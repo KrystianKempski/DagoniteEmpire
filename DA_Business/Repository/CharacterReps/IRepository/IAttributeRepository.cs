@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DA_Business.Repository.IRepository.Character
+namespace DA_Business.Repository.CharacterReps.IRepository
 {
     public interface IAttributeRepository
     {

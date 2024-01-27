@@ -11,7 +11,7 @@ namespace DA_DataAccess.CharacterClasses
     {
         [Key] public int Id { get; set; }
 
-        public required string Name { get; set; }
+        public string? Name { get; set; }
 
         public int BaseBonus { get; set; } = 0;
         public int RaceBonus { get; set; } = 0;

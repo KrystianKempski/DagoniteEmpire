@@ -10,12 +10,14 @@ namespace DA_DataAccess.CharacterClasses
 {
     public class Character
     {
-        [Key] public int ID { get; set; }
+        [Key] public int Id { get; set; }
 
         public string? NPCName { get; set; }
+        public string? Description { get; set; }
         public string? Class {  get; set; }
         public string? Race { get; set; }
         public int Age { get; set; }
+        public string? ImageUrl { get; set; }
         public int UserId { get; set; }
         [ForeignKey(nameof(UserId))]
         public ICollection<Attribute>? Attributes { get; set; }

@@ -1,0 +1,38 @@
+﻿@page "/character/create"
+
+<div class="row my-2">
+    <h3 class="card-title text-primary mb-3 ml-3">@Title character</h3>
+
+    <div class="col-12">
+        <EditForm Model="Character" OnValidSubmit="UpsertCharacter">
+            <DataAnnotationsValidator/>
+            <div class="form-group">
+                <label>Character name</label>
+                <InputText @bind-Value="Character.NPCName" class="form-control"></InputText>
+                <ValidationMessage For="()=>Character.NPCName"></ValidationMessage>
+            </div>
+            <div class="form-group py-2">
+                <button class="btn btn-primary">@Title</button>
+                <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
+            </div>
+        </EditForm>
+    </div>
+
+</div>
+
+@* <SfRichTextEditor>
+    <p>Rich Text Editor allows to insert images from online source as well as local computer where you want to insert the image in your content.</p>
+    <p><b>Get started Quick Toolbar to click on the image</b></p>
+    <p>It is possible to add custom style on the selected image inside the Rich Text Editor through quick toolbar.</p>
+</SfRichTextEditor> *@
+
+@code {
+    private CharacterDTO Character { get; set; } = new CharacterDTO();
+    private string Title { get; set; } = "Create";
+
+    private void UpsertCharacter()
+    {
+        Character.NPCName = "assburg";
+    }
+
+}

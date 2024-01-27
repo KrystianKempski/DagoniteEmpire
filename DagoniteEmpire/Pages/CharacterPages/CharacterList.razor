@@ -1,0 +1,20 @@
+﻿@page "/character"
+
+@inject ICharacterRepository _characterRepository
+@inject IJSRuntime _jsRuntime
+
+<div class="row mt-4">
+    <div class="col-6">
+        <h4 class="card-title text-primary">User Characters List </h4>
+
+    </div>
+    <div class="col-4 offset-2">
+        <a href="/character/create" class="btn btn-primary form-control">Add new character</a>
+    </div>
+</div>
+
+
+@code {
+    private CharacterDTO Character { get; set; } = new CharacterDTO();
+
+}

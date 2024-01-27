@@ -14,8 +14,8 @@ namespace DA_Models.CharacterModels
         public int Id { get; set; }
         [Range(1, int.MaxValue, ErrorMessage = "Please select a related Attribute")]
         public int AtributeId { get; set; }
-
-        public Attribute RelatedAttribute { get; set; }
+        [Required]
+        public required Attribute RelatedAttribute { get; set; }
         [Required]
         public required string Name { get; set; }
         public int BaseBonus { get; set; } = 0;

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using DA_Business.Repository.IRepository.Character;
+using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
 using System;
@@ -8,19 +8,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DA_Business.Repository.Character
+namespace DA_Business.Repository.CharacterReps
 {
-    public class CharacterRepository : ICharacterRepository
+    public class AttributeRepository : IAttributeRepository
     {
         private readonly ApplicationDbContext _db;
         private readonly IMapper _mapper;
 
-        public CharacterRepository(ApplicationDbContext db, IMapper mapper)
+        public AttributeRepository(ApplicationDbContext db, IMapper mapper)
         {
             _db = db;
             _mapper = mapper;
         }
-        public async Task<CharacterDTO> Create(CharacterDTO objDTO)
+        public async Task<AttributeDTO> Create(AttributeDTO objDTO)
         {
             throw new NotImplementedException();
         }
@@ -30,17 +30,17 @@ namespace DA_Business.Repository.Character
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<CharacterDTO>> GetAll()
+        public async Task<IEnumerable<AttributeDTO>> GetAll()
         {
             throw new NotImplementedException();
         }
 
-        public async Task<CharacterDTO> GetById(int id)
+        public async Task<AttributeDTO> GetById(int id)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<CharacterDTO> Update(CharacterDTO objDTO)
+        public async Task<AttributeDTO> Update(AttributeDTO objDTO)
         {
             throw new NotImplementedException();
         }
