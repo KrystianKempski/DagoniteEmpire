@@ -15,6 +15,6 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         public Task<int> Delete(int id);
 
         public Task<BaseSkillDTO> GetById(int id);
-        public Task<IEnumerable<BaseSkillDTO>> GetAll();
+        public Task<IEnumerable<BaseSkillDTO>> GetAll(int? charId = null);
     }
 }

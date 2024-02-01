@@ -17,7 +17,7 @@ namespace DA_DataAccess.Data
         public DbSet<Attribute> Attributes { get; set; }
 
         public DbSet<BaseSkill> BaseSkills { get; set; }
-        public DbSet<BaseSkill> SpecialSkills { get; set; }
+        public DbSet<SpecialSkill> SpecialSkills { get; set; }
         //public DbSet<User> Users { get; set; }
     }
 }

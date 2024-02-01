@@ -17,6 +17,9 @@ namespace DA_DataAccess.CharacterClasses
 
         [ForeignKey(nameof(AtributeId))]
         public required Attribute RelatedAttribute { get; set; }
+        public int CharacterId { get; set; }
+        [ForeignKey(nameof(CharacterId))]
+        public Character Character { get; set; }
 
     }
 }

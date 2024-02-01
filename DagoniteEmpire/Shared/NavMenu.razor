@@ -1,14 +1,14 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@* <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">DagoniteEmpire</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
-</div>
+</div> *@
 
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
+@*<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <nav class="flex-row">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="oi oi-home" aria-hidden="true"></span> Home
@@ -19,7 +19,7 @@
                 <span class="oi oi-list-rich" aria-hidden="true"></span> Bind Properties
             </NavLink>
         </div>
-@*         <div class="nav-item px-3">
+         <div class="nav-item px-3">
             <NavLink class="nav-link" href="learnBlazor/demoProduct">
                 <span class="oi oi-list-rich" aria-hidden="true"></span> Demo Product
             </NavLink>
@@ -39,17 +39,36 @@
                 <span class="oi oi-list-rich" aria-hidden="true"></span> Blazor Js
             </NavLink>
         </div>
-        *@
-        @* <AuthorizeView Roles="@AdminRole"> *@
+        
+        <AuthorizeView Roles="@AdminRole"> 
 
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="character">
                     <span class="oi oi-list-rich" aria-hidden="true"></span> Category
                 </NavLink>
             </div>
-       @*  </AuthorizeView>  *@
+         </AuthorizeView> 
     </nav>
 </div>
+*@
+
+<nav class="navbar navbar-expand-lg position-sticky top-0">
+    <div class="container">
+        <a class="navbar-brand" href="#">Dagonite Empire</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="Dagonite Empire" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item  px-3">
+                    <NavLink class="nav-link" href="character">
+                        <span class="oi oi-list-rich top-0" aria-hidden="true"></span> Character sheets
+                    </NavLink>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
 
 @code {
     private string AdminRole = DA_Common.SD.Role_Admin;

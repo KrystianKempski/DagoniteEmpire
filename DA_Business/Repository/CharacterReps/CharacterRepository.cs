@@ -42,9 +42,11 @@ namespace DA_Business.Repository.CharacterReps
             return 0;
         }
 
-        public async Task<IEnumerable<CharacterDTO>> GetAll()
+        public async Task<IEnumerable<CharacterDTO>> GetAll(int? id=null)
         {
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters); 
+            if(id == null || id < 1)
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters);
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters.Where(u=>u.Id==id));
         }
 
         public async Task<CharacterDTO> GetById(int id)

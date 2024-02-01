@@ -11,20 +11,14 @@ namespace DA_Models.CharacterModels
     {
         [Key] public int Id { get; set; }
         [Required]
-        public required string Name { get; set; }
+        public  string Name { get; set; }
 
         public int BaseBonus { get; set; } = 0;
         public int RaceBonus { get; set; } = 0;
         public int GearBonus { get; set; } = 0;
         public Dictionary<string, int> OtherBonuses = new Dictionary<string, int>();
         public int HealthBonus { get; set; } = 0;
-        public int SumOfAttribute()
-        {
-            return BaseBonus + RaceBonus + GearBonus + HealthBonus + OtherBonuses.Values.AsEnumerable().Sum();
-        }
-        public int GetModyfier()
-        {
-            return (int)Math.Floor((double)(SumOfAttribute() - 10) / 2.0);
-        }
+        [Required]
+        public int CharacterId { get; set; }
     }
 }

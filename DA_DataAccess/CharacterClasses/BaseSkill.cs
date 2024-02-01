@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +15,11 @@ namespace DA_DataAccess.CharacterClasses
             [Key] 
             public int Id { get; set; }
             public string? Type { get; set; }
-        }
+            public int CharacterId { get; set; }
+
+            [ForeignKey(nameof(CharacterId))]
+            public Character Character { get; set; }
+}
 
         public class Skill
         {
@@ -25,11 +30,8 @@ namespace DA_DataAccess.CharacterClasses
             public Dictionary<string, int> OtherBonuses = new();
 
             public Dictionary<string, int> TempBonuses = new();
+            
 
-        public int SumOfSkill()
-            {
-                return BaseBonus + RaceBonus + GearBonus + OtherBonuses.Values.AsEnumerable().Sum() + TempBonuses.Values.AsEnumerable().Sum();
-            }
         }  
 }
 

@@ -4,6 +4,7 @@ using DA_DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240128113400_Update")]
+    partial class Update
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,9 +36,6 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("BaseBonus")
                         .HasColumnType("int");
 
-                    b.Property<int>("CharacterId")
-                        .HasColumnType("int");
-
                     b.Property<int>("GearBonus")
                         .HasColumnType("int");
 
@@ -53,8 +53,6 @@ namespace DA_DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CharacterId");
-
                     b.HasIndex("UserId");
 
                     b.ToTable("Attributes");
@@ -71,7 +69,7 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("BaseBonus")
                         .HasColumnType("int");
 
-                    b.Property<int>("CharacterId")
+                    b.Property<int?>("CharacterId")
                         .HasColumnType("int");
 
                     b.Property<int>("GearBonus")
@@ -141,7 +139,7 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("BaseBonus")
                         .HasColumnType("int");
 
-                    b.Property<int>("CharacterId")
+                    b.Property<int?>("CharacterId")
                         .HasColumnType("int");
 
                     b.Property<int>("GearBonus")
@@ -365,28 +363,16 @@ namespace DA_DataAccess.Migrations
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>
                 {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
-                        .WithMany()
-                        .HasForeignKey("CharacterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
                         .WithMany("Attributes")
                         .HasForeignKey("UserId");
-
-                    b.Navigation("Character");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.BaseSkill", b =>
                 {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
                         .WithMany("BaseSkills")
-                        .HasForeignKey("CharacterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Character");
+                        .HasForeignKey("CharacterId");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
@@ -397,13 +383,9 @@ namespace DA_DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
                         .WithMany("SpecialSkills")
-                        .HasForeignKey("CharacterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Character");
+                        .HasForeignKey("CharacterId");
 
                     b.Navigation("RelatedAttribute");
                 });

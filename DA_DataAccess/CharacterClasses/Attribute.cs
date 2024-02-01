@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +19,11 @@ namespace DA_DataAccess.CharacterClasses
         public int GearBonus { get; set; } = 0;
         public Dictionary<string, int> OtherBonuses = new Dictionary<string, int>();
         public int HealthBonus { get; set; } = 0;
+        public int CharacterId { get; set; }
+        [ForeignKey(nameof(CharacterId))]
+        public Character Character { get; set; }
+
+
 
         //public int SumOfAttribute()
         //{
