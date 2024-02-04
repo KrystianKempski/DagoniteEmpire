@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240130192611_ForeignKeys")]
-    partial class ForeignKeys
+    [Migration("20240204222609_updateAttributes6")]
+    partial class updateAttributes6
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,14 +51,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CharacterId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Attributes");
                 });
@@ -93,7 +88,7 @@ namespace DA_DataAccess.Migrations
 
                     b.HasIndex("CharacterId");
 
-                    b.ToTable("BaseSkill");
+                    b.ToTable("BaseSkills");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
@@ -122,9 +117,6 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Race")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.ToTable("Characters");
@@ -138,13 +130,10 @@ namespace DA_DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AtributeId")
-                        .HasColumnType("int");
-
                     b.Property<int>("BaseBonus")
                         .HasColumnType("int");
 
-                    b.Property<int>("CharacterId")
+                    b.Property<int>("BaseSkillId")
                         .HasColumnType("int");
 
                     b.Property<int>("GearBonus")
@@ -161,11 +150,9 @@ namespace DA_DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AtributeId");
+                    b.HasIndex("BaseSkillId");
 
-                    b.HasIndex("CharacterId");
-
-                    b.ToTable("SpecialSkill");
+                    b.ToTable("SpecialSkills");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -369,14 +356,10 @@ namespace DA_DataAccess.Migrations
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
-                        .WithMany()
+                        .WithMany("Attributes")
                         .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
-                        .WithMany("Attributes")
-                        .HasForeignKey("UserId");
 
                     b.Navigation("Character");
                 });
@@ -394,21 +377,13 @@ namespace DA_DataAccess.Migrations
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
                 {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Attribute", "RelatedAttribute")
-                        .WithMany()
-                        .HasForeignKey("AtributeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
+                    b.HasOne("DA_DataAccess.CharacterClasses.BaseSkill", "BaseSkill")
                         .WithMany("SpecialSkills")
-                        .HasForeignKey("CharacterId")
+                        .HasForeignKey("BaseSkillId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Character");
-
-                    b.Navigation("RelatedAttribute");
+                    b.Navigation("BaseSkill");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -462,13 +437,16 @@ namespace DA_DataAccess.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.BaseSkill", b =>
+                {
+                    b.Navigation("SpecialSkills");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
                 {
                     b.Navigation("Attributes");
 
                     b.Navigation("BaseSkills");
-
-                    b.Navigation("SpecialSkills");
                 });
 #pragma warning restore 612, 618
         }

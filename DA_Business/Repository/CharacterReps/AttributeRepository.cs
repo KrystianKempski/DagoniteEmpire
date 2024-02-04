@@ -12,6 +12,12 @@ namespace DA_Business.Repository.CharacterReps
         private readonly ApplicationDbContext _db;
         private readonly IMapper _mapper;
 
+        public AttributeRepository(ApplicationDbContext db, IMapper mapper)
+        {
+            _db = db;
+            _mapper = mapper;
+        }
+
         public async Task<AttributeDTO> Create(AttributeDTO objDTO)
         {
             var obj = _mapper.Map<AttributeDTO, Attribute>(objDTO);
@@ -36,7 +42,19 @@ namespace DA_Business.Repository.CharacterReps
         {
             if(charId == null || charId < 1)
                 return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(_db.Attributes);
-            return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(_db.Attributes.Where(u=>u.CharacterId==charId));
+            try
+            {
+                var obj = _db.Attributes.Where(u => u.CharacterId == charId);
+                if (obj != null && obj.Any())
+                    return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(obj);
+            }
+            catch(Exception ex) 
+            {
+                ;
+            }
+           
+            
+            return new List<AttributeDTO>();
         }
 
         public async Task<AttributeDTO> GetById(int id)

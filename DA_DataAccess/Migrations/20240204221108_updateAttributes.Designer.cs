@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240128113400_Update")]
-    partial class Update
+    [Migration("20240204221108_updateAttributes")]
+    partial class updateAttributes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -36,6 +36,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("BaseBonus")
                         .HasColumnType("int");
 
+                    b.Property<int>("CharacterId")
+                        .HasColumnType("int");
+
                     b.Property<int>("GearBonus")
                         .HasColumnType("int");
 
@@ -48,12 +51,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("CharacterId");
 
                     b.ToTable("Attributes");
                 });
@@ -69,7 +69,7 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("BaseBonus")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CharacterId")
+                    b.Property<int>("CharacterId")
                         .HasColumnType("int");
 
                     b.Property<int>("GearBonus")
@@ -88,7 +88,7 @@ namespace DA_DataAccess.Migrations
 
                     b.HasIndex("CharacterId");
 
-                    b.ToTable("BaseSkill");
+                    b.ToTable("BaseSkills");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
@@ -117,9 +117,6 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Race")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.ToTable("Characters");
@@ -139,7 +136,7 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("BaseBonus")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CharacterId")
+                    b.Property<int>("CharacterId")
                         .HasColumnType("int");
 
                     b.Property<int>("GearBonus")
@@ -160,7 +157,7 @@ namespace DA_DataAccess.Migrations
 
                     b.HasIndex("CharacterId");
 
-                    b.ToTable("SpecialSkill");
+                    b.ToTable("SpecialSkills");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -363,16 +360,24 @@ namespace DA_DataAccess.Migrations
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>
                 {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
                         .WithMany("Attributes")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.BaseSkill", b =>
                 {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
                         .WithMany("BaseSkills")
-                        .HasForeignKey("CharacterId");
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
@@ -383,9 +388,13 @@ namespace DA_DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
                         .WithMany("SpecialSkills")
-                        .HasForeignKey("CharacterId");
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
 
                     b.Navigation("RelatedAttribute");
                 });

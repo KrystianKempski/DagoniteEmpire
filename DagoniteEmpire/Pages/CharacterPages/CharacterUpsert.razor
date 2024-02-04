@@ -1,13 +1,17 @@
 ﻿@page "/character/create"
-@page "/character/etit/{id:int}"
+@page "/character/edit/{id:int}"
 
 @inject ICharacterRepository _characterRepository
+@inject IAttributeRepository _attributeRepository
+@inject IBaseSkillRepository _baseSkillRepository
+
 @inject NavigationManager _navigationManager
 
 <div class="row my-2">
-    <h3 class="char-title card-title text-primary mb-3 ml-3">@Title character</h3>
+    <h3 class="char-title card-title mb-3 ml-3">@Title character</h3>
 
-    <div class="col-10">
+
+    <div class="col-12">
          @if (IsLoading)
         {
             <div class="text-center">
@@ -18,12 +22,56 @@
         {
             <EditForm Model="Character" OnValidSubmit="UpsertCharacter">
                 <DataAnnotationsValidator/>
-                <div class="form-group">
-                    <label>Character name</label>
-                    <InputText @bind-Value="Character.NPCName" class="form-control col-5"></InputText>
-                    <div class="valid-message">
-                        <ValidationMessage For="()=>Character.NPCName"></ValidationMessage>
+                <form class="row g-3">
+                    <div class="form-group col-md-4">
+                        <label>Character name</label>
+                        <InputText @bind-Value="Character.NPCName" class="form-control col-4"></InputText>
+                        <div class="valid-message">
+                            <ValidationMessage For="()=>Character.NPCName"></ValidationMessage>
+                        </div>
                     </div>
+                    <div class="form-group col-md-3">
+                        <label>Class</label>
+                        <InputText @bind-Value="Character.Class" class="form-control col-3"></InputText>
+                        <div class="valid-message">
+                            <ValidationMessage For="()=>Character.Class"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label>Race</label>
+                        <InputText @bind-Value="Character.Race" class="form-control col-3"></InputText>
+                        <div class="valid-message">
+                            <ValidationMessage For="()=>Character.Race"></ValidationMessage>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>Age</label>
+                        <InputNumber @bind-Value="Character.Age" class="form-control col-2"></InputNumber>
+                        <div class="valid-message">
+                            <ValidationMessage For="()=>Character.Age"></ValidationMessage>
+                        </div>
+                    </div>
+                </form>
+                <div class="row g-3">
+                    <div class="form-group col-md-6">
+                        <h3 class="mb-3 ml-3">Attributes</h3>
+                        <SfGrid @ref="AttributeGrid" DataSource="@Attributes" AllowPaging="false">
+                            <GridEditSettings AllowAdding="false" AllowEditing="true" AllowDeleting="false" Mode="@EditMode.Batch"></GridEditSettings>
+                            <GridEvents OnActionBegin="AttributesActionHandler" TValue="AttributeDTO"></GridEvents>
+                            
+                            <GridColumns>
+                                <GridColumn Field=@nameof(AttributeDTO.Name) HeaderText=Attribute TextAlign="TextAlign.Left" Width="100"></GridColumn>
+                                <GridColumn Field=@nameof(AttributeDTO.BaseBonus) HeaderText="Base" TextAlign="TextAlign.Center" Width="50"></GridColumn>
+                                <GridColumn Field=@nameof(AttributeDTO.GearBonus) HeaderText="Gear" TextAlign="TextAlign.Center" Width="50"></GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                     
+                    </div>
+                    <div class="form-group col-md-6">
+                        <h3 class="mb-3 ml-3">Base Skills</h3>
+
+                    </div>
+                   
                 </div>
                 <div class="form-group py-2">
                     <button class="btn btn-primary">@Title</button>
@@ -47,6 +95,8 @@
     public int Id { get; set; }
 
     private CharacterDTO Character { get; set; } = new CharacterDTO();
+    private IEnumerable<AttributeDTO> Attributes { get; set; } = new List<AttributeDTO>();
+    public SfGrid<AttributeDTO> AttributeGrid;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; }
 
@@ -73,6 +123,7 @@
         IsLoading = true;
         StateHasChanged();
         Character = await _characterRepository.GetById(Id);
+        Attributes = await _attributeRepository.GetAll(Id);
         IsLoading = false;
         StateHasChanged();
     }
@@ -91,6 +142,30 @@
         }
         _navigationManager.NavigateTo("/character");
 
+    }
+
+
+    public async void AttributesActionHandler(ActionEventArgs<AttributeDTO> args)
+    {
+        // if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        // {
+        //     args.Data.ProductId = Id;
+        //     if (args.Action == "Add")
+        //     {
+        //         await _productPriceRepository.Create(args.Data);
+        //         ProductPrices = await _productPriceRepository.GetAll(Id);
+        //         productPriceGrid.Refresh();
+
+        //     }
+        //     else if (args.Action == "Edit")
+        //     {
+        //         await _productPriceRepository.Update(args.Data);
+        //     }
+        // }
+        // else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
+        // {
+        //     await _productPriceRepository.Delete(args.Data.Id);
+        // }
     }
 
 }

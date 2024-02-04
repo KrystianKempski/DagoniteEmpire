@@ -19,7 +19,7 @@ namespace DA_DataAccess.CharacterClasses
         public int GearBonus { get; set; } = 0;
         public Dictionary<string, int> OtherBonuses = new Dictionary<string, int>();
         public int HealthBonus { get; set; } = 0;
-        public int CharacterId { get; set; }
+        public int CharacterId { get; set; } = 0;
         [ForeignKey(nameof(CharacterId))]
         public Character Character { get; set; }
 

@@ -10,12 +10,12 @@ namespace DA_Models.CharacterModels
 {
     public class SpecialSkillDTO
     {
-        [Key]
         public int Id { get; set; }
-        [Range(1, int.MaxValue, ErrorMessage = "Please select a related Attribute")]
-        public int AtributeId { get; set; }
-        [Required]
-        public Attribute RelatedAttribute { get; set; }
+
+        //[Required]
+        //public int BaseSkillId { get; set; }
+
+        //public Attribute RelatedAttribute { get; set; }
         [Required]
         public string Name { get; set; }
         public int BaseBonus { get; set; } = 0;
@@ -25,7 +25,5 @@ namespace DA_Models.CharacterModels
 
         public Dictionary<string, int> TempBonuses = new();
 
-        [Required]
-        public int CharacterId { get; set; }
     }
 }

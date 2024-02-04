@@ -4,6 +4,7 @@ using DA_DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240204222240_updateAttributes5")]
+    partial class updateAttributes5
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -130,6 +133,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("BaseBonus")
                         .HasColumnType("int");
 
+                    b.Property<int>("CharacterId")
+                        .HasColumnType("int");
+
                     b.Property<int>("GearBonus")
                         .HasColumnType("int");
 
@@ -143,6 +149,8 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CharacterId");
 
                     b.ToTable("SpecialSkills");
                 });
@@ -367,6 +375,17 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Character");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
+                        .WithMany("SpecialSkills")
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -423,6 +442,8 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Attributes");
 
                     b.Navigation("BaseSkills");
+
+                    b.Navigation("SpecialSkills");
                 });
 #pragma warning restore 612, 618
         }

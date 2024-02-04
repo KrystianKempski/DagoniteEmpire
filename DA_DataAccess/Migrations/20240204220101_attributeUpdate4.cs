@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class AddCharacterSkillsAttributes : Migration
+    public partial class attributeUpdate4 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -54,17 +54,18 @@ namespace DA_DataAccess.Migrations
                 name: "Characters",
                 columns: table => new
                 {
-                    ID = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     NPCName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Class = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Race = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Age = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false)
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Characters", x => x.ID);
+                    table.PrimaryKey("PK_Characters", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -179,74 +180,77 @@ namespace DA_DataAccess.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BaseBonus = table.Column<int>(type: "int", nullable: false),
                     RaceBonus = table.Column<int>(type: "int", nullable: false),
                     GearBonus = table.Column<int>(type: "int", nullable: false),
                     HealthBonus = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: true)
+                    CharacterId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Attributes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Attributes_Characters_UserId",
-                        column: x => x.UserId,
+                        name: "FK_Attributes_Characters_CharacterId",
+                        column: x => x.CharacterId,
                         principalTable: "Characters",
-                        principalColumn: "ID");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "BaseSkill",
+                name: "BaseSkills",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Type = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CharacterID = table.Column<int>(type: "int", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CharacterId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BaseBonus = table.Column<int>(type: "int", nullable: false),
                     RaceBonus = table.Column<int>(type: "int", nullable: false),
                     GearBonus = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BaseSkill", x => x.Id);
+                    table.PrimaryKey("PK_BaseSkills", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_BaseSkill_Characters_CharacterID",
-                        column: x => x.CharacterID,
+                        name: "FK_BaseSkills_Characters_CharacterId",
+                        column: x => x.CharacterId,
                         principalTable: "Characters",
-                        principalColumn: "ID");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "SpecialSkill",
+                name: "SpecialSkills",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Type = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AtributeId = table.Column<int>(type: "int", nullable: false),
-                    CharacterID = table.Column<int>(type: "int", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CharacterId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BaseBonus = table.Column<int>(type: "int", nullable: false),
                     RaceBonus = table.Column<int>(type: "int", nullable: false),
                     GearBonus = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SpecialSkill", x => x.Id);
+                    table.PrimaryKey("PK_SpecialSkills", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SpecialSkill_Attributes_AtributeId",
+                        name: "FK_SpecialSkills_Attributes_AtributeId",
                         column: x => x.AtributeId,
                         principalTable: "Attributes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_SpecialSkill_Characters_CharacterID",
-                        column: x => x.CharacterID,
+                        name: "FK_SpecialSkills_Characters_CharacterId",
+                        column: x => x.CharacterId,
                         principalTable: "Characters",
-                        principalColumn: "ID");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -289,24 +293,24 @@ namespace DA_DataAccess.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Attributes_UserId",
+                name: "IX_Attributes_CharacterId",
                 table: "Attributes",
-                column: "UserId");
+                column: "CharacterId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BaseSkill_CharacterID",
-                table: "BaseSkill",
-                column: "CharacterID");
+                name: "IX_BaseSkills_CharacterId",
+                table: "BaseSkills",
+                column: "CharacterId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SpecialSkill_AtributeId",
-                table: "SpecialSkill",
+                name: "IX_SpecialSkills_AtributeId",
+                table: "SpecialSkills",
                 column: "AtributeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SpecialSkill_CharacterID",
-                table: "SpecialSkill",
-                column: "CharacterID");
+                name: "IX_SpecialSkills_CharacterId",
+                table: "SpecialSkills",
+                column: "CharacterId");
         }
 
         /// <inheritdoc />
@@ -328,10 +332,10 @@ namespace DA_DataAccess.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "BaseSkill");
+                name: "BaseSkills");
 
             migrationBuilder.DropTable(
-                name: "SpecialSkill");
+                name: "SpecialSkills");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

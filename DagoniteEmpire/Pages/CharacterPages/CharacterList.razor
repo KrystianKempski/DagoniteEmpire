@@ -1,24 +1,24 @@
 ﻿@page "/character"
-
+@using Syncfusion.Blazor.Navigations
 @inject ICharacterRepository _characterRepository
 @inject ISpecialSkillRepository _specialSkillRepository
+@inject NavigationManager _navigationManager
 @inject IJSRuntime _jsRuntime
 <_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this character"></_DeleteConfirmation>
+
+
+
 <div class="row mt-4">
     <div class="col-6">
-        <h4 class="card-title text-primary">User Characters List </h4>
-
-    </div>
-    <div class="col-4 offset-2">
-        <a href="/character/create" class="btn btn-primary form-control">Add new character</a>
+        <h4 class="card-title">User Characters List </h4>
     </div>
 </div>
 <div class="row mt-4">
     <div class="col-12">
-    @if (Characters.Any())
-    {
-            <SfGrid DataSource="@Characters" AllowPaging="true">
-                <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
+        <SfGrid ID="Grid"DataSource="@Characters" AllowPaging="true"
+                Toolbar="@ToolbarItems">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
+            <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
                 <GridColumns>
                     <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="300"></GridColumn>
                     <GridColumn Field=@nameof(CharacterDTO.Race) HeaderText="Race" TextAlign="TextAlign.Left" Width="150"></GridColumn>
@@ -26,6 +26,9 @@
                     <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Right" Width="50"></GridColumn>
                 </GridColumns>
             </SfGrid>
+    @if (Characters.Any())
+    {
+            
     }
     else
     {
@@ -56,6 +59,11 @@
         }
     }
 
+    private List<object> ToolbarItems = new List<object>() {
+        new ItemModel() { Text = "Add Character", PrefixIcon = "e-add", Id = "Grid_add"},//Here Grid is SfGrid ID
+        new ItemModel(){ Text = "Edit Character", PrefixIcon= "e-edit", Id="Grid_edit"},
+        new ItemModel(){ Text = "Delete Character", PrefixIcon= "e-delete", Id="Grid_delete"},
+    };
 
     private async Task LoadCharacters()
     {
@@ -65,12 +73,27 @@
         IsLoading = false;
         StateHasChanged();
     }
+
+    public void ActionHandler(ActionEventArgs<CharacterDTO> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Add))
+        {
+            _navigationManager.NavigateTo($"/character/create/");
+        }
+        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.BeginEdit))
+        {
+            _navigationManager.NavigateTo($"/character/edit/{args.Data.Id}");
+        }
+        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete)){
+            HandleDelete(args.RowData.Id);
+        }
+    }
+    
     private void HandleDelete(int id)
     {
         DeleteCharacterId = id;
         _jsRuntime.InvokeVoidAsync("ShowDeleteConfirmationModal");
     }
-
     public async Task ConfirmDelete_Click(bool isConfirmed)
     {
         IsLoading = true;
@@ -78,17 +101,18 @@
         {
             await Task.Delay(500);
             //delete
+            var prod = await _characterRepository.GetById(DeleteCharacterId);
+            // if (!prod.ImageUrl.Contains("default-img.jpg"))
+            // {
+            //     _fileUpload.DeleteFile(prod.ImageUrl.ToString());
+            // }
+
             await _characterRepository.Delete(DeleteCharacterId);
+           // await _jsRuntime.ToastrSuccess("Product deleted succesfully.");
             await LoadCharacters();
             await _jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
         }
         IsLoading = false;
     }
-
-    public async void ActionHandler(ActionEventArgs<CharacterDTO> args)
-    {
-        
-    }
 }
-
 

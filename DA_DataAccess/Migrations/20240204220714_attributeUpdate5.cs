@@ -5,7 +5,7 @@
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class ForeignKeys2 : Migration
+    public partial class attributeUpdate5 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

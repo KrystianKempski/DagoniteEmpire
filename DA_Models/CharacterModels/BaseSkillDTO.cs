@@ -10,8 +10,10 @@ namespace DA_Models.CharacterModels
 {
     public class BaseSkillDTO
     {
-        [Key]
         public int Id { get; set; }
+
+        [Required]
+        public int CharacterId { get; set; }
         [Required]
         public string Name { get; set; } = "";   
         public int BaseBonus { get; set; } = 0;
@@ -20,7 +22,5 @@ namespace DA_Models.CharacterModels
         public Dictionary<string, int> OtherBonuses = new();
 
         public Dictionary<string, int> TempBonuses = new();
-        [Required]
-        public int CharacterId { get; set; }
     }
 }

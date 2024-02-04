@@ -18,11 +18,11 @@ namespace DA_DataAccess.CharacterClasses
         public string? Race { get; set; }
         public int Age { get; set; }
         public string? ImageUrl { get; set; }
-        public int UserId { get; set; }
-        [ForeignKey(nameof(UserId))]
+        //public int UserId { get; set; }
+        //[ForeignKey(nameof(UserId))]
         public ICollection<Attribute>? Attributes { get; set; }
         public ICollection<BaseSkill>? BaseSkills { get; set; }
-        public ICollection<SpecialSkill>? SpecialSkills { get; set; }
+       
 
 
     }

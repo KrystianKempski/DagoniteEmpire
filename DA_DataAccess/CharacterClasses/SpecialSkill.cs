@@ -12,14 +12,15 @@ namespace DA_DataAccess.CharacterClasses
     {
         [Key]
         public int Id { get; set; }
+        //public int BaseSkillId { get; set; } = 0;
+        //[ForeignKey(nameof(BaseSkillId))]
+        //public BaseSkill BaseSkill { get; set; }
         public string? Type { get; set; }
-        public int AtributeId { get; set; }
+       // public int AtributeId { get; set; }
 
-        [ForeignKey(nameof(AtributeId))]
-        public required Attribute RelatedAttribute { get; set; }
-        public int CharacterId { get; set; }
-        [ForeignKey(nameof(CharacterId))]
-        public Character Character { get; set; }
+        //[ForeignKey(nameof(AtributeId))]
+        //public Attribute RelatedAttribute { get; set; }
+       
 
     }
 }

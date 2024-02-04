@@ -66,7 +66,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 obj.Attributes = objDTO.Attributes;        //is it nessesary?
                 obj.BaseSkills = objDTO.BaseSkills;        //is it nessesary?
-                obj.SpecialSkills = objDTO.SpecialSkills;  //is it nessesary?
+                //obj.SpecialSkills = objDTO.SpecialSkills;  //is it nessesary?
                 obj.Age = objDTO.Age;
                 obj.NPCName = objDTO.NPCName;
                 obj.Race = objDTO.Race;

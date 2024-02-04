@@ -19,7 +19,9 @@ namespace DA_DataAccess.CharacterClasses
 
             [ForeignKey(nameof(CharacterId))]
             public Character Character { get; set; }
-}
+
+            //public ICollection<SpecialSkill>? SpecialSkills { get; set; }
+    }
 
         public class Skill
         {

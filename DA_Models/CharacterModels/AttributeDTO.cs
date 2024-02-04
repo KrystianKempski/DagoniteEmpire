@@ -9,7 +9,9 @@ namespace DA_Models.CharacterModels
 {
     public class AttributeDTO
     {
-        [Key] public int Id { get; set; }
+        public int Id { get; set; }
+        [Required]
+        public int CharacterId { get; set; }
         [Required]
         public  string Name { get; set; }
 
@@ -18,7 +20,5 @@ namespace DA_Models.CharacterModels
         public int GearBonus { get; set; } = 0;
         public Dictionary<string, int> OtherBonuses = new Dictionary<string, int>();
         public int HealthBonus { get; set; } = 0;
-        [Required]
-        public int CharacterId { get; set; }
     }
 }
