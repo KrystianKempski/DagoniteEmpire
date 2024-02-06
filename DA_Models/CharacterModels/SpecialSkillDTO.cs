@@ -12,10 +12,8 @@ namespace DA_Models.CharacterModels
     {
         public int Id { get; set; }
 
-        //[Required]
-        //public int BaseSkillId { get; set; }
-
-        //public Attribute RelatedAttribute { get; set; }
+        [Required]
+        public int CharacterId { get; set; }
         [Required]
         public string Name { get; set; }
         public int BaseBonus { get; set; } = 0;

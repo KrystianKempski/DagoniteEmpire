@@ -19,6 +19,6 @@ namespace DA_Models.CharacterModels
 
         public ICollection<Attribute>? Attributes { get; set; }
         public ICollection<BaseSkill>? BaseSkills { get; set; }
-       // public ICollection<SpecialSkill>? SpecialSkills { get; set; }
+        public ICollection<SpecialSkill>? SpecialSkills { get; set; }
     }
 }

@@ -42,11 +42,11 @@ namespace DA_Business.Repository.CharacterReps
             return 0;
         }
 
-        public async Task<IEnumerable<SpecialSkillDTO>> GetAll(int? baseId = null)
+        public async Task<IEnumerable<SpecialSkillDTO>> GetAll(int? charId = null)
         {
-         //   if (baseId == null || baseId < 1)
+            if (charId == null || charId < 1)
                 return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills);
-           // return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills.Where(u => u.BaseSkillId == baseId));
+           return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills.Where(u => u.CharacterId == charId));
         }
 
         public async Task<SpecialSkillDTO> GetById(int id)
@@ -64,7 +64,7 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await _db.SpecialSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
-               // obj.CharacterId = objDTO.CharacterId;        //is it nessesary?
+                obj.CharacterId = objDTO.CharacterId;        //is it nessesary?
                 obj.OtherBonuses = objDTO.OtherBonuses;        //is it nessesary?
                 obj.RaceBonus = objDTO.RaceBonus;  //is it nessesary?
                 obj.BaseBonus = objDTO.BaseBonus;
