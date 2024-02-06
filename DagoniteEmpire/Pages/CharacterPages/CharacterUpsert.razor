@@ -4,6 +4,7 @@
 @inject ICharacterRepository _characterRepository
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
+@using Attribute = DA_DataAccess.CharacterClasses.Attribute;
 
 @inject NavigationManager _navigationManager
 
@@ -54,21 +55,32 @@
                 </form>
                 <div class="row g-3">
                     <div class="form-group col-md-6">
-                        <h3 class="mb-3 ml-3">Attributes</h3>
-                       @*  <SfGrid @ref="AttributeGrid" DataSource="@Attributes" AllowPaging="false">
+                        <h3 class="my-3 ml-3">Attributes</h3>
+                         <SfGrid @ref="AttributeGrid" DataSource="@Attributes" AllowPaging="false">
                             <GridEditSettings AllowAdding="false" AllowEditing="true" AllowDeleting="false" Mode="@EditMode.Batch"></GridEditSettings>
                             <GridEvents OnActionBegin="AttributesActionHandler" TValue="AttributeDTO"></GridEvents>
-                            
                             <GridColumns>
                                 <GridColumn Field=@nameof(AttributeDTO.Name) HeaderText=Attribute TextAlign="TextAlign.Left" Width="100"></GridColumn>
                                 <GridColumn Field=@nameof(AttributeDTO.BaseBonus) HeaderText="Base" TextAlign="TextAlign.Center" Width="50"></GridColumn>
+                                <GridColumn Field=@nameof(AttributeDTO.RaceBonus) HeaderText="Race" TextAlign="TextAlign.Center" Width="50"></GridColumn>
                                 <GridColumn Field=@nameof(AttributeDTO.GearBonus) HeaderText="Gear" TextAlign="TextAlign.Center" Width="50"></GridColumn>
+                                <GridColumn Field=@nameof(AttributeDTO.HealthBonus) HeaderText="Health" TextAlign="TextAlign.Center" Width="50"></GridColumn>
                             </GridColumns>
-                        </SfGrid> *@
+                        </SfGrid> 
                      
                     </div>
                     <div class="form-group col-md-6">
-                        <h3 class="mb-3 ml-3">Base Skills</h3>
+                        <h3 class="my-3 ml-3">Base Skills</h3>
+                        <SfGrid @ref="BaseSkillGrid" DataSource="@BaseSkills" AllowPaging="false">
+                            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="false" Mode="@EditMode.Batch"></GridEditSettings>
+                            <GridEvents OnActionBegin="BaseSkillActionHandler" TValue="BaseSkillDTO"></GridEvents>
+                            <GridColumns>
+                                <GridColumn Field=@nameof(BaseSkillDTO.Name) HeaderText="Base Skill" TextAlign="TextAlign.Left" Width="100"></GridColumn>
+                                <GridColumn Field=@nameof(BaseSkillDTO.BaseBonus) HeaderText="Base" TextAlign="TextAlign.Center" Width="50"></GridColumn>
+                                <GridColumn Field=@nameof(BaseSkillDTO.RaceBonus) HeaderText="Race" TextAlign="TextAlign.Center" Width="50"></GridColumn>
+                                <GridColumn Field=@nameof(BaseSkillDTO.GearBonus) HeaderText="Gear" TextAlign="TextAlign.Center" Width="50"></GridColumn>
+                            </GridColumns>
+                        </SfGrid>
 
                     </div>
                    
@@ -95,8 +107,10 @@
     public int Id { get; set; }
 
     private CharacterDTO Character { get; set; } = new CharacterDTO();
-    private IEnumerable<AttributeDTO> Attributes { get; set; } = new List<AttributeDTO>();
+    private IEnumerable<AttributeDTO> Attributes { get; set; } = GetAttributes();
     public SfGrid<AttributeDTO> AttributeGrid;
+    private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = new List<BaseSkillDTO>();
+    public SfGrid<BaseSkillDTO> BaseSkillGrid;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; }
 
@@ -123,7 +137,8 @@
         IsLoading = true;
         StateHasChanged();
         Character = await _characterRepository.GetById(Id);
-      //  Attributes = await _attributeRepository.GetAll(Id);
+        Attributes = await _attributeRepository.GetAll(Id);
+        BaseSkills = await _baseSkillRepository.GetAll(Id);
         IsLoading = false;
         StateHasChanged();
     }
@@ -147,27 +162,127 @@
 
     public async void AttributesActionHandler(ActionEventArgs<AttributeDTO> args)
     {
-        // if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
-        // {
-        //     args.Data.ProductId = Id;
-        //     if (args.Action == "Add")
-        //     {
-        //         await _productPriceRepository.Create(args.Data);
-        //         ProductPrices = await _productPriceRepository.GetAll(Id);
-        //         productPriceGrid.Refresh();
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            args.Data.CharacterId = Id;
+            if (args.Action == "Add")
+            {
+                await _attributeRepository.Create(args.Data);
+                Attributes = await _attributeRepository.GetAll(Id);
+                await AttributeGrid.Refresh();
 
-        //     }
-        //     else if (args.Action == "Edit")
-        //     {
-        //         await _productPriceRepository.Update(args.Data);
-        //     }
-        // }
-        // else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
-        // {
-        //     await _productPriceRepository.Delete(args.Data.Id);
-        // }
+            }
+            else if (args.Action == "Edit")
+            {
+                await _attributeRepository.Update(args.Data);
+            }
+        }
+        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
+        {
+            await _attributeRepository.Delete(args.Data.Id);
+        }
+    }
+    public async void BaseSkillActionHandler(ActionEventArgs<BaseSkillDTO> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            args.Data.CharacterId = Id;
+            if (args.Action == "Add")
+            {
+                await _baseSkillRepository.Create(args.Data);
+                BaseSkills = await _baseSkillRepository.GetAll(Id);
+                await AttributeGrid.Refresh();
+
+            }
+            else if (args.Action == "Edit")
+            {
+                await _baseSkillRepository.Update(args.Data);
+            }
+        }
+        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
+        {
+            await _baseSkillRepository.Delete(args.Data.Id);
+        }
     }
 
+    static private IEnumerable<AttributeDTO> GetAttributes()
+    {
+        var attributes = new List<AttributeDTO>()
+            {
+                new AttributeDTO()
+                {
+                    //CharacterId= charId,
+                    Name = "Strength",
+                    BaseBonus = 6,
+                    GearBonus = 0,
+                    HealthBonus = 0,
+                    RaceBonus = 0,
+                    OtherBonuses = { },
+                },
+                new AttributeDTO()
+                {
+                    //CharacterId= charId,
+                    Name = "Dexterity",
+                    BaseBonus = 6,
+                    GearBonus = 0,
+                    HealthBonus = 0,
+                    RaceBonus = 0,
+                    OtherBonuses = { },
+                },
+                new AttributeDTO()
+                {
+                    //CharacterId= charId,
+                    Name = "Endurance",
+                    BaseBonus = 6,
+                    GearBonus = 0,
+                    HealthBonus = 0,
+                    RaceBonus = 0,
+                    OtherBonuses = { },
+                },
+                new AttributeDTO()
+                {
+                    //CharacterId= charId,
+                    Name = "Intelligence",
+                    BaseBonus = 6,
+                    GearBonus = 0,
+                    HealthBonus = 0,
+                    RaceBonus = 0,
+                    OtherBonuses = { },
+                },
+                new AttributeDTO()
+                {
+                    //CharacterId= charId,
+                    Name = "Instinct",
+                    BaseBonus = 6,
+                    GearBonus = 0,
+                    HealthBonus = 0,
+                    RaceBonus = 0,
+                    OtherBonuses = { },
+                },
+                new AttributeDTO()
+                {
+                    //CharacterId= charId,
+                    Name = "Willpower",
+                    BaseBonus = 6,
+                    GearBonus = 0,
+                    HealthBonus = 0,
+                    RaceBonus = 0,
+                    OtherBonuses = { },
+                },
+                new AttributeDTO()
+                {
+                    //CharacterId= charId,
+                    Name = "Charisma",
+                    BaseBonus = 6,
+                    GearBonus = 0,
+                    HealthBonus = 0,
+                    RaceBonus = 0,
+                    OtherBonuses = { },
+                },
+            };
+        return attributes;
+    }
 }
 
 
+                

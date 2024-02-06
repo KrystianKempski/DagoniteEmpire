@@ -13,7 +13,7 @@ namespace DA_Models.CharacterModels
         public string? Description { get; set; }
         public string? Class { get; set; }
         public string? Race { get; set; }
-       // [Range(16, 300, ErrorMessage = "Age must be between 16 and 300 years")]
+        [Range(16, 300, ErrorMessage = "Age must be between 16 and 300 years")]
         public int Age { get; set; }
         public string? ImageUrl { get; set; }
 

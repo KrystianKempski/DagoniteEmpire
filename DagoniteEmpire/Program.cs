@@ -37,6 +37,7 @@ builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();
 builder.Services.AddScoped<ISpecialSkillRepository, SpecialSkillRepository>();
 builder.Services.AddScoped<IBaseSkillRepository, BaseSkillRepository>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 //builder.Services.AddSingleton<IConfiguration>(provider => new ConfigurationBuilder()
 //            .AddEnvironmentVariables()
 //            .AddJsonFile("licenses.json", optional: true, reloadOnChange: true)
