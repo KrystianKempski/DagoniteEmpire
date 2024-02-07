@@ -65,9 +65,10 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await _db.Characters.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
-                obj.Attributes = objDTO.Attributes;        //is it nessesary?
-                obj.BaseSkills = objDTO.BaseSkills;        //is it nessesary?
-                obj.SpecialSkills = objDTO.SpecialSkills;  //is it nessesary?
+                obj.Attributes = _mapper.Map<ICollection<AttributeDTO>, ICollection<Attribute>>(objDTO.Attributes);
+                obj.BaseSkills = _mapper.Map<ICollection<BaseSkillDTO>, ICollection<BaseSkill>>(objDTO.BaseSkills);
+                obj.SpecialSkills = _mapper.Map<ICollection<SpecialSkillDTO>, ICollection<SpecialSkill>>(objDTO.SpecialSkills);
+
                 obj.Age = objDTO.Age;
                 obj.NPCName = objDTO.NPCName;
                 obj.Race = objDTO.Race;

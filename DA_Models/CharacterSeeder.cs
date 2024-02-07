@@ -1,48 +1,22 @@
-﻿using DA_DataAccess.Data;
+﻿using DA_Models.CharacterModels;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Attribute = DA_DataAccess.CharacterClasses.Attribute;
 
-namespace DA_DataAccess
+namespace DA_Models
 {
     public class CharacterSeeder
     {
-        ApplicationDbContext _dbContext;
-        public CharacterSeeder(ApplicationDbContext dbContext)
+        static public IEnumerable<AttributeDTO> GetAttributes()
         {
-            _dbContext = dbContext;
-        }
-        public void Seed()
-        {
-            if (_dbContext.Database.CanConnect())
+            var attributes = new List<AttributeDTO>()
             {
-                if (_dbContext.Characters.Any())
+                new AttributeDTO()
                 {
-                    foreach(var character in _dbContext.Characters)
-                    {
-                        if (character != null && !character.Attributes.Any())
-                        {
-                            var attributes = GetAttributes(character.Id);
-                            _dbContext.Attributes.AddRange(attributes);
-                            _dbContext.SaveChanges();
-
-                        }
-                    }
-                }
-            }
-        }
-
-        private IEnumerable<Attribute> GetAttributes(int charId)
-        {
-            var attributes = new List<Attribute>()
-            {
-                new Attribute()
-                {
-                    CharacterId= charId,
+                    //CharacterId= charId,
                     Name = "Strength",
                     BaseBonus = 6,
                     GearBonus = 0,
@@ -50,9 +24,9 @@ namespace DA_DataAccess
                     RaceBonus = 0,
                     OtherBonuses = { },
                 },
-                new Attribute()
+                new AttributeDTO()
                 {
-                    CharacterId= charId,
+                   //CharacterId= charId,
                     Name = "Dexterity",
                     BaseBonus = 6,
                     GearBonus = 0,
@@ -60,9 +34,9 @@ namespace DA_DataAccess
                     RaceBonus = 0,
                     OtherBonuses = { },
                 },
-                new Attribute()
+                new AttributeDTO()
                 {
-                    CharacterId= charId,
+                    //CharacterId= charId,
                     Name = "Endurance",
                     BaseBonus = 6,
                     GearBonus = 0,
@@ -70,9 +44,9 @@ namespace DA_DataAccess
                     RaceBonus = 0,
                     OtherBonuses = { },
                 },
-                new Attribute()
+                new AttributeDTO()
                 {
-                    CharacterId= charId,
+                    //CharacterId= charId,
                     Name = "Intelligence",
                     BaseBonus = 6,
                     GearBonus = 0,
@@ -80,9 +54,9 @@ namespace DA_DataAccess
                     RaceBonus = 0,
                     OtherBonuses = { },
                 },
-                new Attribute()
+                new AttributeDTO()
                 {
-                    CharacterId= charId,
+                    //CharacterId= charId,
                     Name = "Instinct",
                     BaseBonus = 6,
                     GearBonus = 0,
@@ -90,9 +64,9 @@ namespace DA_DataAccess
                     RaceBonus = 0,
                     OtherBonuses = { },
                 },
-                new Attribute()
+                new AttributeDTO()
                 {
-                    CharacterId= charId,
+                    //CharacterId= charId,
                     Name = "Willpower",
                     BaseBonus = 6,
                     GearBonus = 0,
@@ -100,9 +74,9 @@ namespace DA_DataAccess
                     RaceBonus = 0,
                     OtherBonuses = { },
                 },
-                new Attribute()
+                new AttributeDTO()
                 {
-                    CharacterId= charId,
+                    //CharacterId= charId,
                     Name = "Charisma",
                     BaseBonus = 6,
                     GearBonus = 0,
