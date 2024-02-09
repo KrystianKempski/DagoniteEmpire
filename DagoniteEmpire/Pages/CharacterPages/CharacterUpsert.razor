@@ -53,60 +53,97 @@
                         </div>
                     </div>
                 </form>
-                <div class="row g-3">
-                    <form>
-                    <div class="form-group col-md-6">
-                        <h3 class="my-3 ml-3">Attributes</h3>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Attribute</th>
-                                    <th scope="col">Base</th>
-                                    <th scope="col">Race</th>
-                                    <th scope="col">Gear</th>
-                                    <th scope="col">Health</th>
-                                </tr>
-                            </thead>
-                             <tbody>
-                                @foreach (var obj in Attributes)
-                                {
+                <div class="attribute-row">
+                        <div class="form-group">
+                            <h3 class="my-3 ml-3">Attributes</h3>
+                                <table class="table align-middle">
+                                <thead>
                                     <tr>
+                                    <th scope="col" class="Attribute-name-row">Attribute</th>
+                                    <th scope="col" class="bonus-row">Base</th>
+                                    <th scope="col" class="bonus-row">Race</th>
+                                    <th scope="col" class="bonus-row">Gear</th>
+                                    <th scope="col" class="bonus-row">Health</th>
+                                    </tr>
+                                </thead>
+                                    <tbody>
+                                    @foreach (var obj in Attributes)
+                                    {
+                                        <tr>
+                                                <td >
+                                                    <label class="text-center">@obj.Name</label>
+                                                </td>
+                                                <td>
+                                            <InputNumber @bind-Value="obj.BaseBonus" class="form-control text-center px-0" style="width: 50px; font-size: 12px" />
+                                                    <div class="valid-message">
+                                                        <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
+                                                    </div>
+                                                </td>
+                                                 <td>
+                                            <InputNumber @bind-Value="obj.RaceBonus" class="form-control text-center px-0" style="width: 50px; font-size: 12px" />
+                                                    <div class="valid-message">
+                                                        <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                            <InputNumber @bind-Value="obj.GearBonus" class="form-control text-center px-0" style="width: 50px; font-size: 12px" />
+                                                    <div class="valid-message">
+                                                        <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                            <InputNumber @bind-Value="obj.HealthBonus" class="form-control text-center px-0" style="width: 50px; font-size: 12px" />
+                                                    <div class="valid-message">
+                                                        <ValidationMessage For="()=>obj.HealthBonus"></ValidationMessage>
+                                                    </div>
+                                                </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="form-group col-3">
+                            <h3 class="my-3 ml-3">Base Skills</h3>
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                    <th style="width: 46%">Attribute</th>
+                                    <th style="width: 18%">Base</th>
+                                    <th style="width: 18%">Race</th>
+                                    <th style="width: 18%">Gear</th>
+                                    <th style="width: 18%">Other</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var obj in BaseSkills)
+                                    {
+                                        <tr>
                                             <td>
-                                                <InputText @bind-Value="obj.Name" class="form-control col-2"></InputText>
-                                                <div class="valid-message">
-                                                    <ValidationMessage For="()=>obj.Name"></ValidationMessage>
-                                                </div>
+                                                <label class="text-center">@obj.Name</label>
                                             </td>
                                             <td>
-                                                <InputNumber @bind-Value="obj.BaseBonus" class="form-control col-1"/>
+                                                <InputNumber @bind-Value="obj.BaseBonus" class="form-control text-center" />
                                                 <div class="valid-message">
                                                     <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
                                                 </div>
-                                           </td>
-                                           <td>
-                                                <InputNumber @bind-Value="obj.RaceBonus" class="form-control col-1"/>
+                                            </td>
+                                            <td>
+                                                <InputNumber @bind-Value="obj.RaceBonus" class="form-control text-center" />
                                                 <div class="valid-message">
                                                     <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
                                                 </div>
-                                           </td>
+                                            </td>
                                             <td>
-                                                <InputNumber @bind-Value="obj.GearBonus" class="form-control col-1" />
+                                                <InputNumber @bind-Value="obj.GearBonus" class="form-control text-center" />
                                                 <div class="valid-message">
                                                     <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <InputNumber @bind-Value="obj.HealthBonus" class="form-control col-1" />
-                                                <div class="valid-message">
-                                                    <ValidationMessage For="()=>obj.HealthBonus"></ValidationMessage>
-                                                </div>
-                                            </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                    </form>   
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
                 </div>
                 <div class="form-group py-2">
                     <button class="btn btn-primary">@Title</button>

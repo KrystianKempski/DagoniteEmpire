@@ -121,7 +121,7 @@ namespace DA_Models
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "SleightOfHands",
+                    Name = "Sleight of hands",
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
@@ -184,7 +184,7 @@ namespace DA_Models
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "AnimalHandle",
+                    Name = "Animal handle",
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
@@ -202,7 +202,7 @@ namespace DA_Models
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "SpecialSkill",
+                    Name = "Special skill",
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
