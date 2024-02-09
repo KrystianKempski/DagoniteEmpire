@@ -1,6 +1,6 @@
 ﻿@page "/character/create"
 @page "/character/edit/{id:int}"
-
+@implements IDisposable
 @inject ICharacterRepository _characterRepository
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
@@ -131,9 +131,11 @@
 
     private CharacterDTO Character { get; set; } = new CharacterDTO();
     private IEnumerable<AttributeDTO> Attributes { get; set; } = CharacterSeeder.GetAttributes();
-    private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = new List<BaseSkillDTO>();
+    private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = CharacterSeeder.GetBaseSkills();
+    private IDisposable? registration;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; }
+    private bool IsCharacterSaved = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -161,8 +163,8 @@
         IsLoading = true;
         StateHasChanged();
         Character = await _characterRepository.GetById(Id);
-        Character.Attributes = await _attributeRepository.GetAll(Id);
-        Character.BaseSkills = await _baseSkillRepository.GetAll(Id);
+        Attributes = await _attributeRepository.GetAll(Id);
+        BaseSkills = await _baseSkillRepository.GetAll(Id);
         IsLoading = false;
         StateHasChanged();
     }
@@ -194,6 +196,34 @@
         _navigationManager.NavigateTo("/character");
 
     }
+    public async void DeleteCharacterHandler()
+    {
+        //delete Attributes
+        foreach (var att in Attributes)
+        {
+            await _attributeRepository.Delete(att.Id);
+        }
+        //delete BaseSkills
+        foreach (var bs in BaseSkills)
+        {
+            await _baseSkillRepository.Delete(bs.Id);
+        }
+        await _characterRepository.Delete(Character.Id);
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (!IsCharacterSaved)
+        {
+            DeleteCharacterHandler();
+            //context.PreventNavigation();
+            //add some window with question
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose() => registration?.Dispose();
 }
 
 

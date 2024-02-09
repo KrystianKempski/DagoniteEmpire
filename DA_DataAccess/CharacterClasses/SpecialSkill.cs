@@ -12,7 +12,7 @@ namespace DA_DataAccess.CharacterClasses
     {
         [Key]
         public int Id { get; set; }
-        public int CharacterId { get; set; } = 0;
+        public int CharacterId { get; set; }
 
         [ForeignKey(nameof(CharacterId))]
         public Character Character { get; set; }

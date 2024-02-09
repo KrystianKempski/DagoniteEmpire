@@ -37,17 +37,3 @@ namespace DA_DataAccess.CharacterClasses
         }  
 }
 
-
-//public required Skill Melee;
-//public required Skill Projectiles;
-//public required Skill Acrobatics;
-//public required Skill SleightOfHands;
-//public required Skill Athletics;
-//public required Skill Talk;
-//public required Skill Deceit;
-//public required Skill Knowledge;
-//public required Skill Craft;
-//public required Skill Survival;
-//public required Skill AnimalHandle;
-//public required Skill Medicine;
-//public required Skill SpecialSkill;
