@@ -22,8 +22,17 @@ namespace DA_Business.Repository.CharacterReps
         {
             var obj = _mapper.Map<AttributeDTO, Attribute>(objDTO);
             var addedObj = _db.Attributes.Add(obj);
-            await _db.SaveChangesAsync();
+            try
+            {
+               
+                await _db.SaveChangesAsync();
 
+                
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
             return _mapper.Map<Attribute, AttributeDTO>(addedObj.Entity);
         }
 

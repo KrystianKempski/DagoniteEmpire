@@ -10,15 +10,17 @@ namespace DA_Models.CharacterModels
     public class AttributeDTO
     {
         public int Id { get; set; }
-        [Required]
         public int CharacterId { get; set; }
         [Required]
         public  string Name { get; set; }
-
+        [Range(6, 18, ErrorMessage = "Base bonus must be between 6 and 18")]
         public int BaseBonus { get; set; } = 0;
+        [Range(-6, 6, ErrorMessage = "Race bonus must be between -6 and 6")]
         public int RaceBonus { get; set; } = 0;
+        [Range(-6, 6, ErrorMessage = "Gear bonus must be between -6 and 6")]
         public int GearBonus { get; set; } = 0;
         public Dictionary<string, int> OtherBonuses = new Dictionary<string, int>();
+
         public int HealthBonus { get; set; } = 0;
     }
 }

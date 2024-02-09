@@ -1,6 +1,7 @@
 ﻿@page "/character/create"
 @page "/character/edit/{id:int}"
 
+@implements IDisposable
 @inject ICharacterRepository _characterRepository
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
@@ -56,11 +57,11 @@
                 <div class="row g-3">
                     <div class="form-group col-md-6">
                         <h3 class="my-3 ml-3">Attributes</h3>
-                         <SfGrid @ref="AttributeGrid" DataSource="@Attributes" AllowPaging="false">
+                        <SfGrid @ref="AttributeGrid" DataSource="@Attributes" AllowPaging="false">
                             <GridEditSettings AllowAdding="false" AllowEditing="true" AllowDeleting="false"></GridEditSettings>
-                            <GridEvents OnActionBegin="AttributesActionHandler" TValue="AttributeDTO"></GridEvents>
+                             <GridEvents OnActionBegin="AttributesActionHandler" TValue="AttributeDTO"></GridEvents> 
                             <GridColumns>
-                                <GridColumn IsPrimaryKey="true" AllowAdding="false" Field=@nameof(AttributeDTO.Id) HeaderText="ID" Width="0"></GridColumn>
+                                 <GridColumn IsPrimaryKey="true" AllowAdding="false" Field=@nameof(AttributeDTO.Id) HeaderText="ID" Width="0"></GridColumn>
                                 <GridColumn Field=@nameof(AttributeDTO.Name) HeaderText=Attribute TextAlign="TextAlign.Left" Width="100"></GridColumn>
                                 <GridColumn Field=@nameof(AttributeDTO.BaseBonus) HeaderText="Base" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
                                 <GridColumn Field=@nameof(AttributeDTO.RaceBonus) HeaderText="Race" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
@@ -73,9 +74,10 @@
                     <div class="form-group col-md-6">
                         <h3 class="my-3 ml-3">Base Skills</h3>
                         <SfGrid @ref="BaseSkillGrid" DataSource="@BaseSkills" AllowPaging="false">
-                            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="false" Mode="@EditMode.Batch"></GridEditSettings>
+                            <GridEditSettings AllowAdding="false" AllowEditing="true" AllowDeleting="false" ></GridEditSettings>
                             <GridEvents OnActionBegin="BaseSkillActionHandler" TValue="BaseSkillDTO"></GridEvents>
                             <GridColumns>
+                                <GridColumn IsPrimaryKey="true" AllowAdding="false" Field=@nameof(BaseSkillDTO.Id) HeaderText="ID" Width="0"></GridColumn>
                                 <GridColumn Field=@nameof(BaseSkillDTO.Name) HeaderText="Base" Format="N0" TextAlign="TextAlign.Left" Width="100"></GridColumn>
                                 <GridColumn Field=@nameof(BaseSkillDTO.BaseBonus) HeaderText="Base" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
                                 <GridColumn Field=@nameof(BaseSkillDTO.RaceBonus) HeaderText="Race" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
@@ -108,28 +110,49 @@
     public int Id { get; set; }
 
     private CharacterDTO Character { get; set; } = new CharacterDTO();
-    //private IEnumerable<AttributeDTO> Attributes { get; set; } = CharacterSeeder.GetAttributes();
+    private IEnumerable<AttributeDTO> Attributes { get; set; } = CharacterSeeder.GetAttributes();
     public SfGrid<AttributeDTO> AttributeGrid;
-   // private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = new List<BaseSkillDTO>();
+    private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = CharacterSeeder.GetBaseSkills();
     public SfGrid<BaseSkillDTO> BaseSkillGrid;
+    private IDisposable? registration;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; }
+    private bool IsCharacterSaved = false;
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+
+            registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
             if (Id == 0)
             {
                 //create
-                Character.Attributes = CharacterSeeder.GetAttributes();
-                Character.BaseSkills = new List<BaseSkillDTO>();
-                var chare = await _characterRepository.Create(Character);
+                IsLoading = true;
+                StateHasChanged();
+                Character = await _characterRepository.Create(Character);
+                Id = Character.Id;
+
+                foreach (var att in Attributes)
+                {
+                    att.CharacterId = Id;
+                    var obj = await _attributeRepository.Create(att);
+                    att.Id = obj.Id;
+                }
+                foreach (var bs in BaseSkills)
+                {
+                    bs.CharacterId = Id;
+                    var obj = await _baseSkillRepository.Create(bs);
+                    bs.Id = obj.Id;
+                }
                 IsLoading = false;
+                StateHasChanged();
             }
             else
             {
                 //update
+                IsCharacterSaved = true;
                 Title = "Edit";
                 await LoadCharacter();
             }
@@ -137,12 +160,11 @@
     }
     private async Task LoadCharacter()
     {
-
         IsLoading = true;
         StateHasChanged();
         Character = await _characterRepository.GetById(Id);
-        Character.Attributes = await _attributeRepository.GetAll(Id);
-        Character.BaseSkills = await _baseSkillRepository.GetAll(Id);
+        Attributes = await _attributeRepository.GetAll(Id);
+        BaseSkills = await _baseSkillRepository.GetAll(Id);
         IsLoading = false;
         StateHasChanged();
     }
@@ -153,11 +175,22 @@
         {
             //create
             await _characterRepository.Create(Character);
+            foreach (var att in Attributes)
+            {
+                att.CharacterId = Id;
+                await _attributeRepository.Update(att);
+            }
+            foreach (var bs in BaseSkills)
+            {
+                bs.CharacterId = Id;
+                await _baseSkillRepository.Update(bs);
+            }
         }
         else
         {
             //update
             await _characterRepository.Update(Character);
+            IsCharacterSaved = true;
         }
         _navigationManager.NavigateTo("/character");
 
@@ -168,50 +201,50 @@
     {
         if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
         {
-            args.Data.CharacterId = Id;
-            if (args.Action == "Add")
+            if (args.Action == "Edit")
             {
-                await _attributeRepository.Create(args.Data);
-                Character.Attributes = await _attributeRepository.GetAll(Id);
-                await AttributeGrid.Refresh();
-
+                await _attributeRepository.Update(args.Data);
             }
-            else if (args.Action == "Edit")
-            {
-                Character.Attributes.FirstOrDefault(u => u.Name == args.Data.Name).BaseBonus = args.Data.BaseBonus;
-                Character.Attributes.FirstOrDefault(u => u.Name == args.Data.Name).RaceBonus = args.Data.RaceBonus;
-                Character.Attributes.FirstOrDefault(u => u.Name == args.Data.Name).GearBonus = args.Data.GearBonus;
-                Character.Attributes.FirstOrDefault(u => u.Name == args.Data.Name).OtherBonuses = args.Data.OtherBonuses;
-
-            }
-        }
-        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
-        {
-            await _attributeRepository.Delete(args.Data.Id);
         }
     }
     public async void BaseSkillActionHandler(ActionEventArgs<BaseSkillDTO> args)
     {
         if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
         {
-            args.Data.CharacterId = Id;
-            if (args.Action == "Add")
-            {
-                await _baseSkillRepository.Create(args.Data);
-                BaseSkills = await _baseSkillRepository.GetAll(Id);
-                await AttributeGrid.Refresh();
-
-            }
-            else if (args.Action == "Edit")
+            if (args.Action == "Edit")
             {
                 await _baseSkillRepository.Update(args.Data);
             }
         }
-        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
-        {
-            await _baseSkillRepository.Delete(args.Data.Id);
-        }
     }
+    public async void DeleteCharacterHandler()
+    {
+        //delete Attributes
+        foreach (var att in Attributes)
+        {
+            await _attributeRepository.Delete(att.Id);
+        }
+        //delete BaseSkills
+        foreach (var bs in BaseSkills)
+        {
+            await _baseSkillRepository.Delete(bs.Id);
+        }
+        await _characterRepository.Delete(Character.Id);
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (!IsCharacterSaved)
+        {
+            DeleteCharacterHandler();
+            //context.PreventNavigation();
+            //add some window with question
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose() => registration?.Dispose();
 }
 
 

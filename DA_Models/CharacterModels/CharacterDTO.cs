@@ -17,8 +17,8 @@ namespace DA_Models.CharacterModels
         public int Age { get; set; }
         public string? ImageUrl { get; set; }
 
-        public IEnumerable<AttributeDTO>? Attributes { get; set; }
-        public IEnumerable<BaseSkillDTO>? BaseSkills { get; set; }
-        public IEnumerable<SpecialSkillDTO>? SpecialSkills { get; set; }
+        public ICollection<AttributeDTO>? Attributes { get; set; }
+        public ICollection<BaseSkillDTO>? BaseSkills { get; set; }
+        public ICollection<SpecialSkillDTO>? SpecialSkills { get; set; }
     }
 }

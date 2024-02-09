@@ -65,9 +65,9 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await _db.Characters.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
-                obj.Attributes = _mapper.Map<ICollection<AttributeDTO>, ICollection<Attribute>>(objDTO.Attributes);
-                obj.BaseSkills = _mapper.Map<ICollection<BaseSkillDTO>, ICollection<BaseSkill>>(objDTO.BaseSkills);
-                obj.SpecialSkills = _mapper.Map<ICollection<SpecialSkillDTO>, ICollection<SpecialSkill>>(objDTO.SpecialSkills);
+                //obj.Attributes = _mapper.Map<ICollection<AttributeDTO>, ICollection<Attribute>>(objDTO.Attributes);
+                //obj.BaseSkills = _mapper.Map<ICollection<BaseSkillDTO>, ICollection<BaseSkill>>(objDTO.BaseSkills);
+               // obj.SpecialSkills = _mapper.Map<ICollection<SpecialSkillDTO>, ICollection<SpecialSkill>>(objDTO.SpecialSkills);
 
                 obj.Age = objDTO.Age;
                 obj.NPCName = objDTO.NPCName;
@@ -80,82 +80,5 @@ namespace DA_Business.Repository.CharacterReps
             return objDTO;
         }
 
-        private IEnumerable<Attribute> GetAttributes(int charId)
-        {
-            var attributes = new List<Attribute>()
-            {
-                new Attribute()
-                {
-                    CharacterId= charId,
-                    Name = "Strength",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = { },
-                },
-                new Attribute()
-                {
-                    CharacterId= charId,
-                    Name = "Dexterity",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = { },
-                },
-                new Attribute()
-                {
-                    CharacterId= charId,
-                    Name = "Endurance",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = { },
-                },
-                new Attribute()
-                {
-                    CharacterId= charId,
-                    Name = "Intelligence",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = { },
-                },
-                new Attribute()
-                {
-                    CharacterId= charId,
-                    Name = "Instinct",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = { },
-                },
-                new Attribute()
-                {
-                    CharacterId= charId,
-                    Name = "Willpower",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = { },
-                },
-                new Attribute()
-                {
-                    CharacterId= charId,
-                    Name = "Charisma",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = { },
-                },
-            };
-            return attributes;
-        }
     }
 }
