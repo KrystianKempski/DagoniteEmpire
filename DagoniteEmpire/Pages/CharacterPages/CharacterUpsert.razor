@@ -54,37 +54,59 @@
                     </div>
                 </form>
                 <div class="row g-3">
+                    <form>
                     <div class="form-group col-md-6">
                         <h3 class="my-3 ml-3">Attributes</h3>
-                         <SfGrid @ref="AttributeGrid" DataSource="@Attributes" AllowPaging="false">
-                            <GridEditSettings AllowAdding="false" AllowEditing="true" AllowDeleting="false"></GridEditSettings>
-                            <GridEvents OnActionBegin="AttributesActionHandler" TValue="AttributeDTO"></GridEvents>
-                            <GridColumns>
-                                <GridColumn IsPrimaryKey="true" AllowAdding="false" Field=@nameof(AttributeDTO.Id) HeaderText="ID" Width="0"></GridColumn>
-                                <GridColumn Field=@nameof(AttributeDTO.Name) HeaderText=Attribute TextAlign="TextAlign.Left" Width="100"></GridColumn>
-                                <GridColumn Field=@nameof(AttributeDTO.BaseBonus) HeaderText="Base" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
-                                <GridColumn Field=@nameof(AttributeDTO.RaceBonus) HeaderText="Race" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
-                                <GridColumn Field=@nameof(AttributeDTO.GearBonus) HeaderText="Gear" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
-                                <GridColumn Field=@nameof(AttributeDTO.HealthBonus) HeaderText="Health" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
-                            </GridColumns>
-                        </SfGrid> 
-                     
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Attribute</th>
+                                    <th scope="col">Base</th>
+                                    <th scope="col">Race</th>
+                                    <th scope="col">Gear</th>
+                                    <th scope="col">Health</th>
+                                </tr>
+                            </thead>
+                             <tbody>
+                                @foreach (var obj in Attributes)
+                                {
+                                    <tr>
+                                            <td>
+                                                <InputText @bind-Value="obj.Name" class="form-control col-2"></InputText>
+                                                <div class="valid-message">
+                                                    <ValidationMessage For="()=>obj.Name"></ValidationMessage>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <InputNumber @bind-Value="obj.BaseBonus" class="form-control col-1"/>
+                                                <div class="valid-message">
+                                                    <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
+                                                </div>
+                                           </td>
+                                           <td>
+                                                <InputNumber @bind-Value="obj.RaceBonus" class="form-control col-1"/>
+                                                <div class="valid-message">
+                                                    <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
+                                                </div>
+                                           </td>
+                                            <td>
+                                                <InputNumber @bind-Value="obj.GearBonus" class="form-control col-1" />
+                                                <div class="valid-message">
+                                                    <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <InputNumber @bind-Value="obj.HealthBonus" class="form-control col-1" />
+                                                <div class="valid-message">
+                                                    <ValidationMessage For="()=>obj.HealthBonus"></ValidationMessage>
+                                                </div>
+                                            </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="form-group col-md-6">
-                        <h3 class="my-3 ml-3">Base Skills</h3>
-                        <SfGrid @ref="BaseSkillGrid" DataSource="@BaseSkills" AllowPaging="false">
-                            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="false" Mode="@EditMode.Batch"></GridEditSettings>
-                            <GridEvents OnActionBegin="BaseSkillActionHandler" TValue="BaseSkillDTO"></GridEvents>
-                            <GridColumns>
-                                <GridColumn Field=@nameof(BaseSkillDTO.Name) HeaderText="Base" Format="N0" TextAlign="TextAlign.Left" Width="100"></GridColumn>
-                                <GridColumn Field=@nameof(BaseSkillDTO.BaseBonus) HeaderText="Base" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
-                                <GridColumn Field=@nameof(BaseSkillDTO.RaceBonus) HeaderText="Race" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
-                                <GridColumn Field=@nameof(BaseSkillDTO.GearBonus) HeaderText="Gear" Format="N0" TextAlign="TextAlign.Center" Width="50"></GridColumn>
-                            </GridColumns>
-                        </SfGrid>
-
-                    </div>
-                   
+                    </form>   
                 </div>
                 <div class="form-group py-2">
                     <button class="btn btn-primary">@Title</button>
@@ -108,10 +130,8 @@
     public int Id { get; set; }
 
     private CharacterDTO Character { get; set; } = new CharacterDTO();
-    //private IEnumerable<AttributeDTO> Attributes { get; set; } = CharacterSeeder.GetAttributes();
-    public SfGrid<AttributeDTO> AttributeGrid;
-   // private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = new List<BaseSkillDTO>();
-    public SfGrid<BaseSkillDTO> BaseSkillGrid;
+    private IEnumerable<AttributeDTO> Attributes { get; set; } = CharacterSeeder.GetAttributes();
+    private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = new List<BaseSkillDTO>();
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; }
 
@@ -122,9 +142,9 @@
             if (Id == 0)
             {
                 //create
-                Character.Attributes = CharacterSeeder.GetAttributes();
-                Character.BaseSkills = new List<BaseSkillDTO>();
-                var chare = await _characterRepository.Create(Character);
+                // Character.Attributes = CharacterSeeder.GetAttributes();
+                // Character.BaseSkills = new List<BaseSkillDTO>();
+                // var chare = await _characterRepository.Create(Character);
                 IsLoading = false;
             }
             else
@@ -152,65 +172,27 @@
         if(Character.Id == 0)
         {
             //create
-            await _characterRepository.Create(Character);
+            var charac = await _characterRepository.Create(Character);
+            foreach (var obj in Attributes)
+            {
+                obj.CharacterId = charac.Id;
+                await _attributeRepository.Create(obj);
+            }
+
         }
         else
         {
             //update
             await _characterRepository.Update(Character);
+            var charac = await _characterRepository.Create(Character);
+            foreach (var obj in Attributes)
+            {
+                obj.CharacterId = charac.Id;
+                await _attributeRepository.Update(obj);
+            }
         }
         _navigationManager.NavigateTo("/character");
 
-    }
-
-
-    public async void AttributesActionHandler(ActionEventArgs<AttributeDTO> args)
-    {
-        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
-        {
-            args.Data.CharacterId = Id;
-            if (args.Action == "Add")
-            {
-                await _attributeRepository.Create(args.Data);
-                Character.Attributes = await _attributeRepository.GetAll(Id);
-                await AttributeGrid.Refresh();
-
-            }
-            else if (args.Action == "Edit")
-            {
-                Character.Attributes.FirstOrDefault(u => u.Name == args.Data.Name).BaseBonus = args.Data.BaseBonus;
-                Character.Attributes.FirstOrDefault(u => u.Name == args.Data.Name).RaceBonus = args.Data.RaceBonus;
-                Character.Attributes.FirstOrDefault(u => u.Name == args.Data.Name).GearBonus = args.Data.GearBonus;
-                Character.Attributes.FirstOrDefault(u => u.Name == args.Data.Name).OtherBonuses = args.Data.OtherBonuses;
-
-            }
-        }
-        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
-        {
-            await _attributeRepository.Delete(args.Data.Id);
-        }
-    }
-    public async void BaseSkillActionHandler(ActionEventArgs<BaseSkillDTO> args)
-    {
-        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
-        {
-            args.Data.CharacterId = Id;
-            if (args.Action == "Add")
-            {
-                await _baseSkillRepository.Create(args.Data);
-                BaseSkills = await _baseSkillRepository.GetAll(Id);
-                await AttributeGrid.Refresh();
-
-            }
-            else if (args.Action == "Edit")
-            {
-                await _baseSkillRepository.Update(args.Data);
-            }
-        }
-        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
-        {
-            await _baseSkillRepository.Delete(args.Data.Id);
-        }
     }
 }
 
