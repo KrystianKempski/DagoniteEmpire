@@ -19,7 +19,9 @@ namespace DA_Models.CharacterModels
         public int RaceBonus { get; set; } = 0;
         [Range(-6, 6, ErrorMessage = "Gear bonus must be between -6 and 6")]
         public int GearBonus { get; set; } = 0;
-        public Dictionary<string, int> OtherBonuses = new Dictionary<string, int>();
+        [Range(-6, 6, ErrorMessage = "Other bonus must be between -6 and 6")]
+        public int OtherBonuses { get; set; } = 0;
+        public int TempBonuses { get; set; } = 0;
 
         public int HealthBonus { get; set; } = 0;
     }

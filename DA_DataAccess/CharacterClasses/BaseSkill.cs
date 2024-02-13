@@ -29,11 +29,10 @@ namespace DA_DataAccess.CharacterClasses
             public int BaseBonus { get; set; } = 0;
             public int RaceBonus { get; set; } = 0;
             public int GearBonus { get; set; } = 0;
-            public Dictionary<string, int> OtherBonuses = new();
+            public int OtherBonuses { get; set; } = 0;
+            public int TempBonuses { get; set; } = 0;
 
-            public Dictionary<string, int> TempBonuses = new();
-            
 
-        }  
+    }  
 }
 

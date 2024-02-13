@@ -15,12 +15,16 @@ namespace DA_Models.CharacterModels
         public int CharacterId { get; set; }
         [Required]
         public string Name { get; set; }
+        [Range(0, 5, ErrorMessage = "Base bonus must be between 0 and 5")]
         public int BaseBonus { get; set; } = 0;
+        [Range(0, 2, ErrorMessage = "Race bonus must be between 0 and 5")]
         public int RaceBonus { get; set; } = 0;
+        [Range(0, 5, ErrorMessage = "Gear bonus must be between 0 and 5")]
         public int GearBonus { get; set; } = 0;
-        public Dictionary<string, int> OtherBonuses = new();
+        [Range(0, 5, ErrorMessage = "Other bonus must be between 0 and 5")]
+        public int OtherBonuses = 0;
 
-        public Dictionary<string, int> TempBonuses = new();
+        public int TempBonuses = 0;
 
     }
 }

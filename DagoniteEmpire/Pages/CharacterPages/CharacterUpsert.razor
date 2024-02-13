@@ -23,10 +23,10 @@
         {
             <EditForm Model="Character" OnValidSubmit="UpsertCharacter">
                 <DataAnnotationsValidator/>
-                <form class="row g-3">
+                <div class="row g-3">
                     <div class="form-group col-md-4">
                         <label>Character name</label>
-                        <InputText @bind-Value="Character.NPCName" class="form-control col-4"></InputText>
+                        <input type="text" @bind-value="Character.NPCName" class="form-control col-4"></input>
                         <div class="valid-message">
                             <ValidationMessage For="()=>Character.NPCName"></ValidationMessage>
                         </div>
@@ -52,98 +52,104 @@
                             <ValidationMessage For="()=>Character.Age"></ValidationMessage>
                         </div>
                     </div>
-                </form>
-                <div class="attribute-row">
-                        <div class="form-group">
-                            <h3 class="my-3 ml-3">Attributes</h3>
-                                <table class="table align-middle">
-                                <thead>
-                                    <tr>
-                                    <th scope="col" class="Attribute-name-row">Attribute</th>
+                </div>
+                <div class="row">
+                    <div class="attribute-row">
+                        <h3 class="my-3 ml-3">Attributes</h3>
+                        <table class="table align-middle">
+                        <thead>
+                            <tr>
+                            <th scope="col" class="name-row">Attribute</th>
+                            <th scope="col" class="bonus-row">Base</th>
+                            <th scope="col" class="bonus-row">Race</th>
+                            <th scope="col" class="bonus-row">Gear</th>
+                            <th scope="col" class="bonus-row">Health</th>
+                            </tr>
+                        </thead>
+                            <tbody>
+                            @foreach (var obj in Attributes)
+                            {
+                                <tr>
+                                    <td>
+                                        <label class="names-label text-center">@obj.Name</label>
+                                    </td>
+                                    <td>
+                                        <InputNumber @bind-Value="obj.BaseBonus" class="form-control bonus-control" />
+                                        <div class="valid-message">
+                                            <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
+                                        </div>
+                                    </td>
+                                        <td>
+                                        <InputNumber @bind-Value="obj.RaceBonus" class="form-control bonus-control" />
+                                        <div class="valid-message">
+                                            <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <InputNumber @bind-Value="obj.GearBonus" class="form-control bonus-control"/>
+                                        <div class="valid-message">
+                                            <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <InputNumber @bind-Value="obj.HealthBonus" class="form-control bonus-control" />
+                                        <div class="valid-message">
+                                            <ValidationMessage For="()=>obj.HealthBonus"></ValidationMessage>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        </table>
+                    </div>
+                    <div class="baseskills-row">
+                        <h3 class="my-3 ml-3">Base skills</h3>
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="name-row">Skill</th>
                                     <th scope="col" class="bonus-row">Base</th>
                                     <th scope="col" class="bonus-row">Race</th>
                                     <th scope="col" class="bonus-row">Gear</th>
-                                    <th scope="col" class="bonus-row">Health</th>
-                                    </tr>
-                                </thead>
-                                    <tbody>
-                                    @foreach (var obj in Attributes)
-                                    {
-                                        <tr>
-                                                <td >
-                                                    <label class="text-center">@obj.Name</label>
-                                                </td>
-                                                <td>
-                                            <InputNumber @bind-Value="obj.BaseBonus" class="form-control text-center px-0" style="width: 50px; font-size: 12px" />
-                                                    <div class="valid-message">
-                                                        <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
-                                                    </div>
-                                                </td>
-                                                 <td>
-                                            <InputNumber @bind-Value="obj.RaceBonus" class="form-control text-center px-0" style="width: 50px; font-size: 12px" />
-                                                    <div class="valid-message">
-                                                        <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                            <InputNumber @bind-Value="obj.GearBonus" class="form-control text-center px-0" style="width: 50px; font-size: 12px" />
-                                                    <div class="valid-message">
-                                                        <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                            <InputNumber @bind-Value="obj.HealthBonus" class="form-control text-center px-0" style="width: 50px; font-size: 12px" />
-                                                    <div class="valid-message">
-                                                        <ValidationMessage For="()=>obj.HealthBonus"></ValidationMessage>
-                                                    </div>
-                                                </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="form-group col-3">
-                            <h3 class="my-3 ml-3">Base Skills</h3>
-                            <table class="table align-middle">
-                                <thead>
+                                    <th scope="col" class="bonus-row">Other</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var obj in BaseSkills)
+                                {
                                     <tr>
-                                    <th style="width: 46%">Attribute</th>
-                                    <th style="width: 18%">Base</th>
-                                    <th style="width: 18%">Race</th>
-                                    <th style="width: 18%">Gear</th>
-                                    <th style="width: 18%">Other</th>
+                                        <td>
+                                            <label class="names-label">@obj.Name</label>
+                                        </td>
+                                        <td>
+                                            <InputNumber @bind-Value="obj.BaseBonus" class="form-control bonus-control" />
+                                            <div class="valid-message">
+                                                <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <InputNumber @bind-Value="obj.RaceBonus" class="form-control bonus-control" />
+                                            <div class="valid-message">
+                                                <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <InputNumber @bind-Value="obj.GearBonus" class="form-control bonus-control" />
+                                            <div class="valid-message">
+                                                <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <InputNumber @bind-Value="obj.OtherBonuses" class="form-control bonus-control" />
+                                            <div class="valid-message">
+                                                <ValidationMessage For="()=>obj.OtherBonuses"></ValidationMessage>
+                                            </div>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var obj in BaseSkills)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <label class="text-center">@obj.Name</label>
-                                            </td>
-                                            <td>
-                                                <InputNumber @bind-Value="obj.BaseBonus" class="form-control text-center" />
-                                                <div class="valid-message">
-                                                    <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <InputNumber @bind-Value="obj.RaceBonus" class="form-control text-center" />
-                                                <div class="valid-message">
-                                                    <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <InputNumber @bind-Value="obj.GearBonus" class="form-control text-center" />
-                                                <div class="valid-message">
-                                                    <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="form-group py-2">
                     <button class="btn btn-primary">@Title</button>
@@ -181,9 +187,6 @@
             if (Id == 0)
             {
                 //create
-                // Character.Attributes = CharacterSeeder.GetAttributes();
-                // Character.BaseSkills = new List<BaseSkillDTO>();
-                // var chare = await _characterRepository.Create(Character);
                 IsLoading = false;
             }
             else
@@ -217,6 +220,11 @@
                 obj.CharacterId = charac.Id;
                 await _attributeRepository.Create(obj);
             }
+            foreach (var obj in BaseSkills)
+            {
+                obj.CharacterId = charac.Id;
+                await _baseSkillRepository.Create(obj);
+            }
 
         }
         else
@@ -229,6 +237,12 @@
                 obj.CharacterId = charac.Id;
                 await _attributeRepository.Update(obj);
             }
+            foreach (var obj in BaseSkills)
+            {
+                obj.CharacterId = charac.Id;
+                await _baseSkillRepository.Update(obj);
+            }
+
         }
         _navigationManager.NavigateTo("/character");
 

@@ -22,7 +22,8 @@ namespace DA_Models
                     GearBonus = 0,
                     HealthBonus = 0,
                     RaceBonus = 0,
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
@@ -32,7 +33,8 @@ namespace DA_Models
                     GearBonus = 0,
                     HealthBonus = 0,
                     RaceBonus = 0,
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
@@ -42,7 +44,8 @@ namespace DA_Models
                     GearBonus = 0,
                     HealthBonus = 0,
                     RaceBonus = 0,
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
@@ -52,7 +55,8 @@ namespace DA_Models
                     GearBonus = 0,
                     HealthBonus = 0,
                     RaceBonus = 0,
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
@@ -62,7 +66,8 @@ namespace DA_Models
                     GearBonus = 0,
                     HealthBonus = 0,
                     RaceBonus = 0,
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
@@ -72,7 +77,8 @@ namespace DA_Models
                     GearBonus = 0,
                     HealthBonus = 0,
                     RaceBonus = 0,
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
@@ -82,7 +88,8 @@ namespace DA_Models
                     GearBonus = 0,
                     HealthBonus = 0,
                     RaceBonus = 0,
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
             };
             return attributes;
@@ -98,8 +105,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -107,8 +114,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -116,8 +123,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -125,8 +132,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -134,8 +141,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -143,8 +150,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -152,8 +159,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -161,8 +168,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -170,8 +177,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -179,8 +186,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -188,8 +195,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -197,8 +204,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 new BaseSkillDTO()
                 {
@@ -206,8 +213,8 @@ namespace DA_Models
                     BaseBonus = 0,
                     GearBonus = 0,
                     RaceBonus = 0,
-                    TempBonuses = { },
-                    OtherBonuses = { },
+                    OtherBonuses = 0,
+                    TempBonuses = 0,
                 },
                 
             };
