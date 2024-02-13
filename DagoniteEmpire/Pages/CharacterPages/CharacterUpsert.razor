@@ -231,15 +231,14 @@
         {
             //update
             await _characterRepository.Update(Character);
-            var charac = await _characterRepository.Create(Character);
             foreach (var obj in Attributes)
             {
-                obj.CharacterId = charac.Id;
+                obj.CharacterId = Id;
                 await _attributeRepository.Update(obj);
             }
             foreach (var obj in BaseSkills)
             {
-                obj.CharacterId = charac.Id;
+                obj.CharacterId = Id;
                 await _baseSkillRepository.Update(obj);
             }
 
