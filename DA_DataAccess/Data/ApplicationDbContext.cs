@@ -18,6 +18,8 @@ namespace DA_DataAccess.Data
 
         public DbSet<BaseSkill> BaseSkills { get; set; }
         public DbSet<SpecialSkill> SpecialSkills { get; set; }
+
+        public DbSet<ImageFile> ImageFiles { get; set; }    
         //public DbSet<User> Users { get; set; }
     }
 }

@@ -37,7 +37,7 @@ builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
 builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();
 builder.Services.AddScoped<ISpecialSkillRepository, SpecialSkillRepository>();
 builder.Services.AddScoped<IBaseSkillRepository, BaseSkillRepository>();
-builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 
 

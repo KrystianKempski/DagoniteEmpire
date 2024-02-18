@@ -4,7 +4,9 @@
 @inject ICharacterRepository _characterRepository
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
+@inject IFileUpload _fileUpload;
 @using DA_Models
+@using DagoniteEmpire.Service.IService
 
 @inject NavigationManager _navigationManager
 
@@ -54,7 +56,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="attribute-row">
+                    <div class="attribute">
                         <h3 class="my-3 ml-3">Attributes</h3>
                         <table class="table align-middle">
                         <thead>
@@ -102,7 +104,7 @@
                         </tbody>
                         </table>
                     </div>
-                    <div class="baseskills-row">
+                    <div class="baseskills">
                         <h3 class="my-3 ml-3">Base skills</h3>
                         <table class="table align-middle">
                             <thead>
@@ -149,6 +151,13 @@
                                 }
                             </tbody>
                         </table>
+                    </div>
+                    <div class="portrait">
+                        <h3 class="my-3 ml-3">Portrait</h3>
+                        <div class="portrait-image">
+                            <img src="@Character.ImageUrl" class="" />
+                            <InputFile class="form-control portrait-input" OnChange="HandleImageUpload"></InputFile>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group py-2">
@@ -271,6 +280,37 @@
         }
 
         return ValueTask.CompletedTask;
+    }
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        IsLoading = true;
+        try
+        {
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);
+                    if (fileInfo.Extension.ToLower() == ".jpg" ||
+                        fileInfo.Extension.ToLower() == ".png" ||
+                        fileInfo.Extension.ToLower() == ".jpeg")
+                    {
+                        Character.ImageUrl = await _fileUpload.UploadFile(file);
+                    }
+                    else
+                    {
+                        //await _jsRuntime.ToastrError("Please select .jpg / .jpeg / .png file only");
+                    }
+                }
+            }
+            IsLoading = false;
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+           // await _jsRuntime.ToastrError("Error: " + ex.ToString());
+        }
     }
 
     public void Dispose() => registration?.Dispose();
