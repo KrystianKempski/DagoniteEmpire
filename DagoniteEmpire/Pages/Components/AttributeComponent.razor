@@ -1,0 +1,67 @@
+﻿
+@* <InputNumber TValue="int" Value="@ValueBinded" class="form-control bonus-control" ValueChanged="@AttributeTypeHandle" ValueExpression="@(() => StartValue)" /> *@
+    <input type="number" @onchange="AttributeUpdated" />
+
+@code {
+    [Parameter]
+    public int ValueBinded { get; set; }
+    [Parameter]
+    public int Pool { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnAttributeChanged { get; set; }
+
+    private int StartValue { get; set; }
+    private int PoolChange { get; set; }
+
+    private async Task AttributeUpdated(Microsoft.AspNetCore.Components.ChangeEventArgs e)   //int newVal)
+    {
+        int a = (int)e.Value;
+        await OnAttributeChanged.InvokeAsync((int)e.Value);
+        // if (ValueBinded < newVal)
+        // {
+        //     var ok = false;
+        //     if (newVal < 18)
+        //     {
+        //         if (newVal < 11)
+        //         {
+        //             if (Pool > 0)
+        //             {
+        //                 ok = true;
+        //                 Pool--;
+        //             }
+        //         }
+        //         else
+        //         {
+        //             if (Pool >= (newVal - 9))
+        //             {
+        //                 Pool -= newVal - 9;
+        //                 ok = true;
+        //             }
+        //         }
+
+        //         if (ok)
+        //         {
+        //             ValueBinded = newVal;
+        //         }
+        //     }
+        // }
+        // else if (ValueBinded > newVal)
+        // {
+        //     if (newVal > 6)
+        //     {
+        //         if (newVal < 11)
+        //         {
+        //             Pool++;
+        //         }
+        //         else
+        //         {
+        //             Pool += (newVal - 10);
+        //         }
+        //         ValueBinded = newVal;
+        //     }
+        // }
+        // await PoolChanged.InvokeAsync(Pool);
+    }
+
+}

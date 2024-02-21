@@ -13,16 +13,44 @@ namespace DA_Models.CharacterModels
         public int CharacterId { get; set; }
         [Required]
         public  string Name { get; set; }
-        [Range(6, 18, ErrorMessage = "Base bonus must be between 6 and 18")]
+        [Range(6, 18, ErrorMessage = "Attribute base bonus must be between 6 and 18")]
         public int BaseBonus { get; set; } = 0;
-        [Range(-6, 6, ErrorMessage = "Race bonus must be between -6 and 6")]
+        [Range(-6, 6, ErrorMessage = "Attribute race bonus must be between -6 and 6")]
         public int RaceBonus { get; set; } = 0;
-        [Range(-6, 6, ErrorMessage = "Gear bonus must be between -6 and 6")]
+        [Range(-6, 6, ErrorMessage = "Attribute gear bonus must be between -6 and 6")]
         public int GearBonus { get; set; } = 0;
-        [Range(-6, 6, ErrorMessage = "Other bonus must be between -6 and 6")]
+        [Range(-6, 6, ErrorMessage = "Attribute other bonus must be between -6 and 6")]
         public int OtherBonuses { get; set; } = 0;
         public int TempBonuses { get; set; } = 0;
 
         public int HealthBonus { get; set; } = 0;
+
+        public int SumBonus { get; set; } = 0;
+        public int Modifier {  get; set; } = 0;
+
+        public void DecrRace() { if (RaceBonus >- 6) RaceBonus--; SumAll(); }
+        public void IncrRace() { if (RaceBonus < 6) RaceBonus++; SumAll(); }
+
+        public void DecrGear() { if (GearBonus > -6) GearBonus--; SumAll(); }
+        public void IncrGear() { if (GearBonus < 6) GearBonus++;SumAll(); }
+        public void DecrHeal() {  HealthBonus--; SumAll();}
+        public void IncrHeal() {  HealthBonus++; SumAll();}
+
+        public void DecrOther() { if (OtherBonuses > -6) OtherBonuses--; SumAll(); }
+        public void IncrOther() { if (OtherBonuses < 6) OtherBonuses++;SumAll(); }
+        public void DecrTemp() { TempBonuses--;SumAll(); }
+        public void IncrTemp() { TempBonuses++; SumAll();}
+
+        public int SumAll()
+        {
+            SumBonus = BaseBonus + RaceBonus + GearBonus + TempBonuses + HealthBonus+OtherBonuses;
+            GetModifier();
+            return SumBonus;
+        }
+        public int GetModifier()
+        {
+            Modifier = (int)Math.Floor((SumBonus - 10) / 2.0);
+            return Modifier;
+        }
     }
 }

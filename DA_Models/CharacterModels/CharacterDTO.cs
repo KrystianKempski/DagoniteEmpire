@@ -16,6 +16,10 @@ namespace DA_Models.CharacterModels
         [Range(16, 300, ErrorMessage = "Age must be between 16 and 300 years")]
         public int Age { get; set; }
         public string? ImageUrl { get; set; }
+        public string? NPCType { get; set; }
+        public int AttributePoints { get; set; }
+        public int CurrentExpPoints { get; set; }
+        public int UsedExpPoints { get; set; }
 
         public ICollection<AttributeDTO>? Attributes { get; set; }
         public ICollection<BaseSkillDTO>? BaseSkills { get; set; }

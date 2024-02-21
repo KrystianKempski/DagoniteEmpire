@@ -7,6 +7,7 @@
 @inject IFileUpload _fileUpload;
 @using DA_Models
 @using DagoniteEmpire.Service.IService
+@using DagoniteEmpire.Pages.Components
 
 @inject NavigationManager _navigationManager
 
@@ -28,36 +29,58 @@
                 <div class="row g-3">
                     <div class="form-group col-md-4">
                         <label>Character name</label>
-                        <input type="text" @bind-value="Character.NPCName" class="form-control col-4"></input>
-                        <div class="valid-message">
-                            <ValidationMessage For="()=>Character.NPCName"></ValidationMessage>
-                        </div>
+                        <input type="text" @bind-value="Character.NPCName" class="form-control"></input>
                     </div>
                     <div class="form-group col-md-3">
                         <label>Class</label>
-                        <InputText @bind-Value="Character.Class" class="form-control col-3"></InputText>
-                        <div class="valid-message">
-                            <ValidationMessage For="()=>Character.Class"></ValidationMessage>
-                        </div>
-                    </div>
-                    <div class="form-group col-md-3">
-                        <label>Race</label>
-                        <InputText @bind-Value="Character.Race" class="form-control col-3"></InputText>
-                        <div class="valid-message">
-                            <ValidationMessage For="()=>Character.Race"></ValidationMessage>
-                        </div>
+                        <InputText @bind-Value="Character.Class" class="form-control"></InputText>
                     </div>
                     <div class="form-group col-md-2">
+                        <label>Race</label>
+                        <InputText @bind-Value="Character.Race" class="form-control"></InputText>
+                    </div>
+                    <div class="form-group col-md-1">
                         <label>Age</label>
                         <InputNumber @bind-Value="Character.Age" class="form-control col-2"></InputNumber>
-                        <div class="valid-message">
-                            <ValidationMessage For="()=>Character.Age"></ValidationMessage>
-                        </div>
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>Character Type</label>
+                        <InputSelect @bind-Value="Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
+                            <option checked="@(Character!.NPCType == "Hero")"value="Hero">
+                                Hero
+                            </option>
+                            <option checked="@(Character!.NPCType == "Duke")" value="Duke">
+                                Duke
+                            </option>
+                        </InputSelect>
                     </div>
                 </div>
+                <div class="row mt-3">
+
+                    <ValidationSummary></ValidationSummary>
+                </div>
                 <div class="row">
+                    <div class="portrait">
+                        <h3 class="my-3 ml-3">Portrait</h3>
+                        <div class="portrait-image">
+                            <img src="@Character.ImageUrl" class="" />
+                            <InputFile class="form-control portrait-input" OnChange="HandleImageUpload"></InputFile>
+                        </div>
+
+                        <label class="my-2 mx-1">Avalible experience points:</label>
+                        <InputNumber @bind-Value="Character.CurrentExpPoints" class="form-control my-2 mx-1 points-avalible" disabled="1"></InputNumber>
+
+                        <label class="my-2 mx-1">Avalible attribute points:</label>
+                        <InputNumber @bind-Value="Character.AttributePoints" class="form-control my-2 mx-1 points-avalible" disabled="1"></InputNumber>
+
+                        
+                        
+                        
+                    </div>
+                   
                     <div class="attribute">
                         <h3 class="my-3 ml-3">Attributes</h3>
+
                         <table class="table align-middle">
                         <thead>
                             <tr>
@@ -65,10 +88,13 @@
                             <th scope="col" class="bonus-row">Base</th>
                             <th scope="col" class="bonus-row">Race</th>
                             <th scope="col" class="bonus-row">Gear</th>
-                            <th scope="col" class="bonus-row">Health</th>
+                            <th scope="col" class="bonus-row">Other</th>
+                            <th scope="col" class="bonus-row">Sum</th>
+                            <th scope="col" class="bonus-row">Mod.</th>
                             </tr>
                         </thead>
                             <tbody>
+                               
                             @foreach (var obj in Attributes)
                             {
                                 <tr>
@@ -76,29 +102,53 @@
                                         <label class="names-label text-center">@obj.Name</label>
                                     </td>
                                     <td>
-                                        <InputNumber @bind-Value="obj.BaseBonus" class="form-control bonus-control" />
-                                        <div class="valid-message">
-                                            <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
-                                        </div>
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.BaseBonus</span>
+                                                <div class="arrows">
+                                                    <button @onclick="@(()=>IncrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                    <button @onclick="@(()=>DecrAttr(obj))"class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                </div>
+                                            </div>
                                     </td>
                                         <td>
-                                        <InputNumber @bind-Value="obj.RaceBonus" class="form-control bonus-control" />
-                                        <div class="valid-message">
-                                            <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
-                                        </div>
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.RaceBonus</span>
+                                                <div class="arrows">
+                                                    <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                    <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                </div>
+                                            </div>
+                                    </td>
+                                        <td>
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.GearBonus</span>
+                                                <div class="arrows">
+                                                    <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                    <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                </div>
+                                            </div>
                                     </td>
                                     <td>
-                                        <InputNumber @bind-Value="obj.GearBonus" class="form-control bonus-control"/>
-                                        <div class="valid-message">
-                                            <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
-                                        </div>
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.OtherBonuses</span>
+                                                <div class="arrows">
+                                                    <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                    <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                </div>
+                                            </div>
                                     </td>
-                                    <td>
-                                        <InputNumber @bind-Value="obj.HealthBonus" class="form-control bonus-control" />
-                                        <div class="valid-message">
-                                            <ValidationMessage For="()=>obj.HealthBonus"></ValidationMessage>
-                                        </div>
+                                     <td>
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.SumBonus</span>
+                                                
+                                            </div>
                                     </td>
+                                        <td>
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.Modifier </span>
+                                               
+                                            </div>
+                                        </td>
                                 </tr>
                             }
                         </tbody>
@@ -125,40 +175,34 @@
                                         </td>
                                         <td>
                                             <InputNumber @bind-Value="obj.BaseBonus" class="form-control bonus-control" />
-                                            <div class="valid-message">
+                                            @* <div class="valid-message">
                                                 <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
-                                            </div>
+                                            </div> *@
                                         </td>
                                         <td>
                                             <InputNumber @bind-Value="obj.RaceBonus" class="form-control bonus-control" />
-                                            <div class="valid-message">
+                                            @* <div class="valid-message">
                                                 <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
-                                            </div>
+                                            </div> *@
                                         </td>
                                         <td>
                                             <InputNumber @bind-Value="obj.GearBonus" class="form-control bonus-control" />
-                                            <div class="valid-message">
+                                            @* <div class="valid-message">
                                                 <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
-                                            </div>
+                                            </div> *@
                                         </td>
                                         <td>
                                             <InputNumber @bind-Value="obj.OtherBonuses" class="form-control bonus-control" />
-                                            <div class="valid-message">
+                                            @* <div class="valid-message">
                                                 <ValidationMessage For="()=>obj.OtherBonuses"></ValidationMessage>
-                                            </div>
+                                            </div> *@
                                         </td>
                                     </tr>
                                 }
                             </tbody>
                         </table>
                     </div>
-                    <div class="portrait">
-                        <h3 class="my-3 ml-3">Portrait</h3>
-                        <div class="portrait-image">
-                            <img src="@Character.ImageUrl" class="" />
-                            <InputFile class="form-control portrait-input" OnChange="HandleImageUpload"></InputFile>
-                        </div>
-                    </div>
+                   
                 </div>
                 <div class="form-group py-2">
                     <button class="btn btn-primary">@Title</button>
@@ -196,6 +240,9 @@
             if (Id == 0)
             {
                 //create
+                Character.NPCType = "Hero";
+                CharacterTypeHandle();
+                StateHasChanged();
                 IsLoading = false;
             }
             else
@@ -309,9 +356,83 @@
         catch (Exception ex)
         {
             IsLoading = false;
-           // await _jsRuntime.ToastrError("Error: " + ex.ToString());
+            // await _jsRuntime.ToastrError("Error: " + ex.ToString());
         }
     }
+
+    private void IncrAttr(AttributeDTO obj)
+    {
+        var ok = false;
+        if (obj.BaseBonus < 18)
+        {
+            if (obj.BaseBonus < 11)
+            {
+                if (Character.AttributePoints > 0)
+                {
+                    ok = true;
+                    Character.AttributePoints--;
+                }
+            }
+            else
+            {
+                if (Character.AttributePoints >= (obj.BaseBonus - 9))
+                {
+                    Character.AttributePoints -= obj.BaseBonus - 9;
+                    ok = true;
+                }
+            }
+
+            if (ok)
+            {
+                obj.BaseBonus++;
+                obj.SumAll();
+            }
+        }
+
+    }
+
+    private void DecrAttr(AttributeDTO obj)
+    {
+        if (obj.BaseBonus > 6)
+        {
+            if (obj.BaseBonus < 11)
+            {
+                Character.AttributePoints++;
+            }
+            else
+            {
+                Character.AttributePoints += (obj.BaseBonus - 10);
+            }
+            obj.BaseBonus--;
+            obj.SumAll();
+        }
+    }
+
+
+    private void CharacterTypeHandle()
+    {
+        if (Character.NPCType == "Hero")
+        {
+            Character.AttributePoints = 100;
+            Character.CurrentExpPoints = 250;
+        }
+        else if (Character.NPCType == "Duke")
+        {
+            Character.AttributePoints = 100;
+            Character.CurrentExpPoints = 300;
+        }
+
+        foreach (var obj in Attributes)
+            obj.BaseBonus = 6;
+        foreach (var obj in BaseSkills)
+            obj.BaseBonus = 0;
+
+    }
+    private void AttributeTypeHandle(int e)
+    {
+        var b = e;
+    }
+
 
     public void Dispose() => registration?.Dispose();
 }

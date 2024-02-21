@@ -18,6 +18,11 @@ namespace DA_DataAccess.CharacterClasses
         public string? Race { get; set; }
         public int Age { get; set; }
         public string? ImageUrl { get; set; }
+
+        public string? NPCType { get; set; }
+        public int AttributePoints { get; set; }
+        public int CurrentExpPoints { get; set; }
+        public int UsedExpPoints { get; set; }
         //public int UserId { get; set; }
         //[ForeignKey(nameof(UserId))]
         public ICollection<Attribute>? Attributes { get; set; }

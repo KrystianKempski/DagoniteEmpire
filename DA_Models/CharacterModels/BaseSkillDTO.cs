@@ -16,13 +16,13 @@ namespace DA_Models.CharacterModels
         [Required]
         public string Name { get; set; } = "";
 
-        [Range(0, 5, ErrorMessage = "Base bonus must be between 0 and 5")]
+        [Range(0, 5, ErrorMessage = "Base skill base bonus must be between 0 and 5")]
         public int BaseBonus { get; set; } = 0;
-        [Range(0, 2, ErrorMessage = "Race bonus must be between 0 and 5")]
+        [Range(0, 5, ErrorMessage = "Base skill race bonus must be between 0 and 5")]
         public int RaceBonus { get; set; } = 0;
-        [Range(0, 5, ErrorMessage = "Gear bonus must be between 0 and 5")]
+        [Range(0, 5, ErrorMessage = "Base skill gear bonus must be between 0 and 5")]
         public int GearBonus { get; set; } = 0;
-        [Range(0, 5, ErrorMessage = "Other bonus must be between 0 and 5")]
+        [Range(0, 5, ErrorMessage = "Base skill other bonus must be between 0 and 5")]
         public int OtherBonuses = 0;
 
         public int TempBonuses = 0;
