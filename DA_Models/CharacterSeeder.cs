@@ -107,6 +107,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Strength", "Dexterity" }
                 },
                 new BaseSkillDTO()
                 {
@@ -116,6 +117,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Instinct", "Dexterity" }
                 },
                 new BaseSkillDTO()
                 {
@@ -125,6 +127,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Endurance", "Dexterity" }
                 },
                 new BaseSkillDTO()
                 {
@@ -134,6 +137,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Instinct", "Dexterity" }
                 },
                 new BaseSkillDTO()
                 {
@@ -143,6 +147,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Endurance", "Strength" }
                 },
                 new BaseSkillDTO()
                 {
@@ -152,6 +157,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Charisma", "Instinct" }
                 },
                 new BaseSkillDTO()
                 {
@@ -161,6 +167,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Instinct", "Charisma" }
                 },
                 new BaseSkillDTO()
                 {
@@ -170,6 +177,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Intelligence", "Willpower" }
                 },
                 new BaseSkillDTO()
                 {
@@ -179,6 +187,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Intelligence", "Endurance" }
                 },
                 new BaseSkillDTO()
                 {
@@ -188,6 +197,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                     RelatedAttributes = new List<string>(){ "Intelligence", "Dexterity" }
                 },
                 new BaseSkillDTO()
                 {
@@ -197,6 +207,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                     RelatedAttributes = new List<string>(){ "Instinct", "Willpower" }
                 },
                 new BaseSkillDTO()
                 {
@@ -206,6 +217,7 @@ namespace DA_Models
                     RaceBonus = 0,
                     OtherBonuses = 0,
                     TempBonuses = 0,
+                    RelatedAttributes = new List<string>(){ "Intelligence", "Willpower" }
                 },
                 new BaseSkillDTO()
                 {

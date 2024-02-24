@@ -26,5 +26,27 @@ namespace DA_Models.CharacterModels
         public int OtherBonuses = 0;
 
         public int TempBonuses = 0;
+
+        public IEnumerable<string> RelatedAttributes;
+
+        public int SumBonus { get; set; } = 0;
+        public int Modifier { get; set; } = 0;
+
+        public void DecrRace() { if (RaceBonus > -6) RaceBonus--; SumAll(); }
+        public void IncrRace() { if (RaceBonus < 6) RaceBonus++; SumAll(); }
+
+        public void DecrGear() { if (GearBonus > -6) GearBonus--; SumAll(); }
+        public void IncrGear() { if (GearBonus < 6) GearBonus++; SumAll(); }
+
+        public void DecrOther() { if (OtherBonuses > -6) OtherBonuses--; SumAll(); }
+        public void IncrOther() { if (OtherBonuses < 6) OtherBonuses++; SumAll(); }
+        public void DecrTemp() { TempBonuses--; SumAll(); }
+        public void IncrTemp() { TempBonuses++; SumAll(); }
+
+        public int SumAll()
+        {
+            SumBonus = BaseBonus + RaceBonus + GearBonus + TempBonuses + OtherBonuses;
+            return SumBonus;
+        }
     }
 }

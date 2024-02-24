@@ -24,10 +24,7 @@ namespace DA_Business.Repository.CharacterReps
             var addedObj = _db.Attributes.Add(obj);
             try
             {
-               
                 await _db.SaveChangesAsync();
-
-                
             }
             catch (Exception ex)
             {

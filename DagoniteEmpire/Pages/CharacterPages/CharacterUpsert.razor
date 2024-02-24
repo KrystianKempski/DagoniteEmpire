@@ -5,6 +5,7 @@
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
 @inject IFileUpload _fileUpload;
+@inject IJSRuntime _jsRuntime
 @using DA_Models
 @using DagoniteEmpire.Service.IService
 @using DagoniteEmpire.Pages.Components
@@ -165,28 +166,40 @@
                                             <label class="names-label">@obj.Name</label>
                                         </td>
                                         <td>
-                                            <InputNumber @bind-Value="obj.BaseBonus" class="form-control bonus-control" />
-                                            @* <div class="valid-message">
-                                                <ValidationMessage For="()=>obj.BaseBonus"></ValidationMessage>
-                                            </div> *@
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.BaseBonus</span>
+                                                <div class="arrows">
+                                                    <button @onclick="@(()=>IncrBSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                    <button @onclick="@(()=>DecrBSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
-                                            <InputNumber @bind-Value="obj.RaceBonus" class="form-control bonus-control" />
-                                            @* <div class="valid-message">
-                                                <ValidationMessage For="()=>obj.RaceBonus"></ValidationMessage>
-                                            </div> *@
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.RaceBonus</span>
+                                                <div class="arrows">
+                                                    <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                    <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
-                                            <InputNumber @bind-Value="obj.GearBonus" class="form-control bonus-control" />
-                                            @* <div class="valid-message">
-                                                <ValidationMessage For="()=>obj.GearBonus"></ValidationMessage>
-                                            </div> *@
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.GearBonus</span>
+                                                <div class="arrows">
+                                                    <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                    <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
-                                            <InputNumber @bind-Value="obj.OtherBonuses" class="form-control bonus-control" />
-                                            @* <div class="valid-message">
-                                                <ValidationMessage For="()=>obj.OtherBonuses"></ValidationMessage>
-                                            </div> *@
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.OtherBonuses</span>
+                                                <div class="arrows">
+                                                    <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                    <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                 }
@@ -250,7 +263,10 @@
         IsLoading = true;
         StateHasChanged();
         Character = await _characterRepository.GetById(Id);
+
         Attributes = await _attributeRepository.GetAll(Id);
+        foreach (var obj in Attributes)
+            obj.SumAll();
         BaseSkills = await _baseSkillRepository.GetAll(Id);
         IsLoading = false;
         StateHasChanged();
@@ -261,7 +277,7 @@
         if(Character.Id == 0)
         {
             //check if all valid
-           // ValidationFunction();
+            // ValidationFunction();
             //create
             var charac = await _characterRepository.Create(Character);
             foreach (var obj in Attributes)
@@ -340,7 +356,7 @@
                     }
                     else
                     {
-                        //await _jsRuntime.ToastrError("Please select .jpg / .jpeg / .png file only");
+                        await _jsRuntime.ToastrError("Please select .jpg / .jpeg / .png file only");
                     }
                 }
             }
@@ -349,11 +365,11 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            // await _jsRuntime.ToastrError("Error: " + ex.ToString());
+            await _jsRuntime.ToastrError("Error: " + ex.ToString());
         }
     }
 
-    private void IncrAttr(AttributeDTO obj)
+    private async Task IncrAttr(AttributeDTO obj)
     {
         var ok = false;
         if (obj.BaseBonus < 18)
@@ -379,12 +395,16 @@
             {
                 obj.BaseBonus++;
                 obj.SumAll();
-            }
+            }else
+                await _jsRuntime.AttrLimit("Not enought attribute points");
         }
-
+        else
+        {
+            await _jsRuntime.AttrLimit("Maximium base bonus limit is 18");
+        }
     }
 
-    private void DecrAttr(AttributeDTO obj)
+    private async Task DecrAttr(AttributeDTO obj)
     {
         if (obj.BaseBonus > 6)
         {
@@ -397,6 +417,59 @@
                 Character.AttributePoints += (obj.BaseBonus - 10);
             }
             obj.BaseBonus--;
+            obj.SumAll();
+        }else
+            await _jsRuntime.AttrLimit("Minimum base bonus limit is 6");
+    }
+
+
+    private async Task IncrBSBonus(BaseSkillDTO obj)
+    {
+
+        try
+        {
+            var relatedAttribute1 = Attributes.FirstOrDefault(u => u.Name == obj.RelatedAttributes.First()).BaseBonus;
+            var relatedAttribute2 = Attributes.FirstOrDefault(u => u.Name == obj.RelatedAttributes.ElementAt(1)).BaseBonus;
+            var limit = Math.Floor((double)(relatedAttribute1 + relatedAttribute2) / 6.0) + 1;
+            var expChange = 0;
+            string message;
+
+            if (obj.BaseBonus < limit)
+            {
+                expChange = 3 * (obj.BaseBonus + 1);
+                if (Character.CurrentExpPoints >= expChange)
+                {
+                    Character.CurrentExpPoints -= expChange;
+                    Character.UsedExpPoints += expChange;
+                    obj.BaseBonus++;
+
+                    obj.SumAll();
+                }
+                else
+                    await _jsRuntime.BaseSkillLimit("Not enought experience points");
+            }
+            else
+            {
+                message = "Maximum base bonus is limited by: " + obj.RelatedAttributes.First() + " and " + obj.RelatedAttributes.ElementAt(1) + " to value of " + limit.ToString();
+                await _jsRuntime.BaseSkillLimit(message);
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+    }
+
+    private async Task DecrBSBonus(BaseSkillDTO obj)
+    {
+        var expChange = 0;
+        if (obj.BaseBonus > 0)
+        {
+            Character.CurrentExpPoints += expChange;
+            Character.UsedExpPoints -= expChange;
+            obj.BaseBonus--;
+
             obj.SumAll();
         }
     }
