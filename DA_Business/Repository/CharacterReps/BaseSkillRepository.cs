@@ -70,6 +70,7 @@ namespace DA_Business.Repository.CharacterReps
                 obj.BaseBonus = objDTO.BaseBonus;
                 obj.GearBonus = objDTO.GearBonus;
                 obj.TempBonuses = objDTO.TempBonuses;
+                obj.RelatedAttributes = objDTO.RelatedAttributes;
                 _db.BaseSkills.Update(obj);
                 await _db.SaveChangesAsync();
                 return _mapper.Map<BaseSkill,BaseSkillDTO>(obj);    

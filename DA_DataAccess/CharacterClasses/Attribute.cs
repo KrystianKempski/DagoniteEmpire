@@ -26,6 +26,8 @@ namespace DA_DataAccess.CharacterClasses
 
 
 
+
+
         //public int SumOfAttribute()
         //{
         //   return BaseBonus+ RaceBonus+ GearBonus+ HealthBonus + OtherBonuses.Values.AsEnumerable().Sum();
