@@ -48,31 +48,64 @@ td {
     width:360px;
 }
 .portrait{
-     width: 360px;
+     width: 330px;
+     height: 380px;
      padding-left: 3px;
      padding-right: 3px;
 }
 
 .portrait-image {
     position: relative;
-    padding: 20px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding: 10px;
+    padding-bottom: 40px;
     border: 2px solid darkgrey;
+    width: 310px;
+    height: 310px;
+    font-size: 12px;
     border-radius: 15px;
-    align-content: center;
+    overflow: hidden;
+    align-content:center;
 }
 .portrait img {
+    position: relative;
     width: 100%;
 }
-
-::deep .portrait-input {
-    width: 100%;
+i:hover{
+    transform:scale(1.2)
+}
+i:active {
+    transform: scale(0.9)
 }
 
-::deep .points-avalible{
+.portrait-input {
+    position: absolute;
+    width: 139px;
+    font-size: 14px;
+    padding-bottom: 6px;
+    padding-left: 20px;
+    bottom: 0;
+    overflow: hidden;
+    white-space: nowrap; /* Don't forget this one */
+    text-overflow: ellipsis;
+}
+
+/*InputFile {
+    font-size: 14px;
+    width: 100%;
+}*/
+
+::deep .points-avalible {
     width: 100px;
     text-align: right;
 }
 
+.attribute .attr-control {
+    padding: 22px 0 22px 0;
+
+}
 
 /*arrows*/
 .attr-control {
@@ -82,8 +115,39 @@ td {
     margin-left: 8px;
     width: 40px;
     height: 30px;
-    justify-items:right;
-    align-items:center
+    justify-items: right;
+    align-items: center
+}
+
+.points-control {
+    display: flex;
+    flex-direction: row;
+    margin-top:3px;
+    margin-bottom:3px;
+    height: 50px;
+    font-weight: bold;
+    justify-items: left;
+    align-items: center
+}
+
+.points-label{
+    text-align: left;
+    font-size:16px;
+    font-weight:bold;
+    width:80%;
+}
+
+.points-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid gray;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 4px;
+    width: 55px;
+    height: 40px;
+    margin-right: 2px;
 }
 
 .attr-indicator {
@@ -94,9 +158,8 @@ td {
     font-size: 12px;
     border-radius: 4px;
     width: 100%;
-    
     height: 27px;
-    margin-right:2px;
+    margin-right: 2px;
     /* height: 20px;*/
 }
 

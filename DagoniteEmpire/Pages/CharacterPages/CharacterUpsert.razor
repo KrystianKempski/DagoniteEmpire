@@ -61,16 +61,23 @@
                         <h3 class="my-3 ml-3">Portrait</h3>
                         <div class="portrait-image">
                             <img src="@Character.ImageUrl" class="" />
-                            <InputFile class="form-control portrait-input" OnChange="HandleImageUpload"></InputFile>
+                            <div class="portrait-input">
+                                <InputFile OnChange="HandleImageUpload"></InputFile>
+                            <label class="custom-file-label" for="inputGroupFile01">Choose file</label>
+                            </div>
                         </div>
-
-                        <label class="my-2 mx-1">Avalible experience points:</label>
-                        <InputNumber @bind-Value="Character.CurrentExpPoints" class="form-control my-2 mx-1 points-avalible" disabled="1"></InputNumber>
-
-                        <label class="my-2 mx-1">Avalible attribute points:</label>
-                        <InputNumber @bind-Value="Character.AttributePoints" class="form-control my-2 mx-1 points-avalible" disabled="1"></InputNumber>                        
+                   
+                        <div class="points-control">
+                             <label class="points-label">Avalible experience points:</label>
+                             <span class="points-indicator ml-auto">@Character.CurrentExpPoints</span>
+                        </div>
+                        <div class="points-control">
+                            <label class="points-label">Avalible attribute points:</label>
+                            <span class="points-indicator ml-auto">@Character.AttributePoints</span>
+                        </div>
+                     </div>
                         
-                    </div>
+                   
                    
                     <div class="attribute">
                         <h3 class="my-3 ml-3">Attributes</h3>
@@ -78,13 +85,13 @@
                         <table class="table align-middle">
                         <thead>
                             <tr>
-                            <th scope="col" class="name-row">Attribute</th>
-                            <th scope="col" class="bonus-row">Base</th>
-                            <th scope="col" class="bonus-row">Race</th>
-                            <th scope="col" class="bonus-row">Gear</th>
-                            <th scope="col" class="bonus-row">Other</th>
-                            <th scope="col" class="bonus-row">Sum</th>
-                            <th scope="col" class="bonus-row">Mod.</th>
+                                <th scope="col" class="name-row">Attribute</th>
+                                <th scope="col" class="bonus-row">Base</th>
+                                <th scope="col" class="bonus-row">Race</th>
+                                <th scope="col" class="bonus-row">Gear</th>
+                                <th scope="col" class="bonus-row">Other</th>
+                                <th scope="col" class="bonus-row text-center">Sum</th>
+                                <th scope="col" class="bonus-row text-center">Mod.</th>
                             </tr>
                         </thead>
                             <tbody>
@@ -156,6 +163,7 @@
                                     <th scope="col" class="bonus-row">Race</th>
                                     <th scope="col" class="bonus-row">Gear</th>
                                     <th scope="col" class="bonus-row">Other</th>
+                                    <th scope="col" class="bonus-row text-center"> Sum</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -199,6 +207,11 @@
                                                     <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
                                                     <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                                 </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.SumBonus</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -246,7 +259,6 @@
                 //create
                 Character.NPCType = "Hero";
                 CharacterTypeHandle();
-                StateHasChanged();
                 IsLoading = false;
             }
             else
@@ -255,6 +267,12 @@
                 Title = "Edit";
                 await LoadCharacter();
             }
+            foreach (var obj in Attributes)
+                obj.SumAll();
+            foreach (var obj in BaseSkills)
+                obj.SumAll();
+            IsLoading = false;
+            StateHasChanged();
         }
     }
     private async Task LoadCharacter()
@@ -263,13 +281,8 @@
         IsLoading = true;
         StateHasChanged();
         Character = await _characterRepository.GetById(Id);
-
         Attributes = await _attributeRepository.GetAll(Id);
-        foreach (var obj in Attributes)
-            obj.SumAll();
         BaseSkills = await _baseSkillRepository.GetAll(Id);
-        IsLoading = false;
-        StateHasChanged();
     }
 
     private async Task UpsertCharacter()
