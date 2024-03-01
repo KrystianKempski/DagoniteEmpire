@@ -16,7 +16,10 @@ namespace DA_DataAccess.CharacterClasses
 
         [ForeignKey(nameof(CharacterId))]
         public Character Character { get; set; }
-        public string? Type { get; set; }
+
+        public string? RelatedBaseSkillName { get; set; }
+        public string? ChosenAttribute { get; set; }
+        public bool Editable { get; set; }
 
     }
 }

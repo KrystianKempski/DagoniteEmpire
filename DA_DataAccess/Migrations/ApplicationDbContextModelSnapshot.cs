@@ -87,6 +87,14 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("RelatedAttribute1")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedAttribute2")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("TempBonuses")
                         .HasColumnType("integer");
 
@@ -157,6 +165,12 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("CharacterId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ChosenAttribute")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Editable")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("GearBonus")
                         .HasColumnType("integer");
 
@@ -169,11 +183,19 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("RelatedAttribute1")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedAttribute2")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedBaseSkillName")
+                        .HasColumnType("text");
+
                     b.Property<int>("TempBonuses")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Type")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

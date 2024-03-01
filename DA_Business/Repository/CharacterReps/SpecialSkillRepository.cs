@@ -71,6 +71,9 @@ namespace DA_Business.Repository.CharacterReps
                 //obj.AtributeId = objDTO.AtributeId;
                 obj.GearBonus = objDTO.GearBonus;
                 obj.TempBonuses = objDTO.TempBonuses;
+                obj.RelatedBaseSkillName = objDTO.RelatedBaseSkillName;
+                obj.ChosenAttribute = objDTO.ChosenAttribute;
+                obj.Editable = objDTO.Editable;
                 _db.SpecialSkills.Update(obj);
                 await _db.SaveChangesAsync();
                 return _mapper.Map<SpecialSkill, SpecialSkillDTO>(obj);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ namespace DA_Models.CharacterModels
         [Required]
         public  string Name { get; set; }
         [Range(6, 18, ErrorMessage = "Attribute base bonus must be between 6 and 18")]
-        public int BaseBonus { get; set; } = 0;
+        public int BaseBonus { get; set; } = 6;
         [Range(-6, 6, ErrorMessage = "Attribute race bonus must be between -6 and 6")]
         public int RaceBonus { get; set; } = 0;
         [Range(-6, 6, ErrorMessage = "Attribute gear bonus must be between -6 and 6")]
@@ -26,7 +27,23 @@ namespace DA_Models.CharacterModels
         public int HealthBonus { get; set; } = 0;
 
         public int SumBonus { get; set; } = 0;
-        public int Modifier {  get; set; } = 0;
+        private int _modifier = 0;
+        public int Modifier { 
+            get => _modifier;
+            set
+            {
+                if(_modifier == value) return;
+                _modifier = value;
+                OnModifierChanged(nameof(Modifier));
+            }
+         }
+
+        public event PropertyChangedEventHandler? ModifierChanged=null;
+
+        protected virtual void OnModifierChanged(string propertyName)
+        {
+            ModifierChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         public void DecrRace() { if (RaceBonus >- 6) RaceBonus--; SumAll(); }
         public void IncrRace() { if (RaceBonus < 6) RaceBonus++; SumAll(); }

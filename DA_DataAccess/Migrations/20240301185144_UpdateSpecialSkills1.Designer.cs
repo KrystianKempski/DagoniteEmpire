@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240213210927_TryNPGSQL")]
-    partial class TryNPGSQL
+    [Migration("20240301185144_UpdateSpecialSkills1")]
+    partial class UpdateSpecialSkills1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -90,6 +90,14 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("RelatedAttribute1")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedAttribute2")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("TempBonuses")
                         .HasColumnType("integer");
 
@@ -114,8 +122,14 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("Age")
                         .HasColumnType("integer");
 
+                    b.Property<int>("AttributePoints")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Class")
                         .HasColumnType("text");
+
+                    b.Property<int>("CurrentExpPoints")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -126,8 +140,14 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("NPCName")
                         .HasColumnType("text");
 
+                    b.Property<string>("NPCType")
+                        .HasColumnType("text");
+
                     b.Property<string>("Race")
                         .HasColumnType("text");
+
+                    b.Property<int>("UsedExpPoints")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -148,6 +168,13 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("CharacterId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ChosenAttribute")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Editable")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("GearBonus")
                         .HasColumnType("integer");
 
@@ -160,17 +187,39 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("RelatedBaseSkillName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("TempBonuses")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Type")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CharacterId");
 
                     b.ToTable("SpecialSkills");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.ImageFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ImageName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("fileData")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ImageFiles");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

@@ -16,80 +16,32 @@ namespace DA_Models
             {
                 new AttributeDTO()
                 {
-                    //CharacterId= charId,
                     Name = "Strength",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
-                   //CharacterId= charId,
                     Name = "Dexterity",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
-                    //CharacterId= charId,
                     Name = "Endurance",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
                     TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
-                    //CharacterId= charId,
                     Name = "Intelligence",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
-                    //CharacterId= charId,
                     Name = "Instinct",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
-                    //CharacterId= charId,
                     Name = "Willpower",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
-                    //CharacterId= charId,
                     Name = "Charisma",
-                    BaseBonus = 6,
-                    GearBonus = 0,
-                    HealthBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
                 },
             };
             return attributes;
@@ -102,135 +54,658 @@ namespace DA_Models
                 new BaseSkillDTO()
                 {
                     Name = "Melee",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Strength", "Dexterity" }
+                    RelatedAttribute1 = "Strength",
+                    RelatedAttribute2 = "Dexterity"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Shooting",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Instinct", "Dexterity" }
+                    RelatedAttribute1 = "Instinct",
+                    RelatedAttribute2 = "Dexterity"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Acrobatics",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Endurance", "Dexterity" }
+                    RelatedAttribute1 = "Endurance", 
+                    RelatedAttribute2 = "Dexterity"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Sleight of hands",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Instinct", "Dexterity" }
+                    RelatedAttribute1 = "Instinct", 
+                    RelatedAttribute2 = "Dexterity"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Athletics",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Endurance", "Strength" }
+                    RelatedAttribute1 = "Endurance",
+                    RelatedAttribute2 = "Strength"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Talk",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Charisma", "Instinct" }
+                    RelatedAttribute1 = "Charisma",
+                    RelatedAttribute2 = "Instinct"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Deceit",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Instinct", "Charisma" }
+                    RelatedAttribute1 = "Instinct",
+                    RelatedAttribute2 = "Charisma"
+                },
+                 new BaseSkillDTO()
+                {
+                    Name = "Perception",
+                    RelatedAttribute1 = "Intelligence",
+                    RelatedAttribute2 = "Instinct"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Knowledge",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Intelligence", "Willpower" }
+                    RelatedAttribute1 = "Intelligence",
+                    RelatedAttribute2 = "Willpower"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Craft",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Intelligence", "Endurance" }
+                    RelatedAttribute1 = "Intelligence",
+                    RelatedAttribute2 = "Endurance"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Survival",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                     RelatedAttributes = new List<string>(){ "Intelligence", "Dexterity" }
+                     RelatedAttribute1 = "Intelligence",
+                    RelatedAttribute2 = "Dexterity"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Animal handle",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                     RelatedAttributes = new List<string>(){ "Instinct", "Willpower" }
+                     RelatedAttribute1 = "Instinct",
+                    RelatedAttribute2 = "Willpower"
                 },
                 new BaseSkillDTO()
                 {
                     Name = "Medicine",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
-                    RelatedAttributes = new List<string>(){ "Intelligence", "Willpower" }
-                },
-                new BaseSkillDTO()
-                {
-                    Name = "Special skill",
-                    BaseBonus = 0,
-                    GearBonus = 0,
-                    RaceBonus = 0,
-                    OtherBonuses = 0,
-                    TempBonuses = 0,
+                    RelatedAttribute1 = "Intelligence",
+                    RelatedAttribute2 = "Willpower"
                 },
                 
             };
             return baseSkills;
+        }
+        static public IEnumerable<SpecialSkillDTO> GetSpecialSkills()
+        {
+            var SpecialSkills = new List<SpecialSkillDTO>()
+            {
+                // MELEE
+                new SpecialSkillDTO()
+                {
+                    Name="Heavy weapons",
+                    ChosenAttribute = "Strength",
+                    RelatedBaseSkillName = "Melee"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Swords and sabres",
+                    RelatedAttribute1="Strength",
+                    RelatedAttribute2="Dexterity", 
+                    RelatedBaseSkillName = "Melee"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Fencing weapon",
+                    RelatedAttribute1="Strength",
+                    RelatedAttribute2 = "Dexterity", 
+                    RelatedBaseSkillName = "Melee"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Light weapon",
+                    ChosenAttribute = "Dexterity",
+                    RelatedBaseSkillName = "Melee"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Exotic weapon",
+                    RelatedAttribute1="Strength",
+                    RelatedAttribute2 = "Dexterity",
+                    RelatedBaseSkillName = "Melee",
+                    Editable = true,
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Shield",
+                    RelatedAttribute1="Strength",
+                    RelatedAttribute2 = "Endurance", 
+                    RelatedBaseSkillName = "Melee"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Polearms",
+                    RelatedAttribute1="Strength",
+                    RelatedAttribute2 = "Dexterity", 
+                    RelatedBaseSkillName = "Melee"
+                },
+
+                // SHOOTING
+                new SpecialSkillDTO()
+                {
+                    Name="Bows",
+                    RelatedAttribute1= "Strength",
+                    RelatedAttribute2 =  "Dexterity",
+                    RelatedBaseSkillName = "Shooting"
+                },
+
+                new SpecialSkillDTO()
+                {
+                    Name="Crossbows",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Instinct" ,
+                    RelatedBaseSkillName = "Shooting"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Throwing weapons",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 ="Strength" ,
+                    RelatedBaseSkillName = "Shooting"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Slingshots",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Strength" ,
+                    RelatedBaseSkillName = "Shooting"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Javelins",
+                    ChosenAttribute = "Strength",
+                    RelatedBaseSkillName = "Shooting"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Firearms",
+                    RelatedAttribute1 = "Instinct",
+                    RelatedAttribute2 = "Intelligence",
+                    RelatedBaseSkillName = "Shooting"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Granates",
+                    RelatedAttribute1 =  "Instinct",
+                    RelatedAttribute2 = "Strength",
+                    RelatedBaseSkillName = "Shooting"
+                },
+
+                // ACROBATICS
+
+                new SpecialSkillDTO()
+                {
+                    Name="Jumping",
+                    ChosenAttribute = "Dexterity",
+                    RelatedBaseSkillName = "Acrobatics"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Climbing",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Strength" ,
+                    RelatedBaseSkillName = "Acrobatics"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Balance",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Instinct" ,
+                    RelatedBaseSkillName = "Acrobatics"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Running",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Endurance",
+                    RelatedBaseSkillName = "Acrobatics"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Dodge",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Instinct" ,
+                    RelatedBaseSkillName = "Acrobatics"
+                },
+
+                // SLEIGHT OF HANDS
+
+                new SpecialSkillDTO()
+                {
+                    Name="Pickpocketing",
+                    ChosenAttribute = "Dexterity",
+                    RelatedBaseSkillName = "Sleight of hands"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Lockpicking",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Intelligence" ,
+                    RelatedBaseSkillName = "Sleight of hands"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Disarming traps",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Instinct" ,
+                    RelatedBaseSkillName = "Sleight of hands"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Tricks",
+                    ChosenAttribute = "Dexterity",
+                    RelatedBaseSkillName = "Sleight of hands"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Handcraft",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Instinct" ,
+                    RelatedBaseSkillName = "Sleight of hands"
+                },
+
+                // ATHLETICS Athletics
+
+                new SpecialSkillDTO()
+                {
+                    Name="Wrestling",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Instinct",
+                    RelatedBaseSkillName = "Athletics"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="lifting",
+                    ChosenAttribute = "Strength",
+                    RelatedBaseSkillName = "Athletics"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Threatening",
+                    ChosenAttribute = "Strength",
+                    RelatedBaseSkillName = "Athletics"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Armor",
+                    ChosenAttribute = "Endurance",
+                    RelatedBaseSkillName = "Athletics"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Pain Resistance",
+                    RelatedAttribute1 = "Endurance",
+                    RelatedAttribute2 = "Willpower",
+                    RelatedBaseSkillName = "Athletics"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Swimming",
+                    RelatedAttribute1 = "Endurance",
+                    RelatedAttribute2 = "Strength" ,
+                    RelatedBaseSkillName = "Athletics"
+                },
+
+                // TALK 
+
+                new SpecialSkillDTO()
+                {
+                    Name="Persuasion",
+                    RelatedAttribute1 =  "Charisma",
+                    RelatedAttribute2 = "Intelligence",
+                    RelatedBaseSkillName = "Talk"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Bluff",
+                    RelatedAttribute1 =  "Charisma",
+                    RelatedAttribute2 = "Instinct" ,
+                    RelatedBaseSkillName = "Talk"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Acting",
+                    ChosenAttribute = "Charisma",
+                    RelatedBaseSkillName = "Talk"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Public speach",
+                    RelatedAttribute1 =  "Charisma",
+                    RelatedAttribute2 = "Willpower" ,
+                    RelatedBaseSkillName = "Talk"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Inspire",
+                    RelatedAttribute1 = "Charisma",
+                    RelatedAttribute2 = "Willpower" ,
+                    RelatedBaseSkillName = "Talk"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Diplomacy",
+                    RelatedAttribute1 = "Charisma",
+                    RelatedAttribute2 = "Instinct" ,
+                    RelatedBaseSkillName = "Talk"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Trade",
+                    RelatedAttribute1 = "Charisma",
+                    RelatedAttribute2 = "Willpower",
+                    RelatedBaseSkillName = "Talk"
+                },
+
+                // DECEIT Deceit
+
+                new SpecialSkillDTO()
+                {
+                    Name="Sneak",
+                    ChosenAttribute = "Dexterity",
+                    RelatedBaseSkillName = "Deceit"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Gambling",
+                    RelatedAttribute1 = "Intelligence",
+                    RelatedAttribute2 = "Instinct",
+                    RelatedBaseSkillName = "Deceit"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Dirty tricks",
+                    RelatedAttribute1 = "Dexterity",
+                    RelatedAttribute2 = "Instinct" ,
+                    RelatedBaseSkillName = "Deceit"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Investigation",
+                    ChosenAttribute = "Dexterity",
+                    RelatedBaseSkillName = "Deceit"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Disguise",
+                    RelatedAttribute1 =  "Intelligence",
+                    RelatedAttribute2 = "Dexterity",
+                    RelatedBaseSkillName = "Deceit"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Intimidate",
+                    ChosenAttribute = "Charisma",
+                    RelatedBaseSkillName = "Deceit"
+                },
+
+                // PERCEPTION
+
+                new SpecialSkillDTO()
+                {
+                    Name="Observation",
+                    RelatedAttribute1 ="Intelligence",
+                    RelatedAttribute2 = "Instinct" ,
+                    RelatedBaseSkillName = "Perception"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Sence motives",
+                    RelatedAttribute1 = "Charisma",
+                    RelatedAttribute2 = "Instinct",
+                    RelatedBaseSkillName = "Perception"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Hearing",
+                    ChosenAttribute = "Instinct",
+                    RelatedBaseSkillName = "Perception"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Smell",
+                    ChosenAttribute = "Instinct",
+                    RelatedBaseSkillName = "Perception"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Vigilance",
+                    RelatedAttribute1 = "Willpower",
+                    RelatedAttribute2 = "Instinct",
+                    RelatedBaseSkillName = "Perception"
+                },
+
+                // KNOWLADGE
+
+                new SpecialSkillDTO()
+                {
+                    Name="History and religion",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Beasts",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Linguistics",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Races and nations",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Geography",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Plants and mushrooms",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Heraldry",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Mathematics and logic",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Alchemy and physics",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Strategy and tactics",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Knowledge"
+                },
+
+                // CRAFT 
+
+                new SpecialSkillDTO()
+                {
+                    Name="Architecture and stonemasonry",
+                    RelatedAttribute1="Intelligence",
+                    RelatedAttribute2 = "Strength", 
+                    RelatedBaseSkillName = "Craft"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Geology and mining",
+                    RelatedAttribute1="Intelligence",
+                    RelatedAttribute2 = "Instinct", 
+                    RelatedBaseSkillName = "Craft"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Metallurgy and blacksmithing",
+                    RelatedAttribute1="Intelligence",
+                    RelatedAttribute2 = "Strength", 
+                    RelatedBaseSkillName = "Craft"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Engineering and gunsmithing",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Craft"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Shipbuilding and carpentry",
+                    RelatedAttribute1="Intelligence",
+                    RelatedAttribute2 = "Dexterity", 
+                    RelatedBaseSkillName = "Craft"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Fine arts",
+                    RelatedAttribute1="Charisma",
+                    RelatedAttribute2 = "Dexterity", 
+                    Editable = true,
+                    RelatedBaseSkillName = "Craft"
+                },
+
+                // SURVIVAL 
+
+                new SpecialSkillDTO()
+                {
+                    Name="Tracking",
+                    ChosenAttribute = "Instinct",
+                    RelatedBaseSkillName = "Survival"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Sense of direction",
+                    ChosenAttribute = "Instinct",
+                    RelatedBaseSkillName = "Survival"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Trapping",
+                    RelatedAttribute1="Instinct",
+                    RelatedAttribute2 = "Dexterity", 
+                    RelatedBaseSkillName = "Survival"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Wilderness knowledge",
+                    ChosenAttribute = "Instinct",
+                    RelatedBaseSkillName = "Survival"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Sailing",
+                    ChosenAttribute = "Instinct",
+                    RelatedBaseSkillName = "Survival"
+                },
+
+                // MEDICINE 
+                new SpecialSkillDTO()
+                {
+                    Name="Surgery",
+                    RelatedAttribute1="Instinct",
+                    RelatedAttribute2 = "Dexterity", 
+                    RelatedBaseSkillName = "Medicine"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Tend wounds",
+                    RelatedAttribute1="Intelligence",
+                    RelatedAttribute2 = "Dexterity", 
+                    RelatedBaseSkillName = "Medicine"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Diseases",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Medicine"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Tend beasts",
+                    RelatedAttribute1="Intelligence",
+                    RelatedAttribute2 = "Instinct", 
+                    RelatedBaseSkillName = "Medicine"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Poisons and venoms",
+                    ChosenAttribute = "Intelligence",
+                    RelatedBaseSkillName = "Medicine"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Torture",
+                    RelatedAttribute1="Instinct",
+                    RelatedAttribute2 = "Willpower", 
+                    RelatedBaseSkillName = "Medicine"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Torture",
+                    RelatedAttribute1="Instinct",
+                    RelatedAttribute2 = "Willpower", 
+                    RelatedBaseSkillName = "Medicine"
+                },
+
+                // ANIMAL HANDLE 
+
+                new SpecialSkillDTO()
+                {
+                    Name="Training",
+                    RelatedAttribute1="Instinct",
+                    RelatedAttribute2 = "Willpower", 
+                    RelatedBaseSkillName = "Animal handle"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Taming",
+                    RelatedAttribute1="Instinct",
+                    RelatedAttribute2 = "Willpower", 
+                    RelatedBaseSkillName = "Animal handle"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Riding",
+                    RelatedAttribute1="Instinct",
+                    RelatedAttribute2 = "Dexterity", 
+                    RelatedBaseSkillName = "Animal handle"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Animals care",
+                     RelatedAttribute1 = "Charisma",
+                    RelatedAttribute2 = "Dexterity", 
+                    RelatedBaseSkillName = "Animal handle"
+                },
+
+            };
+            return SpecialSkills;
         }
     }
 }

@@ -71,7 +71,7 @@ namespace DagoniteEmpire.Service
                     }
                 }
 
-                var fullPath = $"/upload/portraits/{fileName}";
+                var fullPath = $"\\upload\\portraits\\{fileName}";
                 return fullPath;
             }
             catch (Exception ex)

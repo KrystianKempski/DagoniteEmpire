@@ -31,6 +31,9 @@
     if (type === "baseSkillLimit") {
         toastr.warning(message, 'Base Skill Limit', { timeOut: 5000, positionClas: "toast-top-right" });
     }
+    if (type === "specialSkillLimit") {
+        toastr.warning(message, 'Special Skill Limit', { timeOut: 5000, positionClas: "toast-top-right" });
+    }
 }
 
 window.ShowSweetAlert = (type, message) => {

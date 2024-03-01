@@ -19,10 +19,7 @@ namespace DA_DataAccess.CharacterClasses
 
             [ForeignKey(nameof(CharacterId))]
             public Character Character { get; set; }
-
-            public IEnumerable<string> RelatedAttributes;
-
-    }
+        }
 
         public class Skill
         {
@@ -32,8 +29,8 @@ namespace DA_DataAccess.CharacterClasses
             public int GearBonus { get; set; } = 0;
             public int OtherBonuses { get; set; } = 0;
             public int TempBonuses { get; set; } = 0;
-
-
-    }  
+            public string RelatedAttribute1 { get; set; } = "";
+            public string RelatedAttribute2 { get; set; } = "";
+        }  
 }
 

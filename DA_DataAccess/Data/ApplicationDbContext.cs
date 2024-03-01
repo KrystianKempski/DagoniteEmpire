@@ -1,6 +1,7 @@
 ﻿using DA_DataAccess.CharacterClasses;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Attribute = DA_DataAccess.CharacterClasses.Attribute;
 
 namespace DA_DataAccess.Data
@@ -19,7 +20,8 @@ namespace DA_DataAccess.Data
         public DbSet<BaseSkill> BaseSkills { get; set; }
         public DbSet<SpecialSkill> SpecialSkills { get; set; }
 
-        public DbSet<ImageFile> ImageFiles { get; set; }    
-        //public DbSet<User> Users { get; set; }
+        public DbSet<ImageFile> ImageFiles { get; set; }
+
+
     }
 }

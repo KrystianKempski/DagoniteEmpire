@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240222200620_AttributesUpdate4")]
-    partial class AttributesUpdate4
+    [Migration("20240301191556_UpdateSpecialSkills2")]
+    partial class UpdateSpecialSkills2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -90,6 +90,14 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("RelatedAttribute1")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedAttribute2")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("TempBonuses")
                         .HasColumnType("integer");
 
@@ -160,6 +168,12 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("CharacterId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ChosenAttribute")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Editable")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("GearBonus")
                         .HasColumnType("integer");
 
@@ -172,11 +186,11 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("RelatedBaseSkillName")
+                        .HasColumnType("text");
+
                     b.Property<int>("TempBonuses")
                         .HasColumnType("integer");
-
-                    b.Property<string>("Type")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

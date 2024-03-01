@@ -4,6 +4,7 @@
 @inject ICharacterRepository _characterRepository
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
+@inject ISpecialSkillRepository _specialSkillRepository
 @inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
 @using DA_Models
@@ -58,7 +59,7 @@
 
                 <div class="row">
                     <div class="portrait">
-                        <h3 class="my-3 ml-3">Portrait</h3>
+                        <h3 class="my-3 ml-3">PORTRAIT</h3>
                         <div class="portrait-image">
                             <img src="@Character.ImageUrl" class="" />
                             <div class="portrait-input">
@@ -80,12 +81,12 @@
                    
                    
                     <div class="attribute">
-                        <h3 class="my-3 ml-3">Attributes</h3>
+                        <h3 class="my-3 ml-3">ATTRIBUTES</h3>
 
                         <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="name-row">Attribute</th>
+                                <th scope="col" class="name-row" >Attribute</th>
                                 <th scope="col" class="bonus-row">Base</th>
                                 <th scope="col" class="bonus-row">Race</th>
                                 <th scope="col" class="bonus-row">Gear</th>
@@ -100,7 +101,7 @@
                             {
                                 <tr>
                                     <td>
-                                        <label class="names-label text-center">@obj.Name</label>
+                                        <label class="names-label text-center">@obj.Name.ToUpper()</label>
                                     </td>
                                     <td>
                                             <div class="attr-control">
@@ -145,7 +146,7 @@
                                     </td>
                                         <td>
                                             <div class="attr-control">
-                                                <span class="attr-indicator">@obj.Modifier </span>
+                                                <span class="attr-indicator">@obj.Modifier </span> 
                                             </div>
                                         </td>
                                 </tr>
@@ -154,7 +155,7 @@
                         </table>
                     </div>
                     <div class="baseskills">
-                        <h3 class="my-3 ml-3">Base skills</h3>
+                        <h3 class="my-3 ml-3">BASE SKILLS</h3>
                         <table class="table align-middle">
                             <thead>
                                 <tr>
@@ -171,7 +172,7 @@
                                 {
                                     <tr>
                                         <td>
-                                            <label class="names-label">@obj.Name</label>
+                                            <label class="names-label">@obj.Name.ToUpper()</label>
                                         </td>
                                         <td>
                                             <div class="attr-control">
@@ -219,6 +220,103 @@
                             </tbody>
                         </table>
                     </div>
+                <h3 class="my-3 ml-3">SPECIAL SKILLS</h3>
+                    <div class="specialskills">
+                        
+                        @foreach (var baseSkill in BaseSkills)
+                        {
+                        <div class="specialskills-table">
+                            <div class="specialskills-control">
+                                <label class="specialskills-label">@baseSkill.Name</label>
+                                <span class="specialskills-indicator">@baseSkill.SumBonus</span>
+                            </div>
+                            <table class="table align-middle">
+
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="name-row">Skill</th>
+
+                                        <th scope="col" class="bonus-row">Base</th>
+                                        <th scope="col" class="rel-attr-row">Related attribute</th>
+                                        <th scope="col" class="attr-mod-row">Attr. mod.</th>
+                                        <th scope="col" class="bonus-row">Race</th>
+                                        <th scope="col" class="bonus-row">Other</th>
+                                        <th scope="col" class="bonus-row text-center"> Sum</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var obj in SpecialSkills.Where(n => n.RelatedBaseSkillName == baseSkill.
+                                    Name))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <label class="names-label">@obj.Name</label>
+                                            </td>
+                                            <td>
+                                                <div class="attr-control">
+                                                    <span class="attr-indicator">@obj.BaseBonus</span>
+                                                    <div class="arrows">
+                                                        <button @onclick="@(()=>IncrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                        <button @onclick="@(()=>DecrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="attribute-selector">
+                                                    @if (obj.ChosenAttribute != null && obj.RelatedAttribute1 == "")
+                                                    {
+                                                        <label>@obj.ChosenAttribute</label>
+                                                    }
+                                                    else
+                                                    {
+                                                         <InputSelect style="width: 100%;"
+                                                                     ValueExpression="@(()=>obj.ChosenAttribute)"
+                                                                     Value="@obj.ChosenAttribute"
+                                                                     ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))" class="attribute-selector">
+                                                            <option value="0" selected disabled>--Select--</option>
+                                                            <option value="@obj.RelatedAttribute1"> @obj.RelatedAttribute1</option>
+                                                            <option value="@obj.RelatedAttribute2"> @obj.RelatedAttribute2</option>
+                                                        </InputSelect>
+                                                    }
+                                                </div>
+
+                                            </td>
+                                            <td>
+                                                <div class="attr-control">
+                                                    <span class="attr-indicator">@obj.AttributeBonus</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="attr-control">
+                                                    <span class="attr-indicator">@obj.RaceBonus</span>
+                                                    <div class="arrows">
+                                                        <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                        <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="attr-control">
+                                                    <span class="attr-indicator">@obj.OtherBonuses</span>
+                                                    <div class="arrows">
+                                                        <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                        <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="attr-control">
+                                                    <span class="attr-indicator">@obj.SumBonus</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        }
+
+                    </div>
                    
                 </div>
                 <div class="form-group py-2">
@@ -242,13 +340,18 @@
     [Parameter]
     public int Id { get; set; }
 
+    // private IEnumerable<AttributeDTO> _attributes 
+
     private CharacterDTO Character { get; set; } = new CharacterDTO();
     private IEnumerable<AttributeDTO> Attributes { get; set; } = CharacterSeeder.GetAttributes();
     private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = CharacterSeeder.GetBaseSkills();
+    private IEnumerable<SpecialSkillDTO> SpecialSkills { get; set; } = CharacterSeeder.GetSpecialSkills();
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; }
     private bool IsCharacterSaved = false;
+    private bool ModifChanged = false;
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -271,6 +374,11 @@
                 obj.SumAll();
             foreach (var obj in BaseSkills)
                 obj.SumAll();
+            foreach (var obj in SpecialSkills)
+            {
+                await ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
+                await AddSSRelatedBaseSkill(obj);
+            }
             IsLoading = false;
             StateHasChanged();
         }
@@ -283,6 +391,7 @@
         Character = await _characterRepository.GetById(Id);
         Attributes = await _attributeRepository.GetAll(Id);
         BaseSkills = await _baseSkillRepository.GetAll(Id);
+        SpecialSkills = await _specialSkillRepository.GetAll(Id);
     }
 
     private async Task UpsertCharacter()
@@ -292,6 +401,8 @@
             //check if all valid
             // ValidationFunction();
             //create
+            try
+            {
             var charac = await _characterRepository.Create(Character);
             foreach (var obj in Attributes)
             {
@@ -302,6 +413,17 @@
             {
                 obj.CharacterId = charac.Id;
                 await _baseSkillRepository.Create(obj);
+            }
+            foreach( var obj in SpecialSkills)
+            {
+                obj.CharacterId = charac.Id;
+                await _specialSkillRepository.Create(obj);
+            }
+            }
+            catch (Exception ex)
+            {
+                IsLoading = false;
+                await _jsRuntime.ToastrError("Error: " + ex.ToString());
             }
 
         }
@@ -318,6 +440,11 @@
             {
                 obj.CharacterId = Id;
                 await _baseSkillRepository.Update(obj);
+            }
+            foreach (var obj in SpecialSkills)
+            {
+                obj.CharacterId = Id;
+                await _specialSkillRepository.Update(obj);
             }
 
         }
@@ -441,8 +568,8 @@
 
         try
         {
-            var relatedAttribute1 = Attributes.FirstOrDefault(u => u.Name == obj.RelatedAttributes.First()).BaseBonus;
-            var relatedAttribute2 = Attributes.FirstOrDefault(u => u.Name == obj.RelatedAttributes.ElementAt(1)).BaseBonus;
+            var relatedAttribute1 = Attributes.FirstOrDefault(u => u.Name == obj.RelatedAttribute1).BaseBonus;
+            var relatedAttribute2 = Attributes.FirstOrDefault(u => u.Name == obj.RelatedAttribute2).BaseBonus;
             var limit = Math.Floor((double)(relatedAttribute1 + relatedAttribute2) / 6.0) + 1;
             var expChange = 0;
             string message;
@@ -463,7 +590,7 @@
             }
             else
             {
-                message = "Maximum base bonus is limited by: " + obj.RelatedAttributes.First() + " and " + obj.RelatedAttributes.ElementAt(1) + " to value of " + limit.ToString();
+                message = "Maximum base bonus is limited by: " + obj.RelatedAttribute1 + " and " + obj.RelatedAttribute2 + " to value of " + limit.ToString();
                 await _jsRuntime.BaseSkillLimit(message);
             }
         }
@@ -476,7 +603,7 @@
 
     private async Task DecrBSBonus(BaseSkillDTO obj)
     {
-        var expChange = 0;
+        var expChange = 3 * obj.BaseBonus;
         if (obj.BaseBonus > 0)
         {
             Character.CurrentExpPoints += expChange;
@@ -508,15 +635,118 @@
 
     }
 
-    // private int ValidationFunction()
-    // {
-    //     if (Character.Age > 300 || Character.Age < 16)
-    //         return 1;
+    private async Task IncrSSBonus(SpecialSkillDTO obj)
+    {
+        try
+        {
+            var limit = BaseSkills.FirstOrDefault(u => u.Name == obj.RelatedBaseSkillName).SumBonus;
+            var expChange = 0;
+            string message;
 
+            if (obj.BaseBonus < limit)
+            {
+                expChange = 1 * (obj.BaseBonus + 1);
+                if (Character.CurrentExpPoints >= expChange)
+                {
+                    Character.CurrentExpPoints -= expChange;
+                    Character.UsedExpPoints += expChange;
+                    obj.BaseBonus++;
 
-    //         return 0;
-    // }
+                    obj.SumAll();
+                }
+                else
+                   await _jsRuntime.SpecialSkillLimit("Not enought experience points");
+            }
+            else
+            {
+                message = "Maximum Special Skill base is limited by : " + obj.RelatedBaseSkillName.ToUpper() + " which is: " + limit.ToString();
+                await _jsRuntime.SpecialSkillLimit(message);
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+    }
 
+    private async Task DecrSSBonus(SpecialSkillDTO obj)
+    {
+        var expChange = 1 * obj.BaseBonus;
+        if (obj.BaseBonus > 0)
+        {
+            Character.CurrentExpPoints += expChange;
+            Character.UsedExpPoints -= expChange;
+            obj.BaseBonus--;
+
+            obj.SumAll();
+        }
+    }
+
+    void OnModifChange()
+    {
+        ;
+        // int a  = newValue;
+        // Perform some other actions
+    }
+
+    private void DoStuff(Microsoft.AspNetCore.Components.ChangeEventArgs e)
+    {
+        // Assign the selected value to the Model
+        //return Task.CompletedTask;
+        ;
+    }
+
+    private async Task ChangeSSRelatedAttribute(string attrName, string specSkillName)
+    {
+        try
+        {
+            if (attrName != null && attrName != "0" && specSkillName != null)
+            {
+                var obj = SpecialSkills.FirstOrDefault(u => u.Name == specSkillName);
+                if (obj != null)
+                {
+                    obj.ChosenAttribute = attrName;
+                    var attr = Attributes.FirstOrDefault(p => p.Name == attrName);
+                    if (attr == null) return;
+                    obj.AttributeBonus = attr.Modifier;
+                    obj.AddPropertyListener(attr);
+                    obj.SumAll();
+                }
+                return;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+
+    }
+
+    private async Task AddSSRelatedBaseSkill(SpecialSkillDTO obj)
+    {
+        try
+        {
+            if (obj != null && obj.RelatedBaseSkillName != null && obj.Name != null)
+            {
+                var baseSkill = BaseSkills.FirstOrDefault(p => p.Name == obj.RelatedBaseSkillName);
+                if (baseSkill == null) return;
+                obj.BaseSkillBonus = baseSkill.SumBonus;
+                obj.AddPropertyListener(baseSkill);
+                obj.SumAll();
+                return;
+            }
+
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+
+    }
     public void Dispose() => registration?.Dispose();
 }
 

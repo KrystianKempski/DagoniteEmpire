@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class TryNPGSQL : Migration
+    public partial class UpdateSpecialSkills1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -62,11 +62,29 @@ namespace DA_DataAccess.Migrations
                     Class = table.Column<string>(type: "text", nullable: true),
                     Race = table.Column<string>(type: "text", nullable: true),
                     Age = table.Column<int>(type: "integer", nullable: false),
-                    ImageUrl = table.Column<string>(type: "text", nullable: true)
+                    ImageUrl = table.Column<string>(type: "text", nullable: true),
+                    NPCType = table.Column<string>(type: "text", nullable: true),
+                    AttributePoints = table.Column<int>(type: "integer", nullable: false),
+                    CurrentExpPoints = table.Column<int>(type: "integer", nullable: false),
+                    UsedExpPoints = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Characters", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ImageFiles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ImageName = table.Column<string>(type: "text", nullable: false),
+                    fileData = table.Column<byte[]>(type: "bytea", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ImageFiles", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -209,6 +227,8 @@ namespace DA_DataAccess.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Type = table.Column<string>(type: "text", nullable: true),
                     CharacterId = table.Column<int>(type: "integer", nullable: false),
+                    RelatedAttribute1 = table.Column<string>(type: "text", nullable: false),
+                    RelatedAttribute2 = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: true),
                     BaseBonus = table.Column<int>(type: "integer", nullable: false),
                     RaceBonus = table.Column<int>(type: "integer", nullable: false),
@@ -234,7 +254,9 @@ namespace DA_DataAccess.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     CharacterId = table.Column<int>(type: "integer", nullable: false),
-                    Type = table.Column<string>(type: "text", nullable: true),
+                    RelatedBaseSkillName = table.Column<string>(type: "text", nullable: false),
+                    ChosenAttribute = table.Column<string>(type: "text", nullable: false),
+                    Editable = table.Column<bool>(type: "boolean", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: true),
                     BaseBonus = table.Column<int>(type: "integer", nullable: false),
                     RaceBonus = table.Column<int>(type: "integer", nullable: false),
@@ -329,6 +351,9 @@ namespace DA_DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "BaseSkills");
+
+            migrationBuilder.DropTable(
+                name: "ImageFiles");
 
             migrationBuilder.DropTable(
                 name: "SpecialSkills");
