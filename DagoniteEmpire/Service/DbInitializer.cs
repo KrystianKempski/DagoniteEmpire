@@ -31,7 +31,8 @@ namespace DagoniteEmpire.Service
                 if (!_roleManager.RoleExistsAsync(SD.Role_Admin).GetAwaiter().GetResult())
                 {
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_Admin)).GetAwaiter().GetResult();
-                    _roleManager.CreateAsync(new IdentityRole(SD.Role_Customer)).GetAwaiter().GetResult();
+                    _roleManager.CreateAsync(new IdentityRole(SD.Role_HeroPlayer)).GetAwaiter().GetResult();
+                    _roleManager.CreateAsync(new IdentityRole(SD.Role_DukePlayer)).GetAwaiter().GetResult();
                 }
                 else
                 {
@@ -40,8 +41,8 @@ namespace DagoniteEmpire.Service
 
                 IdentityUser user = new()
                 {
-                    UserName = "krystian@gmail.com",
-                    Email = "krystian@gmail.com",
+                    UserName = "krystian.kempski@gmail.com",
+                    Email = "krystian.kempski@gmail.com",
                     EmailConfirmed = true,
                 };
 

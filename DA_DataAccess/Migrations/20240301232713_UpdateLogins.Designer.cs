@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240301185144_UpdateSpecialSkills1")]
-    partial class UpdateSpecialSkills1
+    [Migration("20240301232713_UpdateLogins")]
+    partial class UpdateLogins
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -169,7 +169,6 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("ChosenAttribute")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("Editable")
@@ -187,8 +186,15 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("integer");
 
-                    b.Property<string>("RelatedBaseSkillName")
+                    b.Property<string>("RelatedAttribute1")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedAttribute2")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedBaseSkillName")
                         .HasColumnType("text");
 
                     b.Property<int>("TempBonuses")

@@ -4,6 +4,7 @@
 @inject ISpecialSkillRepository _specialSkillRepository
 @inject NavigationManager _navigationManager
 @inject IJSRuntime _jsRuntime
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer)] 
 <_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this character"></_DeleteConfirmation>
 
 
@@ -50,6 +51,18 @@
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     public bool IsLoading { get; set; }
     private int DeleteCharacterId { get; set; } = 0;
+
+    // [CascadingParameter]
+    // public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     var authState = await AuthenticationState;
+    //     if (!authState.User.Identity.IsAuthenticated)
+    //     {
+    //         _navigationManager.NavigateTo("/identity/account/login",forceLoad:true);
+    //     }
+    // }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
