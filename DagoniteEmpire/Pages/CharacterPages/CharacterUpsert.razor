@@ -10,6 +10,7 @@
 @using DA_Models
 @using DagoniteEmpire.Service.IService
 @using DagoniteEmpire.Pages.Components
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer)]
 
 @inject NavigationManager _navigationManager
 
@@ -27,160 +28,268 @@
         else
         {
 
-                <div class="row g-3">
-                    <div class="form-group col-md-4">
-                        <label>Character name</label>
-                        <input type="text" @bind-value="Character.NPCName" class="form-control"></input>
-                    </div>
-                    <div class="form-group col-md-3">
-                        <label>Class</label>
-                        <InputText @bind-Value="Character.Class" class="form-control"></InputText>
-                    </div>
-                    <div class="form-group col-md-2">
-                        <label>Race</label>
-                        <InputText @bind-Value="Character.Race" class="form-control"></InputText>
-                    </div>
-                    <div class="form-group col-md-1">
-                        <label>Age</label>
-                        <InputNumber @bind-Value="Character.Age" class="form-control col-2"></InputNumber>
-                    </div>
-                    <div class="form-group col-md-2">
-                        <label>Character Type</label>
-                        <InputSelect @bind-Value="Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
-                            <option checked="@(Character!.NPCType == "Hero")"value="Hero">
-                                Hero
-                            </option>
-                            <option checked="@(Character!.NPCType == "Duke")" value="Duke">
-                                Duke
-                            </option>
-                        </InputSelect>
-                    </div>
+            <div class="row g-3">
+                <div class="form-group col-md-4">
+                    <label>Character name</label>
+                    <input type="text" @bind-value="Character.NPCName" class="form-control"></input>
                 </div>
+                <div class="form-group col-md-3">
+                    <label>Class</label>
+                    <InputText @bind-Value="Character.Class" class="form-control"></InputText>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Race</label>
+                    <InputText @bind-Value="Character.Race" class="form-control"></InputText>
+                </div>
+                <div class="form-group col-md-1">
+                    <label>Age</label>
+                    <InputNumber @bind-Value="Character.Age" class="form-control col-2"></InputNumber>
+                </div>
+                <div class="form-group col-md-2">
+                    <label>Character Type</label>
+                    <InputSelect @bind-Value="Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
+                        <option checked="@(Character!.NPCType == "Hero")"value="Hero">
+                            Hero
+                        </option>
+                        <option checked="@(Character!.NPCType == "Duke")" value="Duke">
+                            Duke
+                        </option>
+                    </InputSelect>
+                </div>
+            </div>
 
-                <div class="row">
-                    <div class="portrait">
-                        <h3 class="my-3 ml-3">PORTRAIT</h3>
-                        <div class="portrait-image">
-                            <img src="@Character.ImageUrl" class="" />
-                            <div class="portrait-input">
-                                <InputFile OnChange="HandleImageUpload"></InputFile>
-                            <label class="custom-file-label" for="inputGroupFile01">Choose file</label>
-                            </div>
+            <div class="row">
+                <div class="portrait">
+                    <h3 class="my-3 ml-3">PORTRAIT</h3>
+                    <div class="portrait-image">
+                        <img src="@Character.ImageUrl" class="" />
+                        <div class="portrait-input">
+                            <InputFile OnChange="HandleImageUpload"></InputFile>
+                        <label class="custom-file-label" for="inputGroupFile01">Choose file</label>
                         </div>
+                    </div>
                    
-                        <div class="points-control">
-                             <label class="points-label">Avalible experience points:</label>
-                             <span class="points-indicator ml-auto">@Character.CurrentExpPoints</span>
-                        </div>
-                        <div class="points-control">
-                            <label class="points-label">Avalible attribute points:</label>
-                            <span class="points-indicator ml-auto">@Character.AttributePoints</span>
-                        </div>
-                     </div>
+                    <div class="points-control">
+                            <label class="points-label">Avalible experience points:</label>
+                            <span class="points-indicator ml-auto">@Character.CurrentExpPoints</span>
+                    </div>
+                    <div class="points-control">
+                        <label class="points-label">Avalible attribute points:</label>
+                        <span class="points-indicator ml-auto">@Character.AttributePoints</span>
+                    </div>
+                    </div>
                         
                    
                    
-                    <div class="attribute">
-                        <h3 class="my-3 ml-3">ATTRIBUTES</h3>
+                <div class="attribute">
+                    <h3 class="my-3 ml-3">ATTRIBUTES</h3>
 
-                        <table class="table align-middle">
+                    <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="name-row" >Attribute</th>
+                            <th scope="col" class="bonus-row">Base</th>
+                            <th scope="col" class="bonus-row">Race</th>
+                            <th scope="col" class="bonus-row">Gear</th>
+                            <th scope="col" class="bonus-row">Other</th>
+                            <th scope="col" class="bonus-row text-center">Sum</th>
+                            <th scope="col" class="bonus-row text-center">Mod.</th>
+                        </tr>
+                    </thead>
+                        <tbody>
+                               
+                        @foreach (var obj in Attributes)
+                        {
+                            <tr>
+                                <td>
+                                    <label class="names-label text-center">@obj.Name.ToUpper()</label>
+                                </td>
+                                <td>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.BaseBonus</span>
+                                            <div class="arrows">
+                                                <button @onclick="@(()=>IncrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                <button @onclick="@(()=>DecrAttr(obj))"class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                            </div>
+                                        </div>
+                                </td>
+                                    <td>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.RaceBonus</span>
+                                            <div class="arrows">
+                                                <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                            </div>
+                                        </div>
+                                </td>
+                                    <td>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.GearBonus</span>
+                                            <div class="arrows">
+                                                <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                            </div>
+                                        </div>
+                                </td>
+                                <td>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.OtherBonuses</span>
+                                            <div class="arrows">
+                                                <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                            </div>
+                                        </div>
+                                </td>
+                                    <td>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.SumBonus</span>
+                                        </div>
+                                </td>
+                                    <td>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.Modifier </span> 
+                                        </div>
+                                    </td>
+                            </tr>
+                        }
+                    </tbody>
+                    </table>
+                </div>
+                <div class="baseskills">
+                    <h3 class="my-3 ml-3">BASE SKILLS</h3>
+                    <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="name-row" >Attribute</th>
+                                <th scope="col" class="name-row">Skill</th>
                                 <th scope="col" class="bonus-row">Base</th>
                                 <th scope="col" class="bonus-row">Race</th>
                                 <th scope="col" class="bonus-row">Gear</th>
                                 <th scope="col" class="bonus-row">Other</th>
-                                <th scope="col" class="bonus-row text-center">Sum</th>
-                                <th scope="col" class="bonus-row text-center">Mod.</th>
+                                <th scope="col" class="bonus-row text-center"> Sum</th>
                             </tr>
                         </thead>
-                            <tbody>
-                               
-                            @foreach (var obj in Attributes)
+                        <tbody>
+                            @foreach (var obj in BaseSkills)
                             {
                                 <tr>
                                     <td>
-                                        <label class="names-label text-center">@obj.Name.ToUpper()</label>
+                                        <label class="names-label">@obj.Name.ToUpper()</label>
                                     </td>
                                     <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.BaseBonus</span>
-                                                <div class="arrows">
-                                                    <button @onclick="@(()=>IncrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                    <button @onclick="@(()=>DecrAttr(obj))"class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                </div>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.BaseBonus</span>
+                                            <div class="arrows">
+                                                <button @onclick="@(()=>IncrBSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                <button @onclick="@(()=>DecrBSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                             </div>
-                                    </td>
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.RaceBonus</span>
-                                                <div class="arrows">
-                                                    <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                    <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                </div>
-                                            </div>
-                                    </td>
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.GearBonus</span>
-                                                <div class="arrows">
-                                                    <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                    <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                </div>
-                                            </div>
+                                        </div>
                                     </td>
                                     <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.OtherBonuses</span>
-                                                <div class="arrows">
-                                                    <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                    <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                </div>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.RaceBonus</span>
+                                            <div class="arrows">
+                                                <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                             </div>
+                                        </div>
                                     </td>
-                                     <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.SumBonus</span>
+                                    <td>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.GearBonus</span>
+                                            <div class="arrows">
+                                                <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                             </div>
+                                        </div>
                                     </td>
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.Modifier </span> 
+                                    <td>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.OtherBonuses</span>
+                                            <div class="arrows">
+                                                <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                             </div>
-                                        </td>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="attr-control">
+                                            <span class="attr-indicator">@obj.SumBonus</span>
+                                        </div>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
-                        </table>
-                    </div>
-                    <div class="baseskills">
-                        <h3 class="my-3 ml-3">BASE SKILLS</h3>
+                    </table>
+                </div>
+                
+                <div class="description">
+                    <h3 class="my-3 ml-3">DESCRIPTION</h3>
+                    <CharDescriptionDialog DescriptionConfirmation="GetDescription"></CharDescriptionDialog>
+                </div>
+                <h3 class="my-3 ml-3">SPECIAL SKILLS</h3>
+                <div class="specialskills">
+                        
+                    @foreach (var baseSkill in BaseSkills)
+                    {
+                    <div class="specialskills-table">
+                        <div class="specialskills-control">
+                            <label class="specialskills-label">@baseSkill.Name</label>
+                            <span class="specialskills-indicator">@baseSkill.SumBonus</span>
+                        </div>
                         <table class="table align-middle">
+
                             <thead>
                                 <tr>
                                     <th scope="col" class="name-row">Skill</th>
+
                                     <th scope="col" class="bonus-row">Base</th>
+                                    <th scope="col" class="rel-attr-row">Related attribute</th>
+                                    <th scope="col" class="attr-mod-row">Attr. mod.</th>
                                     <th scope="col" class="bonus-row">Race</th>
-                                    <th scope="col" class="bonus-row">Gear</th>
                                     <th scope="col" class="bonus-row">Other</th>
                                     <th scope="col" class="bonus-row text-center"> Sum</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var obj in BaseSkills)
+                                @foreach (var obj in SpecialSkills.Where(n => n.RelatedBaseSkillName == baseSkill.
+                                Name))
                                 {
                                     <tr>
                                         <td>
-                                            <label class="names-label">@obj.Name.ToUpper()</label>
+                                            <label class="names-label">@obj.Name</label>
                                         </td>
                                         <td>
                                             <div class="attr-control">
                                                 <span class="attr-indicator">@obj.BaseBonus</span>
                                                 <div class="arrows">
-                                                    <button @onclick="@(()=>IncrBSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                    <button @onclick="@(()=>DecrBSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                    <button @onclick="@(()=>IncrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                    <button @onclick="@(()=>DecrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                                 </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="attribute-selector">
+                                                @if (obj.ChosenAttribute != null && obj.RelatedAttribute1 == "")
+                                                {
+                                                    <label>@obj.ChosenAttribute</label>
+                                                }
+                                                else
+                                                {
+                                                        <InputSelect style="width: 100%;"
+                                                                    ValueExpression="@(()=>obj.ChosenAttribute)"
+                                                                    Value="@obj.ChosenAttribute"
+                                                                    ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))" class="attribute-selector">
+                                                        <option value="0" selected disabled>--Select--</option>
+                                                        <option value="@obj.RelatedAttribute1"> @obj.RelatedAttribute1</option>
+                                                        <option value="@obj.RelatedAttribute2"> @obj.RelatedAttribute2</option>
+                                                    </InputSelect>
+                                                }
+                                            </div>
+
+                                        </td>
+                                        <td>
+                                            <div class="attr-control">
+                                                <span class="attr-indicator">@obj.AttributeBonus</span>
                                             </div>
                                         </td>
                                         <td>
@@ -189,15 +298,6 @@
                                                 <div class="arrows">
                                                     <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
                                                     <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.GearBonus</span>
-                                                <div class="arrows">
-                                                    <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                    <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                                 </div>
                                             </div>
                                         </td>
@@ -220,120 +320,22 @@
                             </tbody>
                         </table>
                     </div>
-                <h3 class="my-3 ml-3">SPECIAL SKILLS</h3>
-                    <div class="specialskills">
-                        
-                        @foreach (var baseSkill in BaseSkills)
-                        {
-                        <div class="specialskills-table">
-                            <div class="specialskills-control">
-                                <label class="specialskills-label">@baseSkill.Name</label>
-                                <span class="specialskills-indicator">@baseSkill.SumBonus</span>
-                            </div>
-                            <table class="table align-middle">
+                    }
 
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="name-row">Skill</th>
-
-                                        <th scope="col" class="bonus-row">Base</th>
-                                        <th scope="col" class="rel-attr-row">Related attribute</th>
-                                        <th scope="col" class="attr-mod-row">Attr. mod.</th>
-                                        <th scope="col" class="bonus-row">Race</th>
-                                        <th scope="col" class="bonus-row">Other</th>
-                                        <th scope="col" class="bonus-row text-center"> Sum</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var obj in SpecialSkills.Where(n => n.RelatedBaseSkillName == baseSkill.
-                                    Name))
-                                    {
-                                        <tr>
-                                            <td>
-                                                <label class="names-label">@obj.Name</label>
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.BaseBonus</span>
-                                                    <div class="arrows">
-                                                        <button @onclick="@(()=>IncrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                        <button @onclick="@(()=>DecrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="attribute-selector">
-                                                    @if (obj.ChosenAttribute != null && obj.RelatedAttribute1 == "")
-                                                    {
-                                                        <label>@obj.ChosenAttribute</label>
-                                                    }
-                                                    else
-                                                    {
-                                                         <InputSelect style="width: 100%;"
-                                                                     ValueExpression="@(()=>obj.ChosenAttribute)"
-                                                                     Value="@obj.ChosenAttribute"
-                                                                     ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))" class="attribute-selector">
-                                                            <option value="0" selected disabled>--Select--</option>
-                                                            <option value="@obj.RelatedAttribute1"> @obj.RelatedAttribute1</option>
-                                                            <option value="@obj.RelatedAttribute2"> @obj.RelatedAttribute2</option>
-                                                        </InputSelect>
-                                                    }
-                                                </div>
-
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.AttributeBonus</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.RaceBonus</span>
-                                                    <div class="arrows">
-                                                        <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                        <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.OtherBonuses</span>
-                                                    <div class="arrows">
-                                                        <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                        <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.SumBonus</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                        }
-
-                    </div>
-                   
                 </div>
-                <div class="form-group py-2">
-                <button @onclick="UpsertCharacter" class="btn btn-primary">@Title</button>
-                    <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
-                </div>
+                  
+            </div>
+            <div class="form-group py-2">
+            <button @onclick="UpsertCharacter" class="btn btn-primary">@Title</button>
+                <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
+            </div>
            
         }
     </div>
 
 </div>
 
-@* <SfRichTextEditor>
-    <p>Rich Text Editor allows to insert images from online source as well as local computer where you want to insert the image in your content.</p>
-    <p><b>Get started Quick Toolbar to click on the image</b></p>
-    <p>It is possible to add custom style on the selected image inside the Rich Text Editor through quick toolbar.</p>
-</SfRichTextEditor> *@
+
 
 @code {
 
@@ -351,6 +353,7 @@
     public bool IsLoading { get; set; }
     private bool IsCharacterSaved = false;
     private bool ModifChanged = false;
+    private bool IsDescrDialVisible = false;
 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -403,22 +406,22 @@
             //create
             try
             {
-            var charac = await _characterRepository.Create(Character);
-            foreach (var obj in Attributes)
-            {
-                obj.CharacterId = charac.Id;
-                await _attributeRepository.Create(obj);
-            }
-            foreach (var obj in BaseSkills)
-            {
-                obj.CharacterId = charac.Id;
-                await _baseSkillRepository.Create(obj);
-            }
-            foreach( var obj in SpecialSkills)
-            {
-                obj.CharacterId = charac.Id;
-                await _specialSkillRepository.Create(obj);
-            }
+                var charac = await _characterRepository.Create(Character);
+                foreach (var obj in Attributes)
+                {
+                    obj.CharacterId = charac.Id;
+                    await _attributeRepository.Create(obj);
+                }
+                foreach (var obj in BaseSkills)
+                {
+                    obj.CharacterId = charac.Id;
+                    await _baseSkillRepository.Create(obj);
+                }
+                foreach( var obj in SpecialSkills)
+                {
+                    obj.CharacterId = charac.Id;
+                    await _specialSkillRepository.Create(obj);
+                }
             }
             catch (Exception ex)
             {
@@ -655,7 +658,7 @@
                     obj.SumAll();
                 }
                 else
-                   await _jsRuntime.SpecialSkillLimit("Not enought experience points");
+                    await _jsRuntime.SpecialSkillLimit("Not enought experience points");
             }
             else
             {
@@ -747,6 +750,22 @@
         }
 
     }
+
+    // private void OnStartDescriptionDialog()
+    // {
+    //     IsDescrDialVisible = true;
+    // }
+
+    // private void OnSaveDescrBtnClick()
+    // {
+    //     IsDescrDialVisible = false;
+    // }
+
+    private async Task GetDescription(string description)
+    {
+        ;
+    }
+
     public void Dispose() => registration?.Dispose();
 }
 

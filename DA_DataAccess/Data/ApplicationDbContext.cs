@@ -22,6 +22,8 @@ namespace DA_DataAccess.Data
 
         public DbSet<ImageFile> ImageFiles { get; set; }
 
+        public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+
 
     }
 }

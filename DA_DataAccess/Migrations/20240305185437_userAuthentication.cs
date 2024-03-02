@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateSpecialSkills1 : Migration
+    public partial class userAuthentication : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,6 +31,8 @@ namespace DA_DataAccess.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
+                    Discriminator = table.Column<string>(type: "text", nullable: false),
+                    PlayerType = table.Column<string>(type: "text", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -227,14 +229,14 @@ namespace DA_DataAccess.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Type = table.Column<string>(type: "text", nullable: true),
                     CharacterId = table.Column<int>(type: "integer", nullable: false),
-                    RelatedAttribute1 = table.Column<string>(type: "text", nullable: false),
-                    RelatedAttribute2 = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: true),
                     BaseBonus = table.Column<int>(type: "integer", nullable: false),
                     RaceBonus = table.Column<int>(type: "integer", nullable: false),
                     GearBonus = table.Column<int>(type: "integer", nullable: false),
                     OtherBonuses = table.Column<int>(type: "integer", nullable: false),
-                    TempBonuses = table.Column<int>(type: "integer", nullable: false)
+                    TempBonuses = table.Column<int>(type: "integer", nullable: false),
+                    RelatedAttribute1 = table.Column<string>(type: "text", nullable: false),
+                    RelatedAttribute2 = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -254,15 +256,17 @@ namespace DA_DataAccess.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     CharacterId = table.Column<int>(type: "integer", nullable: false),
-                    RelatedBaseSkillName = table.Column<string>(type: "text", nullable: false),
-                    ChosenAttribute = table.Column<string>(type: "text", nullable: false),
+                    RelatedBaseSkillName = table.Column<string>(type: "text", nullable: true),
+                    ChosenAttribute = table.Column<string>(type: "text", nullable: true),
                     Editable = table.Column<bool>(type: "boolean", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: true),
                     BaseBonus = table.Column<int>(type: "integer", nullable: false),
                     RaceBonus = table.Column<int>(type: "integer", nullable: false),
                     GearBonus = table.Column<int>(type: "integer", nullable: false),
                     OtherBonuses = table.Column<int>(type: "integer", nullable: false),
-                    TempBonuses = table.Column<int>(type: "integer", nullable: false)
+                    TempBonuses = table.Column<int>(type: "integer", nullable: false),
+                    RelatedAttribute1 = table.Column<string>(type: "text", nullable: false),
+                    RelatedAttribute2 = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {

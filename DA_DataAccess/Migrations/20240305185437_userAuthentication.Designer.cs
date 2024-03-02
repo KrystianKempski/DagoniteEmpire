@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240301185144_UpdateSpecialSkills1")]
-    partial class UpdateSpecialSkills1
+    [Migration("20240305185437_userAuthentication")]
+    partial class userAuthentication
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -169,7 +169,6 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("ChosenAttribute")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("Editable")
@@ -187,8 +186,15 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("integer");
 
-                    b.Property<string>("RelatedBaseSkillName")
+                    b.Property<string>("RelatedAttribute1")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedAttribute2")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedBaseSkillName")
                         .HasColumnType("text");
 
                     b.Property<int>("TempBonuses")
@@ -285,6 +291,10 @@ namespace DA_DataAccess.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -335,6 +345,10 @@ namespace DA_DataAccess.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -416,6 +430,17 @@ namespace DA_DataAccess.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("DA_DataAccess.ApplicationUser", b =>
+                {
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
+
+                    b.Property<string>("PlayerType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasDiscriminator().HasValue("ApplicationUser");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>

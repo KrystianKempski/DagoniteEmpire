@@ -1,0 +1,102 @@
+﻿<div class="description-frame">
+
+    <SfRichTextEditor Height="90%" @ref="DescrShow" Readonly="true" ShowTooltip="false">
+        <RichTextEditorToolbarSettings Items="@NoTools" />
+        <p>Here write a description of your character</p>
+    </SfRichTextEditor>
+   @*  <button class="start-dialog-btn" @onclick="OnStartDescriptionDialog">Create Description</button> *@
+    <SfButton @onclick="@OnStartDescriptionDialog">Open Modal Dialog</SfButton>
+    
+
+    <SfDialog Width="80%" Height="80%" @bind-Visible="@IsDescrDialVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+        <DialogEvents Opened="@DialogOpen"></DialogEvents>
+        <DialogTemplates>
+            <Header>Write character description</Header>
+            <Content >
+                <SfRichTextEditor @ref="DescrEdit" Height="100%">
+                    <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
+                <p>Here write a description of your character</p>
+                </SfRichTextEditor> 
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+
+            <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
+            </DialogButton>
+            <DialogButton OnClick="@OnSaveDescrBtnClick" Content="Save" IsPrimary="true">
+            </DialogButton>
+
+        </DialogButtons>
+
+    </SfDialog>
+</div>
+
+@code {
+
+
+    [Parameter]
+    public EventCallback<string> DescriptionConfirmation { get; set; }
+
+    private string Description ="asdasdasd";
+    private string HeaderTemplate { get; set; } = "<p>Write character description</p>";
+    private bool IsDescrDialVisible = false;
+    SfRichTextEditor DescrEdit;
+    SfRichTextEditor DescrShow;
+    private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
+    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
+    {
+        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
+        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
+        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
+        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontColor },
+        new ToolbarItemModel() { Command = ToolbarCommand.BackgroundColor },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
+        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.LowerCase },
+        new ToolbarItemModel() { Command = ToolbarCommand.UpperCase },
+        new ToolbarItemModel() { Command = ToolbarCommand.SuperScript },
+        new ToolbarItemModel() { Command = ToolbarCommand.SubScript },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.OrderedList },
+        new ToolbarItemModel() { Command = ToolbarCommand.UnorderedList },
+        new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
+        new ToolbarItemModel() { Command = ToolbarCommand.Indent },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
+        new ToolbarItemModel() { Command = ToolbarCommand.Image },
+        new ToolbarItemModel() { Command = ToolbarCommand.CreateTable },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.ClearFormat },
+        new ToolbarItemModel() { Command = ToolbarCommand.Print },
+        new ToolbarItemModel() { Command = ToolbarCommand.SourceCode },
+        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Undo },
+        new ToolbarItemModel() { Command = ToolbarCommand.Redo }
+    };
+    private void OnStartDescriptionDialog()
+    {
+        IsDescrDialVisible = true;
+    }
+
+    private async Task OnSaveDescrBtnClick()
+    {
+        IsDescrDialVisible = false;
+        await DescriptionConfirmation.InvokeAsync(Description);
+    }
+    private async Task OnCancelBtnClick()
+    {
+        IsDescrDialVisible = false;
+    }
+    private void DialogOpen()
+    {
+        this.DescrEdit.RefreshUI();
+    }
+
+}

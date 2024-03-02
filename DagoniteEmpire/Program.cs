@@ -19,17 +19,8 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddSyncfusionBlazor();
 
 /// DB context 
-//var connectionString = builder.Configuration.GetConnectionString("ApplicationDbContextConnection") ?? throw new InvalidOperationException("Connection string 'ApplicationDbContextConnection' not found.");
-//builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString)); // or builder.Configuration.GetConnectionString("DefaultConnection")
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-//builder.Configuration.SetBasePath(Directory.GetCurrentDirectory())
-//          .AddJsonFile("licenses.json", optional: true, reloadOnChange: true); ;
-builder.Configuration.AddJsonFile("licenses.json",
-        optional: true,
-        reloadOnChange: true);
-//AddJsonFile("licenses.json");
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
