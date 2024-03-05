@@ -153,20 +153,20 @@ namespace DA_Models
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="Fencing weapon",
+                    Name="Fencing weapons",
                     RelatedAttribute1="Strength",
                     RelatedAttribute2 = "Dexterity", 
                     RelatedBaseSkillName = "Melee"
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="Light weapon",
+                    Name="Light weapons",
                     ChosenAttribute = "Dexterity",
                     RelatedBaseSkillName = "Melee"
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="Exotic weapon",
+                    Name="Exotic weapons",
                     RelatedAttribute1="Strength",
                     RelatedAttribute2 = "Dexterity",
                     RelatedBaseSkillName = "Melee",
@@ -174,7 +174,7 @@ namespace DA_Models
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="Shield",
+                    Name="Shields",
                     RelatedAttribute1="Strength",
                     RelatedAttribute2 = "Endurance", 
                     RelatedBaseSkillName = "Melee"
@@ -232,7 +232,7 @@ namespace DA_Models
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="Granates",
+                    Name="Grenades",
                     RelatedAttribute1 =  "Instinct",
                     RelatedAttribute2 = "Strength",
                     RelatedBaseSkillName = "Shooting"
@@ -322,7 +322,7 @@ namespace DA_Models
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="lifting",
+                    Name="Lifting",
                     ChosenAttribute = "Strength",
                     RelatedBaseSkillName = "Athletics"
                 },
@@ -377,7 +377,7 @@ namespace DA_Models
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="Public speach",
+                    Name="Public speech",
                     RelatedAttribute1 =  "Charisma",
                     RelatedAttribute2 = "Willpower" ,
                     RelatedBaseSkillName = "Talk"
@@ -457,7 +457,7 @@ namespace DA_Models
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="Sence motives",
+                    Name="Sense motives",
                     RelatedAttribute1 = "Charisma",
                     RelatedAttribute2 = "Instinct",
                     RelatedBaseSkillName = "Perception"
@@ -656,13 +656,6 @@ namespace DA_Models
                 {
                     Name="Poisons and venoms",
                     ChosenAttribute = "Intelligence",
-                    RelatedBaseSkillName = "Medicine"
-                },
-                new SpecialSkillDTO()
-                {
-                    Name="Torture",
-                    RelatedAttribute1="Instinct",
-                    RelatedAttribute2 = "Willpower", 
                     RelatedBaseSkillName = "Medicine"
                 },
                 new SpecialSkillDTO()

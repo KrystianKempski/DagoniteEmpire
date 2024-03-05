@@ -73,9 +73,9 @@ namespace DA_Business.Repository.CharacterReps
                 obj.UsedExpPoints = objDTO.UsedExpPoints;
                 obj.AttributePoints = objDTO.AttributePoints;
                 obj.NPCType = objDTO.NPCType;
+                obj.ImageUrl = objDTO.ImageUrl;
                 _db.Characters.Update(obj);
                 await _db.SaveChangesAsync();
-               // return _mapper.Map<Object, CharacterDTO>(obj);
             }
             return objDTO;
         }

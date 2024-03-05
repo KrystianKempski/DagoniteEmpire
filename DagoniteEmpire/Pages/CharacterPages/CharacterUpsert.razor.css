@@ -76,24 +76,32 @@ td {
     padding-right: 3px;
 }
 
-.portrait-image {
-    position: relative;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    padding: 10px;
-    padding-bottom: 40px;
+.portrait-imageframe {
+    display: flex;
+    flex-direction:column;
+    justify-content: center;
+    align-items: center;
+    padding: 5px 5px 0px 5px;
     border: 2px solid darkgrey;
-    width: 310px;
-    height: 310px;
+    width: 320px;
+    height: 390px;
     font-size: 12px;
     border-radius: 15px;
     overflow: hidden;
-    align-content:center;
+    align-content: center;
 }
-.portrait img {
-    position: relative;
+.portrait-image {
     width: 100%;
+    height: 93%;
+}
+.portrait-input {
+    width: 118px;
+    font-size: 14px;
+    padding: 4px;
+    bottom: 0;
+    overflow: hidden;
+    white-space: nowrap; /* Don't forget this one */
+    text-overflow: ellipsis;
 }
 i{
     transition: transform 0.1s;
@@ -105,17 +113,7 @@ i:active {
     transform: scale(0.9)
 }
 
-.portrait-input {
-    position: absolute;
-    width: 139px;
-    font-size: 14px;
-    padding-bottom: 6px;
-    padding-left: 20px;
-    bottom: 0;
-    overflow: hidden;
-    white-space: nowrap; /* Don't forget this one */
-    text-overflow: ellipsis;
-}
+
 
 
 ::deep .points-avalible {
