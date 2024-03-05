@@ -37,7 +37,7 @@ namespace DagoniteEmpire.Service
             {
                 FileInfo fileInfo = new(file.Name);
                 var fileName = Guid.NewGuid().ToString() + ".webp";
-                var folderDirectory = $"{_environment.WebRootPath}\\upload\\portraits";
+                var folderDirectory = $"{_environment.WebRootPath}/upload/portraits";
 
                 if (!Directory.Exists(folderDirectory))
                 {
@@ -71,7 +71,7 @@ namespace DagoniteEmpire.Service
                     }
                 }
 
-                var fullPath = $"\\upload\\portraits\\{fileName}";
+                var fullPath = $"/upload/portraits/{fileName}";
                 return fullPath;
             }
             catch (Exception ex)
