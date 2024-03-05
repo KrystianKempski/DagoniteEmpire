@@ -23,4 +23,8 @@ RUN dotnet publish "./DagoniteEmpire.csproj" -c $BUILD_CONFIGURATION -o /app/pub
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+ARG ENVIRONMENT=Production
+ENV ASPNETCORE_ENVIRONMENT $ENVIRONMENT
+
 ENTRYPOINT ["dotnet", "DagoniteEmpire.dll"]

@@ -7,7 +7,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
+<<<<<<<< HEAD:DA_DataAccess/Migrations/20240305185437_userAuthentication.cs
     public partial class userAuthentication : Migration
+========
+    public partial class UpdateLogins : Migration
+>>>>>>>> 460cd05c74d30cf24f1024a3f6dbc3abe8c70169:DA_DataAccess/Migrations/20240301232713_UpdateLogins.cs
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
