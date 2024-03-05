@@ -12,13 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-<<<<<<<< HEAD:DA_DataAccess/Migrations/20240305185437_userAuthentication.Designer.cs
-    [Migration("20240305185437_userAuthentication")]
-    partial class userAuthentication
-========
-    [Migration("20240301232713_UpdateLogins")]
-    partial class UpdateLogins
->>>>>>>> 460cd05c74d30cf24f1024a3f6dbc3abe8c70169:DA_DataAccess/Migrations/20240301232713_UpdateLogins.Designer.cs
+    [Migration("20240305191335_authorisation")]
+    partial class authorisation
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
