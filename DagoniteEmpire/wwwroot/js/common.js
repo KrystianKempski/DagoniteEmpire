@@ -62,3 +62,11 @@ function ShowDeleteConfirmationModal() {
 function HideDeleteConfirmationModal() {
     $('#deleteConfirmationModal').modal('hide');
 }
+
+function ShowLeavePageModal() {
+    $('#leavePageModal').modal('show');
+}
+
+function HideLeavePageModal() {
+    $('#leavePageModal').modal('hide');
+}

@@ -1,13 +1,18 @@
 ﻿
 <AuthorizeView>
     <Authorized>
-        Hello @context.User.Identity.Name
-        <a href="Identity/Account/Logout">Logout</a>
+        <div class="text">
+            @context.User.Identity.Name
+
+            <a class="logout tile" href="Identity/Account/Logout">Logout</a>
+        </div>
 
     </Authorized>
     <NotAuthorized>
-        <a href="Identity/Account/Register">Register</a>
-        <a href="Identity/Account/Login">Login</a>
+         <div class="text">
+            <a class="register tile" href="Identity/Account/Register">Register</a>
+            <a class="login tile" href="Identity/Account/Login">Login</a>
+        </div>
     </NotAuthorized>
 
 </AuthorizeView>

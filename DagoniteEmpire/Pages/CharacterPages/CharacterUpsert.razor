@@ -13,7 +13,7 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer)]
 
 @inject NavigationManager _navigationManager
-
+<_LeavePage IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click" ></_LeavePage>
 <div class="row my-2">
     <h3 class="char-title card-title mb-3 ml-3">@Title character</h3>
 
@@ -78,8 +78,6 @@
                         <span class="points-indicator ml-auto">@Character.AttributePoints</span>
                     </div>
                     </div>
-                        
-                   
                    
                 <div class="attribute">
                     <h3 class="my-3 ml-3">ATTRIBUTES</h3>
@@ -105,51 +103,51 @@
                                     <label class="names-label text-center">@obj.Name.ToUpper()</label>
                                 </td>
                                 <td>
-                                        <div class="attr-control">
-                                            <span class="attr-indicator">@obj.BaseBonus</span>
-                                            <div class="arrows">
-                                                <button @onclick="@(()=>IncrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                <button @onclick="@(()=>DecrAttr(obj))"class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                            </div>
+                                    <div class="attr-control">
+                                        <span class="attr-indicator">@obj.BaseBonus</span>
+                                        <div class="arrows">
+                                            <button @onclick="@(()=>IncrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                            <button @onclick="@(()=>DecrAttr(obj))"class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                         </div>
-                                </td>
-                                    <td>
-                                        <div class="attr-control">
-                                            <span class="attr-indicator">@obj.RaceBonus</span>
-                                            <div class="arrows">
-                                                <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                            </div>
-                                        </div>
-                                </td>
-                                    <td>
-                                        <div class="attr-control">
-                                            <span class="attr-indicator">@obj.GearBonus</span>
-                                            <div class="arrows">
-                                                <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                            </div>
-                                        </div>
+                                    </div>
                                 </td>
                                 <td>
-                                        <div class="attr-control">
-                                            <span class="attr-indicator">@obj.OtherBonuses</span>
-                                            <div class="arrows">
-                                                <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                            </div>
+                                    <div class="attr-control">
+                                        <span class="attr-indicator">@obj.RaceBonus</span>
+                                        <div class="arrows">
+                                            <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                            <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                         </div>
+                                    </div>
                                 </td>
-                                    <td>
-                                        <div class="attr-control">
-                                            <span class="attr-indicator">@obj.SumBonus</span>
+                                <td>
+                                    <div class="attr-control">
+                                        <span class="attr-indicator">@obj.GearBonus</span>
+                                        <div class="arrows">
+                                            <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                            <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                         </div>
+                                    </div>
                                 </td>
-                                    <td>
-                                        <div class="attr-control">
-                                            <span class="attr-indicator">@obj.Modifier </span> 
+                                <td>
+                                    <div class="attr-control">
+                                        <span class="attr-indicator">@obj.OtherBonuses</span>
+                                        <div class="arrows">
+                                            <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                            <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
                                         </div>
-                                    </td>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="attr-control">
+                                        <span class="attr-indicator">@obj.SumBonus</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="attr-control">
+                                        <span class="attr-indicator">@obj.Modifier </span> 
+                                    </div>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -224,7 +222,7 @@
                 
                 <div class="description">
                     <h3 class="my-3 ml-3">DESCRIPTION</h3>
-                    <CharDescriptionDialog DescriptionConfirmation="GetDescription"></CharDescriptionDialog>
+                    <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@Character.Description"></CharDescriptionDialog>
                 </div>
                 <h3 class="my-3 ml-3">SPECIAL SKILLS</h3>
                 <div class="specialskills">
@@ -237,11 +235,9 @@
                             <span class="specialskills-indicator">@baseSkill.SumBonus</span>
                         </div>
                         <table class="table align-middle">
-
                             <thead>
                                 <tr>
                                     <th scope="col" class="name-row">Skill</th>
-
                                     <th scope="col" class="bonus-row">Base</th>
                                     <th scope="col" class="rel-attr-row">Related attribute</th>
                                     <th scope="col" class="attr-mod-row">Attr. mod.</th>
@@ -351,15 +347,17 @@
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; }
-    private bool IsCharacterSaved = false;
     private bool ModifChanged = false;
     private bool IsDescrDialVisible = false;
+    private bool IsLeaveAllowed { get; set; } = false;
+    private string TargetLocation { get; set; } = "";
 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            registration =_navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
             if (Id == 0)
             {
                 //create
@@ -402,7 +400,6 @@
         if(Character.Id == 0)
         {
             //check if all valid
-            // ValidationFunction();
             //create
             try
             {
@@ -451,6 +448,7 @@
             }
 
         }
+        IsLeaveAllowed = true;
         _navigationManager.NavigateTo("/character");
 
     }
@@ -469,17 +467,7 @@
         await _characterRepository.Delete(Character.Id);
     }
 
-    private ValueTask OnLocationChanging(LocationChangingContext context)
-    {
-        if (!IsCharacterSaved)
-        {
-            DeleteCharacterHandler();
-            //context.PreventNavigation();
-            //add some window with question
-        }
 
-        return ValueTask.CompletedTask;
-    }
 
     private async Task HandleImageUpload(InputFileChangeEventArgs e)
     {
@@ -751,19 +739,44 @@
 
     }
 
-    // private void OnStartDescriptionDialog()
-    // {
-    //     IsDescrDialVisible = true;
-    // }
 
-    // private void OnSaveDescrBtnClick()
-    // {
-    //     IsDescrDialVisible = false;
-    // }
+    public async Task ConfirmLeave_Click(bool isConfirmed)
+    {
+        IsLoading = true;
+        if (isConfirmed == true )
+        {
+            IsLoading = true;
+            DeleteCharacterHandler();
+
+            IsLeaveAllowed = true;
+            _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
+            _navigationManager.NavigateTo(TargetLocation, true);
+        }
+        IsLoading = false;
+        _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
+    }
+    private void HandleLeavePage()
+    {
+        _jsRuntime.InvokeVoidAsync("ShowLeavePageModal");
+    }
 
     private async Task GetDescription(string description)
     {
-        ;
+        Character.Description = description;
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (!IsLeaveAllowed )
+        {
+            TargetLocation = context.TargetLocation;
+
+            context.PreventNavigation();
+            HandleLeavePage();
+            //add some window with question
+        }
+
+        return ValueTask.CompletedTask;
     }
 
     public void Dispose() => registration?.Dispose();

@@ -1,21 +1,20 @@
 ﻿<div class="description-frame">
-
-    <SfRichTextEditor Height="90%" @ref="DescrShow" Readonly="true" ShowTooltip="false">
+    <div class="description-richtext">
+    <SfRichTextEditor Height="100%" @ref="DescrShow" @bind-Value="@SavedDescription" Readonly="true" ShowTooltip="false">
         <RichTextEditorToolbarSettings Items="@NoTools" />
         <p>Here write a description of your character</p>
     </SfRichTextEditor>
-   @*  <button class="start-dialog-btn" @onclick="OnStartDescriptionDialog">Create Description</button> *@
-    <SfButton @onclick="@OnStartDescriptionDialog">Open Modal Dialog</SfButton>
-    
+    </div>
+    <button class="start-dialog-btn" @onclick="OnStartDescriptionDialog">Create Description</button>   
 
     <SfDialog Width="80%" Height="80%" @bind-Visible="@IsDescrDialVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>
             <Header>Write character description</Header>
             <Content >
-                <SfRichTextEditor @ref="DescrEdit" Height="100%">
+                <SfRichTextEditor @ref="DescrEdit" @bind-Value="@UnsavedDescription" Height="100%">
                     <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
-                <p>Here write a description of your character</p>
+               
                 </SfRichTextEditor> 
             </Content>
         </DialogTemplates>
@@ -25,9 +24,7 @@
             </DialogButton>
             <DialogButton OnClick="@OnSaveDescrBtnClick" Content="Save" IsPrimary="true">
             </DialogButton>
-
         </DialogButtons>
-
     </SfDialog>
 </div>
 
@@ -37,8 +34,10 @@
     [Parameter]
     public EventCallback<string> DescriptionConfirmation { get; set; }
 
-    private string Description ="asdasdasd";
-    private string HeaderTemplate { get; set; } = "<p>Write character description</p>";
+    [Parameter]
+    public string SavedDescription { get; set; } = "<p>Here write a description of your character</p>";
+
+    private string UnsavedDescription { get; set; } = "";
     private bool IsDescrDialVisible = false;
     SfRichTextEditor DescrEdit;
     SfRichTextEditor DescrShow;
@@ -88,7 +87,8 @@
     private async Task OnSaveDescrBtnClick()
     {
         IsDescrDialVisible = false;
-        await DescriptionConfirmation.InvokeAsync(Description);
+        SavedDescription = UnsavedDescription;
+        await DescriptionConfirmation.InvokeAsync(SavedDescription);
     }
     private async Task OnCancelBtnClick()
     {
