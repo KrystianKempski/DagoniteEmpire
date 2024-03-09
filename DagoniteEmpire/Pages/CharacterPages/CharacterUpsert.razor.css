@@ -1,4 +1,13 @@
-﻿body {
+﻿.page {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.char-header {
+    display:flex;
+    flex-direction:column;
+    height: 100vh;
 }
 
 
@@ -11,18 +20,25 @@ h3 {
 }
 
 .bonus-row {
-    width: 20px;
+    width: 18px;
     font-size: 13px;
     text-align: left;
-    padding: 5px;
+    padding: 2px;
+    vertical-align: middle;
+}
+.sum-row {
+    width: 14px;
+    font-size: 13px;
+    text-align: left;
+    padding: 2px;
     vertical-align: middle;
 }
 .name-row {
     font-size: 13px;
+    width: 40px;
     text-align: left;
     padding: 5px;
     vertical-align: middle;
-    
 }
 
 .char-title{
@@ -32,12 +48,14 @@ h3 {
 
 td {
     font-size: 16px;
-    padding: 2px 2px 2px 2px;
+    padding: 1px;
+    margin: 0px;
 }
 
 .names-label{
     font-size: 13px;
     text-align:left;
+    font-weight:bold;
     text-anchor: start;
 }
 
@@ -50,7 +68,7 @@ td {
 }
 
 .attribute{
-    width:450px;
+    width:330px;
 }
 .baseskills{
     width:400px;
@@ -116,8 +134,26 @@ i:active {
 }
 
 .attribute .attr-control {
-    padding: 22px 0 22px 0;
+    padding: 2px 0 2px 0;
 
+}
+
+.attribute .name-row {
+    border: 0px solid black;
+    padding: 2px;
+    letter-spacing: 1px;
+}
+
+.attribute td {
+    padding: 2px;
+}
+
+.attribute .names-label {
+    width: 100%;
+    font-size: 16px;
+    text-align: left;
+    font-weight: bold;
+    text-anchor: start;
 }
 
 /*arrows*/
@@ -125,12 +161,13 @@ i:active {
     display: flex;
     flex-direction: row;
     /*margin: 2px 4px 2px 4px;*/
-    margin-left: 8px;
+    margin-left: 2px;
     width: 40px;
     height: 30px;
     justify-items: right;
     align-items: center
 }
+
 
 .points-control {
     display: flex;
@@ -199,6 +236,8 @@ i:active {
     display: flex;
     flex-direction:row;
     flex-wrap:wrap;
+    padding: 2px;
+    margin:2px;
 }
 
 .specialskills-table{
@@ -246,25 +285,87 @@ i:active {
     table-layout: fixed;
 }
 
-.specialskills-table .name-row {
+.specialskills-table .skillname-row {
     width: 40px;
 }
+.specialskills-table .names-label {
+    width: 60px;
+    font-size: 16px;
+    text-align: left;
+    font-weight: bold;
+    text-anchor: start;
+}
+
 
 .rel-attr-row {
-    width: 40px;
+    width: 30px;
     text-align:center;
     font-size: 13px;
 }
 
 .attr-mod-row {
-    width: 20px;
+    width: 14px;
     font-size: 13px;
+    padding:2px;
 }
 
 .attribute-selector {
     font-size: 12px;
-    margin: 0px 6px 0px 6px;
-    width: 90px;
+    margin: 0px 0px 0px 0px;
+    width: 80px;
+}
+.specialskills .name-row {
+    display: none;
 }
 
+.specialskills .skillname-row {/*
+    display: inline-block;
+    font-size: 13px;
+    width: 40px;*/
+    text-align: left;
+    padding: 5px;
+    vertical-align: middle;
+}
+
+.specialskills .names-label {
+    width: 100%;
+    font-size: 16px;
+    text-align: left;
+    font-weight: bold;
+    text-anchor: start;
+}
+
+.specialskills .name-td-big {
+}
+.specialskills .name-td-small {
+    display: none;
+}
+
+
+@media (max-width: 400px) {
+    .specialskills-table .skillname-row {
+        display: none;
+    }
+
+    .specialskills .name-td-big {
+        display: none;
+        border: 0px solid black;
+    }
+
+    .specialskills .name-tr-small {
+        display: block;
+        width: 100%;
+    }
+
+    .specialskills .name-td-small {
+        display: block;
+        width: 250px;
+        border: 0px solid black;
+    }
+    
+}
+
+td {
+    padding: 2px 0px 2px 0px;
+}
 

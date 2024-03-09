@@ -146,6 +146,10 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("UsedExpPoints")
                         .HasColumnType("integer");
 
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.ToTable("Characters");

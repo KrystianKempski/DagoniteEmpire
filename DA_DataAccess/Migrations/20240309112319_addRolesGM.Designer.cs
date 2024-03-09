@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240305191335_authorisation")]
-    partial class authorisation
+    [Migration("20240309112319_addRolesGM")]
+    partial class addRolesGM
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -148,6 +148,10 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<int>("UsedExpPoints")
                         .HasColumnType("integer");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

@@ -12,6 +12,8 @@ namespace DA_DataAccess.CharacterClasses
     {
         [Key] public int Id { get; set; }
 
+        public required string UserName { get; set; }
+
         public string? NPCName { get; set; }
         public string? Description { get; set; }
         public string? Class {  get; set; }

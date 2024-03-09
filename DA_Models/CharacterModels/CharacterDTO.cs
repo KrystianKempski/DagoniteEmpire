@@ -9,6 +9,8 @@ namespace DA_Models.CharacterModels
         [Key]
         public int Id { get; set; }
         [Required(ErrorMessage = "Please enter name of character")]
+
+        public string? UserName { get; set; }
         public string? NPCName { get; set; }
         public string? Description { get; set; }
         public string? Class { get; set; }

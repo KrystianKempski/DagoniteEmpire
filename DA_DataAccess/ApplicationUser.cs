@@ -10,5 +10,6 @@ namespace DA_DataAccess
     public class ApplicationUser : IdentityUser
     {
         public string PlayerType { get; set; }
+
     }
 }
