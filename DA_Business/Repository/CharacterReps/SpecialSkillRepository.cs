@@ -64,11 +64,11 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await _db.SpecialSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
+                obj.Name = objDTO.Name;    
                 obj.CharacterId = objDTO.CharacterId;        //is it nessesary?
                 obj.OtherBonuses = objDTO.OtherBonuses;        //is it nessesary?
                 obj.RaceBonus = objDTO.RaceBonus;  //is it nessesary?
                 obj.BaseBonus = objDTO.BaseBonus;
-                //obj.AtributeId = objDTO.AtributeId;
                 obj.GearBonus = objDTO.GearBonus;
                 obj.TempBonuses = objDTO.TempBonuses;
                 obj.RelatedBaseSkillName = objDTO.RelatedBaseSkillName;

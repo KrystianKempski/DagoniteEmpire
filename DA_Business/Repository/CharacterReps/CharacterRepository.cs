@@ -67,6 +67,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 obj.Age = objDTO.Age;
                 obj.NPCName = objDTO.NPCName;
+                obj.Description = objDTO.Description;
                 obj.Race = objDTO.Race;
                 obj.Class = objDTO.Class;
                 obj.CurrentExpPoints = objDTO.CurrentExpPoints;

@@ -357,38 +357,44 @@
     {
         if (firstRender)
         {
-            registration =_navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
-            if (Id == 0)
+            try
             {
-                //create
-                Character.NPCType = "Hero";
-                CharacterTypeHandle();
+                IsLoading = true;
+                StateHasChanged();
+                registration =_navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+                if (Id == 0)
+                {
+                    //create
+                    Character.NPCType = "Hero";
+                    CharacterTypeHandle();;
+                }
+                else
+                {
+                    //update
+                    Title = "Edit";
+                    await LoadCharacter();
+                }
+                foreach (var obj in Attributes)
+                    obj.SumAll();
+                foreach (var obj in BaseSkills)
+                    obj.SumAll();
+                foreach (var obj in SpecialSkills)
+                {
+                    await ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
+                    await AddSSRelatedBaseSkill(obj);
+                }
                 IsLoading = false;
+                StateHasChanged();
             }
-            else
+            catch (Exception ex)
             {
-                //update
-                Title = "Edit";
-                await LoadCharacter();
+                IsLoading = false;
+                await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
             }
-            foreach (var obj in Attributes)
-                obj.SumAll();
-            foreach (var obj in BaseSkills)
-                obj.SumAll();
-            foreach (var obj in SpecialSkills)
-            {
-                await ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
-                await AddSSRelatedBaseSkill(obj);
-            }
-            IsLoading = false;
-            StateHasChanged();
         }
     }
     private async Task LoadCharacter()
     {
-
-        IsLoading = true;
-        StateHasChanged();
         Character = await _characterRepository.GetById(Id);
         Attributes = await _attributeRepository.GetAll(Id);
         BaseSkills = await _baseSkillRepository.GetAll(Id);
@@ -397,12 +403,14 @@
 
     private async Task UpsertCharacter()
     {
-        if(Character.Id == 0)
+        IsLoading = true;
+        StateHasChanged();
+        try
         {
-            //check if all valid
-            //create
-            try
+            if (Character.Id == 0)
             {
+                //check if all valid
+                //create
                 var charac = await _characterRepository.Create(Character);
                 foreach (var obj in Attributes)
                 {
@@ -414,57 +422,73 @@
                     obj.CharacterId = charac.Id;
                     await _baseSkillRepository.Create(obj);
                 }
-                foreach( var obj in SpecialSkills)
+                foreach (var obj in SpecialSkills)
                 {
                     obj.CharacterId = charac.Id;
                     await _specialSkillRepository.Create(obj);
                 }
             }
-            catch (Exception ex)
+            else
             {
-                IsLoading = false;
-                await _jsRuntime.ToastrError("Error: " + ex.ToString());
+                //update
+                await _characterRepository.Update(Character);
+                foreach (var obj in Attributes)
+                {
+                    obj.CharacterId = Id;
+                    await _attributeRepository.Update(obj);
+                }
+                foreach (var obj in BaseSkills)
+                {
+                    obj.CharacterId = Id;
+                    await _baseSkillRepository.Update(obj);
+                }
+                foreach (var obj in SpecialSkills)
+                {
+                    obj.CharacterId = Id;
+                    await _specialSkillRepository.Update(obj);
+                }
             }
-
         }
-        else
+        catch (Exception ex)
         {
-            //update
-            await _characterRepository.Update(Character);
-            foreach (var obj in Attributes)
-            {
-                obj.CharacterId = Id;
-                await _attributeRepository.Update(obj);
-            }
-            foreach (var obj in BaseSkills)
-            {
-                obj.CharacterId = Id;
-                await _baseSkillRepository.Update(obj);
-            }
-            foreach (var obj in SpecialSkills)
-            {
-                obj.CharacterId = Id;
-                await _specialSkillRepository.Update(obj);
-            }
-
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while loading: " + ex.ToString());
         }
         IsLeaveAllowed = true;
+        IsLoading = false;
+        StateHasChanged();
         _navigationManager.NavigateTo("/character");
 
     }
     public async void DeleteCharacterHandler()
     {
-        //delete Attributes
-        foreach (var att in Attributes)
+        try
         {
-            await _attributeRepository.Delete(att.Id);
+            if (Character.Id == 0)
+            {
+                //delete Attributes
+                foreach (var att in Attributes)
+                {
+                    await _attributeRepository.Delete(att.Id);
+                }
+                //delete BaseSkills
+                foreach (var bs in BaseSkills)
+                {
+                    await _baseSkillRepository.Delete(bs.Id);
+                }
+                //delete SpecialSkills
+                foreach (var bs in SpecialSkills)
+                {
+                    await _specialSkillRepository.Delete(bs.Id);
+                }
+                await _characterRepository.Delete(Character.Id);
+            }
         }
-        //delete BaseSkills
-        foreach (var bs in BaseSkills)
+        catch (Exception ex)
         {
-            await _baseSkillRepository.Delete(bs.Id);
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while deleting: " + ex.ToString());
         }
-        await _characterRepository.Delete(Character.Id);
     }
 
 
@@ -496,7 +520,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error: " + ex.ToString());
+            await _jsRuntime.ToastrError("Error while image upload: " + ex.ToString());
         }
     }
 
@@ -674,19 +698,6 @@
         }
     }
 
-    void OnModifChange()
-    {
-        ;
-        // int a  = newValue;
-        // Perform some other actions
-    }
-
-    private void DoStuff(Microsoft.AspNetCore.Components.ChangeEventArgs e)
-    {
-        // Assign the selected value to the Model
-        //return Task.CompletedTask;
-        ;
-    }
 
     private async Task ChangeSSRelatedAttribute(string attrName, string specSkillName)
     {
@@ -706,7 +717,6 @@
                 }
                 return;
             }
-
         }
         catch (Exception ex)
         {
@@ -743,16 +753,15 @@
     public async Task ConfirmLeave_Click(bool isConfirmed)
     {
         IsLoading = true;
+        StateHasChanged();
         if (isConfirmed == true )
         {
-            IsLoading = true;
-            DeleteCharacterHandler();
-
             IsLeaveAllowed = true;
             _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
             _navigationManager.NavigateTo(TargetLocation, true);
         }
         IsLoading = false;
+        StateHasChanged();
         _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
     }
     private void HandleLeavePage()

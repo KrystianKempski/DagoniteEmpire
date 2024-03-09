@@ -64,9 +64,10 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await _db.BaseSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
-                obj.CharacterId = objDTO.CharacterId;        //is it nessesary?
-                obj.OtherBonuses = objDTO.OtherBonuses;        //is it nessesary?
-                obj.RaceBonus = objDTO.RaceBonus;  //is it nessesary?
+                obj.Name = objDTO.Name;
+                obj.CharacterId = objDTO.CharacterId;        
+                obj.OtherBonuses = objDTO.OtherBonuses;        
+                obj.RaceBonus = objDTO.RaceBonus;  
                 obj.BaseBonus = objDTO.BaseBonus;
                 obj.GearBonus = objDTO.GearBonus;
                 obj.TempBonuses = objDTO.TempBonuses;
