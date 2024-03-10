@@ -5,6 +5,7 @@
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
 @inject ISpecialSkillRepository _specialSkillRepository
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
 @using DA_Models
@@ -53,9 +54,12 @@
                                 <option checked="@(Character!.NPCType == "Hero")"value="Hero">
                                     Hero
                                 </option>
-                                <option checked="@(Character!.NPCType == "Duke")" value="Duke">
-                                    Duke
-                                </option>
+                                @if (IsDukeAllowed)
+                                {
+                                    <option checked="@(Character!.NPCType == "Duke")" value="Duke">
+                                        Duke
+                                    </option>
+                                }
                             </InputSelect>
                         </div>
                     </div>
@@ -256,10 +260,10 @@
                                             <th scope="col" class="skillname-row">Skill</th>
                                             <th scope="col" class="bonus-row">Base</th>
                                             <th scope="col" class="rel-attr-row">Related attribute</th>
-                                            <th scope="col" class="bonus-row">Attr. mod.</th>
+                                            <th scope="col" class="sum-row">Attr. mod.</th>
                                             <th scope="col" class="bonus-row">Race</th>
                                             <th scope="col" class="bonus-row">Other</th>
-                                            <th scope="col" class="bonus-row text-center"> Sum</th>
+                                                <th scope="col" class="sum-row text-center"> Sum</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -287,7 +291,7 @@
                                                     <div class="attribute-selector">
                                                         @if (obj.ChosenAttribute != null && obj.RelatedAttribute1 == "")
                                                         {
-                                                            <label>@obj.ChosenAttribute</label>
+                                                                <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
                                                         }
                                                         else
                                                         {
@@ -344,7 +348,7 @@
                 </div>
             </section>
             <div class="form-group py-2">
-            <button @onclick="UpsertCharacter" class="btn btn-primary">@Title</button>
+            <button @onclick="UpsertCharacter" class="btn btn-primary">Save character</button>
                 <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
             </div>
            
@@ -372,6 +376,7 @@
     private bool ModifChanged = false;
     private bool IsDescrDialVisible = false;
     private bool IsLeaveAllowed { get; set; } = false;
+    private bool IsDukeAllowed { get; set; } = false;
     private string TargetLocation { get; set; } = "";
 
 
@@ -388,7 +393,12 @@
                 {
                     //create
                     Character.NPCType = "Hero";
-                    CharacterTypeHandle();;
+                    CharacterTypeHandle();
+
+                    var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+                    var user = authstate.User;
+                    Character.UserName = user.Identity.Name;
+                    IsDukeAllowed = !user.IsInRole(SD.Role_HeroPlayer);
                 }
                 else
                 {

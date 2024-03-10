@@ -89,12 +89,12 @@ td {
 
 .portrait-imageframe {
     display: flex;
-    flex-direction:column;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     padding: 5px 5px 0px 5px;
-    /*border: 2px solid darkgrey;*/
-    width: 320px;
+    border: 2px solid darkgrey;
+    /*width: 320px;*/
     height: 390px;
     font-size: 12px;
     border-radius: 15px;
@@ -102,8 +102,9 @@ td {
     align-content: center;
 }
 .portrait-image {
+    display: flex;
     width: 100%;
-    height: 93%;
+    max-height: 93%;
     border: 0px solid white;
 }
 .portrait-input {
@@ -161,11 +162,41 @@ i:active {
     display: flex;
     flex-direction: row;
     /*margin: 2px 4px 2px 4px;*/
-    margin-left: 2px;
+    /*margin-left: 2px;*/
     width: 40px;
     height: 30px;
     justify-items: right;
     align-items: center
+}
+.attr-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid gray;
+    font-size: 12px;
+    border-radius: 4px;
+    width: 100%;
+    height: 28px;
+    margin-top: 0px;
+    margin-right: 2px;
+}
+.arrows {
+    display: grid;
+    padding: 0px;
+    margin: 0px;
+    margin-top: 2px;
+}
+
+.attr-carret {
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+    margin-top: 0px;
+    height: 18px;
+    font-size: 18px;
+    color: dimgray;
+    border: 0px solid gray;
+    background-color: transparent;
+    text-align: start;
 }
 
 
@@ -200,37 +231,8 @@ i:active {
     margin-right: 2px;
 }
 
-.attr-indicator {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid gray;
-    font-size: 12px;
-    border-radius: 4px;
-    width: 100%;
-    height: 27px;
-    margin-right: 2px;
-    /* height: 20px;*/
-}
 
-.arrows {
-    display:grid;
-    padding: 0px;
-    margin:0px;
-    margin-top:2px;
-}
 
-.attr-carret {
-    padding: 0px 0px 0px 0px;
-    margin: 0px 0px 0px 0px;
-    margin-top:0px;
-    height:15px;
-    font-size: 14px;
-    color:dimgray;
-    border: 0px solid gray;
-    background-color: transparent;
-    text-align:start;
-}
 
 .specialskills {
     display: flex;
@@ -296,6 +298,18 @@ i:active {
     text-anchor: start;
 }
 
+.attr-control {
+    width: 100%;
+    height: 100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+ .attr-indicator {
+    width: 28px;
+}
+
 
 .rel-attr-row {
     width: 30px;
@@ -312,7 +326,7 @@ i:active {
 .attribute-selector {
     font-size: 12px;
     margin: 0px 0px 0px 0px;
-    width: 80px;
+    width: 100%;
 }
 .specialskills .name-row {
     display: none;
@@ -365,7 +379,7 @@ i:active {
     
 }
 
-td {
-    padding: 2px 0px 2px 0px;
+.specialskills td {/*
+    padding: 2px 0px 2px 0px;*/
 }
 
