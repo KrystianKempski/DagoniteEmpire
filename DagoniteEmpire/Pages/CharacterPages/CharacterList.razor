@@ -2,6 +2,7 @@
 @using Syncfusion.Blazor.Navigations;
 @inject ICharacterRepository _characterRepository
 @inject ISpecialSkillRepository _specialSkillRepository
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject NavigationManager _navigationManager
 @inject IJSRuntime _jsRuntime
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
@@ -9,7 +10,7 @@
 
 <div class="row mt-4">
     <div class="col-12">
-        <h4 class="card-title">User Characters List </h4>
+        <h4 class="card-title">@Title</h4>
     </div>
 </div>
 <div class="row mt-4">
@@ -19,10 +20,13 @@
             <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
             <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
                 <GridColumns>
+                @if (IsAdminOrMG){
+                     <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="300"></GridColumn>
+                }
                     <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="300"></GridColumn>
-                    <GridColumn Field=@nameof(CharacterDTO.Race) HeaderText="Race" TextAlign="TextAlign.Left" Width="150"></GridColumn>
-                    <GridColumn Field=@nameof(CharacterDTO.Class) HeaderText="Class" TextAlign="TextAlign.Left" Width="300"></GridColumn>
-                    <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Right" Width="50"></GridColumn>
+                    <GridColumn Field=@nameof(CharacterDTO.Race) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                    <GridColumn Field=@nameof(CharacterDTO.Class) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Left" Width="50"></GridColumn>
                 </GridColumns>
             </SfGrid>
     @if (Characters.Any())
@@ -48,7 +52,9 @@
 @code {
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     public bool IsLoading { get; set; }
+    public bool IsAdminOrMG { get; set; } = true;
     private int DeleteCharacterId { get; set; } = 0;
+    private string Title { get; set; } = "Your characters";
 
     // [CascadingParameter]
     // public Task<AuthenticationState> AuthenticationState { get; set; }
@@ -80,7 +86,22 @@
     {
         IsLoading = true;
         StateHasChanged();
-        Characters = await _characterRepository.GetAll();
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        Title = "Characters of " + user.Identity.Name;
+        if (user == null)
+            return; // failed to load
+
+        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+
+        if (IsAdminOrMG)
+        {
+            Characters = await _characterRepository.GetAll();
+        }
+        else
+        {
+            Characters = await _characterRepository.GetAllForUser(user.Identity.Name);
+        }
         IsLoading = false;
         StateHasChanged();
     }

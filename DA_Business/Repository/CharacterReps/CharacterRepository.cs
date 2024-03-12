@@ -59,6 +59,12 @@ namespace DA_Business.Repository.CharacterReps
             }
             return new CharacterDTO();
         }
+        public async Task<IEnumerable<CharacterDTO>> GetAllForUser(string userName)
+        {
+            if (userName == null || userName.Length<3)
+                return null;
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters.Where(u => u.UserName == userName));
+        }
 
         public async Task<CharacterDTO> Update(CharacterDTO objDTO)
         {
