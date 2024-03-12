@@ -21,9 +21,9 @@
             <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
                 <GridColumns>
                 @if (IsAdminOrMG){
-                     <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="300"></GridColumn>
+                     <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
                 }
-                    <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="300"></GridColumn>
+                    <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
                     <GridColumn Field=@nameof(CharacterDTO.Race) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
                     <GridColumn Field=@nameof(CharacterDTO.Class) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
                 <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Left" Width="50"></GridColumn>
@@ -88,7 +88,6 @@
         StateHasChanged();
         var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
         var user = authstate.User;
-        Title = "Characters of " + user.Identity.Name;
         if (user == null)
             return; // failed to load
 
@@ -96,10 +95,13 @@
 
         if (IsAdminOrMG)
         {
+
+            Title = "All avalible characters";
             Characters = await _characterRepository.GetAll();
         }
         else
         {
+            Title = "Characters of " + user.Identity.Name;
             Characters = await _characterRepository.GetAllForUser(user.Identity.Name);
         }
         IsLoading = false;

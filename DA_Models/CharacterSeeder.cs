@@ -166,14 +166,6 @@ namespace DA_Models
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="Exotic weapons",
-                    RelatedAttribute1="Strength",
-                    RelatedAttribute2 = "Dexterity",
-                    RelatedBaseSkillName = "Melee",
-                    Editable = true,
-                },
-                new SpecialSkillDTO()
-                {
                     Name="Shields",
                     RelatedAttribute1="Strength",
                     RelatedAttribute2 = "Endurance", 
@@ -185,6 +177,12 @@ namespace DA_Models
                     RelatedAttribute1="Strength",
                     RelatedAttribute2 = "Dexterity", 
                     RelatedBaseSkillName = "Melee"
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Exotic weapons",
+                    RelatedBaseSkillName = "Melee",
+                    Editable = true,
                 },
 
                 // SHOOTING
@@ -584,8 +582,6 @@ namespace DA_Models
                 new SpecialSkillDTO()
                 {
                     Name="Fine arts",
-                    RelatedAttribute1="Charisma",
-                    RelatedAttribute2 = "Dexterity", 
                     Editable = true,
                     RelatedBaseSkillName = "Craft"
                 },

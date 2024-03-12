@@ -23,7 +23,7 @@
          @if (IsLoading)
         {
             <div class="text-center">
-                <img src="/images/loading.gif">
+                <img src="/images/loading.gif">Character
             </div>
         }
         else
@@ -92,7 +92,7 @@
                         <div class="attribute">
                             <h3 class="my-3 ml-3">ATTRIBUTES</h3>
 
-                            <table class="table align-middle">
+                            <table class="table align-middle mb-1">
                             <thead>
                                 <tr>
                                    @*  <th scope="col" class="name-row" >Attribute</th> *@
@@ -254,7 +254,7 @@
                                     <label class="specialskills-label">@baseSkill.Name</label>
                                     <span class="specialskills-indicator">@baseSkill.SumBonus</span>
                                 </div>
-                                <table class="table align-middle">
+                                    <table class="table align-middle mb-1">
                                     <thead>
                                         <tr>
                                             <th scope="col" class="skillname-row">Skill</th>
@@ -276,8 +276,15 @@
                                             </tr> 
                                             <tr>
                                                 <td class="name-td-big">
-                                                    <label class="names-label">@obj.Name</label>
-                                                </td>
+                                                    @if (obj.Editable)
+                                                    {
+                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0;" @bind-Value="obj.Name" class=""></InputText>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="names-label">@obj.Name</label>
+                                                    }
+                                                    </td>
                                                 <td>
                                                     <div class="attr-control">
                                                         <span class="attr-indicator">@obj.BaseBonus</span>
@@ -289,13 +296,31 @@
                                                 </td>
                                                 <td>
                                                     <div class="attribute-selector">
+                                                    @if (obj.Editable)
+                                                    {
+                                                                <InputSelect style="width: 100%;"
+                                                                             ValueExpression="@(()=>obj.ChosenAttribute)"
+                                                                             Value="@obj.ChosenAttribute"
+                                                                             ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
+                                                                    <option value="0" selected disabled>--Select--</option>
+                                                                    <option value="Strength"> Strength</option>
+                                                                    <option value="Dexterity"> Dexterity</option>
+                                                                    <option value="Endurance"> Endurance</option>
+                                                                    <option value="Intelligence"> Intelligence</option>
+                                                                    <option value="Instinct"> Instinct</option>
+                                                                    <option value="Willpower"> Willpower</option>
+                                                                    <option value="Charisma"> Charisma</option>
+                                                                </InputSelect>
+                                                    }
+                                                    else
+                                                    {
                                                         @if (obj.ChosenAttribute != null && obj.RelatedAttribute1 == "")
                                                         {
-                                                                <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
+                                                            <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
                                                         }
                                                         else
                                                         {
-                                                                <InputSelect style="width: 100%;"
+                                                            <InputSelect style="width: 100%;"
                                                                             ValueExpression="@(()=>obj.ChosenAttribute)"
                                                                             Value="@obj.ChosenAttribute"
                                                                             ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
@@ -304,6 +329,9 @@
                                                                 <option value="@obj.RelatedAttribute2"> @obj.RelatedAttribute2</option>
                                                             </InputSelect>
                                                         }
+                                                    }
+
+                                                       
                                                     </div>
 
                                                 </td>
@@ -337,9 +365,12 @@
                                                 </td>
                                             </tr>
                                         }
+                                            
                                     </tbody>
                                 </table>
+                                <button  @onclick="@(()=>AddSpecialSkill(baseSkill))" class="add-skill"><i class="fa-solid fa-plus"></i></button>
                             </div>
+                                
                             }
 
                         </div>
@@ -366,13 +397,13 @@
 
     // private IEnumerable<AttributeDTO> _attributes 
 
-    private CharacterDTO Character { get; set; } = new CharacterDTO();
-    private IEnumerable<AttributeDTO> Attributes { get; set; } = CharacterSeeder.GetAttributes();
-    private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = CharacterSeeder.GetBaseSkills();
-    private IEnumerable<SpecialSkillDTO> SpecialSkills { get; set; } = CharacterSeeder.GetSpecialSkills();
+    private CharacterDTO Character { get; set; }
+    private IEnumerable<AttributeDTO> Attributes { get; set; }
+    private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } 
+    private IEnumerable<SpecialSkillDTO> SpecialSkills { get; set; }
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
-    public bool IsLoading { get; set; }
+    public bool IsLoading { get; set; } = true;
     private bool ModifChanged = false;
     private bool IsDescrDialVisible = false;
     private bool IsLeaveAllowed { get; set; } = false;
@@ -392,13 +423,20 @@
                 if (Id == 0)
                 {
                     //create
-                    Character.NPCType = "Hero";
-                    CharacterTypeHandle();
-
+                    Character  = new CharacterDTO();
+                    Attributes = CharacterSeeder.GetAttributes();
+                    BaseSkills  = CharacterSeeder.GetBaseSkills();
+                    SpecialSkills  = CharacterSeeder.GetSpecialSkills();
                     var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
                     var user = authstate.User;
                     Character.UserName = user.Identity.Name;
                     IsDukeAllowed = !user.IsInRole(SD.Role_HeroPlayer);
+
+                    if (IsDukeAllowed)
+                        Character.NPCType = "Hero";
+                    else
+                        Character.NPCType = "Duke";
+                    CharacterTypeHandle();
                 }
                 else
                 {
@@ -818,6 +856,16 @@
         }
 
         return ValueTask.CompletedTask;
+    }
+    private async Task AddSpecialSkill(BaseSkillDTO baseSkill)
+    {
+        var newSkill = new SpecialSkillDTO();
+        newSkill.RelatedBaseSkillName = baseSkill.Name;
+        newSkill.Name = "new skill";
+        newSkill.Editable = true;
+        SpecialSkills = SpecialSkills.Append(newSkill);
+        StateHasChanged();
+
     }
 
     public void Dispose() => registration?.Dispose();
