@@ -271,7 +271,15 @@
                                         {
                                              <tr class="name-tr-small">
                                                 <td class="name-td-small" colspan="6">
-                                                    <label class="names-label text-start">@obj.Name.ToUpper()</label>
+                                                   @*  <label class="names-label text-start">@obj.Name.ToUpper()</label> *@
+                                                        @if (obj.Editable)
+                                                        {
+                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0; text-transform:uppercase;" @bind-Value="obj.Name" class=""></InputText>
+                                                        }
+                                                        else
+                                                        {
+                                                            <label class="names-label">@obj.Name.ToUpper()</label>
+                                                        }
                                                 </td>
                                             </tr> 
                                             <tr>
