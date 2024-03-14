@@ -65,9 +65,9 @@ namespace DA_Business.Repository.CharacterReps
             if (obj != null)
             {
                 obj.Name = objDTO.Name;    
-                obj.CharacterId = objDTO.CharacterId;        //is it nessesary?
-                obj.OtherBonuses = objDTO.OtherBonuses;        //is it nessesary?
-                obj.RaceBonus = objDTO.RaceBonus;  //is it nessesary?
+                obj.CharacterId = objDTO.CharacterId;       
+                obj.OtherBonuses = objDTO.OtherBonuses;        
+                obj.RaceBonus = objDTO.RaceBonus;  
                 obj.BaseBonus = objDTO.BaseBonus;
                 obj.GearBonus = objDTO.GearBonus;
                 obj.TempBonuses = objDTO.TempBonuses;
