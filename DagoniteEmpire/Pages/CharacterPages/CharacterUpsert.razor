@@ -23,7 +23,7 @@
          @if (IsLoading)
         {
             <div class="text-center">
-                <img src="/images/loading.gif">Character
+                <img src="/images/loading.gif">
             </div>
         }
         else
@@ -834,15 +834,10 @@
         StateHasChanged();
         _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
     }
-    private void HandleLeavePage()
-    {
-        _jsRuntime.InvokeVoidAsync("ShowLeavePageModal");
-    }
+    private void HandleLeavePage() => _jsRuntime.InvokeVoidAsync("ShowLeavePageModal");
 
-    private async Task GetDescription(string description)
-    {
-        Character.Description = description;
-    }
+    private async Task GetDescription(string description) => Character.Description = description;
+
 
     private ValueTask OnLocationChanging(LocationChangingContext context)
     {
