@@ -14,6 +14,8 @@ namespace DA_DataAccess.CharacterClasses
         public int Id { get; set; }
         public int CharacterId { get; set; }
 
+        public int Index { get; set; }
+
         [ForeignKey(nameof(CharacterId))]
         public Character Character { get; set; }
 

@@ -46,7 +46,7 @@ namespace DA_Business.Repository.CharacterReps
         {
             if (charId == null || charId < 1)
                 return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills);
-           return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills.Where(u => u.CharacterId == charId));
+           return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills.Where(u => u.CharacterId == charId).OrderBy(u=>u.Index));
         }
 
         public async Task<SpecialSkillDTO> GetById(int id)
@@ -74,11 +74,19 @@ namespace DA_Business.Repository.CharacterReps
                 obj.RelatedBaseSkillName = objDTO.RelatedBaseSkillName;
                 obj.ChosenAttribute = objDTO.ChosenAttribute;
                 obj.Editable = objDTO.Editable;
+                obj.Index = objDTO.Index; 
                 _db.SpecialSkills.Update(obj);
                 await _db.SaveChangesAsync();
                 return _mapper.Map<SpecialSkill, SpecialSkillDTO>(obj);
             }
-            return objDTO;
+            else
+            {
+                obj = _mapper.Map<SpecialSkillDTO, SpecialSkill>(objDTO);
+                var addedObj = _db.SpecialSkills.Add(obj);
+                await _db.SaveChangesAsync();
+
+                return _mapper.Map<SpecialSkill, SpecialSkillDTO>(addedObj.Entity);
+            }
         }
     }
 }

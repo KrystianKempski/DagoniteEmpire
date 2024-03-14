@@ -14,6 +14,8 @@ namespace DA_Models.CharacterModels
         public int Id { get; set; }
 
         public int CharacterId { get; set; }
+
+        public int Index { get; set; }
         public string RelatedBaseSkillName { get; set; } 
         [Required]
         public string Name { get; set; }

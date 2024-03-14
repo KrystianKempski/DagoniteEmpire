@@ -515,6 +515,7 @@
                 foreach (var obj in SpecialSkills)
                 {
                     obj.CharacterId = Id;
+
                     await _specialSkillRepository.Update(obj);
                 }
             }
@@ -855,9 +856,11 @@
     private async Task AddSpecialSkill(BaseSkillDTO baseSkill)
     {
         var newSkill = new SpecialSkillDTO();
+        newSkill.RelatedBaseSkill = baseSkill;
         newSkill.RelatedBaseSkillName = baseSkill.Name;
         newSkill.Name = "new skill";
         newSkill.Editable = true;
+        newSkill.Index =  SpecialSkills.Where(n => n.RelatedBaseSkillName == baseSkill.Name).Count();
         SpecialSkills = SpecialSkills.Append(newSkill);
         StateHasChanged();
 

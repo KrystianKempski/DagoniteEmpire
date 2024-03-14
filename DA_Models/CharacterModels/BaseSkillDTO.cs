@@ -17,6 +17,8 @@ namespace DA_Models.CharacterModels
         [Required]
         public string Name { get; set; } = "";
 
+        public int Index { get; set; }
+
         [Range(0, 5, ErrorMessage = "Base skill base bonus must be between 0 and 7")]
         public int BaseBonus { get; set; } = 0;
         [Range(0, 5, ErrorMessage = "Base skill race bonus must be between 0 and 7")]

@@ -14,6 +14,8 @@ namespace DA_DataAccess.CharacterClasses
 
         public string? Name { get; set; }
 
+        public int Index { get; set; }
+
         public int BaseBonus { get; set; } = 0;
         public int RaceBonus { get; set; } = 0;
         public int GearBonus { get; set; } = 0;

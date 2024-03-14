@@ -50,7 +50,7 @@ namespace DA_Business.Repository.CharacterReps
                 return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(_db.Attributes);
             try
             {
-                var obj = _db.Attributes.Where(u => u.CharacterId == charId);
+                var obj = _db.Attributes.Where(u => u.CharacterId == charId).OrderBy(u => u.Index);
                 if (obj != null && obj.Any())
                     return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(obj);
             }
@@ -84,6 +84,7 @@ namespace DA_Business.Repository.CharacterReps
                 obj.BaseBonus = objDTO.BaseBonus;
                 obj.HealthBonus = objDTO.HealthBonus;
                 obj.GearBonus = objDTO.GearBonus;
+                obj.Index = objDTO.Index;
                 _db.Attributes.Update(obj);
                 await _db.SaveChangesAsync();
                 return _mapper.Map<Attribute, AttributeDTO>(obj);

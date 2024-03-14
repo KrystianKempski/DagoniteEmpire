@@ -46,7 +46,7 @@ namespace DA_Business.Repository.CharacterReps
         {
             if (charId == null || charId < 1)
                 return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(_db.BaseSkills);
-            return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(_db.BaseSkills.Where(u => u.CharacterId == charId));
+            return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(_db.BaseSkills.Where(u => u.CharacterId == charId).OrderBy(u => u.Index));
         }
 
         public async Task<BaseSkillDTO> GetById(int id)
@@ -73,6 +73,7 @@ namespace DA_Business.Repository.CharacterReps
                 obj.TempBonuses = objDTO.TempBonuses;
                 obj.RelatedAttribute1 = objDTO.RelatedAttribute1;
                 obj.RelatedAttribute2 = objDTO.RelatedAttribute2;
+                obj.Index = objDTO.Index;
                 _db.BaseSkills.Update(obj);
                 await _db.SaveChangesAsync();
                 return _mapper.Map<BaseSkill,BaseSkillDTO>(obj);    

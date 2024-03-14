@@ -12,6 +12,8 @@ namespace DA_Models.CharacterModels
     {
         public int Id { get; set; }
         public int CharacterId { get; set; }
+
+        public int Index { get; set; }
         [Required]
         public  string Name { get; set; }
         [Range(6, 18, ErrorMessage = "Attribute base bonus must be between 6 and 18")]
