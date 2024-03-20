@@ -12,5 +12,12 @@ namespace DA_Common
         public const string Role_GameMaster= "GameMaster";
         public const string Role_HeroPlayer = "HeroPlayer";
         public const string Role_DukePlayer = "DukePlayer";
+
+        public const string FeatureAttribute = "Attribute";
+        public const string FeatureBaseSkill = "BaseSkill";
+        public const string FeatureSpecialSkill = "SpecialSkill";
+
+
+
     }
 }

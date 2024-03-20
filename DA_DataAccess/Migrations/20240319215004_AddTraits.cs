@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class addRolesGM : Migration
+    public partial class AddTraits : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -51,6 +51,24 @@ namespace DA_DataAccess.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Bonuses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    FeatureType = table.Column<string>(type: "text", nullable: false),
+                    FeatureName = table.Column<string>(type: "text", nullable: false),
+                    BonusValue = table.Column<int>(type: "integer", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Index = table.Column<int>(type: "integer", nullable: false),
+                    TraitId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bonuses", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -203,6 +221,8 @@ namespace DA_DataAccess.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: true),
+                    FeatureType = table.Column<string>(type: "text", nullable: true),
+                    Index = table.Column<int>(type: "integer", nullable: false),
                     BaseBonus = table.Column<int>(type: "integer", nullable: false),
                     RaceBonus = table.Column<int>(type: "integer", nullable: false),
                     GearBonus = table.Column<int>(type: "integer", nullable: false),
@@ -228,16 +248,18 @@ namespace DA_DataAccess.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Type = table.Column<string>(type: "text", nullable: true),
-                    CharacterId = table.Column<int>(type: "integer", nullable: false),
+                    RelatedAttribute1 = table.Column<string>(type: "text", nullable: false),
+                    RelatedAttribute2 = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: true),
+                    FeatureType = table.Column<string>(type: "text", nullable: true),
+                    Index = table.Column<int>(type: "integer", nullable: false),
                     BaseBonus = table.Column<int>(type: "integer", nullable: false),
                     RaceBonus = table.Column<int>(type: "integer", nullable: false),
                     GearBonus = table.Column<int>(type: "integer", nullable: false),
                     OtherBonuses = table.Column<int>(type: "integer", nullable: false),
                     TempBonuses = table.Column<int>(type: "integer", nullable: false),
-                    RelatedAttribute1 = table.Column<string>(type: "text", nullable: false),
-                    RelatedAttribute2 = table.Column<string>(type: "text", nullable: false)
+                    HealthBonus = table.Column<int>(type: "integer", nullable: false),
+                    CharacterId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -256,24 +278,48 @@ namespace DA_DataAccess.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    CharacterId = table.Column<int>(type: "integer", nullable: false),
                     RelatedBaseSkillName = table.Column<string>(type: "text", nullable: true),
                     ChosenAttribute = table.Column<string>(type: "text", nullable: true),
                     Editable = table.Column<bool>(type: "boolean", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: true),
+                    FeatureType = table.Column<string>(type: "text", nullable: true),
+                    Index = table.Column<int>(type: "integer", nullable: false),
                     BaseBonus = table.Column<int>(type: "integer", nullable: false),
                     RaceBonus = table.Column<int>(type: "integer", nullable: false),
                     GearBonus = table.Column<int>(type: "integer", nullable: false),
                     OtherBonuses = table.Column<int>(type: "integer", nullable: false),
                     TempBonuses = table.Column<int>(type: "integer", nullable: false),
-                    RelatedAttribute1 = table.Column<string>(type: "text", nullable: false),
-                    RelatedAttribute2 = table.Column<string>(type: "text", nullable: false)
+                    HealthBonus = table.Column<int>(type: "integer", nullable: false),
+                    CharacterId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SpecialSkills", x => x.Id);
                     table.ForeignKey(
                         name: "FK_SpecialSkills_Characters_CharacterId",
+                        column: x => x.CharacterId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Traits",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    Index = table.Column<int>(type: "integer", nullable: false),
+                    TraitType = table.Column<string>(type: "text", nullable: false),
+                    Descr = table.Column<string>(type: "text", nullable: false),
+                    CharacterId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Traits", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Traits_Characters_CharacterId",
                         column: x => x.CharacterId,
                         principalTable: "Characters",
                         principalColumn: "Id",
@@ -331,6 +377,11 @@ namespace DA_DataAccess.Migrations
                 name: "IX_SpecialSkills_CharacterId",
                 table: "SpecialSkills",
                 column: "CharacterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Traits_CharacterId",
+                table: "Traits",
+                column: "CharacterId");
         }
 
         /// <inheritdoc />
@@ -358,10 +409,16 @@ namespace DA_DataAccess.Migrations
                 name: "BaseSkills");
 
             migrationBuilder.DropTable(
+                name: "Bonuses");
+
+            migrationBuilder.DropTable(
                 name: "ImageFiles");
 
             migrationBuilder.DropTable(
                 name: "SpecialSkills");
+
+            migrationBuilder.DropTable(
+                name: "Traits");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

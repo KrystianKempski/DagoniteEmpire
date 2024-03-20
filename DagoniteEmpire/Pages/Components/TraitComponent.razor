@@ -1,0 +1,203 @@
+﻿@* @inject IBonusRepository _bonusRepository
+@inject ITraitRepository _traitRepository *@
+<div class="traits">
+
+    @* <button class="button" @onclick="OnStartTraitDialog">Edit Description</button> *@
+
+    <SfDialog Width="50%" Height="50%" @bind-Visible="@IsTraitDialVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+        <DialogEvents Opened="@DialogOpen"></DialogEvents>
+        <DialogTemplates>
+            <Header>Create a new Trait</Header>
+            <Content>
+                 <div class="main-table">
+
+                     @if (IsLoading)
+                    {
+                        <div class="text-center">
+                            <img src="/images/loading.gif">
+                        </div>
+                    }
+                    else
+                    {
+
+                        <label>Trait name</label>
+                        <div class="bonus-name">
+                            <SfTextBox Placeholder="Insert trait name" @bind-Value="@SavedTrait.Name"></SfTextBox>
+                        </div>
+                        <label>Trait description</label>
+                        <div class="bonus-descr">
+                            <SfTextBox Multiline=true Placeholder="Insert trait description" @bind-Value="@SavedTrait.Descr"></SfTextBox>
+
+                        </div>
+                        @if (Bonuses != null)
+                        {
+                            @foreach (var obj in Bonuses)
+                            {
+                                <label class="bonus-cell">@BonusLabel</label>
+                                 <div class="bonuses-columns">
+                                      <div class="bonus-cell">
+                                        <SfDropDownList TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType"></SfDropDownList>
+                                      </div>
+                                    @if (obj.FeatureType == "Attribute")
+                                    {
+                                        <div class="bonus-cell">
+                                            <SfDropDownList TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@Attributes" @bind-Value="@obj.FeatureName">
+                                                <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                            </SfDropDownList>
+                                        </div>
+                                    }
+                                    else if (obj.FeatureType == "Base skill")
+                                    {
+                                        <div class="bonus-cell">
+                                            <SfDropDownList TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@BaseSkills" @bind-Value="@obj.FeatureName">
+                                                <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                            </SfDropDownList>
+                                        </div>
+                                    }
+                                    else if (obj.FeatureType == "Special skill")
+                                    {
+                                        <div class="bonus-cell">
+                                            <SfDropDownList TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@SpecialSkills" @bind-Value="@obj.FeatureName">
+                                                <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                            </SfDropDownList>
+                                        </div>
+                                    }
+                                    else if(obj.FeatureType == "Other")
+                                    {
+                                        <div class="bonus-double-cell">
+                                            <SfTextBox Multiline=true Placeholder="Insert bonus description" @bind-Value="@obj.Description"></SfTextBox>
+
+                                        </div>
+                                    }
+                                    @if (@obj.FeatureName != null && @obj.FeatureType!="Other")
+                                    {
+                                        <div class="bonus-cell">
+                                            <SfNumericTextBox Width="100%%" TValue="int?" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                        </div>
+                                    }
+
+                                </div>
+                            }
+
+                            <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
+                        } 
+
+                    }
+                </div> 
+
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+
+            <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
+            </DialogButton>
+            <DialogButton OnClick="@OnSaveTraitBtnClick" Content="Save" IsPrimary="true">
+            </DialogButton>
+        </DialogButtons>
+    </SfDialog>
+
+</div>
+
+@code {
+    [Parameter]
+    public IEnumerable<AttributeDTO> Attributes { get; set; }
+    [Parameter]
+    public IEnumerable<BaseSkillDTO> BaseSkills { get; set; }
+    [Parameter]
+    public IEnumerable<SpecialSkillDTO> SpecialSkills { get; set; }
+    [Parameter]
+    public EventCallback<TraitDTO> TraitConfirmation { get; set; }
+
+    [Parameter]
+    public TraitDTO SavedTrait { get; set; }
+
+    private int _traitMode = 0;
+
+    [Parameter]
+    public int TraitMode
+    {
+        get => _traitMode; 
+        set {
+            _traitMode = value;
+            if (_traitMode == 1)
+            {
+                IsTraitDialVisible = true;
+                Bonuses = new List<BonusDTO>();
+            }
+            else if (_traitMode == 2)
+            {
+                IsTraitDialVisible = true;
+                LoadBonuses();
+            }
+            else
+            {
+                IsTraitDialVisible = false;
+            }
+        }
+    }
+
+    List<BonusDTO> Bonuses { get; set; }
+
+    private void LoadBonuses()
+    {
+        Bonuses = SavedTrait.Bonuses.ToList();
+    }
+
+    private bool IsLoading = true;
+    private bool IsTraitDialVisible = false;
+
+
+    private string SelectedFeature { get; set; }
+    List<string> FeatureData = new List<string>
+    {
+        "Attribute",
+        "Base skill",
+        "Special skill",
+        "Other",
+    };
+    private string BonusLabel { get; set; } = "Bonus 1";
+
+
+    private async Task OnSaveTraitBtnClick()
+    {
+
+            //upsert bonuses to db
+            if (_traitMode == 0)
+            {
+
+            }
+            else
+            {
+               
+            }
+
+        SavedTrait.Bonuses = Bonuses;
+        await TraitConfirmation.InvokeAsync(SavedTrait);
+        TraitMode = 0;
+    }
+    private async Task OnCancelBtnClick()
+    {
+        TraitMode = 0;
+    }
+    private void DialogOpen()
+    {
+        IsLoading = true;
+        StateHasChanged();
+       // SavedTrait = new();
+       // Bonuses = new List<BonusDTO>() { };
+        IsLoading = false;
+        StateHasChanged();
+    }
+    private async Task OnAddBonusBtnClick()
+    {
+        Bonuses.Add(new BonusDTO());
+        BonusLabel = "Bonus " + Bonuses.Count();
+    }
+
+
+    // private void OnStartTraitDialog()
+    // {
+    //     IsTraitDialVisible = true;
+    // }
+
+}

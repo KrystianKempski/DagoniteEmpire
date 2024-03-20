@@ -9,27 +9,10 @@ using System.ComponentModel;
 
 namespace DA_Models.CharacterModels
 {
-    public class SpecialSkillDTO
+    public class SpecialSkillDTO : FeatureDTO
     {
-        public int Id { get; set; }
-
-        public int CharacterId { get; set; }
-
-        public int Index { get; set; }
-        public string RelatedBaseSkillName { get; set; } 
-        [Required]
-        public string Name { get; set; }
-        [Range(0, 5, ErrorMessage = "Base bonus must be between 0 and 5")]
-        public int BaseBonus { get; set; } = 0;
-        [Range(0, 2, ErrorMessage = "Race bonus must be between 0 and 5")]
-        public int RaceBonus { get; set; } = 0;
-        [Range(0, 5, ErrorMessage = "Gear bonus must be between 0 and 5")]
-        public int GearBonus { get; set; } = 0;
-        [Range(0, 5, ErrorMessage = "Other bonus must be between 0 and 5")]
-        public int OtherBonuses { get; set; } = 0;
-
-        public int TempBonuses { get; set; } = 0;
-
+        public string RelatedBaseSkillName { get; set; }
+        public override string FeatureType { get; set; } = "SpecialSkill";
         public int AttributeBonus { get; set; } = 0;
         public int BaseSkillBonus { get; set; } = 0;
 
@@ -40,19 +23,6 @@ namespace DA_Models.CharacterModels
 
         public string? ChosenAttribute { get; set; } = null;
 
-        public int SumBonus { get; set; } = 0;
-       
-
-        public void DecrRace() { if (RaceBonus > -6) RaceBonus--; SumAll(); }
-        public void IncrRace() { if (RaceBonus < 6) RaceBonus++; SumAll(); }
-
-        public void DecrGear() { if (GearBonus > -6) GearBonus--; SumAll(); }
-        public void IncrGear() { if (GearBonus < 6) GearBonus++; SumAll(); }
-
-        public void DecrOther() { if (OtherBonuses > -6) OtherBonuses--; SumAll(); }
-        public void IncrOther() { if (OtherBonuses < 6) OtherBonuses++; SumAll(); }
-        public void DecrTemp() { TempBonuses--; SumAll(); }
-        public void IncrTemp() { TempBonuses++; SumAll(); }
 
         // Property changes events and property listeners for Attribute and Base skill related to Special Skill
 
@@ -89,7 +59,7 @@ namespace DA_Models.CharacterModels
             SumAll();
         }
 
-        public int SumAll()
+        public override int SumAll()
         {
             SumBonus = BaseBonus + AttributeBonus + BaseSkillBonus + RaceBonus + GearBonus + TempBonuses + OtherBonuses;
             return SumBonus;

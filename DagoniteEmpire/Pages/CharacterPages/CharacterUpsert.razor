@@ -5,12 +5,15 @@
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
 @inject ISpecialSkillRepository _specialSkillRepository
+@inject ITraitRepository _traitRepository
+@inject IBonusRepository _bonusRepository 
 @inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
 @using DA_Models
 @using DagoniteEmpire.Service.IService
 @using DagoniteEmpire.Pages.Components
+@using Syncfusion.Blazor.Navigations
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 
 @inject NavigationManager _navigationManager
@@ -70,7 +73,7 @@
                 <div class="container-fluid">
                     <div class="row">
                         <div class="portrait">
-                            <h3 class="my-3 ml-3">PORTRAIT</h3>
+                            <h3 class="my-3">PORTRAIT</h3>
                             <div class="portrait-imageframe">
                                 <img src="@Character.ImageUrl" class="portrait-image" />
                                 <div class="portrait-input">
@@ -90,9 +93,9 @@
                         </div>
                    
                         <div class="attribute">
-                            <h3 class="my-3 ml-3">ATTRIBUTES</h3>
+                            <h3 class="my-3">ATTRIBUTES</h3>
 
-                            <table class="table align-middle mb-1">
+                            <table class="table align-middle">
                             <thead>
                                 <tr>
                                    @*  <th scope="col" class="name-row" >Attribute</th> *@
@@ -232,7 +235,46 @@
                                 </tbody>
                             </table>
                         </div>
-                
+
+                        <div class="traits">
+                            <h3 class="my-3 ml-3">TRAITS</h3>
+
+                            @* <SfGrid ID="Grid" DataSource="@Traits" AllowPaging="true"
+                                    Toolbar="@ToolbarItems">
+                                <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
+                                <GridEvents OnActionBegin="ActionHandler" TValue="TraitDTO"></GridEvents>
+                                <GridColumns>
+                                    <GridColumn Field=@nameof(TraitDTO.Name) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                                    <GridColumn Field=@nameof(TraitDTO.Descr) HeaderText="Description" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                                </GridColumns>
+                            </SfGrid> *@
+                            <button @onclick="@(()=>AddSpecialSkill(baseSkill))" class="add-skill"><i class="fa-solid fa-plus"></i></button>
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="name-row">Name</th>
+                                        <th scope="col" class="bonus-row">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var obj in Traits)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <label class="names-label">@obj.Name.ToUpper()</label>
+                                            </td>
+                                            <td>
+                                                <div class="names-label">
+                                                    <label class="names-label">@obj.Descr</label>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table> 
+                            <TraitComponent Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" TraitConfirmation="GetTrait" TraitMode="TraitDialogMode" SavedTrait="SavedTrait"></TraitComponent>
+                        </div>
+
                         <div class="description">
                             <h3 class="my-3 ml-3">DESCRIPTION</h3>
                             <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@Character.Description"></CharDescriptionDialog>
@@ -244,7 +286,7 @@
             <section class="section-create-character">
                 <div class="container-fluid">
                     <div class="row">
-                        <h3 class="my-3 ml-3">SPECIAL SKILLS</h3>
+                        <h3 class="my-3 mx-2">SPECIAL SKILLS</h3>
                         <div class="specialskills">
                         
                             @foreach (var baseSkill in BaseSkills)
@@ -409,14 +451,38 @@
     private IEnumerable<AttributeDTO> Attributes { get; set; }
     private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } 
     private IEnumerable<SpecialSkillDTO> SpecialSkills { get; set; }
+    private IEnumerable<TraitDTO> Traits { get; set; } 
+    private IEnumerable<BonusDTO> Bonuses { get; set; } 
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; } = true;
     private bool ModifChanged = false;
-    private bool IsDescrDialVisible = false;
+    // private bool IsDescrDialVisible = false;
+    // private bool IsTraitDialVisible = false;
     private bool IsLeaveAllowed { get; set; } = false;
     private bool IsDukeAllowed { get; set; } = false;
     private string TargetLocation { get; set; } = "";
+
+    private TraitDTO SavedTrait { get; set; }
+    private int TraitDialogMode { get; set; } = 0;
+    private List<object> ToolbarItems = new List<object>() {
+        new ItemModel() { Text = "Add", PrefixIcon = "e-add", Id = "Grid_add"},//Here Grid is SfGrid ID
+        new ItemModel(){ Text = "Edit", PrefixIcon= "e-edit", Id="Grid_edit"},
+        new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
+    };
+
+    // private string SelectedFeature { get; set; }
+    // List<string> FeatureData = new List<string>
+    // {
+    //     "Attribute",
+    //     "Base skill",
+    //     "Special skill",
+    //     "Other",
+    // };
+    // private string TraitName { get; set; }
+
+
+
 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -435,6 +501,8 @@
                     Attributes = CharacterSeeder.GetAttributes();
                     BaseSkills  = CharacterSeeder.GetBaseSkills();
                     SpecialSkills  = CharacterSeeder.GetSpecialSkills();
+                    Traits = new List<TraitDTO>();
+                    Bonuses = new List<BonusDTO>();
                     var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
                     var user = authstate.User;
                     Character.UserName = user.Identity.Name;
@@ -477,6 +545,7 @@
         Attributes = await _attributeRepository.GetAll(Id);
         BaseSkills = await _baseSkillRepository.GetAll(Id);
         SpecialSkills = await _specialSkillRepository.GetAll(Id);
+        Traits = await _traitRepository.GetAll(Id);
     }
 
     private async Task UpsertCharacter()
@@ -847,6 +916,20 @@
 
     private async Task GetDescription(string description) => Character.Description = description;
 
+    private async Task GetTrait(TraitDTO trait)
+    {
+        var obj = Traits.FirstOrDefault(u => u.Name == trait.Name);
+        if(obj == null)
+        {
+            Traits = Traits.Append(trait);
+        }
+        else
+        {
+            obj = trait;
+        }
+        TraitDialogMode = 0;
+    }
+
 
     private ValueTask OnLocationChanging(LocationChangingContext context)
     {
@@ -873,6 +956,60 @@
         StateHasChanged();
 
     }
+
+    public void ActionHandler(ActionEventArgs<TraitDTO> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Add))
+        {
+            SavedTrait = new();
+            SavedTrait.Id = 0;
+            TraitDialogMode = 1;
+            StateHasChanged();
+
+        }
+        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.BeginEdit))
+        {
+            SavedTrait = args.RowData;
+            TraitDialogMode = 2;
+            StateHasChanged();
+        }
+        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
+        {
+
+            ; //  HandleDelete(args.RowData.Id);
+        }
+        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.BeforeBeginEdit))
+        {
+            ;
+        }
+    }
+
+
+
+    // private async Task OnSaveTraitBtnClick()
+    // {
+    //     IsTraitDialVisible = false;
+    //     //  await DescriptionConfirmation.InvokeAsync(SavedDescription);
+    // }
+    // private async Task OnCancelBtnClick()
+    // {
+    //     IsTraitDialVisible = false;
+    // }
+    // private void DialogOpen()
+    // {
+    //     Bonuses = Bonuses.Append(new BonusDTO());
+    //     //this.DescrEdit.RefreshUI();
+    // }
+    // private async Task OnAddBonusBtnClick()
+    // {
+    //     Bonuses = Bonuses.Append(new BonusDTO());
+    // }
+    
+
+    // private void OnStartTraitDialog()
+    // {
+    //     IsTraitDialVisible = true;
+    // }
 
     public void Dispose() => registration?.Dispose();
 }

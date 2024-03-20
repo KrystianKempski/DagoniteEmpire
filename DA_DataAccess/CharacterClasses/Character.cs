@@ -31,6 +31,7 @@ namespace DA_DataAccess.CharacterClasses
         public ICollection<BaseSkill>? BaseSkills { get; set; }
 
         public ICollection<SpecialSkill>? SpecialSkills { get; set; }
+        public ICollection<Trait>? Traits { get; set; }
 
 
     }

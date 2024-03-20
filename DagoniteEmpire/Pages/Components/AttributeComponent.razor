@@ -1,67 +1,163 @@
 ﻿
 @* <InputNumber TValue="int" Value="@ValueBinded" class="form-control bonus-control" ValueChanged="@AttributeTypeHandle" ValueExpression="@(() => StartValue)" /> *@
-    <input type="number" @onchange="AttributeUpdated" />
+   @*  <input type="number" @onchange="AttributeUpdated" /> *@
+   @inject IJSRuntime _jsRuntime
+
+<div class="attribute">
+    <h3 class="my-3">ATTRIBUTES</h3>
+
+    <table class="table align-middle mb-1">
+        <thead>
+            <tr>
+                @*  <th scope="col" class="name-row" >Attribute</th> *@
+                <th scope="col" class="bonus-row">Base</th>
+                <th scope="col" class="bonus-row">Race</th>
+                <th scope="col" class="bonus-row">Gear</th>
+                <th scope="col" class="bonus-row">Other</th>
+                <th scope="col" class="sum-row text-center">Sum</th>
+                <th scope="col" class="sum-row text-center">Mod.</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            @foreach (var obj in Attributes)
+            {
+                <tr>
+                    <td class="name-row" colspan="6">
+                        <label class="names-label text-start">@obj.Name.ToUpper()</label>
+                    </td>
+                </tr>
+                <tr>
+
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.BaseBonus</span>
+                            <div class="arrows">
+                                <button @onclick="@(()=>IncrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                <button @onclick="@(()=>DecrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.RaceBonus</span>
+                            <div class="arrows">
+                                <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.GearBonus</span>
+                            <div class="arrows">
+                                <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.OtherBonuses</span>
+                            <div class="arrows">
+                                <button @onclick="@obj.IncrOther" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                <button @onclick="@obj.DecrOther" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.SumBonus</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.Modifier </span>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
 
 @code {
+
+    private IEnumerable<AttributeDTO>? _attributes;
     [Parameter]
-    public int ValueBinded { get; set; }
-    [Parameter]
-    public int Pool { get; set; }
-
-    [Parameter]
-    public EventCallback<int> OnAttributeChanged { get; set; }
-
-    private int StartValue { get; set; }
-    private int PoolChange { get; set; }
-
-    private async Task AttributeUpdated(Microsoft.AspNetCore.Components.ChangeEventArgs e)   //int newVal)
-    {
-        int a = (int)e.Value;
-        await OnAttributeChanged.InvokeAsync((int)e.Value);
-        // if (ValueBinded < newVal)
-        // {
-        //     var ok = false;
-        //     if (newVal < 18)
-        //     {
-        //         if (newVal < 11)
-        //         {
-        //             if (Pool > 0)
-        //             {
-        //                 ok = true;
-        //                 Pool--;
-        //             }
-        //         }
-        //         else
-        //         {
-        //             if (Pool >= (newVal - 9))
-        //             {
-        //                 Pool -= newVal - 9;
-        //                 ok = true;
-        //             }
-        //         }
-
-        //         if (ok)
-        //         {
-        //             ValueBinded = newVal;
-        //         }
-        //     }
-        // }
-        // else if (ValueBinded > newVal)
-        // {
-        //     if (newVal > 6)
-        //     {
-        //         if (newVal < 11)
-        //         {
-        //             Pool++;
-        //         }
-        //         else
-        //         {
-        //             Pool += (newVal - 10);
-        //         }
-        //         ValueBinded = newVal;
-        //     }
-        // }
-        // await PoolChanged.InvokeAsync(Pool);
+    public IEnumerable<AttributeDTO>? Attributes {
+        get => _attributes;
+        set
+        {
+            _attributes = value;
+            AttributesChanged.InvokeAsync(value);
+        }
     }
+
+    [Parameter]
+    public EventCallback<IEnumerable<AttributeDTO>> AttributesChanged { get; set; }
+
+    [Parameter]
+    public CharacterDTO Character { get; set; } = null;
+
+
+
+    private async Task IncrAttr(AttributeDTO obj)
+    {
+        var ok = false;
+        if (obj.BaseBonus < 18)
+        {
+            if (obj.BaseBonus < 11)
+            {
+                if (Character.AttributePoints > 0)
+                {
+                    ok = true;
+                    Character.AttributePoints--;
+                }
+            }
+            else
+            {
+                if (Character.AttributePoints >= (obj.BaseBonus - 9))
+                {
+                    Character.AttributePoints -= obj.BaseBonus - 9;
+                    ok = true;
+                }
+            }
+
+            if (ok)
+            {
+                obj.BaseBonus++;
+                obj.SumAll();
+            }
+            else
+                await _jsRuntime.AttrLimit("Not enought attribute points");
+        }
+        else
+        {
+            await _jsRuntime.AttrLimit("Maximium base bonus limit is 18");
+        }
+    }
+
+    private async Task DecrAttr(AttributeDTO obj)
+    {
+        if (obj.BaseBonus > 6)
+        {
+            if (obj.BaseBonus < 11)
+            {
+                Character.AttributePoints++;
+            }
+            else
+            {
+                Character.AttributePoints += (obj.BaseBonus - 10);
+            }
+            obj.BaseBonus--;
+            obj.SumAll();
+        }
+        else
+            await _jsRuntime.AttrLimit("Minimum base bonus limit is 6");
+    }
+
+
 
 }

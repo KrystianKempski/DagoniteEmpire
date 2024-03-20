@@ -8,50 +8,41 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 <_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this character"></_DeleteConfirmation>
 
-<div class="row mt-4">
-    <div class="col-12">
-        <h4 class="card-title">@Title</h4>
-    </div>
-</div>
-<div class="row mt-4">
-    <div class="col-12">
-        <SfGrid ID="Grid"DataSource="@Characters" AllowPaging="true"
-                Toolbar="@ToolbarItems">
-            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
-            <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
-                <GridColumns>
-                @if (IsAdminOrMG){
-                     <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                }
-                    <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                    <GridColumn Field=@nameof(CharacterDTO.Race) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                    <GridColumn Field=@nameof(CharacterDTO.Class) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Left" Width="50"></GridColumn>
-                </GridColumns>
-            </SfGrid>
-    @if (Characters.Any())
+@if (IsLoading)
     {
-            
+        <div class="text-center">
+            <img src="images/loading.gif" width="60px">
+        </div>
     }
     else
     {
-        @if (IsLoading)
-        {
-            <div class="text-center">
-                <img src="images/loading.gif" width="60px">
-            </div>
-        }
-        else
-        {
-            <p>No records found</p>
-        }
-    }
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4 class="card-title">@Title</h4>
+        </div>
     </div>
-</div>
-
+    <div class="row mt-4">
+        <div class="col-12">
+            <SfGrid ID="Grid"DataSource="@Characters" AllowPaging="true"
+                    Toolbar="@ToolbarItems">
+                <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
+                <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
+                    <GridColumns>
+                    @if (IsAdminOrMG){
+                         <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                    }
+                        <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                        <GridColumn Field=@nameof(CharacterDTO.Race) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                        <GridColumn Field=@nameof(CharacterDTO.Class) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                    <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Left" Width="50"></GridColumn>
+                    </GridColumns>
+                </SfGrid>
+        </div>
+    </div>
+}
 @code {
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
-    public bool IsLoading { get; set; }
+    public bool IsLoading { get; set; } = true;
     public bool IsAdminOrMG { get; set; } = true;
     private int DeleteCharacterId { get; set; } = 0;
     private string Title { get; set; } = "Your characters";
@@ -131,6 +122,7 @@
     public async Task ConfirmDelete_Click(bool isConfirmed)
     {
         IsLoading = true;
+        StateHasChanged();
         if (isConfirmed == true && DeleteCharacterId != 0)
         {
             await Task.Delay(500);
@@ -147,6 +139,7 @@
             await _jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
         }
         IsLoading = false;
+        StateHasChanged();
     }
   
 }
