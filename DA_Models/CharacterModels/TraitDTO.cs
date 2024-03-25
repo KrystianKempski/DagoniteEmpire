@@ -11,15 +11,15 @@ namespace DA_Models.CharacterModels
     public class TraitDTO
     {
         public int Id { get; set; }
-        public string? Name { get; set; }
+        public string Name { get; set; }
         public string Descr { get; set; }
         public int CharacterId { get; set; }
         public int Index { get; set; }
+        public int TraitValue { get; set; }
 
-        public string TraitType { get; set; }
+        public string TraitType { get; set; } = string.Empty;
 
-        public IEnumerable<BonusDTO>? Bonuses { get; set; }
-
+        public ICollection<BonusDTO> Bonuses { get; set; }
 
     }
 }

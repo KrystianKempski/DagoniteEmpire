@@ -5,7 +5,7 @@
 
     @* <button class="button" @onclick="OnStartTraitDialog">Edit Description</button> *@
 
-    <SfDialog Width="50%" Height="50%" @bind-Visible="@IsTraitDialVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+    <SfDialog Width="50%" Height="50%" @bind-Visible="@_traitComponent.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>
             <Header>Create a new Trait</Header>
@@ -20,6 +20,23 @@
                     }
                     else
                     {
+                        <div class="container">
+                            <div class="row align-items-start">
+                                <div class="col-10 p-1">
+                                    <label class="fw-bold">Trait name</label>
+                                </div>
+                                <div class="col-2 p-1">
+                                    <label class="fw-bold">Trait value</label>
+                                </div>
+                             </div>
+                            <div class="row align-items-start">
+                                <div class="col-10 bonus-name">
+                                    <SfTextBox Placeholder="Insert trait name" @bind-Value="@_traitComponent.TraitDTO.Name"></SfTextBox>
+                                </div>
+                                <div class="col-2 bonus-name">
+                                    <SfNumericTextBox TValue="int" @bind-Value="@_traitComponent.TraitDTO.TraitValue"></SfNumericTextBox>
+                                </div>
+                            </div>
 
                         <label>Trait name</label>
                         <div class="bonus-name">
@@ -29,12 +46,14 @@
                         <div class="bonus-descr">
                             <SfTextBox Multiline=true Placeholder="Insert trait description" @bind-Value="@SavedTrait.Descr"></SfTextBox>
 
-                        </div>
-                        @if (Bonuses != null)
+
+
+                        <label class="fw-bold pt-4">Bonuses and penalties</label>
+                        @if (_traitComponent.TraitDTO.Bonuses != null)
                         {
-                            @foreach (var obj in Bonuses)
+                            @foreach (var obj in _traitComponent.TraitDTO.Bonuses)
                             {
-                                <label class="bonus-cell">@BonusLabel</label>
+                                <label class="bonus-cell">Bonus @obj.Index</label>
                                  <div class="bonuses-columns">
                                       <div class="bonus-cell">
                                         <SfDropDownList TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType"></SfDropDownList>
@@ -73,7 +92,7 @@
                                     @if (@obj.FeatureName != null && @obj.FeatureType!="Other")
                                     {
                                         <div class="bonus-cell">
-                                            <SfNumericTextBox Width="100%%" TValue="int?" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                            <SfNumericTextBox Width="100%%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
                                         </div>
                                     }
 
@@ -81,8 +100,9 @@
                             }
 
                             <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
-                        } 
-
+                        }
+                        <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
+                        <label class="warnign-message">@ErrorMessage</label>
                     }
                 </div> 
 
@@ -107,35 +127,23 @@
     [Parameter]
     public IEnumerable<SpecialSkillDTO> SpecialSkills { get; set; }
     [Parameter]
-    public EventCallback<TraitDTO> TraitConfirmation { get; set; }
+    public IEnumerable<TraitDTO> Traits { get; set; }
+    [Parameter]
+    public EventCallback<TraitCompModel> TraitCompChanged { get; set; }
+
+    TraitCompModel _traitComponent;
 
     [Parameter]
-    public TraitDTO SavedTrait { get; set; }
-
-    private int _traitMode = 0;
-
-    [Parameter]
-    public int TraitMode
+    public TraitCompModel TraitComp 
     {
-        get => _traitMode; 
-        set {
-            _traitMode = value;
-            if (_traitMode == 1)
-            {
-                IsTraitDialVisible = true;
-                Bonuses = new List<BonusDTO>();
-            }
-            else if (_traitMode == 2)
-            {
-                IsTraitDialVisible = true;
-                LoadBonuses();
-            }
-            else
-            {
-                IsTraitDialVisible = false;
-            }
+        get => _traitComponent;
+        set{
+            if (_traitComponent == value) return;
+            _traitComponent = value;
+            IsLoading = false;
+            StateHasChanged();
+            TraitCompChanged.InvokeAsync(value);
         }
-    }
 
     List<BonusDTO> Bonuses { get; set; }
 
@@ -143,6 +151,8 @@
     {
         Bonuses = SavedTrait.Bonuses.ToList();
     }
+    private string ErrorMessage { get; set; } = string.Empty;
+    private bool IsLoading { get; set; }= true;
 
     private bool IsLoading = true;
     private bool IsTraitDialVisible = false;
@@ -162,37 +172,77 @@
     private async Task OnSaveTraitBtnClick()
     {
 
-            //upsert bonuses to db
-            if (_traitMode == 0)
+        if (TraitComp.TraitDTO.Bonuses == null || TraitComp.TraitDTO.Bonuses.Count == 0)
+        {
+            ErrorMessage = $"There must be at least one bonus in trait";
+            return;
+        }
+        foreach (var bonus in TraitComp.TraitDTO.Bonuses)
+        {
+            if (bonus.BonusValue == 0 && bonus.Description==string.Empty)
             {
+                ErrorMessage = $"Please fill all input fiels in bonus";
+                return;
+            }
+            if (bonus.BonusValue == 0 && bonus.Description == string.Empty)
+            {
+                ErrorMessage = $"Please fill all input fiels in bonus";
+                return;
+            }
+        }
+        if(!TraitComp.TraitDTO.Bonuses.GroupBy(x => x.FeatureName).All(g => g.Count() == 1))
+        {
+            ErrorMessage = $"Bonuses cannor relate to the same feature more than once";
+            return;
+        }
 
+        if(TraitComp.IsEditMode == false && Traits.Where(t => t.Name == TraitComp.TraitDTO.Name).Count()>0)
+        {
+            ErrorMessage = $"That trait name already exists";
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+
+        TraitComp.IsVisible = false;
+        TraitComp.TraitDTO.Descr = string.Empty;
+        foreach (var bonus in TraitComp.TraitDTO.Bonuses)
+        {
+
+            if (bonus.Description != null && bonus.Description.Length > 0)
+            {
+                TraitComp.TraitDTO.Descr += bonus.Description + "; ";
             }
             else
             {
-               
+                string val;
+                if (bonus.BonusValue > 0)
+                    val = $"+{bonus.BonusValue}";
+                else
+                    val = $"{bonus.BonusValue}";
+                TraitComp.TraitDTO.Descr += $"{val} to {bonus.FeatureName}; ";
             }
 
-        SavedTrait.Bonuses = Bonuses;
-        await TraitConfirmation.InvokeAsync(SavedTrait);
-        TraitMode = 0;
+        }
+        await TraitCompChanged.InvokeAsync(TraitComp);
     }
     private async Task OnCancelBtnClick()
     {
-        TraitMode = 0;
+        TraitComp.IsVisible = false;
     }
     private void DialogOpen()
     {
-        IsLoading = true;
-        StateHasChanged();
-       // SavedTrait = new();
-       // Bonuses = new List<BonusDTO>() { };
-        IsLoading = false;
+        ErrorMessage = string.Empty;
         StateHasChanged();
     }
     private async Task OnAddBonusBtnClick()
     {
-        Bonuses.Add(new BonusDTO());
-        BonusLabel = "Bonus " + Bonuses.Count();
+        ErrorMessage = string.Empty;
+        if (TraitComp.TraitDTO.Bonuses == null)
+            TraitComp.TraitDTO.Bonuses = new List<BonusDTO>();
+        var bonus = new BonusDTO();
+        bonus.Index = TraitComp.TraitDTO.Bonuses.Count() +1;
+        TraitComp.TraitDTO.Bonuses.Add(bonus);
     }
 
 

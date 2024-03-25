@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DA_DataAccess.CharacterClasses;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -33,7 +34,7 @@ namespace DA_Models.CharacterModels
 
         public override int SumAll()
         {
-            SumBonus = BaseBonus + RaceBonus + GearBonus + TempBonuses + HealthBonus+OtherBonuses;
+            SumBonus = base.SumAll();// BaseBonus + RaceBonus + GearBonus + TempBonuses + HealthBonus+ TraitBonus + OtherBonuses;
             GetModifier();
             return SumBonus;
         }

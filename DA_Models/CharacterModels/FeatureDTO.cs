@@ -21,6 +21,7 @@ namespace DA_Models.CharacterModels
         public virtual int BaseBonus { get; set; } = 0;
         public int RaceBonus { get; set; } = 0;
         public int GearBonus { get; set; } = 0;
+        public int TraitBonus { get; set; } = 0;
         public int OtherBonuses { get; set; } = 0;
         public int TempBonuses { get; set; } = 0;
 
@@ -33,6 +34,15 @@ namespace DA_Models.CharacterModels
 
         public virtual void DecrGear() { if (GearBonus > -6) GearBonus--; SumAll(); }
         public  virtual void IncrGear() { if (GearBonus < 6) GearBonus++;SumAll(); }
+        public virtual void ChangeTrait(int val) { TraitBonus+=val; SumAll(); }
+        //public virtual void CalcTrait()
+        //{
+        //    foreach (var bonus in TraitBonusesRelated)
+        //    {
+        //        if (bonus.FeatureName == Name)
+        //            TraitBonus += bonus.BonusValue;
+        //    }
+        //}
         public virtual void DecrHeal() {  HealthBonus--; SumAll();}
         public virtual void IncrHeal() {  HealthBonus++; SumAll();}
 
@@ -43,7 +53,7 @@ namespace DA_Models.CharacterModels
 
         public virtual int SumAll()
         {
-            SumBonus = BaseBonus + RaceBonus + GearBonus + TempBonuses + HealthBonus+OtherBonuses;
+            SumBonus = BaseBonus + RaceBonus + GearBonus + TraitBonus + TempBonuses + HealthBonus + OtherBonuses;
             return SumBonus;
         }
     }

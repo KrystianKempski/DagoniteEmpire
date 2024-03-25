@@ -45,13 +45,13 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<SpecialSkillDTO>> GetAll(int? charId = null)
         {
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills);
-           return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills.Where(u => u.CharacterId == charId).OrderBy(u=>u.Index));
+                return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills/*.Include(u => u.TraitBonusRelated)*/);
+           return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills/*.Include(u => u.TraitBonusRelated)*/.Where(u => u.CharacterId == charId).OrderBy(u=>u.Index));
         }
 
         public async Task<SpecialSkillDTO> GetById(int id)
         {
-            var obj = await _db.SpecialSkills.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await _db.SpecialSkills./*Include(u => u.TraitBonusRelated).*/FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<SpecialSkill, SpecialSkillDTO>(obj);

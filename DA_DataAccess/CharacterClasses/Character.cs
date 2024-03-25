@@ -25,6 +25,8 @@ namespace DA_DataAccess.CharacterClasses
         public int AttributePoints { get; set; }
         public int CurrentExpPoints { get; set; }
         public int UsedExpPoints { get; set; }
+
+        public int TraitBalance { get; set; }
         //public int UserId { get; set; }
         //[ForeignKey(nameof(UserId))]
         public ICollection<Attribute>? Attributes { get; set; }

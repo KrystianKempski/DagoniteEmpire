@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DA_Business.Repository.CharacterReps.IRepository;
+using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
 using Microsoft.EntityFrameworkCore;
@@ -47,10 +48,10 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<AttributeDTO>> GetAll(int? charId = null)
         {
             if(charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(_db.Attributes);
+                return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(_db.Attributes/*.Include(u => u.TraitBonusRelated)*/);
             try
             {
-                var obj = _db.Attributes.Where(u => u.CharacterId == charId).OrderBy(u => u.Index);
+                var obj = _db.Attributes./*Include(u => u.TraitBonusRelated).*/Where(u => u.CharacterId == charId).OrderBy(u => u.Index);
                 if (obj != null && obj.Any())
                     return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(obj);
             }
@@ -65,7 +66,7 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<AttributeDTO> GetById(int id)
         {
-            var obj = await _db.Attributes.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await _db.Attributes/*.Include(u => u.TraitBonusRelated)*/.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Attribute, AttributeDTO>(obj);

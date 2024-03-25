@@ -24,20 +24,38 @@ namespace DA_Business.Repository.CharacterReps
         }
         public async Task<TraitDTO> Create(TraitDTO objDTO)
         {
-            var obj = _mapper.Map<TraitDTO, Trait>(objDTO);
-            var addedObj = _db.Traits.Add(obj);
-            await _db.SaveChangesAsync();
+            try
+            {
 
-            return _mapper.Map<Trait, TraitDTO>(addedObj.Entity);
-        }
+                var obj = _mapper.Map<TraitDTO, Trait>(objDTO);
+                var addedObj = _db.Traits.Add(obj);
+                await _db.SaveChangesAsync();
+
+                return _mapper.Map<Trait, TraitDTO>(addedObj.Entity);
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
+            return null;
+                
+}
 
         public async Task<int> Delete(int id)
         {
-            var obj = await _db.Traits.FirstOrDefaultAsync(u => u.Id == id);
+            try
+            {
+                var obj = await _db.Traits.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 _db.Traits.Remove(obj);
                 return _db.SaveChanges();
+            }
+            return 0;
+            }
+            catch (Exception ex)
+            {
+                ;
             }
             return 0;
         }
@@ -45,13 +63,13 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<TraitDTO>> GetAll(int? charId = null)
         {
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits);
-           return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Where(u => u.CharacterId == charId).OrderBy(u=>u.Index));
+                return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Include(u => u.Bonuses));
+           return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Include(u => u.Bonuses).Where(u => u.CharacterId == charId).OrderBy(u=>u.Index));
         }
 
         public async Task<TraitDTO> GetById(int id)
         {
-            var obj = await _db.Traits.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await _db.Traits.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Trait, TraitDTO>(obj);
@@ -61,25 +79,35 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<TraitDTO> Update(TraitDTO objDTO)
         {
-            var obj = await _db.Traits.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
-            if (obj != null)
+            try
             {
-                obj.Name = objDTO.Name;    
-                obj.CharacterId = objDTO.CharacterId;       
-                obj.Descr = objDTO.Descr;        
-                obj.Index = objDTO.Index;  
-                _db.Traits.Update(obj);
-                await _db.SaveChangesAsync();
-                return _mapper.Map<Trait, TraitDTO>(obj);
-            }
-            else
-            {
-                obj = _mapper.Map<TraitDTO, Trait>(objDTO);
-                var addedObj = _db.Traits.Add(obj);
-                await _db.SaveChangesAsync();
+                var obj = await _db.Traits.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                if (obj != null)
+                {
+                    obj.Name = objDTO.Name;    
+                    obj.CharacterId = objDTO.CharacterId;       
+                    obj.Descr = objDTO.Descr;        
+                    obj.Index = objDTO.Index;  
+                    obj.TraitType = objDTO.TraitType;
+                    obj.TraitValue = objDTO.TraitValue;
+                    _db.Traits.Update(obj);
+                    await _db.SaveChangesAsync();
+                    return _mapper.Map<Trait, TraitDTO>(obj);
+                }
+                else
+                {
+                    obj = _mapper.Map<TraitDTO, Trait>(objDTO);
+                    var addedObj = _db.Traits.Add(obj);
+                    await _db.SaveChangesAsync();
 
-                return _mapper.Map<Trait, TraitDTO>(addedObj.Entity);
+                    return _mapper.Map<Trait, TraitDTO>(addedObj.Entity);
+                }
             }
+            catch (Exception ex)
+            {
+                ;
+            }
+            return null;
         }
     }
 }

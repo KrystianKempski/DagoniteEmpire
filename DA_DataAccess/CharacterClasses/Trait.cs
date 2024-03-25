@@ -15,7 +15,9 @@ namespace DA_DataAccess.CharacterClasses
         public string? Name { get; set; }            //for example "No leg"
         public int Index { get; set; }
 
-        public string TraitType { get; set; }        // for example "race" or "advantages"
+        public string TraitType { get; set; } = string.Empty;      // for example "race" or "advantages"
+
+        public int TraitValue { get; set; }          // for advantages and disadvantages
         public string Descr { get; set; }            // descritpion of all trait 
 
         public int CharacterId { get; set; }
@@ -23,6 +25,7 @@ namespace DA_DataAccess.CharacterClasses
         [ForeignKey(nameof(CharacterId))]
         public Character Character { get; set; }
 
+        public ICollection<Bonus> Bonuses { get; set; }
 
     }
 }
