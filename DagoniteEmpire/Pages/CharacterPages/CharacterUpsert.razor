@@ -12,6 +12,7 @@
 @using DA_Models
 @using DagoniteEmpire.Service.IService
 @using DagoniteEmpire.Pages.Components
+@using Syncfusion.Blazor.Navigations
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 
 @inject NavigationManager _navigationManager
@@ -545,6 +546,7 @@
         Attributes = await _attributeRepository.GetAll(Id);
         BaseSkills = await _baseSkillRepository.GetAll(Id);
         SpecialSkills = await _specialSkillRepository.GetAll(Id);
+        Traits = await _traitRepository.GetAll(Id);
     }
 
     private async Task UpsertCharacter()

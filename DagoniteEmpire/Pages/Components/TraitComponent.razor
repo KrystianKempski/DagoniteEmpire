@@ -1,9 +1,4 @@
-﻿
-@* @inject IBonusRepository _bonusRepository
-@inject ITraitRepository _traitRepository *@
-<div class="traits">
-
-    @* <button class="button" @onclick="OnStartTraitDialog">Edit Description</button> *@
+﻿<div class="traits">
 
     <SfDialog Width="50%" Height="50%" @bind-Visible="@_traitComponent.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
@@ -12,7 +7,7 @@
             <Content>
                  <div class="main-table">
 
-                     @if (IsLoading)
+                    @if (IsLoading)
                     {
                         <div class="text-center">
                             <img src="/images/loading.gif">
@@ -20,7 +15,7 @@
                     }
                     else
                     {
-                        <div class="container">
+                         <div class="container">
                             <div class="row align-items-start">
                                 <div class="col-10 p-1">
                                     <label class="fw-bold">Trait name</label>
@@ -28,7 +23,7 @@
                                 <div class="col-2 p-1">
                                     <label class="fw-bold">Trait value</label>
                                 </div>
-                             </div>
+                                </div>
                             <div class="row align-items-start">
                                 <div class="col-10 bonus-name">
                                     <SfTextBox Placeholder="Insert trait name" @bind-Value="@_traitComponent.TraitDTO.Name"></SfTextBox>
@@ -37,15 +32,7 @@
                                     <SfNumericTextBox TValue="int" @bind-Value="@_traitComponent.TraitDTO.TraitValue"></SfNumericTextBox>
                                 </div>
                             </div>
-
-                        <label>Trait name</label>
-                        <div class="bonus-name">
-                            <SfTextBox Placeholder="Insert trait name" @bind-Value="@SavedTrait.Name"></SfTextBox>
                         </div>
-                        <label>Trait description</label>
-                        <div class="bonus-descr">
-                            <SfTextBox Multiline=true Placeholder="Insert trait description" @bind-Value="@SavedTrait.Descr"></SfTextBox>
-
 
 
                         <label class="fw-bold pt-4">Bonuses and penalties</label>
@@ -54,10 +41,10 @@
                             @foreach (var obj in _traitComponent.TraitDTO.Bonuses)
                             {
                                 <label class="bonus-cell">Bonus @obj.Index</label>
-                                 <div class="bonuses-columns">
-                                      <div class="bonus-cell">
+                                <div class="bonuses-columns">
+                                        <div class="bonus-cell">
                                         <SfDropDownList TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType"></SfDropDownList>
-                                      </div>
+                                        </div>
                                     @if (obj.FeatureType == "Attribute")
                                     {
                                         <div class="bonus-cell">
@@ -98,12 +85,10 @@
 
                                 </div>
                             }
-
-                            <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
                         }
                         <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
-                        <label class="warnign-message">@ErrorMessage</label>
-                    }
+                    <label class="warnign-message">@ErrorMessage</label>
+                    } 
                 </div> 
 
             </Content>
@@ -144,17 +129,11 @@
             StateHasChanged();
             TraitCompChanged.InvokeAsync(value);
         }
-
-    List<BonusDTO> Bonuses { get; set; }
-
-    private void LoadBonuses()
-    {
-        Bonuses = SavedTrait.Bonuses.ToList();
     }
+
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
 
-    private bool IsLoading = true;
     private bool IsTraitDialVisible = false;
 
 

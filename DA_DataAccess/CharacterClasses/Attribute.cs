@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DA_DataAccess.CharacterClasses
 {
-    public class Attribute
+    public class Attribute: Feature
     {
         
         //public ICollection<Bonus> TraitBonusesRelated { get; set; }
