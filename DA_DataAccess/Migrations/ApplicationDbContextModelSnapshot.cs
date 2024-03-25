@@ -36,6 +36,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("CharacterId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("FeatureType")
+                        .HasColumnType("text");
+
                     b.Property<int>("GearBonus")
                         .HasColumnType("integer");
 
@@ -55,6 +58,9 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("TempBonuses")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TraitBonus")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -78,7 +84,13 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("CharacterId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("FeatureType")
+                        .HasColumnType("text");
+
                     b.Property<int>("GearBonus")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HealthBonus")
                         .HasColumnType("integer");
 
                     b.Property<int>("Index")
@@ -104,14 +116,48 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("TempBonuses")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Type")
-                        .HasColumnType("text");
+                    b.Property<int>("TraitBonus")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CharacterId");
 
                     b.ToTable("BaseSkills");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Bonus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("BonusValue")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FeatureName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FeatureType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Index")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TraitId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TraitId");
+
+                    b.ToTable("Bonuses");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
@@ -149,6 +195,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Race")
                         .HasColumnType("text");
 
+                    b.Property<int>("TraitBalance")
+                        .HasColumnType("integer");
+
                     b.Property<int>("UsedExpPoints")
                         .HasColumnType("integer");
 
@@ -181,7 +230,13 @@ namespace DA_DataAccess.Migrations
                     b.Property<bool>("Editable")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("FeatureType")
+                        .HasColumnType("text");
+
                     b.Property<int>("GearBonus")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HealthBonus")
                         .HasColumnType("integer");
 
                     b.Property<int>("Index")
@@ -196,18 +251,13 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("RaceBonus")
                         .HasColumnType("integer");
 
-                    b.Property<string>("RelatedAttribute1")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RelatedAttribute2")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("RelatedBaseSkillName")
                         .HasColumnType("text");
 
                     b.Property<int>("TempBonuses")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TraitBonus")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -215,6 +265,41 @@ namespace DA_DataAccess.Migrations
                     b.HasIndex("CharacterId");
 
                     b.ToTable("SpecialSkills");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CharacterId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Descr")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Index")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TraitType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TraitValue")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("Traits");
                 });
 
             modelBuilder.Entity("DA_DataAccess.ImageFile", b =>
@@ -301,10 +386,6 @@ namespace DA_DataAccess.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -355,10 +436,6 @@ namespace DA_DataAccess.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -442,17 +519,6 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("DA_DataAccess.ApplicationUser", b =>
-                {
-                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
-
-                    b.Property<string>("PlayerType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasDiscriminator().HasValue("ApplicationUser");
-                });
-
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
@@ -475,10 +541,32 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Character");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Bonus", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Trait", "Trait")
+                        .WithMany("Bonuses")
+                        .HasForeignKey("TraitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Trait");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
                         .WithMany("SpecialSkills")
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
+                        .WithMany("Traits")
                         .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -544,6 +632,13 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("BaseSkills");
 
                     b.Navigation("SpecialSkills");
+
+                    b.Navigation("Traits");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>
+                {
+                    b.Navigation("Bonuses");
                 });
 #pragma warning restore 612, 618
         }

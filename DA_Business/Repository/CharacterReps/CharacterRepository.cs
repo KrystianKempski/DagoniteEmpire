@@ -81,6 +81,7 @@ namespace DA_Business.Repository.CharacterReps
                 obj.AttributePoints = objDTO.AttributePoints;
                 obj.NPCType = objDTO.NPCType;
                 obj.ImageUrl = objDTO.ImageUrl;
+                obj.TraitBalance = objDTO.TraitBalance;
                 _db.Characters.Update(obj);
                 await _db.SaveChangesAsync();
             }

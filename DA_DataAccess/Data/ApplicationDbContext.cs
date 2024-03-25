@@ -22,8 +22,24 @@ namespace DA_DataAccess.Data
 
         public DbSet<ImageFile> ImageFiles { get; set; }
 
-        public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+       // public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+
+    //    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    //    {
+    //        base.OnModelCreating(modelBuilder);
+
+    //        modelBuilder.Entity<Trait>().ToTable(nameof(Trait))
+    //            .HasMany(a => a.Bonuses)
+    //            .WithOne()
+    //            .HasForeignKey(e => e.TraitId)
+    //            .IsRequired();
 
 
+    //        modelBuilder.Entity<Feature>().ToTable(nameof(Feature))
+    //            .HasMany(a => a.TraitBonusesRelated)
+    //            .WithOne()
+    //            .HasForeignKey(e=> e.FeatureId)
+    //            .IsRequired(false);
+    //    }
     }
 }

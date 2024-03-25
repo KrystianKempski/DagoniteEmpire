@@ -19,6 +19,8 @@ namespace DA_Business.Mapper
             CreateMap<Character, CharacterDTO>().ReverseMap();
             CreateMap<BaseSkill, BaseSkillDTO>().ReverseMap();
             CreateMap<SpecialSkill, SpecialSkillDTO>().ReverseMap();
+            CreateMap<Trait, TraitDTO>().ReverseMap();
+            CreateMap<Bonus, BonusDTO>().ReverseMap();
 
         }
     }

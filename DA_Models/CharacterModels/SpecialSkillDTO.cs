@@ -91,7 +91,7 @@ namespace DA_Models.CharacterModels
 
         public int SumAll()
         {
-            SumBonus = BaseBonus + AttributeBonus + BaseSkillBonus + RaceBonus + GearBonus + TempBonuses + OtherBonuses;
+            SumBonus = base.SumAll() + AttributeBonus + BaseSkillBonus;
             return SumBonus;
         }
 

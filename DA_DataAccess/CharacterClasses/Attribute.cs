@@ -8,36 +8,10 @@ using System.Threading.Tasks;
 
 namespace DA_DataAccess.CharacterClasses
 {
-    public class Attribute
+    public class Attribute: Feature
     {
-        [Key] public int Id { get; set; }
-
-        public string? Name { get; set; }
-
-        public int Index { get; set; }
-
-        public int BaseBonus { get; set; } = 0;
-        public int RaceBonus { get; set; } = 0;
-        public int GearBonus { get; set; } = 0;
-        public int OtherBonuses { get; set; } = 0;
-        public int TempBonuses { get; set; } = 0;
-        public int HealthBonus { get; set; } = 0;
-        public int CharacterId { get; set; }
-        [ForeignKey(nameof(CharacterId))]
-        public Character Character { get; set; }
-
-
-
-
-
-        //public int SumOfAttribute()
-        //{
-        //   return BaseBonus+ RaceBonus+ GearBonus+ HealthBonus + OtherBonuses.Values.AsEnumerable().Sum();
-        //}
-        //public int GetModyfier()
-        //{
-        //    return (int)Math.Floor( (double)(SumOfAttribute() - 10) / 2.0);
-        //}
+        
+        //public ICollection<Bonus> TraitBonusesRelated { get; set; }
     }
 }
 

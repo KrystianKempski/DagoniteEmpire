@@ -23,6 +23,8 @@ namespace DA_Models.CharacterModels
         public int CurrentExpPoints { get; set; }
         public int UsedExpPoints { get; set; }
 
+        public int TraitBalance { get; set; }
+
         public ICollection<AttributeDTO>? Attributes { get; set; }
         public ICollection<BaseSkillDTO>? BaseSkills { get; set; }
         public ICollection<SpecialSkillDTO>? SpecialSkills { get; set; }

@@ -24,11 +24,19 @@ namespace DA_Business.Repository.CharacterReps
         }
         public async Task<BaseSkillDTO> Create(BaseSkillDTO objDTO)
         {
-            var obj = _mapper.Map<BaseSkillDTO, BaseSkill>(objDTO);
-            var addedObj = _db.BaseSkills.Add(obj);
-            await _db.SaveChangesAsync();
+            try
+            {
+                var obj = _mapper.Map<BaseSkillDTO, BaseSkill>(objDTO);
+                var addedObj = _db.BaseSkills.Add(obj);
+                await _db.SaveChangesAsync();
 
-            return _mapper.Map<BaseSkill, BaseSkillDTO>(addedObj.Entity);
+                return _mapper.Map<BaseSkill, BaseSkillDTO>(addedObj.Entity);
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
+            return null;
         }
 
         public async Task<int> Delete(int id)
@@ -45,13 +53,13 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<BaseSkillDTO>> GetAll(int? charId = null)
         {
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(_db.BaseSkills);
-            return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(_db.BaseSkills.Where(u => u.CharacterId == charId).OrderBy(u => u.Index));
+                return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(_db.BaseSkills/*.Include(u => u.TraitBonusRelated)*/);
+            return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(_db.BaseSkills./*Include(u => u.TraitBonusRelated).*/Where(u => u.CharacterId == charId).OrderBy(u => u.Index));
         }
 
         public async Task<BaseSkillDTO> GetById(int id)
         {
-            var obj = await _db.BaseSkills.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await _db.BaseSkills./*Include(u => u.TraitBonusRelated).*/FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<BaseSkill, BaseSkillDTO>(obj);
