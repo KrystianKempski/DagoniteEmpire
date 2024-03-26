@@ -262,11 +262,16 @@
                             </table>
                             <div class="row">
                                 <label>Traits balance: @Character.TraitBalance </label>
-                                <span><button @onclick="@(()=>AddTrait())" class="add-trait"><i class="fa-solid fa-plus"></i></button></span>
+                                <span><button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add custom trait</button></span>
+                                <span><button @onclick="@(()=>AddExistingTrait())" class="add-trait">Add existing trait</button></span>
                             </div>
                             @if (TraitComponent!=null)
                             {
                                 <TraitComponent Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-TraitComp="@TraitComponent"></TraitComponent>
+                            }
+                            @if (TraitsChosen != null)
+                            {
+                                <ExistingTraitsDialog @bind-TraitsChosen="@TraitsChosen"></ExistingTraitsDialog>
                             }
                         </div>
 
@@ -482,6 +487,27 @@
         } 
     }
 
+    private TraitsChosenModel _traitsChosen;
+    private TraitsChosenModel TraitsChosen
+    {
+        get => _traitsChosen;
+        set{
+            if (value.TraitsChosen != null && value.TraitsChosen.Count()>0)
+            {
+                foreach (var trait in value.TraitsChosen)
+                {
+                    if(Traits.FirstOrDefault(u => u.Name == trait.Name) == null)
+                    {
+                        Traits = Traits.Append(trait);
+                    }
+                }
+                 CalculateTraitsBonuses();
+            }
+            if (_traitsChosen == value) return;
+            _traitsChosen = value;
+        }
+    }
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -599,20 +625,12 @@
                 foreach (var obj in SpecialSkills)
                 {
                     obj.CharacterId = Id;
-
                     await _specialSkillRepository.Update(obj);
                 }
                 foreach (var obj in Traits)
                 {
                     obj.CharacterId = Id;
-
                     await _traitRepository.Update(obj);
-                }
-                foreach (var obj in Traits)
-                {
-                    obj.CharacterId = Id;
-                    await _traitRepository.Update(obj);
-
                 }
             }
         }
@@ -962,11 +980,17 @@
 
     }
 
-    private async Task AddTrait()
+    private async Task AddCustomTrait()
     {
         TraitComponent.TraitDTO = new();
         TraitComponent.IsVisible = true;
         TraitComponent.IsEditMode = false;
+        StateHasChanged();
+    }
+    private async Task AddExistingTrait()
+    {
+        TraitsChosen = new();
+        TraitsChosen.IsVisible = true;
         StateHasChanged();
     }
 

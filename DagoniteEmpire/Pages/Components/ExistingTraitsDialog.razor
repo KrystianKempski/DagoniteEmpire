@@ -1,0 +1,113 @@
+﻿@inject ITraitRepository _traitRepository
+
+<div class="traits">
+
+    <SfDialog Width="50%" Height="50%" @bind-Visible="@_traitsChosen.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+        <DialogEvents Opened="@DialogOpen"></DialogEvents>
+        <DialogTemplates>
+            <Header>Create a new Trait</Header>
+            <Content>
+                 <div class="main-table">
+
+                    @if (IsLoading)
+                    {
+                        <div class="text-center">
+                            <img src="/images/loading.gif">
+                        </div>
+                    }
+                    else
+                    {
+                        <SfGrid DataSource="@Traits" @ref="Grid" AllowFiltering="true" AllowPaging="true" Width="100%" Height="100%">
+                            <GridPageSettings PageSize="10"></GridPageSettings>
+                            <GridFilterSettings ImmediateModeDelay=500 Mode="FilterBarMode.Immediate" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+                            <GridColumns>
+                                <GridColumn Field=@nameof(TraitDTO.Name) HeaderText="Name" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="100"></GridColumn>
+                                <GridColumn Field=@nameof(TraitDTO.Descr) HeaderText="Description" FilterSettings="FilterSettings" Width="300"></GridColumn>
+                                <GridColumn Field=@nameof(TraitDTO.TraitValue) HeaderText="Value" FilterSettings="FilterSettings" Width="50" MinWidth="63px" ></GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    } 
+                </div> 
+
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+
+            <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
+            </DialogButton>
+            <DialogButton OnClick="@OnSaveTraitBtnClick" Content="Save" IsPrimary="true">
+            </DialogButton>
+        </DialogButtons>
+    </SfDialog>
+
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<TraitsChosenModel> TraitsChosenChanged { get; set; }
+
+    TraitsChosenModel _traitsChosen;
+
+    [Parameter]
+    public TraitsChosenModel TraitsChosen
+    {
+        get => _traitsChosen;
+        set{
+            if (_traitsChosen == value) return;
+            _traitsChosen = value;
+            IsLoading = false;
+            StateHasChanged();
+            TraitsChosenChanged.InvokeAsync(value);
+        }
+    }
+    private IEnumerable<TraitDTO> Traits { get; set; }
+    SfGrid<TraitDTO> Grid;
+    FilterSettings FilterSettings = new FilterSettings { Operator = Syncfusion.Blazor.Operator.Contains, Type = Syncfusion.Blazor.Grids.FilterType.FilterBar};
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        Traits = await _traitRepository.GetAll();
+    }
+
+    private string ErrorMessage { get; set; } = string.Empty;
+    private bool IsLoading { get; set; }= true;
+
+
+    private async Task OnSaveTraitBtnClick()
+    {
+
+       
+        ErrorMessage = string.Empty;
+
+        TraitsChosen.IsVisible = false;
+
+
+        await TraitsChosenChanged.InvokeAsync(TraitsChosen);
+    }
+    private async Task OnCancelBtnClick()
+    {
+        TraitsChosen.IsVisible = false;
+    }
+    private void DialogOpen()
+    {
+        ErrorMessage = string.Empty;
+        StateHasChanged();
+    }
+    // private async Task OnAddBonusBtnClick()
+    // {
+    //     ErrorMessage = string.Empty;
+    //     if (TraitComp.TraitDTO.Bonuses == null)
+    //         TraitComp.TraitDTO.Bonuses = new List<BonusDTO>();
+    //     var bonus = new BonusDTO();
+    //     bonus.Index = TraitComp.TraitDTO.Bonuses.Count() +1;
+    //     TraitComp.TraitDTO.Bonuses.Add(bonus);
+    // }
+
+
+    // private void OnStartTraitDialog()
+    // {
+    //     IsTraitDialVisible = true;
+    // }
+
+}
