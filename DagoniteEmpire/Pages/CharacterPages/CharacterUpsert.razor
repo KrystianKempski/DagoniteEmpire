@@ -262,8 +262,10 @@
                             </table>
                             <div class="row">
                                 <label>Traits balance: @Character.TraitBalance </label>
-                                <span><button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add custom trait</button></span>
-                                <span><button @onclick="@(()=>AddExistingTrait())" class="add-trait">Add existing trait</button></span>
+                                <div class="column">
+                                    <span><button @onclick="@(()=>AddCustomTrait())" class="add-trait p-1 my-1">Add custom trait</button></span>
+                                    <span><button @onclick="@(()=>AddExistingTrait())" class="add-trait p-1 my-1">Add existing trait</button></span>
+                                </div>
                             </div>
                             @if (TraitComponent!=null)
                             {

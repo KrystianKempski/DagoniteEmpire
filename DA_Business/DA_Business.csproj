@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Repository\IReps\**" />
+    <EmbeddedResource Remove="Repository\IReps\**" />
+    <None Remove="Repository\IReps\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="Dapper" Version="2.1.28" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.11" />
@@ -18,10 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DA_Models\DA_Models.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Repository\IReps\" />
   </ItemGroup>
 
 </Project>

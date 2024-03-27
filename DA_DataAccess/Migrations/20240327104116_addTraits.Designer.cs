@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240319215004_AddTraits")]
-    partial class AddTraits
+    [Migration("20240327104116_addTraits")]
+    partial class addTraits
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -61,6 +61,9 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("TempBonuses")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TraitBonus")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -116,6 +119,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("TempBonuses")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TraitBonus")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CharacterId");
@@ -135,11 +141,9 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("FeatureName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("FeatureType")
@@ -153,6 +157,8 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TraitId");
 
                     b.ToTable("Bonuses");
                 });
@@ -191,6 +197,9 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<string>("Race")
                         .HasColumnType("text");
+
+                    b.Property<int>("TraitBalance")
+                        .HasColumnType("integer");
 
                     b.Property<int>("UsedExpPoints")
                         .HasColumnType("integer");
@@ -251,6 +260,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("TempBonuses")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TraitBonus")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CharacterId");
@@ -282,6 +294,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("TraitType")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("TraitValue")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -548,6 +563,17 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Character");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Bonus", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Trait", "Trait")
+                        .WithMany("Bonuses")
+                        .HasForeignKey("TraitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Trait");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
@@ -630,6 +656,11 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("SpecialSkills");
 
                     b.Navigation("Traits");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>
+                {
+                    b.Navigation("Bonuses");
                 });
 #pragma warning restore 612, 618
         }
