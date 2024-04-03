@@ -6,6 +6,7 @@
 @inject IBaseSkillRepository _baseSkillRepository
 @inject ISpecialSkillRepository _specialSkillRepository
 @inject ITraitRepository _traitRepository
+@inject IRaceRepository _raceRepository
 @inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
@@ -227,6 +228,61 @@
                             </table>
                         </div>
 
+                        <div class="race">
+                           @*  <h3 class="my-3 ml-3">RACE</h3>
+                            <div class="row">
+                                <InputSelect style="width: 100%;"
+                                                ValueExpression="@(()=>Race.Name)"
+                                                Value="@Race.Name"
+                                                ValueChanged="@((string value) => ChangeRace(value))">
+                                    <option value="0" selected disabled>--Select Race--</option>
+                                    @foreach(var race in Races)
+                                    {
+                                        <option value="@race.Name">@race.Name</option>
+                                    }
+                                    <option value="Custom Race">Custom Race</option>
+                                </InputSelect>
+                                <label>Race description</label>
+                                <SfRichTextEditor Height="100%" @ref="RaceDescrShow" @bind-Value="@Race.Description" Readonly="true" ShowTooltip="false">
+                                    <RichTextEditorToolbarSettings Items="@NoTools" />
+                                </SfRichTextEditor>
+
+                                <label>Race traits</label>
+                            </div>
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="name-row">Name</th>
+                                        <th scope="col" class="description-row">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var obj in Race.Traits)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <label class="name-label">@obj.Name</label>
+                                            </td>
+                                            <td>
+                                                <label class="name-label">@obj.Descr</label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="name-label text-center">@obj.TraitValue</label>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            @if (TraitComponent != null)
+                            {
+                                <TraitComponent Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-TraitComp="@TraitComponent"></TraitComponent>
+                            }
+                            @if (TraitsChosen != null)
+                            {
+                                <ExistingTraitsDialog @bind-TraitsChosen="@TraitsChosen"></ExistingTraitsDialog>
+                            } *@
+                        </div>
+
                         <div class="traits">
                             <h3 class="my-3 ml-3">TRAITS</h3>
                           
@@ -247,7 +303,7 @@
                                                 <label class="name-label">@obj.Name</label>
                                             </td>
                                             <td>
-                                                <label class="name-label">@obj.Descr</label>
+                                                <label class="name-label">@obj.SummaryDescr</label>
                                             </td>
                                             <td class="text-center">
                                                 <label class="name-label text-center">@obj.TraitValue</label>
@@ -267,9 +323,9 @@
                                     <span><button @onclick="@(()=>AddExistingTrait())" class="add-trait p-1 my-1">Add existing trait</button></span>
                                 </div>
                             </div>
-                            @if (TraitComponent!=null)
+                            @if (CustomTraitComponent != null)
                             {
-                                <TraitComponent Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-TraitComp="@TraitComponent"></TraitComponent>
+                                <CustomTraitDialog Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-CustomTraitModel="@CustomTraitComponent"></CustomTraitDialog>
                             }
                             @if (TraitsChosen != null)
                             {
@@ -330,7 +386,8 @@
                                                 <td class="name-td-big">
                                                     @if (obj.Editable)
                                                     {
-                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0;" @bind-Value="obj.Name" class=""></InputText>
+                                                           @*  <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0;" @bind-Value="obj.Name" class=""></InputText> *@
+                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0;" Value="@obj.Name" ValueChanged="@((string value) => SpecialSkillNameChanged(value, obj))" ValueExpression="@(()=>obj.Name)"></InputText>
                                                     }
                                                     else
                                                     {
@@ -446,10 +503,12 @@
     // private IEnumerable<AttributeDTO> _attributes 
 
     private CharacterDTO Character { get; set; }
+    private RaceDTO Race {get; set; }
     private IEnumerable<AttributeDTO> Attributes { get; set; }
     private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } 
-    private IEnumerable<SpecialSkillDTO> SpecialSkills { get; set; }
+    private ICollection<SpecialSkillDTO> SpecialSkills { get; set; }
     private IEnumerable<TraitDTO> Traits { get; set; } 
+    private IEnumerable<RaceDTO> Races {get; set; }
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; } = true;
@@ -457,6 +516,9 @@
     private bool IsLeaveAllowed { get; set; } = false;
     private bool IsDukeAllowed { get; set; } = false;
     private string TargetLocation { get; set; } = "";
+    private SfRichTextEditor RaceDescrShow;
+    private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
+
 
     private List<object> ToolbarItems = new List<object>() {
         new ItemModel() { Text = "Add", PrefixIcon = "e-add", Id = "Grid_add"},//Here Grid is SfGrid ID
@@ -464,10 +526,10 @@
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
 
-    private TraitCompModel _traitComponent;
-
-    private TraitCompModel TraitComponent { 
-        get =>_traitComponent ; 
+    private CustomTraitModel _customTraitComponent;
+    private CustomTraitModel CustomTraitComponent
+    {
+        get => _customTraitComponent;
         set{
             if (value.TraitDTO != null)
             {
@@ -484,8 +546,8 @@
 
                 CalculateTraitsBonuses();
             }
-            if (_traitComponent == value) return;
-            _traitComponent = value;
+            if (_customTraitComponent == value) return;
+            _customTraitComponent = value;
         } 
     }
 
@@ -503,7 +565,7 @@
                         Traits = Traits.Append(trait);
                     }
                 }
-                 CalculateTraitsBonuses();
+                CalculateTraitsBonuses();
             }
             if (_traitsChosen == value) return;
             _traitsChosen = value;
@@ -520,7 +582,7 @@
                 IsLoading = true;
                 StateHasChanged();
                 registration =_navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
-                TraitComponent = new();
+                CustomTraitComponent = new();
                 if (Id == 0)
                 {
                     //create
@@ -529,7 +591,7 @@
                     BaseSkills  = CharacterSeeder.GetBaseSkills();
                     SpecialSkills  = CharacterSeeder.GetSpecialSkills();
                     Traits = new List<TraitDTO>();
-
+                    Race = new();
                     // Bonuses = new List<BonusDTO>();
                     var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
                     var user = authstate.User;
@@ -573,8 +635,10 @@
         Character = await _characterRepository.GetById(Id);
         Attributes = await _attributeRepository.GetAll(Id);
         BaseSkills = await _baseSkillRepository.GetAll(Id);
-        SpecialSkills = await _specialSkillRepository.GetAll(Id);
+        IEnumerable<SpecialSkillDTO> temp = await _specialSkillRepository.GetAll(Id);
+        SpecialSkills = temp.ToList();
         Traits = await _traitRepository.GetAll(Id);
+        Races = await _raceRepository.GetAllApproved();
     }
 
     private async Task UpsertCharacter()
@@ -912,6 +976,68 @@
         }
 
     }
+    private void SpecialSkillNameChanged(string specSkillName, SpecialSkillDTO specSkill)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(specSkillName) && specSkill!= null)
+            {
+                if (SpecialSkills.FirstOrDefault(u => u.Name.ToLower() == specSkillName.ToLower()) != null)
+        {
+                    _jsRuntime.ToastrWarning("Special skill with this name already exists. Please choose other name");
+                    int num = 1;
+                    string  newname = specSkillName;
+                    while (SpecialSkills.FirstOrDefault(s => s.Name == newname) != null)
+                    {
+                        newname = specSkillName + (num++).ToString();
+                    }
+                    specSkill.Name = newname;
+                    StateHasChanged();
+                }
+                else
+                {
+                    specSkill.Name = specSkillName;
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+
+    }
+
+
+    private async Task ChangeRace(string name)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(name))
+            {
+                if(name == "Custom race")
+                {
+                    Race =  new RaceDTO();
+                    // go to race creation component
+                }
+                Race = Races.FirstOrDefault(u => u.Name == name);
+                if (Race != null)
+                {
+                    Race = new RaceDTO();
+                }
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+
+    }
+
+
 
     private async Task AddSSRelatedBaseSkill(SpecialSkillDTO obj)
     {
@@ -974,19 +1100,25 @@
         var newSkill = new SpecialSkillDTO();
         newSkill.RelatedBaseSkill = baseSkill;
         newSkill.RelatedBaseSkillName = baseSkill.Name;
-        newSkill.Name = "new skill";
+        int num = 1;
+        string basename = "new skill", newname = "new skill";
+        while (SpecialSkills.FirstOrDefault(s => s.Name == newname)!=null)
+        {
+            newname = basename + (num++).ToString();
+        }
+        newSkill.Name = newname;
         newSkill.Editable = true;
         newSkill.Index =  SpecialSkills.Where(n => n.RelatedBaseSkillName == baseSkill.Name).Count();
-        SpecialSkills = SpecialSkills.Append(newSkill);
+        SpecialSkills.Add(newSkill);
         StateHasChanged();
 
     }
 
     private async Task AddCustomTrait()
     {
-        TraitComponent.TraitDTO = new();
-        TraitComponent.IsVisible = true;
-        TraitComponent.IsEditMode = false;
+        CustomTraitComponent.TraitDTO = new();
+        CustomTraitComponent.IsVisible = true;
+        CustomTraitComponent.IsEditMode = false;
         StateHasChanged();
     }
     private async Task AddExistingTrait()
@@ -1000,9 +1132,9 @@
 
     private async Task EditTrait(TraitDTO trait)
     {
-        TraitComponent.TraitDTO = trait;
-        TraitComponent.IsVisible = true;
-        TraitComponent.IsEditMode = true;
+        CustomTraitComponent.TraitDTO = trait;
+        CustomTraitComponent.IsVisible = true;
+        CustomTraitComponent.IsEditMode = true;
         StateHasChanged();
     }
 
@@ -1049,7 +1181,7 @@
                 }
                 if (feature != null)
                 {
-                    feature.TraitBonus = bonus.BonusValue;
+                    feature.TraitBonus += bonus.BonusValue;
                     feature.SumAll();
                     refresh = true;
                 }

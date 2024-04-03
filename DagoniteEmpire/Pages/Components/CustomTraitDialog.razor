@@ -1,6 +1,7 @@
-﻿<div class="traits">
+﻿@inject AuthenticationStateProvider GetAuthenticationStateAsync
+<div class="traits">
 
-    <SfDialog Width="50%" Height="50%" @bind-Visible="@_traitComponent.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+    <SfDialog Width="50%" Height="50%" @bind-Visible="@_customTraitModel.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>
             <Header>Create a new Trait</Header>
@@ -15,35 +16,44 @@
                     }
                     else
                     {
-                         
-                            <div class="d-flex ">
-                                <div class="flex-grow-1 p-1">
-                                    <label class="fw-bold">Trait name</label>
-                                </div>
-                                <div class="w-10 p-1">
-                                    <label class="fw-bold">Trait value</label>
-                                </div>
-                                </div>
-                            <div class="d-flex">
-                                <div class="flex-grow-1 bonus-name">
-                                    <SfTextBox Placeholder="Insert trait name" @bind-Value="@_traitComponent.TraitDTO.Name"></SfTextBox>
-                                </div>
-                                <div class="w-10 bonus-name">
-                                        <SfNumericTextBox Width="100px" TValue="int" @bind-Value="@_traitComponent.TraitDTO.TraitValue"></SfNumericTextBox>
+                        <div class="d-flex ">
+                            <div class="d-flex flex-column flex-grow-1">
+                            <label class="fw-bold py-1">Trait name</label>
+                                <SfTextBox Placeholder="Insert trait name" @bind-Value="@_customTraitModel.TraitDTO.Name"></SfTextBox>
+                            </div>
+                            <div class="d-flex flex-column px-1">
+                                <label class="fw-bold py-1">Trait value</label>
+                                <SfNumericTextBox Width="100px" TValue="int" @bind-Value="@_customTraitModel.TraitDTO.TraitValue"></SfNumericTextBox>
+                            </div>
+                            <div class="d-flex flex-column px-1">
+                                <label class="fw-bold py-1">Unique</label>
+                                <div class="justify-content-center mx-auto my-auto">
+                                    <SfCheckBox @bind-Checked="IsUnique"></SfCheckBox>
                                 </div>
                             </div>
-                            <div class="align-items-start bonus-name">
-                                <label class="fw-bold  p-1">Trait description</label>
-                            </div>
-                            <div class="align-items-start">
-                                <div class="col-12 bonus-name">
-                                    <SfTextBox Multiline=true Placeholder="Insert general trait description" @bind-Value="@_traitComponent.TraitDTO.Descr"></SfTextBox>
+                            @if (IsAdminOrMG)
+                            {
+                            <div class="d-flex flex-column px-1">
+                                <label class="fw-bold py-1">Approve</label>
+                                <div class="justify-content-center mx-auto my-auto">
+                                        <SfCheckBox @bind-Checked="_customTraitModel.TraitDTO.TraitApproved"></SfCheckBox>
                                 </div>
                             </div>
+                            }
+                            </div>
+                        <div class="align-items-start bonus-name py-0">
+                            <label class="fw-bold  py-1">Trait description</label>
+                        </div>
+                        <div class="align-items-start">
+                            <div class="col-12 bonus-name py-0">
+                                <SfTextBox Multiline=true Placeholder="Insert general trait description" @bind-Value="@_customTraitModel.TraitDTO.Descr"></SfTextBox>
+                            </div>
+                        </div>
+                        
                         <label class="fw-bold pt-4">Bonuses and penalties</label>
-                        @if (_traitComponent.TraitDTO.Bonuses != null)
+                        @if (_customTraitModel.TraitDTO.Bonuses != null)
                         {
-                            @foreach (var obj in _traitComponent.TraitDTO.Bonuses)
+                            @foreach (var obj in _customTraitModel.TraitDTO.Bonuses)
                             {
                                 <label class="bonus-cell">Bonus @obj.Index</label>
                                 <div class="bonuses-columns">
@@ -119,25 +129,27 @@
     [Parameter]
     public IEnumerable<TraitDTO> Traits { get; set; }
     [Parameter]
-    public EventCallback<TraitCompModel> TraitCompChanged { get; set; }
+    public EventCallback<CustomTraitModel> CustomTraitModelChanged { get; set; }
 
-    TraitCompModel _traitComponent;
+    CustomTraitModel _customTraitModel;
 
     [Parameter]
-    public TraitCompModel TraitComp 
+    public CustomTraitModel CustomTraitModel
     {
-        get => _traitComponent;
+        get => _customTraitModel;
         set{
-            if (_traitComponent == value) return;
-            _traitComponent = value;
+            if (_customTraitModel == value) return;
+            _customTraitModel = value;
             IsLoading = false;
             StateHasChanged();
-            TraitCompChanged.InvokeAsync(value);
+            CustomTraitModelChanged.InvokeAsync(value);
         }
     }
 
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
+    public bool IsAdminOrMG { get; set; } = false;
+    private bool IsUnique { get; set; } = false;
 
     List<string> FeatureData = new List<string>
     {
@@ -151,12 +163,12 @@
     private async Task OnSaveTraitBtnClick()
     {
 
-        if (TraitComp.TraitDTO.Bonuses == null || TraitComp.TraitDTO.Bonuses.Count == 0)
+        if (CustomTraitModel.TraitDTO.Bonuses == null || CustomTraitModel.TraitDTO.Bonuses.Count == 0)
         {
             ErrorMessage = $"There must be at least one bonus in trait";
             return;
         }
-        foreach (var bonus in TraitComp.TraitDTO.Bonuses)
+        foreach (var bonus in CustomTraitModel.TraitDTO.Bonuses)
         {
             if (bonus.BonusValue == 0 && bonus.Description==string.Empty)
             {
@@ -169,13 +181,13 @@
                 return;
             }
         }
-        if(!TraitComp.TraitDTO.Bonuses.GroupBy(x => x.FeatureName).All(g => g.Count() == 1))
+        if (!CustomTraitModel.TraitDTO.Bonuses.GroupBy(x => x.FeatureName).All(g => g.Count() == 1))
         {
             ErrorMessage = $"Bonuses cannot relate to the same feature more than once";
             return;
         }
 
-        if(TraitComp.IsEditMode == false && Traits.Where(t => t.Name == TraitComp.TraitDTO.Name).Count()>0)
+        if (CustomTraitModel.IsEditMode == false && Traits.Where(t => t.Name == CustomTraitModel.TraitDTO.Name).Count() > 0)
         {
             ErrorMessage = $"That trait name already exists";
             return;
@@ -183,15 +195,15 @@
 
         ErrorMessage = string.Empty;
 
-        TraitComp.IsVisible = false;
-        TraitComp.TraitDTO.Descr += ". ";
+        CustomTraitModel.IsVisible = false;
+        CustomTraitModel.TraitDTO.SummaryDescr = CustomTraitModel.TraitDTO.Descr + ". ";
 
-        foreach (var bonus in TraitComp.TraitDTO.Bonuses)
+        foreach (var bonus in CustomTraitModel.TraitDTO.Bonuses)
         {
 
             if (bonus.Description != null && bonus.Description.Length > 0)
             {
-                TraitComp.TraitDTO.Descr += bonus.Description + ", ";
+                CustomTraitModel.TraitDTO.SummaryDescr += bonus.Description + ", ";
             }
             else
             {
@@ -200,29 +212,48 @@
                     val = $"+{bonus.BonusValue}";
                 else
                     val = $"{bonus.BonusValue}";
-                TraitComp.TraitDTO.Descr += $"{val} to {bonus.FeatureName}; ";
+                CustomTraitModel.TraitDTO.SummaryDescr += $"{val} to {bonus.FeatureName}; ";
             }
 
         }
-        await TraitCompChanged.InvokeAsync(TraitComp);
+        if (IsUnique == true)
+        {
+            CustomTraitModel.TraitDTO.TraitType = SD.TraitType_Unique;
+        }
+        else
+        {
+            CustomTraitModel.TraitDTO.TraitType = SD.TraitType_Advantage;
+        }
+        
+        await CustomTraitModelChanged.InvokeAsync(CustomTraitModel);
     }
     private async Task OnCancelBtnClick()
     {
-        TraitComp.IsVisible = false;
+        CustomTraitModel.IsVisible = false;
     }
-    private void DialogOpen()
+
+    private async Task DialogOpen()
     {
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        if (user == null)
+            return; // failed to load
+        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+        IsUnique = false;
+        if (CustomTraitModel.TraitDTO.TraitType == SD.TraitType_Unique)
+            IsUnique = true;
+
         ErrorMessage = string.Empty;
         StateHasChanged();
     }
     private async Task OnAddBonusBtnClick()
     {
         ErrorMessage = string.Empty;
-        if (TraitComp.TraitDTO.Bonuses == null)
-            TraitComp.TraitDTO.Bonuses = new List<BonusDTO>();
+        if (CustomTraitModel.TraitDTO.Bonuses == null)
+            CustomTraitModel.TraitDTO.Bonuses = new List<BonusDTO>();
         var bonus = new BonusDTO();
-        bonus.Index = TraitComp.TraitDTO.Bonuses.Count() +1;
-        TraitComp.TraitDTO.Bonuses.Add(bonus);
+        bonus.Index = CustomTraitModel.TraitDTO.Bonuses.Count() + 1;
+        CustomTraitModel.TraitDTO.Bonuses.Add(bonus);
     }
 
 

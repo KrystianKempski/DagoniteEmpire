@@ -13,9 +13,12 @@ namespace DA_Models.CharacterModels
         public int Id { get; set; }
         public string Name { get; set; }
         public string Descr { get; set; }
+
+        public string SummaryDescr { get; set; }
         public int CharacterId { get; set; }
         public int Index { get; set; }
         public int TraitValue { get; set; }
+        public bool TraitApproved { get; set; }
 
         public string TraitType { get; set; } = string.Empty;
 

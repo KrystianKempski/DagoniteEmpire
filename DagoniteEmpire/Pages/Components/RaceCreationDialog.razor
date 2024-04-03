@@ -1,0 +1,279 @@
+﻿@* <div class="race">
+    <SfDialog Width="50%" Height="50%" @bind-Visible="@_raceComponent.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+        <DialogEvents Opened="@DialogOpen"></DialogEvents>
+        <DialogTemplates>
+            <Header>Create a new race</Header>
+            <Content>
+       
+                 <div class="main-table">
+
+                     @if (IsLoading)
+                    {
+                        <div class="text-center">
+                            <img src="/images/loading.gif">
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex ">
+                            <div class="d-flex flex-column flex-grow-1">
+                                <label class="fw-bold py-1">Trait name</label>
+                                <SfTextBox Placeholder="Insert race name" @bind-Value="@_raceComponent.RaceDTO.Name"></SfTextBox>
+                            </div>
+                            <div class="align-items-start bonus-name py-0">
+                                <label class="fw-bold  p-1">Trait description</label>
+                            </div>
+                            <div class="align-items-start">
+                                <div class="col-12 bonus-name py-0">
+                                    <SfTextBox Multiline=true Placeholder="Insert general trait description" @bind-Value="@_raceComponent.RaceDTO.Description"></SfTextBox>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <label class="fw-bold pt-4">Bonuses and penalties</label>
+                        @if (_raceComponent.RaceDTO.Traits != null)
+                        {
+
+                            <div class="traits">
+                                <h3 class="my-3 ml-3">TRAITS</h3>
+
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="name-row">Name</th>
+                                            <th scope="col" class="description-row">Description</th>
+                                            <th scope="col" class="trait-value-row text-center">Value</th>
+                                            <th scope="col" class="action-row text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var obj in _raceComponent.RaceDTO.Traits)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <label class="name-label">@obj.Name</label>
+                                                </td>
+                                                <td>
+                                                    <label class="name-label">@obj.Descr</label>
+                                                </td>
+                                                <td class="text-center">
+                                                    <label class="name-label text-center">@obj.TraitValue</label>
+                                                </td>
+                                                <td>
+                                                    <button @onclick="@(()=>EditTrait(obj))" class="add-trait"><i class="fa-solid fa-pencil"></i></button>
+                                                    <button @onclick="@(()=>DeleteTrait(obj))" class="add-trait"><i class="fa-solid fa-trash"></i></button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                <div class="row">
+                                    <div class="column">
+                                        <span><button @onclick="@(()=>AddCustomTrait())" class="add-trait p-1 my-1">Add custom trait</button></span>
+                                        <span><button @onclick="@(()=>AddExistingTrait())" class="add-trait p-1 my-1">Add existing trait</button></span>
+                                    </div>
+                                </div>
+                                @if (TraitComponent != null)
+                                {
+                                    <TraitComponent Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-TraitComp="@TraitComponent"></TraitComponent>
+                                }
+                                @if (TraitsChosen != null)
+                                {
+                                    <ExistingTraitsDialog @bind-TraitsChosen="@TraitsChosen"></ExistingTraitsDialog>
+                                }
+                            </div>
+                        }
+                        <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
+                    <label class="warnign-message">@ErrorMessage</label>
+                    } 
+                    
+                </div>  
+                
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+
+            <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
+            </DialogButton>
+            <DialogButton OnClick="@OnSaveTraitBtnClick" Content="Save" IsPrimary="true">
+            </DialogButton>
+        </DialogButtons>
+    </SfDialog>
+
+</div>
+
+@code {
+    [Parameter]
+    public IEnumerable<AttributeDTO> Attributes { get; set; }
+    [Parameter]
+    public IEnumerable<BaseSkillDTO> BaseSkills { get; set; }
+    [Parameter]
+    public IEnumerable<SpecialSkillDTO> SpecialSkills { get; set; }
+
+    [Parameter]
+    private IEnumerable<TraitDTO> Traits { get; set; }
+
+    [Parameter]
+    public EventCallback<RaceCompModel> RaceCompChanged { get; set; }
+
+    private RaceCompModel _raceComponent;
+
+    [Parameter]
+    public RaceCompModel RaceComp
+    {
+        get => _raceComponent;
+        set{
+            if (_raceComponent == value) return;
+            _raceComponent = value;
+            IsLoading = false;
+            StateHasChanged();
+            RaceCompChanged.InvokeAsync(value);
+        }
+    }
+
+
+    private TraitsChosenModel _traitsChosen;
+    private TraitsChosenModel TraitsChosen
+    {
+        get => _traitsChosen;
+        set
+        {
+            if (value.TraitsChosen != null && value.TraitsChosen.Count() > 0)
+            {
+                foreach (var trait in value.TraitsChosen)
+                {
+                    if (Traits.FirstOrDefault(u => u.Name == trait.Name) == null)
+                    {
+                        Traits = Traits.Append(trait);
+                    }
+                }
+                CalculateTraitsBonuses();
+            }
+            if (_traitsChosen == value) return;
+            _traitsChosen = value;
+        }
+    }
+
+    private CustomTraitModel _traitComponent;
+
+    private CustomTraitModel TraitComponent
+    {
+        get => _traitComponent;
+        set
+        {
+            if (value.TraitDTO != null)
+            {
+                var obj = Traits.FirstOrDefault(u => u.Name == value.TraitDTO.Name);
+                if (obj == null)
+                {
+                    Traits = Traits.Append(value.TraitDTO);
+
+                }
+                else
+                {
+                    obj = value.TraitDTO;
+                }
+
+                CalculateTraitsBonuses();
+            }
+            if (_traitComponent == value) return;
+            _traitComponent = value;
+        }
+    }
+
+    private string ErrorMessage { get; set; } = string.Empty;
+    private bool IsLoading { get; set; }= true;
+    public bool IsAdminOrMG { get; set; } = false;
+
+
+    private async Task OnSaveTraitBtnClick()
+    {
+
+        if (RaceComp.TraitDTO.Trait == null || TraitComp.TraitDTO.Bonuses.Count == 0)
+        {
+            ErrorMessage = $"There must be at least one trait in case";
+            return;
+        }
+        foreach (var bonus in TraitComp.TraitDTO.Bonuses)
+        {
+            if (bonus.BonusValue == 0 && bonus.Description==string.Empty)
+            {
+                ErrorMessage = $"Please fill all input fiels in bonus";
+                return;
+            }
+            if (bonus.BonusValue == 0 && bonus.Description == string.Empty)
+            {
+                ErrorMessage = $"Please fill all input fiels in bonus";
+                return;
+            }
+        }
+        if(!TraitComp.TraitDTO.Bonuses.GroupBy(x => x.FeatureName).All(g => g.Count() == 1))
+        {
+            ErrorMessage = $"Bonuses cannot relate to the same feature more than once";
+            return;
+        }
+
+        if(TraitComp.IsEditMode == false && Traits.Where(t => t.Name == TraitComp.TraitDTO.Name).Count()>0)
+        {
+            ErrorMessage = $"That trait name already exists";
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+
+        TraitComp.IsVisible = false;
+        TraitComp.TraitDTO.Descr += ". ";
+
+        foreach (var bonus in TraitComp.TraitDTO.Bonuses)
+        {
+
+            if (bonus.Description != null && bonus.Description.Length > 0)
+            {
+                TraitComp.TraitDTO.Descr += bonus.Description + ", ";
+            }
+            else
+            {
+                string val;
+                if (bonus.BonusValue > 0)
+                    val = $"+{bonus.BonusValue}";
+                else
+                    val = $"{bonus.BonusValue}";
+                TraitComp.TraitDTO.Descr += $"{val} to {bonus.FeatureName}; ";
+            }
+
+        }
+        TraitComp.TraitDTO.TraitType = SD.TraitType_Advantage;
+        await TraitCompChanged.InvokeAsync(TraitComp);
+    }
+    private async Task OnCancelBtnClick()
+    {
+        TraitComp.IsVisible = false;
+    }
+    private async Task DialogOpen()
+    {
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        if (user == null)
+            return; // failed to load
+        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+        ErrorMessage = string.Empty;
+        StateHasChanged();
+    }
+    private async Task OnAddBonusBtnClick()
+    {
+        ErrorMessage = string.Empty;
+        if (TraitComp.TraitDTO.Bonuses == null)
+            TraitComp.TraitDTO.Bonuses = new List<BonusDTO>();
+        var bonus = new BonusDTO();
+        bonus.Index = TraitComp.TraitDTO.Bonuses.Count() +1;
+        TraitComp.TraitDTO.Bonuses.Add(bonus);
+    }
+
+
+    // private void OnStartTraitDialog()
+    // {
+    //     IsTraitDialVisible = true;
+    // }
+
+}
+ *@

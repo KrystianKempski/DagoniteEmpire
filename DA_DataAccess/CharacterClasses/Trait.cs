@@ -18,7 +18,10 @@ namespace DA_DataAccess.CharacterClasses
         public string TraitType { get; set; } = string.Empty;      // for example "race" or "advantages"
 
         public int TraitValue { get; set; }          // for advantages and disadvantages
-        public string Descr { get; set; }            // descritpion of all trait 
+        public string Descr { get; set; }            // short description of trait 
+
+        public string SummaryDescr { get; set; }    // summary descritpion of all trait 
+        public bool TraitApproved { get; set; }     // traits have to be approved by Game Master
 
         public int CharacterId { get; set; }
 

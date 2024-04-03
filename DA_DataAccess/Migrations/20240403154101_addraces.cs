@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class addTraits : Migration
+    public partial class addraces : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -258,6 +258,28 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Races",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Index = table.Column<int>(type: "integer", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    RaceApproved = table.Column<bool>(type: "boolean", nullable: false),
+                    CharacterId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Races", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Races_Characters_CharacterId",
+                        column: x => x.CharacterId,
+                        principalTable: "Characters",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SpecialSkills",
                 columns: table => new
                 {
@@ -300,7 +322,9 @@ namespace DA_DataAccess.Migrations
                     TraitType = table.Column<string>(type: "text", nullable: false),
                     TraitValue = table.Column<int>(type: "integer", nullable: false),
                     Descr = table.Column<string>(type: "text", nullable: false),
-                    CharacterId = table.Column<int>(type: "integer", nullable: false)
+                    TraitApproved = table.Column<bool>(type: "boolean", nullable: false),
+                    CharacterId = table.Column<int>(type: "integer", nullable: false),
+                    RaceId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -311,6 +335,11 @@ namespace DA_DataAccess.Migrations
                         principalTable: "Characters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Traits_Races_RaceId",
+                        column: x => x.RaceId,
+                        principalTable: "Races",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -390,6 +419,11 @@ namespace DA_DataAccess.Migrations
                 column: "TraitId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Races_CharacterId",
+                table: "Races",
+                column: "CharacterId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SpecialSkills_CharacterId",
                 table: "SpecialSkills",
                 column: "CharacterId");
@@ -398,6 +432,11 @@ namespace DA_DataAccess.Migrations
                 name: "IX_Traits_CharacterId",
                 table: "Traits",
                 column: "CharacterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Traits_RaceId",
+                table: "Traits",
+                column: "RaceId");
         }
 
         /// <inheritdoc />
@@ -441,6 +480,9 @@ namespace DA_DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "Traits");
+
+            migrationBuilder.DropTable(
+                name: "Races");
 
             migrationBuilder.DropTable(
                 name: "Characters");

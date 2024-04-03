@@ -30,6 +30,7 @@ builder.Services.AddScoped<ISpecialSkillRepository, SpecialSkillRepository>();
 builder.Services.AddScoped<IBaseSkillRepository, BaseSkillRepository>();
 builder.Services.AddScoped<ITraitRepository, TraitRepository>();
 builder.Services.AddScoped<IBonusRepository, BonusRepository>();
+builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 

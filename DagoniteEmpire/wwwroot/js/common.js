@@ -25,6 +25,9 @@
     if (type === "error") {
         toastr.error(message, 'Error', { timeOut: 5000, positionClas: "toast-top-right" });
     }
+    if (type === "warning") {
+        toastr.error(message, 'Warning', { timeOut: 5000, positionClas: "toast-top-right" });
+    }
     if (type === "attributeLimit") {
         toastr.warning(message, 'Attribute Limit', { timeOut: 5000, positionClas: "toast-top-right" });
     }

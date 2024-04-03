@@ -1,11 +1,10 @@
-﻿@inject ITraitRepository _traitRepository
-
+﻿@inject ITraitRepository _traitRepository 
 <div class="traits">
 
     <SfDialog Width="50%" Height="50%" @bind-Visible="@_traitsChosen.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>
-            <Header>Create a new Trait</Header>
+            <Header>Choose one or more from existing traits</Header>
             <Content>
                  <div class="main-table">
 
@@ -43,6 +42,7 @@
 </div>
 
 @code {
+
     [Parameter]
     public EventCallback<TraitsChosenModel> TraitsChosenChanged { get; set; }
 
@@ -64,10 +64,9 @@
     SfGrid<TraitDTO> Grid;
     FilterSettings FilterSettings = new FilterSettings { Operator = Syncfusion.Blazor.Operator.Contains, Type = Syncfusion.Blazor.Grids.FilterType.FilterBar};
 
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Traits = await _traitRepository.GetAll();
+        Traits = await _traitRepository.GetAllApproved(SD.TraitType_Advantage);
     }
 
     private string ErrorMessage { get; set; } = string.Empty;

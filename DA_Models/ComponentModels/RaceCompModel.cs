@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace DA_Models.ComponentModels
 {
-    public class TraitsChosenModel
+    public class RaceCompModel
     {
-        public List<TraitDTO> TraitsChosen { get; set; }
+        public RaceDTO RaceDTO { get; set; }
         public bool IsVisible { get; set; } = false;
     }
 }

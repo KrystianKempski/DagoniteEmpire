@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using Abp.Collections.Extensions;
+using AutoMapper;
 using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
@@ -67,6 +68,13 @@ namespace DA_Business.Repository.CharacterReps
            return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Include(u => u.Bonuses).Where(u => u.CharacterId == charId).OrderBy(u=>u.Index));
         }
 
+        public async Task<IEnumerable<TraitDTO>> GetAllApproved(string? traitType)
+        {
+            if (traitType.IsNullOrEmpty())
+                return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Include(u => u.Bonuses).Where(t => t.TraitApproved == true));
+            return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.TraitType == traitType));
+        }
+
         public async Task<TraitDTO> GetById(int id)
         {
             var obj = await _db.Traits.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
@@ -90,6 +98,7 @@ namespace DA_Business.Repository.CharacterReps
                     obj.Index = objDTO.Index;  
                     obj.TraitType = objDTO.TraitType;
                     obj.TraitValue = objDTO.TraitValue;
+                    obj.TraitApproved = objDTO.TraitApproved;
                     _db.Traits.Update(obj);
                     await _db.SaveChangesAsync();
                     return _mapper.Map<Trait, TraitDTO>(obj);

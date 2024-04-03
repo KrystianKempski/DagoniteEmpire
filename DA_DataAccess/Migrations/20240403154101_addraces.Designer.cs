@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240327104116_addTraits")]
-    partial class addTraits
+    [Migration("20240403154101_addraces")]
+    partial class addraces
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -213,6 +213,38 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("Characters");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CharacterId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Index")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("RaceApproved")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("Races");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
                 {
                     b.Property<int>("Id")
@@ -291,6 +323,12 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
+                    b.Property<int?>("RaceId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("TraitApproved")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("TraitType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -301,6 +339,8 @@ namespace DA_DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CharacterId");
+
+                    b.HasIndex("RaceId");
 
                     b.ToTable("Traits");
                 });
@@ -574,6 +614,15 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Trait");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId");
+
+                    b.Navigation("Character");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
@@ -592,6 +641,10 @@ namespace DA_DataAccess.Migrations
                         .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("DA_DataAccess.CharacterClasses.Race", null)
+                        .WithMany("Traits")
+                        .HasForeignKey("RaceId");
 
                     b.Navigation("Character");
                 });
@@ -655,6 +708,11 @@ namespace DA_DataAccess.Migrations
 
                     b.Navigation("SpecialSkills");
 
+                    b.Navigation("Traits");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>
+                {
                     b.Navigation("Traits");
                 });
 

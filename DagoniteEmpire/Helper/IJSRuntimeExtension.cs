@@ -16,6 +16,10 @@ namespace DagoniteEmpire.Helper
         {
             await jsRuntime.InvokeVoidAsync("ShowToastr", "specialSkillLimit", message);
         }
+        public static async ValueTask ToastrWarning(this IJSRuntime jsRuntime, string message)
+        {
+            await jsRuntime.InvokeVoidAsync("ShowToastr", "warning", message);
+        }
         public static async ValueTask ToastrError(this IJSRuntime jsRuntime, string message)
         {
             await jsRuntime.InvokeVoidAsync("ShowToastr", "error", message);
