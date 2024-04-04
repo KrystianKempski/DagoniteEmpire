@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DA_Models.ComponentModels
 {
-    public class RaceCompModel
+    public class CustomRaceModel
     {
         public RaceDTO RaceDTO { get; set; }
         public bool IsVisible { get; set; } = false;

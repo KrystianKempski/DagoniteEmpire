@@ -98,11 +98,10 @@
                             <table class="table align-middle mb-1">
                             <thead>
                                 <tr>
-                                   @*  <th scope="col" class="name-row" >Attribute</th> *@
-                                    <th scope="col" class="bonus-row">Base</th>
-                                    <th scope="col" class="bonus-row">Race</th>
-                                    <th scope="col" class="bonus-row">Gear</th>
-                                    <th scope="col" class="bonus-row">Trait</th>
+                                    <th scope="col" class="bonus-row text-center">Base</th>
+                                    <th scope="col" class="sum-row text-center">Race</th>
+                                    <th scope="col" class="sum-row text-center">Gear</th>
+                                    <th scope="col" class="sum-row text-center">Trait</th>
                                     <th scope="col" class="sum-row text-center">Sum</th>
                                     <th scope="col" class="sum-row text-center">Mod.</th>
                                 </tr>
@@ -130,19 +129,11 @@
                                         <td>
                                             <div class="attr-control">
                                                 <span class="attr-indicator">@obj.RaceBonus</span>
-                                                <div class="arrows">
-                                                    <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                    <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                </div>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="attr-control">
                                                 <span class="attr-indicator">@obj.GearBonus</span>
-                                                <div class="arrows">
-                                                    <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                    <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                </div>
                                             </div>
                                         </td>
                                         <td>
@@ -171,11 +162,11 @@
                                 <thead>
                                     <tr>
                                         <th scope="col" class="name-row">Skill</th>
-                                        <th scope="col" class="bonus-row">Base</th>
-                                        <th scope="col" class="bonus-row">Race</th>
-                                        <th scope="col" class="bonus-row">Gear</th>
-                                        <th scope="col" class="bonus-row">Trait</th>
-                                        <th scope="col" class="bonus-row text-center"> Sum</th>
+                                        <th scope="col" class="bonus-row text-center">Base</th>
+                                        <th scope="col" class="sum-row text-center">Race</th>
+                                        <th scope="col" class="sum-row text-center">Gear</th>
+                                        <th scope="col" class="sum-row text-center">Trait</th>
+                                        <th scope="col" class="sum-row text-center"> Sum</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -197,19 +188,11 @@
                                             <td>
                                                 <div class="attr-control">
                                                     <span class="attr-indicator">@obj.RaceBonus</span>
-                                                    <div class="arrows">
-                                                        <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                        <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                    </div>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div class="attr-control">
                                                     <span class="attr-indicator">@obj.GearBonus</span>
-                                                    <div class="arrows">
-                                                        <button @onclick="@obj.IncrGear" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                        <button @onclick="@obj.DecrGear" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                    </div>
                                                 </div>
                                             </td>
                                             <td>
@@ -228,109 +211,17 @@
                             </table>
                         </div>
 
-                        <div class="race">
-                           @*  <h3 class="my-3 ml-3">RACE</h3>
-                            <div class="row">
-                                <InputSelect style="width: 100%;"
-                                                ValueExpression="@(()=>Race.Name)"
-                                                Value="@Race.Name"
-                                                ValueChanged="@((string value) => ChangeRace(value))">
-                                    <option value="0" selected disabled>--Select Race--</option>
-                                    @foreach(var race in Races)
-                                    {
-                                        <option value="@race.Name">@race.Name</option>
-                                    }
-                                    <option value="Custom Race">Custom Race</option>
-                                </InputSelect>
-                                <label>Race description</label>
-                                <SfRichTextEditor Height="100%" @ref="RaceDescrShow" @bind-Value="@Race.Description" Readonly="true" ShowTooltip="false">
-                                    <RichTextEditorToolbarSettings Items="@NoTools" />
-                                </SfRichTextEditor>
+                        <div class="races">
+                             <h3 class="my-3 ml-3">RACE</h3>
 
-                                <label>Race traits</label>
-                            </div>
-                            <table class="table align-middle">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="name-row">Name</th>
-                                        <th scope="col" class="description-row">Description</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var obj in Race.Traits)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <label class="name-label">@obj.Name</label>
-                                            </td>
-                                            <td>
-                                                <label class="name-label">@obj.Descr</label>
-                                            </td>
-                                            <td class="text-center">
-                                                <label class="name-label text-center">@obj.TraitValue</label>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                            @if (TraitComponent != null)
-                            {
-                                <TraitComponent Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-TraitComp="@TraitComponent"></TraitComponent>
-                            }
-                            @if (TraitsChosen != null)
-                            {
-                                <ExistingTraitsDialog @bind-TraitsChosen="@TraitsChosen"></ExistingTraitsDialog>
-                            } *@
+                            <RaceComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Races="@Races" @bind-CurrentRace="@CurrentRace"></RaceComponent>
+                            
                         </div>
 
                         <div class="traits">
                             <h3 class="my-3 ml-3">TRAITS</h3>
                           
-                            <table class="table align-middle">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="name-row">Name</th>
-                                        <th scope="col" class="description-row">Description</th>
-                                        <th scope="col" class="trait-value-row text-center">Value</th>
-                                        <th scope="col" class="action-row text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var obj in Traits)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <label class="name-label">@obj.Name</label>
-                                            </td>
-                                            <td>
-                                                <label class="name-label">@obj.SummaryDescr</label>
-                                            </td>
-                                            <td class="text-center">
-                                                <label class="name-label text-center">@obj.TraitValue</label>
-                                            </td>
-                                            <td>
-                                                <button @onclick="@(()=>EditTrait(obj))" class="add-trait"><i class="fa-solid fa-pencil"></i></button>
-                                                <button @onclick="@(()=>DeleteTrait(obj))" class="add-trait"><i class="fa-solid fa-trash"></i></button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                            <div class="row">
-                                <label>Traits balance: @Character.TraitBalance </label>
-                                <div class="column">
-                                    <span><button @onclick="@(()=>AddCustomTrait())" class="add-trait p-1 my-1">Add custom trait</button></span>
-                                    <span><button @onclick="@(()=>AddExistingTrait())" class="add-trait p-1 my-1">Add existing trait</button></span>
-                                </div>
-                            </div>
-                            @if (CustomTraitComponent != null)
-                            {
-                                <CustomTraitDialog Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-CustomTraitModel="@CustomTraitComponent"></CustomTraitDialog>
-                            }
-                            @if (TraitsChosen != null)
-                            {
-                                <ExistingTraitsDialog @bind-TraitsChosen="@TraitsChosen"></ExistingTraitsDialog>
-                            }
+                            <TraitsComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Character="@Character" @bind-Traits="@Traits" TraitType="TraitType"></TraitsComponent>
                         </div>
 
                         <div class="description">
@@ -358,12 +249,12 @@
                                     <thead>
                                         <tr>
                                             <th scope="col" class="skillname-row">Skill</th>
-                                            <th scope="col" class="bonus-row">Base</th>
+                                            <th scope="col" class="bonus-row text-center">Base</th>
                                             <th scope="col" class="rel-attr-row">Related attribute</th>
-                                            <th scope="col" class="sum-row">Attr. mod.</th>
-                                            <th scope="col" class="bonus-row">Race</th>
-                                            <th scope="col" class="bonus-row">Trait</th>
-                                                <th scope="col" class="sum-row text-center"> Sum</th>
+                                            <th scope="col" class="sum-row text-center">Attr. mod.</th>
+                                                <th scope="col" class="sum-row text-center">Race</th>
+                                                <th scope="col" class="sum-row text-center">Trait</th>
+                                            <th scope="col" class="sum-row text-center"> Sum</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -452,10 +343,6 @@
                                                 <td>
                                                     <div class="attr-control">
                                                         <span class="attr-indicator">@obj.RaceBonus</span>
-                                                        <div class="arrows">
-                                                            <button @onclick="@obj.IncrRace" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                            <button @onclick="@obj.DecrRace" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -503,12 +390,12 @@
     // private IEnumerable<AttributeDTO> _attributes 
 
     private CharacterDTO Character { get; set; }
-    private RaceDTO Race {get; set; }
+    private RaceDTO CurrentRace {get; set; }
     private IEnumerable<AttributeDTO> Attributes { get; set; }
     private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } 
     private ICollection<SpecialSkillDTO> SpecialSkills { get; set; }
-    private IEnumerable<TraitDTO> Traits { get; set; } 
-    private IEnumerable<RaceDTO> Races {get; set; }
+    private ICollection<TraitDTO> Traits { get; set; } 
+    private ICollection<RaceDTO> Races { get; set; }
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; } = true;
@@ -516,7 +403,6 @@
     private bool IsLeaveAllowed { get; set; } = false;
     private bool IsDukeAllowed { get; set; } = false;
     private string TargetLocation { get; set; } = "";
-    private SfRichTextEditor RaceDescrShow;
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
 
 
@@ -526,51 +412,6 @@
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
 
-    private CustomTraitModel _customTraitComponent;
-    private CustomTraitModel CustomTraitComponent
-    {
-        get => _customTraitComponent;
-        set{
-            if (value.TraitDTO != null)
-            {
-                var obj = Traits.FirstOrDefault(u => u.Name == value.TraitDTO.Name);
-                if(obj == null)
-                {
-                    Traits = Traits.Append(value.TraitDTO);
-
-                }
-                else
-                {
-                    obj = value.TraitDTO;
-                }
-
-                CalculateTraitsBonuses();
-            }
-            if (_customTraitComponent == value) return;
-            _customTraitComponent = value;
-        } 
-    }
-
-    private TraitsChosenModel _traitsChosen;
-    private TraitsChosenModel TraitsChosen
-    {
-        get => _traitsChosen;
-        set{
-            if (value.TraitsChosen != null && value.TraitsChosen.Count()>0)
-            {
-                foreach (var trait in value.TraitsChosen)
-                {
-                    if(Traits.FirstOrDefault(u => u.Name == trait.Name) == null)
-                    {
-                        Traits = Traits.Append(trait);
-                    }
-                }
-                CalculateTraitsBonuses();
-            }
-            if (_traitsChosen == value) return;
-            _traitsChosen = value;
-        }
-    }
 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -582,7 +423,7 @@
                 IsLoading = true;
                 StateHasChanged();
                 registration =_navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
-                CustomTraitComponent = new();
+                //CustomTraitComponent = new();
                 if (Id == 0)
                 {
                     //create
@@ -591,7 +432,8 @@
                     BaseSkills  = CharacterSeeder.GetBaseSkills();
                     SpecialSkills  = CharacterSeeder.GetSpecialSkills();
                     Traits = new List<TraitDTO>();
-                    Race = new();
+                    Races = new List<RaceDTO>();
+                    CurrentRace = new();
                     // Bonuses = new List<BonusDTO>();
                     var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
                     var user = authstate.User;
@@ -635,10 +477,9 @@
         Character = await _characterRepository.GetById(Id);
         Attributes = await _attributeRepository.GetAll(Id);
         BaseSkills = await _baseSkillRepository.GetAll(Id);
-        IEnumerable<SpecialSkillDTO> temp = await _specialSkillRepository.GetAll(Id);
-        SpecialSkills = temp.ToList();
-        Traits = await _traitRepository.GetAll(Id);
-        Races = await _raceRepository.GetAllApproved();
+        SpecialSkills = (await _specialSkillRepository.GetAll(Id)).ToList();
+        Traits = (await _traitRepository.GetAll(Id)).ToList();
+        Races = (await _raceRepository.GetAllApproved()).ToList();
     }
 
     private async Task UpsertCharacter()
@@ -1010,34 +851,6 @@
     }
 
 
-    private async Task ChangeRace(string name)
-    {
-        try
-        {
-            if (!string.IsNullOrEmpty(name))
-            {
-                if(name == "Custom race")
-                {
-                    Race =  new RaceDTO();
-                    // go to race creation component
-                }
-                Race = Races.FirstOrDefault(u => u.Name == name);
-                if (Race != null)
-                {
-                    Race = new RaceDTO();
-                }
-                return;
-            }
-        }
-        catch (Exception ex)
-        {
-            IsLoading = false;
-            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
-        }
-
-    }
-
-
 
     private async Task AddSSRelatedBaseSkill(SpecialSkillDTO obj)
     {
@@ -1114,102 +927,101 @@
 
     }
 
-    private async Task AddCustomTrait()
-    {
-        CustomTraitComponent.TraitDTO = new();
-        CustomTraitComponent.IsVisible = true;
-        CustomTraitComponent.IsEditMode = false;
-        StateHasChanged();
-    }
-    private async Task AddExistingTrait()
-    {
-        TraitsChosen = new();
-        TraitsChosen.IsVisible = true;
-        StateHasChanged();
-    }
+    // private async Task AddCustomTrait()
+    // {
+    //     CustomTraitComponent.TraitDTO = new();
+    //     CustomTraitComponent.IsVisible = true;
+    //     CustomTraitComponent.IsEditMode = false;
+    //     StateHasChanged();
+    // }
+    // private async Task AddExistingTrait()
+    // {
+    //     TraitsChosen = new();
+    //     TraitsChosen.IsVisible = true;
+    //     StateHasChanged();
+    // }
 
 
 
-    private async Task EditTrait(TraitDTO trait)
-    {
-        CustomTraitComponent.TraitDTO = trait;
-        CustomTraitComponent.IsVisible = true;
-        CustomTraitComponent.IsEditMode = true;
-        StateHasChanged();
-    }
+    // private async Task EditTrait(TraitDTO trait)
+    // {
+    //     CustomTraitComponent.TraitDTO = trait;
+    //     CustomTraitComponent.IsVisible = true;
+    //     CustomTraitComponent.IsEditMode = true;
+    //     StateHasChanged();
+    // }
 
-    private void CalculateTraitsBonuses()
-    {
-        bool refresh = false;
+    // private void CalculateTraitsBonuses()
+    // {
+    //     bool refresh = false;
 
-        //clear all traits bonuses
-        Character.TraitBalance = 0;
-        IEnumerable<FeatureDTO>[] allFeatures = { Attributes, BaseSkills, SpecialSkills };
+    //     //clear all traits bonuses
+    //     Character.TraitBalance = 0;
+    //     IEnumerable<FeatureDTO>[] allFeatures = { Attributes, BaseSkills, SpecialSkills };
 
-        foreach(var feat in allFeatures)
-        {
-            foreach (var obj in feat)
-            {
-                if (obj.TraitBonus!=0)
-                {
-                    obj.TraitBonus = 0;
-                    obj.SumAll();
-                }
-            }
-        }
+    //     foreach(var feat in allFeatures)
+    //     {
+    //         foreach (var obj in feat)
+    //         {
+    //             if (obj.TraitBonus!=0)
+    //             {
+    //                 obj.TraitBonus = 0;
+    //                 obj.SumAll();
+    //             }
+    //         }
+    //     }
 
-        // calculate all traits
-        foreach (var trait in Traits)
-        {
-            Character.TraitBalance += trait.TraitValue; 
-            FeatureDTO? feature = null;
-            foreach (var bonus in trait.Bonuses)
-            {
-                switch (bonus.FeatureType)
-                {
-                    case "Attribute":
-                        feature = Attributes.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    case "Base skill":
-                        feature = BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    case "Special skill":
-                        feature = SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    default:
-                        break;
-                }
-                if (feature != null)
-                {
-                    feature.TraitBonus += bonus.BonusValue;
-                    feature.SumAll();
-                    refresh = true;
-                }
-            }
-        }
-        if(refresh)
-        {
-            StateHasChanged();
-        }
+    //     // calculate all traits
+    //     foreach (var trait in Traits)
+    //     {
+    //         Character.TraitBalance += trait.TraitValue; 
+    //         FeatureDTO? feature = null;
+    //         foreach (var bonus in trait.Bonuses)
+    //         {
+    //             switch (bonus.FeatureType)
+    //             {
+    //                 case "Attribute":
+    //                     feature = Attributes.FirstOrDefault(u => u.Name == bonus.FeatureName);
+    //                     break;
+    //                 case "Base skill":
+    //                     feature = BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
+    //                     break;
+    //                 case "Special skill":
+    //                     feature = SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
+    //                     break;
+    //                 default:
+    //                     break;
+    //             }
+    //             if (feature != null)
+    //             {
+    //                 feature.TraitBonus += bonus.BonusValue;
+    //                 feature.SumAll();
+    //                 refresh = true;
+    //             }
+    //         }
+    //     }
+    //     if(refresh)
+    //     {
+    //         StateHasChanged();
+    //     }
+    // }
 
-    }
+    // private async Task DeleteTrait(TraitDTO trait)
+    // {
+    //     if (trait.Id != 0)
+    //     {
+    //         await _traitRepository.Delete(trait.Id);
+    //         // await _jsRuntime.ToastrSuccess("Product deleted succesfully.");
+    //         Traits = await _traitRepository.GetAll(Id);
+    //     }
+    //     else
+    //     {
+    //         Traits = Traits.Where(u => u.Name != trait.Name).ToList(); ;
+    //     }
+    //     CalculateTraitsBonuses();
+    //     StateHasChanged();
 
-    private async Task DeleteTrait(TraitDTO trait)
-    {
-        if (trait.Id != 0)
-        {
-            await _traitRepository.Delete(trait.Id);
-            // await _jsRuntime.ToastrSuccess("Product deleted succesfully.");
-            Traits = await _traitRepository.GetAll(Id);
-        }
-        else
-        {
-            Traits = Traits.Where(u => u.Name != trait.Name).ToList(); ;
-        }
-        CalculateTraitsBonuses();
-        StateHasChanged();
-
-    }
+    // }
 
     public void Dispose() => registration?.Dispose();
 }

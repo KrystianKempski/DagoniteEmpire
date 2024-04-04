@@ -130,6 +130,8 @@
     public IEnumerable<TraitDTO> Traits { get; set; }
     [Parameter]
     public EventCallback<CustomTraitModel> CustomTraitModelChanged { get; set; }
+    [Parameter]
+    public string TraitType {get; set; }
 
     CustomTraitModel _customTraitModel;
 
@@ -222,7 +224,7 @@
         }
         else
         {
-            CustomTraitModel.TraitDTO.TraitType = SD.TraitType_Advantage;
+            CustomTraitModel.TraitDTO.TraitType = TraitType;
         }
         
         await CustomTraitModelChanged.InvokeAsync(CustomTraitModel);

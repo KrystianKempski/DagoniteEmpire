@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Syncfusion.Blazor.RichTextEditor;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,7 +24,7 @@ namespace DA_Common
         public const string TraitType_Unique = "Unique";
 
 
-
+       
 
     }
 }
