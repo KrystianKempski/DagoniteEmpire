@@ -7,7 +7,7 @@ Application database is made on PostGreSQL.
 Pre-release link to deployed application on private server:
 https://dagonite-empire.drik.it
 
-login as 'guestplayer@gmail.com' or 'guestGM.gmail.co', password: 'Guest123*' , or create own account
+login as 'guestplayer@gmail.com' or 'guestGM.gmail.com', password: 'Guest123*' , or create own account
 
 Work in progress.
 
