@@ -10,16 +10,15 @@ namespace DA_Models.CharacterModels
 {
     public class RaceDTO
     {
-        public int Id { get; set; } = 0;
+        public int Id { get; set; }
+        public int? CharacterId { get; set; }
+
+        public ICollection<TraitRaceDTO>? Traits { get; set; } = new List<TraitRaceDTO>();
         public string Name { get; set; } = string.Empty;         //for example "dwarf"
         public int Index { get; set; } = 0;
 
         public string Description { get; set; } = string.Empty;          // descritpion of race
         public bool RaceApproved { get; set; } = false;   // race have to be approved by Game Master
-
-        public int? CharacterId { get; set; } = null;
-
-        public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
 
     }
 }

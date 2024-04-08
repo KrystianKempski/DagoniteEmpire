@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class addraces : Migration
+    public partial class newtraits3 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -63,7 +63,6 @@ namespace DA_DataAccess.Migrations
                     NPCName = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
                     Class = table.Column<string>(type: "text", nullable: true),
-                    Race = table.Column<string>(type: "text", nullable: true),
                     Age = table.Column<int>(type: "integer", nullable: false),
                     ImageUrl = table.Column<string>(type: "text", nullable: true),
                     NPCType = table.Column<string>(type: "text", nullable: true),
@@ -263,11 +262,11 @@ namespace DA_DataAccess.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CharacterId = table.Column<int>(type: "integer", nullable: true),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Index = table.Column<int>(type: "integer", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
-                    RaceApproved = table.Column<bool>(type: "boolean", nullable: false),
-                    CharacterId = table.Column<int>(type: "integer", nullable: true)
+                    RaceApproved = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -322,8 +321,11 @@ namespace DA_DataAccess.Migrations
                     TraitType = table.Column<string>(type: "text", nullable: false),
                     TraitValue = table.Column<int>(type: "integer", nullable: false),
                     Descr = table.Column<string>(type: "text", nullable: false),
+                    SummaryDescr = table.Column<string>(type: "text", nullable: false),
                     TraitApproved = table.Column<bool>(type: "boolean", nullable: false),
-                    CharacterId = table.Column<int>(type: "integer", nullable: false),
+                    IsUnique = table.Column<bool>(type: "boolean", nullable: false),
+                    Discriminator = table.Column<string>(type: "text", nullable: false),
+                    CharacterId = table.Column<int>(type: "integer", nullable: true),
                     RaceId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
@@ -333,8 +335,7 @@ namespace DA_DataAccess.Migrations
                         name: "FK_Traits_Characters_CharacterId",
                         column: x => x.CharacterId,
                         principalTable: "Characters",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Traits_Races_RaceId",
                         column: x => x.RaceId,
@@ -421,7 +422,8 @@ namespace DA_DataAccess.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Races_CharacterId",
                 table: "Races",
-                column: "CharacterId");
+                column: "CharacterId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SpecialSkills_CharacterId",

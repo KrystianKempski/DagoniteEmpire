@@ -20,7 +20,7 @@ namespace DA_Common
 
         public const string TraitType_Advantage = "Advantage";
         public const string TraitType_Race = "Race";
-        public const string TraitType_Weapon = "Weapon";
+        public const string TraitType_Gear = "Gear";
         public const string TraitType_Unique = "Unique";
 
 

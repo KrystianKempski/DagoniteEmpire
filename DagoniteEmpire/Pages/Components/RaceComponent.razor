@@ -13,7 +13,7 @@
     </InputSelect>
     @if (ShowNameLabel)
     {
-        <InputText style="width: 100%;font-size: 14px;padding: 2px 0px 2px 0px; margin: 6px 0px 4px 0px;" @bind-Value="@CurrentRace.Name" class=""></InputText>
+        <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px;" @bind-Value="@CurrentRace.Name" class=""></InputText>
     }
     <label class="race-descr-label">Race description</label>
     <SfRichTextEditor Height="220px" @ref="RaceDescrShow" @bind-Value="@CurrentRace.Description" Readonly="true" ShowTooltip="false">
@@ -39,16 +39,16 @@
                     <td>
                         <label class="name-label">@obj.SummaryDescr</label>
                     </td>
-                    <td class="text-center">
-                        <label class="name-label text-center">@obj.TraitValue</label>
-                    </td>
                 </tr>
             }
         </tbody>
     </table>
+    @if (ShowNameLabel)
+    {
         <div class="column">
             <span><button @onclick="@(()=>EditCustomRace())" class="add-trait p-1 my-1">Edit custom race</button></span>
         </div>
+    }
     @if (CustomRaceComponent != null)
     {
         <CustomRaceDialog Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" @bind-CustomRaceComponent="@CustomRaceComponent"></CustomRaceDialog>
@@ -122,6 +122,7 @@
     private async Task EditCustomRace()
     {
         CustomRaceComponent.RaceDTO = CurrentRace;
+        CustomRaceComponent.Traits = CustomRaceComponent.RaceDTO.Traits.OfType<TraitDTO>().ToList();
         CustomRaceComponent.IsVisible = true;
         StateHasChanged();
     }
@@ -150,6 +151,9 @@
         // calculate all race traits
         foreach (var trait in CurrentRace.Traits)
         {
+
+            if (trait.TraitType != SD.TraitType_Race)
+                continue;
             FeatureDTO? feature = null;
             foreach (var bonus in trait.Bonuses)
             {
@@ -185,6 +189,17 @@
             await CurrentRaceChanged.InvokeAsync(CurrentRace);
             StateHasChanged();
         }
-
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (!string.IsNullOrEmpty(CurrentRace.Name))
+            {
+                SelectedRace = "Custom race";
+                ShowNameLabel = true;
+                StateHasChanged();
+            }
+        }
     }
 }

@@ -5,7 +5,8 @@
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
 @inject ISpecialSkillRepository _specialSkillRepository
-@inject ITraitRepository _traitRepository
+@inject ITraitAdvRepository _traitAdvRepository
+@inject ITraitRaceRepository _traitRaceRepository
 @inject IRaceRepository _raceRepository
 @inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject IFileUpload _fileUpload;
@@ -42,10 +43,6 @@
                         <div class="form-group col-md-2 px-1">
                             <label>Class</label>
                             <InputText @bind-Value="Character.Class" class="form-control"></InputText>
-                        </div>
-                        <div class="form-group col-md-2 px-1">
-                            <label>Race</label>
-                            <InputText @bind-Value="Character.Race" class="form-control"></InputText>
                         </div>
                         <div class="form-group col-md-1 px-1">
                             <label>Age</label>
@@ -213,15 +210,12 @@
 
                         <div class="races">
                              <h3 class="my-3 ml-3">RACE</h3>
-
                             <RaceComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Races="@Races" @bind-CurrentRace="@CurrentRace"></RaceComponent>
-                            
                         </div>
 
                         <div class="traits">
                             <h3 class="my-3 ml-3">TRAITS</h3>
-                          
-                            <TraitsComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Character="@Character" @bind-Traits="@Traits" TraitType="TraitType"></TraitsComponent>
+                            <TraitsComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Character="@Character" @bind-Traits="@Traits" TraitType="@SD.TraitType_Advantage"></TraitsComponent>
                         </div>
 
                         <div class="description">
@@ -387,14 +381,13 @@
     [Parameter]
     public int Id { get; set; }
 
-    // private IEnumerable<AttributeDTO> _attributes 
-
     private CharacterDTO Character { get; set; }
     private RaceDTO CurrentRace {get; set; }
     private IEnumerable<AttributeDTO> Attributes { get; set; }
     private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } 
     private ICollection<SpecialSkillDTO> SpecialSkills { get; set; }
-    private ICollection<TraitDTO> Traits { get; set; } 
+    private ICollection<TraitAdvDTO> TraitsAdv { get; set; }
+    private ICollection<TraitDTO> Traits { get; set; }
     private ICollection<RaceDTO> Races { get; set; }
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
@@ -427,14 +420,14 @@
                 if (Id == 0)
                 {
                     //create
-                    Character  = new CharacterDTO();
+                    Character = new CharacterDTO();
                     Attributes = CharacterSeeder.GetAttributes();
                     BaseSkills  = CharacterSeeder.GetBaseSkills();
                     SpecialSkills  = CharacterSeeder.GetSpecialSkills();
+                    Races = (await _raceRepository.GetAllApproved()).ToList();
                     Traits = new List<TraitDTO>();
-                    Races = new List<RaceDTO>();
+                    TraitsAdv = new List<TraitAdvDTO>();
                     CurrentRace = new();
-                    // Bonuses = new List<BonusDTO>();
                     var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
                     var user = authstate.User;
                     Character.UserName = user.Identity.Name;
@@ -478,7 +471,14 @@
         Attributes = await _attributeRepository.GetAll(Id);
         BaseSkills = await _baseSkillRepository.GetAll(Id);
         SpecialSkills = (await _specialSkillRepository.GetAll(Id)).ToList();
-        Traits = (await _traitRepository.GetAll(Id)).ToList();
+        TraitsAdv = (await _traitAdvRepository.GetAll(Id)).ToList(); 
+        Traits = new List<TraitDTO>();
+        foreach(var advTrait in TraitsAdv)
+        {
+            Traits.Add(new TraitAdvDTO(advTrait, Id));
+        }
+        CurrentRace = Character.Race;
+        CurrentRace.Traits = (await _traitRaceRepository.GetAll(Character.Race.Id)).ToList();
         Races = (await _raceRepository.GetAllApproved()).ToList();
     }
 
@@ -510,10 +510,10 @@
                 }
                 foreach (var obj in Traits)
                 {
-                    obj.CharacterId = charac.Id;
-                    await _traitRepository.Create(obj);
+                    await _traitAdvRepository.Create(new(obj, charac.Id));
                 }
-
+                CurrentRace.CharacterId = charac.Id;
+                _raceRepository.Create(CurrentRace);
             }
             else
             {
@@ -536,9 +536,16 @@
                 }
                 foreach (var obj in Traits)
                 {
-                    obj.CharacterId = Id;
-                    await _traitRepository.Update(obj);
+                    TraitAdvDTO val = new(obj, Id);
+                    await _traitAdvRepository.Update(val);
+                }   
+                foreach (var obj in CurrentRace.Traits)
+                {
+                    obj.RaceId = CurrentRace.Id;
+                    await _traitRaceRepository.Update(obj);
                 }
+                CurrentRace.CharacterId = Id;
+                _raceRepository.Update(CurrentRace);
             }
         }
         catch (Exception ex)
@@ -582,8 +589,6 @@
             await _jsRuntime.ToastrError("Error while deleting: " + ex.ToString());
         }
     }
-
-
 
     private async Task HandleImageUpload(InputFileChangeEventArgs e)
     {
@@ -672,7 +677,6 @@
 
     private async Task IncrBSBonus(BaseSkillDTO obj)
     {
-
         try
         {
             var relatedAttribute1 = Attributes.FirstOrDefault(u => u.Name == obj.RelatedAttribute1).BaseBonus;
@@ -739,7 +743,6 @@
             obj.BaseBonus = 6;
         foreach (var obj in BaseSkills)
             obj.BaseBonus = 0;
-
     }
 
     private async Task IncrSSBonus(SpecialSkillDTO obj)
@@ -850,8 +853,6 @@
 
     }
 
-
-
     private async Task AddSSRelatedBaseSkill(SpecialSkillDTO obj)
     {
         try
@@ -865,7 +866,6 @@
                 obj.SumAll();
                 return;
             }
-
         }
         catch (Exception ex)
         {
@@ -874,7 +874,6 @@
         }
 
     }
-
 
     public async Task ConfirmLeave_Click(bool isConfirmed)
     {
@@ -924,104 +923,7 @@
         newSkill.Index =  SpecialSkills.Where(n => n.RelatedBaseSkillName == baseSkill.Name).Count();
         SpecialSkills.Add(newSkill);
         StateHasChanged();
-
     }
-
-    // private async Task AddCustomTrait()
-    // {
-    //     CustomTraitComponent.TraitDTO = new();
-    //     CustomTraitComponent.IsVisible = true;
-    //     CustomTraitComponent.IsEditMode = false;
-    //     StateHasChanged();
-    // }
-    // private async Task AddExistingTrait()
-    // {
-    //     TraitsChosen = new();
-    //     TraitsChosen.IsVisible = true;
-    //     StateHasChanged();
-    // }
-
-
-
-    // private async Task EditTrait(TraitDTO trait)
-    // {
-    //     CustomTraitComponent.TraitDTO = trait;
-    //     CustomTraitComponent.IsVisible = true;
-    //     CustomTraitComponent.IsEditMode = true;
-    //     StateHasChanged();
-    // }
-
-    // private void CalculateTraitsBonuses()
-    // {
-    //     bool refresh = false;
-
-    //     //clear all traits bonuses
-    //     Character.TraitBalance = 0;
-    //     IEnumerable<FeatureDTO>[] allFeatures = { Attributes, BaseSkills, SpecialSkills };
-
-    //     foreach(var feat in allFeatures)
-    //     {
-    //         foreach (var obj in feat)
-    //         {
-    //             if (obj.TraitBonus!=0)
-    //             {
-    //                 obj.TraitBonus = 0;
-    //                 obj.SumAll();
-    //             }
-    //         }
-    //     }
-
-    //     // calculate all traits
-    //     foreach (var trait in Traits)
-    //     {
-    //         Character.TraitBalance += trait.TraitValue; 
-    //         FeatureDTO? feature = null;
-    //         foreach (var bonus in trait.Bonuses)
-    //         {
-    //             switch (bonus.FeatureType)
-    //             {
-    //                 case "Attribute":
-    //                     feature = Attributes.FirstOrDefault(u => u.Name == bonus.FeatureName);
-    //                     break;
-    //                 case "Base skill":
-    //                     feature = BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-    //                     break;
-    //                 case "Special skill":
-    //                     feature = SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-    //                     break;
-    //                 default:
-    //                     break;
-    //             }
-    //             if (feature != null)
-    //             {
-    //                 feature.TraitBonus += bonus.BonusValue;
-    //                 feature.SumAll();
-    //                 refresh = true;
-    //             }
-    //         }
-    //     }
-    //     if(refresh)
-    //     {
-    //         StateHasChanged();
-    //     }
-    // }
-
-    // private async Task DeleteTrait(TraitDTO trait)
-    // {
-    //     if (trait.Id != 0)
-    //     {
-    //         await _traitRepository.Delete(trait.Id);
-    //         // await _jsRuntime.ToastrSuccess("Product deleted succesfully.");
-    //         Traits = await _traitRepository.GetAll(Id);
-    //     }
-    //     else
-    //     {
-    //         Traits = Traits.Where(u => u.Name != trait.Name).ToList(); ;
-    //     }
-    //     CalculateTraitsBonuses();
-    //     StateHasChanged();
-
-    // }
 
     public void Dispose() => registration?.Dispose();
 }

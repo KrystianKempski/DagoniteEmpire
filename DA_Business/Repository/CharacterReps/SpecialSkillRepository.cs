@@ -70,6 +70,7 @@ namespace DA_Business.Repository.CharacterReps
                 obj.RaceBonus = objDTO.RaceBonus;  
                 obj.BaseBonus = objDTO.BaseBonus;
                 obj.GearBonus = objDTO.GearBonus;
+                obj.TraitBonus = objDTO.TraitBonus;
                 obj.TempBonuses = objDTO.TempBonuses;
                 obj.RelatedBaseSkillName = objDTO.RelatedBaseSkillName;
                 obj.ChosenAttribute = objDTO.ChosenAttribute;

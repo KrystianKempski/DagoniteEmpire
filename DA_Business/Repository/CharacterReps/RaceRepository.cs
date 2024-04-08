@@ -30,7 +30,7 @@ namespace DA_Business.Repository.CharacterReps
 
                 var obj = _mapper.Map<RaceDTO, Race>(objDTO);
                 var addedObj = _db.Races.Add(obj);
-                await _db.SaveChangesAsync();
+                _db.SaveChangesAsync();
 
                 return _mapper.Map<Race, RaceDTO>(addedObj.Entity);
             }
@@ -75,7 +75,7 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<RaceDTO> GetById(int id)
         {
-            var obj = await _db.Races.Include(u=>u.Traits).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await _db.Races.Include(u => u.Traits).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Race, RaceDTO>(obj);
@@ -96,6 +96,7 @@ namespace DA_Business.Repository.CharacterReps
                     obj.Index = objDTO.Index;
                     obj.RaceApproved = objDTO.RaceApproved;
                     _db.Races.Update(obj);
+
                     await _db.SaveChangesAsync();
                     return _mapper.Map<Race, RaceDTO>(obj);
                 }

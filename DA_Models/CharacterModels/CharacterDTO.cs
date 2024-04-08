@@ -6,15 +6,13 @@ namespace DA_Models.CharacterModels
 {
     public class CharacterDTO
     {
-        [Key]
         public int Id { get; set; }
         [Required(ErrorMessage = "Please enter name of character")]
-
         public string? UserName { get; set; }
         public string? NPCName { get; set; }
         public string? Description { get; set; }
         public string? Class { get; set; }
-        public string? Race { get; set; }
+        //public string? Race { get; set; }
         [Range(16, 300, ErrorMessage = "Age must be between 16 and 300 years")]
         public int Age { get; set; }
         public string? ImageUrl { get; set; }
@@ -28,6 +26,7 @@ namespace DA_Models.CharacterModels
         public ICollection<AttributeDTO>? Attributes { get; set; }
         public ICollection<BaseSkillDTO>? BaseSkills { get; set; }
         public ICollection<SpecialSkillDTO>? SpecialSkills { get; set; }
-        public ICollection<TraitDTO>? Traits { get; set; }
+        public ICollection <TraitAdv>? TraitsAdv { get; set; }
+        public RaceDTO Race { get; set; }
     }
 }

@@ -43,7 +43,7 @@
 
     @if (CustomTraitComponent != null)
     {
-        <CustomTraitDialog Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-CustomTraitModel="@CustomTraitComponent" TraitType="TraitType"></CustomTraitDialog>
+        <CustomTraitDialog Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
     }
     @if (TraitsChosen != null)
     {
@@ -139,8 +139,6 @@
         StateHasChanged();
     }
 
-
-
     private async Task EditTrait(TraitDTO trait)
     {
         CustomTraitComponent.TraitDTO = trait;
@@ -153,6 +151,8 @@
     {
         bool refresh = false;
 
+        if (TraitType != SD.TraitType_Advantage)
+            return ;
         //clear all traits bonuses
         if (Character != null)
             Character.TraitBalance = 0;
@@ -176,6 +176,9 @@
         {
             if (Character != null)
                 Character.TraitBalance += trait.TraitValue;
+
+            if (trait.TraitType != SD.TraitType_Advantage)
+                continue;
             FeatureDTO? feature = null;
             foreach (var bonus in trait.Bonuses)
             {
@@ -204,7 +207,6 @@
 
         if (refresh)
         {
-
             await AttributesChanged.InvokeAsync(Attributes);
             await BaseSkillsChanged.InvokeAsync(BaseSkills);
             await SpecialSkillsChanged.InvokeAsync(SpecialSkills);
@@ -213,7 +215,6 @@
                 await CharacterChanged.InvokeAsync(Character);
             StateHasChanged();
         }
-
     }
 
     private async Task DeleteTrait(TraitDTO trait)
@@ -230,7 +231,5 @@
         }
         CalculateTraitsBonuses();
         StateHasChanged();
-
     }
-
 }

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DA_DataAccess.CharacterClasses
 {
-    public class Trait
+    public abstract class Trait
     {
         [Key]
         public int Id { get; set; }
@@ -23,10 +23,7 @@ namespace DA_DataAccess.CharacterClasses
         public string SummaryDescr { get; set; }    // summary descritpion of all trait 
         public bool TraitApproved { get; set; }     // traits have to be approved by Game Master
 
-        public int CharacterId { get; set; }
-
-        [ForeignKey(nameof(CharacterId))]
-        public Character Character { get; set; }
+        public bool IsUnique { get; set; }
 
         public ICollection<Bonus> Bonuses { get; set; }
 

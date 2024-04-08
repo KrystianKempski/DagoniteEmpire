@@ -10,6 +10,8 @@ namespace DA_Models.ComponentModels
     public class CustomRaceModel
     {
         public RaceDTO RaceDTO { get; set; }
+
+        public ICollection<TraitDTO> Traits { get; set; }
         public bool IsVisible { get; set; } = false;
     }
 }

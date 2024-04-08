@@ -46,13 +46,13 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<CharacterDTO>> GetAll(int? id=null)
         {
             if(id == null || id < 1)
-                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters);
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters.Where(u=>u.Id==id));
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters.Include(r => r.TraitsAdv).Include(r => r.Race));
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters.Include(r => r.TraitsAdv).Include(r => r.Race).Where(u=>u.Id==id));
         }
 
         public async Task<CharacterDTO> GetById(int id)
         {
-            var obj = await _db.Characters.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await _db.Characters.Include(t => t.TraitsAdv).Include(r=>r.Race).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Character, CharacterDTO>(obj);
@@ -63,7 +63,7 @@ namespace DA_Business.Repository.CharacterReps
         {
             if (userName == null || userName.Length<3)
                 return null;
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters.Where(u => u.UserName == userName));
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(_db.Characters.Include(r => r.Race).Include(r => r.Race).Where(u => u.UserName == userName));
         }
 
         public async Task<CharacterDTO> Update(CharacterDTO objDTO)
@@ -74,7 +74,6 @@ namespace DA_Business.Repository.CharacterReps
                 obj.Age = objDTO.Age;
                 obj.NPCName = objDTO.NPCName;
                 obj.Description = objDTO.Description;
-                obj.Race = objDTO.Race;
                 obj.Class = objDTO.Class;
                 obj.CurrentExpPoints = objDTO.CurrentExpPoints;
                 obj.UsedExpPoints = objDTO.UsedExpPoints;

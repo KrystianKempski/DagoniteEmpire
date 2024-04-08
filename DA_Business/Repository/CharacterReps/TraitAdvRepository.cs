@@ -13,26 +13,26 @@ using System.Threading.Tasks;
 
 namespace DA_Business.Repository.CharacterReps
 {
-    public class TraitRepository : ITraitRepository
+    public class TraitAdvRepository : ITraitAdvRepository
     {
         private readonly ApplicationDbContext _db;
         private readonly IMapper _mapper;
 
-        public TraitRepository(ApplicationDbContext db, IMapper mapper)
+        public TraitAdvRepository(ApplicationDbContext db, IMapper mapper)
         {
             _db = db;
             _mapper = mapper;
         }
-        public async Task<TraitDTO> Create(TraitDTO objDTO)
+        public async Task<TraitAdvDTO> Create(TraitAdvDTO objDTO)
         {
             try
             {
 
-                var obj = _mapper.Map<TraitDTO, Trait>(objDTO);
-                var addedObj = _db.Traits.Add(obj);
+                var obj = _mapper.Map<TraitAdvDTO, TraitAdv>(objDTO);
+                var addedObj = _db.TraitsAdv.Add(obj);
                 await _db.SaveChangesAsync();
 
-                return _mapper.Map<Trait, TraitDTO>(addedObj.Entity);
+                return _mapper.Map<TraitAdv, TraitAdvDTO>(addedObj.Entity);
             }
             catch (Exception ex)
             {
@@ -46,10 +46,10 @@ namespace DA_Business.Repository.CharacterReps
         {
             try
             {
-                var obj = await _db.Traits.FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await _db.TraitsAdv.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                _db.Traits.Remove(obj);
+                _db.TraitsAdv.Remove(obj);
                 return _db.SaveChanges();
             }
             return 0;
@@ -61,55 +61,55 @@ namespace DA_Business.Repository.CharacterReps
             return 0;
         }
 
-        public async Task<IEnumerable<TraitDTO>> GetAll(int? charId = null)
+        public async Task<IEnumerable<TraitAdvDTO>> GetAll(int? charId = null)
         {
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Include(u => u.Bonuses).Where(u => u.CharacterId == charId).OrderBy(u=>u.Index));
+                return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(_db.TraitsAdv.Include(u => u.Bonuses));
+           return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(_db.TraitsAdv.Include(u => u.Bonuses).Where(u => u.CharacterId == charId));
         }
 
-        public async Task<IEnumerable<TraitDTO>> GetAllApproved(string? traitType)
+        public async Task<IEnumerable<TraitAdvDTO>> GetAllApproved()
         {
-            if (traitType.IsNullOrEmpty())
-                return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Include(u => u.Bonuses).Where(t => t.TraitApproved == true));
-            return _mapper.Map<IEnumerable<Trait>, IEnumerable<TraitDTO>>(_db.Traits.Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.TraitType == traitType));
+            return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(_db.TraitsAdv.Include(u => u.Bonuses).Where(t=>t.TraitApproved==true));
         }
 
-        public async Task<TraitDTO> GetById(int id)
+        public async Task<TraitAdvDTO> GetById(int id)
         {
-            var obj = await _db.Traits.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await _db.TraitsAdv.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                return _mapper.Map<Trait, TraitDTO>(obj);
+                return _mapper.Map<TraitAdv, TraitAdvDTO>(obj);
             }
-            return new TraitDTO();
+            return new TraitAdvDTO();
         }
 
-        public async Task<TraitDTO> Update(TraitDTO objDTO)
+        public async Task<TraitAdvDTO> Update(TraitAdvDTO objDTO)
         {
             try
             {
-                var obj = await _db.Traits.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                var obj = await _db.TraitsAdv.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj != null)
                 {
                     obj.Name = objDTO.Name;    
                     obj.CharacterId = objDTO.CharacterId;       
-                    obj.Descr = objDTO.Descr;        
+                    obj.Descr = objDTO.Descr;
+                    obj.SummaryDescr = objDTO.SummaryDescr;
                     obj.Index = objDTO.Index;  
                     obj.TraitType = objDTO.TraitType;
                     obj.TraitValue = objDTO.TraitValue;
                     obj.TraitApproved = objDTO.TraitApproved;
-                    _db.Traits.Update(obj);
+                    obj.IsUnique = objDTO.IsUnique; 
+                    _db.TraitsAdv.Update(obj);
                     await _db.SaveChangesAsync();
-                    return _mapper.Map<Trait, TraitDTO>(obj);
+                    return _mapper.Map<TraitAdv, TraitAdvDTO>(obj);
                 }
                 else
                 {
-                    obj = _mapper.Map<TraitDTO, Trait>(objDTO);
-                    var addedObj = _db.Traits.Add(obj);
+                    obj = _mapper.Map<TraitAdvDTO, TraitAdv>(objDTO);
+                    var addedObj = _db.TraitsAdv.Add(obj);
                     await _db.SaveChangesAsync();
 
-                    return _mapper.Map<Trait, TraitDTO>(addedObj.Entity);
+                    return _mapper.Map<TraitAdv, TraitAdvDTO>(addedObj.Entity);
                 }
             }
             catch (Exception ex)

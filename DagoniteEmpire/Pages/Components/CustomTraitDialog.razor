@@ -25,12 +25,15 @@
                                 <label class="fw-bold py-1">Trait value</label>
                                 <SfNumericTextBox Width="100px" TValue="int" @bind-Value="@_customTraitModel.TraitDTO.TraitValue"></SfNumericTextBox>
                             </div>
-                            <div class="d-flex flex-column px-1">
-                                <label class="fw-bold py-1">Unique</label>
-                                <div class="justify-content-center mx-auto my-auto">
-                                    <SfCheckBox @bind-Checked="IsUnique"></SfCheckBox>
+                            @if (TraitType == SD.TraitType_Advantage)
+                            {
+                                <div class="d-flex flex-column px-1">
+                                    <label class="fw-bold py-1">Unique</label>
+                                    <div class="justify-content-center mx-auto my-auto">
+                                        <SfCheckBox @bind-Checked="_customTraitModel.TraitDTO.IsUnique "></SfCheckBox>
+                                    </div>
                                 </div>
-                            </div>
+                            }
                             @if (IsAdminOrMG)
                             {
                             <div class="d-flex flex-column px-1">
@@ -131,7 +134,7 @@
     [Parameter]
     public EventCallback<CustomTraitModel> CustomTraitModelChanged { get; set; }
     [Parameter]
-    public string TraitType {get; set; }
+    public string TraitType { get; set; }
 
     CustomTraitModel _customTraitModel;
 
@@ -151,7 +154,6 @@
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
     public bool IsAdminOrMG { get; set; } = false;
-    private bool IsUnique { get; set; } = false;
 
     List<string> FeatureData = new List<string>
     {
@@ -218,14 +220,8 @@
             }
 
         }
-        if (IsUnique == true)
-        {
-            CustomTraitModel.TraitDTO.TraitType = SD.TraitType_Unique;
-        }
-        else
-        {
-            CustomTraitModel.TraitDTO.TraitType = TraitType;
-        }
+
+        CustomTraitModel.TraitDTO.TraitType = TraitType;
         
         await CustomTraitModelChanged.InvokeAsync(CustomTraitModel);
     }
@@ -241,10 +237,7 @@
         if (user == null)
             return; // failed to load
         IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-        IsUnique = false;
-        if (CustomTraitModel.TraitDTO.TraitType == SD.TraitType_Unique)
-            IsUnique = true;
-
+        
         ErrorMessage = string.Empty;
         StateHasChanged();
     }

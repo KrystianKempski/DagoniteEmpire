@@ -30,7 +30,7 @@
                         @if (_customRaceComponent.RaceDTO.Traits != null)
                         {
                             <div class="traits">
-                                <TraitsComponent Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" @bind-Traits="@_customRaceComponent.RaceDTO.Traits" TraitType="@TraitType"></TraitsComponent>
+                                <TraitsComponent Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" @bind-Traits="@CustomRaceComponent.Traits" TraitType="@TraitType"></TraitsComponent>
                             </div>
                         }
                     <label class="warnign-message">@ErrorMessage</label>
@@ -59,9 +59,7 @@
     [Parameter]
     public ICollection<SpecialSkillDTO> SpecialSkills { get; set; }
 
-
     private CustomRaceModel _customRaceComponent;
-
     private SfRichTextEditor DescrEdit;
 
     [Parameter]
@@ -71,6 +69,15 @@
         set{
             if (_customRaceComponent == value) return;
             _customRaceComponent = value;
+            if (_customRaceComponent.RaceDTO != null)
+            {
+                _customRaceComponent.RaceDTO.Traits = new List<TraitRaceDTO>();
+                foreach (var trait in _customRaceComponent.Traits)
+                {
+                    TraitRaceDTO raceTrait = new TraitRaceDTO(trait, _customRaceComponent.RaceDTO.Id);
+                    _customRaceComponent.RaceDTO.Traits.Add(raceTrait);
+                }
+            }
             IsLoading = false;
             StateHasChanged();
             CustomRaceComponentChanged.InvokeAsync(value);
@@ -80,7 +87,6 @@
     public EventCallback<CustomRaceModel> CustomRaceComponentChanged { get; set; }
 
     private string TraitType { get; set; } = @SD.TraitType_Race;
-    
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
     public bool IsAdminOrMG { get; set; } = false;
@@ -123,21 +129,30 @@
         new ToolbarItemModel() { Command = ToolbarCommand.Redo }
     };
 
-
     private async Task OnSaveRaceBtnClick()
     {
-
-        if (CustomRaceComponent.RaceDTO.Traits == null || CustomRaceComponent.RaceDTO.Traits.Count() == 0)
+        if (CustomRaceComponent.Traits == null || CustomRaceComponent.Traits.Count() == 0)
         {
-            ErrorMessage = $"There must be at least one trait in case";
+            ErrorMessage = $"There must be at least one trait in race";
             return;
         }
-        
+        if (string.IsNullOrEmpty(CustomRaceComponent.RaceDTO.Name) || string.IsNullOrEmpty(CustomRaceComponent.RaceDTO.Description))
+        {
+            ErrorMessage = $"Create name and description of race";
+            return;
+        }
+        if (CustomRaceComponent.RaceDTO != null)
+        {
+            CustomRaceComponent.RaceDTO.Traits = new List<TraitRaceDTO>();
+            foreach (var trait in CustomRaceComponent.Traits)
+            {
+                TraitRaceDTO raceTrait = new TraitRaceDTO(trait, CustomRaceComponent.RaceDTO.Id);
+                CustomRaceComponent.RaceDTO.Traits.Add(raceTrait);
+            }
+        }
 
         ErrorMessage = string.Empty;
-
         CustomRaceComponent.IsVisible = false;
-
 
         await CustomRaceComponentChanged.InvokeAsync(CustomRaceComponent);
     }
@@ -152,6 +167,4 @@
         ErrorMessage = string.Empty;
         StateHasChanged();
     }
-
-
 }

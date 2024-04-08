@@ -1,4 +1,5 @@
-﻿@inject ITraitRepository _traitRepository 
+﻿@inject ITraitAdvRepository _traitAdvRepository 
+@inject ITraitRaceRepository _traitRaceRepository
 <div class="traits">
 
     <SfDialog Width="50%" Height="50%" @bind-Visible="@_traitsChosen.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
@@ -66,7 +67,8 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Traits = await _traitRepository.GetAllApproved(SD.TraitType_Advantage);
+        
+        Traits = await _traitAdvRepository.GetAllApproved();
     }
 
     private string ErrorMessage { get; set; } = string.Empty;
