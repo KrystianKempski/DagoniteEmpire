@@ -1,4 +1,5 @@
-﻿<div class="race">
+﻿
+<div class="race">
     <SfDialog Width="80%" Height="80%" @bind-Visible="@_customRaceComponent.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>
@@ -74,7 +75,7 @@
                 _customRaceComponent.RaceDTO.Traits = new List<TraitRaceDTO>();
                 foreach (var trait in _customRaceComponent.Traits)
                 {
-                    TraitRaceDTO raceTrait = new TraitRaceDTO(trait, _customRaceComponent.RaceDTO.Id);
+                    TraitRaceDTO raceTrait = new TraitRaceDTO(trait, _customRaceComponent.RaceDTO);
                     _customRaceComponent.RaceDTO.Traits.Add(raceTrait);
                 }
             }
@@ -146,7 +147,7 @@
             CustomRaceComponent.RaceDTO.Traits = new List<TraitRaceDTO>();
             foreach (var trait in CustomRaceComponent.Traits)
             {
-                TraitRaceDTO raceTrait = new TraitRaceDTO(trait, CustomRaceComponent.RaceDTO.Id);
+                TraitRaceDTO raceTrait = new TraitRaceDTO(trait, CustomRaceComponent.RaceDTO);
                 CustomRaceComponent.RaceDTO.Traits.Add(raceTrait);
             }
         }

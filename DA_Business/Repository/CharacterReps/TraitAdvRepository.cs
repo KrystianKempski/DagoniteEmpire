@@ -61,11 +61,11 @@ namespace DA_Business.Repository.CharacterReps
             return 0;
         }
 
-        public async Task<IEnumerable<TraitAdvDTO>> GetAll(int? charId = null)
+        public async Task<IEnumerable<TraitAdvDTO>> GetAll(int? charId =null)
         {
             if (charId == null || charId < 1)
                 return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(_db.TraitsAdv.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(_db.TraitsAdv.Include(u => u.Bonuses).Where(u => u.CharacterId == charId));
+           return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(_db.TraitsAdv.Include(u => u.Bonuses).Where(u => u.Characters.FirstOrDefault(c=>c.Id == charId)!=null));
         }
 
         public async Task<IEnumerable<TraitAdvDTO>> GetAllApproved()
@@ -91,7 +91,7 @@ namespace DA_Business.Repository.CharacterReps
                 if (obj != null)
                 {
                     obj.Name = objDTO.Name;    
-                    obj.CharacterId = objDTO.CharacterId;       
+                   // obj.CharacterId = objDTO.CharacterId;       
                     obj.Descr = objDTO.Descr;
                     obj.SummaryDescr = objDTO.SummaryDescr;
                     obj.Index = objDTO.Index;  

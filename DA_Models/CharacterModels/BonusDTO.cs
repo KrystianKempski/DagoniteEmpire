@@ -14,9 +14,7 @@ namespace DA_Models.CharacterModels
         public string? FeatureName { get; set; } = null;
         public int Index { get; set; } = 0;
         //public string BonusType { get; set; }
-
-        [Required]
-        public int TraitId { get; set; }
+        public int TraitId { get; set; } = 0;
         public int BonusValue { get; set; } = 0;
         public string Description { get; set; } = string.Empty;
 

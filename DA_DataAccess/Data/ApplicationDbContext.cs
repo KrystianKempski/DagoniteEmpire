@@ -25,22 +25,25 @@ namespace DA_DataAccess.Data
         public DbSet<TraitAdv> TraitsAdv { get; set; }
         public DbSet<TraitRace> TraitsRace { get; set; }
 
-        //    protected override void OnModelCreating(ModelBuilder modelBuilder)
-        //    {
-        //        base.OnModelCreating(modelBuilder);
+        //protected override void OnModelCreating(ModelBuilder modelBuilder)
+        //{
+        //    base.OnModelCreating(modelBuilder);
 
-        //        modelBuilder.Entity<Trait>().ToTable(nameof(Trait))
-        //            .HasMany(a => a.Bonuses)
-        //            .WithOne()
-        //            .HasForeignKey(e => e.TraitId)
-        //            .IsRequired();
+        //    modelBuilder.Entity<Character>()
+        //        .HasMany(x => x.TraitsAdv)
+        //        .WithMany(y => y.Characters)
+        //        .UsingEntity(j => j.ToTable("CharacterTrait"));
 
 
-        //        modelBuilder.Entity<Feature>().ToTable(nameof(Feature))
-        //            .HasMany(a => a.TraitBonusesRelated)
-        //            .WithOne()
-        //            .HasForeignKey(e=> e.FeatureId)
-        //            .IsRequired(false);
-        //    }
+        //    //modelBuilder.Entity<Character>()
+        //    //    .HasOne(x => x.Race)
+        //    //    .WithMany(y => y.Characters)
+        //    //    .UsingEntity(j => j.ToTable("CharacterRace"));
+
+        //    modelBuilder.Entity<Race>()
+        //        .HasMany(x => x.Traits)
+        //        .WithMany(y => y.Races)
+        //        .UsingEntity(j => j.ToTable("RaceTrait"));
+        //}
     }
 }

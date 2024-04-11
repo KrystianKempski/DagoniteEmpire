@@ -28,11 +28,11 @@
                 <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
                 <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
                     <GridColumns>
-                    @if (IsAdminOrMG){
-                         <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                    }
+                        @if (IsAdminOrMG){
+                             <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                        }
                         <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                        <GridColumn Field=@nameof(CharacterDTO.Race) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                        <GridColumn Field=@nameof(CharacterDTO.RaceName) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
                         <GridColumn Field=@nameof(CharacterDTO.Class) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
                     <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Left" Width="50"></GridColumn>
                     </GridColumns>
@@ -95,6 +95,13 @@
             Title = "Characters of " + user.Identity.Name;
             Characters = await _characterRepository.GetAllForUser(user.Identity.Name);
         }
+        // foreach(var charac in Characters)
+        // {
+        //     if (charac.Race != null)
+        //         charac.RaceName = charac.Race.Name;
+        //     else
+        //         charac.RaceName = string.Empty;
+        // }
         IsLoading = false;
         StateHasChanged();
     }

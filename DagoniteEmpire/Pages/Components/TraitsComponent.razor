@@ -1,5 +1,6 @@
-﻿<div>
-
+﻿@inject ITraitAdvRepository _traitAdvRepository
+@inject ITraitRaceRepository _traitRaceRepository
+<div>
     <table class="table align-middle">
         <thead>
             <tr>
@@ -207,10 +208,11 @@
 
         if (refresh)
         {
+
+            await TraitsChanged.InvokeAsync(Traits);
             await AttributesChanged.InvokeAsync(Attributes);
             await BaseSkillsChanged.InvokeAsync(BaseSkills);
             await SpecialSkillsChanged.InvokeAsync(SpecialSkills);
-            await TraitsChanged.InvokeAsync(Traits);
             if (Character != null)
                 await CharacterChanged.InvokeAsync(Character);
             StateHasChanged();
@@ -221,15 +223,23 @@
     {
         if (trait.Id != 0)
         {
-           // await _traitRepository.Delete(trait.Id);
-            // await _jsRuntime.ToastrSuccess("Product deleted succesfully.");
-            //Traits = await _traitRepository.GetAll(Id);
+
+            if (trait.TraitType == SD.TraitType_Advantage)
+            {
+                await _traitAdvRepository.Delete(trait.Id);
+
+            }
+            else if (trait.TraitType == SD.TraitType_Race)
+            {
+                await _traitRaceRepository.Delete(trait.Id);
+            }
+
         }
-        else
-        {
-            Traits = Traits.Where(u => u.Name != trait.Name).ToList(); ;
-        }
-        CalculateTraitsBonuses();
+        Traits = Traits.Where(u => u.Name != trait.Name).ToList();
+        if (TraitType == SD.TraitType_Advantage)
+            CalculateTraitsBonuses();
+        else if (TraitType == SD.TraitType_Race)
+            await TraitsChanged.InvokeAsync(Traits);
         StateHasChanged();
     }
 }

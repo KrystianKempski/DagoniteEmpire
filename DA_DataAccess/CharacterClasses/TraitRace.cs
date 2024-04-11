@@ -9,8 +9,6 @@ namespace DA_DataAccess.CharacterClasses
 {
     public class TraitRace: Trait
     {
-        public int? RaceId { get; set; }
-        [ForeignKey(nameof(RaceId))]
-        public Race? Race { get; set; }
+        public ICollection<Race>? Races { get; set; }
     }
 }

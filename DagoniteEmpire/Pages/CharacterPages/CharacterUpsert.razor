@@ -256,22 +256,20 @@
                                         {
                                              <tr class="name-tr-small">
                                                 <td class="name-td-small" colspan="6">
-                                                   @*  <label class="names-label text-start">@obj.Name.ToUpper()</label> *@
-                                                        @if (obj.Editable)
-                                                        {
-                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0; text-transform:uppercase;" @bind-Value="obj.Name" class=""></InputText>
-                                                        }
-                                                        else
-                                                        {
-                                                            <label class="names-label">@obj.Name.ToUpper()</label>
-                                                        }
+                                                    @if (obj.Editable)
+                                                    {
+                                                        <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0; text-transform:uppercase;" @bind-Value="obj.Name" class=""></InputText>
+                                                    }
+                                                    else
+                                                    {
+                                                        <label class="names-label">@obj.Name.ToUpper()</label>
+                                                    }
                                                 </td>
                                             </tr> 
                                             <tr>
                                                 <td class="name-td-big">
                                                     @if (obj.Editable)
                                                     {
-                                                           @*  <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0;" @bind-Value="obj.Name" class=""></InputText> *@
                                                             <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0;" Value="@obj.Name" ValueChanged="@((string value) => SpecialSkillNameChanged(value, obj))" ValueExpression="@(()=>obj.Name)"></InputText>
                                                     }
                                                     else
@@ -290,42 +288,40 @@
                                                 </td>
                                                 <td>
                                                     <div class="attribute-selector">
-                                                    @if (obj.Editable)
-                                                    {
-                                                                <InputSelect style="width: 100%;"
-                                                                             ValueExpression="@(()=>obj.ChosenAttribute)"
-                                                                             Value="@obj.ChosenAttribute"
-                                                                             ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
-                                                                    <option value="0" selected disabled>--Select--</option>
-                                                                    <option value="Strength"> Strength</option>
-                                                                    <option value="Dexterity"> Dexterity</option>
-                                                                    <option value="Endurance"> Endurance</option>
-                                                                    <option value="Intelligence"> Intelligence</option>
-                                                                    <option value="Instinct"> Instinct</option>
-                                                                    <option value="Willpower"> Willpower</option>
-                                                                    <option value="Charisma"> Charisma</option>
-                                                                </InputSelect>
-                                                    }
-                                                    else
-                                                    {
-                                                        @if (obj.ChosenAttribute != null && obj.RelatedAttribute1 == "")
-                                                        {
-                                                            <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
-                                                        }
-                                                        else
+                                                        @if (obj.Editable)
                                                         {
                                                             <InputSelect style="width: 100%;"
                                                                             ValueExpression="@(()=>obj.ChosenAttribute)"
                                                                             Value="@obj.ChosenAttribute"
                                                                             ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
                                                                 <option value="0" selected disabled>--Select--</option>
-                                                                <option value="@obj.RelatedAttribute1"> @obj.RelatedAttribute1</option>
-                                                                <option value="@obj.RelatedAttribute2"> @obj.RelatedAttribute2</option>
+                                                                <option value="Strength"> Strength</option>
+                                                                <option value="Dexterity"> Dexterity</option>
+                                                                <option value="Endurance"> Endurance</option>
+                                                                <option value="Intelligence"> Intelligence</option>
+                                                                <option value="Instinct"> Instinct</option>
+                                                                <option value="Willpower"> Willpower</option>
+                                                                <option value="Charisma"> Charisma</option>
                                                             </InputSelect>
                                                         }
-                                                    }
-
-                                                       
+                                                        else
+                                                        {
+                                                            @if (obj.ChosenAttribute != null && obj.RelatedAttribute1 == "")
+                                                            {
+                                                                <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
+                                                            }
+                                                            else
+                                                            {
+                                                                <InputSelect style="width: 100%;"
+                                                                                ValueExpression="@(()=>obj.ChosenAttribute)"
+                                                                                Value="@obj.ChosenAttribute"
+                                                                                ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
+                                                                    <option value="0" selected disabled>--Select--</option>
+                                                                    <option value="@obj.RelatedAttribute1"> @obj.RelatedAttribute1</option>
+                                                                    <option value="@obj.RelatedAttribute2"> @obj.RelatedAttribute2</option>
+                                                                </InputSelect>
+                                                            }
+                                                        }
                                                     </div>
 
                                                 </td>
@@ -472,13 +468,14 @@
         BaseSkills = await _baseSkillRepository.GetAll(Id);
         SpecialSkills = (await _specialSkillRepository.GetAll(Id)).ToList();
         TraitsAdv = (await _traitAdvRepository.GetAll(Id)).ToList(); 
+        //need Traits in base class to use Component
         Traits = new List<TraitDTO>();
         foreach(var advTrait in TraitsAdv)
         {
-            Traits.Add(new TraitAdvDTO(advTrait, Id));
+            Traits.Add(new TraitAdvDTO(advTrait, Character));
         }
-        CurrentRace = Character.Race;
-        CurrentRace.Traits = (await _traitRaceRepository.GetAll(Character.Race.Id)).ToList();
+        CurrentRace = await _raceRepository.GetById(Character.RaceId);
+        //CurrentRace.Traits = (await _traitRaceRepository.GetAll(CurrentRace.Id)).ToList();
         Races = (await _raceRepository.GetAllApproved()).ToList();
     }
 
@@ -492,6 +489,29 @@
             {
                 //check if all valid
                 //create
+                RaceDTO? raceDTO;
+                if (CurrentRace.Id > 0)
+                {
+                    raceDTO = await _raceRepository.Update(CurrentRace);
+                }
+                else
+                {
+                    raceDTO = await _raceRepository.Create(CurrentRace);
+                }
+                if (raceDTO is not null)
+                {
+                    Character.RaceId = raceDTO.Id;
+                }
+                else
+                {
+                    Character.RaceId = 0;
+                }
+                foreach (var obj in Traits)
+                {
+                    TraitsAdv.Add(new(obj, Character));
+                }
+
+                Character.TraitsAdv = TraitsAdv;
                 var charac = await _characterRepository.Create(Character);
                 foreach (var obj in Attributes)
                 {
@@ -508,16 +528,47 @@
                     obj.CharacterId = charac.Id;
                     await _specialSkillRepository.Create(obj);
                 }
-                foreach (var obj in Traits)
-                {
-                    await _traitAdvRepository.Create(new(obj, charac.Id));
-                }
-                CurrentRace.CharacterId = charac.Id;
-                _raceRepository.Create(CurrentRace);
+                // foreach (var obj in Traits)
+                // {
+                //     await _traitAdvRepository.Create(new(obj, charac));
+                // }
             }
             else
             {
-                //update
+
+                //update race Traits
+                foreach (var rTraitDTO in CurrentRace.Traits)
+                {
+                    await _traitRaceRepository.Update(new(rTraitDTO, CurrentRace));
+                }
+
+                //update race
+                RaceDTO? raceDTO;
+                if (CurrentRace.Id > 0)
+                {
+                    raceDTO = await _raceRepository.Update(CurrentRace);
+                }
+                else
+                {
+                    raceDTO = await _raceRepository.Create(CurrentRace);
+                }
+                if (raceDTO is not null)
+                {
+                    Character.RaceId = raceDTO.Id;
+                }
+                else
+                {
+                    Character.RaceId = 0;
+                }
+
+                // update Adv traits
+                Character.TraitsAdv = new List<TraitAdvDTO>();
+                foreach (var obj in Traits)
+                {
+                    Character.TraitsAdv.Add(await _traitAdvRepository.Update(new(obj, Character)));  //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
+                }
+
+                // update character with TraitAdv collection properly filled
                 await _characterRepository.Update(Character);
                 foreach (var obj in Attributes)
                 {
@@ -534,18 +585,14 @@
                     obj.CharacterId = Id;
                     await _specialSkillRepository.Update(obj);
                 }
-                foreach (var obj in Traits)
-                {
-                    TraitAdvDTO val = new(obj, Id);
-                    await _traitAdvRepository.Update(val);
-                }   
-                foreach (var obj in CurrentRace.Traits)
-                {
-                    obj.RaceId = CurrentRace.Id;
-                    await _traitRaceRepository.Update(obj);
-                }
-                CurrentRace.CharacterId = Id;
-                _raceRepository.Update(CurrentRace);
+                 
+                // foreach (var obj in CurrentRace.Traits)
+                // {
+                //   //  obj.RaceId = Character.Race.Id;
+                //     await _traitRaceRepository.Update(obj);
+                // }
+               // Character.Race.CharacterId = Id;
+                //_raceRepository.Update(CurrentRace);
             }
         }
         catch (Exception ex)

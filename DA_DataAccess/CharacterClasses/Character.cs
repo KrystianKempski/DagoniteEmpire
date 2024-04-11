@@ -37,7 +37,9 @@ namespace DA_DataAccess.CharacterClasses
         public ICollection<SpecialSkill>? SpecialSkills { get; set; }
         public ICollection<TraitAdv>? TraitsAdv { get; set; }
 
-        public Race Race { get; set; }
+        public int? RaceId { get; set; }
+        [ForeignKey(nameof(RaceId))]
+        public Race? Race { get; set; }
 
     }
 }

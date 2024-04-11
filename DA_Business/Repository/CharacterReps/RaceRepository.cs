@@ -27,10 +27,21 @@ namespace DA_Business.Repository.CharacterReps
         {
             try
             {
-
                 var obj = _mapper.Map<RaceDTO, Race>(objDTO);
+                //handle traitsRace
+                var traits = await _db.TraitsRace.ToListAsync();
+                traits.ForEach(t =>
+                {
+                    if (obj.Traits.Any(ncht => ncht.Id == t.Id))
+                    {
+                        var untracked = obj.Traits.FirstOrDefault(ncht => ncht.Id == t.Id);
+                        obj.Traits.Remove(untracked);
+                        obj.Traits.Add(t);
+                    }
+                });
+
                 var addedObj = _db.Races.Add(obj);
-                _db.SaveChangesAsync();
+                await _db.SaveChangesAsync();
 
                 return _mapper.Map<Race, RaceDTO>(addedObj.Entity);
             }
@@ -61,16 +72,16 @@ namespace DA_Business.Repository.CharacterReps
             return 0;
         }
 
-        public async Task<IEnumerable<RaceDTO>> GetAll(int? charId = null)
+        public async Task<IEnumerable<RaceDTO>> GetAll()
         {
-            if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<Race>, IEnumerable<RaceDTO>>(_db.Races.Include(u => u.Traits));
-           return _mapper.Map<IEnumerable<Race>, IEnumerable<RaceDTO>>(_db.Races.Include(u => u.Traits).Where(u => u.CharacterId == charId).OrderBy(u=>u.Index));
+            //if (charId == null || charId < 1)
+                return _mapper.Map<IEnumerable<Race>, IEnumerable<RaceDTO>>(_db.Races.Include(u => u.Traits).ThenInclude(b=>b.Bonuses));
+          // return _mapper.Map<IEnumerable<Race>, IEnumerable<RaceDTO>>(_db.Races.Include(u => u.Traits).Where(u => u.Characters.FirstOrDefault(c=>c.Id ==charId) != null).OrderBy(u=>u.Index));
         }
 
         public async Task<IEnumerable<RaceDTO>> GetAllApproved()
         {
-            return _mapper.Map<IEnumerable<Race>, IEnumerable<RaceDTO>>(_db.Races.Include(u => u.Traits).Where(t=>t.RaceApproved == true));
+            return _mapper.Map<IEnumerable<Race>, IEnumerable<RaceDTO>>(_db.Races.Include(u => u.Traits).ThenInclude(b => b.Bonuses).Where(t=>t.RaceApproved == true));
         }
 
         public async Task<RaceDTO> GetById(int id)
@@ -87,16 +98,29 @@ namespace DA_Business.Repository.CharacterReps
         {
             try
             {
-                var obj = await _db.Races.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                var obj = await _db.Races.Include(r=>r.Traits).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj != null)
                 {
-                    obj.Name = objDTO.Name;    
-                    obj.CharacterId = objDTO.CharacterId;       
-                    obj.Description = objDTO.Description;        
-                    obj.Index = objDTO.Index;
-                    obj.RaceApproved = objDTO.RaceApproved;
-                    _db.Races.Update(obj);
+                    var updatedRace = _mapper.Map<RaceDTO, Race>(objDTO);
+                    var traits = await _db.TraitsRace.ToListAsync();
 
+                    obj.Name = updatedRace.Name;        
+                    obj.Description = updatedRace.Description;        
+                    obj.Index = updatedRace.Index;
+                    obj.RaceApproved = updatedRace.RaceApproved;
+                    //obj.Traits = updatedRace.Traits;
+
+
+                    foreach(var t in traits)
+                    {
+                        if (updatedRace.Traits.Any(ut => ut.Id == t.Id) 
+                            && !obj.Traits.Any(ot=>ot.Id == t.Id))
+                        {
+                            obj.Traits.Add(t);
+                        }
+                    }
+
+                    _db.Races.Update(obj);
                     await _db.SaveChangesAsync();
                     return _mapper.Map<Race, RaceDTO>(obj);
                 }

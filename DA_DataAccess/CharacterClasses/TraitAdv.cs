@@ -9,10 +9,7 @@ namespace DA_DataAccess.CharacterClasses
 {
     public class TraitAdv : Trait
     {
-        public int? CharacterId { get; set; }
-
-        [ForeignKey(nameof(CharacterId))]
-        public Character? Character { get; set; }
+        public ICollection<Character>? Characters { get; set; }
 
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DA_DataAccess.CharacterClasses;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,14 +10,26 @@ namespace DA_Models.CharacterModels
     public class TraitRaceDTO: TraitDTO
     {
         public TraitRaceDTO() { }
-        public TraitRaceDTO(TraitDTO traitDTO, int id)
+        public TraitRaceDTO(TraitDTO traitDTO, RaceDTO raceDTO)
         {
             foreach (var prop in traitDTO.GetType().GetProperties())
             {
                 this.GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(traitDTO, null), null);
             }
-            this.RaceId = id;
+            if(this.Races != null)
+            {
+                var race = this.Races.FirstOrDefault(r => r.Id == raceDTO.Id);
+                if (race is null)
+                {
+                    this.Races.Add(raceDTO);
+                }
+                else
+                {
+                    race = raceDTO;
+                }
+            }
         }
-        public int? RaceId { get; set; }
+        public ICollection<RaceDTO> Races { get; set; }
+        //public int? RaceId { get; set; }
     }
 }

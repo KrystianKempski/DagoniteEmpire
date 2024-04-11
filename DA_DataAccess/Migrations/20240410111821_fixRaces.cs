@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class newtraits3 : Migration
+    public partial class fixRaces : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -54,29 +54,6 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Characters",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserName = table.Column<string>(type: "text", nullable: false),
-                    NPCName = table.Column<string>(type: "text", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    Class = table.Column<string>(type: "text", nullable: true),
-                    Age = table.Column<int>(type: "integer", nullable: false),
-                    ImageUrl = table.Column<string>(type: "text", nullable: true),
-                    NPCType = table.Column<string>(type: "text", nullable: true),
-                    AttributePoints = table.Column<int>(type: "integer", nullable: false),
-                    CurrentExpPoints = table.Column<int>(type: "integer", nullable: false),
-                    UsedExpPoints = table.Column<int>(type: "integer", nullable: false),
-                    TraitBalance = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Characters", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ImageFiles",
                 columns: table => new
                 {
@@ -88,6 +65,43 @@ namespace DA_DataAccess.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ImageFiles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Races",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Index = table.Column<int>(type: "integer", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    RaceApproved = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Races", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Traits",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    Index = table.Column<int>(type: "integer", nullable: false),
+                    TraitType = table.Column<string>(type: "text", nullable: false),
+                    TraitValue = table.Column<int>(type: "integer", nullable: false),
+                    Descr = table.Column<string>(type: "text", nullable: false),
+                    SummaryDescr = table.Column<string>(type: "text", nullable: false),
+                    TraitApproved = table.Column<bool>(type: "boolean", nullable: false),
+                    IsUnique = table.Column<bool>(type: "boolean", nullable: false),
+                    Discriminator = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Traits", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -197,6 +211,84 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Characters",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserName = table.Column<string>(type: "text", nullable: false),
+                    NPCName = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Class = table.Column<string>(type: "text", nullable: true),
+                    Age = table.Column<int>(type: "integer", nullable: false),
+                    ImageUrl = table.Column<string>(type: "text", nullable: true),
+                    NPCType = table.Column<string>(type: "text", nullable: true),
+                    AttributePoints = table.Column<int>(type: "integer", nullable: false),
+                    CurrentExpPoints = table.Column<int>(type: "integer", nullable: false),
+                    UsedExpPoints = table.Column<int>(type: "integer", nullable: false),
+                    TraitBalance = table.Column<int>(type: "integer", nullable: false),
+                    RaceId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Characters", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Characters_Races_RaceId",
+                        column: x => x.RaceId,
+                        principalTable: "Races",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Bonuses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    FeatureType = table.Column<string>(type: "text", nullable: false),
+                    FeatureName = table.Column<string>(type: "text", nullable: true),
+                    BonusValue = table.Column<int>(type: "integer", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
+                    Index = table.Column<int>(type: "integer", nullable: false),
+                    TraitId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bonuses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Bonuses_Traits_TraitId",
+                        column: x => x.TraitId,
+                        principalTable: "Traits",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RaceTraitRace",
+                columns: table => new
+                {
+                    RacesId = table.Column<int>(type: "integer", nullable: false),
+                    TraitsId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RaceTraitRace", x => new { x.RacesId, x.TraitsId });
+                    table.ForeignKey(
+                        name: "FK_RaceTraitRace_Races_RacesId",
+                        column: x => x.RacesId,
+                        principalTable: "Races",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RaceTraitRace_Traits_TraitsId",
+                        column: x => x.TraitsId,
+                        principalTable: "Traits",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Attributes",
                 columns: table => new
                 {
@@ -257,25 +349,27 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Races",
+                name: "CharacterTraitAdv",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    CharacterId = table.Column<int>(type: "integer", nullable: true),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Index = table.Column<int>(type: "integer", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
-                    RaceApproved = table.Column<bool>(type: "boolean", nullable: false)
+                    CharactersId = table.Column<int>(type: "integer", nullable: false),
+                    TraitsAdvId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Races", x => x.Id);
+                    table.PrimaryKey("PK_CharacterTraitAdv", x => new { x.CharactersId, x.TraitsAdvId });
                     table.ForeignKey(
-                        name: "FK_Races_Characters_CharacterId",
-                        column: x => x.CharacterId,
+                        name: "FK_CharacterTraitAdv_Characters_CharactersId",
+                        column: x => x.CharactersId,
                         principalTable: "Characters",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CharacterTraitAdv_Traits_TraitsAdvId",
+                        column: x => x.TraitsAdvId,
+                        principalTable: "Traits",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -306,63 +400,6 @@ namespace DA_DataAccess.Migrations
                         name: "FK_SpecialSkills_Characters_CharacterId",
                         column: x => x.CharacterId,
                         principalTable: "Characters",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Traits",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    Index = table.Column<int>(type: "integer", nullable: false),
-                    TraitType = table.Column<string>(type: "text", nullable: false),
-                    TraitValue = table.Column<int>(type: "integer", nullable: false),
-                    Descr = table.Column<string>(type: "text", nullable: false),
-                    SummaryDescr = table.Column<string>(type: "text", nullable: false),
-                    TraitApproved = table.Column<bool>(type: "boolean", nullable: false),
-                    IsUnique = table.Column<bool>(type: "boolean", nullable: false),
-                    Discriminator = table.Column<string>(type: "text", nullable: false),
-                    CharacterId = table.Column<int>(type: "integer", nullable: true),
-                    RaceId = table.Column<int>(type: "integer", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Traits", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Traits_Characters_CharacterId",
-                        column: x => x.CharacterId,
-                        principalTable: "Characters",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Traits_Races_RaceId",
-                        column: x => x.RaceId,
-                        principalTable: "Races",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Bonuses",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    FeatureType = table.Column<string>(type: "text", nullable: false),
-                    FeatureName = table.Column<string>(type: "text", nullable: true),
-                    BonusValue = table.Column<int>(type: "integer", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    Index = table.Column<int>(type: "integer", nullable: false),
-                    TraitId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Bonuses", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Bonuses_Traits_TraitId",
-                        column: x => x.TraitId,
-                        principalTable: "Traits",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -420,25 +457,24 @@ namespace DA_DataAccess.Migrations
                 column: "TraitId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Races_CharacterId",
-                table: "Races",
-                column: "CharacterId",
-                unique: true);
+                name: "IX_Characters_RaceId",
+                table: "Characters",
+                column: "RaceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CharacterTraitAdv_TraitsAdvId",
+                table: "CharacterTraitAdv",
+                column: "TraitsAdvId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RaceTraitRace_TraitsId",
+                table: "RaceTraitRace",
+                column: "TraitsId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SpecialSkills_CharacterId",
                 table: "SpecialSkills",
                 column: "CharacterId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Traits_CharacterId",
-                table: "Traits",
-                column: "CharacterId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Traits_RaceId",
-                table: "Traits",
-                column: "RaceId");
         }
 
         /// <inheritdoc />
@@ -469,7 +505,13 @@ namespace DA_DataAccess.Migrations
                 name: "Bonuses");
 
             migrationBuilder.DropTable(
+                name: "CharacterTraitAdv");
+
+            migrationBuilder.DropTable(
                 name: "ImageFiles");
+
+            migrationBuilder.DropTable(
+                name: "RaceTraitRace");
 
             migrationBuilder.DropTable(
                 name: "SpecialSkills");
@@ -484,10 +526,10 @@ namespace DA_DataAccess.Migrations
                 name: "Traits");
 
             migrationBuilder.DropTable(
-                name: "Races");
+                name: "Characters");
 
             migrationBuilder.DropTable(
-                name: "Characters");
+                name: "Races");
         }
     }
 }

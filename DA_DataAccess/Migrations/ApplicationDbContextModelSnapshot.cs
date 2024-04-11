@@ -22,6 +22,21 @@ namespace DA_DataAccess.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CharacterTraitAdv", b =>
+                {
+                    b.Property<int>("CharactersId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TraitsAdvId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CharactersId", "TraitsAdvId");
+
+                    b.HasIndex("TraitsAdvId");
+
+                    b.ToTable("CharacterTraitAdv");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>
                 {
                     b.Property<int>("Id")
@@ -192,6 +207,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("NPCType")
                         .HasColumnType("text");
 
+                    b.Property<int>("RaceId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("TraitBalance")
                         .HasColumnType("integer");
 
@@ -204,6 +222,8 @@ namespace DA_DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("RaceId");
+
                     b.ToTable("Characters");
                 });
 
@@ -214,9 +234,6 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("CharacterId")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -233,9 +250,6 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("boolean");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CharacterId")
-                        .IsUnique();
 
                     b.ToTable("Races");
                 });
@@ -570,14 +584,24 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("RaceTraitRace", b =>
+                {
+                    b.Property<int>("RacesId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TraitsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("RacesId", "TraitsId");
+
+                    b.HasIndex("TraitsId");
+
+                    b.ToTable("RaceTraitRace");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitAdv", b =>
                 {
                     b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
-
-                    b.Property<int?>("CharacterId")
-                        .HasColumnType("integer");
-
-                    b.HasIndex("CharacterId");
 
                     b.HasDiscriminator().HasValue("TraitAdv");
                 });
@@ -585,11 +609,6 @@ namespace DA_DataAccess.Migrations
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitRace", b =>
                 {
                     b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
-
-                    b.Property<int?>("RaceId")
-                        .HasColumnType("integer");
-
-                    b.HasIndex("RaceId");
 
                     b.HasDiscriminator().HasValue("TraitRace");
                 });
@@ -603,6 +622,21 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.HasDiscriminator().HasValue("ApplicationUser");
+                });
+
+            modelBuilder.Entity("CharacterTraitAdv", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
+                        .WithMany()
+                        .HasForeignKey("CharactersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DA_DataAccess.CharacterClasses.TraitAdv", null)
+                        .WithMany()
+                        .HasForeignKey("TraitsAdvId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>
@@ -638,13 +672,15 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Trait");
                 });
 
-            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
                 {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
-                        .WithOne("Race")
-                        .HasForeignKey("DA_DataAccess.CharacterClasses.Race", "CharacterId");
+                    b.HasOne("DA_DataAccess.CharacterClasses.Race", "Race")
+                        .WithMany("Characters")
+                        .HasForeignKey("RaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Character");
+                    b.Navigation("Race");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
@@ -709,22 +745,19 @@ namespace DA_DataAccess.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitAdv", b =>
+            modelBuilder.Entity("RaceTraitRace", b =>
                 {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
-                        .WithMany("TraitsAdv")
-                        .HasForeignKey("CharacterId");
+                    b.HasOne("DA_DataAccess.CharacterClasses.Race", null)
+                        .WithMany()
+                        .HasForeignKey("RacesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Character");
-                });
-
-            modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitRace", b =>
-                {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Race", "Race")
-                        .WithMany("Traits")
-                        .HasForeignKey("RaceId");
-
-                    b.Navigation("Race");
+                    b.HasOne("DA_DataAccess.CharacterClasses.TraitRace", null)
+                        .WithMany()
+                        .HasForeignKey("TraitsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
@@ -733,17 +766,12 @@ namespace DA_DataAccess.Migrations
 
                     b.Navigation("BaseSkills");
 
-                    b.Navigation("Race")
-                        .IsRequired();
-
                     b.Navigation("SpecialSkills");
-
-                    b.Navigation("TraitsAdv");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>
                 {
-                    b.Navigation("Traits");
+                    b.Navigation("Characters");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>

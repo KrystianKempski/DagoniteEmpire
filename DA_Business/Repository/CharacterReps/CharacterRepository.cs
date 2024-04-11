@@ -26,6 +26,30 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<CharacterDTO> Create(CharacterDTO objDTO)
         {
             var obj = _mapper.Map<CharacterDTO, Character>(objDTO);
+            // handle race
+            if (obj.RaceId > 0)
+            {
+                obj.Race = _db.Races.FirstOrDefault(r => r.Id == obj.RaceId);
+            }
+            else
+            {
+                obj.Race = null;
+                obj.RaceId = 0;
+            }
+            //handle traitsAdv
+
+            var traits = await _db.TraitsAdv.ToListAsync();
+            traits.ForEach(t =>
+            {
+                if (obj.TraitsAdv.Any(ncht => ncht.Id == t.Id))
+                {
+                    var untracked = obj.TraitsAdv.FirstOrDefault(ncht => ncht.Id == t.Id);
+                    obj.TraitsAdv.Remove(untracked);
+                    obj.TraitsAdv.Add(t);
+                }
+            });
+
+
             var addedObj = _db.Characters.Add(obj);
             await _db.SaveChangesAsync();
 
@@ -71,16 +95,62 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await _db.Characters.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
-                obj.Age = objDTO.Age;
-                obj.NPCName = objDTO.NPCName;
-                obj.Description = objDTO.Description;
-                obj.Class = objDTO.Class;
-                obj.CurrentExpPoints = objDTO.CurrentExpPoints;
-                obj.UsedExpPoints = objDTO.UsedExpPoints;
-                obj.AttributePoints = objDTO.AttributePoints;
-                obj.NPCType = objDTO.NPCType;
-                obj.ImageUrl = objDTO.ImageUrl;
-                obj.TraitBalance = objDTO.TraitBalance;
+                var updatedChar = _mapper.Map<CharacterDTO, Character>(objDTO);
+                var traits = await _db.TraitsAdv.ToListAsync();
+
+                obj.Age = updatedChar.Age;
+                obj.NPCName = updatedChar.NPCName;
+                obj.Description = updatedChar.Description;
+                obj.Class = updatedChar.Class;
+                obj.CurrentExpPoints = updatedChar.CurrentExpPoints;
+                obj.UsedExpPoints = updatedChar.UsedExpPoints;
+                obj.AttributePoints = updatedChar.AttributePoints;
+                obj.NPCType = updatedChar.NPCType;
+                obj.ImageUrl = updatedChar.ImageUrl;
+                obj.TraitBalance = updatedChar.TraitBalance;
+                obj.RaceId = updatedChar.RaceId;
+               //obj.TraitsAdv = updatedChar.TraitsAdv;
+
+
+
+                // race
+                // handle race
+                if (obj.RaceId > 0)
+                {
+                    obj.Race = _db.Races.FirstOrDefault(r => r.Id == obj.RaceId);
+                }
+
+                //handle traitsAdv
+                    
+                foreach (var t in traits)
+                {
+                    if (updatedChar.TraitsAdv.Any(ut => ut.Id == t.Id)
+                        && !obj.TraitsAdv.Any(ot => ot.Id == t.Id))
+                    {
+                        obj.TraitsAdv.Add(t);
+                    }
+                }
+
+                //foreach(var t in traits)
+                //{
+                //    if (obj.TraitsAdv.Any(ncht => ncht.Id == t.Id))
+                //    {
+                //        var untracked = obj.TraitsAdv.FirstOrDefault(ncht => ncht.Id == t.Id);
+                //        obj.TraitsAdv.Remove(untracked);
+                //        obj.TraitsAdv.Add(t);
+                //    }
+                //}
+
+                //traits.ForEach(t =>
+                //{
+                //    if (obj.TraitsAdv.Any(ncht => ncht.Id == t.Id))
+                //    {
+                //        var untracked = obj.TraitsAdv.FirstOrDefault(ncht => ncht.Id == t.Id);
+                //        obj.TraitsAdv.Remove(untracked);
+                //        obj.TraitsAdv.Add(t);
+                //    }
+                //});
+
                 _db.Characters.Update(obj);
                 await _db.SaveChangesAsync();
             }

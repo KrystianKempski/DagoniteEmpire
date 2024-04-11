@@ -27,6 +27,7 @@ namespace DA_Business.Repository.CharacterReps
         {
             try
             {
+                //How to use EF 6 many-to-many with IDbContextFactory in Blazor Server
                 var obj = _mapper.Map<TraitRaceDTO, TraitRace>(objDTO);
                 var addedObj = _db.TraitsRace.Add(obj);
                 await _db.SaveChangesAsync();
@@ -64,7 +65,7 @@ namespace DA_Business.Repository.CharacterReps
         {
             if (raceId == null || raceId < 1)
                 return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(_db.TraitsRace.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(_db.TraitsRace.Include(u => u.Bonuses).Where(u => u.RaceId == raceId));
+           return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(_db.TraitsRace.Include(u => u.Bonuses).Where(u => u.Races.FirstOrDefault(r=>r.Id == raceId) != null));
         }
 
         public async Task<IEnumerable<TraitRaceDTO>> GetAllApproved()
@@ -90,7 +91,7 @@ namespace DA_Business.Repository.CharacterReps
                 if (obj != null)
                 {
                     obj.Name = objDTO.Name;
-                    obj.RaceId = objDTO.RaceId;
+                    //obj.RaceId = objDTO.RaceId;
                     obj.Descr = objDTO.Descr;
                     obj.SummaryDescr = objDTO.SummaryDescr;
                     obj.Index = objDTO.Index;

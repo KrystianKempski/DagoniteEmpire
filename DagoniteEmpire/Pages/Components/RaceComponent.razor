@@ -77,7 +77,7 @@
     [Parameter]
     public EventCallback<RaceDTO> CurrentRaceChanged { get; set; }
 
-
+    public RaceDTO CustomRace { get; set; }
     private SfRichTextEditor RaceDescrShow;
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
 
@@ -112,11 +112,19 @@
     private async Task ChangeRace(string raceName)
     {
         if (raceName == "Custom race")
+        {
             ShowNameLabel = true;
+            CurrentRace = CustomRace;
+        }
         else
+        {
             ShowNameLabel = false;
+            CurrentRace = Races.FirstOrDefault(r => r.Name == raceName);
+        }
 
+        CalculateRaceBonuses();
         SelectedRace = raceName;
+        StateHasChanged();
     }
 
     private async Task EditCustomRace()
@@ -194,11 +202,30 @@
     {
         if (firstRender)
         {
+            CustomRace = CurrentRace;
             if (!string.IsNullOrEmpty(CurrentRace.Name))
             {
-                SelectedRace = "Custom race";
-                ShowNameLabel = true;
+                var race  = Races.FirstOrDefault(r => r.Name == CurrentRace.Name);
+                if (race is not null && race.RaceApproved)
+                {
+                    SelectedRace = race.Name;
+                    ShowNameLabel = false;
+                }
+                else
+                {
+                    SelectedRace = "Custom race";
+                    ShowNameLabel = true;
+                }
+                if (CurrentRace.RaceApproved==false)
+                    CustomRace = CurrentRace;
+                else
+                    CustomRace = new();
+
                 StateHasChanged();
+            }
+            else
+            {
+                CustomRace = new();
             }
         }
     }
