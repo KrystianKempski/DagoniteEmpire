@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Attribute = DA_DataAccess.CharacterClasses.Attribute;
 using System.Diagnostics.Metrics;
 using Abp.Collections.Extensions;
+using System.Diagnostics;
 
 namespace DA_Business.Repository.CharacterReps
 {
@@ -151,7 +152,14 @@ namespace DA_Business.Repository.CharacterReps
                             if (!updatedChar.TraitsAdv.Any(c => c.Id == existingChild.Id))
                             {
                                 if (existingChild.TraitApproved == true)
-                                    obj.TraitsAdv.Remove(existingChild);
+                                {
+                                    var detachedTrait = contex.TraitsAdv.Include(t => t.Bonuses).Include(c => c.Characters).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
+                                    if(detachedTrait != null && !detachedTrait.Characters.IsNullOrEmpty() && detachedTrait.Characters.Contains(obj))
+                                    {
+                                        detachedTrait.Characters.Remove(obj);
+                                        contex.Traits.Update(detachedTrait);
+                                    }
+                                }
                                 else
                                     contex.TraitsAdv.Remove(existingChild);
                             }
@@ -162,69 +170,81 @@ namespace DA_Business.Repository.CharacterReps
                     // Update and Insert traits
                     if (updatedChar.TraitsAdv is not null)
                     {
-                        foreach (var childTrait in updatedChar.TraitsAdv)
+                        foreach (var trait in updatedChar.TraitsAdv)
                         {
-                            TraitAdv? existingChild;
-                            if (!obj.TraitsAdv.IsNullOrEmpty())
+                            TraitAdv? existingTrait = null;
+                            if (obj.TraitsAdv is not null)
                             {
-                                existingChild = obj.TraitsAdv
-                               .Where(c => c.Id == childTrait.Id && c.Id != default(int))
-                               .SingleOrDefault();
+                                existingTrait = obj.TraitsAdv
+                                    .FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
                             }
-                            else
-                            {
+                            else 
+                            {   
                                 obj.TraitsAdv = new List<TraitAdv>();
-                                existingChild = null;
                             }
 
-                            if (existingChild != null)
+                            if (existingTrait == null)
                             {
-                                // Update trait
-                                contex.Entry(existingChild).CurrentValues.SetValues(childTrait);
-                                // update bonuses
+                                existingTrait = contex.TraitsAdv.Include(t => t.Bonuses).Include(c=>c.Characters).FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
+                            }
 
-                                // Delete trait bonuses
-                                if (!existingChild.Bonuses.IsNullOrEmpty())
+                            if (existingTrait is not null)
+                            {
+                                if (existingTrait.TraitApproved && obj.TraitsAdv.Contains(existingTrait) == false)
                                 {
-                                    foreach (var existingChildBonus in existingChild.Bonuses.ToList())
+                                    if (existingTrait.Characters is null)
+                                        existingTrait.Characters = new List<Character>();
+                                    existingTrait.Characters.Add(obj);
+                                    contex.Traits.Update(existingTrait);
+                                }
+                                else
+                                {
+                                    // Update trait
+                                    contex.Entry(existingTrait).CurrentValues.SetValues(trait);
+                                    // update bonuses
+
+                                    // Delete trait bonuses
+                                    if (!existingTrait.Bonuses.IsNullOrEmpty())
                                     {
-                                        if (!childTrait.Bonuses.Any(c => c.Id == existingChildBonus.Id))
+                                        foreach (var existingChildBonus in existingTrait.Bonuses.ToList())
                                         {
-                                            contex.Bonuses.Remove(existingChildBonus);
+                                            if (!trait.Bonuses.Any(c => c.Id == existingChildBonus.Id))
+                                            {
+                                                contex.Bonuses.Remove(existingChildBonus);
+                                            }
                                         }
                                     }
-                                }
 
-                                // Update and Insert bonuses
-                                if (childTrait.Bonuses is not null)
-                                {
-                                    foreach (var childTraitBonus in childTrait.Bonuses)
+                                    // Update and Insert bonuses
+                                    if (trait.Bonuses is not null)
                                     {
-                                        Bonus? existingChildTrait;
-                                        if (!existingChild.Bonuses.IsNullOrEmpty())
+                                        foreach (var childBonus in trait.Bonuses)
                                         {
-                                            existingChildTrait = existingChild.Bonuses
-                                           .Where(c => c.Id == childTraitBonus.Id && c.Id != default(int))
-                                           .SingleOrDefault();
-                                        }
-                                        else
-                                        {
-                                            existingChild.Bonuses = new List<Bonus>();
-                                            existingChildTrait = null;
-                                        }
+                                            Bonus? existingChildBonus;
+                                            if (!existingTrait.Bonuses.IsNullOrEmpty())
+                                            {
+                                                existingChildBonus = existingTrait.Bonuses
+                                               .FirstOrDefault(c => c.Id == childBonus.Id && c.Id != default(int));
+                                            }
+                                            else
+                                            {
+                                                existingTrait.Bonuses = new List<Bonus>();
+                                                existingChildBonus = null;
+                                            }
 
-                                        if (existingChildTrait != null)
-                                            // Update bonus
-                                            contex.Entry(existingChildTrait).CurrentValues.SetValues(childTraitBonus);
-                                        else
-                                            // Insert bonus
-                                            existingChild.Bonuses.Add(childTraitBonus);
+                                            if (existingChildBonus != null)
+                                                // Update bonus
+                                                contex.Entry(existingChildBonus).CurrentValues.SetValues(childBonus);
+                                            else
+                                                // Insert bonus
+                                                existingTrait.Bonuses.Add(childBonus);
+                                        }
                                     }
                                 }
                             }
                             else
                                 // Insert trait
-                                obj.TraitsAdv.Add(childTrait);
+                                obj.TraitsAdv.Add(trait);
                         }
                     }
 

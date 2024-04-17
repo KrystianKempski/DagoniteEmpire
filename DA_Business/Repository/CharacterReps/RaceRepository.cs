@@ -123,97 +123,112 @@ namespace DA_Business.Repository.CharacterReps
                 if (obj is not null)
                 {
                     var updatedRace = _mapper.Map<RaceDTO, Race>(objDTO);
-                    //var traits = await _db.TraitsRace.ToListAsync();
 
                     // Update parent
                     contex.Entry(obj).CurrentValues.SetValues(updatedRace);
 
 
                     // Delete race traits
-                    if (!obj.Traits.IsNullOrEmpty())
+                    if (obj.Traits is not null)
                     {
                         foreach (var existingChild in obj.Traits.ToList())
                         {
                             if (!updatedRace.Traits.Any(c => c.Id == existingChild.Id))
                             {
                                 if (existingChild.TraitApproved == true)
-                                    obj.Traits.Remove(existingChild);
+                                {
+                                    var detachedTrait = contex.TraitsRace.Include(t => t.Bonuses).Include(c => c.Races).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
+                                    if (detachedTrait != null && !detachedTrait.Races.IsNullOrEmpty() && detachedTrait.Races.Contains(obj))
+                                    {
+                                        detachedTrait.Races.Remove(obj);
+                                        contex.TraitsRace.Update(detachedTrait);
+                                    }
+                                }
                                 else
-                                    contex.Traits.Remove(existingChild);
+                                    contex.TraitsRace.Remove(existingChild);
                             }
                         }
                     }
 
-                    // Update and Insert characters
+                    // Update and Insert traits
                     if (updatedRace.Traits is not null)
                     {
-                        foreach (var childTrait in updatedRace.Traits)
+                        foreach (var trait in updatedRace.Traits)
                         {
-                            TraitRace? existingChild;
-                            if (!obj.Traits.IsNullOrEmpty())
+                            TraitRace? existingTrait = null;
+                            if (obj.Traits is not null)
                             {
-                                existingChild = obj.Traits
-                               .Where(c => c.Id == childTrait.Id && c.Id != default(int))
-                               .SingleOrDefault();
+                                existingTrait = obj.Traits
+                                    .FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
                             }
                             else
                             {
                                 obj.Traits = new List<TraitRace>();
-                                existingChild = null;
                             }
 
-                            if (existingChild != null)
+                            if (existingTrait == null)
                             {
+                                existingTrait = contex.TraitsRace.Include(t => t.Bonuses).Include(c => c.Races).FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
+                            }
 
-
-                                // Update trait
-                                contex.Entry(existingChild).CurrentValues.SetValues(childTrait);
-                                // update bonuses
-
-                                // Delete trait bonuses
-                                if (!existingChild.Bonuses.IsNullOrEmpty())
+                            if (existingTrait is not null)
+                            {
+                                if (existingTrait.TraitApproved && obj.Traits.Contains(existingTrait) == false)
                                 {
-                                    foreach (var existingChildBonus in existingChild.Bonuses.ToList())
+                                    if (existingTrait.Races is null)
+                                        existingTrait.Races = new List<Race>();
+                                    existingTrait.Races.Add(obj);
+                                    contex.Traits.Update(existingTrait);
+                                }
+                                else
+                                {
+                                    // Update trait
+                                    contex.Entry(existingTrait).CurrentValues.SetValues(trait);
+                                    // update bonuses
+
+                                    // Delete trait bonuses
+                                    if (!existingTrait.Bonuses.IsNullOrEmpty())
                                     {
-                                        if (!childTrait.Bonuses.Any(c => c.Id == existingChildBonus.Id))
+                                        foreach (var existingChildBonus in existingTrait.Bonuses.ToList())
                                         {
-                                            contex.Bonuses.Remove(existingChildBonus);
+                                            if (!trait.Bonuses.Any(c => c.Id == existingChildBonus.Id))
+                                            {
+                                                contex.Bonuses.Remove(existingChildBonus);
+                                            }
+                                        }
+                                    }
+                                    
+
+                                    // Update and Insert bonuses
+                                    if (trait.Bonuses is not null)
+                                    {
+                                        foreach (var childBonus in trait.Bonuses)
+                                        {
+                                            Bonus? existingChildBonus;
+                                            if (!existingTrait.Bonuses.IsNullOrEmpty())
+                                            {
+                                                existingChildBonus = existingTrait.Bonuses
+                                               .FirstOrDefault(c => c.Id == childBonus.Id && c.Id != default(int));
+                                            }
+                                            else
+                                            {
+                                                existingTrait.Bonuses = new List<Bonus>();
+                                                existingChildBonus = null;
+                                            }
+
+                                            if (existingChildBonus != null)
+                                                // Update bonus
+                                                contex.Entry(existingChildBonus).CurrentValues.SetValues(childBonus);
+                                            else
+                                                // Insert bonus
+                                                existingTrait.Bonuses.Add(childBonus);
                                         }
                                     }
                                 }
-
-                                // Update and Insert bonuses
-                                if (childTrait.Bonuses is not null)
-                                {
-                                    foreach (var childTraitBonus in childTrait.Bonuses)
-                                    {
-                                        Bonus? existingChildTrait;
-                                        if (!existingChild.Bonuses.IsNullOrEmpty())
-                                        {
-                                            existingChildTrait = existingChild.Bonuses
-                                           .Where(c => c.Id == childTraitBonus.Id && c.Id != default(int))
-                                           .SingleOrDefault();
-                                        }
-                                        else
-                                        {
-                                            existingChild.Bonuses = new List<Bonus>();
-                                            existingChildTrait = null;
-                                        }
-
-                                        if (existingChildTrait != null)
-                                            // Update bonus
-                                            contex.Entry(existingChildTrait).CurrentValues.SetValues(childTraitBonus);
-                                        else
-                                            // Insert bonus
-                                            existingChild.Bonuses.Add(childTraitBonus);
-                                    }
-                                }
-
-
                             }
                             else
                                 // Insert trait
-                                obj.Traits.Add(childTrait);
+                                obj.Traits.Add(trait);
                         }
                     }
                     await contex.SaveChangesAsync();
