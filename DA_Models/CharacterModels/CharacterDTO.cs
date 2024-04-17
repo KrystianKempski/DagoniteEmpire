@@ -31,5 +31,6 @@ namespace DA_Models.CharacterModels
         public ICollection <TraitAdvDTO>? TraitsAdv { get; set; }
 
         public int RaceId { get; set; } = 0;
+
     }
 }

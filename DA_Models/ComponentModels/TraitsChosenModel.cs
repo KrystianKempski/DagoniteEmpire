@@ -10,6 +10,7 @@ namespace DA_Models.ComponentModels
     public class TraitsChosenModel
     {
         public List<TraitDTO> TraitsChosen { get; set; }
+        public string TraitType { get; set; }
         public bool IsVisible { get; set; } = false;
     }
 }

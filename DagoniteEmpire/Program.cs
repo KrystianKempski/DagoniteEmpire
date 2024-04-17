@@ -10,6 +10,8 @@ using DagoniteEmpire.Service;
 using Syncfusion.Blazor;
 using Syncfusion.Blazor.RichTextEditor;
 using DA_Common;
+using NLog.Web;
+using DagoniteEmpire.Middleware;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,10 +19,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSyncfusionBlazor();
+builder.Host.UseNLog();
 
 /// DB context 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    //options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    //options.EnableSensitiveDataLogging();
+});
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -34,6 +41,7 @@ builder.Services.AddScoped<IBonusRepository, BonusRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+builder.Services.AddScoped<ErrorHandlingMiddleware>();
 
 
 
@@ -55,7 +63,7 @@ else
 {
     app.UseDeveloperExceptionPage();
 }
-
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();

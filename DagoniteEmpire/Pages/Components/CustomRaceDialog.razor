@@ -1,6 +1,8 @@
-﻿
+﻿@inject AuthenticationStateProvider GetAuthenticationStateAsync
 <div class="race">
-    <SfDialog Width="80%" Height="80%" @bind-Visible="@_customRaceComponent.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+
+
+    <SfDialog  Width="80%" Height="80%" @bind-Visible="@_customRaceComponent.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>
             <Header>Create a new race</Header>
@@ -16,17 +18,29 @@
                     }
                     else
                     {
-                        <div class="d-flex flex-column flex-grow-1">
-                            <label class="fw-bold py-1">Race name</label>
-                            <SfTextBox Placeholder="Insert race name" @bind-Value="@_customRaceComponent.RaceDTO.Name"></SfTextBox>
+                        <div class="d-flex ">
+                            <div class="d-flex flex-column flex-grow-1">
+                                <label class="fw-bold py-1">Race name</label>
+                                <SfTextBox Placeholder="Insert race name" @bind-Value="@_customRaceComponent.RaceDTO.Name"></SfTextBox>
+                            </div>
+                            @if (IsAdminOrMG)
+                            {
+                                <div class="d-flex flex-column px-1">
+                                    <label class="fw-bold py-1">Approve</label>
+                                    <div class="justify-content-center mx-auto my-auto">
+                                        <SfCheckBox @bind-Checked="_customRaceComponent.RaceDTO.RaceApproved"></SfCheckBox>
+                                    </div>
+                                </div>
+                            }
                         </div>
                         <div class="d-flex flex-column flex-grow-1">
                             <label class="fw-bold  p-1">Trait description</label>
-                            <SfRichTextEditor Height="250px" @ref="DescrEdit" @bind-Value="@_customRaceComponent.RaceDTO.Description" ShowTooltip="true">
+                            <SfRichTextEditor Height="350px" @ref="DescrEdit" @bind-Value="@_customRaceComponent.RaceDTO.Description" ShowTooltip="true">
                                 <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
                             </SfRichTextEditor>
                         </div>
-                        
+
+
                         <label class="fw-bold pt-4">Bonuses and penalties</label>
                         @if (_customRaceComponent.RaceDTO.Traits != null)
                         {
@@ -52,6 +66,15 @@
 
 </div>
 
+<style>
+    @@media (max-width: 400px) {
+        .e-dialog.e-popup{
+            width: 100% !important;
+            height: 100% !important;
+        }
+    }
+</style>
+
 @code {
     [Parameter]
     public IEnumerable<AttributeDTO> Attributes { get; set; }
@@ -62,6 +85,7 @@
 
     private CustomRaceModel _customRaceComponent;
     private SfRichTextEditor DescrEdit;
+    private SfDialog Dialog;
 
     [Parameter]
     public CustomRaceModel CustomRaceComponent
@@ -101,33 +125,10 @@
         new ToolbarItemModel() { Command = ToolbarCommand.FontName },
         new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
         new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontColor },
-        new ToolbarItemModel() { Command = ToolbarCommand.BackgroundColor },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
         new ToolbarItemModel() { Command = ToolbarCommand.Formats },
         new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.LowerCase },
-        new ToolbarItemModel() { Command = ToolbarCommand.UpperCase },
-        new ToolbarItemModel() { Command = ToolbarCommand.SuperScript },
-        new ToolbarItemModel() { Command = ToolbarCommand.SubScript },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.OrderedList },
-        new ToolbarItemModel() { Command = ToolbarCommand.UnorderedList },
-        new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Indent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
         new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
-        new ToolbarItemModel() { Command = ToolbarCommand.Image },
-        new ToolbarItemModel() { Command = ToolbarCommand.CreateTable },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.ClearFormat },
-        new ToolbarItemModel() { Command = ToolbarCommand.Print },
-        new ToolbarItemModel() { Command = ToolbarCommand.SourceCode },
         new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Undo },
-        new ToolbarItemModel() { Command = ToolbarCommand.Redo }
     };
 
     private async Task OnSaveRaceBtnClick()
@@ -162,7 +163,12 @@
         CustomRaceComponent.IsVisible = false;
     }
     private async Task DialogOpen()
-    {
+    { 
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        if (user == null)
+            return; // failed to load
+        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
 
         this.DescrEdit.RefreshUI();
         ErrorMessage = string.Empty;

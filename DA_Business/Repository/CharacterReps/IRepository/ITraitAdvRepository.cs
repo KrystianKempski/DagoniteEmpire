@@ -17,6 +17,6 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         public Task<TraitAdvDTO> GetById(int id);
         public Task<IEnumerable<TraitAdvDTO>> GetAll(int? charId = null);
 
-        public Task<IEnumerable<TraitAdvDTO>> GetAllApproved();
+        public Task<IEnumerable<TraitAdvDTO>> GetAllApproved(bool addUnique = false);
     }
 }

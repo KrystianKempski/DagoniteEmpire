@@ -137,6 +137,7 @@
     {
         TraitsChosen = new();
         TraitsChosen.IsVisible = true;
+        TraitsChosen.TraitType = TraitType;
         StateHasChanged();
     }
 
@@ -224,12 +225,12 @@
         if (trait.Id != 0)
         {
 
-            if (trait.TraitType == SD.TraitType_Advantage)
+            if (trait.TraitType == SD.TraitType_Advantage && trait.TraitApproved ==false)
             {
                 await _traitAdvRepository.Delete(trait.Id);
 
             }
-            else if (trait.TraitType == SD.TraitType_Race)
+            else if (trait.TraitType == SD.TraitType_Race && trait.TraitApproved == false)
             {
                 await _traitRaceRepository.Delete(trait.Id);
             }

@@ -501,6 +501,7 @@
                 if (raceDTO is not null)
                 {
                     Character.RaceId = raceDTO.Id;
+
                 }
                 else
                 {
@@ -528,19 +529,11 @@
                     obj.CharacterId = charac.Id;
                     await _specialSkillRepository.Create(obj);
                 }
-                // foreach (var obj in Traits)
-                // {
-                //     await _traitAdvRepository.Create(new(obj, charac));
-                // }
             }
             else
             {
 
-                //update race Traits
-                foreach (var rTraitDTO in CurrentRace.Traits)
-                {
-                    await _traitRaceRepository.Update(new(rTraitDTO, CurrentRace));
-                }
+                
 
                 //update race
                 RaceDTO? raceDTO;
@@ -561,11 +554,12 @@
                     Character.RaceId = 0;
                 }
 
+
                 // update Adv traits
                 Character.TraitsAdv = new List<TraitAdvDTO>();
                 foreach (var obj in Traits)
                 {
-                    Character.TraitsAdv.Add(await _traitAdvRepository.Update(new(obj, Character)));  //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
+                    Character.TraitsAdv.Add(new(obj, Character));  //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
                 }
 
                 // update character with TraitAdv collection properly filled
@@ -584,15 +578,7 @@
                 {
                     obj.CharacterId = Id;
                     await _specialSkillRepository.Update(obj);
-                }
-                 
-                // foreach (var obj in CurrentRace.Traits)
-                // {
-                //   //  obj.RaceId = Character.Race.Id;
-                //     await _traitRaceRepository.Update(obj);
-                // }
-               // Character.Race.CharacterId = Id;
-                //_raceRepository.Update(CurrentRace);
+                }                 
             }
         }
         catch (Exception ex)

@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class fixRaces : Migration
+    public partial class racesfix : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -227,7 +227,7 @@ namespace DA_DataAccess.Migrations
                     CurrentExpPoints = table.Column<int>(type: "integer", nullable: false),
                     UsedExpPoints = table.Column<int>(type: "integer", nullable: false),
                     TraitBalance = table.Column<int>(type: "integer", nullable: false),
-                    RaceId = table.Column<int>(type: "integer", nullable: false)
+                    RaceId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -236,8 +236,7 @@ namespace DA_DataAccess.Migrations
                         name: "FK_Characters_Races_RaceId",
                         column: x => x.RaceId,
                         principalTable: "Races",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240410111821_fixRaces")]
-    partial class fixRaces
+    [Migration("20240412213045_racesfix")]
+    partial class racesfix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -210,7 +210,7 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("NPCType")
                         .HasColumnType("text");
 
-                    b.Property<int>("RaceId")
+                    b.Property<int?>("RaceId")
                         .HasColumnType("integer");
 
                     b.Property<int>("TraitBalance")
@@ -679,9 +679,7 @@ namespace DA_DataAccess.Migrations
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Race", "Race")
                         .WithMany("Characters")
-                        .HasForeignKey("RaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("RaceId");
 
                     b.Navigation("Race");
                 });
