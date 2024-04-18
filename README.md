@@ -22,9 +22,10 @@ Default Game Master account:
 🚧 Work in progress.
 
 ## 🛠️ Used tools  
-Whole application was developed with .Net 7.0 Blazor Server 
-Multiple frameworks and tools were used for best apperience and user-friendly interface.
-  -Syncfusion solutions components
+Whole application was developed with .Net 7.0 Blazor Server.
+
+Multiple frameworks and tools were used for best apperience and user-friendly interface:
+  - Syncfusion solutions components
   - EntityFrameworkCore PostgreSQL
   - Magick.NET
   - AutoMapper
