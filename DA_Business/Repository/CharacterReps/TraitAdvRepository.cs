@@ -4,6 +4,7 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
+using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -38,7 +39,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Trait-Adv Repository Create");
             }
             return null;
                 
@@ -59,7 +60,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Trait-Adv Repository Delete"); ;
             }
             return 0;
         }
@@ -166,7 +167,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Trait-Race Repository Update");
             }
             return null;
         }

@@ -1,4 +1,5 @@
-﻿using DagoniteEmpire.Helper;
+﻿using DagoniteEmpire.Exceptions;
+using DagoniteEmpire.Helper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -28,6 +29,10 @@ namespace DagoniteEmpire.Middleware
             try
             {
                 await next.Invoke(context);
+            }
+            catch(RepositoryErrorException ex)
+            {
+                await _jsRuntime.ToastrError(ex.Message);
             }
             catch (Exception ex)
             {

@@ -6,7 +6,10 @@
             <tr>
                 <th scope="col" class="name-row">Name</th>
                 <th scope="col" class="description-row">Description</th>
-                <th scope="col" class="trait-value-row text-center">Value</th>
+                @if (TraitType == SD.TraitType_Advantage)
+                {
+                    <th scope="col" class="trait-value-row text-center">Value</th>
+                }
                 <th scope="col" class="action-row text-center">Actions</th>
             </tr>
         </thead>
@@ -20,9 +23,12 @@
                     <td>
                         <label class="name-label">@obj.SummaryDescr</label>
                     </td>
-                    <td class="text-center">
-                        <label class="name-label text-center">@obj.TraitValue</label>
-                    </td>
+                    @if (TraitType == SD.TraitType_Advantage)
+                    {
+                        <td class="text-center">
+                            <label class="name-label text-center">@obj.TraitValue</label>
+                        </td>
+                    }
                     <td>
                         <button @onclick="@(()=>EditTrait(obj))" class="add-trait"><i class="fa-solid fa-pencil"></i></button>
                         <button @onclick="@(()=>DeleteTrait(obj))" class="add-trait"><i class="fa-solid fa-trash"></i></button>

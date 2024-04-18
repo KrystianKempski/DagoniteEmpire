@@ -4,7 +4,9 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
+using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,11 +19,13 @@ namespace DA_Business.Repository.CharacterReps
     {
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
+        private readonly IJSRuntime _jsRuntime;
 
-        public TraitRaceRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
+        public TraitRaceRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper, IJSRuntime jsRuntime)
         {
             _db = db;
             _mapper = mapper;
+            _jsRuntime = jsRuntime;
         }
         public async Task<TraitRaceDTO> Create(TraitRaceDTO objDTO)
         {
@@ -37,7 +41,8 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+
+                throw new RepositoryErrorException("Error in Trait-race Repository Create");
             }
             return null;
                 
@@ -164,7 +169,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Trait-race Repository Update");
             }
             return null;
         }

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DagoniteEmpire.Exceptions;
 
 namespace DA_Business.Repository.CharacterReps
 {
@@ -32,16 +33,16 @@ namespace DA_Business.Repository.CharacterReps
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<RaceDTO, Race>(objDTO);
                 //handle traitsRace
-                //var traits = await contex.TraitsRace.ToListAsync();
-                //traits.ForEach(t =>
-                //{
-                //    if (obj.Traits.Any(nt => nt.Id == t.Id))
-                //    {
-                //        var untracked = obj.Traits.FirstOrDefault(nt => nt.Id == t.Id);
-                //        obj.Traits.Remove(untracked);
-                //        obj.Traits.Add(t);
-                //    }
-                //});
+                var traits = await contex.TraitsRace.ToListAsync();
+                traits.ForEach(t =>
+                {
+                    if (obj.Traits.Any(nt => nt.Id == t.Id))
+                    {
+                        var untracked = obj.Traits.FirstOrDefault(nt => nt.Id == t.Id);
+                        obj.Traits.Remove(untracked);
+                        obj.Traits.Add(t);
+                    }
+                });
 
                 var addedObj = await contex.Races.AddAsync(obj);
                 await contex.SaveChangesAsync();
@@ -50,7 +51,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Race Repository Create");
             }
             return null;
                 
@@ -79,7 +80,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Race Repository Delete");
             }
             return 0;
         }
@@ -246,7 +247,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Race Repository Update");
             }
             return null;
         }

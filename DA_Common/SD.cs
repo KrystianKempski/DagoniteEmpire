@@ -17,6 +17,7 @@ namespace DA_Common
         public const string FeatureAttribute = "Attribute";
         public const string FeatureBaseSkill = "BaseSkill";
         public const string FeatureSpecialSkill = "SpecialSkill";
+        public const string FeatureDukeTraits = "DukeTraits";
         public const string FeatureOther = "Other";
 
         public const string TraitType_Advantage = "Advantage";

@@ -76,14 +76,14 @@ namespace DagoniteEmpire.Service
 
                 if(_db.Races.FirstOrDefault(u=>u.Name == "Human") == null)
                 {
-                    RaceDTO raceHuman = new RaceDTO()
+                    Race raceHuman = new Race()
                     {
                         Name = "Human",
                         Description = "Humans are universal.Their strength lies in their diversity and adaptability",
                         RaceApproved = true,
-                        Traits = new List<TraitRaceDTO>()
+                        Traits = new List<TraitRace>()
                         {
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Diversity",
                                 Descr = "",
@@ -92,17 +92,8 @@ namespace DagoniteEmpire.Service
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
-                                {
-                                    new BonusDTO()
-                                    {
-                                        FeatureType = SD.FeatureAttribute,
-                                        FeatureName = "Strength",
-                                        BonusValue = 2,
-                                    }
-                                }
                             },
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
                                 Descr = "",
@@ -111,62 +102,46 @@ namespace DagoniteEmpire.Service
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
-                                {
-                                    new BonusDTO()
-                                    {
-                                        FeatureType = SD.FeatureBaseSkill,
-                                        FeatureName = "Melee",
-                                        BonusValue = 1,
-                                    },
-                                    new BonusDTO()
-                                    {
-                                        FeatureType = SD.FeatureBaseSkill,
-                                        FeatureName = "Shooting",
-                                        BonusValue = 1,
-                                    }
-
-                                }
                             }
                         }
                     };
-                    _db.Races.Add(_mapper.Map<RaceDTO, Race>(raceHuman));
+                    _db.Races.Add(raceHuman);
                     _db.SaveChanges();
                 }
                 if (_db.Races.FirstOrDefault(u => u.Name == "Dwarf") == null)
                 {
 
-                    RaceDTO raceDwarf = new RaceDTO()
+                    Race raceDwarf = new Race()
                     {
                         Name = "Dwarf",
                         Description = "Common in the Empire, but rare in power. Fierce warriors and excellent craftsmen",
                         RaceApproved = true,
-                        Traits = new List<TraitRaceDTO>()
+                        Traits = new List<TraitRace>()
                         {
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
                                 Descr = "",
-                                SummaryDescr = "Dwarves are both tough and wise, but also a bit gruff.",
+                                SummaryDescr = "Dwarves are both tough and wise, but also a bit gruff +2 Endurance, +2 Willpower, -2 Charisma.",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureAttribute,
                                         FeatureName = "Endurance",
                                         BonusValue = 2,
                                     },
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureAttribute,
                                         FeatureName = "Willpower",
                                         BonusValue = 2,
                                     },
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureAttribute,
                                         FeatureName = "Charisma",
@@ -174,7 +149,7 @@ namespace DagoniteEmpire.Service
                                     }
                                 }
                             },
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Hardy",
                                 Descr = "",
@@ -183,9 +158,9 @@ namespace DagoniteEmpire.Service
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureBaseSkill,
                                         FeatureName = "Athletics",
@@ -193,7 +168,7 @@ namespace DagoniteEmpire.Service
                                     },
                                 }
                             },
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Excelent craftsment",
                                 Descr = "",
@@ -202,9 +177,9 @@ namespace DagoniteEmpire.Service
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureBaseSkill,
                                         FeatureName = "Craft",
@@ -212,7 +187,7 @@ namespace DagoniteEmpire.Service
                                     },
                                 }
                             },
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Darkvision",
                                 Descr = "",
@@ -221,9 +196,9 @@ namespace DagoniteEmpire.Service
                                 IsUnique=false,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureBaseSkill,
                                         FeatureName = "Darkvision",
@@ -231,7 +206,7 @@ namespace DagoniteEmpire.Service
                                     },
                                 }
                             },
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Hatred",
                                 Descr = "",
@@ -240,9 +215,9 @@ namespace DagoniteEmpire.Service
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureBaseSkill,
                                         FeatureName = "Hatred",
@@ -250,7 +225,7 @@ namespace DagoniteEmpire.Service
                                     },
                                 }
                             },
-                             new TraitRaceDTO()
+                             new TraitRace()
                             {
                                 Name="Unpopular amongst people",
                                 Descr = "",
@@ -259,9 +234,9 @@ namespace DagoniteEmpire.Service
                                 IsUnique=false,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureOther,
                                         FeatureName = "Unpopular amongst people",
@@ -273,44 +248,44 @@ namespace DagoniteEmpire.Service
 
                     };
 
-                    _db.Races.Add(_mapper.Map<RaceDTO, Race>(raceDwarf));
+                    _db.Races.Add(raceDwarf);
                     _db.SaveChanges();
                 }
 
                 if (_db.Races.FirstOrDefault(u => u.Name == "Elf") == null)
                 {
 
-                    RaceDTO raceElf = new RaceDTO()
+                    Race raceElf = new Race()
                     {
                         Name = "Elf",
                         Description = "Long-lived children of natural world. Rather uncommon in Empire",
                         RaceApproved = true,
-                        Traits = new List<TraitRaceDTO>()
+                        Traits = new List<TraitRace>()
                         {
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
                                 Descr = "",
-                                SummaryDescr = "Elves are nimble, both in body and mind, but their form is frail.",
+                                SummaryDescr = "Elves are nimble, both in body and mind, but their form is frail. +2 Dexterity, +2 Inteligence, -2 Endurance",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureAttribute,
                                         FeatureName = "Dexterity",
                                         BonusValue = 2,
                                     },
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureAttribute,
                                         FeatureName = "Intelligence",
                                         BonusValue = 2,
                                     },
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureAttribute,
                                         FeatureName = "Endurance",
@@ -318,7 +293,7 @@ namespace DagoniteEmpire.Service
                                     }
                                 }
                             },
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Keen Senses",
                                 Descr = "",
@@ -327,9 +302,9 @@ namespace DagoniteEmpire.Service
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureBaseSkill,
                                         FeatureName = "Perception",
@@ -337,7 +312,7 @@ namespace DagoniteEmpire.Service
                                     },
                                 }
                             },
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Elven Magic",
                                 Descr = "",
@@ -346,9 +321,9 @@ namespace DagoniteEmpire.Service
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureOther,
                                         FeatureName = "Elven Magic",
@@ -356,7 +331,7 @@ namespace DagoniteEmpire.Service
                                     },
                                 }
                             },
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Low-Light Vision",
                                 Descr = "",
@@ -365,9 +340,9 @@ namespace DagoniteEmpire.Service
                                 IsUnique=false,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureOther,
                                         FeatureName = "Darkvision",
@@ -375,18 +350,18 @@ namespace DagoniteEmpire.Service
                                     },
                                 }
                             },
-                            new TraitRaceDTO()
+                            new TraitRace()
                             {
                                 Name="Unpopular amongst people",
                                 Descr = "",
                                 SummaryDescr = "Non-human races receive a penalty for ruling and diplomacy as nobles in the Empire.",
                                 TraitApproved = true,
-                                IsUnique=false,
+                                IsUnique=true,
                                 TraitType=SD.TraitType_Race,
                                 TraitValue = 0,
-                                Bonuses = new List<BonusDTO>()
+                                Bonuses = new List<Bonus>()
                                 {
-                                    new BonusDTO()
+                                    new Bonus()
                                     {
                                         FeatureType = SD.FeatureOther,
                                         FeatureName = "Unpopular amongst people",
@@ -397,10 +372,166 @@ namespace DagoniteEmpire.Service
                         }
                     };
 
-                    _db.Races.Add(_mapper.Map<RaceDTO, Race>(raceElf));
+                    _db.Races.Add(raceElf);
                     _db.SaveChanges();
                 }
-
+                TraitAdv trait = null;
+                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Lame") == null)
+                {
+                    trait = new TraitAdv()
+                    {
+                        Name = "Lame",
+                        Descr = "",
+                        SummaryDescr = "An old wound or disfigurement makes this character limp. +2 Melee, -1 Charisma",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Advantage,
+                        TraitValue = -4,
+                        Bonuses = new List<Bonus>()
+                        {
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureBaseSkill,
+                                FeatureName = "Melee",
+                                BonusValue = -2,
+                            },
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureAttribute,
+                                FeatureName = "Charisma",
+                                BonusValue = -1,
+                            },
+                        },
+                    };
+                    _db.TraitsAdv.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Beautiful") == null)
+                {
+                    trait = new TraitAdv()
+                    {
+                        Name = "Beautiful",
+                        Descr = "",
+                        SummaryDescr = "This character is somehow physically beautiful. +2 Charisma, +1 Loyalty",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Advantage,
+                        TraitValue = 4,
+                        Bonuses = new List<Bonus>()
+                        {
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureDukeTraits,
+                                FeatureName = "Loyalty",
+                                BonusValue = 1,
+                            },
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureAttribute,
+                                FeatureName = "Charisma",
+                                BonusValue = 2,
+                            },
+                        },
+                    };
+                    _db.TraitsAdv.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Genius") == null)
+                {
+                    trait = new TraitAdv()
+                    {
+                        Name = "Genius",
+                        Descr = "",
+                        SummaryDescr = "This character is exceptionally intelligent. +3 Intelligence, +3 Instinct",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Advantage,
+                        TraitValue = 10,
+                        Bonuses = new List<Bonus>()
+                        {
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureAttribute,
+                                FeatureName = "Intelligence",
+                                BonusValue = 3,
+                            },
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureAttribute,
+                                FeatureName = "Instinct",
+                                BonusValue = 3,
+                            },
+                        },
+                    };
+                    _db.TraitsAdv.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Ugly") == null)
+                {
+                    trait = new TraitAdv()
+                    {
+                        Name = "Ugly",
+                        Descr = "",
+                        SummaryDescr = "This character is not pleasant to eyes. -2 Charisma, -1 Loyalty",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Advantage,
+                        TraitValue = -4,
+                        Bonuses = new List<Bonus>()
+                        {
+                             new Bonus()
+                            {
+                                FeatureType = SD.FeatureDukeTraits,
+                                FeatureName = "Loyalty",
+                                BonusValue = -1,
+                            },
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureAttribute,
+                                FeatureName = "Charisma",
+                                BonusValue = -2,
+                            },
+                        },
+                    };
+                    _db.TraitsAdv.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Wrathful") == null)
+                {
+                    trait = new TraitAdv()
+                    {
+                        Name = "Wrathful",
+                        Descr = "",
+                        SummaryDescr = "This character's outbursts of anger are frequent and violent (somethimes makes will checks). +2 Melee, -2 Talk",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Advantage,
+                        TraitValue = -1,
+                        Bonuses = new List<Bonus>()
+                        {
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureBaseSkill,
+                                FeatureName = "Melee",
+                                BonusValue = 2,
+                            },
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureBaseSkill,
+                                FeatureName = "Talk",
+                                BonusValue = -2,
+                            },
+                            new Bonus()
+                            {
+                                FeatureType = SD.FeatureOther,
+                                FeatureName = "Occasional fits of rage",
+                                Description = "When this character finds himself in an uncomfortable situation, sometimes the GM can force him to make willpower test against stupid fury."
+                            },
+                        },
+                    };
+                    _db.TraitsAdv.Add(trait);
+                    _db.SaveChanges();
+                }
             }
             catch (Exception ex)
             {

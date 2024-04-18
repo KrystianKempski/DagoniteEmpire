@@ -13,6 +13,7 @@ using Attribute = DA_DataAccess.CharacterClasses.Attribute;
 using System.Diagnostics.Metrics;
 using Abp.Collections.Extensions;
 using System.Diagnostics;
+using DagoniteEmpire.Exceptions;
 
 namespace DA_Business.Repository.CharacterReps
 {
@@ -29,70 +30,56 @@ namespace DA_Business.Repository.CharacterReps
         }
         public async Task<CharacterDTO> Create(CharacterDTO objDTO)
         {
-            var objMapped = _mapper.Map<CharacterDTO, Character>(objDTO);
+            var obj = _mapper.Map<CharacterDTO, Character>(objDTO);
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Characters.Include(u => u.TraitsAdv).FirstOrDefaultAsync(c=>c.Id == objMapped.Id);
             try
             {
+                obj.Race = null;
 
-
-                if (obj is null)
+                //handle traits Adv
+                var traits = await contex.TraitsAdv.ToListAsync();
+                traits.ForEach(t =>
                 {
-
-
-                    // handle race
-                    //if (obj.RaceId > 0)
-                    //{
-                    //    obj.Race = contex.Races.FirstOrDefault(r => r.Id == obj.RaceId);
-                    //}
-                    //else
-                    //{
-                    //    obj.Race = null;
-                    //    obj.RaceId = 0;
-                    //}
-                    //handle traitsAdv
-                    objMapped.Race = null;
-
-                    var traits = await contex.TraitsAdv.ToListAsync();
-                    traits.ForEach(t =>
+                    if (obj.TraitsAdv.Any(nt => nt.Id == t.Id))
                     {
-                        if (obj.TraitsAdv.Any(ncht => ncht.Id == t.Id))
-                        {
-                            var untracked = obj.TraitsAdv.FirstOrDefault(ncht => ncht.Id == t.Id);
-                            obj.TraitsAdv.Remove(untracked);
-                            obj.TraitsAdv.Add(t);
-                        }
-                    });
-                }
+                        var untracked = obj.TraitsAdv.FirstOrDefault(nt => nt.Id == t.Id);
+                        obj.TraitsAdv.Remove(untracked);
+                        obj.TraitsAdv.Add(t);
+                    }
+                });
 
-                var addedObj = contex.Characters.Add(objMapped);
+                var addedObj = contex.Characters.Add(obj);
                 await contex.SaveChangesAsync();
                 return _mapper.Map<Character, CharacterDTO>(addedObj.Entity);
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Character Repository Create");
             }
-
-            return null;
         }
 
         public async Task<int> Delete(int id)
         {
-            using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == id);
-            var race = await contex.Races.FirstOrDefaultAsync(u => u.Id == obj.RaceId && u.RaceApproved == false);
-            if (race is not null)
+            try
             {
-                contex.Races.Remove(race);
-            }
+                using var contex = await _db.CreateDbContextAsync();
+                var obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == id);
+                var race = await contex.Races.FirstOrDefaultAsync(u => u.Id == obj.RaceId && u.RaceApproved == false);
+                if (race is not null)
+                {
+                    contex.Races.Remove(race);
+                }
 
-            if (obj is not null)
-            {
-                contex.Characters.Remove(obj);
+                if (obj is not null)
+                {
+                    contex.Characters.Remove(obj);
+                }
+                return contex.SaveChanges();
             }
-            return contex.SaveChanges();
-            return 0;
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in Character Repository Create");
+            }
         }
 
         public async Task<IEnumerable<CharacterDTO>> GetAll(int? id=null)
@@ -257,9 +244,8 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Character Repository Update");
             }
-            return null;
         }
 
     }
