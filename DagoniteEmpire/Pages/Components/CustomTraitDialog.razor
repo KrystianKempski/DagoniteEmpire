@@ -199,12 +199,17 @@
             ErrorMessage = $"Bonuses cannot relate to the same feature more than once";
             return;
         }
-
+        if (string.IsNullOrEmpty(CustomTraitModel.TraitDTO.Name) || string.IsNullOrEmpty(CustomTraitModel.TraitDTO.Descr))
+        {
+            ErrorMessage = $"Create name and description of race";
+            return;
+        }
         if (CustomTraitModel.IsEditMode == false && Traits.Where(t => t.Name == CustomTraitModel.TraitDTO.Name).Count() > 0)
         {
             ErrorMessage = $"That trait name already exists";
             return;
         }
+        
 
         ErrorMessage = string.Empty;
 
