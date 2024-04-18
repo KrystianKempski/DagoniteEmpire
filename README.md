@@ -1,6 +1,12 @@
 # 👑 DagoniteEmpire
 ![image](https://github.com/KrystianKempski/DagoniteEmpire/assets/19647553/36e5a213-fd3d-4849-bae7-826be70e2f0f)
 
+<div align="center">
+<img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/KrystianKempski/DagoniteEmpire/docker-image.yml?style=for-the-badge&logo=github-actions&logoColor=white">
+<img alt="GitHub Release" src="https://img.shields.io/github/v/release/KrystianKempski/DagoniteEmpire?style=for-the-badge&logo=github&logoColor=white">
+<img alt="Website" src="https://img.shields.io/website?url=https%3A%2F%2Fdagonite-empire.drik.it&style=for-the-badge&logo=kubernetes&logoColor=white&label=demo%20website">
+</div>
+
 ## ⚔️ About
 A comprehensive tool for starting an online, text-based RPG campaign, enabling multiple players to start long-term games in an original, well-defined world. Each player creates their own character with special abilities and skill sets, who then become a part of an adventure team with other players in a campaign led by a Game Master. 
 Application database is made on PostGreSQL.
