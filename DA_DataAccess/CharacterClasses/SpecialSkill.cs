@@ -11,6 +11,8 @@ namespace DA_DataAccess.CharacterClasses
     public class SpecialSkill : Feature
     {
 
+        public string RelatedAttribute1 { get; set; }
+        public string RelatedAttribute2 { get; set; }
         public string? RelatedBaseSkillName { get; set; }
         public string? ChosenAttribute { get; set; }
         public bool Editable { get; set; }

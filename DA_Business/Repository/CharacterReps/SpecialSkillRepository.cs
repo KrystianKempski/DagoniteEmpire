@@ -73,6 +73,8 @@ namespace DA_Business.Repository.CharacterReps
                 obj.TraitBonus = objDTO.TraitBonus;
                 obj.TempBonuses = objDTO.TempBonuses;
                 obj.RelatedBaseSkillName = objDTO.RelatedBaseSkillName;
+                obj.RelatedAttribute1 = objDTO.RelatedAttribute1;
+                obj.RelatedAttribute2 = objDTO.RelatedAttribute2;
                 obj.ChosenAttribute = objDTO.ChosenAttribute;
                 obj.Editable = objDTO.Editable;
                 obj.Index = objDTO.Index; 

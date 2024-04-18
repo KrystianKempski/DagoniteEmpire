@@ -201,7 +201,7 @@
         }
         if (string.IsNullOrEmpty(CustomTraitModel.TraitDTO.Name) || string.IsNullOrEmpty(CustomTraitModel.TraitDTO.Descr))
         {
-            ErrorMessage = $"Create name and description of race";
+            ErrorMessage = $"Create name and description of trait";
             return;
         }
         if (CustomTraitModel.IsEditMode == false && Traits.Where(t => t.Name == CustomTraitModel.TraitDTO.Name).Count() > 0)
