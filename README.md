@@ -21,6 +21,18 @@ Default Game Master account:
 
 🚧 Work in progress.
 
+## 🛠️ Used tools  
+Whole application was developed with .Net 7.0 Blazor Server 
+Multiple frameworks and tools were used for best apperience and user-friendly interface.
+  -Syncfusion solutions components
+  - EntityFrameworkCore.PostgreSQ
+  - Magick.NET
+  - AutoMapper
+  - jquery
+  - toastr
+  - nlog
+  - bootstrap
+
 ## 🏗️ Deploy
 Application is built automatically when new release is published using Github Actions as a Docker image and pushed to DockerHub. FluxCD residing on private Kubernetes cluster is monitoring DockerHub registry and when a new version is ready it recreates the app container with new image wihitn 5 minutes. Deployment configuration is set using custom helm chart available in [drik-homelab-helm-charts](https://github.com/drikqlis/drik-homelab-helm-charts) repository and managed by FluxCD.
  
