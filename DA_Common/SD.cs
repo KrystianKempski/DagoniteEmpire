@@ -25,8 +25,15 @@ namespace DA_Common
         public const string TraitType_Gear = "Gear";
         public const string TraitType_Unique = "Unique";
 
+        public const string Strength = "Strength";
+        public const string Dexterity = "Dexterity";
+        public const string Endurance = "Endurance";
+        public const string Intelligence = "Intelligence";
+        public const string Instinct = "Instinct";
+        public const string Willpower = "Willpower";
+        public const string Charisma = "Charisma";
 
-       
+
 
     }
 }

@@ -207,6 +207,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("NPCType")
                         .HasColumnType("text");
 
+                    b.Property<int>("ProfessionId")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("RaceId")
                         .HasColumnType("integer");
 
@@ -222,9 +225,98 @@ namespace DA_DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ProfessionId");
+
                     b.HasIndex("RaceId");
 
                     b.ToTable("Characters");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Profession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClassLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentCofusPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsUniversal")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxFocusPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelatedAttribute")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Professions");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.ProfessionSkill", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ActiveProfessionId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Cost")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("DC")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<long>("Index")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("PassiveProfessionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Range")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActiveProfessionId");
+
+                    b.HasIndex("PassiveProfessionId");
+
+                    b.ToTable("ProfessionSkills");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>
@@ -682,11 +774,36 @@ namespace DA_DataAccess.Migrations
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
                 {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Profession", "Profession")
+                        .WithMany("Characters")
+                        .HasForeignKey("ProfessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("DA_DataAccess.CharacterClasses.Race", "Race")
                         .WithMany("Characters")
                         .HasForeignKey("RaceId");
 
+                    b.Navigation("Profession");
+
                     b.Navigation("Race");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.ProfessionSkill", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Profession", "ActiveProfession")
+                        .WithMany("ActiveSkills")
+                        .HasForeignKey("ActiveProfessionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("DA_DataAccess.CharacterClasses.Profession", "PassiveProfession")
+                        .WithMany("PassiveSkills")
+                        .HasForeignKey("PassiveProfessionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("ActiveProfession");
+
+                    b.Navigation("PassiveProfession");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
@@ -773,6 +890,15 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("BaseSkills");
 
                     b.Navigation("SpecialSkills");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Profession", b =>
+                {
+                    b.Navigation("ActiveSkills");
+
+                    b.Navigation("Characters");
+
+                    b.Navigation("PassiveSkills");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>

@@ -33,7 +33,7 @@
                         }
                         <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
                         <GridColumn Field=@nameof(CharacterDTO.RaceName) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                        <GridColumn Field=@nameof(CharacterDTO.Class) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                        <GridColumn Field=@nameof(CharacterDTO.ProfessionName) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
                     <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Left" Width="50"></GridColumn>
                     </GridColumns>
                 </SfGrid>
@@ -95,13 +95,6 @@
             Title = "Characters of " + user.Identity.Name;
             Characters = await _characterRepository.GetAllForUser(user.Identity.Name);
         }
-        // foreach(var charac in Characters)
-        // {
-        //     if (charac.Race != null)
-        //         charac.RaceName = charac.Race.Name;
-        //     else
-        //         charac.RaceName = string.Empty;
-        // }
         IsLoading = false;
         StateHasChanged();
     }

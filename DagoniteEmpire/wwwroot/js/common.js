@@ -73,3 +73,20 @@ function ShowLeavePageModal() {
 function HideLeavePageModal() {
     $('#leavePageModal').modal('hide');
 }
+
+function EditKeyDown(id) {
+    document.getElementById(id).addEventListener("keydown", function (e) {
+        if (e.key == "Enter") {
+            e.stopPropagation();
+        }
+    });
+}
+
+function ResizeTextArea(id) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.style.height = "5px";
+        el.style.height = (el.scrollHeight + 5) + "px";
+    }
+    return true;
+}

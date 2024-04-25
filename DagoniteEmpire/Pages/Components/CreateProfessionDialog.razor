@@ -1,0 +1,354 @@
+﻿@using DA_DataAccess.CharacterClasses
+@inject IJSRuntime _jsruntime
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+<div class="race">
+
+
+    <SfDialog Width="80%" Height="80%" @bind-Visible="@_createProfession.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+        <DialogEvents Opened="@DialogOpen"></DialogEvents>
+        <DialogTemplates>
+            <Header>Specify class</Header>
+            <Content>
+       
+                 <div class="main-table">
+
+                     @if (IsLoading)
+                    {
+                        <div class="text-center">
+                            <img src="/images/loading.gif">
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex ">
+                            <label class="warnign-message">@ErrorMessage</label>
+                            <div class="d-flex flex-column px-1 flex-grow-1">
+                                <label class="class-section py-1">Class name</label>
+                                <SfTextBox Placeholder="Insert class name" @bind-Value="@_createProfession.ProfessionDTO.Name"></SfTextBox>
+                            </div>
+                            <div class="d-flex flex-column px-1">
+                                <label class="class-section py-1">Related attribute</label>
+                                <InputSelect style="width: 150px;height: 32px;border: 1px solid RGB(222 226 230); border-radius: 4px; padding: 0px 4px 0px 4px;"
+                                             ValueExpression="@(()=>_createProfession.ProfessionDTO.RelatedAttribute)"
+                                             Value="@_createProfession.ProfessionDTO.RelatedAttribute"
+                                             ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
+                                    <option value="0" selected disabled>--Select--</option>
+                                    <option value="@SD.Strength"> @SD.Strength</option>
+                                    <option value="@SD.Dexterity"> @SD.Dexterity</option>
+                                    <option value="@SD.Endurance"> @SD.Endurance</option>
+                                    <option value="@SD.Intelligence"> @SD.Intelligence</option>
+                                    <option value="@SD.Instinct"> @SD.Instinct</option>
+                                    <option value="@SD.Willpower"> @SD.Willpower</option>
+                                    <option value="@SD.Charisma"> @SD.Charisma</option>
+                                </InputSelect>
+                            </div>
+                            @if (IsAdminOrMG)
+                            {
+                                <div class="d-flex flex-column px-1">
+                                    <label class="column-section py-1">Class Level</label>
+                                    <SfNumericTextBox Width="100px"  ShowSpinButton="false" @bind-Value="@_createProfession.ProfessionDTO.ClassLevel" OnChange="ChangeProfLevel"></SfNumericTextBox>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column px-1">
+                                    <label class="column-section py-1">Class Level</label>
+                                    <label class="prof-variables">@_createProfession.ProfessionDTO.ClassLevel</label>
+                                </div>
+                            }
+
+                            <div class="d-flex flex-column px-1">
+                                <label class="column-section py-1">Skill roll</label>
+                                <label class="prof-variables">@_createProfession.ProfessionDTO.ProfessionSkillRoll</label>
+                            </div>
+                            <div class="d-flex flex-column px-1">
+                                <label class="column-section py-1">Focus points</label>
+                                 <label class="prof-variables">@_createProfession.ProfessionDTO.MaxFocusPoints</label>
+                            </div>
+                            @if (IsAdminOrMG)
+                            {
+                                <div class="d-flex flex-column px-1">
+                                    <label class="class-section py-1">Approve</label>
+                                    <div class="justify-content-center mx-auto my-auto">
+                                        <SfCheckBox @bind-Checked="_createProfession.ProfessionDTO.IsApproved"></SfCheckBox>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="d-flex flex-column flex-grow-1">
+                            <label class="class-section">Class description</label>
+                            <SfRichTextEditor Height="300px" @ref="DescrEdit" @bind-Value="@_createProfession.ProfessionDTO.Description" ShowTooltip="true">
+                                <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
+                            </SfRichTextEditor>
+                        </div>
+                        @*  ACTIVE SKILLS  *@
+                        <label class="class-section">Active class skills</label>
+
+                        <div class="wide-screen-table">
+
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="level-row text-center">Level</th>
+                                        <th scope="col" class="name-row text-center">Name</th>
+                                        <th scope="col" class="descr-row text-center">Description</th>
+                                        <th scope="col" class="number-row text-center">DC</th>
+                                        <th scope="col" class="number-row text-center">Cost</th>
+                                        <th scope="col" class="number-row text-center"> Range</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var skill in _createProfession.ProfessionDTO.ActiveSkills)
+                                {
+                                    <tr>
+                                        @if (skill.Index%2==0){
+                                            <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
+                                        }
+                                        <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
+                                        <td>
+                                            <div class="bonus-double-cell">
+                                                <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                                </SfTextBox>
+                                            </div>
+                                        </td>
+                                        <td><div class="short-row"><SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.DC"></SfNumericTextBox></div></td>
+                                        <td><div class="short-row"><SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.Cost"></SfNumericTextBox></div></td>
+                                        <td><div class="short-row"><SfTextBox  @bind-Value="@skill.Range"></SfTextBox></div></td>
+                                    </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="short-screen-table">
+
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="number-row text-center">Level</th>
+                                        <th scope="col" class="name-row-short text-center">Name</th>
+                                        <th scope="col" class="number-row text-center">DC</th>
+                                        <th scope="col" class="number-row text-center">Cost</th>
+                                        <th scope="col" class="number-row text-center"> Range</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var skill in _createProfession.ProfessionDTO.ActiveSkills)
+                                    {
+                                        <tr>
+                                            @if (skill.Index % 2 == 0)
+                                            {
+                                                <td rowspan="4"> <label class="short-row">@skill.Level</label> </td>
+                                            }
+                                            <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
+                                           
+                                            <td><div class="short-row"><SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.DC"></SfNumericTextBox></div></td>
+                                            <td><div class="short-row"><SfNumericTextBox Format="" ShowSpinButton="false" @bind-Value="@skill.Cost"></SfNumericTextBox></div></td>
+                                            <td><div class="short-row"><SfTextBox @bind-Value="@skill.Range"></SfTextBox></div></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4">
+                                                <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                                </SfTextBox>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                       @*  PASSIVE SKILLS  *@
+                        <label class="class-section">Passive class skills</label>
+
+                        <div class="wide-screen-table">
+
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="level-row text-center">Level</th>
+                                        <th scope="col" class="name-row text-center">Name</th>
+                                        <th scope="col" class="descr-row text-center">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var skill in _createProfession.ProfessionDTO.PassiveSkills)
+                                    {
+                                        <tr>
+                                            <td> <label class="short-row">@skill.Level</label> </td>
+                                            <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
+                                            <td>
+                                                <div class="bonus-double-cell">
+                                                    <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                                    </SfTextBox>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="short-screen-table">
+
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="number-row text-center">Level</th>
+                                        <th scope="col" class="name-row-short text-center">Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var skill in _createProfession.ProfessionDTO.PassiveSkills)
+                                    {
+                                        <tr>
+                                            <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
+                                            <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2">
+                                                <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                                </SfTextBox>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <label class="warnign-message">@ErrorMessage</label>
+                    } 
+                </div>  
+                
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+
+            <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
+            </DialogButton>
+            <DialogButton OnClick="@OnSaveProfBtnClick" Content="Save" IsPrimary="true">
+            </DialogButton>
+        </DialogButtons>
+    </SfDialog>
+
+</div>
+
+<style>
+
+    @@media (max-width: 400px) {
+        .e-dialog.e-popup{
+            width: 100% !important;
+            height: 100% !important;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public IEnumerable<AttributeDTO> Attributes { get; set; }
+
+
+    private SfRichTextEditor DescrEdit;
+    private SfDialog Dialog;
+    SfGrid<ProfessionSkill> Grid;
+
+    private CreateProfessionModel _createProfession;
+    [Parameter]
+    public CreateProfessionModel CreateProfession
+    {
+        get => _createProfession;
+        set{
+            if (_createProfession == value) return;
+            _createProfession = value;
+            if (_createProfession.ProfessionDTO != null)
+            {
+                _createProfession.ProfessionDTO.CalculateClassParams(Attributes);
+            }
+            IsLoading = false;
+            StateHasChanged();
+            CreateProfessionChanged.InvokeAsync(value);
+        }
+    }
+    [Parameter]
+    public EventCallback<CreateProfessionModel> CreateProfessionChanged { get; set; }
+
+    private string ErrorMessage { get; set; } = string.Empty;
+    private bool IsLoading { get; set; }= true;
+    public bool IsAdminOrMG { get; set; } = false;
+
+    public IEditorSettings EditParams = new NumericEditCellParams
+    {
+        Params = new NumericTextBoxModel<object>() { ShowClearButton = true, ShowSpinButton = false }
+    };
+
+    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
+    {
+        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
+        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
+        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
+        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
+        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
+        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
+    };
+    public void ChangeDescription(uint args)
+    {
+        //pass ID(column name) of multiline textbox
+        _jsruntime.InvokeVoidAsync("ResizeTextArea", $"{args}");
+    }
+    private async Task OnSaveProfBtnClick()
+    {
+
+        if (string.IsNullOrEmpty(CreateProfession.ProfessionDTO.Name) || string.IsNullOrEmpty(CreateProfession.ProfessionDTO.Description))
+        {
+            ErrorMessage = $"Create name and description of class";
+            return;
+        }
+        if (string.IsNullOrEmpty(CreateProfession.ProfessionDTO.RelatedAttribute))
+        {
+            ErrorMessage = $"Choose attribute related to class";
+            return;
+        }
+
+        ErrorMessage = string.Empty;
+        CreateProfession.IsVisible = false;
+
+        await CreateProfessionChanged.InvokeAsync(CreateProfession);
+    }
+    private async Task OnCancelBtnClick()
+    {
+        CreateProfession.IsVisible = false;
+    }
+    private async Task DialogOpen()
+    { 
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        if (user == null)
+            return; // failed to load
+        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+
+        this.DescrEdit.RefreshUI();
+        ErrorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task ChangeProfLevel()
+    {
+        CreateProfession.ProfessionDTO.CalculateClassParams(Attributes);
+        StateHasChanged();
+    }
+
+    private async Task ChangeRelatedAttribute(string attrName)
+    {
+        try
+        {
+            if (attrName != null && attrName != "0" )
+            {
+                CreateProfession.ProfessionDTO.RelatedAttribute = attrName;
+                CreateProfession.ProfessionDTO.CalculateClassParams(Attributes);
+                StateHasChanged();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+        }
+
+    }
+}

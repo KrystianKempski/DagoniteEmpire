@@ -11,8 +11,7 @@ namespace DA_Models.CharacterModels
         public string? UserName { get; set; }
         public string? NPCName { get; set; }
         public string? Description { get; set; }
-        public string? Class { get; set; }
-        //public string? Race { get; set; }
+
         [Range(16, 300, ErrorMessage = "Age must be between 16 and 300 years")]
         public int Age { get; set; }
         public string? ImageUrl { get; set; }
@@ -24,13 +23,14 @@ namespace DA_Models.CharacterModels
         public int TraitBalance { get; set; } = 0;
 
         public string RaceName { get; set; } = string.Empty;
+        public string ProfessionName { get; set; } = string.Empty;
 
         public ICollection<AttributeDTO>? Attributes { get; set; }
         public ICollection<BaseSkillDTO>? BaseSkills { get; set; }
         public ICollection<SpecialSkillDTO>? SpecialSkills { get; set; }
         public ICollection <TraitAdvDTO>? TraitsAdv { get; set; }
-
         public int RaceId { get; set; } = 0;
+        public int ProfessionId { get; set; } = 0;
 
     }
 }

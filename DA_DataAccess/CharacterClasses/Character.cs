@@ -17,7 +17,6 @@ namespace DA_DataAccess.CharacterClasses
 
         public string? NPCName { get; set; }
         public string? Description { get; set; }
-        public string? Class {  get; set; }
         public int Age { get; set; }
         public string? ImageUrl { get; set; }
 
@@ -40,6 +39,12 @@ namespace DA_DataAccess.CharacterClasses
         public int? RaceId { get; set; }
         [ForeignKey(nameof(RaceId))]
         public Race? Race { get; set; }
+
+
+        public int ProfessionId { get; set; } = 0;
+
+        [ForeignKey(nameof(ProfessionId))]
+        public Profession? Profession { get; set; }
 
     }
 }

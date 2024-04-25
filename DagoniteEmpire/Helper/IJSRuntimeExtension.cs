@@ -39,5 +39,6 @@ namespace DagoniteEmpire.Helper
             await jsRuntime.InvokeVoidAsync("ShowSweetAlert", "error", message);
         }
 
+
     }
 }

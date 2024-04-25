@@ -35,6 +35,7 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 obj.Race = null;
+                obj.Profession = null;
 
                 //handle traits Adv
                 var traits = await contex.TraitsAdv.ToListAsync();
@@ -63,16 +64,26 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == id);
-                var race = await contex.Races.FirstOrDefaultAsync(u => u.Id == obj.RaceId && u.RaceApproved == false);
+                var obj = await contex.Characters.Include(c=>c.TraitsAdv).FirstOrDefaultAsync(u => u.Id == id);
+                if (!obj.TraitsAdv.IsNullOrEmpty())
+                {
+                    obj.TraitsAdv.Where(t=>t.TraitApproved == false).ToList().ForEach(t => contex.TraitsAdv.Remove(t));
+                }
+                var race = await contex.Races.Include(c => c.Traits).FirstOrDefaultAsync(u => u.Id == obj.RaceId && u.RaceApproved == false);
                 if (race is not null)
                 {
+                    if (!race.Traits.IsNullOrEmpty())
+                        race.Traits.ToList().ForEach(t =>contex.TraitsRace.Remove(t));
                     contex.Races.Remove(race);
                 }
-
-                if (obj is not null)
+                var profession = await contex.Professions.Include(s=>s.ActiveSkills).Include(u=>u.PassiveSkills).FirstOrDefaultAsync(u => u.Id == obj.ProfessionId && u.IsApproved == false && u.IsUniversal == false);
+                if (profession is not null)
                 {
-                    contex.Characters.Remove(obj);
+                    if (!profession.ActiveSkills.IsNullOrEmpty())
+                        profession.ActiveSkills.ToList().ForEach(s =>contex.ProfessionSkills.Remove(s));
+                    if (!profession.PassiveSkills.IsNullOrEmpty())
+                        profession.PassiveSkills.ToList().ForEach(s =>contex.ProfessionSkills.Remove(s));
+                    contex.Professions.Remove(profession);
                 }
                 return contex.SaveChanges();
             }
@@ -86,14 +97,14 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             if (id == null || id < 1)
-                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.TraitsAdv).Include(r => r.Race));
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.TraitsAdv).Include(r => r.Race).Where(u=>u.Id==id));
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.TraitsAdv).Include(r => r.Race).Include(r => r.Profession));
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.TraitsAdv).Include(r => r.Race).Include(r => r.Profession).Where(u=>u.Id==id));
         }
 
         public async Task<CharacterDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Characters.Include(t => t.TraitsAdv).ThenInclude(b=>b.Bonuses).Include(r=>r.Race).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.Characters.Include(t => t.TraitsAdv).ThenInclude(b=>b.Bonuses).Include(r=>r.Race).Include(r => r.Profession).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Character, CharacterDTO>(obj);
@@ -105,7 +116,7 @@ namespace DA_Business.Repository.CharacterReps
             using var contex = await _db.CreateDbContextAsync();
             if (userName == null || userName.Length<3)
                 return null;
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Where(u => u.UserName == userName));
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Where(u => u.UserName == userName));
         }
 
         public async Task<CharacterDTO> Update(CharacterDTO objDTO)
@@ -122,7 +133,6 @@ namespace DA_Business.Repository.CharacterReps
                     obj.Age = updatedChar.Age;
                     obj.NPCName = updatedChar.NPCName;
                     obj.Description = updatedChar.Description;
-                    obj.Class = updatedChar.Class;
                     obj.CurrentExpPoints = updatedChar.CurrentExpPoints;
                     obj.UsedExpPoints = updatedChar.UsedExpPoints;
                     obj.AttributePoints = updatedChar.AttributePoints;
@@ -130,6 +140,7 @@ namespace DA_Business.Repository.CharacterReps
                     obj.ImageUrl = updatedChar.ImageUrl;
                     obj.TraitBalance = updatedChar.TraitBalance;
                     obj.RaceId = updatedChar.RaceId;
+                    obj.ProfessionId = updatedChar.ProfessionId;
 
                     // Delete adv traits
                     if(obj.TraitsAdv is not null)

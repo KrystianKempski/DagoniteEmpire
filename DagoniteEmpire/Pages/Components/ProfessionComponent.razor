@@ -1,0 +1,100 @@
+﻿<div class="profession">
+    <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px;" @bind-Value="@Profession.Name" class=""></InputText>
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th scope="col" class="name-row">Level</th>
+                <th scope="col" class="name-row">Attribute</th>
+                <th scope="col" class="name-row">Roll</th>
+                <th scope="col" class="name-row">Focus</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            <tr>
+                <td>
+                    <label class="name-label">@Profession.ClassLevel</label>
+                </td>
+                <td>
+                    <label class="name-label">@Profession.RelatedAttribute</label>
+                </td>
+                <td>
+                    <label class="name-label">@Profession.ProfessionSkillRoll</label>
+                </td>
+                <td>
+                    <label class="name-label">@Profession.MaxFocusPoints</label>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <label class="prof-descr-label">Class description</label>
+    <SfRichTextEditor Height="220px" @ref="ProfessionDescrShow" @bind-Value="@Profession.Description" Readonly="true" ShowTooltip="false">
+        <RichTextEditorToolbarSettings Items="@NoTools" />
+    </SfRichTextEditor>
+
+    <div class="buttons">
+        <span><button @onclick="@(()=>EditProfession())" class="add-trait my-2">Edit profession</button></span>
+    </div>
+
+    @if (CreateProfession != null)
+    {
+        <CreateProfessionDialog Attributes="@Attributes" @bind-CreateProfession="@CreateProfession"></CreateProfessionDialog>
+    }
+</div> 
+
+@code {
+    [Parameter]
+    public IEnumerable<AttributeDTO> Attributes { get; set; } = null;
+
+    [Parameter]
+    public ProfessionDTO Profession { get; set; } = null;
+    [Parameter]
+    public EventCallback<ProfessionDTO> ProfessionChanged { get; set; }
+
+    private SfRichTextEditor ProfessionDescrShow;
+    private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
+    private string ProfessionName { get; set; }
+
+
+    private CreateProfessionModel _createProfession = new();
+    private CreateProfessionModel CreateProfession
+    {
+        get => _createProfession;
+        set
+        {
+            if (value.ProfessionDTO != null)
+            {
+
+                Profession = value.ProfessionDTO;
+                StateHasChanged();
+            }
+            if (_createProfession == value) return;
+            _createProfession = value;
+        }
+    }
+
+    private async Task EditProfession()
+    {
+        CreateProfession.ProfessionDTO = Profession;
+        CreateProfession.IsVisible = true;
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(Profession.Name))
+            {
+                ProfessionName = "Class name";
+            }
+            else
+            {
+                ProfessionName = Profession.Name;
+            }
+
+
+        }
+    }
+}

@@ -25,6 +25,7 @@ builder.Host.UseNLog();
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.EnableDetailedErrors();
     //options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     //options.EnableSensitiveDataLogging();
 });
@@ -39,6 +40,8 @@ builder.Services.AddScoped<ITraitAdvRepository, TraitAdvRepository>();
 builder.Services.AddScoped<ITraitRaceRepository, TraitRaceRepository>();
 builder.Services.AddScoped<IBonusRepository, BonusRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
+builder.Services.AddScoped<IProfessionRepository, ProfessionRepository>();
+builder.Services.AddScoped<IProfessionSkillRepository, ProfessionSkillRepository>();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();

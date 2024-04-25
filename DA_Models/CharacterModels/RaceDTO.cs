@@ -11,9 +11,7 @@ namespace DA_Models.CharacterModels
     public class RaceDTO
     {
         public int Id { get; set; }
-       // public int? CharacterId { get; set; }
-
-        public ICollection<CharacterDTO>? Characters { get; set; }
+        public ICollection<CharacterDTO>? Characters { get; set; } = new List<CharacterDTO>();
 
         public ICollection<TraitRaceDTO>? Traits { get; set; } = new List<TraitRaceDTO>();
         public string Name { get; set; } = string.Empty;         //for example "dwarf"

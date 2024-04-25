@@ -8,6 +8,7 @@
 @inject ITraitAdvRepository _traitAdvRepository
 @inject ITraitRaceRepository _traitRaceRepository
 @inject IRaceRepository _raceRepository
+@inject IProfessionRepository _professionRepository
 @inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
@@ -39,10 +40,6 @@
                         <div class="form-group col-md-4 px-1">
                             <label>Character name</label>
                             <input type="text" @bind-value="Character.NPCName" class="form-control"></input>
-                        </div>
-                        <div class="form-group col-md-2 px-1">
-                            <label>Class</label>
-                            <InputText @bind-Value="Character.Class" class="form-control"></InputText>
                         </div>
                         <div class="form-group col-md-1 px-1">
                             <label>Age</label>
@@ -213,6 +210,11 @@
                             <RaceComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Races="@Races" @bind-CurrentRace="@CurrentRace"></RaceComponent>
                         </div>
 
+                        <div class="profession">
+                            <h3 class="my-3 ml-3">CLASS</h3>
+                            <ProfessionComponent Attributes="@Attributes" @bind-Profession="@Profession"></ProfessionComponent>
+                        </div>
+
                         <div class="traits">
                             <h3 class="my-3 ml-3">TRAITS</h3>
                             <TraitsComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Character="@Character" @bind-Traits="@Traits" TraitType="@SD.TraitType_Advantage"></TraitsComponent>
@@ -379,6 +381,7 @@
 
     private CharacterDTO Character { get; set; }
     private RaceDTO CurrentRace {get; set; }
+    private ProfessionDTO Profession { get; set; }
     private IEnumerable<AttributeDTO> Attributes { get; set; }
     private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } 
     private ICollection<SpecialSkillDTO> SpecialSkills { get; set; }
@@ -424,6 +427,7 @@
                     Traits = new List<TraitDTO>();
                     TraitsAdv = new List<TraitAdvDTO>();
                     CurrentRace = new();
+                    Profession = new();
                     var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
                     var user = authstate.User;
                     Character.UserName = user.Identity.Name;
@@ -441,6 +445,8 @@
                     Title = "Edit";
                     await LoadCharacter();
                 }
+
+                // calculate all stats
                 foreach (var obj in Attributes)
                     obj.SumAll();
                 foreach (var obj in BaseSkills)
@@ -450,6 +456,9 @@
                     await ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
                     await AddSSRelatedBaseSkill(obj);
                 }
+
+                await ChangeProfRelatedAttribute(Profession.RelatedAttribute);
+                Profession.CalculateClassParams(Attributes);
 
                 IsLoading = false;
                 StateHasChanged();
@@ -470,12 +479,10 @@
         TraitsAdv = (await _traitAdvRepository.GetAll(Id)).ToList(); 
         //need Traits in base class to use Component
         Traits = new List<TraitDTO>();
-        foreach(var advTrait in TraitsAdv)
-        {
-            Traits.Add(new TraitAdvDTO(advTrait, Character));
-        }
+        TraitsAdv.ToList().ForEach(t =>
+            Traits.Add(new TraitAdvDTO(t, Character)));
         CurrentRace = await _raceRepository.GetById(Character.RaceId);
-        //CurrentRace.Traits = (await _traitRaceRepository.GetAll(CurrentRace.Id)).ToList();
+        Profession = await _professionRepository.GetById(Character.ProfessionId);
         Races = (await _raceRepository.GetAllApproved()).ToList();
     }
 
@@ -488,7 +495,7 @@
             if (Character.Id == 0)
             {
                 //check if all valid
-                //create
+                //upsert race
                 RaceDTO? raceDTO;
                 if (CurrentRace.Id > 0)
                 {
@@ -507,12 +514,15 @@
                 {
                     Character.RaceId = 0;
                 }
-                foreach (var obj in Traits)
-                {
-                    TraitsAdv.Add(new(obj, Character));
-                }
-
+                Traits.ToList().ForEach(t => TraitsAdv.Add(new(t, Character)));
                 Character.TraitsAdv = TraitsAdv;
+
+                // create profession
+                ProfessionDTO? professionDTO;
+                professionDTO = await _professionRepository.Create(Profession);
+                if (professionDTO is not null)
+                    Character.ProfessionId = professionDTO.Id;
+
                 var charac = await _characterRepository.Create(Character);
                 foreach (var obj in Attributes)
                 {
@@ -532,9 +542,6 @@
             }
             else
             {
-
-                
-
                 //update race
                 RaceDTO? raceDTO;
                 if (CurrentRace.Id > 0)
@@ -553,14 +560,18 @@
                 {
                     Character.RaceId = 0;
                 }
-
+                // update profession
+                ProfessionDTO? professionDTO;
+                if (Profession.Id > 0)
+                    professionDTO = await _professionRepository.Update(Profession);
+                else
+                    professionDTO = await _professionRepository.Create(Profession);
+                if (professionDTO is not null)
+                    Character.ProfessionId = professionDTO.Id;
 
                 // update Adv traits
                 Character.TraitsAdv = new List<TraitAdvDTO>();
-                foreach (var obj in Traits)
-                {
-                    Character.TraitsAdv.Add(new(obj, Character));  //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
-                }
+                Traits.ToList().ForEach(t => Character.TraitsAdv.Add(new(t, Character))); //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
 
                 // update character with TraitAdv collection properly filled
                 await _characterRepository.Update(Character);
@@ -584,7 +595,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-           // await _jsRuntime.ToastrError("Error while loading: " + ex.ToString());
+            // await _jsRuntime.ToastrError("Error while loading: " + ex.ToString());
         }
         IsLeaveAllowed = true;
         IsLoading = false;
@@ -765,11 +776,13 @@
         {
             Character.AttributePoints = 100;
             Character.CurrentExpPoints = 250;
+            Profession.ClassLevel = 2;
         }
         else if (Character.NPCType == "Duke")
         {
             Character.AttributePoints = 100;
             Character.CurrentExpPoints = 300;
+            Profession.ClassLevel = 3;
         }
 
         foreach (var obj in Attributes)
@@ -897,6 +910,27 @@
                 obj.BaseSkillBonus = baseSkill.SumBonus;
                 obj.AddPropertyListener(baseSkill);
                 obj.SumAll();
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+
+    }
+
+    private async Task ChangeProfRelatedAttribute(string attrName)
+    {
+        try
+        {
+            if (attrName != null && attrName != "0")
+            {
+                Profession.RelatedAttribute = attrName;
+                var attr = Attributes.FirstOrDefault(p => p.Name == attrName);
+                if (attr == null) return;
+                Profession.AddPropertyListener(attr);
                 return;
             }
         }
