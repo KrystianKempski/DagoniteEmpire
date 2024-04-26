@@ -21,21 +21,19 @@
 @inject NavigationManager _navigationManager
 <_LeavePage IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click" ></_LeavePage>
 <div class="page">
-    
-
 
     <div class="col-12">
          @if (IsLoading)
         {
-            <div class="text-center">
-                <img src="/images/loading.gif">
+            <div class=" text-center">
+                <img class="loading-gif" src="/images/loading.gif">
             </div>
         }
         else
         {
             <section class="section-create-character">
                 <div class="container-fluid">
-                    <h3 class="char-title card-title mb-3 ml-3">@Title character</h3>
+                    <h3 class="char-title card-title mb-3 ml-3 mt-2">@Title character</h3>
                     <div class="row">
                         <div class="form-group col-md-4 px-1">
                             <label>Character name</label>
@@ -67,12 +65,15 @@
                 <div class="container-fluid">
                     <div class="row">
                         <div class="portrait">
-                            <h3 class="my-3 ml-3">PORTRAIT</h3>
+                            <div class="sheet-img">
+                                <img src="../images/old_paper2.png" class="stretch" />
+                            </div>
+                            <h3 class="my-3 ml-3 text-center">PORTRAIT</h3>
                             <div class="portrait-imageframe">
                                 <img src="@Character.ImageUrl" class="portrait-image" />
                                 <div class="portrait-input">
-                                    <InputFile OnChange="HandleImageUpload"></InputFile>
-                                <label class="custom-file-label" for="inputGroupFile01">Choose file</label>
+                                    <label class="input-label" for="input">Choose file</label>
+                                    <InputFile id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
                                 </div>
                             </div>
                    
@@ -84,10 +85,14 @@
                                 <label class="points-label">Avalible attribute points:</label>
                                 <span class="points-indicator ml-auto">@Character.AttributePoints</span>
                             </div>
+                            
                         </div>
                    
                         <div class="attribute">
-                            <h3 class="my-3 ml-3">ATTRIBUTES</h3>
+                            <div class="sheet-img">
+                                <img src="../images/old_paper2.png" class="stretch" />
+                            </div>
+                            <h3 class="my-3 ml-3 text-center">ATTRIBUTES</h3>
 
                             <table class="table align-middle mb-1">
                             <thead>
@@ -151,7 +156,10 @@
                             </table>
                         </div>
                         <div class="baseskills">
-                            <h3 class="my-3 ml-3">BASE SKILLS</h3>
+                            <div class="sheet-img">
+                                <img src="../images/old_paper2.png" class="stretch" />
+                            </div>
+                            <h3 class="my-3 ml-3 text-center">BASE SKILLS</h3>
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
@@ -206,22 +214,26 @@
                         </div>
 
                         <div class="races">
-                             <h3 class="my-3 ml-3">RACE</h3>
+                            
                             <RaceComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Races="@Races" @bind-CurrentRace="@CurrentRace"></RaceComponent>
                         </div>
 
                         <div class="profession">
-                            <h3 class="my-3 ml-3">CLASS</h3>
                             <ProfessionComponent Attributes="@Attributes" @bind-Profession="@Profession"></ProfessionComponent>
                         </div>
 
                         <div class="traits">
-                            <h3 class="my-3 ml-3">TRAITS</h3>
-                            <TraitsComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Character="@Character" @bind-Traits="@Traits" TraitType="@SD.TraitType_Advantage"></TraitsComponent>
+                            <div class="sheet-img">
+                                <img src="../images/old_paper2.png" class="stretch" />
+                            </div>
+                            <h3 class="my-3 ml-3 text-center">TRAITS</h3>
+                            <div class="trait-container">
+                                <TraitsComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Character="@Character" @bind-Traits="@Traits" TraitType="@SD.TraitType_Advantage"></TraitsComponent>
+                            </div>
                         </div>
 
                         <div class="description">
-                            <h3 class="my-3 ml-3">DESCRIPTION</h3>
+
                             <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@Character.Description"></CharDescriptionDialog>
                         </div>
                     </div>
@@ -237,6 +249,9 @@
                             @foreach (var baseSkill in BaseSkills)
                             {
                             <div class="specialskills-table">
+                                    <div class="sheet-img">
+                                        <img src="../images/old_paper2.png" class="stretch" />
+                                    </div>
                                 <div class="specialskills-control">
                                     <label class="specialskills-label">@baseSkill.Name</label>
                                     <span class="specialskills-indicator">@baseSkill.SumBonus</span>
@@ -260,7 +275,7 @@
                                                 <td class="name-td-small" colspan="6">
                                                     @if (obj.Editable)
                                                     {
-                                                        <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0; text-transform:uppercase;" @bind-Value="obj.Name" class=""></InputText>
+                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid black; border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
                                                     }
                                                     else
                                                     {
@@ -272,7 +287,7 @@
                                                 <td class="name-td-big">
                                                     @if (obj.Editable)
                                                     {
-                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding:0;" Value="@obj.Name" ValueChanged="@((string value) => SpecialSkillNameChanged(value, obj))" ValueExpression="@(()=>obj.Name)"></InputText>
+                                                        <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid black; border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
                                                     }
                                                     else
                                                     {
@@ -292,7 +307,7 @@
                                                     <div class="attribute-selector">
                                                         @if (obj.Editable)
                                                         {
-                                                            <InputSelect style="width: 100%;"
+                                                                <InputSelect style="width: 100%; background-color: transparent;"
                                                                             ValueExpression="@(()=>obj.ChosenAttribute)"
                                                                             Value="@obj.ChosenAttribute"
                                                                             ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
@@ -314,7 +329,7 @@
                                                             }
                                                             else
                                                             {
-                                                                <InputSelect style="width: 100%;"
+                                                                    <InputSelect style="width: 100%; background-color: transparent;"
                                                                                 ValueExpression="@(()=>obj.ChosenAttribute)"
                                                                                 Value="@obj.ChosenAttribute"
                                                                                 ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
@@ -371,6 +386,23 @@
     </div>
 
 </div>
+
+<style>
+
+    .e-richtexteditor .e-rte-content,
+    .e-richtexteditor .e-source-content {
+        background: transparent;
+    }
+
+    .e-richtexteditor.e-rte-tb-expand .e-rte-content, .e-richtexteditor.e-rte-tb-expand .e-source-content{
+        border: 1px solid black;
+    }
+
+    .e-richtexteditor.e-rte-tb-expand{
+        border: none;
+    }
+    
+</style>
 
 
 

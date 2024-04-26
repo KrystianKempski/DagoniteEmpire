@@ -1,5 +1,9 @@
 ﻿<div class="profession">
-    <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px;" @bind-Value="@Profession.Name" class=""></InputText>
+    <div class="sheet-img">
+        <img src="../images/old_paper2.png" class="stretch" />
+    </div>
+    <h3 class="my-3 ml-3 text-center">CLASS</h3>
+    <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid black; border-radius: 4px;background-color:transparent;" @bind-Value="@Profession.Name" class=""></InputText>
     <table class="table align-middle">
         <thead>
             <tr>
@@ -29,12 +33,15 @@
     </table>
 
     <label class="prof-descr-label">Class description</label>
-    <SfRichTextEditor Height="220px" @ref="ProfessionDescrShow" @bind-Value="@Profession.Description" Readonly="true" ShowTooltip="false">
-        <RichTextEditorToolbarSettings Items="@NoTools" />
-    </SfRichTextEditor>
+    <div class="richtext-conteiner">
 
+        <SfRichTextEditor Height="100%" @ref="ProfessionDescrShow" @bind-Value="@Profession.Description" Readonly="true" ShowTooltip="false">
+            <RichTextEditorToolbarSettings Items="@NoTools" />
+        </SfRichTextEditor>
+
+    </div>
     <div class="buttons">
-        <span><button @onclick="@(()=>EditProfession())" class="add-trait my-2">Edit profession</button></span>
+        <button @onclick="@(()=>EditProfession())" class="add-trait">Edit class</button>
     </div>
 
     @if (CreateProfession != null)

@@ -1,6 +1,7 @@
 ﻿@inject ITraitAdvRepository _traitAdvRepository
 @inject ITraitRaceRepository _traitRaceRepository
-<div>
+<div class="traits">
+    <div class="table-container">
     <table class="table align-middle">
         <thead>
             <tr>
@@ -30,21 +31,22 @@
                         </td>
                     }
                     <td>
-                        <button @onclick="@(()=>EditTrait(obj))" class="add-trait"><i class="fa-solid fa-pencil"></i></button>
+                        <button @onclick="@(()=>EditTrait(obj))" class="add-trait" ><i class="fa-solid fa-pencil"></i></button>
                         <button @onclick="@(()=>DeleteTrait(obj))" class="add-trait"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
+    </div>
     <div class="row">
         @if (Character != null)
         {
-            <label>Traits balance: @Character.TraitBalance </label>
+            <label class="balance">Traits balance: @Character.TraitBalance </label>
         }
-        <div class="column">
-            <span><button @onclick="@(()=>AddCustomTrait())" class="add-trait p-1 my-1">Add custom trait</button></span>
-            <span><button @onclick="@(()=>AddExistingTrait())" class="add-trait p-1 my-1">Add existing trait</button></span>
+        <div class="buttons-row">
+            <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Custom</button>
+            <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing</button>
         </div>
     </div>
 

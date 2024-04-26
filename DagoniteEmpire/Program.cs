@@ -9,6 +9,7 @@ using DagoniteEmpire.Service.IService;
 using DagoniteEmpire.Service;
 using Syncfusion.Blazor;
 using Syncfusion.Blazor.RichTextEditor;
+using MudBlazor.Services;
 using DA_Common;
 using NLog.Web;
 using DagoniteEmpire.Middleware;
@@ -19,6 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSyncfusionBlazor();
+//builder.Services.AddMudServices();
 builder.Host.UseNLog();
 
 /// DB context 
