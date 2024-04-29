@@ -1,9 +1,9 @@
 ﻿<div class="race">
     <div class="sheet-img">
-        <img src="../images/old_paper2.png" class="stretch" />
+        @* <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
     <h3 class="my-3 ml-3 text-center">RACE</h3>
-    <InputSelect style="width: 100%; padding: 2px 0px 2px 0px; background-color: transparent; border: 1px solid black; border-radius: 4px;"
+    <InputSelect style="width: 100%; padding: 2px 0px 2px 0px; background-color: transparent; border: 1px solid RGB(206 212 218); border-radius: 4px;"
                      ValueExpression="@(()=>SelectedRace)"
                      Value="@SelectedRace"
                      ValueChanged="@((string value) => ChangeRace(value))">
@@ -16,11 +16,11 @@
     </InputSelect>
     @if (ShowNameLabel)
     {
-        <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px; border: 1px solid black; border-radius: 4px; background-color: transparent;" @bind-Value="@CurrentRace.Name" class=""></InputText>
+        <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color: transparent;" @bind-Value="@CurrentRace.Name" class=""></InputText>
     }
     <label class="race-descr-label">Race description</label>
     <div class="richtext-conteiner">
-        <SfRichTextEditor  Height="100%" @ref="RaceDescrShow" @bind-Value="@CurrentRace.Description" Readonly="true" ShowTooltip="false">
+        <SfRichTextEditor Height="100%" @ref="RaceDescrShow" @bind-Value="@CurrentRace.Description" Readonly="true" ShowTooltip="false">
             <RichTextEditorToolbarSettings Items="@NoTools" />
         </SfRichTextEditor>
     </div>

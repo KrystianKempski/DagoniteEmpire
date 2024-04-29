@@ -64,9 +64,9 @@
              <section class="section-create-character">
                 <div class="container-fluid">
                     <div class="row">
-                        <div class="portrait">
+                        <div class="portrait border">
                             <div class="sheet-img">
-                                <img src="../images/old_paper2.png" class="stretch" />
+                                @* <img src="../images/old_paper2.png" class="stretch" /> *@
                             </div>
                             <h3 class="my-3 ml-3 text-center">PORTRAIT</h3>
                             <div class="portrait-imageframe">
@@ -87,10 +87,10 @@
                             </div>
                             
                         </div>
-                   
-                        <div class="attribute">
+
+                        <div class="attribute border">
                             <div class="sheet-img">
-                                <img src="../images/old_paper2.png" class="stretch" />
+                                @* <img src="../images/old_paper2.png" class="stretch" /> *@
                             </div>
                             <h3 class="my-3 ml-3 text-center">ATTRIBUTES</h3>
 
@@ -155,9 +155,9 @@
                             </tbody>
                             </table>
                         </div>
-                        <div class="baseskills">
+                        <div class="baseskills border">
                             <div class="sheet-img">
-                                <img src="../images/old_paper2.png" class="stretch" />
+                               @*  <img src="../images/old_paper2.png" class="stretch" /> *@
                             </div>
                             <h3 class="my-3 ml-3 text-center">BASE SKILLS</h3>
                             <table class="table align-middle">
@@ -213,18 +213,18 @@
                             </table>
                         </div>
 
-                        <div class="races">
+                        <div class="races border">
                             
                             <RaceComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Races="@Races" @bind-CurrentRace="@CurrentRace"></RaceComponent>
                         </div>
 
-                        <div class="profession">
+                        <div class="profession border">
                             <ProfessionComponent Attributes="@Attributes" @bind-Profession="@Profession"></ProfessionComponent>
                         </div>
 
-                        <div class="traits">
+                        <div class="traits border">
                             <div class="sheet-img">
-                                <img src="../images/old_paper2.png" class="stretch" />
+                                @* <img src="../images/old_paper2.png" class="stretch" /> *@
                             </div>
                             <h3 class="my-3 ml-3 text-center">TRAITS</h3>
                             <div class="trait-container">
@@ -232,7 +232,7 @@
                             </div>
                         </div>
 
-                        <div class="description">
+                        <div class="description border">
 
                             <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@Character.Description"></CharDescriptionDialog>
                         </div>
@@ -248,9 +248,9 @@
                         
                             @foreach (var baseSkill in BaseSkills)
                             {
-                            <div class="specialskills-table">
+                                <div class="specialskills-table border">
                                     <div class="sheet-img">
-                                        <img src="../images/old_paper2.png" class="stretch" />
+                                       @*  <img src="../images/old_paper2.png" class="stretch" /> *@
                                     </div>
                                 <div class="specialskills-control">
                                     <label class="specialskills-label">@baseSkill.Name</label>
@@ -275,7 +275,7 @@
                                                 <td class="name-td-small" colspan="6">
                                                     @if (obj.Editable)
                                                     {
-                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid black; border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
+                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid RGB(206 212 218); border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
                                                     }
                                                     else
                                                     {
@@ -287,7 +287,7 @@
                                                 <td class="name-td-big">
                                                     @if (obj.Editable)
                                                     {
-                                                        <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid black; border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
+                                                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid RGB(206 212 218); border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
                                                     }
                                                     else
                                                     {
@@ -394,13 +394,13 @@
         background: transparent;
     }
 
-    .e-richtexteditor.e-rte-tb-expand .e-rte-content, .e-richtexteditor.e-rte-tb-expand .e-source-content{
+   /*  .e-richtexteditor.e-rte-tb-expand .e-rte-content, .e-richtexteditor.e-rte-tb-expand .e-source-content{
         border: 1px solid black;
     }
 
     .e-richtexteditor.e-rte-tb-expand{
         border: none;
-    }
+    } */
     
 </style>
 

@@ -13,6 +13,9 @@ using MudBlazor.Services;
 using DA_Common;
 using NLog.Web;
 using DagoniteEmpire.Middleware;
+using DA_DataAccess;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using DagoniteEmpire.Helper;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,8 +50,15 @@ builder.Services.AddScoped<IProfessionSkillRepository, ProfessionSkillRepository
 builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+//builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 
-
+//builder.Services.Configure<DataProtectionTokenProviderOptions>(o =>
+//       o.TokenLifespan = TimeSpan.FromHours(3));
+builder.Services.Configure<EmailConfiguration>(options =>
+{
+    builder.Configuration.GetSection("Email").Bind(options);
+});
 
 var app = builder.Build();
 
