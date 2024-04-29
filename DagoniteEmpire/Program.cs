@@ -36,7 +36,11 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     //options.EnableSensitiveDataLogging();
 });
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(config =>
+    {
+        config.SignIn.RequireConfirmedEmail = true;
+        config.SignIn.RequireConfirmedAccount = true;
+    }).AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
 builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();
@@ -83,7 +87,7 @@ else
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 
-app.Services.CreateScope().ServiceProvider.GetRequiredService<IOptions<IdentityOptions>>().Value.SignIn.RequireConfirmedAccount = true;
+//app.Services.CreateScope().ServiceProvider.GetRequiredService<IOptions<IdentityOptions>>().Value.SignIn.RequireConfirmedAccount = true;
 
 app.UseStaticFiles();
 
