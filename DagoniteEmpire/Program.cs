@@ -16,6 +16,7 @@ using DagoniteEmpire.Middleware;
 using DA_DataAccess;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using DagoniteEmpire.Helper;
+using Microsoft.Extensions.Options;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +52,7 @@ builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+
 //builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
 
 //builder.Services.Configure<DataProtectionTokenProviderOptions>(o =>
@@ -80,6 +82,8 @@ else
 }
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
+
+app.Services.CreateScope().ServiceProvider.GetRequiredService<IOptions<IdentityOptions>>().Value.SignIn.RequireConfirmedAccount = true;
 
 app.UseStaticFiles();
 
