@@ -38,7 +38,7 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(config =>
     {
-        config.SignIn.RequireConfirmedEmail = true;
+       // config.SignIn.RequireConfirmedEmail = true;
         config.SignIn.RequireConfirmedAccount = true;
     }).AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
