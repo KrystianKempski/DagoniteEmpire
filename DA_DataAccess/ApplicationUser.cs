@@ -9,7 +9,7 @@ namespace DA_DataAccess
 {
     public class ApplicationUser : IdentityUser
     {
-        public string PlayerType { get; set; }
+        public string Name { get; set; }
 
     }
 }

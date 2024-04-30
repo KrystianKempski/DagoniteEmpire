@@ -32,16 +32,6 @@ namespace DA_DataAccess.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            //modelBuilder.Entity<Profession>()
-            //    .HasMany(x => x.ActiveSkills)
-            //    .WithOne(y => y.Profession)
-            //    .HasForeignKey(e=>e.ProfessionId);
-
-            //modelBuilder.Entity<Profession>()
-            //   .HasMany(x => x.PasiveSkills)
-            //   .WithOne(y => y.Profession)
-            //   .HasForeignKey(e => e.ProfessionId);
-
             modelBuilder.Entity<ProfessionSkill>()
                 .HasOne(a => a.ActiveProfession)
                 .WithMany(y => y.ActiveSkills)
@@ -51,16 +41,6 @@ namespace DA_DataAccess.Data
                 .HasOne(a => a.PassiveProfession)
                 .WithMany(y => y.PassiveSkills)
                 .HasForeignKey(a => a.PassiveProfessionId).OnDelete(DeleteBehavior.NoAction);
-
-            //modelBuilder.Entity<Character>()
-            //    .HasOne(x => x.Race)
-            //    .WithMany(y => y.Characters)
-            //    .UsingEntity(j => j.ToTable("CharacterRace"));
-
-            //modelBuilder.Entity<Race>()
-            //    .HasMany(x => x.Traits)
-            //    .WithMany(y => y.Races)
-            //    .UsingEntity(j => j.ToTable("RaceTrait"));
         }
     }
 }

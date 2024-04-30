@@ -133,6 +133,7 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
 
                 await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
                 var resultuser = await _userManager.FindByEmailAsync(Input.Email);
+
                 
                 if(resultuser != null && resultuser.UserName != null)
                 {
