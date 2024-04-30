@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace DagoniteEmpire.Areas.Identity.Pages.Account
@@ -131,6 +132,13 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
                 var user = CreateUser();
 
                 await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
+                var resultuser = await _userManager.FindByEmailAsync(Input.Email);
+                if(resultuser.UserName != null)
+                {
+                    ModelState.AddModelError(string.Empty, "Email already exists");
+                    return Page();
+                }
+
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
 
