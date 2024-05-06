@@ -17,6 +17,7 @@ using DA_DataAccess;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using DagoniteEmpire.Helper;
 using Microsoft.Extensions.Options;
+using DA_Models.CharacterModels;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,12 +47,14 @@ builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
 builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();
 builder.Services.AddScoped<ISpecialSkillRepository, SpecialSkillRepository>();
 builder.Services.AddScoped<IBaseSkillRepository, BaseSkillRepository>();
-builder.Services.AddScoped<ITraitAdvRepository, TraitAdvRepository>();
-builder.Services.AddScoped<ITraitRaceRepository, TraitRaceRepository>();
+builder.Services.AddScoped<ITraitRepository<TraitAdvDTO>, TraitAdvRepository>();
+builder.Services.AddScoped<ITraitRepository<TraitRaceDTO>, TraitRaceRepository>();
+builder.Services.AddScoped<ITraitRepository<TraitEquipmentDTO>, TraitEquipmentRepository>();
 builder.Services.AddScoped<IBonusRepository, BonusRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IProfessionRepository, ProfessionRepository>();
 builder.Services.AddScoped<IProfessionSkillRepository, ProfessionSkillRepository>();
+builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();

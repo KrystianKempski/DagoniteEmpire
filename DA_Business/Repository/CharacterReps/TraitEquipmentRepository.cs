@@ -6,7 +6,6 @@ using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,34 +14,32 @@ using System.Threading.Tasks;
 
 namespace DA_Business.Repository.CharacterReps
 {
-    public class TraitRaceRepository : ITraitRepository<TraitRaceDTO>
+    public class TraitEquipmentRepository : ITraitRepository<TraitEquipmentDTO>
     {
+       // private readonly ApplicationDbContext _db;
+
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
-        private readonly IJSRuntime _jsRuntime;
 
-        public TraitRaceRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper, IJSRuntime jsRuntime)
+        public TraitEquipmentRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
         {
             _db = db;
             _mapper = mapper;
-            _jsRuntime = jsRuntime;
         }
-        public async Task<TraitRaceDTO> Create(TraitRaceDTO objDTO)
+        public async Task<TraitEquipmentDTO> Create(TraitEquipmentDTO objDTO)
         {
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                //How to use EF 6 many-to-many with IDbContextFactory in Blazor Server
-                var obj = _mapper.Map<TraitRaceDTO, TraitRace>(objDTO);
-                var addedObj = contex.TraitsRace.Add(obj);
+                var obj = _mapper.Map<TraitEquipmentDTO, TraitEquipment>(objDTO);
+                var addedObj = await contex.TraitsEquipment.AddAsync(obj);
                 await contex.SaveChangesAsync();
 
-                return _mapper.Map<TraitRace, TraitRaceDTO>(addedObj.Entity);
+                return _mapper.Map<TraitEquipment, TraitEquipmentDTO>(addedObj.Entity);
             }
             catch (Exception ex)
             {
-
-                throw new RepositoryErrorException("Error in Trait-race Repository Create");
+                throw new RepositoryErrorException("Error in Trait-Equipment Repository Create");
             }
             return null;
                 
@@ -53,59 +50,62 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.TraitsRace.FirstOrDefaultAsync(u => u.Id == id && u.TraitApproved == false);
+                var obj = await contex.TraitsEquipment.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == id && u.TraitApproved == false);
                 if (obj != null)
                 {
-                    contex.TraitsRace.Remove(obj);
+                    contex.TraitsEquipment.Remove(obj);
                     await contex.SaveChangesAsync();
                 }
                 return 0;
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Trait-Equipment Repository Delete"); ;
             }
             return 0;
         }
 
-        public async Task<IEnumerable<TraitRaceDTO>> GetAll(int? raceId = null)
+        public async Task<IEnumerable<TraitEquipmentDTO>> GetAll(int? charId =null)
         {
+
             using var contex = await _db.CreateDbContextAsync();
-            if (raceId == null || raceId < 1)
-                return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(contex.TraitsRace.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(contex.TraitsRace.Include(u => u.Bonuses).Where(u => u.Races.FirstOrDefault(r=>r.Id == raceId) != null));
+            if (charId == null || charId < 1)
+                return _mapper.Map<IEnumerable<TraitEquipment>, IEnumerable<TraitEquipmentDTO>>(contex.TraitsEquipment.Include(u => u.Bonuses));
+           return _mapper.Map<IEnumerable<TraitEquipment>, IEnumerable<TraitEquipmentDTO>>(contex.TraitsEquipment.Include(u => u.Bonuses).Where(u => u.Equipment.FirstOrDefault(c=>c.Id == charId)!=null));
         }
 
-        public async Task<IEnumerable<TraitRaceDTO>> GetAllApproved(bool addUnique = false)
+        public async Task<IEnumerable<TraitEquipmentDTO>> GetAllApproved(bool addUnique = false)
         {
+
             using var contex = await _db.CreateDbContextAsync();
             if (addUnique)
-                return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(contex.TraitsRace.Include(u => u.Bonuses).Where(t => t.TraitApproved == true));
-            return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(contex.TraitsRace.Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.IsUnique == false));
+                return _mapper.Map<IEnumerable<TraitEquipment>, IEnumerable<TraitEquipmentDTO>>(contex.TraitsEquipment.Include(u => u.Bonuses).Where(t => t.TraitApproved == true));
+                    
+            return _mapper.Map<IEnumerable<TraitEquipment>, IEnumerable<TraitEquipmentDTO>>(contex.TraitsEquipment.Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.IsUnique == false));
         }
 
-        public async Task<TraitRaceDTO> GetById(int id)
+        public async Task<TraitEquipmentDTO> GetById(int id)
         {
+
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.TraitsRace.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.TraitsEquipment.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                return _mapper.Map<TraitRace, TraitRaceDTO>(obj);
+                return _mapper.Map<TraitEquipment, TraitEquipmentDTO>(obj);
             }
-            return new TraitRaceDTO();
+            return new TraitEquipmentDTO();
         }
 
-        public async Task<TraitRaceDTO> Update(TraitRaceDTO objDTO)
+        public async Task<TraitEquipmentDTO> Update(TraitEquipmentDTO objDTO)
         {
             try
             {
+                var newTrait = _mapper.Map<TraitEquipmentDTO, TraitEquipment>(objDTO);
                 using var contex = await _db.CreateDbContextAsync();
-                var newTrait = _mapper.Map<TraitRaceDTO, TraitRace>(objDTO);
-                var obj = await contex.TraitsRace.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
-                if (obj != null)
+                var obj = await contex.TraitsEquipment.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                if (obj is not null)
                 {
-
-                    obj.Name = newTrait.Name;
+                    obj.Name = newTrait.Name;    
                     obj.Descr = newTrait.Descr;
                     obj.SummaryDescr = newTrait.SummaryDescr;
                     obj.Index = newTrait.Index;
@@ -121,7 +121,7 @@ namespace DA_Business.Repository.CharacterReps
                         {
                             if (!newTrait.Bonuses.Any(c => c.Id == existingChild.Id))
                             {
-                                contex.Bonuses.Remove(existingChild);
+                               contex.Bonuses.Remove(existingChild);
                             }
                         }
                     }
@@ -153,25 +153,23 @@ namespace DA_Business.Repository.CharacterReps
                         }
                     }
 
-                    var updatedObj = contex.TraitsRace.Update(obj);
+                    var addedObj =  contex.TraitsEquipment.Update(obj);
                     await contex.SaveChangesAsync();
-                    return _mapper.Map<TraitRace, TraitRaceDTO>(updatedObj.Entity);
+                    return _mapper.Map<TraitEquipment, TraitEquipmentDTO>(addedObj.Entity);
                 }
                 else
                 {
-                   
-                    var addedObj = await contex.TraitsRace.AddAsync(newTrait);
+                    var addedObj = await contex.TraitsEquipment.AddAsync(newTrait);
                     await contex.SaveChangesAsync();
 
-                    return _mapper.Map<TraitRace, TraitRaceDTO>(addedObj.Entity);
+                    return _mapper.Map<TraitEquipment, TraitEquipmentDTO>(addedObj.Entity);
                 }
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Trait-race Repository Update");
+                throw new RepositoryErrorException("Error in Trait-Equipment Repository Update");
             }
             return null;
         }
-
     }
 }

@@ -53,8 +53,8 @@
 
     private string UnsavedDescription { get; set; } = "";
     private bool IsDescrDialVisible = false;
-    SfRichTextEditor DescrEdit;
-    SfRichTextEditor DescrShow;
+    SfRichTextEditor DescrEdit = new SfRichTextEditor();
+    SfRichTextEditor DescrShow = new SfRichTextEditor();
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
@@ -96,9 +96,9 @@
     {
         IsDescrDialVisible = false;
     }
-    private void DialogOpen()
+    private async Task DialogOpen()
     {
-        this.DescrEdit.RefreshUI();
+        this.DescrEdit.RefreshUIAsync();
     }
 
 }

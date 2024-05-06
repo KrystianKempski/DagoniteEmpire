@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace DA_Business.Repository.CharacterReps
 {
-    public class TraitAdvRepository : ITraitAdvRepository
+    public class TraitAdvRepository : ITraitRepository<TraitAdvDTO>
     {
        // private readonly ApplicationDbContext _db;
 

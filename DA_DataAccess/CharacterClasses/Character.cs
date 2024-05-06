@@ -27,14 +27,13 @@ namespace DA_DataAccess.CharacterClasses
 
         public int TraitBalance { get; set; }
 
-
-        //public int UserId { get; set; }
-        //[ForeignKey(nameof(UserId))]
         public ICollection<Attribute>? Attributes { get; set; }
         public ICollection<BaseSkill>? BaseSkills { get; set; }
 
         public ICollection<SpecialSkill>? SpecialSkills { get; set; }
         public ICollection<TraitAdv>? TraitsAdv { get; set; }
+
+        public ICollection<Equipment>? Equipment { get; set; }
 
         public int? RaceId { get; set; }
         [ForeignKey(nameof(RaceId))]

@@ -5,16 +5,17 @@
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
 @inject ISpecialSkillRepository _specialSkillRepository
-@inject ITraitAdvRepository _traitAdvRepository
-@inject ITraitRaceRepository _traitRaceRepository
+@inject ITraitRepository<TraitAdvDTO> _traitAdvRepository
+@inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
+@inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject IRaceRepository _raceRepository
 @inject IProfessionRepository _professionRepository
+@inject IEquipmentRepository _equipmentRepository
 @inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
 @using DA_Models
-@using DagoniteEmpire.Service.IService
-@using DagoniteEmpire.Pages.Components
+
 @using Syncfusion.Blazor.Navigations
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 
@@ -214,12 +215,15 @@
                         </div>
 
                         <div class="races border">
-                            
-                            <RaceComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Races="@Races" @bind-CurrentRace="@CurrentRace"></RaceComponent>
+                            <CascadingValue Value="@AllParams">
+                                <RaceComponent OnTraitsChange="TraitsChange"></RaceComponent>
+                            </CascadingValue>
                         </div>
 
                         <div class="profession border">
-                            <ProfessionComponent Attributes="@Attributes" @bind-Profession="@Profession"></ProfessionComponent>
+                            <CascadingValue Value="@AllParams">
+                                <ProfessionComponent @bind-Profession="@Profession"></ProfessionComponent>
+                            </CascadingValue>
                         </div>
 
                         <div class="traits border">
@@ -228,13 +232,21 @@
                             </div>
                             <h3 class="my-3 ml-3 text-center">TRAITS</h3>
                             <div class="trait-container">
-                                <TraitsComponent @bind-Attributes="@Attributes" @bind-BaseSkills="@BaseSkills" @bind-SpecialSkills="@SpecialSkills" @bind-Character="@Character" @bind-Traits="@Traits" TraitType="@SD.TraitType_Advantage"></TraitsComponent>
+                                <CascadingValue Value="@AllParams">
+                                    <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@Traits" TraitType="@SD.TraitType_Advantage"></TraitsComponent>
+                                </CascadingValue>
                             </div>
                         </div>
 
                         <div class="description border">
-
-                            <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@Character.Description"></CharDescriptionDialog>
+                            <CascadingValue Value="@AllParams">
+                                    <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@Character.Description"></CharDescriptionDialog>
+                            </CascadingValue>
+                        </div>
+                        <div class="equipment border">
+                            <CascadingValue Value="@AllParams">
+                                <EquipmentComponent OnTraitsChange="TraitsChange"></EquipmentComponent>
+                            </CascadingValue>
                         </div>
                     </div>
                 </div>
@@ -411,6 +423,8 @@
     [Parameter]
     public int Id { get; set; }
 
+    private AllParamsModel AllParams { get; set; }
+
     private CharacterDTO Character { get; set; }
     private RaceDTO CurrentRace {get; set; }
     private ProfessionDTO Profession { get; set; }
@@ -420,6 +434,7 @@
     private ICollection<TraitAdvDTO> TraitsAdv { get; set; }
     private ICollection<TraitDTO> Traits { get; set; }
     private ICollection<RaceDTO> Races { get; set; }
+    private ICollection<EquipmentDTO> Equipment { get; set; }
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; } = true;
@@ -429,14 +444,11 @@
     private string TargetLocation { get; set; } = "";
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
 
-
     private List<object> ToolbarItems = new List<object>() {
         new ItemModel() { Text = "Add", PrefixIcon = "e-add", Id = "Grid_add"},//Here Grid is SfGrid ID
         new ItemModel(){ Text = "Edit", PrefixIcon= "e-edit", Id="Grid_edit"},
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
-
-
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -453,13 +465,14 @@
                     //create
                     Character = new CharacterDTO();
                     Attributes = CharacterSeeder.GetAttributes();
-                    BaseSkills  = CharacterSeeder.GetBaseSkills();
-                    SpecialSkills  = CharacterSeeder.GetSpecialSkills();
+                    BaseSkills = CharacterSeeder.GetBaseSkills();
+                    SpecialSkills = CharacterSeeder.GetSpecialSkills();
                     Races = (await _raceRepository.GetAllApproved()).ToList();
                     Traits = new List<TraitDTO>();
                     TraitsAdv = new List<TraitAdvDTO>();
                     CurrentRace = new();
                     Profession = new();
+                    Equipment = new List<EquipmentDTO>();
                     var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
                     var user = authstate.User;
                     Character.UserName = user.Identity.Name;
@@ -488,6 +501,17 @@
                     await ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
                     await AddSSRelatedBaseSkill(obj);
                 }
+                AllParams = new();
+                AllParams.Character = Character;
+                AllParams.Attributes = Attributes;
+                AllParams.BaseSkills = BaseSkills;
+                AllParams.SpecialSkills = SpecialSkills;
+                AllParams.Races = Races;
+                AllParams.Traits = Traits;
+                AllParams.TraitsAdv = TraitsAdv;
+                AllParams.CurrentRace = CurrentRace;
+                AllParams.Profession = Profession;
+                AllParams.Equipment = Equipment;
 
                 await ChangeProfRelatedAttribute(Profession.RelatedAttribute);
                 Profession.CalculateClassParams(Attributes);
@@ -515,11 +539,14 @@
             Traits.Add(new TraitAdvDTO(t, Character)));
         CurrentRace = await _raceRepository.GetById(Character.RaceId);
         Profession = await _professionRepository.GetById(Character.ProfessionId);
+        Equipment = (await _equipmentRepository.GetAll(Id)).ToList();
         Races = (await _raceRepository.GetAllApproved()).ToList();
     }
 
     private async Task UpsertCharacter()
     {
+        RaceDTO? raceDTO;
+        ProfessionDTO? professionDTO;
         IsLoading = true;
         StateHasChanged();
         try
@@ -528,7 +555,6 @@
             {
                 //check if all valid
                 //upsert race
-                RaceDTO? raceDTO;
                 if (CurrentRace.Id > 0)
                 {
                     raceDTO = await _raceRepository.Update(CurrentRace);
@@ -546,11 +572,13 @@
                 {
                     Character.RaceId = 0;
                 }
+                // create traits (in character)
                 Traits.ToList().ForEach(t => TraitsAdv.Add(new(t, Character)));
                 Character.TraitsAdv = TraitsAdv;
+                // create equipment (in character)
+                Character.Equipment = Equipment;
 
                 // create profession
-                ProfessionDTO? professionDTO;
                 professionDTO = await _professionRepository.Create(Profession);
                 if (professionDTO is not null)
                     Character.ProfessionId = professionDTO.Id;
@@ -575,7 +603,6 @@
             else
             {
                 //update race
-                RaceDTO? raceDTO;
                 if (CurrentRace.Id > 0)
                 {
                     raceDTO = await _raceRepository.Update(CurrentRace);
@@ -593,7 +620,6 @@
                     Character.RaceId = 0;
                 }
                 // update profession
-                ProfessionDTO? professionDTO;
                 if (Profession.Id > 0)
                     professionDTO = await _professionRepository.Update(Profession);
                 else
@@ -604,6 +630,9 @@
                 // update Adv traits
                 Character.TraitsAdv = new List<TraitAdvDTO>();
                 Traits.ToList().ForEach(t => Character.TraitsAdv.Add(new(t, Character))); //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
+
+                // update equipment (in character)
+                Character.Equipment = Equipment;
 
                 // update character with TraitAdv collection properly filled
                 await _characterRepository.Update(Character);
@@ -991,6 +1020,111 @@
     private void HandleLeavePage() => _jsRuntime.InvokeVoidAsync("ShowLeavePageModal");
 
     private async Task GetDescription(string description) => Character.Description = description;
+
+    protected async void TraitsChange()
+    {
+
+        IEnumerable<FeatureDTO>[] allFeatures = { Attributes, BaseSkills, SpecialSkills };
+        bool sum = false;
+
+        //clear all traits bonuses
+        foreach (var feat in allFeatures)
+        {
+            foreach (var obj in feat)
+            {
+                if (obj.TraitBonus != 0)
+                {
+                    obj.TraitBonus = 0;
+                    sum = true;
+                }
+                if (obj.RaceBonus != 0)
+                {
+                    obj.RaceBonus = 0;
+                    sum = true;
+                }
+                if (obj.GearBonus != 0)
+                {
+                    obj.GearBonus = 0;
+                    sum = true;
+                }
+                if (sum)
+                {
+                    obj.SumAll();
+                    sum = false;
+                }
+            }
+        }
+
+        // calculate all traits adv
+        CalculateTraits(AllParams.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Advantage);
+
+        // calculate all race traits
+        CalculateTraits(AllParams.CurrentRace.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Race);
+
+        foreach (var equ in AllParams.Equipment)
+        {
+            if (equ.Traits != null)
+            {
+                CalculateTraits(equ.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
+            }
+        }
+        Character = AllParams.Character;
+        Attributes = AllParams.Attributes;
+        BaseSkills = AllParams.BaseSkills;
+        SpecialSkills = AllParams.SpecialSkills;
+        Races = AllParams.Races;
+        Traits = AllParams.Traits;
+        AllParams.TraitsAdv = AllParams.TraitsAdv;
+        CurrentRace = AllParams.CurrentRace;
+        Profession = AllParams.Profession;
+        Equipment = AllParams.Equipment;
+
+        StateHasChanged();
+    }
+
+    private async void CalculateTraits(ICollection<TraitDTO> traits, string TraitType)
+    {
+        FeatureDTO? feature = null;
+        // calculate all traits adv
+        string bonusName;
+        switch (TraitType)
+        {
+            case SD.TraitType_Advantage: bonusName = nameof(feature.TraitBonus); break;
+            case SD.TraitType_Gear: bonusName = nameof(feature.GearBonus); break;
+            case SD.TraitType_Race: bonusName = nameof(feature.RaceBonus); break;
+            default: bonusName = string.Empty; break;
+        }
+
+        foreach (var trait in traits)
+        {
+            if (trait.TraitType != SD.TraitType_Advantage)
+                AllParams.Character.TraitBalance += trait.TraitValue;
+
+            foreach (var bonus in trait.Bonuses)
+            {
+                switch (bonus.FeatureType)
+                {
+                    case "Attribute":
+                        feature = AllParams.Attributes.FirstOrDefault(u => u.Name == bonus.FeatureName);
+                        break;
+                    case "Base skill":
+                        feature = AllParams.BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
+                        break;
+                    case "Special skill":
+                        feature = AllParams.SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
+                        break;
+                    default:
+                        break;
+                }
+                if (feature != null)
+                {
+                    int newVal = (int)feature.GetType().GetProperty(bonusName).GetValue(feature, null) + bonus.BonusValue;
+                    feature.GetType().GetProperty(bonusName).SetValue(feature, newVal);
+                    feature.SumAll();
+                }
+            }
+        }
+    }
 
 
     private ValueTask OnLocationChanging(LocationChangingContext context)

@@ -1,0 +1,173 @@
+﻿@inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
+<div class="equipment">
+    <h3 class="my-3 ml-3 text-center">EQUIPMENT</h3>
+    <div class="table-container">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th scope="col" class="name-row">Name</th>
+                    <th scope="col" class="description-row">Description</th>
+                    <th scope="col" class="value-row text-center">Price</th>
+                    <th scope="col" class="value-row text-center">Weight</th>
+                    <th scope="col" class="action-row text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var obj in AllParams.Equipment)
+                {
+                    <tr>
+                        <td>
+                            <label class="name-label">@obj.Name</label>
+                        </td>
+                        <td>
+                            <label class="name-label">@obj.ShortDescr</label>
+                        </td>
+                        <td class="text-center">
+                            <label class="name-label text-center">@obj.Price</label>
+                        </td>
+                        <td class="text-center">
+                            <label class="name-label text-center">@obj.Weight</label>
+                        </td>
+                        <td>
+                            <div class="row m-0">
+                                <button @onclick="@(()=>EditEquipment(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
+                                <button @onclick="@(()=>DeleteEquipment(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="row">
+        <div class="buttons-row">
+            <button @onclick="@(()=>AddCustomEquipment())" class="add-trait">Add new</button>
+            <button @onclick="@(()=>AddExistingEquipment())" class="add-trait">Existing items</button>
+        </div>
+    </div>
+
+
+    @if (CustomEquipmentComponent != null)
+    {
+        <CustomEquipmentDialog @bind-CustomEquipmentComponent="@CustomEquipmentComponent"></CustomEquipmentDialog>
+    }
+    @if (EquipmentChosen != null)
+    {
+        <ExistingEquipmentDialog @bind-EquipmentChosen="@EquipmentChosen"></ExistingEquipmentDialog>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; } = new();
+
+    [Parameter]
+    public EventCallback OnTraitsChange { get; set; }
+
+    private SfRichTextEditor DescrEdit = new();
+
+
+    private CustomEquipmentModel _customEquipmentComponent = new();
+    private CustomEquipmentModel CustomEquipmentComponent
+    {
+        get => _customEquipmentComponent;
+        set
+        {
+            if (value.EquipmentDTO != null)
+            {
+                var obj = AllParams.Equipment.FirstOrDefault(u => u.Name == value.EquipmentDTO.Name);
+                if (obj == null)
+                {
+                    AllParams.Equipment.Add(value.EquipmentDTO);
+
+                }
+                else
+                {
+                    obj = value.EquipmentDTO;
+                }
+
+                OnTraitsChange.InvokeAsync();
+            }
+            if (_customEquipmentComponent == value) return;
+            _customEquipmentComponent = value;
+        }
+    }
+
+    private EquipmentChosenModel _equipmentChosen;
+    private EquipmentChosenModel EquipmentChosen
+    {
+        get => _equipmentChosen;
+        set
+        {
+            if (value.EquipmentChosen != null && value.EquipmentChosen.Count() > 0)
+            {
+                foreach (var equ in value.EquipmentChosen)
+                {
+                    if (AllParams.Equipment.FirstOrDefault(u => u.Name == equ.Name) == null)
+                    {
+                        AllParams.Equipment.Add(equ);
+                    }
+                }
+                OnTraitsChange.InvokeAsync();
+            }
+            if (_equipmentChosen == value) return;
+            _equipmentChosen = value;
+        }
+    }
+
+    private async Task AddCustomEquipment()
+    {
+        CustomEquipmentComponent.EquipmentDTO = new();
+        CustomEquipmentComponent.Traits = new List<TraitDTO>();
+        CustomEquipmentComponent.IsVisible = true;
+        StateHasChanged();
+    }
+    private async Task AddExistingEquipment()
+    {
+        EquipmentChosen = new();
+        EquipmentChosen.IsVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task EditEquipment(EquipmentDTO equ)
+    {
+        CustomEquipmentComponent.EquipmentDTO = equ;
+        CustomEquipmentComponent.Traits = CustomEquipmentComponent.EquipmentDTO.Traits.OfType<TraitDTO>().ToList();
+        CustomEquipmentComponent.IsVisible = true;
+        CustomEquipmentComponent.IsEditMode = true;
+        StateHasChanged();
+    }
+
+    private async Task DeleteEquipment(EquipmentDTO equ)
+    {
+        if (equ.Id != 0)
+        {
+
+            if (equ.IsApproved == false)
+            {
+                await _traitEquipmentRepository.Delete(equ.Id);
+
+            }
+        }
+        AllParams.Equipment = AllParams.Equipment.Where(u => u.Name != equ.Name).ToList();
+        OnTraitsChange.InvokeAsync();
+        StateHasChanged();
+    }
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+    //         if (_customEquipmentComponent.EquipmentDTO is not null)
+    //         {
+    //             var shortDescr = (await DescrEdit.GetTextAsync());
+    //             if (shortDescr is not null)
+    //             {
+    //                 if (shortDescr.Length > 100)
+    //                     shortDescr = shortDescr?[0..100] + "...";
+    //                 CustomEquipmentComponent.EquipmentDTO.ShortDescr = shortDescr;
+    //             }
+    //         }
+    //     }
+    // }
+}

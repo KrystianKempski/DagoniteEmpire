@@ -20,16 +20,11 @@ namespace DA_Models.CharacterModels
             {
                 var race = this.Races.FirstOrDefault(r => r.Id == raceDTO.Id);
                 if (race is null)
-                {
                     this.Races.Add(raceDTO);
-                }
                 else
-                {
                     race = raceDTO;
-                }
             }
         }
         public ICollection<RaceDTO> Races { get; set; }
-        //public int? RaceId { get; set; }
     }
 }

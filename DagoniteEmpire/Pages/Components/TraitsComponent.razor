@@ -1,5 +1,5 @@
-﻿@inject ITraitAdvRepository _traitAdvRepository
-@inject ITraitRaceRepository _traitRaceRepository
+﻿@inject ITraitRepository<TraitAdvDTO> _traitAdvRepository
+@inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 <div class="traits">
     <div class="table-container">
     <table class="table align-middle">
@@ -15,7 +15,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var obj in Traits)
+                @foreach (var obj in Traits)
             {
                 <tr>
                     <td>
@@ -31,8 +31,10 @@
                         </td>
                     }
                     <td>
-                         <span><button @onclick="@(()=>EditTrait(obj))" class="trait-btn-small"><i class="fa-solid fa-pencil"></i></button></span>
-                         <span><button @onclick="@(()=>DeleteTrait(obj))" class="trait-btn-small"><i class="fa-solid fa-trash"></i></button></span>
+                        <div class="row m-0">
+                             <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
+                             <button @onclick="@(()=>DeleteTrait(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                     </td>
                 </tr>
             }
@@ -40,19 +42,19 @@
     </table>
     </div>
     <div class="row">
-        @if (Character != null)
+        @if (TraitType==SD.TraitType_Advantage)
         {
-            <label class="balance">Traits balance: @Character.TraitBalance </label>
+            <label class="balance">Traits balance: @AllParams.Character.TraitBalance </label>
         }
         <div class="buttons-row">
-            <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Custom</button>
-            <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing</button>
+            <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add new</button>
+            <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing traits</button>
         </div>
     </div>
 
     @if (CustomTraitComponent != null)
     {
-        <CustomTraitDialog Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" Traits="@Traits" @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
+        <CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
     }
     @if (TraitsChosen != null)
     {
@@ -61,29 +63,20 @@
 </div>
 
 @code {
-    [Parameter]
-    public CharacterDTO Character { get; set; } = null;
-    [Parameter]
-    public EventCallback<CharacterDTO> CharacterChanged { get; set; }
-    [Parameter]
-    public IEnumerable<AttributeDTO> Attributes { get; set; } = null;
-    [Parameter]
-    public EventCallback<IEnumerable<AttributeDTO>> AttributesChanged  { get; set; }
-    [Parameter]
-    public IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = null;
-    [Parameter]
-    public EventCallback<IEnumerable<BaseSkillDTO>> BaseSkillsChanged { get; set; }
-    [Parameter]
-    public ICollection<SpecialSkillDTO> SpecialSkills { get; set; } = null;
-    [Parameter]
-    public EventCallback<ICollection<SpecialSkillDTO>> SpecialSkillsChanged { get; set; }
+
     [Parameter]
     public ICollection<TraitDTO> Traits { get; set; } = null;
     [Parameter]
     public EventCallback<ICollection<TraitDTO>> TraitsChanged { get; set; }
 
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
+
     [Parameter]
-    public string TraitType { get; set; }
+    public string TraitType { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback OnTraitsChange { get; set; }
 
 
     private CustomTraitModel _customTraitComponent = new();
@@ -105,7 +98,8 @@
                     obj = value.TraitDTO;
                 }
 
-                CalculateTraitsBonuses();
+                TraitsChanged.InvokeAsync(Traits);
+                OnTraitsChange.InvokeAsync();
             }
             if (_customTraitComponent == value) return;
             _customTraitComponent = value;
@@ -127,7 +121,8 @@
                         Traits.Add(trait);
                     }
                 }
-                CalculateTraitsBonuses();
+                TraitsChanged.InvokeAsync(Traits);
+                OnTraitsChange.InvokeAsync();
             }
             if (_traitsChosen == value) return;
             _traitsChosen = value;
@@ -157,76 +152,6 @@
         StateHasChanged();
     }
 
-    private async Task CalculateTraitsBonuses()
-    {
-        bool refresh = false;
-
-        if (TraitType != SD.TraitType_Advantage)
-            return ;
-        //clear all traits bonuses
-        if (Character != null)
-            Character.TraitBalance = 0;
-        IEnumerable<FeatureDTO>[] allFeatures = { Attributes, BaseSkills, SpecialSkills };
-
-        foreach (var feat in allFeatures)
-        {
-            foreach (var obj in feat)
-            {
-                if (obj.TraitBonus != 0)
-                {
-                    obj.TraitBonus = 0;
-                    obj.SumAll();
-                    refresh = true;
-                }
-            }
-        }
-
-        // calculate all traits
-        foreach (var trait in Traits)
-        {
-            if (Character != null)
-                Character.TraitBalance += trait.TraitValue;
-
-            if (trait.TraitType != SD.TraitType_Advantage)
-                continue;
-            FeatureDTO? feature = null;
-            foreach (var bonus in trait.Bonuses)
-            {
-                switch (bonus.FeatureType)
-                {
-                    case "Attribute":
-                        feature = Attributes.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    case "Base skill":
-                        feature = BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    case "Special skill":
-                        feature = SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    default:
-                        break;
-                }
-                if (feature != null)
-                {
-                    feature.TraitBonus += bonus.BonusValue;
-                    feature.SumAll();
-                    refresh = true;
-                }
-            }
-        }
-
-        if (refresh)
-        {
-
-            await TraitsChanged.InvokeAsync(Traits);
-            await AttributesChanged.InvokeAsync(Attributes);
-            await BaseSkillsChanged.InvokeAsync(BaseSkills);
-            await SpecialSkillsChanged.InvokeAsync(SpecialSkills);
-            if (Character != null)
-                await CharacterChanged.InvokeAsync(Character);
-            StateHasChanged();
-        }
-    }
 
     private async Task DeleteTrait(TraitDTO trait)
     {
@@ -245,10 +170,7 @@
 
         }
         Traits = Traits.Where(u => u.Name != trait.Name).ToList();
-        if (TraitType == SD.TraitType_Advantage)
-            CalculateTraitsBonuses();
-        else if (TraitType == SD.TraitType_Race)
-            await TraitsChanged.InvokeAsync(Traits);
+        await TraitsChanged.InvokeAsync(Traits);
         StateHasChanged();
     }
 }

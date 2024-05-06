@@ -74,7 +74,7 @@ namespace DagoniteEmpire.Service
                     _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
                 }
 
-                if(_db.Races.FirstOrDefault(u=>u.Name == "Human") == null)
+                if (_db.Races.FirstOrDefault(u => u.Name == "Human") == null)
                 {
                     Race raceHuman = new Race()
                     {
@@ -530,6 +530,97 @@ namespace DagoniteEmpire.Service
                         },
                     };
                     _db.TraitsAdv.Add(trait);
+                    _db.SaveChanges();
+                }
+                /// EQUIPMENT
+
+                Equipment item;
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Long sword") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Long sword",
+                        Description = "Main tool of all adventurers",
+                        Weight = 3.0m,
+                        Price = 1.0m,
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Leather armor") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Leather armor",
+                        Description = "Light but sturdy",
+                        Weight = 10.0m,
+                        Price = 5.0m,
+                        Count = 1,
+                        IsApproved = true,
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Bandage") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Bandage",
+                        Description = "For dressing wounds",
+                        Weight = 0.2m,
+                        Price = 0.01m,
+                        Count = 1,
+                        IsApproved = true,
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Wound balm") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Wound balm",
+                        Description = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 Dose for ligth and medium wounds, 2 for heavy, and 4 for critical",
+                        Weight = 1.0m,
+                        Price = 0.1m,
+                        Count = 1,
+                        IsApproved = true,
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Dagger") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Dagger",
+                        Description = "Small and deadly",
+                        Weight = 1.0m,
+                        Price = 0.1m,
+                        Count = 1,
+                        IsApproved = true,
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Rope") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Rope",
+                        Description = "20 feat of strong rope",
+                        Weight = 5.0m,
+                        Price = 0.1m,
+                        Count = 1,
+                        IsApproved = true,
+
+                    };
+                    _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
             }

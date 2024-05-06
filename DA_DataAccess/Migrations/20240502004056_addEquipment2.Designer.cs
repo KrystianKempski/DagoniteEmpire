@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240430203225_addUserName")]
-    partial class addUserName
+    [Migration("20240502004056_addEquipment2")]
+    partial class addEquipment2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,21 @@ namespace DA_DataAccess.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("CharacterEquipment", b =>
+                {
+                    b.Property<int>("CharactersId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EquipmentId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CharactersId", "EquipmentId");
+
+                    b.HasIndex("EquipmentId");
+
+                    b.ToTable("CharacterEquipment");
+                });
 
             modelBuilder.Entity("CharacterTraitAdv", b =>
                 {
@@ -230,6 +245,39 @@ namespace DA_DataAccess.Migrations
                     b.HasIndex("RaceId");
 
                     b.ToTable("Characters");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Equipment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Index")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("Weight")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Equipment");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Profession", b =>
@@ -480,6 +528,21 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("ImageFiles");
                 });
 
+            modelBuilder.Entity("EquipmentTraitEquipment", b =>
+                {
+                    b.Property<int>("EquipmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TraitsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("EquipmentId", "TraitsId");
+
+                    b.HasIndex("TraitsId");
+
+                    b.ToTable("EquipmentTraitEquipment");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -706,6 +769,13 @@ namespace DA_DataAccess.Migrations
                     b.HasDiscriminator().HasValue("TraitAdv");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitEquipment", b =>
+                {
+                    b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
+
+                    b.HasDiscriminator().HasValue("TraitEquipment");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitRace", b =>
                 {
                     b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
@@ -722,6 +792,21 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.HasDiscriminator().HasValue("ApplicationUser");
+                });
+
+            modelBuilder.Entity("CharacterEquipment", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
+                        .WithMany()
+                        .HasForeignKey("CharactersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DA_DataAccess.CharacterClasses.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("CharacterTraitAdv", b =>
@@ -815,6 +900,21 @@ namespace DA_DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Character");
+                });
+
+            modelBuilder.Entity("EquipmentTraitEquipment", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Equipment", null)
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DA_DataAccess.CharacterClasses.TraitEquipment", null)
+                        .WithMany()
+                        .HasForeignKey("TraitsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

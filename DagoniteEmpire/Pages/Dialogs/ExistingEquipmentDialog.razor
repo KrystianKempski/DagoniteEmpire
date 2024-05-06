@@ -1,11 +1,10 @@
-﻿@inject ITraitAdvRepository _traitAdvRepository 
-@inject ITraitRaceRepository _traitRaceRepository
-<div class="traits">
+﻿@inject IEquipmentRepository _equipmentRepository
+<div class="equipment">
 
-    <SfDialog Width="50%" Height="50%" @bind-Visible="@_traitsChosen.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+    <SfDialog Width="50%" Height="50%" @bind-Visible="@_equipmentChosen.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>
-            <Header>Choose one or more from existing traits</Header>
+            <Header>Choose one or more from existing items</Header>
             <Content>
                  <div class="main-table">
 
@@ -17,15 +16,14 @@
                     }
                     else
                     {
-                        <SfGrid DataSource="@Traits" @ref="Grid" AllowSelection="true" AllowFiltering="true" AllowPaging="true" Width="100%" Height="100%">
+                        <SfGrid DataSource="@Equipment" @ref="Grid" AllowSelection="true" AllowFiltering="true" AllowPaging="true" Width="100%" Height="100%">
                              <GridPageSettings PageSize="10"></GridPageSettings>
                             <GridFilterSettings ImmediateModeDelay=500 Mode="FilterBarMode.Immediate" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings> 
                             <GridSelectionSettings CheckboxOnly="true" PersistSelection="true"></GridSelectionSettings>
                             <GridColumns>
                                 <GridColumn Type="ColumnType.CheckBox" Width="20"></GridColumn>
-                                <GridColumn Field=@nameof(TraitDTO.Name) HeaderText="Name" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="100"></GridColumn>
-                                <GridColumn Field=@nameof(TraitDTO.SummaryDescr) HeaderText="Description" FilterSettings="FilterSettings" Width="300"></GridColumn>
-                                <GridColumn Field=@nameof(TraitDTO.TraitValue) HeaderText="Value" FilterSettings="FilterSettings" Width="50" MinWidth="63px" ></GridColumn>
+                                <GridColumn Field=@nameof(EquipmentDTO.Name) HeaderText="Name" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="100"></GridColumn>
+                                <GridColumn Field=@nameof(EquipmentDTO.Description) HeaderText="Description" FilterSettings="FilterSettings" Width="300"></GridColumn>
                             </GridColumns>
                         </SfGrid>
                     } 
@@ -37,7 +35,7 @@
 
             <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
             </DialogButton>
-            <DialogButton OnClick="@OnSaveTraitBtnClick" Content="Save" IsPrimary="true">
+            <DialogButton OnClick="@OnSaveBtnClick" Content="Save" IsPrimary="true">
             </DialogButton>
         </DialogButtons>
     </SfDialog>
@@ -56,54 +54,52 @@
 @code {
 
     [Parameter]
-    public EventCallback<TraitsChosenModel> TraitsChosenChanged { get; set; }
+    public EventCallback<EquipmentChosenModel> EquipmentChosenChanged { get; set; }
 
-    TraitsChosenModel _traitsChosen;
+    private EquipmentChosenModel _equipmentChosen = new();
 
     [Parameter]
-    public TraitsChosenModel TraitsChosen
+    public EquipmentChosenModel EquipmentChosen
     {
-        get => _traitsChosen;
+        get => _equipmentChosen;
         set{
-            if (_traitsChosen == value) return;
-            _traitsChosen = value;
+            if (_equipmentChosen == value) return;
+            _equipmentChosen = value;
             IsLoading = false;
             StateHasChanged();
-            TraitsChosenChanged.InvokeAsync(value);
+            EquipmentChosenChanged.InvokeAsync(value);
         }
     }
 
-    private IEnumerable<TraitDTO> Traits { get; set; }
-    SfGrid<TraitDTO> Grid;
+    private IEnumerable<EquipmentDTO> Equipment { get; set; }
+    SfGrid<EquipmentDTO> Grid = new SfGrid<EquipmentDTO>();
 
     FilterSettings FilterSettings = new FilterSettings { Operator = Syncfusion.Blazor.Operator.Contains, Type = Syncfusion.Blazor.Grids.FilterType.FilterBar};
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (TraitsChosen.TraitType == SD.TraitType_Advantage)
-            Traits = await _traitAdvRepository.GetAllApproved();
-        else
-            Traits = await _traitRaceRepository.GetAllApproved();
+
+        Equipment = await _equipmentRepository.GetAllApproved();
     }
 
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
 
 
-    private async Task OnSaveTraitBtnClick()
+    private async Task OnSaveBtnClick()
     {
 
-        TraitsChosen.TraitsChosen = Grid.SelectedRecords;
+        EquipmentChosen.EquipmentChosen = Grid.SelectedRecords;
         ErrorMessage = string.Empty;
 
-        TraitsChosen.IsVisible = false;
+        EquipmentChosen.IsVisible = false;
 
 
-        await TraitsChosenChanged.InvokeAsync(TraitsChosen);
+        await EquipmentChosenChanged.InvokeAsync(EquipmentChosen);
     }
     private async Task OnCancelBtnClick()
     {
-        TraitsChosen.IsVisible = false;
+        EquipmentChosen.IsVisible = false;
     }
     private void DialogOpen()
     {

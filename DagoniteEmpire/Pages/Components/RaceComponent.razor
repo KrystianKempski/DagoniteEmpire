@@ -8,7 +8,7 @@
                      Value="@SelectedRace"
                      ValueChanged="@((string value) => ChangeRace(value))">
         <option value="0" selected disabled>--Select Race--</option>
-        @foreach(var race in Races)
+        @foreach (var race in AllParams.Races)
         {
             <option value="@race.Name">@race.Name</option>
         }
@@ -16,69 +16,58 @@
     </InputSelect>
     @if (ShowNameLabel)
     {
-        <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color: transparent;" @bind-Value="@CurrentRace.Name" class=""></InputText>
+        <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color: transparent;" @bind-Value="@AllParams.CurrentRace.Name" class=""></InputText>
     }
     <label class="race-descr-label">Race description</label>
     <div class="richtext-conteiner">
-        <SfRichTextEditor Height="100%" @ref="RaceDescrShow" @bind-Value="@CurrentRace.Description" Readonly="true" ShowTooltip="false">
+        <SfRichTextEditor Height="100%" @ref="RaceDescrShow" @bind-Value="@AllParams.CurrentRace.Description" Readonly="true" ShowTooltip="false">
             <RichTextEditorToolbarSettings Items="@NoTools" />
         </SfRichTextEditor>
     </div>
     <label class="race-traits-label">Race traits</label>
-
-    <table class="table align-middle">
-        <thead>
-            <tr>
-                <th scope="col" class="name-row">Name</th>
-                <th scope="col" class="description-row">Description</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var obj in CurrentRace.Traits)
-            {
+    <div class="flex-conteiner">
+        <table class="table align-middle">
+            <thead>
                 <tr>
-                    <td>
-                        <label class="name-label">@obj.Name</label>
-                    </td>
-                    <td>
-                        <label class="name-label">@obj.SummaryDescr</label>
-                    </td>
+                    <th scope="col" class="name-row">Name</th>
+                    <th scope="col" class="description-row">Description</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var obj in AllParams.CurrentRace.Traits)
+                {
+                    <tr>
+                        <td>
+                            <label class="name-label">@obj.Name</label>
+                        </td>
+                        <td>
+                            <label class="name-label">@obj.SummaryDescr</label>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
     @if (ShowNameLabel)
     {
             <button @onclick="@(()=>EditCustomRace())" class="add-trait">Edit race</button>
     }
     @if (CustomRaceComponent != null)
     {
-        <CustomRaceDialog Attributes="@Attributes" BaseSkills="@BaseSkills" SpecialSkills="@SpecialSkills" @bind-CustomRaceComponent="@CustomRaceComponent"></CustomRaceDialog>
+        <CustomRaceDialog @bind-CustomRaceComponent="@CustomRaceComponent"></CustomRaceDialog>
     }
 </div> 
 
 
 @code {
+
+
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
+
     [Parameter]
-    public IEnumerable<AttributeDTO> Attributes { get; set; } = null;
-    [Parameter]
-    public EventCallback<IEnumerable<AttributeDTO>> AttributesChanged  { get; set; }
-    [Parameter]
-    public IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = null;
-    [Parameter]
-    public EventCallback<IEnumerable<BaseSkillDTO>> BaseSkillsChanged { get; set; }
-    [Parameter]
-    public ICollection<SpecialSkillDTO> SpecialSkills { get; set; } = null;
-    [Parameter]
-    public EventCallback<ICollection<SpecialSkillDTO>> SpecialSkillsChanged { get; set; }
-    [Parameter]
-    public ICollection<RaceDTO> Races { get; set; } = null;
-    [Parameter]
-    public EventCallback<ICollection<RaceDTO>> RacesChanged { get; set; }
-    [Parameter]
-    public RaceDTO CurrentRace { get; set; } = null;
-    [Parameter]
-    public EventCallback<RaceDTO> CurrentRaceChanged { get; set; }
+    public EventCallback OnTraitsChange { get; set; }
+
 
     public RaceDTO CustomRace { get; set; }
     private SfRichTextEditor RaceDescrShow;
@@ -95,10 +84,10 @@
         {
             if (value.RaceDTO != null)
             {
-                var obj = Races.FirstOrDefault(u => u.Name == value.RaceDTO.Name);
+                var obj = AllParams.Races.FirstOrDefault(u => u.Name == value.RaceDTO.Name);
                 if (obj == null)
                 {
-                    Races.Add(value.RaceDTO);
+                    AllParams.Races.Add(value.RaceDTO);
 
                 }
                 else
@@ -106,7 +95,7 @@
                     obj = value.RaceDTO;
                 }
 
-                CalculateRaceBonuses();
+                OnTraitsChange.InvokeAsync();
             }
             if (_customRaceComponent == value) return;
             _customRaceComponent = value;
@@ -117,98 +106,35 @@
         if (raceName == "Custom race")
         {
             ShowNameLabel = true;
-            CurrentRace = CustomRace;
+            AllParams.CurrentRace = CustomRace;
         }
         else
         {
             ShowNameLabel = false;
-            CurrentRace = Races.FirstOrDefault(r => r.Name == raceName);
+            AllParams.CurrentRace = AllParams.Races.FirstOrDefault(r => r.Name == raceName);
         }
 
-        CalculateRaceBonuses();
+        OnTraitsChange.InvokeAsync();
         SelectedRace = raceName;
         StateHasChanged();
     }
 
     private async Task EditCustomRace()
     {
-        CustomRaceComponent.RaceDTO = CurrentRace;
+        CustomRaceComponent.RaceDTO = AllParams.CurrentRace;
         CustomRaceComponent.Traits = CustomRaceComponent.RaceDTO.Traits.OfType<TraitDTO>().ToList();
         CustomRaceComponent.IsVisible = true;
         StateHasChanged();
     }
 
-
-    private async Task CalculateRaceBonuses()
-    {
-        bool refresh = false;
-
-        //clear all races bonuses
-        IEnumerable<FeatureDTO>[] allFeatures = { Attributes, BaseSkills, SpecialSkills };
-
-        foreach (var feat in allFeatures)
-        {
-            foreach (var obj in feat)
-            {
-                if (obj.RaceBonus != 0)
-                {
-                    obj.RaceBonus = 0;
-                    obj.SumAll();
-                    refresh = true;
-                }
-            }
-        }
-
-        // calculate all race traits
-        foreach (var trait in CurrentRace.Traits)
-        {
-
-            if (trait.TraitType != SD.TraitType_Race)
-                continue;
-            FeatureDTO? feature = null;
-            foreach (var bonus in trait.Bonuses)
-            {
-                switch (bonus.FeatureType)
-                {
-                    case "Attribute":
-                        feature = Attributes.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    case "Base skill":
-                        feature = BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    case "Special skill":
-                        feature = SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    default:
-                        break;
-                }
-                if (feature != null)
-                {
-                    feature.RaceBonus += bonus.BonusValue;
-                    feature.SumAll();
-                    refresh = true;
-                }
-            }
-        }
-
-        if (refresh)
-        {
-            await AttributesChanged.InvokeAsync(Attributes);
-            await BaseSkillsChanged.InvokeAsync(BaseSkills);
-            await SpecialSkillsChanged.InvokeAsync(SpecialSkills);
-            await RacesChanged.InvokeAsync(Races);
-            await CurrentRaceChanged.InvokeAsync(CurrentRace);
-            StateHasChanged();
-        }
-    }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            CustomRace = CurrentRace;
-            if (!string.IsNullOrEmpty(CurrentRace.Name))
+            CustomRace = AllParams.CurrentRace;
+            if (!string.IsNullOrEmpty(AllParams.CurrentRace.Name))
             {
-                var race  = Races.FirstOrDefault(r => r.Name == CurrentRace.Name);
+                var race = AllParams.Races.FirstOrDefault(r => r.Name == AllParams.CurrentRace.Name);
                 if (race is not null && race.RaceApproved)
                 {
                     SelectedRace = race.Name;
@@ -219,8 +145,8 @@
                     SelectedRace = "Custom race";
                     ShowNameLabel = true;
                 }
-                if (CurrentRace.RaceApproved==false)
-                    CustomRace = CurrentRace;
+                if (AllParams.CurrentRace.RaceApproved == false)
+                    CustomRace = AllParams.CurrentRace;
                 else
                     CustomRace = new();
 

@@ -21,9 +21,10 @@ namespace DA_DataAccess.Data
         public DbSet<Race> Races { get; set; }
         public DbSet<ImageFile> ImageFiles { get; set; }
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
-
+        public DbSet<Equipment> Equipment { get; set; }
         public DbSet<TraitAdv> TraitsAdv { get; set; }
         public DbSet<TraitRace> TraitsRace { get; set; }
+        public DbSet<TraitEquipment> TraitsEquipment { get; set; }
 
         public DbSet<Profession> Professions { get; set; }
         public DbSet<ProfessionSkill> ProfessionSkills { get; set; }

@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class addprofessions : Migration
+    public partial class addEquipment : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -32,7 +32,7 @@ namespace DA_DataAccess.Migrations
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
                     Discriminator = table.Column<string>(type: "text", nullable: false),
-                    PlayerType = table.Column<string>(type: "text", nullable: true),
+                    Name = table.Column<string>(type: "text", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -51,6 +51,22 @@ namespace DA_DataAccess.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Equipment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Index = table.Column<int>(type: "integer", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    IsApproved = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Equipment", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -271,7 +287,6 @@ namespace DA_DataAccess.Migrations
                     UserName = table.Column<string>(type: "text", nullable: false),
                     NPCName = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
-                    Class = table.Column<string>(type: "text", nullable: true),
                     Age = table.Column<int>(type: "integer", nullable: false),
                     ImageUrl = table.Column<string>(type: "text", nullable: true),
                     NPCType = table.Column<string>(type: "text", nullable: true),
@@ -317,6 +332,30 @@ namespace DA_DataAccess.Migrations
                     table.ForeignKey(
                         name: "FK_Bonuses_Traits_TraitId",
                         column: x => x.TraitId,
+                        principalTable: "Traits",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EquipmentTraitEquipment",
+                columns: table => new
+                {
+                    EquipmentId = table.Column<int>(type: "integer", nullable: false),
+                    TraitsId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EquipmentTraitEquipment", x => new { x.EquipmentId, x.TraitsId });
+                    table.ForeignKey(
+                        name: "FK_EquipmentTraitEquipment_Equipment_EquipmentId",
+                        column: x => x.EquipmentId,
+                        principalTable: "Equipment",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EquipmentTraitEquipment_Traits_TraitsId",
+                        column: x => x.TraitsId,
                         principalTable: "Traits",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -402,6 +441,30 @@ namespace DA_DataAccess.Migrations
                         name: "FK_BaseSkills_Characters_CharacterId",
                         column: x => x.CharacterId,
                         principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CharacterEquipment",
+                columns: table => new
+                {
+                    CharactersId = table.Column<int>(type: "integer", nullable: false),
+                    EquipmentId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CharacterEquipment", x => new { x.CharactersId, x.EquipmentId });
+                    table.ForeignKey(
+                        name: "FK_CharacterEquipment_Characters_CharactersId",
+                        column: x => x.CharactersId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CharacterEquipment_Equipment_EquipmentId",
+                        column: x => x.EquipmentId,
+                        principalTable: "Equipment",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -517,6 +580,11 @@ namespace DA_DataAccess.Migrations
                 column: "TraitId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CharacterEquipment_EquipmentId",
+                table: "CharacterEquipment",
+                column: "EquipmentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Characters_ProfessionId",
                 table: "Characters",
                 column: "ProfessionId");
@@ -530,6 +598,11 @@ namespace DA_DataAccess.Migrations
                 name: "IX_CharacterTraitAdv_TraitsAdvId",
                 table: "CharacterTraitAdv",
                 column: "TraitsAdvId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EquipmentTraitEquipment_TraitsId",
+                table: "EquipmentTraitEquipment",
+                column: "TraitsId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProfessionSkills_ActiveProfessionId",
@@ -580,7 +653,13 @@ namespace DA_DataAccess.Migrations
                 name: "Bonuses");
 
             migrationBuilder.DropTable(
+                name: "CharacterEquipment");
+
+            migrationBuilder.DropTable(
                 name: "CharacterTraitAdv");
+
+            migrationBuilder.DropTable(
+                name: "EquipmentTraitEquipment");
 
             migrationBuilder.DropTable(
                 name: "ImageFiles");
@@ -599,6 +678,9 @@ namespace DA_DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Equipment");
 
             migrationBuilder.DropTable(
                 name: "Traits");

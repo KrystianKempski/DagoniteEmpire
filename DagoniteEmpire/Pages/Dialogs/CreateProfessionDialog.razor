@@ -309,9 +309,7 @@
     public IEnumerable<AttributeDTO> Attributes { get; set; }
 
 
-    private SfRichTextEditor DescrEdit;
-    private SfDialog Dialog;
-    SfGrid<ProfessionSkill> Grid;
+    private SfRichTextEditor DescrEdit = new SfRichTextEditor();
 
     private CreateProfessionModel _createProfession;
     [Parameter]
@@ -387,7 +385,7 @@
             return; // failed to load
         IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
 
-        this.DescrEdit.RefreshUI();
+        this.DescrEdit.RefreshUIAsync();
         ErrorMessage = string.Empty;
         StateHasChanged();
     }

@@ -66,7 +66,7 @@
                                     @if (obj.FeatureType == "Attribute")
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@Attributes" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>
@@ -74,7 +74,7 @@
                                     else if (obj.FeatureType == "Base skill")
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@BaseSkills" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@AllParams.BaseSkills" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>
@@ -82,7 +82,7 @@
                                     else if (obj.FeatureType == "Special skill")
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@SpecialSkills" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>
@@ -132,14 +132,9 @@
 </style>
 
 @code {
-    [Parameter]
-    public IEnumerable<AttributeDTO> Attributes { get; set; }
-    [Parameter]
-    public IEnumerable<BaseSkillDTO> BaseSkills { get; set; }
-    [Parameter]
-    public IEnumerable<SpecialSkillDTO> SpecialSkills { get; set; }
-    [Parameter]
-    public IEnumerable<TraitDTO> Traits { get; set; }
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
+
     [Parameter]
     public EventCallback<CustomTraitModel> CustomTraitModelChanged { get; set; }
     [Parameter]
@@ -204,7 +199,7 @@
             ErrorMessage = $"Create name and description of trait";
             return;
         }
-        if (CustomTraitModel.IsEditMode == false && Traits.Where(t => t.Name == CustomTraitModel.TraitDTO.Name).Count() > 0)
+        if (CustomTraitModel.IsEditMode == false && AllParams.Traits.Where(t => t.Name == CustomTraitModel.TraitDTO.Name).Count() > 0)
         {
             ErrorMessage = $"That trait name already exists";
             return;

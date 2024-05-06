@@ -29,6 +29,7 @@ namespace DA_Models.CharacterModels
         public ICollection<BaseSkillDTO>? BaseSkills { get; set; }
         public ICollection<SpecialSkillDTO>? SpecialSkills { get; set; }
         public ICollection <TraitAdvDTO>? TraitsAdv { get; set; }
+        public ICollection<EquipmentDTO>? Equipment { get; set; }
         public int RaceId { get; set; } = 0;
         public int ProfessionId { get; set; } = 0;
 
