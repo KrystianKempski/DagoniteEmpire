@@ -4,14 +4,15 @@
         @* <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
     <h3 class="my-3 ml-3 text-center">DESCRIPTION</h3>
-    <div class="description-richtext">
-    <SfRichTextEditor Height="100%" @ref="DescrShow" @bind-Value="@SavedDescription" Readonly="true" ShowTooltip="false">
-        <RichTextEditorToolbarSettings Items="@NoTools" />
-        <p>Here write a description of your character</p>
-    </SfRichTextEditor>
+    <div class="descr-container">
+        <div class="description-richtext">
+            <SfRichTextEditor Height="100%" @ref="DescrShow" @bind-Value="@SavedDescription" Readonly="true" ShowTooltip="false">
+                <RichTextEditorToolbarSettings Items="@NoTools" />
+                <p>Here write a description of your character</p>
+            </SfRichTextEditor>
+        </div>
+        <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>
     </div>
-    <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>
-
     <SfDialog Width="80%" Height="80%" @bind-Visible="@IsDescrDialVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>

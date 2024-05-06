@@ -6,7 +6,7 @@
             <thead>
                 <tr>
                     <th scope="col" class="name-row">Name</th>
-                    <th scope="col" class="description-row">Description</th>
+                    <th scope="col" class="value-row text-center">Count</th>
                     <th scope="col" class="value-row text-center">Price</th>
                     <th scope="col" class="value-row text-center">Weight</th>
                     <th scope="col" class="action-row text-center">Actions</th>
@@ -16,26 +16,54 @@
                 @foreach (var obj in AllParams.Equipment)
                 {
                     <tr>
-                        <td>
+                        <td class="nobottomborder">
                             <label class="name-label">@obj.Name</label>
                         </td>
-                        <td>
-                            <label class="name-label">@obj.ShortDescr</label>
+                        <td class="text-center nobottomborder">
+                            <div class="control">
+                                <span class="indicator">@obj.Count</span>
+                                <div class="arrows">
+                                    <button @onclick="@(()=>IncrCount(obj))" class="carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                    <button @onclick="@(()=>DecrCount(obj))" class="carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                </div>
+                            </div>
                         </td>
-                        <td class="text-center">
-                            <label class="name-label text-center">@obj.Price</label>
+                        <td class="text-center nobottomborder">
+                            <label class="text-label text-center">@obj.Price.ToString("F3")</label>
                         </td>
-                        <td class="text-center">
-                            <label class="name-label text-center">@obj.Weight</label>
+                        <td class="text-center nobottomborder">
+                            <label class="text-label text-center">@obj.Weight.ToString("F1")</label>
                         </td>
-                        <td>
+                        <td class="text-center nobottomborder">
                             <div class="row m-0">
                                 <button @onclick="@(()=>EditEquipment(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
                                 <button @onclick="@(()=>DeleteEquipment(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
+                    <tr >
+                        <td colspan="5">
+                            <label class="text-label">@obj.ShortDescr</label>
+                        </td>
+                    </tr>
                 }
+                <tr>
+                    <td class="">
+                        <label class="name-label">All equipment: </label>
+                    </td>
+                    <td >
+                        
+                    </td>
+                    <td class="text-center">
+                        <label class="text-label text-center">@EquipmentPrice.ToString("F3")</label>
+                    </td>
+                    <td class="text-center">
+                        <label class="text-label text-center">@EquipmentWeight.ToString("F1")</label>
+                    </td>
+                    <td class="text-center">
+                       
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -65,6 +93,9 @@
     public EventCallback OnTraitsChange { get; set; }
 
     private SfRichTextEditor DescrEdit = new();
+
+    private decimal EquipmentWeight;
+    private decimal EquipmentPrice;
 
 
     private CustomEquipmentModel _customEquipmentComponent = new();
@@ -109,10 +140,25 @@
                     }
                 }
                 OnTraitsChange.InvokeAsync();
+                CalculateEquipWeightAndPrice();
+
             }
             if (_equipmentChosen == value) return;
             _equipmentChosen = value;
+
         }
+    }
+
+    private async Task CalculateEquipWeightAndPrice()
+    {
+        EquipmentWeight = 0.0m;
+        EquipmentPrice = 0.0m;
+        foreach (var equ in AllParams.Equipment)
+        {
+            EquipmentWeight += equ.Weight;
+            EquipmentPrice += equ.Price;
+        }
+        StateHasChanged();
     }
 
     private async Task AddCustomEquipment()
@@ -120,13 +166,11 @@
         CustomEquipmentComponent.EquipmentDTO = new();
         CustomEquipmentComponent.Traits = new List<TraitDTO>();
         CustomEquipmentComponent.IsVisible = true;
-        StateHasChanged();
     }
     private async Task AddExistingEquipment()
     {
         EquipmentChosen = new();
         EquipmentChosen.IsVisible = true;
-        StateHasChanged();
     }
 
     private async Task EditEquipment(EquipmentDTO equ)
@@ -135,7 +179,7 @@
         CustomEquipmentComponent.Traits = CustomEquipmentComponent.EquipmentDTO.Traits.OfType<TraitDTO>().ToList();
         CustomEquipmentComponent.IsVisible = true;
         CustomEquipmentComponent.IsEditMode = true;
-        StateHasChanged();
+        CalculateEquipWeightAndPrice();
     }
 
     private async Task DeleteEquipment(EquipmentDTO equ)
@@ -151,23 +195,42 @@
         }
         AllParams.Equipment = AllParams.Equipment.Where(u => u.Name != equ.Name).ToList();
         OnTraitsChange.InvokeAsync();
-        StateHasChanged();
+        CalculateEquipWeightAndPrice();
     }
 
-    // protected override async Task OnAfterRenderAsync(bool firstRender)
-    // {
-    //     if (firstRender)
-    //     {
-    //         if (_customEquipmentComponent.EquipmentDTO is not null)
-    //         {
-    //             var shortDescr = (await DescrEdit.GetTextAsync());
-    //             if (shortDescr is not null)
-    //             {
-    //                 if (shortDescr.Length > 100)
-    //                     shortDescr = shortDescr?[0..100] + "...";
-    //                 CustomEquipmentComponent.EquipmentDTO.ShortDescr = shortDescr;
-    //             }
-    //         }
-    //     }
-    // }
+
+    private async Task IncrCount(EquipmentDTO obj)
+    {
+
+        decimal unitWeigh = obj.Weight / obj.Count;
+        decimal unitPrice = obj.Price / obj.Count;
+        obj.Count++;
+        obj.Weight = unitWeigh * obj.Count;
+        obj.Price = unitPrice * obj.Count;
+
+        CalculateEquipWeightAndPrice();
+    }
+
+    private async Task DecrCount(EquipmentDTO obj)
+    {
+        if (obj.Count>1)
+        {
+            decimal unitWeigh = obj.Weight / obj.Count;
+            decimal unitPrice = obj.Price / obj.Count;
+
+            obj.Count--;
+
+            obj.Weight = unitWeigh * obj.Count;
+            obj.Price = unitPrice * obj.Count;
+            CalculateEquipWeightAndPrice();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            CalculateEquipWeightAndPrice();
+        }
+    }
 }

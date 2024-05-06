@@ -541,6 +541,7 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Long sword",
                         Description = "Main tool of all adventurers",
+                        ShortDescr = "Main tool of all adventurers",
                         Weight = 3.0m,
                         Price = 1.0m,
                         IsApproved = true,
@@ -554,6 +555,7 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Leather armor",
                         Description = "Light but sturdy",
+                        ShortDescr = "Light but sturdy",
                         Weight = 10.0m,
                         Price = 5.0m,
                         Count = 1,
@@ -569,6 +571,7 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Bandage",
                         Description = "For dressing wounds",
+                        ShortDescr = "For dressing wounds",
                         Weight = 0.2m,
                         Price = 0.01m,
                         Count = 1,
@@ -584,6 +587,7 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Wound balm",
                         Description = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 Dose for ligth and medium wounds, 2 for heavy, and 4 for critical",
+                        ShortDescr = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 Dose for ligth and medium wounds, 2 for heavy, and 4 for critical",
                         Weight = 1.0m,
                         Price = 0.1m,
                         Count = 1,
@@ -599,6 +603,7 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Dagger",
                         Description = "Small and deadly",
+                        ShortDescr = "Small and deadly",
                         Weight = 1.0m,
                         Price = 0.1m,
                         Count = 1,
@@ -614,6 +619,7 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Rope",
                         Description = "20 feat of strong rope",
+                        ShortDescr = "20 feat of strong rope",
                         Weight = 5.0m,
                         Price = 0.1m,
                         Count = 1,
