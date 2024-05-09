@@ -12,9 +12,9 @@ namespace DA_DataAccess.CharacterClasses
     {
         [Key] public int Id { get; set; }
 
-        public ICollection<TraitEquipment>? Traits { get; set; }
+        public ICollection<TraitEquipment>? Traits { get; set; } = null;
 
-        public ICollection<Character>? Characters { get; set; }
+        public ICollection<Character>? Characters { get; set; } = null;
 
         public string Name { get; set; }                        //for example "axe"
         public int Index { get; set; }

@@ -100,6 +100,7 @@
 
                 TraitsChanged.InvokeAsync(Traits);
                 OnTraitsChange.InvokeAsync();
+                CalculateTraitBalance();
             }
             if (_customTraitComponent == value) return;
             _customTraitComponent = value;
@@ -123,6 +124,7 @@
                 }
                 TraitsChanged.InvokeAsync(Traits);
                 OnTraitsChange.InvokeAsync();
+                CalculateTraitBalance();
             }
             if (_traitsChosen == value) return;
             _traitsChosen = value;
@@ -134,14 +136,14 @@
         CustomTraitComponent.TraitDTO = new();
         CustomTraitComponent.IsVisible = true;
         CustomTraitComponent.IsEditMode = false;
-        StateHasChanged();
+        //CalculateTraitBalance();
     }
     private async Task AddExistingTrait()
     {
         TraitsChosen = new();
         TraitsChosen.IsVisible = true;
         TraitsChosen.TraitType = TraitType;
-        StateHasChanged();
+        //CalculateTraitBalance();
     }
 
     private async Task EditTrait(TraitDTO trait)
@@ -149,9 +151,18 @@
         CustomTraitComponent.TraitDTO = trait;
         CustomTraitComponent.IsVisible = true;
         CustomTraitComponent.IsEditMode = true;
-        StateHasChanged();
+        CalculateTraitBalance();
     }
 
+    private async Task CalculateTraitBalance()
+    {
+        AllParams.Character.TraitBalance = 0;
+        foreach (var trait in Traits)
+        {
+            AllParams.Character.TraitBalance += trait.TraitValue;
+        }
+        StateHasChanged();
+    }
 
     private async Task DeleteTrait(TraitDTO trait)
     {
@@ -171,6 +182,6 @@
         }
         Traits = Traits.Where(u => u.Name != trait.Name).ToList();
         await TraitsChanged.InvokeAsync(Traits);
-        StateHasChanged();
+        CalculateTraitBalance();
     }
 }

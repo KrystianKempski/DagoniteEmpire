@@ -1,9 +1,14 @@
-﻿@inherits LayoutComponentBase
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager _navigationManager
+@inject ISnackbar _snackBar
+@inject AuthenticationStateProvider _stateProvider;
+@inherits LayoutComponentBase
 
 <PageTitle>DagoniteEmpire</PageTitle>
-@* <MudThemeProvider Theme="@MyCustomTheme" />
+
+<MudThemeProvider/>
 <MudDialogProvider />
-<MudSnackbarProvider />  *@
+<MudSnackbarProvider />    
 
 
 @* <MudLayout>
@@ -18,7 +23,9 @@
     <NavMenu />
     <main>
         <article class="">
+            <CascadingValue Value="hubConnection">
             @Body
+            </CascadingValue>
         </article>
     </main>
 </div>
@@ -48,3 +55,45 @@
         _drawerOpen = !_drawerOpen;
     }
 } *@
+
+@code {
+    bool _drawerOpen = false;
+    private string CurrentUserId { get; set; }
+
+    private HubConnection hubConnection;
+    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+    protected override async Task OnInitializedAsync()
+    {
+        string baseUrl = _navigationManager.BaseUri;
+        string HubUrl = baseUrl.TrimEnd('/') + ChatHub.HubUrl;
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
+            .Build();
+
+       // hubConnection = new HubConnectionBuilder().WithUrl(_navigationManager.ToAbsoluteUri("/signalRHub")).Build();
+        await hubConnection.StartAsync();
+        hubConnection.On<string, string, string>("ReceiveChatNotification", (message, receiverUserId, senderUserId) =>
+        {
+            if (CurrentUserId == receiverUserId)
+            {
+                _snackBar.Add(message, Severity.Info, config =>
+                {
+                    config.VisibleStateDuration = 10000;
+                    config.HideTransitionDuration = 500;
+                    config.ShowTransitionDuration = 500;
+                    config.Action = "Chat?";
+                    config.ActionColor = Color.Info;
+                    config.Onclick = snackbar =>
+                    {
+                        _navigationManager.NavigateTo($"chat/{senderUserId}");
+                        return Task.CompletedTask;
+                    };
+                });
+            }
+        });
+        var state = await _stateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+        CurrentUserId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
+    }
+}

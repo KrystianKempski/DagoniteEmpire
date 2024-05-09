@@ -1,4 +1,6 @@
-﻿using DA_DataAccess.CharacterClasses;
+﻿using Abp.Domain.Entities;
+using DA_DataAccess.CharacterClasses;
+using DA_DataAccess.Chat;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -10,7 +12,7 @@ namespace DA_DataAccess.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
-
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         }
         public DbSet<Character> Characters { get; set; }
         public DbSet<Attribute> Attributes { get; set; }
@@ -29,6 +31,8 @@ namespace DA_DataAccess.Data
         public DbSet<Profession> Professions { get; set; }
         public DbSet<ProfessionSkill> ProfessionSkills { get; set; }
 
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -42,6 +46,17 @@ namespace DA_DataAccess.Data
                 .HasOne(a => a.PassiveProfession)
                 .WithMany(y => y.PassiveSkills)
                 .HasForeignKey(a => a.PassiveProfessionId).OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(d => d.FromUser)
+                .WithMany(p => p.ChatMessagesFromUsers)
+                .HasForeignKey(d => d.FromUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+            modelBuilder.Entity<ChatMessage>()
+                .HasOne(d => d.ToUser)
+                .WithMany(p => p.ChatMessagesToUsers)
+                .HasForeignKey(d => d.ToUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         }
     }
 }

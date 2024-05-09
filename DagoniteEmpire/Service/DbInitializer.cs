@@ -6,17 +6,18 @@ using DA_Models.CharacterModels;
 using DagoniteEmpire.Service.IService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using DA_DataAccess;
 
 namespace DagoniteEmpire.Service
 {
     public class DbInitializer : IDbInitializer
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser>_userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _db;
         private readonly IMapper _mapper;
 
-        public DbInitializer(UserManager<IdentityUser> userManager,
+        public DbInitializer(UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             ApplicationDbContext db,
             IMapper mapper)
@@ -43,7 +44,7 @@ namespace DagoniteEmpire.Service
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_GameMaster)).GetAwaiter().GetResult();
 
 
-                    IdentityUser user = new()
+                    ApplicationUser user = new()
                     {
                         UserName = "krystian.kempski@gmail.com",
                         Email = "krystian.kempski@gmail.com",
@@ -542,8 +543,10 @@ namespace DagoniteEmpire.Service
                         Name = "Long sword",
                         Description = "Main tool of all adventurers",
                         ShortDescr = "Main tool of all adventurers",
+                        Count = 1,
                         Weight = 3.0m,
                         Price = 1.0m,
+
                         IsApproved = true,
                     };
                     _db.Equipment.Add(item);

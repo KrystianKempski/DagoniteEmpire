@@ -39,6 +39,11 @@ namespace DagoniteEmpire.Helper
             await jsRuntime.InvokeVoidAsync("ShowSweetAlert", "error", message);
         }
 
+        public static async ValueTask ScrollToBottom(this IJSRuntime jsRuntime, string container)
+        {
+            await jsRuntime.InvokeVoidAsync("ScrollToBottom",  container);
+        }
+
 
     }
 }

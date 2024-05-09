@@ -90,3 +90,8 @@ function ResizeTextArea(id) {
     }
     return true;
 }
+
+window.ScrollToBottom = (elementName) => {
+    element = document.getElementById(elementName);
+    element.scrollTop = element.scrollHeight - element.clientHeight;
+}

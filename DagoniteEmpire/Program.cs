@@ -18,15 +18,22 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using DagoniteEmpire.Helper;
 using Microsoft.Extensions.Options;
 using DA_Models.CharacterModels;
+using DA_Models.ChatModels;
+using MudBlazor;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddAuthentication();
+
 builder.Services.AddRazorPages();
+
+builder.Services.AddSignalR();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSyncfusionBlazor();
-//builder.Services.AddMudServices();
+builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
 builder.Host.UseNLog();
+
 
 /// DB context 
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
@@ -37,7 +44,7 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     //options.EnableSensitiveDataLogging();
 });
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(config =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(config =>
     {
        // config.SignIn.RequireConfirmedEmail = true;
         config.SignIn.RequireConfirmedAccount = true;
@@ -58,12 +65,8 @@ builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
+builder.Services.AddTransient<IChatManager, ChatManager>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
-
-//builder.Services.Configure<AuthMessageSenderOptions>(builder.Configuration);
-
-//builder.Services.Configure<DataProtectionTokenProviderOptions>(o =>
-//       o.TokenLifespan = TimeSpan.FromHours(3));
 builder.Services.Configure<EmailConfiguration>(options =>
 {
     builder.Configuration.GetSection("Email").Bind(options);
@@ -90,7 +93,7 @@ else
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 
-//app.Services.CreateScope().ServiceProvider.GetRequiredService<IOptions<IdentityOptions>>().Value.SignIn.RequireConfirmedAccount = true;
+//chat endpoints
 
 app.UseStaticFiles();
 
@@ -100,8 +103,11 @@ SeedDatabase();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHub<ChatHub>(ChatHub.HubUrl);
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+//app.MapHub<ChatHub>(ChatHub.HubUrl);
+//app.MapHub<SignalRHub>("/signalRHub");
 
 app.Run();
 

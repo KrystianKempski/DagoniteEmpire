@@ -48,6 +48,17 @@ namespace DA_Business.Repository.CharacterReps
                         obj.TraitsAdv.Add(t);
                     }
                 });
+                //handle equipment
+                var equipment = await contex.Equipment.ToListAsync();
+                equipment.ForEach(e =>
+                {
+                    if (obj.Equipment.Any(nt => nt.Id == e.Id))
+                    {
+                        var untracked = obj.Equipment.FirstOrDefault(nt => nt.Id == e.Id);
+                        obj.Equipment.Remove(untracked);
+                        obj.Equipment.Add(e);
+                    }
+                });
 
                 var addedObj = contex.Characters.Add(obj);
                 await contex.SaveChangesAsync();

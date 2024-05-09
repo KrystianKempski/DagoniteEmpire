@@ -66,6 +66,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = await contex.Races.Include(u=>u.Traits).FirstOrDefaultAsync(u => u.Id == id);
+                
                 if (obj is not null)
                 {
                     var traits = obj.Traits;
