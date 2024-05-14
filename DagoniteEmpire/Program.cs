@@ -106,8 +106,6 @@ app.UseAuthorization();
 app.MapHub<ChatHub>(ChatHub.HubUrl);
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
-//app.MapHub<ChatHub>(ChatHub.HubUrl);
-//app.MapHub<SignalRHub>("/signalRHub");
 
 app.Run();
 

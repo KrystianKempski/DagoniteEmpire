@@ -1,6 +1,4 @@
-﻿@page "/chat/{ContactId}"
-@page "/chat"
-@using Microsoft.AspNetCore.SignalR.Client
+﻿@using Microsoft.AspNetCore.SignalR.Client
 @inject IChatManager _chatManager
 @inject IJSRuntime _jsRuntime
 @inject NavigationManager _navigationManager
@@ -182,9 +180,13 @@
             {
                 messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { Email = ContactEmail } });
             }
-            await _jsRuntime.ScrollToBottom("chatContainer");
+           
             // Inform blazor the UI needs updating
             InvokeAsync(StateHasChanged);
+
+            await Task.Delay(1000);
+
+            await _jsRuntime.ScrollToBottom("chatContainer");
         }
     }
 
@@ -205,8 +207,8 @@
     }
 
     public List<ApplicationUser> ChatUsers = new List<ApplicationUser>();
-    [Parameter] public string ContactEmail { get; set; }
-    [Parameter] public string ContactId { get; set; }
+    public string ContactEmail { get; set; }
+    public string ContactId { get; set; }
     private bool IsUserChosen { get; set; } = false;
     async Task LoadUserChat(string userId)
     {

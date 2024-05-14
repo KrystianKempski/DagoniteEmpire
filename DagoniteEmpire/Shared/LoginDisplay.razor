@@ -1,24 +1,44 @@
 ﻿
+ @inject NavigationManager _navigationManager;
+
 <AuthorizeView>
     <Authorized>
-        <div class="text">
-            @context.User.Identity.Name
-
-            <a class="logout tile" href="Identity/Account/Logout">Logout</a>
+        <div class=big-screen "pa-4 justify-center my-4 mud-text-align-center">
+            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" >Hi, @context.User.Identity.Name!</MudButton>
+            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" Link="Identity/Account/Logout">Log Out</MudButton>
         </div>
-
+        <div class="small-screen">
+            <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle">
+                <MudMenuItem>Hi, @context.User.Identity.Name!</MudMenuItem>
+                
+                <MudMenuItem OnClick="@(() => GoTo("Logout"))">Log in</MudMenuItem>
+            </MudMenu>
+        </div>
     </Authorized>
     <NotAuthorized>
-         <div class="text">
-            <a class="register tile" href="Identity/Account/Register">Register</a>
-            <a class="login tile" href="Identity/Account/Login">Login</a>
+        <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
+            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" Link="Identity/Account/Register">Register</MudButton>
+            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" Color="Color.Secondary" Link="Identity/Account/Login">Log in</MudButton>
+        </div>
+        <div class="small-screen">
+            <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle">
+                <MudMenuItem OnClick="@(() => GoTo("Register"))">Register</MudMenuItem>
+                <MudMenuItem OnClick="@(() => GoTo("Login"))">Log in</MudMenuItem>
+            </MudMenu>
         </div>
     </NotAuthorized>
-
 </AuthorizeView>
 
-
-
 @code {
+
+    void GoTo(string panel)
+    {
+        if(panel=="Register")
+            _navigationManager.NavigateTo($"/Identity/Account/Register", true);
+        else if (panel == "Login")
+            _navigationManager.NavigateTo($"/Identity/Account/Login",true);
+        else if (panel == "Logout")
+            _navigationManager.NavigateTo($"/Identity/Account/Logout", true);
+    }
 
 }

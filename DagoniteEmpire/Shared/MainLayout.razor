@@ -1,6 +1,9 @@
 ﻿@using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager _navigationManager
 @inject ISnackbar _snackBar
+
+@inject IJSRuntime _jsRuntime
+@inject IChatManager _chatManager
 @inject AuthenticationStateProvider _stateProvider;
 @inherits LayoutComponentBase
 
@@ -11,89 +14,377 @@
 <MudSnackbarProvider />    
 
 
-@* <MudLayout>
-    <MudAppBar DisableGutters="true" Dense="false" Class="appbar">
-        <NavMenu />
-    </MudAppBar>
-    <MudMainContent>
-        @Body
-    </MudMainContent>
-</MudLayout> *@
-<div class="page">
-    <NavMenu />
-    <main>
-        <article class="">
-            <CascadingValue Value="hubConnection">
-            @Body
-            </CascadingValue>
-        </article>
-    </main>
-</div>
-
-@* 
 <MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+    <MudAppBar Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Elevation="1">
+        <div class="big-screen">
+            <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4}; font-family: 'Eagle Lake', serif; font-size: 20px;")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="#">Dagonite Empire</MudButton>
+        </div>
+            <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
+                <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/character"> <MudIcon Class="px-1" Icon="@Icons.Material.Filled.PeopleAlt"></MudIcon>Character list</MudButton>
+                <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true"  Color="Color.Primary" Link="/chat"><MudIcon Class="px-1" Icon="@Icons.Material.Filled.Chat"></MudIcon>Chat</MudButton>
+            </div>
+ 
+        <div class="small-screen">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerStartToggle())" />
+            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4}; font-family: 'Eagle Lake', serif; font-size: 12px; padding: 6px;")" Variant="Variant.Filled" DisableElevation="true" Link="#">Dagonite Empire</MudButton>
+        </div>
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+        <LoginDisplay />
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h5" Class="mt-1">Application</MudText>
-        </MudDrawerHeader>
-        @NavMenu
-    </MudDrawer>
-    <MudMainContent>
-        @Body
-    </MudMainContent>
-</MudLayout>
-@code {
-    bool _drawerOpen = true;
+    <div class="small-screen">
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
+            <NavMenu />
+        </MudDrawer>
+    </div>
+    
+    <MudContainer MaxWidth="MaxWidth.False" Class="m-0 p-0" Style="overflow:hidden; position:relative;">
+        <AuthorizeView>
+            <Authorized>
+                <MudDrawer @bind-Open="@openEnd" Fixed="true" Anchor="Anchor.End" Elevation="0" Variant="@DrawerVariant.Mini" ClipMode="DrawerClipMode.Always" Style="overflow:hidden; text-wrap: nowrap">
+                    <MudDrawerHeader Style="overflow:hidden; text-wrap: nowrap" Class="p-2">
+                        <MudText Typo="Typo.h6"><MudIconButton Icon="@Icons.Material.Filled.Group"></MudIconButton> Chat </MudText>
+                    </MudDrawerHeader> 
 
-    void DrawerToggle()
+                    <div class="d-flex flex-column px-4" style="max-height:calc(100vh - 128px);min-height:calc(100vh - 128px); overflow:hidden;">
+                        <MudList Clickable="true">
+                            @foreach (var user in ChatUsers)
+                            {
+                                <MudListItem Class="pa-0 px-2" OnClick="@(() => AddUserChat(user.Id))">
+                                    <div class="d-flex flex-row mt-n1 mb-n1">
+                                        <div class="mr-4">
+                                            <MudBadge Class="my-2">
+                                                @if (user.Id == ChosenUser.ContactId)
+                                                {
+                                                    <MudAvatar Color="Color.Secondary" Style="height:40px; width:40px;">@user.UserName.ToUpper().FirstOrDefault()</MudAvatar>
+                                                }
+                                                else
+                                                {
+                                                    <MudAvatar Color="Color.Dark" Style="height:40px; width:40px;">@user.UserName.ToUpper().FirstOrDefault()</MudAvatar>
+                                                }
+                                            </MudBadge>
+                                        </div>
+                                        <div>
+                                            <MudText Typo="Typo.body2" Class="mt-3 mb-n2">@user.UserName</MudText>@*
+                                        <MudText Typo="Typo.caption" Style="font-size: xx-small!important;">@user.Id</MudText> *@
+                                        </div>
+                                    </div>
+                                </MudListItem>
+                            }
+                        </MudList>
+                        <div class="d-flex align-items-end flex-grow-1">
+                            @if (openEnd)
+                            {
+                                <MudIconButton Class="my-2 py-2" Icon="@Icons.Material.Filled.ArrowForwardIos" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleEndDrawer" />
+                            }
+                            else
+                            {
+                                <MudIconButton Class="my-2 py-2" Icon="@Icons.Material.Filled.ArrowBackIosNew" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleEndDrawer" />
+                            }
+                        </div>
+                    </div>
+                </MudDrawer>
+                       
+                <div class="chatboxes">
+                @foreach (var userbox in UserBoxes)
+                {
+                    <div class="chatbox">
+                    <MudPaper Width="310px" Height="600px" Elevation="25" Class="p-1 flex-grow-1">
+                        <MudToolBar Class="px-1" Dense="true">
+                            <MudIcon Icon="@Icons.Material.Outlined.ChatBubble" Style="margin-right:10px"></MudIcon>
+                             <MudText Typo="Typo.h6">@userbox.UserName</MudText>
+                              <MudIconButton Style="margin-left: auto; margin-right:0px" Class="p-2" Icon="@Icons.Material.Filled.Close" Color="Color.Inherit" OnClick="@(() => CloseChatbox(userbox))" />
+                        </MudToolBar>
+                            <div class="d-flex flex-column px-1 " style="height:490px;width:100%; overflow:scroll;" id="@userbox.ContactId">
+                            @foreach (var message in userbox.messages)
+                            {
+                                @if (message.FromUser.UserName == CurrentUserName)
+                                {
+                                    <div class="d-flex flex-row my-4 ">
+                                        <div class="mr-4">
+                                                <MudAvatar Color="Color.Secondary" Style="height:40px; width:40px;">@message.FromUser.UserName.ToUpper().FirstOrDefault()</MudAvatar>
+                                        </div>
+                                            <div class="flex-grow-1">
+                                                    <MudText Typo="Typo.body1">@message.FromUser.UserName</MudText>
+                                            <MudText Typo="Typo.caption" Style="font-size: xx-small!important;">@message.CreatedDate.ToString("dd MMM, yyyy hh:mm tt")</MudText>
+                                            <MudText Typo="Typo.body2" Style=" padding: 15px;background-color: var(--mud-palette-background-grey);border-radius: 12px;margin-top:5px">@message.Message</MudText>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="d-flex flex-row-reverse my-4 ">
+                                        <div class="ml-4">
+                                                    <MudAvatar Color="Color.Primary" Style="height:40px; width:40px;">@message.FromUser.UserName.ToUpper().FirstOrDefault()</MudAvatar>
+                                        </div>
+                                            <div class="flex-grow-1">
+                                                    <MudText Typo="Typo.body1">@message.FromUser.UserName</MudText>
+                                            <MudText Typo="Typo.caption" Style="font-size: xx-small!important;">@message.CreatedDate.ToString("dd MMM, yyyy hh:mm tt")</MudText>
+                                            <MudText Typo="Typo.body2" Style=" padding: 15px;background-color: var(--mud-palette-background-grey);border-radius: 12px;margin-top:5px">@message.Message</MudText>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <MudPaper Width="300px" Height="50px" Elevation="25" Class="d-flex flex-row px-2" Style="">
+                                    <MudTextField @onfocus="@(() => OnMessageFocus(userbox))" Disabled="!userbox.IsUserChosen" @ref="userbox.ChatTextField" Immediate="true" T="string" Placeholder="Enter your message..." DisableUnderLine="true" Class="mt-n2 mx-2"
+                                                  @bind-Value="userbox.CurrentMessage" For="@(()=> userbox.CurrentMessage)" OnKeyDown="Enter" />
+                                    <MudButton Disabled="!userbox.IsUserChosen" OnClick="@(() => SubmitAsync(userbox))" StartIcon="@Icons.Material.Outlined.Send" Color="Color.Secondary" ButtonType="MudBlazor.ButtonType.Button">Send</MudButton>
+                        </MudPaper>
+                    </MudPaper>
+                    </div>
+                }
+                </div>
+                                
+            </Authorized>
+            <NotAuthorized>
+                    
+                <MudMainContent>
+                    <CascadingValue Value="hubConnection">
+                        @Body
+                    </CascadingValue>
+
+                </MudMainContent>
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudContainer>
+
+    <MudMainContent>
+        <CascadingValue Value="hubConnection">
+            @Body
+        </CascadingValue>
+    </MudMainContent>
+    
+</MudLayout>
+
+
+
+@code {
+    [CascadingParameter]
+    public bool Rtl { get; set; }
+
+    private MudTheme Theme = new MudTheme();
+
+    bool openEnd = false;
+
+    void ToggleEndDrawer()
+    {
+        openEnd = !openEnd;
+    }
+
+    void DrawerStartToggle()
     {
         _drawerOpen = !_drawerOpen;
     }
-} *@
 
-@code {
     bool _drawerOpen = false;
-    private string CurrentUserId { get; set; }
 
     private HubConnection hubConnection;
     public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     string baseUrl = _navigationManager.BaseUri;
+    //     string HubUrl = baseUrl.TrimEnd('/') + ChatHub.HubUrl;
+
+    //     hubConnection = new HubConnectionBuilder()
+    //         .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
+    //         .Build();
+
+    //    // hubConnection = new HubConnectionBuilder().WithUrl(_navigationManager.ToAbsoluteUri("/signalRHub")).Build();
+    //     await hubConnection.StartAsync();
+    //     hubConnection.On<string, string, string>("ReceiveChatNotification", (message, receiverUserId, senderUserId) =>
+    //     {
+    //         if (CurrentUserId == receiverUserId)
+    //         {
+    //             _snackBar.Add(message, Severity.Info, config =>
+    //             {
+    //                 config.VisibleStateDuration = 10000;
+    //                 config.HideTransitionDuration = 500;
+    //                 config.ShowTransitionDuration = 500;
+    //                 config.Action = "Chat?";
+    //                 config.ActionColor = Color.Info;
+    //                 config.Onclick = snackbar =>
+    //                 {
+    //                     _navigationManager.NavigateTo($"chat/{senderUserId}");
+    //                     return Task.CompletedTask;
+    //                 };
+    //             });
+    //         }
+    //     });
+    //     var state = await _stateProvider.GetAuthenticationStateAsync();
+    //     var user = state.User;
+    //     CurrentUserId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
+    // }
+
+    private string CurrentUserId { get; set; }
+    private string CurrentUserName {get; set; }
+    private bool ScrollToBottom = false; 
+
+
+    private class UserBox
+    {
+
+        public string CurrentMessage { get; set; }
+        public MudTextField<string> ChatTextField = new();
+        public List<ChatMessage> messages = new List<ChatMessage>();
+        public string UserName { get; set; } = string.Empty;
+        public string ContactId { get; set; } = string.Empty;
+        public bool IsUserChosen { get; set; } = false;
+    }
+
+    private List<UserBox> UserBoxes { get; set; } = new List<UserBox>();
+    private UserBox ChosenUser { get; set; } = new();
+    public List<ApplicationUser> ChatUsers = new List<ApplicationUser>();
+
+    private async Task SubmitAsync(UserBox user)
+    {
+        ChosenUser = user;
+        ChosenUser.IsUserChosen = true;
+
+        if (!string.IsNullOrEmpty(ChosenUser.CurrentMessage) && !string.IsNullOrEmpty(ChosenUser.ContactId))
+        {
+            //Save Message to DB
+            var chatHistory = new ChatMessage()
+            {
+                Message = ChosenUser.CurrentMessage,
+                ToUserId = ChosenUser.ContactId,
+                CreatedDate = DateTime.Now
+            };
+
+            chatHistory.FromUserId = CurrentUserId;
+            await hubConnection.SendAsync("SendMessage", CurrentUserName, chatHistory);
+            ChosenUser.CurrentMessage = string.Empty;
+            await _chatManager.SaveMessageAsync(chatHistory);
+        }
+    }
+    private async Task OnMessageFocus(UserBox user)
+    {
+        if (ChosenUser.ContactId != user.ContactId)
+        {
+
+            ChosenUser = user;
+            ChosenUser.IsUserChosen = true;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ScrollToBottom)
+        {
+            await _jsRuntime.ScrollToBottom($"{ChosenUser.ContactId}");
+            ScrollToBottom = false;
+        }
+    }
+
+
+
     protected override async Task OnInitializedAsync()
     {
-        string baseUrl = _navigationManager.BaseUri;
-        string HubUrl = baseUrl.TrimEnd('/') + ChatHub.HubUrl;
-
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
-            .Build();
-
-       // hubConnection = new HubConnectionBuilder().WithUrl(_navigationManager.ToAbsoluteUri("/signalRHub")).Build();
-        await hubConnection.StartAsync();
-        hubConnection.On<string, string, string>("ReceiveChatNotification", (message, receiverUserId, senderUserId) =>
+        try
         {
-            if (CurrentUserId == receiverUserId)
+            if (hubConnection == null)
             {
-                _snackBar.Add(message, Severity.Info, config =>
-                {
-                    config.VisibleStateDuration = 10000;
-                    config.HideTransitionDuration = 500;
-                    config.ShowTransitionDuration = 500;
-                    config.Action = "Chat?";
-                    config.ActionColor = Color.Info;
-                    config.Onclick = snackbar =>
-                    {
-                        _navigationManager.NavigateTo($"chat/{senderUserId}");
-                        return Task.CompletedTask;
-                    };
-                });
+                hubConnection = new HubConnectionBuilder().WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl)).Build();
             }
-        });
-        var state = await _stateProvider.GetAuthenticationStateAsync();
-        var user = state.User;
-        CurrentUserId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
+            if (hubConnection.State == HubConnectionState.Disconnected)
+            {
+                await hubConnection.StartAsync();
+            }
+
+            hubConnection.On<string, ChatMessage>("SendMessage", ReceiveMessage);
+
+            await GetUsersAsync();
+            var state = await _stateProvider.GetAuthenticationStateAsync();
+            var user = state.User;
+            CurrentUserId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
+            // CurrentUserEmail = user.FindFirst(u => u.Type.Contains("emailaddress"))?.Value;
+            CurrentUserName = user.FindFirst(u => u.Type.Contains("name") && !u.Type.Contains("nameidentifier"))?.Value;
+            // if (!string.IsNullOrEmpty(ContactId))
+            // {
+            //     await LoadUserChat(ContactId);
+            // }
+
+            // await SendAsync($"[Notice] {_username} joined chat room.");
+        }
+        catch (Exception e)
+        {
+            ;
+            // _message = $"ERROR: Failed to start chat client: {e.Message}";
+            // _isChatting = false;
+        }
+
+    }
+
+    private async Task ReceiveMessage(string name, ChatMessage message)
+    {
+        if ((ChosenUser.ContactId == message.ToUserId && CurrentUserId == message.FromUserId) || (ChosenUser.ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
+        {
+
+            if ((ChosenUser.ContactId == message.ToUserId && CurrentUserId == message.FromUserId))
+            {
+                ChosenUser.messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { UserName = CurrentUserName } });
+                //await hubConnection.SendAsync("ChatNotificationAsync", $"New Message From {name}", ContactId, CurrentUserId);
+            }
+            else if ((ChosenUser.ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
+            {
+                ChosenUser.messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { UserName = ChosenUser.UserName } });
+            }
+
+            // Inform blazor the UI needs updating
+            InvokeAsync(StateHasChanged);
+
+        }
+        ScrollToBottom = true;
+    }
+
+    public async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            ChosenUser.ChatTextField.TextUpdateSuppression = false;
+            await SubmitAsync(ChosenUser);
+            ChosenUser.CurrentMessage = string.Empty;
+            StateHasChanged();
+            await Task.Run(async () =>
+            {
+                await Task.Delay(150);
+                ChosenUser.ChatTextField.TextUpdateSuppression = true;
+            });
+        }
+    }
+
+    async Task AddUserChat(string userId)
+    {
+        var width = await _jsRuntime.GetWindowWidth();
+        var contact = await _chatManager.GetUserDetailsAsync(userId);
+        ChosenUser = UserBoxes.FirstOrDefault(u => u.ContactId == userId);
+        if (ChosenUser == null)
+        {
+            ChosenUser = new UserBox()
+                {
+                ContactId = contact.Id,
+                UserName = contact.UserName,
+                messages = await _chatManager.GetConversationAsync(contact.Id),
+                IsUserChosen = true,
+            };
+            UserBoxes.Add(ChosenUser);
+            if (width - UserBoxes.Count * 320 < 320 )
+            {
+                UserBoxes.RemoveAt(0);
+            }
+        }
+        StateHasChanged();
+        await _jsRuntime.ScrollToBottom($"{ChosenUser.ContactId}");
+
+    }
+    private async Task CloseChatbox(UserBox user)
+    {
+        UserBoxes.Remove(user);
+
+        StateHasChanged();
+    }
+
+    private async Task GetUsersAsync()
+    {
+        ChatUsers = await _chatManager.GetUsersAsync();
     }
 }

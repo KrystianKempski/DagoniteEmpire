@@ -46,7 +46,7 @@ namespace DagoniteEmpire.Service
 
                     ApplicationUser user = new()
                     {
-                        UserName = "krystian.kempski@gmail.com",
+                        UserName = "AdminKrystian",
                         Email = "krystian.kempski@gmail.com",
                         EmailConfirmed = true,
                     };
@@ -56,7 +56,7 @@ namespace DagoniteEmpire.Service
 
                     user = new()
                     {
-                        UserName = "player@example.com",
+                        UserName = "player",
                         Email = "player@example.com",
                         EmailConfirmed = true,
                     };
@@ -66,7 +66,7 @@ namespace DagoniteEmpire.Service
 
                     user = new()
                     {
-                        UserName = "gm@example.com",
+                        UserName = "gm",
                         Email = "gm@example.com",
                         EmailConfirmed = true,
                     };

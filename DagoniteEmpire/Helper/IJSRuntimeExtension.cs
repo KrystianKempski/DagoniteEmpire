@@ -1,4 +1,5 @@
 ﻿using Microsoft.JSInterop;
+using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 
 namespace DagoniteEmpire.Helper
 {
@@ -44,6 +45,11 @@ namespace DagoniteEmpire.Helper
             await jsRuntime.InvokeVoidAsync("ScrollToBottom",  container);
         }
 
+        public static async ValueTask<int> GetWindowWidth(this IJSRuntime jsRuntime)
+        {
+            return await jsRuntime.InvokeAsync<int>("GetWindowWidth");
+        }
 
     }
+
 }

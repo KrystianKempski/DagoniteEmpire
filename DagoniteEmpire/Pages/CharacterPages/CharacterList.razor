@@ -16,27 +16,30 @@
     }
     else
     {
-    <div class="row mt-4">
-        <div class="col-12">
-            <h4 class="card-title">@Title</h4>
+    <div class="page">
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4 class="card-title">@Title</h4>
+            </div>
         </div>
-    </div>
-    <div class="row mt-4">
-        <div class="col-12">
-            <SfGrid ID="Grid"DataSource="@Characters" AllowPaging="true"
-                    Toolbar="@ToolbarItems">
-                <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
-                <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
-                    <GridColumns>
-                        @if (IsAdminOrMG){
-                             <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                        }
-                        <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                        <GridColumn Field=@nameof(CharacterDTO.RaceName) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                        <GridColumn Field=@nameof(CharacterDTO.ProfessionName) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                    <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Left" Width="50"></GridColumn>
-                    </GridColumns>
-                </SfGrid>
+        <div class="row mt-4">
+            <div class="col-12">
+                <SfGrid ID="Grid"DataSource="@Characters" AllowPaging="true"
+                        Toolbar="@ToolbarItems">
+                    <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
+                    <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
+                        <GridColumns>
+                            @if (IsAdminOrMG){
+                                 <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                            }
+                            <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                            <GridColumn Field=@nameof(CharacterDTO.RaceName) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                            <GridColumn Field=@nameof(CharacterDTO.ProfessionName) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                        <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Left" Width="50"></GridColumn>
+                        </GridColumns>
+                    </SfGrid>
+            </div>
         </div>
     </div>
 }
