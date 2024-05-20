@@ -15,5 +15,9 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task SaveMessageAsync(ChatMessage message);
         Task<List<ChatMessage>> GetConversationAsync(string contactId);
         Task<ApplicationUser> GetUserDetailsAsync(string userId);
+
+        Task<ApplicationUser> UpdateUserDetailsAsync(ApplicationUser updatedUser);
+
+        Task MakeMessageRedAsync(string contactId);
     }
 }

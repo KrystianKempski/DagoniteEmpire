@@ -49,18 +49,33 @@ namespace DA_Business.Repository.CharacterReps
                         Id = x.Id,
                         ToUserId = x.ToUserId,
                         ToUser = x.ToUser,
-                        FromUser = x.FromUser
+                        FromUser = x.FromUser,
+                        IsRead = x.IsRead
                     }).ToListAsync();
 
             return messages;
         }
         public async Task<ApplicationUser> GetUserDetailsAsync(string userId)
         {
-            using var contex = await _db.CreateDbContextAsync();
-            // var user = await contex.ApplicationUsers.Where(user => user.Id == userId).FirstOrDefaultAsync();
             var user = _userManager.Users.Where(user => user.Id == userId).FirstOrDefaultAsync();
 
             return await user;
+        }
+
+        public async Task<ApplicationUser> UpdateUserDetailsAsync(ApplicationUser updatedUser)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var user = await contex.ApplicationUsers.Include(c=>c.ChatMessagesFromUsers).Include(u=>u.ChatMessagesToUsers).FirstOrDefaultAsync(u => u.Id == updatedUser.Id);
+
+            // Update built-in type members
+            if (user is not null)
+            {
+                contex.Entry(user).CurrentValues.SetValues(updatedUser);
+                var addedObj = contex.ApplicationUsers.Update(user);
+                await contex.SaveChangesAsync();
+            }
+
+            return user;
         }
         public async Task<List<ApplicationUser>> GetUsersAsync()
         {
@@ -68,7 +83,7 @@ namespace DA_Business.Repository.CharacterReps
             var user = (await _authState.GetAuthenticationStateAsync()).User;
 
             var userId = user.Claims.Where(a => a.Type == ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
-            var allUsers = _userManager.Users.Where(user => user.Id != userId).ToListAsync();
+            var allUsers = _userManager.Users.Include(t=>t.ChatMessagesFromUsers).Include(t=>t.ChatMessagesToUsers).Where(user => user.Id != userId).ToListAsync();
 
             return await allUsers;
         }
@@ -88,6 +103,32 @@ namespace DA_Business.Repository.CharacterReps
 
             }
             catch(Exception ex) 
+            {
+                ;
+            }
+
+        }
+
+        public async Task MakeMessageRedAsync(string contactId)
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+                var user = (await _authState.GetAuthenticationStateAsync()).User;
+                var userId = user.Claims.Where(a => a.Type == ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
+
+                var messages = await contex.ChatMessages
+                    .Where(h => ((h.FromUserId == contactId && h.ToUserId == userId) || (h.FromUserId == userId && h.ToUserId == contactId) && h.IsRead == false)).ToListAsync();
+
+                foreach (var item in messages)
+                {
+                    item.IsRead = true;
+                    contex.ChatMessages.Update(item);
+                }
+                await contex.SaveChangesAsync();
+
+            }
+            catch (Exception ex)
             {
                 ;
             }

@@ -18,6 +18,7 @@ namespace DA_DataAccess
             ChatMessagesFromUsers = new HashSet<ChatMessage>();
             ChatMessagesToUsers = new HashSet<ChatMessage>();
         }
-
+        public bool ShowBadge { get; set; } = false;
+        public int? BadgeContent { get; set; } = null;
     }
 }

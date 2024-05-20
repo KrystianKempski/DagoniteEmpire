@@ -6,7 +6,6 @@
 @inject NavigationManager _navigationManager
 @inject AuthenticationStateProvider _stateProvider
 
-@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 
 <div class="d-flex flex-grow-1 flex-row">
     <MudPaper Elevation="25" Class="py-4 flex-grow-1">
@@ -101,7 +100,8 @@
     [Parameter] public string CurrentMessage { get; set; }
     [Parameter] public string CurrentUserId { get; set; }
     [Parameter] public string CurrentUserEmail { get; set; }
-
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
     MudTextField<string> ChatTextField = new();
     private string HubUrl;
     private List<ChatMessage> messages = new List<ChatMessage>();
@@ -132,8 +132,16 @@
     {
         await _jsRuntime.ScrollToBottom("chatContainer");
     }
+
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationState;
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            var uri = new Uri(_navigationManager.Uri);
+            _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+        }
+
         try
         {
             if (hubConnection == null)

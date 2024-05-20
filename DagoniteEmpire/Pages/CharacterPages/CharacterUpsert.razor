@@ -17,7 +17,6 @@
 @using DA_Models
 
 @using Syncfusion.Blazor.Navigations
-@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 
 @inject NavigationManager _navigationManager
 <_LeavePage IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click" ></_LeavePage>
@@ -449,6 +448,19 @@
         new ItemModel(){ Text = "Edit", PrefixIcon= "e-edit", Id="Grid_edit"},
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
+
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationState;
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            var uri = new Uri(_navigationManager.Uri);
+            _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

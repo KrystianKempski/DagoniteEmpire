@@ -17,5 +17,7 @@ namespace DA_DataAccess.Chat
         public virtual ApplicationUser FromUser { get; set; }
         public virtual ApplicationUser ToUser { get; set; }
         public bool IsNotice => Message.StartsWith("[Notice]");
+
+        public bool IsRead { get; set; } = false;
     }
 }

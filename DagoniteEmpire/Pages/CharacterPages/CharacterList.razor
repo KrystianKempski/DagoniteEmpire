@@ -5,7 +5,7 @@
 @inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject NavigationManager _navigationManager
 @inject IJSRuntime _jsRuntime
-@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
+
 <_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this character"></_DeleteConfirmation>
 
 @if (IsLoading)
@@ -50,17 +50,18 @@
     private int DeleteCharacterId { get; set; } = 0;
     private string Title { get; set; } = "Your characters";
 
-    // [CascadingParameter]
-    // public Task<AuthenticationState> AuthenticationState { get; set; }
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
 
-    // protected override async Task OnInitializedAsync()
-    // {
-    //     var authState = await AuthenticationState;
-    //     if (!authState.User.Identity.IsAuthenticated)
-    //     {
-    //         _navigationManager.NavigateTo("/identity/account/login",forceLoad:true);
-    //     }
-    // }
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationState;
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            var uri = new Uri(_navigationManager.Uri);
+            _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}",forceLoad:true);
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

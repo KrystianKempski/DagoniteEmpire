@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240502004056_addEquipment2")]
-    partial class addEquipment2
+    [Migration("20240517125003_addchatnotification")]
+    partial class addchatnotification
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -255,6 +255,9 @@ namespace DA_DataAccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("Count")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -271,6 +274,10 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
+
+                    b.Property<string>("ShortDescr")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<decimal>("Weight")
                         .HasColumnType("numeric");
@@ -505,6 +512,38 @@ namespace DA_DataAccess.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("Trait");
 
                     b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("DA_DataAccess.Chat.ChatMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("FromUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ToUserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromUserId");
+
+                    b.HasIndex("ToUserId");
+
+                    b.ToTable("ChatMessages");
                 });
 
             modelBuilder.Entity("DA_DataAccess.ImageFile", b =>
@@ -787,9 +826,15 @@ namespace DA_DataAccess.Migrations
                 {
                     b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
 
+                    b.Property<int?>("BadgeContent")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("ShowBadge")
+                        .HasColumnType("boolean");
 
                     b.HasDiscriminator().HasValue("ApplicationUser");
                 });
@@ -902,6 +947,23 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Character");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.Chat.ChatMessage", b =>
+                {
+                    b.HasOne("DA_DataAccess.ApplicationUser", "FromUser")
+                        .WithMany("ChatMessagesFromUsers")
+                        .HasForeignKey("FromUserId")
+                        .IsRequired();
+
+                    b.HasOne("DA_DataAccess.ApplicationUser", "ToUser")
+                        .WithMany("ChatMessagesToUsers")
+                        .HasForeignKey("ToUserId")
+                        .IsRequired();
+
+                    b.Navigation("FromUser");
+
+                    b.Navigation("ToUser");
+                });
+
             modelBuilder.Entity("EquipmentTraitEquipment", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Equipment", null)
@@ -1009,6 +1071,13 @@ namespace DA_DataAccess.Migrations
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>
                 {
                     b.Navigation("Bonuses");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.ApplicationUser", b =>
+                {
+                    b.Navigation("ChatMessagesFromUsers");
+
+                    b.Navigation("ChatMessagesToUsers");
                 });
 #pragma warning restore 612, 618
         }

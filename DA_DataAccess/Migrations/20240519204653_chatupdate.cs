@@ -5,25 +5,25 @@
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class addItemCount : Migration
+    public partial class chatupdate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "Count",
-                table: "Equipment",
-                type: "integer",
+            migrationBuilder.AddColumn<bool>(
+                name: "IsRead",
+                table: "ChatMessages",
+                type: "boolean",
                 nullable: false,
-                defaultValue: 0);
+                defaultValue: false);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "Count",
-                table: "Equipment");
+                name: "IsRead",
+                table: "ChatMessages");
         }
     }
 }
