@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DA_DataAccess.CharacterClasses;
+using DA_DataAccess.Chat;
 using DA_Models.CharacterModels;
 using System;
 using System.Collections.Generic;
@@ -26,6 +27,10 @@ namespace DA_Business.Mapper
             CreateMap<Race, RaceDTO>().ReverseMap();
             CreateMap<Profession, ProfessionDTO>().ReverseMap();
             CreateMap<Equipment, EquipmentDTO>().ReverseMap();
+            CreateMap<Chapter,ChapterDTO>().ReverseMap();
+            CreateMap<Post, PostDTO>().ReverseMap();
+            CreateMap<Campaign, CampaignDTO>().ReverseMap();
+
         }
     }
 }

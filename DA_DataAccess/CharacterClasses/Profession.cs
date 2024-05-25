@@ -14,14 +14,14 @@ namespace DA_DataAccess.CharacterClasses
         public int Id { get; set; }
 
         public string Name { get; set; }    
-        public string Description { get; set; }
-        public string RelatedAttribute { get; set; }
-        public int ClassLevel { get; set; }
-        public int MaxFocusPoints { get; set; }
-        public int CurrentCofusPoints { get; set; }
-        public bool IsApproved { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string RelatedAttribute { get; set; } = string.Empty;
+        public int ClassLevel { get; set; } = 1;
+        public int MaxFocusPoints { get; set; } = 0;
+        public int CurrentCofusPoints { get; set; } = 0;
+        public bool IsApproved { get; set; } = false;
 
-        public bool IsUniversal { get; set; }
+        public bool IsUniversal { get; set; } = false;
 
         public ICollection<Character>? Characters { get; set; }
 

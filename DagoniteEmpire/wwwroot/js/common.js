@@ -90,6 +90,15 @@ function ResizeTextArea(id) {
     }
     return true;
 }
+function ResizeRichTextArea(id) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.style.height = "5px";
+        el.style.height = (el.scrollHeight + 5) + "px";
+        el.style.border = "none";
+    }
+    return true;
+}
 
 window.ScrollToBottom = (elementName) => {
     element = document.getElementById(elementName);

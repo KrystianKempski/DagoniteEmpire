@@ -22,6 +22,36 @@ namespace DA_DataAccess.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CampaignCharacter", b =>
+                {
+                    b.Property<int>("CampaignsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CharactersId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CampaignsId", "CharactersId");
+
+                    b.HasIndex("CharactersId");
+
+                    b.ToTable("CampaignCharacter");
+                });
+
+            modelBuilder.Entity("ChapterCharacter", b =>
+                {
+                    b.Property<int>("ChaptersId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CharactersId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ChaptersId", "CharactersId");
+
+                    b.HasIndex("CharactersId");
+
+                    b.ToTable("ChapterCharacter");
+                });
+
             modelBuilder.Entity("CharacterEquipment", b =>
                 {
                     b.Property<int>("CharactersId")
@@ -212,6 +242,9 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("NPCName")
                         .HasColumnType("text");
@@ -511,6 +544,77 @@ namespace DA_DataAccess.Migrations
                     b.UseTphMappingStrategy();
                 });
 
+            modelBuilder.Entity("DA_DataAccess.Chat.Campaign", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("GameMaster")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsFinished")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Campaigns");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.Chat.Chapter", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CampaignId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Day")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsFinished")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Place")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampaignId");
+
+                    b.ToTable("Chapters");
+                });
+
             modelBuilder.Entity("DA_DataAccess.Chat.ChatMessage", b =>
                 {
                     b.Property<long>("Id")
@@ -544,6 +648,36 @@ namespace DA_DataAccess.Migrations
                     b.HasIndex("ToUserId");
 
                     b.ToTable("ChatMessages");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.Chat.Post", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CharacterId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChapterId");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("Posts");
                 });
 
             modelBuilder.Entity("DA_DataAccess.ImageFile", b =>
@@ -839,6 +973,36 @@ namespace DA_DataAccess.Migrations
                     b.HasDiscriminator().HasValue("ApplicationUser");
                 });
 
+            modelBuilder.Entity("CampaignCharacter", b =>
+                {
+                    b.HasOne("DA_DataAccess.Chat.Campaign", null)
+                        .WithMany()
+                        .HasForeignKey("CampaignsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
+                        .WithMany()
+                        .HasForeignKey("CharactersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ChapterCharacter", b =>
+                {
+                    b.HasOne("DA_DataAccess.Chat.Chapter", null)
+                        .WithMany()
+                        .HasForeignKey("ChaptersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
+                        .WithMany()
+                        .HasForeignKey("CharactersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("CharacterEquipment", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
@@ -947,6 +1111,17 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Character");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.Chat.Chapter", b =>
+                {
+                    b.HasOne("DA_DataAccess.Chat.Campaign", "Campaign")
+                        .WithMany("Chapters")
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Campaign");
+                });
+
             modelBuilder.Entity("DA_DataAccess.Chat.ChatMessage", b =>
                 {
                     b.HasOne("DA_DataAccess.ApplicationUser", "FromUser")
@@ -962,6 +1137,25 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("FromUser");
 
                     b.Navigation("ToUser");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.Chat.Post", b =>
+                {
+                    b.HasOne("DA_DataAccess.Chat.Chapter", "Chapter")
+                        .WithMany("Posts")
+                        .HasForeignKey("ChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
+                        .WithMany("Posts")
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Chapter");
+
+                    b.Navigation("Character");
                 });
 
             modelBuilder.Entity("EquipmentTraitEquipment", b =>
@@ -1051,6 +1245,8 @@ namespace DA_DataAccess.Migrations
 
                     b.Navigation("BaseSkills");
 
+                    b.Navigation("Posts");
+
                     b.Navigation("SpecialSkills");
                 });
 
@@ -1071,6 +1267,16 @@ namespace DA_DataAccess.Migrations
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>
                 {
                     b.Navigation("Bonuses");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.Chat.Campaign", b =>
+                {
+                    b.Navigation("Chapters");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.Chat.Chapter", b =>
+                {
+                    b.Navigation("Posts");
                 });
 
             modelBuilder.Entity("DA_DataAccess.ApplicationUser", b =>

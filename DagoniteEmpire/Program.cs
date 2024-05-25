@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using DA_Models.CharacterModels;
 using DA_Models.ChatModels;
 using MudBlazor;
+using DA_Business.Repository.ChatRepos;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,6 +63,9 @@ builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IProfessionRepository, ProfessionRepository>();
 builder.Services.AddScoped<IProfessionSkillRepository, ProfessionSkillRepository>();
 builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();
+builder.Services.AddScoped<IPostRepository, PostRepository>();
+builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
+builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();

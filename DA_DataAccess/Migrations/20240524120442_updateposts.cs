@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class addchatnotification : Migration
+    public partial class updateposts : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -53,6 +53,23 @@ namespace DA_DataAccess.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Campaigns",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    GameMaster = table.Column<string>(type: "text", nullable: false),
+                    IsFinished = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Campaigns", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -261,7 +278,8 @@ namespace DA_DataAccess.Migrations
                     FromUserId = table.Column<string>(type: "text", nullable: false),
                     ToUserId = table.Column<string>(type: "text", nullable: false),
                     Message = table.Column<string>(type: "text", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -276,6 +294,31 @@ namespace DA_DataAccess.Migrations
                         column: x => x.ToUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Chapters",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Day = table.Column<string>(type: "text", nullable: false),
+                    Place = table.Column<string>(type: "text", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    IsFinished = table.Column<bool>(type: "boolean", nullable: false),
+                    CampaignId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Chapters", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Chapters_Campaigns_CampaignId",
+                        column: x => x.CampaignId,
+                        principalTable: "Campaigns",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -327,6 +370,7 @@ namespace DA_DataAccess.Migrations
                     UsedExpPoints = table.Column<int>(type: "integer", nullable: false),
                     TraitBalance = table.Column<int>(type: "integer", nullable: false),
                     RaceId = table.Column<int>(type: "integer", nullable: true),
+                    IsApproved = table.Column<bool>(type: "boolean", nullable: false),
                     ProfessionId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -478,6 +522,54 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CampaignCharacter",
+                columns: table => new
+                {
+                    CampaignsId = table.Column<int>(type: "integer", nullable: false),
+                    CharactersId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CampaignCharacter", x => new { x.CampaignsId, x.CharactersId });
+                    table.ForeignKey(
+                        name: "FK_CampaignCharacter_Campaigns_CampaignsId",
+                        column: x => x.CampaignsId,
+                        principalTable: "Campaigns",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CampaignCharacter_Characters_CharactersId",
+                        column: x => x.CharactersId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChapterCharacter",
+                columns: table => new
+                {
+                    ChaptersId = table.Column<int>(type: "integer", nullable: false),
+                    CharactersId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChapterCharacter", x => new { x.ChaptersId, x.CharactersId });
+                    table.ForeignKey(
+                        name: "FK_ChapterCharacter_Chapters_ChaptersId",
+                        column: x => x.ChaptersId,
+                        principalTable: "Chapters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ChapterCharacter_Characters_CharactersId",
+                        column: x => x.CharactersId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CharacterEquipment",
                 columns: table => new
                 {
@@ -521,6 +613,34 @@ namespace DA_DataAccess.Migrations
                         name: "FK_CharacterTraitAdv_Traits_TraitsAdvId",
                         column: x => x.TraitsAdvId,
                         principalTable: "Traits",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Posts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Content = table.Column<string>(type: "text", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    CharacterId = table.Column<int>(type: "integer", nullable: false),
+                    ChapterId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Posts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Posts_Chapters_ChapterId",
+                        column: x => x.ChapterId,
+                        principalTable: "Chapters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Posts_Characters_CharacterId",
+                        column: x => x.CharacterId,
+                        principalTable: "Characters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -612,6 +732,21 @@ namespace DA_DataAccess.Migrations
                 column: "TraitId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CampaignCharacter_CharactersId",
+                table: "CampaignCharacter",
+                column: "CharactersId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChapterCharacter_CharactersId",
+                table: "ChapterCharacter",
+                column: "CharactersId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Chapters_CampaignId",
+                table: "Chapters",
+                column: "CampaignId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CharacterEquipment_EquipmentId",
                 table: "CharacterEquipment",
                 column: "EquipmentId");
@@ -645,6 +780,16 @@ namespace DA_DataAccess.Migrations
                 name: "IX_EquipmentTraitEquipment_TraitsId",
                 table: "EquipmentTraitEquipment",
                 column: "TraitsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Posts_ChapterId",
+                table: "Posts",
+                column: "ChapterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Posts_CharacterId",
+                table: "Posts",
+                column: "CharacterId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProfessionSkills_ActiveProfessionId",
@@ -695,6 +840,12 @@ namespace DA_DataAccess.Migrations
                 name: "Bonuses");
 
             migrationBuilder.DropTable(
+                name: "CampaignCharacter");
+
+            migrationBuilder.DropTable(
+                name: "ChapterCharacter");
+
+            migrationBuilder.DropTable(
                 name: "CharacterEquipment");
 
             migrationBuilder.DropTable(
@@ -708,6 +859,9 @@ namespace DA_DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "ImageFiles");
+
+            migrationBuilder.DropTable(
+                name: "Posts");
 
             migrationBuilder.DropTable(
                 name: "ProfessionSkills");
@@ -728,10 +882,16 @@ namespace DA_DataAccess.Migrations
                 name: "Equipment");
 
             migrationBuilder.DropTable(
+                name: "Chapters");
+
+            migrationBuilder.DropTable(
                 name: "Traits");
 
             migrationBuilder.DropTable(
                 name: "Characters");
+
+            migrationBuilder.DropTable(
+                name: "Campaigns");
 
             migrationBuilder.DropTable(
                 name: "Professions");

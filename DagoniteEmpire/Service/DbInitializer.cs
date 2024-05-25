@@ -74,6 +74,33 @@ namespace DagoniteEmpire.Service
                     _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
                     _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
                 }
+                if (_db.Professions.FirstOrDefault(c => c.Name == "Game Master") == null)
+                {
+                    var proff = new Profession() { Name = "Game Master",Description="", RelatedAttribute= "" };
+
+                    _db.Professions.Add(proff);
+                    _db.SaveChanges();
+                }
+                if (_db.Races.FirstOrDefault(c => c.Name == "Game Master") == null)
+                {
+                    var race = new Race() { Name = "Game Master" };
+
+                    _db.Races.Add(race);
+                    _db.SaveChanges();
+                }
+                if (_db.Characters.FirstOrDefault(c=>c.NPCName == "Game Master") == null)
+                {
+                    var charac = new Character() { UserName = "GM", NPCName = "Game Master" };
+
+                    var profession = _db.Professions.FirstOrDefault(c => c.Name == "Game Master");
+                    var race = _db.Races.FirstOrDefault(c => c.Name == "Game Master");
+                    charac.ProfessionId = profession.Id;
+                    charac.RaceId = race.Id;
+                    charac.ImageUrl = "../images/gm_avatar.webp";
+
+                    _db.Characters.Add(charac);
+                    _db.SaveChanges();
+                }
 
                 if (_db.Races.FirstOrDefault(u => u.Name == "Human") == null)
                 {

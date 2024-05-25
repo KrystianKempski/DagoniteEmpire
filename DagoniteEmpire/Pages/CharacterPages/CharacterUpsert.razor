@@ -43,6 +43,12 @@
                             <label>Age</label>
                             <InputNumber @bind-Value="Character.Age" class="form-control col-2"></InputNumber>
                         </div>
+                        @if(IsAdminOrMG){
+                            <div class="form-group col-md-1 px-1">
+                                <label>Is Approved?</label>
+                                <SfCheckBox @bind-Checked="@Character.IsApproved"></SfCheckBox>
+                            </div>
+                        }
                         <div class="form-group col-md-3 px-1">
                             <label>Character Type</label>
                             <InputSelect @bind-Value="Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
@@ -72,7 +78,7 @@
                             <div class="portrait-imageframe">
                                 <img src="@Character.ImageUrl" class="portrait-image" />
                                 <div class="portrait-input">
-                                    <label class="input-label" for="input">Choose file</label>
+                                    <label class="input-label" for="input">@ChooseFile</label>
                                     <InputFile id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
                                 </div>
                             </div>
@@ -85,7 +91,6 @@
                                 <label class="points-label">Avalible attribute points:</label>
                                 <span class="points-indicator ml-auto">@Character.AttributePoints</span>
                             </div>
-                            
                         </div>
 
                         <div class="attribute border">
@@ -440,7 +445,8 @@
     private bool ModifChanged = false;
     private bool IsLeaveAllowed { get; set; } = false;
     private bool IsDukeAllowed { get; set; } = false;
-    private string TargetLocation { get; set; } = "";
+    private string TargetLocation { get; set; } = "";    
+    public bool IsAdminOrMG { get; set; } = true;
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
 
     private List<object> ToolbarItems = new List<object>() {
@@ -448,7 +454,7 @@
         new ItemModel(){ Text = "Edit", PrefixIcon= "e-edit", Id="Grid_edit"},
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
-
+    private string ChooseFile = "Choose file";
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
 
@@ -460,6 +466,11 @@
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
+        var user = authState.User;
+        if (user == null)
+            return; // failed to load
+
+        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -714,6 +725,7 @@
         {
             if (e.GetMultipleFiles().Count > 0)
             {
+                ChooseFile = string.Empty;
                 foreach (var file in e.GetMultipleFiles())
                 {
                     System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);

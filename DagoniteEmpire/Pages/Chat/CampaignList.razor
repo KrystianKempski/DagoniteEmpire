@@ -1,0 +1,220 @@
+﻿@page "/campaignlist"
+
+@using Syncfusion.Blazor.Navigations;
+@inject NavigationManager _navigationManager
+@inject ISnackbar _snackBar
+@inject IDialogService DialogService
+@inject IJSRuntime _jsRuntime
+@inject ICharacterRepository _characterRepository
+@inject ICampaignRepository _campaignRepository
+@inject IChapterRepository _chapterRepository
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject IChatManager _chatManager
+@inject ICampaignRepository _campaignRepository
+
+
+@using Microsoft.AspNetCore.SignalR.Client;
+
+
+<MudContainer Fixed="false">
+    @if (IsLoading == true){
+        <div class="text-center">
+            <img src="images/loading.gif" width="60px">
+        </div>
+    }else{
+
+        <MudText Typo="Typo.h4" Class="pb-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns</MudText>
+        @if (IsAdminOrMG)
+        {
+            <div class="camp">
+
+                <MudPaper Height="100px" Width="100%" Class="pa-3 ma-3 justify-content-center" Style="cursor: pointer;" @onclick="CreateCampaign">
+                    <MudText Typo="Typo.h5" Align="Align.Center"> Add new Campaign...</MudText>
+            </MudPaper>
+            </div>
+        }
+        else
+        {
+            @if (Characters.Count() > 0)
+            {
+                <MudSelect Value="SelectedCharacter" T="CharacterDTO" ValueChanged="SelectCharacter" Label=@Title AnchorOrigin="Origin.BottomCenter">
+
+                    @foreach (var character in Characters)
+                    {
+                        <MudSelectItem Value="@character"/>
+                    }
+                </MudSelect>
+                }
+        }
+
+        <MudStack>
+            @if(Campaigns is not null && Campaigns.Any())
+            {
+                @foreach(var camp in Campaigns)
+                {
+                    <div class="d-flex flex-column camp">
+                        <MudPaper Class="d-flex flex-column pa-3 my-3" Height="200px" Width="100%" @onclick="@(()=>ChooseCampaign(camp))">
+                        
+                            <MudText Typo="Typo.h5">@camp.Name</MudText>
+                            <MudText Typo="Typo.caption">Started by: @camp.GameMaster at: @camp.CreatedDate</MudText>
+                            <MudText Class="py-2 flex-grow-1" Typo="Typo.body1"> @camp.Description </MudText>                        
+                            <div class="d-inline-flex">
+                                @foreach (var adv in camp.Characters)
+                                {
+                                    <MudChip>
+                                        <AvatarContent>
+                                            @if (string.IsNullOrEmpty(adv.ImageUrl))
+                                            {
+                                                <MudAvatar>@adv.NPCName.ToUpper().First()</MudAvatar>
+                                            }
+                                            else
+                                            {
+                                                <MudAvatar>
+                                                    <MudImage Src="@adv.ImageUrl"></MudImage>
+                                                </MudAvatar>
+                                            }
+                                        </AvatarContent>
+                                        <ChildContent>@adv.NPCName</ChildContent>
+                                    </MudChip>
+                                }
+                            </div>
+                        </MudPaper>
+
+                    </div>
+
+                }
+
+            }
+            else
+            {
+                <MudText Class="pt-3" Typo="Typo.h5">Not signed into any adventures yet</MudText>
+            }
+        </MudStack>
+    }
+    <MudPaper Width="100%" Square="true" Class="ma-2">
+
+
+    </MudPaper>
+</MudContainer>
+
+
+
+
+@code{
+
+    private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
+    private List<CampaignDTO> Campaigns { get; set; } = new List<CampaignDTO>();
+    public bool IsLoading { get; set; } = true;
+    public bool IsAdminOrMG { get; set; } = true;
+    private string Title { get; set; } = "Your characters";
+    private CharacterDTO SelectedCharacter  = new();
+    public CampaignDTO NewCampaign { get; set; } = new();
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationState;
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            var uri = new Uri(_navigationManager.Uri);
+            _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+        }
+
+        var user = authState.User;
+        if (user == null)
+            return; // failed to load
+
+        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadCharactersAndCampaigns();
+        }
+    }
+
+    private async Task SelectCharacter(CharacterDTO character)
+    {
+        IsLoading = true;
+        StateHasChanged();
+        SelectedCharacter = character;
+        Campaigns = (await _campaignRepository.GetAll(character.Id)).ToList();
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadCharactersAndCampaigns()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        if (user == null)
+            return; // failed to load
+
+
+        if (IsAdminOrMG)
+        {
+            Title = "All avalible campaingns";
+            Characters = await _characterRepository.GetAll();
+            Campaigns = (await _campaignRepository.GetAll()).ToList();
+            SelectedCharacter = await _characterRepository.GetByName("Game Master");
+        }
+        else
+        {
+            Title = "Characters of " + user.Identity.Name;
+            Characters = await _characterRepository.GetAllForUser(user.Identity.Name);
+            if (Characters.Any())
+            {
+                SelectedCharacter = Characters.First();
+                Campaigns = (await _campaignRepository.GetAll(SelectedCharacter.Id)).ToList();
+            }
+           
+
+        }
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task CreateCampaign(){
+
+        NewCampaign.Characters = Characters.ToList();
+
+        var parameters = new DialogParameters<CreateCampaignDialog> { { x => x.NewCampaign, NewCampaign } };
+
+        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Create Campaig", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewCampaign = (CampaignDTO)result.Data;
+
+            var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+            if (authstate is not null)
+                NewCampaign.GameMaster = authstate.User.Identity.Name;
+
+            
+
+           // await _campaignRepository.Create(NewCampaign);
+
+            Campaigns.Add(await _campaignRepository.Create(NewCampaign));
+        }
+    }
+
+    private async Task ChooseCampaign(CampaignDTO campaign)
+    {
+        _navigationManager.NavigateTo($"/campaign/{campaign.Id}/{SelectedCharacter.Id}");
+    }
+
+
+
+
+
+
+
+
+
+}

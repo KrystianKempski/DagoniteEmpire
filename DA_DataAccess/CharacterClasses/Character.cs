@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DA_DataAccess.Chat;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -35,15 +36,21 @@ namespace DA_DataAccess.CharacterClasses
 
         public ICollection<Equipment>? Equipment { get; set; }
 
+        public ICollection<Campaign>? Campaigns { get; set; }
+
+        public ICollection<Post>? Posts { get; set; }
+        public ICollection<Chapter>? Chapters { get; set; }
+
         public int? RaceId { get; set; }
         [ForeignKey(nameof(RaceId))]
-        public Race? Race { get; set; }
+        public Race? Race { get; set; } = null;
 
+        public bool IsApproved { get; set; }
 
         public int ProfessionId { get; set; } = 0;
 
         [ForeignKey(nameof(ProfessionId))]
-        public Profession? Profession { get; set; }
+        public Profession? Profession { get; set; } = null;
 
     }
 }

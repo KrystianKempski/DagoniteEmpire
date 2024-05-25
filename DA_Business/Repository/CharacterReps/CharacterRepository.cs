@@ -64,10 +64,7 @@ namespace DA_Business.Repository.CharacterReps
                 await contex.SaveChangesAsync();
                 return _mapper.Map<Character, CharacterDTO>(addedObj.Entity);
             }
-            catch (Exception ex)
-            {
-                throw new RepositoryErrorException("Error in Character Repository Create");
-            }
+            catch (Exception ex) {throw new RepositoryErrorException("Error in"+ System.Reflection.MethodBase.GetCurrentMethod().Name); }
         }
 
         public async Task<int> Delete(int id)
@@ -114,10 +111,7 @@ namespace DA_Business.Repository.CharacterReps
 
                 return contex.SaveChanges();
             }
-            catch (Exception ex)
-            {
-                throw new RepositoryErrorException("Error in Character Repository Create");
-            }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
         }
 
         public async Task<IEnumerable<CharacterDTO>> GetAll(int? id=null)
@@ -138,12 +132,39 @@ namespace DA_Business.Repository.CharacterReps
             }
             return new CharacterDTO();
         }
+        public async Task<CharacterDTO> GetByName(string npcName)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.Characters.Include(t => t.TraitsAdv).ThenInclude(b => b.Bonuses).Include(r => r.Race).Include(r => r.Profession).Include(r => r.Equipment).FirstOrDefaultAsync(u => u.NPCName == npcName);
+            if (obj != null)
+            {
+                return _mapper.Map<Character, CharacterDTO>(obj);
+            }
+            return new CharacterDTO();
+        }
+        
         public async Task<IEnumerable<CharacterDTO>> GetAllForUser(string userName)
         {
             using var contex = await _db.CreateDbContextAsync();
             if (userName == null || userName.Length<3)
                 return new List<CharacterDTO>();
             return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r=>r.Equipment).Where(u => u.UserName == userName));
+        }
+        public async Task<IEnumerable<CharacterDTO>> GetAllForCampaign(int campaignId)
+        {
+            //try
+            //{
+            //    using var contex = await _db.CreateDbContextAsync();
+            //    if (campaignId == null || campaignId == 0)
+            //        return new List<CharacterDTO>();
+            //    return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.Equipment)
+            //        .Where(u => u.Campaigns != null && u.Campaigns.FirstOrDefault(c => c.Id == campaignId) != null));
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            //}
+            return null;
         }
 
         public async Task<CharacterDTO> Update(CharacterDTO objDTO)
@@ -161,6 +182,7 @@ namespace DA_Business.Repository.CharacterReps
 
                     obj.Age = updatedChar.Age;
                     obj.NPCName = updatedChar.NPCName;
+                    obj.IsApproved = updatedChar.IsApproved;
                     obj.Description = updatedChar.Description;
                     obj.CurrentExpPoints = updatedChar.CurrentExpPoints;
                     obj.UsedExpPoints = updatedChar.UsedExpPoints;
@@ -464,10 +486,7 @@ namespace DA_Business.Repository.CharacterReps
                 }else
                     return objDTO;
             }
-            catch (Exception ex)
-            {
-                throw new RepositoryErrorException("Error in Character Repository Update");
-            }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
         }
 
     }

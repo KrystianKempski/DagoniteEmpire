@@ -1,6 +1,7 @@
 ﻿using Syncfusion.Blazor.RichTextEditor;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,6 +34,13 @@ namespace DA_Common
         public const string Willpower = "Willpower";
         public const string Charisma = "Charisma";
 
+        
+    }
+    public static class MyIcon
+    {
+        public const string Bookmark = "icons/bookmarklet.svg";
+        public const string Scroll = "icons/scroll.svg";
+        public const string Quill = "icons/quill.svg";
 
 
     }

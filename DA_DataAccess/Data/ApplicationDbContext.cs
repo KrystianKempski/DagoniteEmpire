@@ -32,6 +32,9 @@ namespace DA_DataAccess.Data
         public DbSet<ProfessionSkill> ProfessionSkills { get; set; }
 
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<Post> Posts { get; set; }
+        public DbSet<Chapter> Chapters { get; set; }
+        public DbSet<Campaign> Campaigns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,6 +60,8 @@ namespace DA_DataAccess.Data
                 .WithMany(p => p.ChatMessagesToUsers)
                 .HasForeignKey(d => d.ToUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+
+          
         }
     }
 }

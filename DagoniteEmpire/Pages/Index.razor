@@ -1,15 +1,32 @@
 ﻿@page "/"
 
-@* <PageTitle>Dagonite Empire</PageTitle> *@
-
-<header class="hero-img" id="home">
-    <div class="hero-text text-center">
-        <h1 class="text" >Welcome to <span class="text blue-text">Dagonite Empire!</span></h1>
+@if (IsLoading)
+{
+    <div class="text-center">
+        <img src="images/loading.gif" width="60px">
     </div>
-    <div class="hero-shadow"></div>
+}
+else
+{
+    <header class="hero-img" id="home">
+        <div class="hero-text text-center">
+            <h1 class="text" >Welcome to <span class="text blue-text">Dagonite Empire!</span></h1>
+        </div>
+        <div class="hero-shadow"></div>
 
-</header>
-@* 
-<h1>Welcome to Dagonite Empire!</h1> *@
+    </header>
+
+}
 
 
+@code{
+    public bool IsLoading { get; set; } = true;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+}

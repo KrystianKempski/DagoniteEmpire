@@ -3,6 +3,7 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
+using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Attribute = DA_DataAccess.CharacterClasses.Attribute;
 
@@ -27,10 +28,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 await _db.SaveChangesAsync();
             }
-            catch (Exception ex)
-            {
-                ;
-            }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
             return _mapper.Map<Attribute, AttributeDTO>(addedObj.Entity);
         }
 
@@ -55,12 +53,9 @@ namespace DA_Business.Repository.CharacterReps
                 if (obj != null && obj.Any())
                     return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(obj);
             }
-            catch(Exception ex) 
-            {
-                ;
-            }
-           
-            
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+
+
             return new List<AttributeDTO>();
         }
 

@@ -16,7 +16,7 @@ namespace DA_DataAccess.Chat
         public DateTime CreatedDate { get; set; }
         public virtual ApplicationUser FromUser { get; set; }
         public virtual ApplicationUser ToUser { get; set; }
-        public bool IsNotice => Message.StartsWith("[Notice]");
+        //public bool IsNotice => Message.StartsWith("[Notice]");
 
         public bool IsRead { get; set; } = false;
     }

@@ -65,6 +65,7 @@ namespace DA_Models.CharacterModels
                 new ProfessionSkill(){ Level = 6, Index=5},
                 new ProfessionSkill(){ Level = 7, Index=6},
             };
+            Description = string.Empty;
         }
         public void CalculateClassParams(IEnumerable<AttributeDTO> attributes)
         {

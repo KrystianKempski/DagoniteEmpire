@@ -16,11 +16,11 @@ namespace DA_DataAccess.CharacterClasses
 
         public ICollection<Character>? Characters { get; set; }
 
-        public string Name { get; set; }            //for example "dwarf"
-        public int Index { get; set; }
+        public string Name { get; set; }                                //for example "dwarf"
+        public int Index { get; set; } = 0;
 
-        public string Description { get; set; }            // descritpion of race
-        public bool RaceApproved { get; set; }     // race have to be approved by Game Master
+        public string Description { get; set; } = string.Empty;         // descritpion of race
+        public bool RaceApproved { get; set; } = false;                 // race have to be approved by Game Master
 
     }
 }

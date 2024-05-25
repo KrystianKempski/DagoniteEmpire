@@ -8,11 +8,11 @@
 
 <MudDrawer @bind-Open="@openEnd" Fixed="true" Anchor="Anchor.End" Elevation="0" Variant="@DrawerVariant.Mini" ClipMode="DrawerClipMode.Always" Style="overflow:hidden; text-wrap: nowrap">
     <MudDrawerHeader Style="overflow:hidden; text-wrap: nowrap" Class="p-1">
-        <MudText Typo="Typo.h6"><MudIconButton OnClick="@ToggleEndDrawer" Icon="@Icons.Material.Filled.Group"></MudIconButton> Chat </MudText>
+        <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 24px; "><MudIconButton OnClick="@ToggleEndDrawer" Icon="@Icons.Material.Filled.Group"></MudIconButton> Chat </MudText>
     </MudDrawerHeader> 
 
     <div class="d-flex flex-column " style="max-height:calc(100vh - 128px);min-height:calc(100vh - 128px); overflow:hidden; padding: 0">
-        <MudList Clickable="true">
+        <MudList Class="pa-0" Clickable="true">
             @foreach (var user in ChatUsers)
             {
                 <MudListItem Class="pa-0 px-0" OnClick="@(() => AddUserChat(user.Id))">
@@ -237,7 +237,7 @@
 
             ChosenUser = user;
             ChosenUser.IsUserChosen = true;
-            InvokeAsync(StateHasChanged);
+            await InvokeAsync(StateHasChanged);
         }
 
         ClearBadgeContent();
@@ -306,7 +306,7 @@
             }
         }
         // Inform blazor the UI needs updating
-        InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);
         ScrollToBottom = true;
     }
 

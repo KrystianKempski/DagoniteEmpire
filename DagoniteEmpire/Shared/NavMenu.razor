@@ -1,64 +1,4 @@
-﻿@* 
-<nav class="navbar navbar-expand-lg position-sticky top-0" id="mainbar">
-    <div class="container-fluid">
-        
-        <div class="navbar-brand">
-            <a class="nav-link home-link" href="#">Dagonite Empire</a>
-            <div class="btn-group dropstart px-2" id="login-display-small">
-                <button type="button" class="login-button" data-bs-toggle="dropdown" aria-expanded="false" id="login-btn-small">
-                    <i class="fa-solid fa-circle-user m-2"></i>
-                </button>
-                <ul class="dropdown-menu">
-                    <LoginDisplay></LoginDisplay>
-                </ul>
-            </div>
-
-        </div>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-hidden="true" aria-label="Toggle navigation">
-            <i class="fa-solid fa-bars p-2 pe-3"></i>
-        </button>
-      
-        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-            <div class="navbar-nav">
-                <a class="nav-link" href="character">Character sheets</a>
-                
-            </div>
-            <div class="navbar-nav">
-                <a class="nav-link" href="chat">Chat room</a>
-            </div>
-            
-        </div>
-        <div class="btn-group dropstart px-2">
-            <button type="button" class="login-button" data-bs-toggle="dropdown" aria-expanded="false" id="login-display-big"s>
-                <i class="fa-solid fa-circle-user m-2"></i>
-            </button>
-            <ul class="dropdown-menu">
-                <LoginDisplay></LoginDisplay>
-            </ul>
-        </div>
-
-        
-    </div>
-  
-
-</nav>
-
-
-
-@code {
-    private string AdminRole = DA_Common.SD.Role_Admin;
-    private string LoggedRole = DA_Common.SD.Role_Admin + "," + DA_Common.SD.Role_Admin + "," + DA_Common.SD.Role_Admin + "," + SD.Role_GameMaster;
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
-}
- *@
-
+﻿
 <MudNavMenu>
     <MudNavLink Href="/character" Icon="@Icons.Material.Outlined.Home">
         Home
@@ -66,7 +6,7 @@
     <MudNavLink Href="/chat" Icon="@Icons.Material.Outlined.Dashboard">
         Character sheets
     </MudNavLink>
-    <MudNavLink Href="/chat" Icon="@Icons.Material.Outlined.QuestionAnswer">
-        Chat room
+    <MudNavLink Href="/campaignlist" Icon="@Icons.Material.Outlined.QuestionAnswer">
+        Campaign
     </MudNavLink>
 </MudNavMenu>

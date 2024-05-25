@@ -1,0 +1,60 @@
+﻿
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />
+            Create new Campaign
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="@NewCampaign.Name" Label="Campaign name" />
+        <MudTextField @bind-Value="@NewCampaign.Description" Label="Description" />
+        <MudChipSet @bind-SelectedChips="SelectedCharacters" MultiSelection="true" Filter="true">
+            @foreach (var adv in NewCampaign.Characters)
+            {
+                <MudChip Text="@adv.NPCName"></MudChip>
+            }
+            
+        </MudChipSet>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="CreateCampaign">Create campaign</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public CampaignDTO NewCampaign { get; set; }
+    MudChip[] SelectedCharacters { get; set; }
+    private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void CreateCampaign()
+    {
+        //In a real world scenario this bool would probably be a service to delete the item from api/database
+        Snackbar.Add("Campaign Created", Severity.Success);
+
+        if (SelectedCharacters is not null)
+        {            
+            foreach (var charac in SelectedCharacters)
+            {
+                var adventurer = NewCampaign.Characters.FirstOrDefault(c => c.NPCName == charac.Text);
+                if (adventurer is not null)
+                    Characters.Add(adventurer);
+            }
+        }
+        NewCampaign.Characters = Characters;
+        NewCampaign.CreatedDate = DateTime.Now;
+
+
+        MudDialog.Close(DialogResult.Ok(NewCampaign));
+    }
+}
