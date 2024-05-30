@@ -107,6 +107,13 @@ window.ScrollToBottom = (elementName) => {
         element.scrollTop = element.scrollHeight - element.clientHeight;
     }
 }
+window.ScrollToElement = (elementName) => {
+    element = document.getElementById(elementName);
+
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+    }
+}
 
 window.GetWindowWidth = function () {
     return window.innerWidth;

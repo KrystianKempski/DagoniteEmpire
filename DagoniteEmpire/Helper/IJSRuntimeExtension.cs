@@ -44,6 +44,10 @@ namespace DagoniteEmpire.Helper
         {
             await jsRuntime.InvokeVoidAsync("ScrollToBottom",  container);
         }
+        public static async ValueTask ScrollToElement(this IJSRuntime jsRuntime, string container)
+        {
+            await jsRuntime.InvokeVoidAsync("ScrollToElement", container);
+        }
 
         public static async ValueTask<int> GetWindowWidth(this IJSRuntime jsRuntime)
         {

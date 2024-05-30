@@ -74,26 +74,26 @@ namespace DagoniteEmpire.Service
                     _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
                     _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
                 }
-                if (_db.Professions.FirstOrDefault(c => c.Name == "Game Master") == null)
+                if (_db.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
                 {
-                    var proff = new Profession() { Name = "Game Master",Description="", RelatedAttribute= "" };
+                    var proff = new Profession() { Name = SD.NPCName_GameMaster, Description="", RelatedAttribute= "" };
 
                     _db.Professions.Add(proff);
                     _db.SaveChanges();
                 }
-                if (_db.Races.FirstOrDefault(c => c.Name == "Game Master") == null)
+                if (_db.Races.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
                 {
-                    var race = new Race() { Name = "Game Master" };
+                    var race = new Race() { Name = SD.NPCName_GameMaster };
 
                     _db.Races.Add(race);
                     _db.SaveChanges();
                 }
-                if (_db.Characters.FirstOrDefault(c=>c.NPCName == "Game Master") == null)
+                if (_db.Characters.FirstOrDefault(c=>c.NPCName == SD.NPCName_GameMaster) == null)
                 {
-                    var charac = new Character() { UserName = "GM", NPCName = "Game Master" };
+                    var charac = new Character() { UserName = "GM", NPCName = SD.NPCName_GameMaster };
 
-                    var profession = _db.Professions.FirstOrDefault(c => c.Name == "Game Master");
-                    var race = _db.Races.FirstOrDefault(c => c.Name == "Game Master");
+                    var profession = _db.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster);
+                    var race = _db.Races.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster);
                     charac.ProfessionId = profession.Id;
                     charac.RaceId = race.Id;
                     charac.ImageUrl = "../images/gm_avatar.webp";

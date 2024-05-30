@@ -1,5 +1,5 @@
-﻿
-@inject ISnackbar Snackbar
+﻿@inject ISnackbar Snackbar
+@inject ICharacterRepository _characterRepository
 
 <MudDialog>
     <TitleContent>
@@ -12,16 +12,16 @@
         <MudTextField @bind-Value="@NewCampaign.Name" Label="Campaign name" />
         <MudTextField @bind-Value="@NewCampaign.Description" Label="Description" />
         <MudChipSet @bind-SelectedChips="SelectedCharacters" MultiSelection="true" Filter="true">
-            @foreach (var adv in NewCampaign.Characters)
+            @foreach (var adv in AllCharacters)
             {
-                <MudChip Text="@adv.NPCName"></MudChip>
+                <MudChip Text="@adv.NPCName" Default="NewCampaign.Characters.Any(u=>u.Id == adv.Id)"></MudChip>
             }
             
         </MudChipSet>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="CreateCampaign">Create campaign</MudButton>
+        <MudButton Color="Color.Error" OnClick="CreateCampaign">Title</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -29,8 +29,18 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter] public CampaignDTO NewCampaign { get; set; }
+    [Parameter] public bool IsEdit { get; set; } = false;
     MudChip[] SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
+    private IEnumerable<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
+    private string Title { get; set; } = "Create campaign";
+
+    protected override async Task OnInitializedAsync()
+    {
+        AllCharacters = await _characterRepository.GetAll();
+        if (IsEdit)
+            Title = "Edit campaign";
+    }
 
     private void Cancel()
     {
@@ -39,22 +49,23 @@
 
     private void CreateCampaign()
     {
-        //In a real world scenario this bool would probably be a service to delete the item from api/database
-        Snackbar.Add("Campaign Created", Severity.Success);
-
         if (SelectedCharacters is not null)
         {            
             foreach (var charac in SelectedCharacters)
             {
-                var adventurer = NewCampaign.Characters.FirstOrDefault(c => c.NPCName == charac.Text);
-                if (adventurer is not null)
+                var adventurer = AllCharacters.FirstOrDefault(c => c.NPCName == charac.Text);
+                if (adventurer is not null && !Characters.Any(c => c.NPCName == charac.Text))
                     Characters.Add(adventurer);
             }
         }
         NewCampaign.Characters = Characters;
         NewCampaign.CreatedDate = DateTime.Now;
-
-
         MudDialog.Close(DialogResult.Ok(NewCampaign));
+        //In a real world scenario this bool would probably be a service to delete the item from api/database
+        if (IsEdit)
+          Snackbar.Add("Campaign Edited", Severity.Success);
+        else
+          Snackbar.Add("Campaign created", Severity.Success);
+
     }
 }

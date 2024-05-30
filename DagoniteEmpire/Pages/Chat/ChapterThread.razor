@@ -16,7 +16,7 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 
 
-<MudContainer Fixed="false">
+<MudContainer Class="pr-1"  Fixed="false">
     @if (IsLoading == true){
         <div class="text-center">
             <img src="images/loading.gif" width="60px">
@@ -28,39 +28,89 @@
         {
             <MudText Typo="Typo.h4"><img src="@MyIcon.Quill" width="40px" height="40px" class="pr-2" />Chapter: @Chapter.Name</MudText>
             <MudText Class="py-2 flex-grow-1" Typo="Typo.h6"> @Chapter.Day, @Chapter.Place </MudText>
-            <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate</MudText>  
+            <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate</MudText>
 
-        <MudStack>
-            @if(Chapter.Posts is not null){
-                @foreach (var post in Posts)
-                {
-                    if (post.Character is not null)
+            <div class="big-screen" id="send-message-cont">
+                <MudStack>
+                @if(Chapter.Posts is not null){
+                    @foreach (var post in Posts)
                     {
-                            string postId = "postnumber_" + post.Id.ToString(); 
-                            <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="300px">
-                            <MudPaper Class="d-flex flex-column pa-2" Width="200px">
-                                    <MudText Typo="Typo.h5">@post.Character.NPCName</MudText>
-                                    <MudImage Src="@post.Character.ImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg" />
+                        if (post.Character is not null)
+                        {
+                            string postId = "post_big_number_" + post.Id.ToString();
+
+                                <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="300px">
+                                <MudPaper Class="d-flex flex-column pa-2" Width="200px">
+                                        <MudText Align="Align.Center" Typo="Typo.h5">@post.Character.NPCName</MudText>
+                                        <MudImage Src="@post.Character.ImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg" />
+                                        @if (@post.Character.NPCName != SD.NPCName_GameMaster)
+                                        {
+                                            <MudText Align="Align.Center" Typo="Typo.body1">Race: @post.Character.RaceName</MudText>
+                                            <MudText Align="Align.Center" Typo="Typo.body1">Class: @post.Character.ProfessionName</MudText>
+                                        }
+                                </MudPaper>
+                                <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
+                                        <MudStack Spacing="0" Row="true">
+                                            <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
+                                            <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                        </MudStack>
+                                
+                                        <SfRichTextEditor ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
+                                            <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
+                                            <RichTextEditorToolbarSettings Items="@NoTools" />
+                                    </SfRichTextEditor>
+                                </MudPaper>
                             </MudPaper>
-                            <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
-                                <MudText Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
-                                    <SfRichTextEditor ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
-                                        <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
-                                        <RichTextEditorToolbarSettings Items="@NoTools" />
-                                </SfRichTextEditor>
-                            </MudPaper>
-                        </MudPaper>
+                        }
                     }
                 }
-            }
-        </MudStack>
+            </MudStack>
+
+            </div>
+            <div class="small-screen w-100" id="send-message-cont">
+                <MudStack>
+                    @if (Chapter.Posts is not null)
+                    {
+                        @foreach (var post in Posts)
+                        {
+                            if (post.Character is not null)
+                            {
+                                string postId = "post_small_number_" + post.Id.ToString();
+
+                                <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
+                                    <MudStack Class="pb-1" Spacing="0" Row="true">
+                                        <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage Src="@post.Character.ImageUrl"></MudImage></MudAvatar>
+                                        <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.Character.NPCName</MudText>
+                                        <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                    </MudStack>
+
+                                    <SfRichTextEditor ID="@postId" @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
+                                        <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
+                                        <RichTextEditorToolbarSettings Items="@NoTools" />
+                                    </SfRichTextEditor>
+                                    <MudText Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
+                                </MudPaper>
+                            }
+                        }
+                    }
+                </MudStack>
+
+            </div>
         }
+    <div id="bottom-container">
         <MudPaper Width="100%" Height="300px" Square="true" Class="d-flex  flex-column flex-grow-1 my-2 pa-2">
             <SfRichTextEditor Height="100%" @bind-Value="@NewPost.Content"  ShowTooltip="true">
                     <RichTextEditorToolbarSettings Items="@Tools" />
                 </SfRichTextEditor>
-            <MudButton Class="mt-2 py-0" OnClick="CreatePost">Save</MudButton>
+                <div class="d-flex flex-row">
+                    <MudButton Class="mt-2 py-0" OnClick="CreatePost">@SendButtonText</MudButton>
+                    @if (IsEditMode)
+                    {
+                        <MudButton Class="mt-2 py-0" OnClick="CancelEdit">Cancel Edit</MudButton>
+                    }
+                </div>
         </MudPaper>
+    </div>
     }
     
 </MudContainer>
@@ -73,11 +123,15 @@
 
     .e-richtexteditor.e-rte-tb-expand .e-rte-content, .e-richtexteditor.e-rte-tb-expand .e-source-content{
         border: none;
-        }
+    }
 
-        .e-richtexteditor.e-rte-tb-expand{
-            border: none;
-        }
+    .e-richtexteditor.e-rte-tb-expand{
+        border: none;
+    }
+
+    .e-richtexteditor .e-rte-content .e-content {
+        padding: 4px;
+    }
 </style>
 
 @code{
@@ -93,6 +147,8 @@
     public bool IsAdminOrMG { get; set; } = true;
     private string Title { get; set; } = "Campaign name";
     private CharacterDTO SelectedCharacter  = null;
+    private bool IsEditMode = false;
+    private string SendButtonText { get; set; } = "Send Post";
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
@@ -152,6 +208,7 @@
         {
             await LoadChapter();
         }
+        await _jsRuntime.ScrollToElement("bottom-container");
     }
 
 
@@ -166,7 +223,7 @@
 
         if (IsAdminOrMG)
         {
-            SelectedCharacter = await _characterRepository.GetByName("Game Master");
+            SelectedCharacter = await _characterRepository.GetByName(SD.NPCName_GameMaster);
         }
         else
         {
@@ -177,6 +234,7 @@
 
         IsLoading = false;
         StateHasChanged();
+       
     }
 
     private async Task CreatePost()
@@ -184,21 +242,54 @@
         if (string.IsNullOrEmpty(NewPost.Content))
             return;
 
+
         IsLoading = true;
         StateHasChanged();
-        NewPost.ChapterId = Id;
-        NewPost.CharacterId = SelectedCharacter.Id;
-        NewPost.Character = SelectedCharacter;
-        NewPost.CreatedDate = DateTime.Now;
+        if (IsEditMode)
+        {
+            var result = await _postRepository.Update(NewPost);
+            if (result is not null)
+            {
+                var index =  Posts.FindIndex(p => p.Id == NewPost.Id);
+                if (index >= 0)
+                    Posts[index].Content = NewPost.Content;
+            }
+            IsEditMode = false;
+            SendButtonText = "Send Post";
+        }
+        else
+        {
+            
+            NewPost.ChapterId = Id;
+            NewPost.CharacterId = SelectedCharacter.Id;
+            NewPost.Character = SelectedCharacter;
+            NewPost.CreatedDate = DateTime.Now;
 
-        var result = await _postRepository.Create(NewPost);
-        if(result is not null)
-            Posts.Add(NewPost);
+            var result = await _postRepository.Create(NewPost);
+            if(result is not null)
+                Posts.Add(NewPost);
 
+        }
         NewPost = new();
 
         IsLoading = false;
         StateHasChanged();
+    }
+
+    private async Task EditPost(PostDTO post)
+    {
+        await _jsRuntime.ScrollToElement("bottom-container");
+        NewPost = post;
+        IsEditMode = true;
+        SendButtonText = "Edit Post";
+
+    }
+    private async Task CancelEdit()
+    {
+        NewPost = new();
+        IsEditMode = false;
+        SendButtonText = "Send Post";
+
     }
 
     public void ResizePostContent(string args)

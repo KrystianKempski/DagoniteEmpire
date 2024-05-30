@@ -1,4 +1,5 @@
-﻿using DA_DataAccess.CharacterClasses;
+﻿using DA_Common;
+using DA_DataAccess.CharacterClasses;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;

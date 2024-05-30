@@ -16,7 +16,7 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 
 
-<MudContainer Fixed="false">
+<MudContainer Class="pr-1" Fixed="false">
     @if (IsLoading == true){
         <div class="text-center">
             <img src="images/loading.gif" width="60px">
@@ -24,21 +24,26 @@
     }else{
         @if (Campaign is not null)
         {
-            <MudText Typo="Typo.h4"><img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />Chapter list of @Campaign.Name</MudText>
+            <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />Chapter list of @Campaign.Name</MudText>
         }
         @if (IsAdminOrMG)
         {
             <div class="camp">
-                <MudPaper Height="100px" Width="100%" Class="pa-3 ma-3 justify-content-center" Style="cursor: pointer;" @onclick="CreateChapter">
+                <MudPaper Height="100px" Width="100%" Class="pa-3 my-2 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateChapter">
                     <MudText Align="Align.Center" Typo="Typo.h5"> Add new Chapter...</MudText>
             </MudPaper>
             </div>
         }
         else
         {
-            <MudPaper Height="100px" Width="100%" Class="pa-3 ma-3 justify-content-center align-content-center">
+            @* <MudPaper Height="100px" Width="100%" Class="pa-3 ma-3 justify-content-center align-content-center">
                 <MudText Typo="Typo.h5"> Chapters for @SelectedCharacter.NPCName</MudText>
-            </MudPaper>
+            </MudPaper> *@
+            <div class="camp">
+                <MudPaper Height="100px" Width="100%" Class="pa-3 my-2 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateChapter">
+                    <MudText Align="Align.Center" Typo="Typo.h5"> Add new Chapter...</MudText>
+                </MudPaper>
+            </div>
             
         }
 
@@ -48,13 +53,16 @@
                 @foreach (var chap in Chapters)
                 {
                     <div class="d-flex flex-column camp">
-                        <MudPaper Class="d-flex flex-column pa-3 ma-3" Height="200px" Width="100%" @onclick="@(()=>ChooseChapter(chap))">
+                        <MudPaper Class="d-flex flex-column pa-3 ma-0" Height="300px" Width="100%" @onclick="@(()=>ChooseChapter(chap))">
 
-                            <MudText Typo="Typo.h5">@chap.Name</MudText>
+                            <MudStack Spacing="0" Row="true">
+                                <MudText Class="flex-grow-1" Typo="Typo.h6">@chap.Name</MudText>
+                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditChapter(chap))"></MudIconButton>
+                            </MudStack>
                             <MudText Typo="Typo.caption">Started at: @chap.CreatedDate</MudText>
-                            <MudText Class="py-2 flex-grow-1" Typo="Typo.h6"> @chap.Day, @chap.Place </MudText>
-                            <MudText Class="py-2 flex-grow-1" Typo="Typo.body1"> @chap.Description </MudText>
-                            <div class="d-inline-flex">
+                            <MudText Class="py-1" Typo="Typo.subtitle2"> @chap.Day, @chap.Place </MudText>
+                            <MudText Class="py-1 flex-grow-1" Typo="Typo.body2"> @chap.Description </MudText>
+                            <div class="d-flex flex-wrap">
                                 @foreach (var adv in chap.Characters)
                                 {
                                     <MudChip>
@@ -147,11 +155,11 @@
 
     private async Task CreateChapter()
     {
-        NewChapter.Characters = Campaign.Characters.ToList();
+        var AllCharacters = Campaign.Characters.ToList();
 
-        var parameters = new DialogParameters<CreateChapterDialog> { { x => x.NewChapter, NewChapter } };
+        var parameters = new DialogParameters<CreateChapterDialog> { { x => x.NewChapter, NewChapter }, { x => x.AllCharacters, AllCharacters } };
 
-        var dialog = await DialogService.ShowAsync<CreateChapterDialog>("Create Campaign", parameters);
+        var dialog = await DialogService.ShowAsync<CreateChapterDialog>("Create chapter", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -161,6 +169,26 @@
 
 
             Chapters.Add(await _chapterRepository.Create(NewChapter));
+        }
+    }
+
+    private async Task EditChapter(ChapterDTO chapter)
+    {
+        var AllCharacters = Campaign.Characters.ToList();
+        NewChapter = chapter;
+
+        var parameters = new DialogParameters<CreateChapterDialog> { { x => x.NewChapter, NewChapter }, { x => x.AllCharacters, AllCharacters }, { x => x.IsEdit, true } };
+
+        var dialog = await DialogService.ShowAsync<CreateChapterDialog>("Edit chapter", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewChapter = (ChapterDTO)result.Data;
+
+            int index = Chapters.FindIndex(u => u.Id == NewChapter.Id);
+            if (index >= 0)
+                Chapters[index] = await _chapterRepository.Update(NewChapter);
         }
     }
 

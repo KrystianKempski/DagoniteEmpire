@@ -14,6 +14,7 @@ using System.Diagnostics.Metrics;
 using Abp.Collections.Extensions;
 using System.Diagnostics;
 using DagoniteEmpire.Exceptions;
+using DA_Common;
 
 namespace DA_Business.Repository.CharacterReps
 {
@@ -118,8 +119,8 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             if (id == null || id < 1)
-                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.TraitsAdv).Include(r => r.Race).Include(r => r.Profession).Include(r=>r.Equipment));
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.TraitsAdv).Include(r => r.Race).Include(r => r.Profession).Include(r => r.Equipment).Where(u=>u.Id==id));
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.TraitsAdv).Include(r => r.Race).Include(r => r.Profession).Include(r=>r.Equipment).Where(u=>u.NPCName != SD.NPCName_GameMaster));
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.TraitsAdv).Include(r => r.Race).Include(r => r.Profession).Include(r => r.Equipment).Where(u=>u.Id == id && u.NPCName != SD.NPCName_GameMaster));
         }
 
         public async Task<CharacterDTO> GetById(int id)

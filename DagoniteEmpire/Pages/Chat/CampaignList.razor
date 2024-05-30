@@ -16,19 +16,19 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 
 
-<MudContainer Fixed="false">
+<MudContainer Class="pr-1" Fixed="false">
     @if (IsLoading == true){
         <div class="text-center">
             <img src="images/loading.gif" width="60px">
         </div>
     }else{
 
-        <MudText Typo="Typo.h4" Class="pb-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns</MudText>
+        <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns</MudText>
         @if (IsAdminOrMG)
         {
             <div class="camp">
 
-                <MudPaper Height="100px" Width="100%" Class="pa-3 ma-3 justify-content-center" Style="cursor: pointer;" @onclick="CreateCampaign">
+                <MudPaper Height="100px" Width="100%" Class="pa-3 ma-3 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateCampaign">
                     <MudText Typo="Typo.h5" Align="Align.Center"> Add new Campaign...</MudText>
             </MudPaper>
             </div>
@@ -53,12 +53,16 @@
                 @foreach(var camp in Campaigns)
                 {
                     <div class="d-flex flex-column camp">
-                        <MudPaper Class="d-flex flex-column pa-3 my-3" Height="200px" Width="100%" @onclick="@(()=>ChooseCampaign(camp))">
-                        
-                            <MudText Typo="Typo.h5">@camp.Name</MudText>
+                        <MudPaper Class="d-flex flex-column pa-3" Height="300px" Width="100%" @onclick="@(()=>ChooseCampaign(camp))">
+
+
+                            <MudStack Spacing="0" Row="true">
+                                <MudText Class="flex-grow-1" Typo="Typo.h6">@camp.Name</MudText>
+                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))"></MudIconButton>
+                            </MudStack>
                             <MudText Typo="Typo.caption">Started by: @camp.GameMaster at: @camp.CreatedDate</MudText>
-                            <MudText Class="py-2 flex-grow-1" Typo="Typo.body1"> @camp.Description </MudText>                        
-                            <div class="d-inline-flex">
+                            <MudText Class="py-1 flex-grow-1" Typo="Typo.body2"> @camp.Description </MudText>
+                            <div class="d-flex flex-wrap">
                                 @foreach (var adv in camp.Characters)
                                 {
                                     <MudChip>
@@ -161,7 +165,7 @@
             Title = "All avalible campaingns";
             Characters = await _characterRepository.GetAll();
             Campaigns = (await _campaignRepository.GetAll()).ToList();
-            SelectedCharacter = await _characterRepository.GetByName("Game Master");
+            SelectedCharacter = await _characterRepository.GetByName(SD.NPCName_GameMaster);
         }
         else
         {
@@ -172,20 +176,19 @@
                 SelectedCharacter = Characters.First();
                 Campaigns = (await _campaignRepository.GetAll(SelectedCharacter.Id)).ToList();
             }
-           
+
 
         }
         IsLoading = false;
         StateHasChanged();
     }
 
-    private async Task CreateCampaign(){
-
-        NewCampaign.Characters = Characters.ToList();
+    private async Task CreateCampaign()
+    {
 
         var parameters = new DialogParameters<CreateCampaignDialog> { { x => x.NewCampaign, NewCampaign } };
 
-        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Create Campaig", parameters);
+        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Create Campaign", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -196,11 +199,23 @@
             if (authstate is not null)
                 NewCampaign.GameMaster = authstate.User.Identity.Name;
 
-            
-
-           // await _campaignRepository.Create(NewCampaign);
-
             Campaigns.Add(await _campaignRepository.Create(NewCampaign));
+        }
+    }
+    private async Task EditCampaign(CampaignDTO camp)
+    {
+        var parameters = new DialogParameters<CreateCampaignDialog> { { x => x.NewCampaign, camp }, { x => x.IsEdit, true } };
+
+        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Edit Campaign", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewCampaign = (CampaignDTO)result.Data;
+
+            int index = Campaigns.FindIndex(u => u.Id == NewCampaign.Id);
+            if (index >= 0)
+                Campaigns[index] = await _campaignRepository.Update(NewCampaign);
         }
     }
 

@@ -6,6 +6,8 @@ using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.Metrics;
+using System.Linq;
 
 namespace DA_Business.Repository.ChatRepos
 {
@@ -118,16 +120,104 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Campaigns.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
-                if (obj != null)
+                var obj = await contex.Campaigns.Include(a => a.Characters).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                if (obj is not null)
                 {
-                    obj.IsFinished = objDTO.IsFinished;
-                    obj.Description = objDTO.Description;
-                    obj.Name = objDTO.Name;
+                    var updatedCampaign = _mapper.Map<CampaignDTO, Campaign>(objDTO);
 
-                    contex.Campaigns.Update(obj);
+                    // Update parent
+                    contex.Entry(obj).CurrentValues.SetValues(updatedCampaign);
+
+
+                    // Delete characters
+                    if (obj.Characters is not null)
+                    {
+                        foreach (var existingChild in obj.Characters.ToList())
+                        {
+                            if (!updatedCampaign.Characters.Any(c => c.Id == existingChild.Id))
+                            {
+                                //remove from campaign
+                                var detachedCharacter = contex.Characters.Include(c => c.Campaigns).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
+                                if (detachedCharacter == null || detachedCharacter.Campaigns == null || !detachedCharacter.Campaigns.Contains(obj))
+                                    continue;
+                                detachedCharacter.Campaigns.Remove(obj);
+                                contex.Characters.Update(detachedCharacter);
+                                // also remove from chapters
+                                var allChapters = contex.Chapters.Include(c => c.Characters).Where(c => c.CampaignId == obj.Id);
+                                if(allChapters.Any())
+                                {
+                                    foreach(var chapter in allChapters)
+                                    {
+                                        detachedCharacter.Chapters.Remove(chapter);
+                                        contex.Characters.Update(detachedCharacter);
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+
+                    // Update and Insert Characters
+                    if (updatedCampaign.Characters is not null)
+                    {
+                        foreach (var childChar in updatedCampaign.Characters)
+                        {
+                            if (!obj.Characters.Any(c => c.Id == childChar.Id && c.Id != default(int)))
+                                obj.Characters.Add(childChar);
+                        }
+                    }
+
+                    //// Delete chapters
+                    //if (obj.Chapters is not null)
+                    //{
+                    //    foreach (var existingChild in obj.Chapters.ToList())
+                    //    {
+                    //        if (!updatedCampaign.Chapters.Any(c => c.Id == existingChild.Id))
+                    //        {
+                    //            contex.Chapters.Remove(existingChild);
+                    //        }
+                    //    }
+                    //}
+
+                    //// Update and Insert Chapters
+                    //if (updatedCampaign.Chapters is not null)
+                    //{
+                    //    foreach (var childChap in updatedCampaign.Chapters)
+                    //    {
+                    //        if (!obj.Chapters.Any(c => c.Id == childChap.Id && c.Id != default(int)) != null)
+                    //            obj.Chapters.Add(childChap);
+                    //    }
+                    //}
+                   // contex.Campaigns.Update(updatedCampaign);
                     await contex.SaveChangesAsync();
                     return _mapper.Map<Campaign, CampaignDTO>(obj);
+                }
+                else
+                {
+                    obj = _mapper.Map<CampaignDTO, Campaign>(objDTO);
+
+
+                    foreach (var cha in obj.Characters)
+                    {
+                        cha.Profession = null;
+                        cha.Race = null;
+                    }
+
+                    var characterts = await contex.Characters.ToListAsync();
+                    characterts.ForEach(t =>
+                    {
+                        if (obj.Characters.Any(nt => nt.Id == t.Id))
+                        {
+                            var untracked = obj.Characters.FirstOrDefault(nt => nt.Id == t.Id);
+                            obj.Characters.Remove(untracked);
+                            obj.Characters.Add(t);
+                        }
+                    });
+
+                    var addedObj = contex.Campaigns.Add(obj);
+                    await contex.SaveChangesAsync();
+
+                    return _mapper.Map<Campaign, CampaignDTO>(addedObj.Entity);
                 }
             }
             catch (Exception ex) {

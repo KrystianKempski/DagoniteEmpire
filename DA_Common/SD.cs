@@ -33,6 +33,7 @@ namespace DA_Common
         public const string Instinct = "Instinct";
         public const string Willpower = "Willpower";
         public const string Charisma = "Charisma";
+        public const string NPCName_GameMaster = "Game Master";
 
         
     }

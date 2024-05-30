@@ -5,26 +5,26 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
              <MudIcon Icon="..\icons\bookmarklet.svg" Color="Color.Primary" /> 
-            Create new Chapter
+            @Title
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudTextField @bind-Value="@NewChapter.Name" Label="Campaign name" />
         <MudTextField @bind-Value="@NewChapter.Description" Label="Description" />
-        <MudTextField @bind-Value="@NewChapter.Day" Label="Description" />
-        <MudTextField @bind-Value="@NewChapter.Place" Label="Description" />
+        <MudTextField @bind-Value="@NewChapter.Day" Label="Date and Time" />
+        <MudTextField @bind-Value="@NewChapter.Place" Label="Location" />
 
         <MudChipSet @bind-SelectedChips="SelectedCharacters" MultiSelection="true" Filter="true">
-            @foreach (var adv in NewChapter.Characters)
+            @foreach (var adv in AllCharacters)
             {
-                <MudChip Text="@adv.NPCName"></MudChip>
+                <MudChip Text="@adv.NPCName" Default="NewChapter.Characters.Any(u=>u.Id == adv.Id)"></MudChip>
             }
             
         </MudChipSet>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="CreateCampaign">Create campaign</MudButton>
+        <MudButton Color="Color.Error" OnClick="CreateCampaign">@Title</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -32,6 +32,9 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter] public ChapterDTO NewChapter { get; set; }
+    [Parameter] public List<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
+    [Parameter] public bool IsEdit { get; set; } = false;
+    private string Title = "Create chapter";
     MudChip[] SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
 
@@ -40,23 +43,35 @@
         MudDialog.Cancel();
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEdit)
+            Title = "Edit chapter";
+    }
+
     private void CreateCampaign()
     {
-        //In a real world scenario this bool would probably be a service to delete the item from api/database
-        Snackbar.Add("Chapter Created", Severity.Success);
+       
 
         if (SelectedCharacters is not null)
         {            
+
             foreach (var charac in SelectedCharacters)
             {
-                var adventurer = NewChapter.Characters.FirstOrDefault(c => c.NPCName == charac.Text);
-                if (adventurer is not null)
+                var adventurer = AllCharacters.FirstOrDefault(c => c.NPCName == charac.Text);
+                if (adventurer is not null && !Characters.Any(c => c.NPCName == charac.Text))
                     Characters.Add(adventurer);
             }
         }
+        //In a real world scenario this bool would probably be a service to delete the item from api/database
+      
         NewChapter.Characters = Characters;
         NewChapter.CreatedDate = DateTime.Now;
 
         MudDialog.Close(DialogResult.Ok(NewChapter));
+        if (IsEdit)
+            Snackbar.Add("Chapter edited", Severity.Success);
+        else 
+            Snackbar.Add("Chapter created", Severity.Success);
     }
 }

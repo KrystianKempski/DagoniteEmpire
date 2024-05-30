@@ -17,7 +17,7 @@ namespace DA_DataAccess.Chat
 
         [ForeignKey(nameof(Character))]
         public int CharacterId { get; set; }
-        public Character? Character { get; set; }
+        public virtual Character? Character { get; set; }
 
         [ForeignKey(nameof(Chapter))]
         public int ChapterId { get; set; }
