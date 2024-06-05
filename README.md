@@ -32,6 +32,7 @@ Whole application was developed with .Net 7.0 Blazor Server.
 
 Multiple frameworks and tools were used for best apperience and user-friendly interface:
   - Syncfusion solutions components
+  - Mudblazor
   - EntityFrameworkCore PostgreSQL
   - Magick.NET
   - AutoMapper
