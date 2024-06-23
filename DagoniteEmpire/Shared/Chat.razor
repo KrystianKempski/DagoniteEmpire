@@ -347,6 +347,11 @@
                     UserBoxes.RemoveAt(0);
             }
         }
+        else if (ChosenUser.ContactId == userId)
+        {
+            CloseChatbox(ChosenUser);
+            return;
+        }
         ClearBadgeContent();
         StateHasChanged();
         await _jsRuntime.ScrollToBottom($"{ChosenUser.ContactId}");
