@@ -38,6 +38,8 @@ namespace DA_Models.CharacterModels
         public int RaceId { get; set; } = 0;
         public int ProfessionId { get; set; } = 0;
         public bool IsApproved { get; set; } = false;
+        public EquipmentDTO Armor { get; set; }
+        public EquipmentDTO Weapon { get; set; }
 
         public override string ToString() => NPCName;
     }

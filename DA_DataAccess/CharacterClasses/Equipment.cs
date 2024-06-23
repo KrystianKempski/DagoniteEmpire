@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DA_Common;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -26,6 +27,11 @@ namespace DA_DataAccess.CharacterClasses
         public decimal Weight { get; set; }
         public int Count { get; set; }      = 1;                // how many items in equipment
         public bool IsApproved { get; set; }                    // Equipment have to be approved by Game Master
+
+        public bool IsEquipped { get; set; } = false;
+        public string EquipmentType { get; set; } = "other";
+
+        //public ICollection<WeaponQuality>? WeaponQualities { get; set; } = null;
 
     }
 }

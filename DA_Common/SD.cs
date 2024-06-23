@@ -18,6 +18,7 @@ namespace DA_Common
         public const string FeatureAttribute = "Attribute";
         public const string FeatureBaseSkill = "BaseSkill";
         public const string FeatureSpecialSkill = "SpecialSkill";
+        public const string FeatureWeaponQuality = "WeaponQuality";
         public const string FeatureDukeTraits = "DukeTraits";
         public const string FeatureOther = "Other";
 
@@ -34,8 +35,29 @@ namespace DA_Common
         public const string Willpower = "Willpower";
         public const string Charisma = "Charisma";
         public const string NPCName_GameMaster = "Game Master";
+        // Weapon qualities
+        public const string WeaponQuality_Fast = "Fast";
+        public const string WeaponQuality_Slow = "Slow";
+        public const string WeaponQuality_Parrying = "Parrying";
+        public const string WeaponQuality_ShieldDestructive = "Shield destructive";
+        public const string WeaponQuality_ArmorPiercing = "Armor piercing";
+        public const string WeaponQuality_Long = "Long";
+        public const string WeaponQuality_Heavy = "Heavy";
+        public const string WeaponQuality_Devastating = "Devastating";
+        public const string WeaponQuality_Weak = "Weak";
+        public const string WeaponQuality_Stunning = "Stunning";
+        public const string WeaponQuality_Stumbling = "Stumbling";
+        public const string WeaponQuality_Snatching = "Snatching";
+        public const string WeaponQuality_Armor = "Armor";
+        public const string WeaponQuality_ArmorDefenceBonus = "Armor defence bonus";
+        public const string WeaponQuality_ArmorBane = "ArmorBane";
+        public const string WeaponQuality_Durability = "Durability";
+        public const string WeaponQuality_ShieldDefenceBonus = "Shield defence bonus";
+        public const string WeaponQuality_Bulky = "Bulky";
+        public const string WeaponQuality_Precise = "Precise";
+        public const string WeaponQuality_Range  = "Range";
+        public const string WeaponQuality_Ligh = "Ligh";
 
-        
     }
     public static class MyIcon
     {
@@ -44,5 +66,13 @@ namespace DA_Common
         public const string Quill = "icons/quill.svg";
 
 
+    }
+
+    public enum EquipmentType
+    {
+        Other,
+        Armor,
+        WeaponMelee,
+        WeaponRanged,
     }
 }

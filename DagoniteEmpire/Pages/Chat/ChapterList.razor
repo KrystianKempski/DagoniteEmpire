@@ -12,9 +12,8 @@
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
 
-
 @using Microsoft.AspNetCore.SignalR.Client;
-
+@using BreadcrumbItem = MudBlazor.BreadcrumbItem;
 
 <MudContainer Class="pr-1" Fixed="false">
     @if (IsLoading == true){
@@ -22,6 +21,7 @@
             <img src="images/loading.gif" width="60px">
         </div>
     }else{
+        <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
         @if (Campaign is not null)
         {
             <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />Chapter list of @Campaign.Name</MudText>
@@ -53,7 +53,7 @@
                 @foreach (var chap in Chapters)
                 {
                     <div class="d-flex flex-column camp">
-                        <MudPaper Class="d-flex flex-column pa-3 ma-0" Height="300px" Width="100%" @onclick="@(()=>ChooseChapter(chap))">
+                        <MudPaper Class="d-flex flex-column pa-3 ma-0" Height="230px" Width="100%" @onclick="@(()=>ChooseChapter(chap))">
 
                             <MudStack Spacing="0" Row="true">
                                 <MudText Class="flex-grow-1" Typo="Typo.h6">@chap.Name</MudText>
@@ -113,6 +113,7 @@
     private CharacterDTO SelectedCharacter  = null;
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -148,6 +149,11 @@
         Chapters = (await _chapterRepository.GetAll(Id)).ToList();
         SelectedCharacter = await _characterRepository.GetById(CharId);
         Title = Campaign.Name;
+        _items = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Campaigns", href: $"/campaignlist/"),
+            new BreadcrumbItem("Chapters", href: $"/campaign/{Id}/{CharId}"),
+        };
 
         IsLoading = false;
         StateHasChanged();

@@ -12,9 +12,8 @@
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
 
-
 @using Microsoft.AspNetCore.SignalR.Client;
-
+@using BreadcrumbItem = MudBlazor.BreadcrumbItem;
 
 <MudContainer Class="pr-1"  Fixed="false">
     @if (IsLoading == true){
@@ -24,6 +23,7 @@
     }else{
 
 
+        <MudBreadcrumbs Class="px-0" py-2 Items="_items"></MudBreadcrumbs>
         @if (Chapter is not null)
         {
             <MudText Typo="Typo.h4"><img src="@MyIcon.Quill" width="40px" height="40px" class="pr-2" />Chapter: @Chapter.Name</MudText>
@@ -50,14 +50,17 @@
                                         }
                                 </MudPaper>
                                 <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
-                                        <MudStack Spacing="0" Row="true">
-                                            <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
+                                    <MudStack Spacing="0" Row="true">
+                                        <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
+                                        @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.NPCName_GameMaster)
+                                        {
                                             <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
-                                        </MudStack>
+                                        }
+                                    </MudStack>
                                 
-                                        <SfRichTextEditor ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
-                                            <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
-                                            <RichTextEditorToolbarSettings Items="@NoTools" />
+                                    <SfRichTextEditor ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
+                                        <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
+                                        <RichTextEditorToolbarSettings Items="@NoTools" />
                                     </SfRichTextEditor>
                                 </MudPaper>
                             </MudPaper>
@@ -81,7 +84,10 @@
                                     <MudStack Class="pb-1" Spacing="0" Row="true">
                                         <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage Src="@post.Character.ImageUrl"></MudImage></MudAvatar>
                                         <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.Character.NPCName</MudText>
-                                        <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                        @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.NPCName_GameMaster)
+                                        {
+                                            <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                        }
                                     </MudStack>
 
                                     <SfRichTextEditor ID="@postId" @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
@@ -176,6 +182,8 @@
     };
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
+    
 
     protected override async Task OnInitializedAsync()
     {
@@ -216,6 +224,7 @@
     {
         IsLoading = true;
         StateHasChanged();
+      
 
         Chapter = await _chapterRepository.GetById(Id);
         Posts = (await _postRepository.GetAll(Id)).ToList();
@@ -229,7 +238,12 @@
         {
             SelectedCharacter = await _characterRepository.GetById(CharId);
         }
-
+        _items = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Campaigns", href: $"/campaignlist/" ),
+            new BreadcrumbItem("Chapters", href: $"/campaign/{Chapter.CampaignId}/{CharId}"),
+            new BreadcrumbItem("Posts", href: $"/chapter/{Id}/{CharId}"),
+        };
         Title = Chapter.Name;
 
         IsLoading = false;

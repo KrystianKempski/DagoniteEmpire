@@ -1,4 +1,5 @@
-﻿@inject AuthenticationStateProvider GetAuthenticationStateAsync
+﻿@using DA_DataAccess.CharacterClasses
+@inject AuthenticationStateProvider GetAuthenticationStateAsync
 <div class="traits">
 
     <SfDialog Width="50%" Height="50%" @bind-Visible="@_customTraitModel.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
@@ -63,7 +64,7 @@
                                         <div class="bonus-cell">
                                         <SfDropDownList TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType"></SfDropDownList>
                                         </div>
-                                    @if (obj.FeatureType == "Attribute")
+                                    @if (obj.FeatureType == SD.FeatureAttribute)
                                     {
                                         <div class="bonus-cell">
                                             <SfDropDownList TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes" @bind-Value="@obj.FeatureName">
@@ -71,7 +72,7 @@
                                             </SfDropDownList>
                                         </div>
                                     }
-                                    else if (obj.FeatureType == "Base skill")
+                                    else if (obj.FeatureType == SD.FeatureBaseSkill)
                                     {
                                         <div class="bonus-cell">
                                             <SfDropDownList TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@AllParams.BaseSkills" @bind-Value="@obj.FeatureName">
@@ -79,7 +80,7 @@
                                             </SfDropDownList>
                                         </div>
                                     }
-                                    else if (obj.FeatureType == "Special skill")
+                                    else if (obj.FeatureType == SD.FeatureSpecialSkill)
                                     {
                                         <div class="bonus-cell">
                                             <SfDropDownList TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills" @bind-Value="@obj.FeatureName">
@@ -87,18 +88,36 @@
                                             </SfDropDownList>
                                         </div>
                                     }
-                                    else if(obj.FeatureType == "Other")
+                                    else if (obj.FeatureType == SD.FeatureWeaponQuality)
+                                    {
+                                        <div class="bonus-cell">
+                                            <SfDropDownList TValue="string" TItem="WeaponQualityList" Width="100%" Placeholder="Select special skill " DataSource="@LocalData" @bind-Value="@obj.FeatureName">
+                                                <DropDownListFieldSettings Value="Id" Text="Id"></DropDownListFieldSettings>
+                                            </SfDropDownList>
+                                        </div>
+                                    }
+                                    else if(obj.FeatureType == SD.FeatureOther)
                                     {
                                         <div class="bonus-double-cell">
                                             <SfTextBox Multiline=true Placeholder="Insert bonus description" @bind-Value="@obj.Description"></SfTextBox>
 
                                         </div>
                                     }
-                                    @if (@obj.FeatureName != null && @obj.FeatureType!="Other")
+                                    @if (@obj.FeatureName != null && @obj.FeatureType != SD.FeatureOther)
                                     {
-                                        <div class="bonus-cell">
-                                            <SfNumericTextBox Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
-                                        </div>
+                                        if (obj.FeatureType == SD.FeatureWeaponQuality)
+                                        {
+                                            <div class="bonus-cell">
+                                                <SfNumericTextBox Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                            </div>
+                                        }
+                                        else
+                                        {
+
+                                            <div class="bonus-cell">
+                                                <SfNumericTextBox Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                            </div>
+                                        }
                                     }
 
                                 </div>
@@ -155,16 +174,47 @@
         }
     }
 
+    
+    public class WeaponQualityList
+    {
+        public string Id { get; set; }
+    };
+    List<WeaponQualityList> LocalData = new List<WeaponQualityList> {
+        new WeaponQualityList() { Id= SD.WeaponQuality_Fast },
+        new WeaponQualityList() { Id= SD.WeaponQuality_Slow },
+        new WeaponQualityList() { Id= SD.WeaponQuality_Parrying },
+        new WeaponQualityList() { Id= SD.WeaponQuality_ShieldDestructive },
+        new WeaponQualityList() { Id= SD.WeaponQuality_ArmorPiercing},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Long},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Heavy},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Devastating},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Weak },
+        new WeaponQualityList() { Id= SD.WeaponQuality_Stunning},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Snatching},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Armor},
+        new WeaponQualityList() { Id= SD.WeaponQuality_ArmorDefenceBonus},
+        new WeaponQualityList() { Id= SD.WeaponQuality_ArmorBane},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Durability},
+        new WeaponQualityList() { Id= SD.WeaponQuality_ShieldDefenceBonus},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Bulky},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Precise},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Range},
+        new WeaponQualityList() { Id= SD.WeaponQuality_Ligh},
+      };
+
+
+
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
     public bool IsAdminOrMG { get; set; } = false;
 
     List<string> FeatureData = new List<string>
     {
-        "Attribute",
-        "Base skill",
-        "Special skill",
-        "Other",
+        SD.FeatureAttribute,
+        SD.FeatureBaseSkill,
+        SD.FeatureSpecialSkill,
+        SD.FeatureWeaponQuality,
+        SD.FeatureOther
     };
 
 

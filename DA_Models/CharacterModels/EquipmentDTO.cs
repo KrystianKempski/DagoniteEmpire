@@ -20,6 +20,7 @@ namespace DA_Models.CharacterModels
         public decimal Weight { get; set; }
         public int Count { get; set; } = 1;                                 // how many items in equipment
         public bool IsApproved { get; set; }                                // Equipment have to be approved by Game Master
+        public string EquipmentType { get; set; } = "other";
         public ICollection<TraitEquipmentDTO>? Traits { get; set; } = new List<TraitEquipmentDTO>();
         public ICollection<CharacterDTO>? Characters { get; set; } = new List<CharacterDTO>();
     }

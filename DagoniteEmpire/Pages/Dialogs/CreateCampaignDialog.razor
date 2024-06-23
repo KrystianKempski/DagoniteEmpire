@@ -10,7 +10,8 @@
     </TitleContent>
     <DialogContent>
         <MudTextField @bind-Value="@NewCampaign.Name" Label="Campaign name" />
-        <MudTextField @bind-Value="@NewCampaign.Description" Label="Description" />
+        <MudTextField @bind-Value="@NewCampaign.Description" Label="Description" Lines="5" />
+        <MudText Typo="Typo.caption">Choose players characters for campaign</MudText>
         <MudChipSet @bind-SelectedChips="SelectedCharacters" MultiSelection="true" Filter="true">
             @foreach (var adv in AllCharacters)
             {
@@ -21,7 +22,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="CreateCampaign">Title</MudButton>
+        <MudButton Color="Color.Error" OnClick="CreateCampaign">@Title</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -33,13 +34,13 @@
     MudChip[] SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IEnumerable<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
-    private string Title { get; set; } = "Create campaign";
+    private string Title { get; set; } = "Create";
 
     protected override async Task OnInitializedAsync()
     {
         AllCharacters = await _characterRepository.GetAll();
         if (IsEdit)
-            Title = "Edit campaign";
+            Title = "Edit";
     }
 
     private void Cancel()

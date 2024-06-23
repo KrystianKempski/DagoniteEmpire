@@ -10,10 +10,10 @@
     </TitleContent>
     <DialogContent>
         <MudTextField @bind-Value="@NewChapter.Name" Label="Campaign name" />
-        <MudTextField @bind-Value="@NewChapter.Description" Label="Description" />
+        <MudTextField @bind-Value="@NewChapter.Description" Label="Description" Lines="3" />
         <MudTextField @bind-Value="@NewChapter.Day" Label="Date and Time" />
         <MudTextField @bind-Value="@NewChapter.Place" Label="Location" />
-
+        <MudText Typo="Typo.caption">Choose players characters for chapter</MudText>
         <MudChipSet @bind-SelectedChips="SelectedCharacters" MultiSelection="true" Filter="true">
             @foreach (var adv in AllCharacters)
             {
@@ -34,7 +34,7 @@
     [Parameter] public ChapterDTO NewChapter { get; set; }
     [Parameter] public List<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
     [Parameter] public bool IsEdit { get; set; } = false;
-    private string Title = "Create chapter";
+    private string Title = "Create";
     MudChip[] SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
 
@@ -46,7 +46,7 @@
     protected override async Task OnInitializedAsync()
     {
         if (IsEdit)
-            Title = "Edit chapter";
+            Title = "Edit";
     }
 
     private void CreateCampaign()

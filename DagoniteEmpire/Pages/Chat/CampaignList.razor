@@ -1,6 +1,7 @@
 ﻿@page "/campaignlist"
 
 @using Syncfusion.Blazor.Navigations;
+@using BreadcrumbItem = MudBlazor.BreadcrumbItem;
 @inject NavigationManager _navigationManager
 @inject ISnackbar _snackBar
 @inject IDialogService DialogService
@@ -22,7 +23,7 @@
             <img src="images/loading.gif" width="60px">
         </div>
     }else{
-
+        <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
         <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns</MudText>
         @if (IsAdminOrMG)
         {
@@ -116,6 +117,9 @@
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
 
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
+
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationState;
@@ -154,6 +158,10 @@
     {
         IsLoading = true;
         StateHasChanged();
+        _items = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Campaign", href: $"/campaignlist/"),
+        };
         var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
         var user = authstate.User;
         if (user == null)
