@@ -42,14 +42,18 @@
     </table>
     </div>
     <div class="row">
-        @if (TraitType==SD.TraitType_Advantage)
+        @if (TraitType == SD.TraitType_Advantage && (AllParams.IsAdminOrMG || AllParams.Character.IsApproved == false))
         {
             <label class="balance">Traits balance: @AllParams.Character.TraitBalance </label>
         }
-        <div class="buttons-row">
-            <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add new</button>
-            <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing traits</button>
-        </div>
+
+        @if (AllParams.IsAdminOrMG || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Advantage)
+        {
+            <div class="buttons-row">
+                <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add new</button>
+                <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing traits</button>
+            </div>
+        }
     </div>
 
     @if (CustomTraitComponent != null)

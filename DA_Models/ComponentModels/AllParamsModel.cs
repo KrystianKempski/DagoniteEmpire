@@ -20,5 +20,7 @@ namespace DA_Models.ComponentModels
         public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
         public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
         public ICollection<EquipmentDTO> Equipment { get; set; } = new List<EquipmentDTO>();
+
+        public bool IsAdminOrMG { get; set; } = false;
     }
 }

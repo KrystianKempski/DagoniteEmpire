@@ -1,9 +1,17 @@
-﻿<div class="profession">
+﻿
+<div class="profession">
     <div class="sheet-img">
        @*  <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
     <h3 class="my-3 ml-3 text-center">CLASS</h3>
-    <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;" @bind-Value="@Profession.Name" class=""></InputText>
+    @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+    {
+        <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;" @bind-Value="@Profession.Name" class=""></InputText>
+    }
+    else
+    {
+        <InputText readonly style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;" @bind-Value="@Profession.Name" class=""></InputText>
+    }
     <table class="table align-middle">
         <thead>
             <tr>
@@ -46,19 +54,20 @@
 
     @if (CreateProfession != null)
     {
-        <CreateProfessionDialog Attributes="@Attributes" @bind-CreateProfession="@CreateProfession"></CreateProfessionDialog>
+        <CascadingValue Value="@AllParams">
+            <CreateProfessionDialog Attributes="@AllParams.Attributes" @bind-CreateProfession="@CreateProfession"></CreateProfessionDialog>
+        </CascadingValue>
     }
 </div> 
 
 @code {
-    [Parameter]
-    public IEnumerable<AttributeDTO> Attributes { get; set; } = null;
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
 
     [Parameter]
     public ProfessionDTO Profession { get; set; } = null;
     [Parameter]
     public EventCallback<ProfessionDTO> ProfessionChanged { get; set; }
-
 
     private SfRichTextEditor ProfessionDescrShow;
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
@@ -101,8 +110,6 @@
             {
                 ProfessionName = Profession.Name;
             }
-
-
         }
     }
 }

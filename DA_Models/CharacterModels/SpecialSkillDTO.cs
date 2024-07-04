@@ -6,13 +6,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using DA_Common;
 
 namespace DA_Models.CharacterModels
 {
     public class SpecialSkillDTO : FeatureDTO
     {
         public string RelatedBaseSkillName { get; set; }
-        public override string FeatureType { get; set; } = "SpecialSkill";
+        public override string FeatureType { get; set; } = SD.FeatureSpecialSkill;
         public int AttributeBonus { get; set; } = 0;
         public int BaseSkillBonus { get; set; } = 0;
 
