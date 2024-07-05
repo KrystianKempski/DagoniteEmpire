@@ -9,6 +9,11 @@ using System.Threading.Tasks;
 
 namespace DA_Models.CharacterModels
 {
+    public enum SpellcasterType
+    {
+        Wizard,
+        Sorcerer,
+    }
     public class ProfessionDTO
     {
         public int Id { get; set; }
@@ -23,9 +28,14 @@ namespace DA_Models.CharacterModels
 
         public ICollection<CharacterDTO>? Characters { get; set; } = new List<CharacterDTO>();
 
-        public ICollection<ProfessionSkill>? ActiveSkills { get; set; } 
+        public ICollection<ProfessionSkill>? ActiveSkills { get; set; }
 
-        public ICollection<ProfessionSkill>? PassiveSkills { get; set; } 
+        public ICollection<ProfessionSkill>? PassiveSkills { get; set; }
+
+        public SpellcasterType Spellcaster { get; set; }
+
+        public ICollection<SpellCircle>? SpellCircles { get;set; }
+
 
         public bool IsApproved { get; set; } = false;
 

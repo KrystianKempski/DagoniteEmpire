@@ -30,6 +30,7 @@ namespace DA_DataAccess.CharacterClasses
 
         [InverseProperty("PassiveProfession")]
         public virtual ICollection<ProfessionSkill>? PassiveSkills { get; set; }
+        public virtual ICollection<SpellCircle>? SpellCircles { get; set; }
 
     }
 }

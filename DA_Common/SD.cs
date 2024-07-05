@@ -58,6 +58,18 @@ namespace DA_Common
         public const string WeaponQuality_Range  = "Range";
         public const string WeaponQuality_Ligh = "Ligh";
 
+     //circle 0  1  2  3  4  5  6  7  8  9
+        public static readonly int[,] SpellsKnown = { 
+            { 4, 2, 0, 0, 0, 0, 0, 0, 0, 0 },               // lvl 0
+            { 4, 3, 2, 1, 0, 0, 0, 0, 0, 0 },               // lvl 1
+            { 4, 4, 3, 3, 2, 0, 0, 0, 0, 0 },               // lvl 2
+            { 4, 4, 4, 4, 3, 2, 1, 0, 0, 0 },               // lvl 3
+            { 4, 3, 2, 1, 0, 0, 0, 0, 0, 0 },               // lvl 4
+            { 4, 4, 4, 4, 4, 3, 3, 2, 0, 0 },               // lvl 5
+            { 4, 4, 4, 4, 4, 4, 3, 3, 2, 1 },               // lvl 6
+            { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,},               // lvl 7
+        } ;
+
     }
     public static class MyIcon
     {
@@ -74,5 +86,11 @@ namespace DA_Common
         Armor,
         WeaponMelee,
         WeaponRanged,
+    }
+
+    public enum SpellcasterType
+    {
+        Wizard,
+        Sorcerer
     }
 }

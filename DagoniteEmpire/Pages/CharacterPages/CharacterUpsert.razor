@@ -428,17 +428,6 @@
     public int Id { get; set; }
 
     private AllParamsModel AllParams { get; set; }
-
-   // private CharacterDTO Character { get; set; }
-    //private RaceDTO CurrentRace {get; set; }
-    // private ProfessionDTO Profession { get; set; }
-    // private IEnumerable<AttributeDTO> Attributes { get; set; }
-    // private IEnumerable<BaseSkillDTO> BaseSkills { get; set; } 
-    // private ICollection<SpecialSkillDTO> SpecialSkills { get; set; }
-    // private ICollection<TraitAdvDTO> TraitsAdv { get; set; }
-    // private ICollection<TraitDTO> Traits { get; set; }
-    // private ICollection<RaceDTO> Races { get; set; }
-    // private ICollection<EquipmentDTO> Equipment { get; set; }
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; } = true;
@@ -526,16 +515,6 @@
                     await ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
                     await AddSSRelatedBaseSkill(obj);
                 }
-                // AllParams.Character = Character;
-                // AllParams.Attributes = Attributes;
-                // AllParams.BaseSkills = BaseSkills;
-                // AllParams.SpecialSkills = SpecialSkills;
-                // AllParams.Races = Races;
-                // AllParams.Traits = Traits;
-                // AllParams.TraitsAdv = TraitsAdv;
-                // AllParams.CurrentRace = CurrentRace;
-                // AllParams.Profession = Profession;
-                // AllParams.Equipment = Equipment;
 
                 TraitsChange();
 
@@ -1095,16 +1074,6 @@
                 CalculateTraits(equ.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
             }
         }
-        // Character = AllParams.Character;
-        // Attributes = AllParams.Attributes;
-        // BaseSkills = AllParams.BaseSkills;
-        // SpecialSkills = AllParams.SpecialSkills;
-        // Races = AllParams.Races;
-        // Traits = AllParams.Traits;
-        // TraitsAdv = AllParams.TraitsAdv;
-        // CurrentRace = AllParams.CurrentRace;
-        // Profession = AllParams.Profession;
-        // Equipment = AllParams.Equipment;
 
         StateHasChanged();
     }

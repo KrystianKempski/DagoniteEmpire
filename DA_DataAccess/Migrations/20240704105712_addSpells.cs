@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class addpostupdate : Migration
+    public partial class addSpells : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -85,7 +85,9 @@ namespace DA_DataAccess.Migrations
                     Price = table.Column<decimal>(type: "numeric", nullable: false),
                     Weight = table.Column<decimal>(type: "numeric", nullable: false),
                     Count = table.Column<int>(type: "integer", nullable: false),
-                    IsApproved = table.Column<bool>(type: "boolean", nullable: false)
+                    IsApproved = table.Column<bool>(type: "boolean", nullable: false),
+                    IsEquipped = table.Column<bool>(type: "boolean", nullable: false),
+                    EquipmentType = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -140,6 +142,23 @@ namespace DA_DataAccess.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Races", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Spells",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    IsApproved = table.Column<bool>(type: "boolean", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Level = table.Column<int>(type: "integer", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Link = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Spells", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -354,6 +373,28 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SpellCircles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Level = table.Column<int>(type: "integer", nullable: false),
+                    KnownSpells = table.Column<int>(type: "integer", nullable: false),
+                    PerDay = table.Column<int>(type: "integer", nullable: false),
+                    ProfessionId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SpellCircles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SpellCircles_Professions_ProfessionId",
+                        column: x => x.ProfessionId,
+                        principalTable: "Professions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Characters",
                 columns: table => new
                 {
@@ -457,6 +498,27 @@ namespace DA_DataAccess.Migrations
                         name: "FK_RaceTraitRace_Traits_TraitsId",
                         column: x => x.TraitsId,
                         principalTable: "Traits",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SpellSlots",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    InSpellbook = table.Column<bool>(type: "boolean", nullable: false),
+                    Prepared = table.Column<int>(type: "integer", nullable: false),
+                    SpellCircleId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SpellSlots", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SpellSlots_SpellCircles_SpellCircleId",
+                        column: x => x.SpellCircleId,
+                        principalTable: "SpellCircles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -679,6 +741,30 @@ namespace DA_DataAccess.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "SpellSpellSlot",
+                columns: table => new
+                {
+                    SpellId = table.Column<int>(type: "integer", nullable: false),
+                    SpellSlotsId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SpellSpellSlot", x => new { x.SpellId, x.SpellSlotsId });
+                    table.ForeignKey(
+                        name: "FK_SpellSpellSlot_SpellSlots_SpellSlotsId",
+                        column: x => x.SpellSlotsId,
+                        principalTable: "SpellSlots",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SpellSpellSlot_Spells_SpellId",
+                        column: x => x.SpellId,
+                        principalTable: "Spells",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -810,6 +896,21 @@ namespace DA_DataAccess.Migrations
                 name: "IX_SpecialSkills_CharacterId",
                 table: "SpecialSkills",
                 column: "CharacterId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpellCircles_ProfessionId",
+                table: "SpellCircles",
+                column: "ProfessionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpellSlots_SpellCircleId",
+                table: "SpellSlots",
+                column: "SpellCircleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpellSpellSlot_SpellSlotsId",
+                table: "SpellSpellSlot",
+                column: "SpellSlotsId");
         }
 
         /// <inheritdoc />
@@ -873,6 +974,9 @@ namespace DA_DataAccess.Migrations
                 name: "SpecialSkills");
 
             migrationBuilder.DropTable(
+                name: "SpellSpellSlot");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -891,13 +995,22 @@ namespace DA_DataAccess.Migrations
                 name: "Characters");
 
             migrationBuilder.DropTable(
+                name: "SpellSlots");
+
+            migrationBuilder.DropTable(
+                name: "Spells");
+
+            migrationBuilder.DropTable(
                 name: "Campaigns");
 
             migrationBuilder.DropTable(
-                name: "Professions");
+                name: "Races");
 
             migrationBuilder.DropTable(
-                name: "Races");
+                name: "SpellCircles");
+
+            migrationBuilder.DropTable(
+                name: "Professions");
         }
     }
 }

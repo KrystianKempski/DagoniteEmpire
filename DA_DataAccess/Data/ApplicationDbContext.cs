@@ -30,6 +30,9 @@ namespace DA_DataAccess.Data
 
         public DbSet<Profession> Professions { get; set; }
         public DbSet<ProfessionSkill> ProfessionSkills { get; set; }
+        public DbSet<SpellCircle> SpellCircles { get; set; }
+        public DbSet<SpellSlot> SpellSlots { get; set; }
+        public DbSet<Spell> Spells { get; set; }
 
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<Post> Posts { get; set; }

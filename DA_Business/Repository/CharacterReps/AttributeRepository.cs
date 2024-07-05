@@ -49,7 +49,7 @@ namespace DA_Business.Repository.CharacterReps
                 return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(_db.Attributes/*.Include(u => u.TraitBonusRelated)*/);
             try
             {
-                var obj = _db.Attributes./*Include(u => u.TraitBonusRelated).*/Where(u => u.CharacterId == charId).OrderBy(u => u.Index);
+                var obj = _db.Attributes./*Include(u => u.TraitBonusRelated).*/Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToList();
                 if (obj != null && obj.Any())
                     return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(obj);
             }

@@ -1,4 +1,5 @@
-﻿<div class="profession">
+﻿@inject NavigationManager _navigationManager
+<div class="profession">
     <div class="sheet-img">
        @*  <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
@@ -51,6 +52,8 @@
 </div> 
 
 @code {
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
     [Parameter]
     public IEnumerable<AttributeDTO> Attributes { get; set; } = null;
 
@@ -84,8 +87,16 @@
 
     private async Task EditProfession()
     {
-        CreateProfession.ProfessionDTO = Profession;
-        CreateProfession.IsVisible = true;
+        if(AllParams.Character.IsApproved == false)
+        {
+
+           CreateProfession.ProfessionDTO = Profession;
+           CreateProfession.IsVisible = true;
+       }
+        else 
+        {
+        _navigationManager.NavigateTo($"/profession/{AllParams.Character.Id}");
+        }
         StateHasChanged();
     }
 

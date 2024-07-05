@@ -503,6 +503,88 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("SpecialSkills");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Spell", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Link")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Spells");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpellCircle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("KnownSpells")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PerDay")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProfessionId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfessionId");
+
+                    b.ToTable("SpellCircles");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpellSlot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("InSpellbook")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Prepared")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SpellCircleId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SpellCircleId");
+
+                    b.ToTable("SpellSlots");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>
                 {
                     b.Property<int>("Id")
@@ -942,6 +1024,21 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("RaceTraitRace");
                 });
 
+            modelBuilder.Entity("SpellSpellSlot", b =>
+                {
+                    b.Property<int>("SpellId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SpellSlotsId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("SpellId", "SpellSlotsId");
+
+                    b.HasIndex("SpellSlotsId");
+
+                    b.ToTable("SpellSpellSlot");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitAdv", b =>
                 {
                     b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
@@ -1118,6 +1215,28 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Character");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpellCircle", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Profession", "Profession")
+                        .WithMany("SpellCircles")
+                        .HasForeignKey("ProfessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Profession");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpellSlot", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.SpellCircle", "SpellCircle")
+                        .WithMany("SpellSlots")
+                        .HasForeignKey("SpellCircleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SpellCircle");
+                });
+
             modelBuilder.Entity("DA_DataAccess.Chat.Chapter", b =>
                 {
                     b.HasOne("DA_DataAccess.Chat.Campaign", "Campaign")
@@ -1246,6 +1365,21 @@ namespace DA_DataAccess.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SpellSpellSlot", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Spell", null)
+                        .WithMany()
+                        .HasForeignKey("SpellId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DA_DataAccess.CharacterClasses.SpellSlot", null)
+                        .WithMany()
+                        .HasForeignKey("SpellSlotsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
                 {
                     b.Navigation("Attributes");
@@ -1264,11 +1398,18 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Characters");
 
                     b.Navigation("PassiveSkills");
+
+                    b.Navigation("SpellCircles");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>
                 {
                     b.Navigation("Characters");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpellCircle", b =>
+                {
+                    b.Navigation("SpellSlots");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>
