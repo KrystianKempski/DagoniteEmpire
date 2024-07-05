@@ -1,23 +1,30 @@
-﻿<div class="race">
+﻿@inject IDialogService DialogService
+<div class="race">
     <div class="sheet-img">
         @* <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
     <h3 class="my-3 ml-3 text-center">RACE</h3>
-    <InputSelect style="width: 100%; padding: 2px 0px 2px 0px; background-color: transparent; border: 1px solid RGB(206 212 218); border-radius: 4px;"
-                     ValueExpression="@(()=>SelectedRace)"
-                     Value="@SelectedRace"
-                     ValueChanged="@((string value) => ChangeRace(value))">
-        <option value="0" selected disabled>--Select Race--</option>
-        @foreach (var race in AllParams.Races)
-        {
-            <option value="@race.Name">@race.Name</option>
-        }
-        <option value="Custom race">Custom race</option>
-    </InputSelect>
-    @if (ShowNameLabel)
+    @if(AllParams.Character.IsApproved == false )
     {
-        <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color: transparent;" @bind-Value="@AllParams.CurrentRace.Name" class=""></InputText>
+        <InputSelect style="width: 100%; padding: 2px 0px 2px 0px; background-color: transparent; border: 1px solid RGB(206 212 218); border-radius: 4px;"
+                         ValueExpression="@(()=>SelectedRace)"
+                         Value="@SelectedRace"
+                         ValueChanged="@((string value) => ChangeRace(value))">
+            <option value="0" selected disabled>--Select Race--</option>
+            @foreach (var race in AllParams.Races)
+            {
+                <option value="@race.Name">@race.Name</option>
+            }
+            <option value="Custom race">Custom race</option>
+        </InputSelect>
+        @if (ShowNameLabel)
+        {
+            <InputText  style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color: transparent;" @bind-Value="@AllParams.CurrentRace.Name" class=""></InputText>
+        }
+    }else{
+        <InputText readonly style="width: 100%;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px;; background-color: transparent; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;" @bind-Value="@AllParams.CurrentRace.Name"></InputText>
     }
+    
     <label class="race-descr-label">Race description</label>
     <div class="richtext-conteiner">
         <SfRichTextEditor Height="100%" @ref="RaceDescrShow" @bind-Value="@AllParams.CurrentRace.Description" Readonly="true" ShowTooltip="false">
@@ -48,7 +55,7 @@
             </tbody>
         </table>
     </div>
-    @if (ShowNameLabel)
+    @if (ShowNameLabel && AllParams.Character.IsApproved == false)
     {
             <button @onclick="@(()=>EditCustomRace())" class="add-trait">Edit race</button>
     }
@@ -101,12 +108,62 @@
             _customRaceComponent = value;
         }
     }
+
+
     private async Task ChangeRace(string raceName)
     {
         if (raceName == "Custom race")
         {
             ShowNameLabel = true;
             AllParams.CurrentRace = CustomRace;
+        }
+        else if (raceName == "Human")
+        {
+            HumanRaceModel humanRaceBonuses = new();
+            var parameters = new DialogParameters<HumanRaceTraitsDialog> { { x => x.HumanRaceBonuses, humanRaceBonuses } };
+
+            var dialog = await DialogService.ShowAsync<HumanRaceTraitsDialog>("Choose human bonuses", parameters);
+            var result = await dialog.Result;
+
+            if (!result.Canceled)
+            {
+                humanRaceBonuses = (HumanRaceModel)result.Data;
+                RaceDTO humanRaceOld = AllParams.Races.FirstOrDefault(r => r.Name == "Human");
+                RaceDTO humanRaceNew = new();
+                humanRaceNew.Name = humanRaceOld.Name;
+                humanRaceNew.RaceApproved = false;
+                humanRaceNew.Description = humanRaceOld.Description;
+                foreach (var tr in humanRaceOld.Traits)
+                    humanRaceNew.Traits.Add(tr);
+                TraitRaceDTO trait = new();
+                //attribute bonus
+                BonusDTO bonus = new(), bonus2 = new(), bonus3 = new();
+                bonus.BonusValue = 2;
+                bonus.FeatureName = humanRaceBonuses.AttributeNameBonus;
+                bonus.FeatureType = SD.FeatureAttribute;
+                bonus.Description = $"+ 2 {humanRaceBonuses.AttributeNameBonus}";
+                trait.Bonuses = new List<BonusDTO>();
+                trait.Bonuses.Add(bonus);
+                //first base skill bonus
+                bonus2.BonusValue = 1;
+                bonus2.FeatureName = humanRaceBonuses.FirstSkillNameBonus;
+                bonus2.FeatureType = SD.FeatureBaseSkill;
+                bonus2.Description = $"+ 1 {humanRaceBonuses.FirstSkillNameBonus}";
+                trait.Bonuses.Add(bonus2);
+                //second base skill bonus
+                bonus3.BonusValue = 1;
+                bonus3.FeatureName = humanRaceBonuses.SecondSkillNameBonus;
+                bonus3.FeatureType = SD.FeatureBaseSkill;
+                bonus3.Description = $"+ 1 {humanRaceBonuses.SecondSkillNameBonus}";
+                trait.Bonuses.Add(bonus3);
+                trait.SummaryDescr = $"{bonus.Description}, {bonus2.Description}, {bonus3.Description}";
+                trait.Name = "Human race bonuses";
+                trait.TraitType = SD.TraitType_Race;
+                trait.Descr = trait.SummaryDescr;
+                humanRaceNew.Traits.Add(trait);
+                AllParams.CurrentRace = humanRaceNew;
+            }
+
         }
         else
         {

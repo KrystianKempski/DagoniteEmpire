@@ -23,7 +23,7 @@
                                 <label class="fw-bold py-1">Race name</label>
                                 <SfTextBox Placeholder="Insert race name" @bind-Value="@_customRaceComponent.RaceDTO.Name"></SfTextBox>
                             </div>
-                            @if (IsAdminOrMG)
+                            @if (AllParams.IsAdminOrMG)
                             {
                                 <div class="d-flex flex-column px-1">
                                     <label class="fw-bold py-1">Approve</label>
@@ -109,7 +109,6 @@
     private string TraitType { get; set; } = @SD.TraitType_Race;
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
-    public bool IsAdminOrMG { get; set; } = false;
 
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
@@ -159,12 +158,6 @@
     }
     private async Task DialogOpen()
     { 
-        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
-        var user = authstate.User;
-        if (user == null)
-            return; // failed to load
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-
         this.DescrEdit.RefreshUIAsync();
         ErrorMessage = string.Empty;
         StateHasChanged();

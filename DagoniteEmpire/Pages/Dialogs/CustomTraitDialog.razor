@@ -35,7 +35,7 @@
                                     </div>
                                 </div>
                             }
-                            @if (IsAdminOrMG)
+                            @if (AllParams.IsAdminOrMG)
                             {
                             <div class="d-flex flex-column px-1">
                                 <label class="fw-bold py-1">Approve</label>
@@ -206,7 +206,6 @@
 
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
-    public bool IsAdminOrMG { get; set; } = false;
 
     List<string> FeatureData = new List<string>
     {
@@ -291,12 +290,7 @@
 
     private async Task DialogOpen()
     {
-        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
-        var user = authstate.User;
-        if (user == null)
-            return; // failed to load
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-        
+             
         ErrorMessage = string.Empty;
         StateHasChanged();
     }

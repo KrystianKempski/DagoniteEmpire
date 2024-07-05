@@ -11,7 +11,10 @@
                 <p>Here write a description of your character</p>
             </SfRichTextEditor>
         </div>
-        <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>
+        @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+        {
+            <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>
+        }
     </div>
     <SfDialog Width="80%" Height="80%" @bind-Visible="@IsDescrDialVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
@@ -44,7 +47,8 @@
 </style>
 
 @code {
-
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
 
     [Parameter]
     public EventCallback<string> DescriptionConfirmation { get; set; }

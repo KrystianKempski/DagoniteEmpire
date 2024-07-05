@@ -37,32 +37,56 @@
                     <div class="row">
                         <div class="form-group col-md-4 px-1">
                             <label>Character name</label>
-                            <input type="text" @bind-value="AllParams.Character.NPCName" class="form-control"></input>
-                        </div>
+                            @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                            {
+                                <input type="text" @bind-value="AllParams.Character.NPCName" class="form-control"></input>
+                            }
+                            else
+                            {
+                                <input readonly type="text" @bind-value="AllParams.Character.NPCName" class="form-control"></input>
+                            }
+                            </div>
                         <div class="form-group col-md-1 px-1">
                             <label>Age</label>
-                            <InputNumber @bind-Value="AllParams.Character.Age" class="form-control col-2"></InputNumber>
+                            @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                            {
+                                <InputNumber  @bind-Value="AllParams.Character.Age" class="form-control col-2"></InputNumber>
+                            }
+                            else
+                            {
+                                <InputNumber readonly @bind-Value="AllParams.Character.Age" class="form-control col-2"></InputNumber>
+                            }
                         </div>
-                        @if(IsAdminOrMG){
-                            <div class="form-group col-md-1 px-1">
-                                <label>Is Approved?</label>
-                                <SfCheckBox @bind-Checked="@AllParams.Character.IsApproved"></SfCheckBox>
-                            </div>
-                        }
+                       
                         <div class="form-group col-md-3 px-1">
                             <label>Character Type</label>
-                            <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
-                                <option checked="@(AllParams.Character!.NPCType == "Hero")" value="Hero">
-                                    Hero
-                                </option>
-                                @if (IsDukeAllowed)
-                                {
-                                    <option checked="@(AllParams.Character!.NPCType == "Duke")" value="Duke">
-                                        Duke
+                            @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                            {
+                                <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
+                                    <option checked="@(AllParams.Character!.NPCType == "Hero")" value="Hero">
+                                        Hero
                                     </option>
-                                }
-                            </InputSelect>
+                                    @if (IsDukeAllowed)
+                                    {
+                                        <option checked="@(AllParams.Character!.NPCType == "Duke")" value="Duke">
+                                            Duke
+                                        </option>
+                                    }
+                                </InputSelect>
+                            }
+                            else
+                            {
+                                <input readonly type="text" @bind-value="AllParams.Character.NPCType" class="form-control"></input>
+                            }
                         </div>
+                        @if (AllParams.IsAdminOrMG)
+                        {
+                            <div class="form-group col-md-1 px-1">
+                                <label>Is Approved?</label>
+                                <MudCheckBox @bind-Value="@AllParams.Character.IsApproved" Size="Size.Medium"></MudCheckBox>
+                                @* <SfCheckBox ControlSize="60" @bind-Checked="@AllParams.Character.IsApproved"></SfCheckBox> *@
+                            </div>
+                        }
                     </div>
                 </div>
             </section>
@@ -78,8 +102,11 @@
                             <div class="portrait-imageframe">
                                 <img src="@AllParams.Character.ImageUrl" class="portrait-image" />
                                 <div class="portrait-input">
-                                    <label class="input-label" for="input">@ChooseFile</label>
-                                    <InputFile id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
+                                    @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                                    {
+                                        <label class="input-label" for="input">@ChooseFile</label>
+                                        <InputFile id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
+                                    }
                                 </div>
                             </div>
                    
@@ -88,8 +115,11 @@
                                     <span class="points-indicator ml-auto">@AllParams.Character.CurrentExpPoints</span>
                             </div>
                             <div class="points-control">
-                                <label class="points-label">Avalible attribute points:</label>
-                                <span class="points-indicator ml-auto">@AllParams.Character.AttributePoints</span>
+                                @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                                {
+                                    <label class="points-label">Avalible attribute points:</label>
+                                    <span class="points-indicator ml-auto">@AllParams.Character.AttributePoints</span>
+                                }
                             </div>
                         </div>
 
@@ -260,6 +290,8 @@
                 <div class="container-fluid">
                     <div class="row">
                         <h3 class="my-3 ml-3">SPECIAL SKILLS</h3>
+
+                        <button class="btn btn-secondary" style="width: 180px; margin-left:10px; " @onclick="AutoChooseRelatedAttribute">Autoselect attributes</button>
                         <div class="specialskills">
                         
                             @foreach (var baseSkill in AllParams.BaseSkills)
@@ -323,18 +355,15 @@
                                                     <div class="attribute-selector">
                                                         @if (obj.Editable)
                                                         {
-                                                                <InputSelect style="width: 100%; background-color: transparent;"
+                                                                <InputSelect style="width: 100%; background-color: transparent; margin: auto;  border: 1px solid RGB(206 212 218); border-radius: 4px;"
                                                                             ValueExpression="@(()=>obj.ChosenAttribute)"
                                                                             Value="@obj.ChosenAttribute"
                                                                             ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
                                                                 <option value="0" selected disabled>--Select--</option>
-                                                                <option value="Strength"> Strength</option>
-                                                                <option value="Dexterity"> Dexterity</option>
-                                                                <option value="Endurance"> Endurance</option>
-                                                                <option value="Intelligence"> Intelligence</option>
-                                                                <option value="Instinct"> Instinct</option>
-                                                                <option value="Willpower"> Willpower</option>
-                                                                <option value="Charisma"> Charisma</option>
+                                                                    @foreach(var att in SD.Attributes.All)
+                                                                    {
+                                                                        <option value=@att> @att</option>
+                                                                    }
                                                             </InputSelect>
                                                         }
                                                         else
@@ -345,7 +374,7 @@
                                                             }
                                                             else
                                                             {
-                                                                    <InputSelect style="width: 100%; background-color: transparent;"
+                                                                    <InputSelect style="width: 100%; background-color: transparent; margin: auto;  border: 1px solid RGB(206 212 218);"
                                                                                 ValueExpression="@(()=>obj.ChosenAttribute)"
                                                                                 Value="@obj.ChosenAttribute"
                                                                                 ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
@@ -434,8 +463,7 @@
     private bool ModifChanged = false;
     private bool IsLeaveAllowed { get; set; } = false;
     private bool IsDukeAllowed { get; set; } = false;
-    private string TargetLocation { get; set; } = "";    
-    public bool IsAdminOrMG { get; set; } = true;
+    private string TargetLocation { get; set; } = "";
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
 
     private List<object> ToolbarItems = new List<object>() {
@@ -449,6 +477,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+
+        AllParams = new();
         var authState = await AuthenticationState;
         if (!authState.User.Identity.IsAuthenticated)
         {
@@ -459,7 +489,8 @@
         if (user == null)
             return; // failed to load
 
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+        AllParams.IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -470,7 +501,6 @@
             {
                 IsLoading = true;
 
-                AllParams = new();
                 StateHasChanged();
                 registration =_navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
                 //CustomTraitComponent = new();
@@ -520,6 +550,8 @@
 
                 await ChangeProfRelatedAttribute(AllParams.Profession.RelatedAttribute);
                 AllParams.Profession.CalculateClassParams(AllParams.Attributes);
+
+
 
                 IsLoading = false;
                 StateHasChanged();
@@ -661,7 +693,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            // await _jsRuntime.ToastrError("Error while loading: " + ex.ToString());
+            await _jsRuntime.ToastrError("Error while adding character");
         }
         IsLeaveAllowed = true;
         IsLoading = false;
@@ -735,54 +767,77 @@
     private async Task IncrAttr(AttributeDTO obj)
     {
         var ok = false;
-        if (obj.BaseBonus < 18)
+        if (AllParams.Character.IsApproved == false)
         {
-            if (obj.BaseBonus < 11)
+            if (obj.BaseBonus < 18)
             {
-                if (AllParams.Character.AttributePoints > 0)
+                if (obj.BaseBonus < 11)
                 {
-                    ok = true;
-                    AllParams.Character.AttributePoints--;
+                    if (AllParams.Character.AttributePoints > 0 && AllParams.Character.IsApproved == false)
+                    {
+                        ok = true;
+                        AllParams.Character.AttributePoints--;
+                    }
                 }
+                else
+                {
+                    if (AllParams.Character.AttributePoints >= (obj.BaseBonus - 9))
+                    {
+                        AllParams.Character.AttributePoints -= obj.BaseBonus - 9;
+                        ok = true;
+                    }
+                }
+
+                if (ok)
+                {
+                    obj.BaseBonus++;
+                    obj.SumAll();
+                }
+                else
+                    await _jsRuntime.AttrLimit("Not enough attribute points");
             }
             else
             {
-                if (AllParams.Character.AttributePoints >= (obj.BaseBonus - 9))
-                {
-                    AllParams.Character.AttributePoints -= obj.BaseBonus - 9;
-                    ok = true;
-                }
+                await _jsRuntime.AttrLimit("Maximium base bonus limit is 18");
             }
-
-            if (ok)
+        }
+        else if (AllParams.Character.IsApproved)
+        {
+            if (AllParams.Character.CurrentExpPoints >= obj.BaseBonus * 2)
             {
+                AllParams.Character.CurrentExpPoints -= obj.BaseBonus * 2;
                 obj.BaseBonus++;
                 obj.SumAll();
-            }else
-                await _jsRuntime.AttrLimit("Not enought attribute points");
-        }
-        else
-        {
-            await _jsRuntime.AttrLimit("Maximium base bonus limit is 18");
+            }
+            else
+                await _jsRuntime.AttrLimit("Not enough experience points");
         }
     }
 
+
     private async Task DecrAttr(AttributeDTO obj)
     {
-        if (obj.BaseBonus > 6)
+        if (AllParams.Character.IsApproved == false)
         {
-            if (obj.BaseBonus < 11)
+            if (obj.BaseBonus > 6)
             {
-                AllParams.Character.AttributePoints++;
-            }
-            else
-            {
-                AllParams.Character.AttributePoints += (obj.BaseBonus - 10);
-            }
-            obj.BaseBonus--;
-            obj.SumAll();
-        }else
-            await _jsRuntime.AttrLimit("Minimum base bonus limit is 6");
+                if (obj.BaseBonus < 11)
+                {
+                    AllParams.Character.AttributePoints++;
+                }
+                else
+                {
+                    AllParams.Character.AttributePoints += (obj.BaseBonus - 10);
+                }
+                obj.BaseBonus--;
+                obj.SumAll();
+            }else
+                await _jsRuntime.AttrLimit("Minimum base bonus limit is 6");
+        }
+        else
+        {
+            await _jsRuntime.AttrLimit("To revert changes reload page");
+        }
     }
 
 
@@ -940,7 +995,7 @@
             if (!string.IsNullOrEmpty(specSkillName) && specSkill!= null)
             {
                 if (AllParams.SpecialSkills.FirstOrDefault(u => u.Name.ToLower() == specSkillName.ToLower()) != null)
-        {
+                {
                     _jsRuntime.ToastrWarning("Special skill with this name already exists. Please choose other name");
                     int num = 1;
                     string  newname = specSkillName;
@@ -1100,13 +1155,13 @@
             {
                 switch (bonus.FeatureType)
                 {
-                    case "Attribute":
+                    case SD.FeatureAttribute:
                         feature = AllParams.Attributes.FirstOrDefault(u => u.Name == bonus.FeatureName);
                         break;
-                    case "Base skill":
+                    case SD.FeatureBaseSkill:
                         feature = AllParams.BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
                         break;
-                    case "Special skill":
+                    case SD.FeatureSpecialSkill:
                         feature = AllParams.SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
                         break;
                     default:
@@ -1121,6 +1176,32 @@
                 }
             }
         }
+    }
+
+    private async Task AutoChooseRelatedAttribute()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        foreach(var skill in AllParams.SpecialSkills){
+            if (skill.RelatedAttribute1 != "")
+            {
+                var attr1 = AllParams.Attributes.FirstOrDefault(a => a.Name == skill.RelatedAttribute1);
+                var attr2 = AllParams.Attributes.FirstOrDefault(a => a.Name == skill.RelatedAttribute2);
+                if(attr1!=null && attr2 != null)
+                {
+                    if(attr1.SumBonus >= attr2.SumBonus)
+                    {
+                        skill.ChosenAttribute = attr1.Name;
+                    }
+                    else
+                    {
+                        skill.ChosenAttribute = attr2.Name;
+                    }
+                }
+            }
+        }
+        IsLoading = false;
+        StateHasChanged();
     }
 
 

@@ -32,7 +32,7 @@
                                     <label class="fw-bold py-1">Price</label>
                                     <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Price"></SfNumericTextBox>
                                 </div>
-                                @if (IsAdminOrMG)
+                                @if (AllParams.IsAdminOrMG)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="fw-bold py-1">Approve</label>
@@ -60,7 +60,7 @@
                                     <label class="fw-bold py-1">Price</label>
                                     <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Price"></SfNumericTextBox>
                                 </div>
-                                @if (IsAdminOrMG)
+                                @if (AllParams.IsAdminOrMG)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="fw-bold py-1">Approve</label>
@@ -143,7 +143,6 @@
     private string TraitType { get; set; } = @SD.TraitType_Gear;
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
-    public bool IsAdminOrMG { get; set; } = false;
 
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
@@ -190,14 +189,7 @@
         CustomEquipmentComponent.IsVisible = false;
     }
     private async Task DialogOpen()
-    { 
-        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
-        var user = authstate.User;
-        if (user == null)
-            return; // failed to load
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-
-        //_customEquipmentComponent = new();
+    {  //_customEquipmentComponent = new();
 
         this.DescrEdit.RefreshUIAsync();
         ErrorMessage = string.Empty;

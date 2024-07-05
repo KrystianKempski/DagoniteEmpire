@@ -5,13 +5,13 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />
-            Create new Campaign
+            @Title Campaign
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudTextField @bind-Value="@NewCampaign.Name" Label="Campaign name" />
         <MudTextField @bind-Value="@NewCampaign.Description" Label="Description" Lines="5" />
-        <MudText Typo="Typo.caption">Choose players characters for campaign</MudText>
+        <MudText Typo="Typo.caption">Choose player characters for campaign</MudText>
         <MudChipSet @bind-SelectedChips="SelectedCharacters" MultiSelection="true" Filter="true">
             @foreach (var adv in AllCharacters)
             {

@@ -16,7 +16,7 @@
 
 @using Microsoft.AspNetCore.SignalR.Client;
 
-
+<_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this campaign"></_DeleteConfirmation>
 <MudContainer Class="pr-1" Fixed="false">
     @if (IsLoading == true){
         <div class="text-center">
@@ -59,7 +59,11 @@
 
                             <MudStack Spacing="0" Row="true">
                                 <MudText Class="flex-grow-1" Typo="Typo.h6">@camp.Name</MudText>
-                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))"></MudIconButton>
+                                @if (IsAdminOrMG)
+                                {
+                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))"></MudIconButton>
+                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))"></MudIconButton>
+                                }
                             </MudStack>
                             <MudText Typo="Typo.caption">Started by: @camp.GameMaster at: @camp.CreatedDate</MudText>
                             <MudText Class="py-1 flex-grow-1" Typo="Typo.body2"> @camp.Description </MudText>
@@ -116,6 +120,7 @@
     public CampaignDTO NewCampaign { get; set; } = new();
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
+    private int DeleteCampaignId;
 
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
 
@@ -225,6 +230,39 @@
             if (index >= 0)
                 Campaigns[index] = await _campaignRepository.Update(NewCampaign);
         }
+    }
+
+
+    private async Task DeleteCampaign(int id)
+    {
+        DeleteCampaignId = id;
+        _jsRuntime.InvokeVoidAsync("ShowDeleteConfirmationModal");
+    }
+    public async Task ConfirmDelete_Click(bool isConfirmed)
+    {
+
+        IsLoading = true;
+        StateHasChanged();
+        if (isConfirmed == true && DeleteCampaignId != 0)
+        {
+
+            IsLoading = true;
+            StateHasChanged();
+
+            int index = Campaigns.FindIndex(u => u.Id == DeleteCampaignId);
+            if (index >= 0)
+            {
+                await _campaignRepository.Delete(DeleteCampaignId);
+                Campaigns = (await _campaignRepository.GetAll()).ToList();
+            }
+
+            IsLoading = false;
+            StateHasChanged();
+            await LoadCharactersAndCampaigns();
+            await _jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
+        }
+        IsLoading = false;
+        StateHasChanged();
     }
 
     private async Task ChooseCampaign(CampaignDTO campaign)

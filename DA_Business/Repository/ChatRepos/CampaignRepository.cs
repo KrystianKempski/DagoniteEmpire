@@ -64,6 +64,20 @@ namespace DA_Business.Repository.ChatRepos
 
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = await contex.Campaigns.FirstOrDefaultAsync(u => u.Id == id);
+                if (obj.Chapters != null && obj.Chapters.Any())
+                {
+                    foreach (var chap in obj.Chapters)
+                    {
+                        if (chap.Posts != null && chap.Posts.Any())
+                        {
+                            foreach (var mess in chap.Posts)
+                            {
+                                contex.Posts.Remove(mess);
+                            }
+                        }
+                        contex.Chapters.Remove(chap);
+                    }
+                }
                 if (obj != null)
                 {
                     contex.Campaigns.Remove(obj);

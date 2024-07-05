@@ -4,8 +4,8 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-             <MudIcon Icon="..\icons\bookmarklet.svg" Color="Color.Primary" /> 
-            @Title
+             <MudIcon Icon="@MyIcon.Scroll" Color="Color.Primary" /> 
+            @Title Chapter
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -13,7 +13,7 @@
         <MudTextField @bind-Value="@NewChapter.Description" Label="Description" Lines="3" />
         <MudTextField @bind-Value="@NewChapter.Day" Label="Date and Time" />
         <MudTextField @bind-Value="@NewChapter.Place" Label="Location" />
-        <MudText Typo="Typo.caption">Choose players characters for chapter</MudText>
+        <MudText Typo="Typo.caption">Choose player characters for chapter</MudText>
         <MudChipSet @bind-SelectedChips="SelectedCharacters" MultiSelection="true" Filter="true">
             @foreach (var adv in AllCharacters)
             {

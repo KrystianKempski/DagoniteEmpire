@@ -1,6 +1,5 @@
 ﻿@using DA_DataAccess.CharacterClasses
 @inject IJSRuntime _jsruntime
-@inject AuthenticationStateProvider GetAuthenticationStateAsync
 <div class="race">
 
 
@@ -35,16 +34,21 @@
                                                  Value="@_createProfession.ProfessionDTO.RelatedAttribute"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
                                         <option value="0" selected disabled>--Select--</option>
-                                        <option value="@SD.Strength"> @SD.Strength</option>
+                                        @foreach(var attr in SD.Attributes.All)
+                                        {
+                                            <option value="@attr"> @attr</option>
+                                        }
+                                        @* 
+                                        <option value="@SD.Attributes.All Strength"> @SD.Strength</option>
                                         <option value="@SD.Dexterity"> @SD.Dexterity</option>
                                         <option value="@SD.Endurance"> @SD.Endurance</option>
                                         <option value="@SD.Intelligence"> @SD.Intelligence</option>
                                         <option value="@SD.Instinct"> @SD.Instinct</option>
                                         <option value="@SD.Willpower"> @SD.Willpower</option>
-                                        <option value="@SD.Charisma"> @SD.Charisma</option>
+                                        <option value="@SD.Charisma"> @SD.Charisma</option> *@
                                     </InputSelect>
                                 </div>
-                                @if (IsAdminOrMG)
+                                @if (AllParams.IsAdminOrMG)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="column-section py-1">Class Level</label>
@@ -67,7 +71,7 @@
                                     <label class="column-section py-1">Focus points</label>
                                      <label class="prof-variables">@_createProfession.ProfessionDTO.MaxFocusPoints</label>
                                 </div>
-                                @if (IsAdminOrMG)
+                                @if (AllParams.IsAdminOrMG)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="class-section py-1">Approve</label>
@@ -85,7 +89,7 @@
                                         <label class="class-section py-1">Class name</label>
                                         <SfTextBox Placeholder="Insert class name" @bind-Value="@_createProfession.ProfessionDTO.Name"></SfTextBox>
                                     </div>
-                                    @if (IsAdminOrMG)
+                                    @if (AllParams.IsAdminOrMG)
                                     {
                                         <div class="d-flex flex-column px-1">
                                             <label class="class-section py-1">Approve</label>
@@ -101,18 +105,16 @@
                                                  ValueExpression="@(()=>_createProfession.ProfessionDTO.RelatedAttribute)"
                                                  Value="@_createProfession.ProfessionDTO.RelatedAttribute"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
+                                        
                                         <option value="0" selected disabled>--Select--</option>
-                                        <option value="@SD.Strength"> @SD.Strength</option>
-                                        <option value="@SD.Dexterity"> @SD.Dexterity</option>
-                                        <option value="@SD.Endurance"> @SD.Endurance</option>
-                                        <option value="@SD.Intelligence"> @SD.Intelligence</option>
-                                        <option value="@SD.Instinct"> @SD.Instinct</option>
-                                        <option value="@SD.Willpower"> @SD.Willpower</option>
-                                        <option value="@SD.Charisma"> @SD.Charisma</option>
+                                        @foreach (var attr in SD.Attributes.All)
+                                        {
+                                            <option value="@attr"> @attr</option>
+                                        }
                                     </InputSelect>
                                 </div>
                                 <div class="d-flex">
-                                    @if (IsAdminOrMG)
+                                    @if (AllParams.IsAdminOrMG)
                                     {
                                         <div class="d-flex flex-column px-1 variables">
                                             <label class="column-section py-1">Class Level</label>
@@ -305,6 +307,8 @@
 </style>
 
 @code {
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
     [Parameter]
     public IEnumerable<AttributeDTO> Attributes { get; set; }
 
@@ -333,7 +337,6 @@
 
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
-    public bool IsAdminOrMG { get; set; } = false;
 
     public IEditorSettings EditParams = new NumericEditCellParams
     {
@@ -379,12 +382,6 @@
     }
     private async Task DialogOpen()
     { 
-        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
-        var user = authstate.User;
-        if (user == null)
-            return; // failed to load
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-
         this.DescrEdit.RefreshUIAsync();
         ErrorMessage = string.Empty;
         StateHasChanged();
@@ -400,9 +397,13 @@
     {
         try
         {
-            if (attrName != null && attrName != "0" )
+            if (attrName != null && attrName != "0")
             {
                 CreateProfession.ProfessionDTO.RelatedAttribute = attrName;
+                var attr = Attributes.FirstOrDefault(p => p.Name == attrName);
+                if (attr == null) return;
+                CreateProfession.ProfessionDTO.AddPropertyListener(attr);
+
                 CreateProfession.ProfessionDTO.CalculateClassParams(Attributes);
                 StateHasChanged();
                 return;
@@ -412,6 +413,6 @@
         {
             IsLoading = false;
         }
-
     }
+
 }

@@ -1,4 +1,5 @@
-﻿using DA_Models.CharacterModels;
+﻿using DA_Common;
+using DA_Models.CharacterModels;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -16,38 +17,38 @@ namespace DA_Models
             {
                 new AttributeDTO()
                 {
-                    Name = "Strength",
+                    Name = SD.Attributes.Strength,
                     Index = 0,
                 },
                 new AttributeDTO()
                 {
-                    Name = "Dexterity",
+                    Name = SD.Attributes.Dexterity,
                     Index = 1,
                 },
                 new AttributeDTO()
                 {
-                    Name = "Endurance",
+                    Name = SD.Attributes.Endurance,
                     Index = 2,
                     TempBonuses = 0,
                 },
                 new AttributeDTO()
                 {
-                    Name = "Intelligence",
+                    Name = SD.Attributes.Intelligence,
                     Index = 3,
                 },
                 new AttributeDTO()
                 {
-                    Name = "Instinct",
+                    Name = SD.Attributes.Instinct,
                     Index = 4,
                 },
                 new AttributeDTO()
                 {
-                    Name = "Willpower",
+                    Name = SD.Attributes.Willpower,
                     Index = 5,
                 },
                 new AttributeDTO()
                 {
-                    Name = "Charisma",
+                    Name = SD.Attributes.Charisma,
                     Index = 6,
                 },
             };
@@ -60,94 +61,94 @@ namespace DA_Models
             {
                 new BaseSkillDTO()
                 {
-                    Name = "Melee",
-                    RelatedAttribute1 = "Strength",
-                    RelatedAttribute2 = "Dexterity",
+                    Name = SD.BaseSkills.Melee ,
+                    RelatedAttribute1 =  SD.Attributes.Strength,
+                    RelatedAttribute2 =  SD.Attributes.Dexterity,
                     Index= 0,
                    
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Shooting",
-                    RelatedAttribute1 = "Instinct",
-                    RelatedAttribute2 = "Dexterity",
+                    Name = SD.BaseSkills.Shooting,
+                    RelatedAttribute1 =  SD.Attributes.Instinct,
+                    RelatedAttribute2 =  SD.Attributes.Dexterity,
                     Index= 1,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Acrobatics",
-                    RelatedAttribute1 = "Endurance", 
-                    RelatedAttribute2 = "Dexterity",
+                    Name = SD.BaseSkills.Acrobatics,
+                    RelatedAttribute1 =  SD.Attributes.Endurance, 
+                    RelatedAttribute2 =  SD.Attributes.Dexterity,
                     Index= 2,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Sleight of hands",
-                    RelatedAttribute1 = "Instinct", 
-                    RelatedAttribute2 = "Dexterity",
+                    Name = SD.BaseSkills.SleightOfHands,
+                    RelatedAttribute1 =  SD.Attributes.Instinct, 
+                    RelatedAttribute2 =  SD.Attributes.Dexterity,
                     Index= 3,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Athletics",
-                    RelatedAttribute1 = "Endurance",
-                    RelatedAttribute2 = "Strength",
+                    Name = SD.BaseSkills.Athletics,
+                    RelatedAttribute1 =  SD.Attributes.Endurance,
+                    RelatedAttribute2 =  SD.Attributes.Strength,
                     Index= 4,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Talk",
-                    RelatedAttribute1 = "Charisma",
-                    RelatedAttribute2 = "Instinct",
+                    Name = SD.BaseSkills.Talk,
+                    RelatedAttribute1 =  SD.Attributes.Charisma,
+                    RelatedAttribute2 =  SD.Attributes.Instinct,
                     Index= 5,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Deceit",
-                    RelatedAttribute1 = "Instinct",
-                    RelatedAttribute2 = "Charisma",
+                    Name = SD.BaseSkills.Deceit,
+                    RelatedAttribute1 =  SD.Attributes.Instinct,
+                    RelatedAttribute2 =  SD.Attributes.Charisma,
                     Index= 6,
                 },
                  new BaseSkillDTO()
                 {
-                    Name = "Perception",
-                    RelatedAttribute1 = "Intelligence",
-                    RelatedAttribute2 = "Instinct",
+                    Name = SD.BaseSkills.Perception,
+                    RelatedAttribute1 =  SD.Attributes.Intelligence,
+                    RelatedAttribute2 =  SD.Attributes.Instinct,
                     Index= 7,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Knowledge",
-                    RelatedAttribute1 = "Intelligence",
-                    RelatedAttribute2 = "Willpower",
+                    Name = SD.BaseSkills.Knowledge,
+                    RelatedAttribute1 =  SD.Attributes.Intelligence,
+                    RelatedAttribute2 =  SD.Attributes.Willpower,
                     Index= 8,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Craft",
-                    RelatedAttribute1 = "Intelligence",
-                    RelatedAttribute2 = "Endurance",
+                    Name = SD.BaseSkills.Craft,
+                    RelatedAttribute1 = SD.Attributes.Intelligence,
+                    RelatedAttribute2 = SD.Attributes.Endurance,
                     Index= 9,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Survival",
-                     RelatedAttribute1 = "Intelligence",
-                    RelatedAttribute2 = "Dexterity",
+                    Name = SD.BaseSkills.Survival,
+                     RelatedAttribute1 = SD.Attributes.Intelligence,
+                    RelatedAttribute2 = SD.Attributes.Dexterity,
                     Index= 10,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Animal handle",
-                     RelatedAttribute1 = "Instinct",
-                    RelatedAttribute2 = "Willpower",
+                    Name = SD.BaseSkills.AnimalHandle,
+                     RelatedAttribute1 = SD.Attributes.Instinct,
+                    RelatedAttribute2 = SD.Attributes.Willpower,
                     Index= 11,
                 },
                 new BaseSkillDTO()
                 {
-                    Name = "Medicine",
-                    RelatedAttribute1 = "Intelligence",
-                    RelatedAttribute2 = "Willpower",
+                    Name = SD.BaseSkills.Medicine,
+                    RelatedAttribute1 = SD.Attributes.Intelligence,
+                    RelatedAttribute2 = SD.Attributes.Willpower,
                     Index= 12,
                 },
                 

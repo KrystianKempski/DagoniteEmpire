@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DA_Common;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -11,7 +12,7 @@ namespace DA_Models.CharacterModels
 {
     public class BaseSkillDTO :FeatureDTO
     {
-        public override string FeatureType { get; set; } = "BaseSkill";
+        public override string FeatureType { get; set; } = SD.FeatureBaseSkill;
 
 
         public string RelatedAttribute1 { get; set; }
