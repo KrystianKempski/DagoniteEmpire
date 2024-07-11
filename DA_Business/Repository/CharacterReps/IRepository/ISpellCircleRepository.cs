@@ -10,13 +10,13 @@ namespace DA_Business.Repository.CharacterReps.IRepository
 {
     public interface ISpellCircleRepository
     {
-        public Task<SpellCircle> Create(SpellCircle objDTO);
+        public Task<SpellCircleDTO> Create(SpellCircleDTO objDTO);
 
-        public Task<SpellCircle> Update(SpellCircle objDTO);
+        public Task<SpellCircleDTO> Update(SpellCircleDTO objDTO);
         public Task<int> Delete(int id);
 
-        public Task<SpellCircle> GetById(int id);
-        public Task<IEnumerable<SpellCircle>> GetAll(int profId);
+        public Task<SpellCircleDTO> GetById(int id);
+        public Task<IEnumerable<SpellCircleDTO>> GetAll(int profId);
 
     }
 }

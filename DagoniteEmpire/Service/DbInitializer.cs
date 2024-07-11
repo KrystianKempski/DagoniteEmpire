@@ -76,7 +76,7 @@ namespace DagoniteEmpire.Service
                 }
                 if (_db.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
                 {
-                    var proff = new Profession() { Name = SD.NPCName_GameMaster, Description="", RelatedAttribute= "" };
+                    var proff = new Profession() { Name = SD.NPCName_GameMaster, Description="", RelatedAttributeName = "" };
 
                     _db.Professions.Add(proff);
                     _db.SaveChanges();

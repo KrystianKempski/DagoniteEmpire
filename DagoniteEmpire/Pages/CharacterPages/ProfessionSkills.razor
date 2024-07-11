@@ -6,8 +6,14 @@
 @inject IAttributeRepository _attributeRepository
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentRepository _equipmentRepository
+@inject ISpellRepository _spellRepository
+@inject ISpellRepository _spellSlotRepository
+@inject ISpellCircleRepository _spellCircleRepository
+@inject IDialogService DialogService
 @inject NavigationManager _navigationManager
 @inject AuthenticationStateProvider GetAuthenticationStateAsync
+
+@inject IJSRuntime _jsRuntime
 
 <div class="main-table">
 
@@ -29,13 +35,13 @@
                 </div>
                 <div class="d-flex flex-column px-1">
                     <label class="class-section py-1">Related attribute</label>
-                    <label class="prof-variables" style="width: 150px;">@ProfessionDTO.RelatedAttribute</label>
+                    <label class="prof-variables" style="width: 150px;">@ProfessionDTO.RelatedAttributeName</label>
                 </div>
                 @if (IsAdminOrMG)
                 {
                     <div class="d-flex flex-column px-1">
                         <label class="column-section py-1">Class Level</label>
-                        <SfNumericTextBox Width="100px" ShowSpinButton="false" @bind-Value="@ProfessionDTO.ClassLevel" OnChange="ChangeProfLevel"></SfNumericTextBox>
+                        <SfNumericTextBox CssClass="prof-variables" Width="100px" ShowSpinButton="false" @bind-Value="@ProfessionDTO.ClassLevel" OnChange="ChangeProfLevel"></SfNumericTextBox>
                     </div>
                 }
                 else
@@ -84,7 +90,7 @@
                 </div>
                 <div class="d-flex flex-column px-1">
                     <label class="class-section py-1">Related attribute</label>
-                    <label class="prof-variables">@ProfessionDTO.RelatedAttribute</label>
+                    <label class="prof-variables">@ProfessionDTO.RelatedAttributeName</label>
                 </div>
                 <div class="d-flex">
                     @if (IsAdminOrMG)
@@ -256,74 +262,104 @@
                     </table>
                 </div>
 
-             <button @onclick="AddSpellCircle"> Add Spell Circle</button>
-
-
             </MudTabPanel>
             <MudTabPanel Text="Spells" Disabled="false" Style="font-weight: bold;">
-                <MudTable T="SpellCircle" Items="@SpellCircles" Hover="true" Breakpoint="Breakpoint.Sm" @ref="CircleTable">
+                @*  SPELLS  *@
+                <div class="spell-type my-2">
+                    <InputSelect @bind-Value="ProfessionDTO.CasterType" class="form-select" @bind-Value:after="SpellcasterTypeHandle">
+                        <option checked="@(ProfessionDTO.CasterType == SpellcasterType.Sorcerer)" value="@SpellcasterType.Sorcerer">
+                            Sorcerer
+                        </option>
+                        <option checked="@(ProfessionDTO.CasterType == SpellcasterType.Wizard)" value="@SpellcasterType.Wizard">
+                            Wizard
+                        </option>
+                    </InputSelect>
+                </div>
+
+                <MudTable RowClass="cell-small"  T="SpellCircleDTO" Items="@SpellCircles" Breakpoint="Breakpoint.Sm" @ref="CircleTable">
                     <HeaderContent>
-                        <MudTh>Level</MudTh>
-                        <MudTh>PerDay</MudTh>
-                        <MudTh></MudTh>
+                        <MudTh Style="text-align:center; width: 60px; padding: 4px;">Level</MudTh>
+                        <MudTh Style="text-align:center; width: 60px; padding: 4px;">Known</MudTh>
+                        <MudTh Style="text-align:center; width: 60px; padding: 4px;">PerDay</MudTh>
+                        <MudTh Style="text-align:center; padding: 4px;">Spell slots</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd DataLabel="Level">@context.Level</MudTd>
-                        <MudTd DataLabel="PerDay">@context.PerDay</MudTd>
-                        <MudTd>
-                            <MudTabPanel Text="SpellSlot" Disabled="false" Style="font-weight: bold;">
-                                <MudTable T="SpellSlot" Items="@context.SpellSlots" Hover="true" Breakpoint="Breakpoint.Sm">
-                                    <HeaderContent>
-                                        <MudTh>in spellbook</MudTh>
-                                        <MudTh>PerDay</MudTh>
-                                        <MudTh></MudTh>
-                                    </HeaderContent>
-                                    <RowTemplate Context="slotContext"> 
-                                        <MudTd DataLabel="Level">@slotContext.InSpellbook</MudTd>
-                                        <MudTd DataLabel="PerDay">@slotContext.Prepared</MudTd>
-                                    </RowTemplate>
-                                </MudTable>
-                             </MudTabPanel>
+                        <MudTd Style="text-align:center; width: 60px; padding: 4px; font-size:26px; font-weight:bold" DataLabel="Level">@context.Level</MudTd>
+                        <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="Known">@context.KnownSpells</MudTd>
+                        <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="PerDay">@context.PerDay</MudTd>
+                        <MudTd Style="text-align:center; padding: 4px;" DataLabel="Spell slots">
+                            <MudTable T="SpellSlot" Items="@context.SpellSlots" Hover="true" Breakpoint="Breakpoint.Sm">
+                                <RowTemplate Context="slotContext">
+                                    @if(slotContext.Spell is not null)
+                                    {
+                                        <MudTd Style="padding: 4px;" DataLabel="Prepared">
+                                            <MudLink Href="@slotContext.Spell.Link">@slotContext.Spell.Name</MudLink>
+                                        </MudTd>
+                                    }
+                                    else
+                                    {
+                                        <MudTd Style="padding: 4px;" DataLabel="Prepared">Select Spell</MudTd>
+                                    }
+                                    <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
+                                        
+                                        <MudNumericField Class="dense-numeric-field text-center" IconSize="Size.Small"
+                                                         ShrinkLabel="true" Value=@slotContext.Prepared ValueChanged="(int newValue)=>ChangePrepared(slotContext,context,newValue)" Immediate="true"
+                                                         For="@(() => slotContext.Prepared)"  />
+                                    </MudTd>
+                                    <MudTd Style="width: 60px; padding: 4px;" DataLabel="actions">
+                                        <div class="d-flex px-0">
+                                            @if(slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false){
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Change spell"></MudIconButton>
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;"  OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Delete spell"></MudIconButton>
+                                            }else{
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="Add new spell"></MudIconButton>
+                                            }
+                                        </div>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
                         </MudTd>
                     </RowTemplate>
                 </MudTable>
+                <button disabled="@IsSpellTypeDisabled" class="btn btn-secondary my-2" @onclick="AddSpellCircle">Add Spell Circle</button>
             </MudTabPanel>
         </MudTabs>
-        
-      
 
         <label class="warnign-message">@ErrorMessage</label>
         <div class="d-flex ">
-            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
-            <button @onclick="OnCancelBtnClick" class="btn btn-secondary">Cancel</button>
+            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary ma-2">Save</button>
+            <button @onclick="OnCancelBtnClick" class="btn btn-secondary ma-2">Cancel</button>
         </div>
     }
 </div>
 
            
-
+<style>
+    .dense-numeric-field .mud-input-control-input-container .mud-input-underline {
+        margin-top: 0px !important;
+    }
+    .mud-input-control {
+        margin-top: 0px !important;
+    }
+</style>
 
 
 @code {
 
     [Parameter]
     public int Id { get; set; }
-
+    public int AvalibleSpells { get; set; } = 0;
     public ProfessionDTO ProfessionDTO { get; set; } = new();
     private AllParamsModel AllParams { get; set; } = new();
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
-    private ICollection<SpellCircle> SpellCircles = new List<SpellCircle>();
-    private MudTable<SpellCircle> CircleTable;
+    private ICollection<SpellCircleDTO> SpellCircles = new List<SpellCircleDTO>();
+    private MudTable<SpellCircleDTO> CircleTable;
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
 
     private MudTable<SpellCircle> mudTable;
 
 
-    private string SelectedRowClassFunc(SpellCircle element, int rowNumber)
-    {
-        return string.Empty;
-    }
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationState;
@@ -365,15 +401,35 @@
 
     private async Task LoadCharacter()
     {
+
         AllParams.Character = await _characterRepository.GetById(Id);
+        AllParams.Attributes = await _attributeRepository.GetAll(Id);
         //AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
         ProfessionDTO = await _professionRepository.GetById(AllParams.Character.ProfessionId);
-        //AllParams.Attributes = await _attributeRepository.GetAll(Id);
-        ;
+        if(ProfessionDTO.SpellCircles is not null)
+        {
+            SpellCircles = ProfessionDTO.SpellCircles;
+        }
+
+        if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
+            throw new Exception("No related class attribute");
+
+        if (ProfessionDTO.CasterType != SpellcasterType.None)
+            IsSpellTypeDisabled = false;
+
+        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        var user = authstate.User;
+        if (user == null)
+            return; // failed to load
+
+        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+
+        ProfessionDTO.CalculateClassParams(AllParams.Attributes);
     }
 
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; } = true;
+    private bool IsSpellTypeDisabled { get; set; } = true;
     public bool IsAdminOrMG { get; set; } = false;
     public bool ReadOnly { get; set; } = false;
 
@@ -398,22 +454,35 @@
     }
     private async Task OnSaveChangesBtnClick()
     {
-
-        if (string.IsNullOrEmpty(ProfessionDTO.Name) || string.IsNullOrEmpty(ProfessionDTO.Description))
+        try
         {
-            ErrorMessage = $"Create name and description of class";
-            return;
+            if (string.IsNullOrEmpty(ProfessionDTO.Name) || string.IsNullOrEmpty(ProfessionDTO.Description))
+            {
+                throw new WarningException("Create name and description of class");
+            }
+            if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
+            {
+                throw new WarningException("Choose class related attribute");
+            }
+
+            // await _spellCircleRepository.Update()
+            ProfessionDTO.SpellCircles = SpellCircles;
+
+            await _professionRepository.Update(ProfessionDTO);
+
+            _navigationManager.NavigateTo("#");
+            ErrorMessage = string.Empty;
         }
-        // if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttribute))
-        // {
-        //     ErrorMessage = $"Choose attribute related to class";
-        //     return;
-        // }
-
-        await _professionRepository.Update(ProfessionDTO);
-
-        _navigationManager.NavigateTo("#");
-        ErrorMessage = string.Empty;
+        catch (WarningException ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrWarning(ex.ToString());
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+        }
     }
     private async Task OnCancelBtnClick()
     {
@@ -422,8 +491,21 @@
 
     private async Task ChangeProfLevel()
     {
-        ProfessionDTO.CalculateClassParams(AllParams.Attributes);
-        StateHasChanged();
+        try
+        {
+            ProfessionDTO.CalculateClassParams(AllParams.Attributes);
+            StateHasChanged();
+        }
+        catch (WarningException ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrWarning(ex.ToString());
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+        }
     }
 
     private async Task ChangeRelatedAttribute(string attrName)
@@ -432,28 +514,168 @@
         {
             if (attrName != null && attrName != "0")
             {
-                ProfessionDTO.RelatedAttribute = attrName;
+                ProfessionDTO.RelatedAttributeName = attrName;
+                ProfessionDTO.RelatedAttribute = AllParams.Attributes.FirstOrDefault(a => a.Name == attrName);
                 ProfessionDTO.CalculateClassParams(AllParams.Attributes);
                 StateHasChanged();
                 return;
             }
         }
+        catch(WarningException ex){
+            IsLoading = false;
+            await _jsRuntime.ToastrWarning(ex.ToString());
+        }
         catch (Exception ex)
         {
             IsLoading = false;
+            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+        }
+    }
+
+    private async Task AddSpellCircle()
+    {
+        try{
+            int newLevel = SpellCircles.Count();
+            if (newLevel > 9)
+                throw new WarningException("Max spell circle level reached");
+            SpellCircleDTO circle = new();
+            circle.ProfessionId = ProfessionDTO.Id;
+            circle.Profession = ProfessionDTO;
+            circle.Level = newLevel;
+            circle.CalculateSpells();
+            circle.SpellSlots = new List<SpellSlot>();
+            for(int i=0; i < circle.KnownSpells; i++)
+            {
+                circle.SpellSlots.Add(new SpellSlot());
+            }
+
+            SpellCircles.Add(circle);
+            StateHasChanged();
+        } 
+        catch(WarningException ex){
+            IsLoading = false;
+            await _jsRuntime.ToastrWarning(ex.ToString());
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+        }
+    }
+
+    private void SpellcasterTypeHandle()
+    {
+        IsSpellTypeDisabled = false;
+
+        if (ProfessionDTO.CasterType != SpellcasterType.None)
+        {
+            if(ProfessionDTO.SpellCircles is not null){
+
+                foreach(var circle in ProfessionDTO.SpellCircles)
+                {
+                    if (circle.SpellSlots is not null)
+                    {
+                        foreach(var slot in circle.SpellSlots)
+                        {
+                            if (ProfessionDTO.CasterType == SpellcasterType.Sorcerer)
+                            {
+                                slot.Prepared = circle.PerDay;
+                            }
+                            else 
+                            {
+                                slot.Prepared = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task SaveSpell(SpellSlot? spellSlot, bool isEdit)
+    {
+        if (spellSlot is null)
+            return;
+
+        Spell spell = new();
+        if (isEdit && spellSlot.Spell is not null)
+        {
+            spell.Id = spellSlot.Spell.Id;
+            spell.Level = spellSlot.Spell.Level;
+            spell.Description = spellSlot.Spell.Description;
+            spell.Link = spellSlot.Spell.Link;
+            spell.Name = spellSlot.Spell.Name;
+            spell.IsApproved = spellSlot.Spell.IsApproved;
+        }
+        var parameters = new DialogParameters<SpellDialog> { { x => x.Spell, spell }, { x => x.IsEdit, isEdit }, { x => x.IsAdminOrMG, IsAdminOrMG } };
+        var dialog = await DialogService.ShowAsync<SpellDialog>("Edit spell", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            spellSlot.Spell = (Spell)result.Data;
+            StateHasChanged();
+        }
+    }
+
+    public async Task ChangePrepared(SpellSlot slot, SpellCircleDTO circle, int newValue) // your model.Amt type
+    {
+
+        int allPreparedSpells = 0;
+        //FOR WIZZARD 
+        if (ProfessionDTO.CasterType == SpellcasterType.Wizard)
+        {
+            if(circle.SpellSlots is not null){
+                foreach(var s in circle.SpellSlots)
+                {
+                    allPreparedSpells += s.Prepared;
+                }
+            }
+            //adding
+            if (slot.Prepared < newValue)
+            {
+                if (circle.PerDay - allPreparedSpells > 0)
+                {
+                    slot.Prepared = newValue;
+                }
+
+            }
+            //refracting
+            if (slot.Prepared > newValue && slot.Prepared > 0 )
+            {
+                slot.Prepared = newValue;
+            }
+        }
+        else if (ProfessionDTO.CasterType == SpellcasterType.Sorcerer)
+        {
+            allPreparedSpells = slot.Prepared;
+            //adding
+            if (slot.Prepared < newValue)
+            {
+                if (circle.PerDay - allPreparedSpells > 0)
+                {
+                    slot.Prepared = newValue;
+                }
+
+            }
+            //refracting
+            if (slot.Prepared > newValue && slot.Prepared > 0)
+            {
+                slot.Prepared = newValue;
+            }
+            if (circle.SpellSlots is not null)
+            {
+                foreach (var s in circle.SpellSlots)
+                {
+                    s.Prepared = slot.Prepared;
+                }
+            }
         }
 
     }
 
-
-
-    private async Task AddSpellCircle()
+    private async Task DeleteSpell(SpellSlot spellSlot)
     {
-        int newLevel = SpellCircles.Count();
-        SpellCircle circle = new();
-        circle.ProfessionId = ProfessionDTO.Id;
-        circle.Level = newLevel;
-        circle.KnownSpells = 
-        SpellCircles.Add()
+
     }
 }

@@ -25,16 +25,16 @@ namespace DA_Business.Repository.CharacterReps
             _db = db;
             _mapper = mapper;
         }
-        public async Task<SpellCircle> Create(SpellCircle objDTO)
+        public async Task<SpellCircleDTO> Create(SpellCircleDTO objDTO)
         {
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-               
-                var addedObj = await contex.SpellCircles.AddAsync(objDTO);
+                var obj = _mapper.Map<SpellCircleDTO, SpellCircle>(objDTO);
+                var addedObj = await contex.SpellCircles.AddAsync(obj);
                 await contex.SaveChangesAsync();
 
-                return addedObj.Entity;
+                return _mapper.Map <SpellCircle, SpellCircleDTO>(addedObj.Entity);
             }
             catch (Exception ex)
             {
@@ -62,28 +62,31 @@ namespace DA_Business.Repository.CharacterReps
             }
         }
 
-        public async Task<IEnumerable<SpellCircle>> GetAll(int profId)
+        public async Task<IEnumerable<SpellCircleDTO>> GetAll(int profId)
         {
             using var contex = await _db.CreateDbContextAsync();
 
-            return contex.SpellCircles.Where(u=>u.ProfessionId == profId);
+            return _mapper.Map<IEnumerable<SpellCircle>, IEnumerable<SpellCircleDTO>>(contex.SpellCircles.Where(u => u.ProfessionId == profId));
+    
         }
 
-        public async Task<SpellCircle> GetById(int id)
+        public async Task<SpellCircleDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
             var obj = await contex.SpellCircles.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                return obj;
+                return _mapper.Map<SpellCircle, SpellCircleDTO>(obj);
             }
-            return new SpellCircle();
+            return new SpellCircleDTO();
         }
 
-        public async Task<SpellCircle> Update(SpellCircle objDTO)
+        public async Task<SpellCircleDTO> Update(SpellCircleDTO objDTO)
         {
             try
             {
+
+                var newCircle = _mapper.Map<SpellCircleDTO, SpellCircle>(objDTO);
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = await contex.SpellCircles.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
@@ -91,13 +94,13 @@ namespace DA_Business.Repository.CharacterReps
                     // Update parent
                     contex.Entry(obj).CurrentValues.SetValues(objDTO);
                     await contex.SaveChangesAsync();
-                    return obj;
+                    return _mapper.Map<SpellCircle, SpellCircleDTO>(obj);
                 }
                 else
                 {
-                    var addedObj = contex.SpellCircles.Add(objDTO);
+                    var addedObj = contex.SpellCircles.Add(newCircle);
                     await contex.SaveChangesAsync();
-                    return addedObj.Entity;
+                    return _mapper.Map<SpellCircle, SpellCircleDTO>(addedObj.Entity);
                 }
             }
             catch (Exception ex)

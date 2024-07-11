@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DA_Common;
+using Microsoft.AspNetCore.Rewrite;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -14,9 +16,10 @@ namespace DA_DataAccess.CharacterClasses
         public int Level { get; set; }
         public int KnownSpells { get; set; }
         public int PerDay { get; set; }
-        public IEnumerable<SpellSlot> SpellSlots { get; set; }
+        public ICollection<SpellSlot>? SpellSlots { get; set; }
         public int ProfessionId { get; set; }
         [ForeignKey(nameof(ProfessionId))]
-        public Profession Profession { get; set; }
+        public virtual Profession Profession { get; set; }
+
     }
 }

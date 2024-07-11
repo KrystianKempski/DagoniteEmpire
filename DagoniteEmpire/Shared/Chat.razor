@@ -17,7 +17,7 @@
             {
                 <MudListItem Class="pa-0 px-0" OnClick="@(() => AddUserChat(user.Id))">
                     <div class="d-flex flex-row mt-n1 mb-n1">
-                        <div class="mr-4 py-3 pl-3 pr-2" style="padding: 8px 8px 8px 10px;">
+                        <div class="mr-4 py-3 pl-2 pr-2" style="padding: 8px 8px 8px 10px;">
                             <MudBadge Visible="@user.ShowBadge" Content="@user.BadgeContent" Color="Color.Primary" Origin="Origin.TopLeft" Overlap="true" Class="">
                                 @if (ChosenUser != null && user.Id == ChosenUser.ContactId)
                                 {
@@ -150,41 +150,7 @@
 
     private HubConnection hubConnection;
     public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
-    // protected override async Task OnInitializedAsync()
-    // {
-    //     string baseUrl = _navigationManager.BaseUri;
-    //     string HubUrl = baseUrl.TrimEnd('/') + ChatHub.HubUrl;
-
-    //     hubConnection = new HubConnectionBuilder()
-    //         .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
-    //         .Build();
-
-    //    // hubConnection = new HubConnectionBuilder().WithUrl(_navigationManager.ToAbsoluteUri("/signalRHub")).Build();
-    //     await hubConnection.StartAsync();
-    //     hubConnection.On<string, string, string>("ReceiveChatNotification", (message, receiverUserId, senderUserId) =>
-    //     {
-    //         if (CurrentUserId == receiverUserId)
-    //         {
-    //             _snackBar.Add(message, Severity.Info, config =>
-    //             {
-    //                 config.VisibleStateDuration = 10000;
-    //                 config.HideTransitionDuration = 500;
-    //                 config.ShowTransitionDuration = 500;
-    //                 config.Action = "Chat?";
-    //                 config.ActionColor = Color.Info;
-    //                 config.Onclick = snackbar =>
-    //                 {
-    //                     _navigationManager.NavigateTo($"chat/{senderUserId}");
-    //                     return Task.CompletedTask;
-    //                 };
-    //             });
-    //         }
-    //     });
-    //     var state = await _stateProvider.GetAuthenticationStateAsync();
-    //     var user = state.User;
-    //     CurrentUserId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
-    // }
-
+    
     private string CurrentUserId { get; set; }
     private string CurrentUserName { get; set; }
     private bool ScrollToBottom = false;

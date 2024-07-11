@@ -1,4 +1,4 @@
-﻿
+﻿@inject NavigationManager _navigationManager
 <div class="profession">
     <div class="sheet-img">
        @*  <img src="../images/old_paper2.png" class="stretch" /> *@
@@ -28,7 +28,7 @@
                     <label class="name-label">@Profession.ClassLevel</label>
                 </td>
                 <td>
-                    <label class="name-label">@Profession.RelatedAttribute</label>
+                    <label class="name-label">@Profession.RelatedAttributeName</label>
                 </td>
                 <td>
                     <label class="name-label">@Profession.ProfessionSkillRoll</label>
@@ -101,7 +101,7 @@
        }
         else 
         {
-        _navigationManager.NavigateTo($"/profession/{AllParams.Character.Id}");
+            _navigationManager.NavigateTo($"/profession/{AllParams.Character.Id}");
         }
         StateHasChanged();
     }

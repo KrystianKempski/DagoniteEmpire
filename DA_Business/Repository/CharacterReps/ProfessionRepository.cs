@@ -122,7 +122,10 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<ProfessionDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Professions.Include(u => u.ActiveSkills).Include(p => p.PassiveSkills).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.Professions
+                .Include(u => u.ActiveSkills)
+                .Include(p => p.PassiveSkills)
+                .Include(p => p.SpellCircles).ThenInclude(p=>p.SpellSlots).ThenInclude(p=>p.Spell).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Profession, ProfessionDTO>(obj);
@@ -199,6 +202,89 @@ namespace DA_Business.Repository.CharacterReps
                             else
                                 // Insert bonus
                                 obj.PassiveSkills.Add(childTrait);
+                        }
+                    }
+
+                    // Delete spell circles
+                    if (obj.SpellCircles is not null)
+                    {
+                        foreach (var existingChild in obj.SpellCircles.ToList())
+                        {
+                            //delete those who is not in updated proffestion
+                            if (!updateProfession.SpellCircles.Any(c => c.Id == existingChild.Id))
+                            {
+                                if(existingChild.SpellSlots is not null)
+                                {
+                                    foreach (var existingSlot in existingChild.SpellSlots)
+                                    {
+                                        contex.SpellSlots.Remove(existingSlot);
+                                    }
+                                }
+                                contex.SpellCircles.Remove(existingChild);
+                            }
+                        }
+                    }
+                    // Update and Insert spell circles
+                    if (updateProfession.SpellCircles is not null)
+                    {
+                        foreach (var childTrait in updateProfession.SpellCircles)
+                        {
+                            SpellCircle? existingChild;
+                            if (!obj.SpellCircles.IsNullOrEmpty())
+                            {
+                                existingChild = obj.SpellCircles.FirstOrDefault(c => c.Id == childTrait.Id);
+                            }
+                            else
+                            {
+                                obj.SpellCircles = new List<SpellCircle>();
+                                existingChild = null;
+                            }
+
+                            if (existingChild != null)
+                            {
+                                // Update Circle
+                                contex.Entry(existingChild).CurrentValues.SetValues(childTrait);
+
+                                // Update Slot
+                                // Delete spell Slot
+                                if (obj.SpellCircles is not null)
+                                {
+                                    foreach (var existingSlot in existingChild.SpellSlots.ToList())
+                                    {
+                                        if (!childTrait.SpellSlots.Any(c => c.Id == existingSlot.Id))
+                                        {
+                                            contex.SpellSlots.Remove(existingSlot);
+                                        }
+                                    }
+                                }
+                                // Update and Insert spell Slot
+                                if (childTrait.SpellSlots is not null)
+                                {
+                                    foreach (var spellSlot in childTrait.SpellSlots)
+                                    {
+                                        SpellSlot? existingSlot;
+                                        if (!existingChild.SpellSlots.IsNullOrEmpty())
+                                        {
+                                            existingSlot = existingChild.SpellSlots.FirstOrDefault(c => c.Id == spellSlot.Id);
+                                        }
+                                        else
+                                        {
+                                            existingChild.SpellSlots = new List<SpellSlot>();
+                                            existingSlot = null;
+                                        }
+
+                                        if (existingSlot != null)
+                                            // Update bonus
+                                            contex.Entry(existingSlot).CurrentValues.SetValues(spellSlot);
+                                        else
+                                            // Insert bonus
+                                            existingChild.SpellSlots.Add(spellSlot);
+                                    }
+                                }
+                            }
+                            else
+                                // Insert bonus
+                                obj.SpellCircles.Add(childTrait);
                         }
                     }
                     await contex.SaveChangesAsync();

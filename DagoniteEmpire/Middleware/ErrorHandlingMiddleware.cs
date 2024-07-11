@@ -34,6 +34,10 @@ namespace DagoniteEmpire.Middleware
             {
                 await _jsRuntime.ToastrError(ex.Message);
             }
+            catch(WarningException ex) 
+            {
+                await _jsRuntime.ToastrWarning(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, ex.Message);

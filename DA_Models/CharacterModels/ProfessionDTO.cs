@@ -1,4 +1,5 @@
-﻿using DA_DataAccess.CharacterClasses;
+﻿using DA_Common;
+using DA_DataAccess.CharacterClasses;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,18 +10,13 @@ using System.Threading.Tasks;
 
 namespace DA_Models.CharacterModels
 {
-    public enum SpellcasterType
-    {
-        Wizard,
-        Sorcerer,
-    }
     public class ProfessionDTO
     {
         public int Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string RelatedAttribute { get; set; } = string.Empty;
+        public string RelatedAttributeName { get; set; } = string.Empty;
         public int ClassLevel { get; set; } = 1;
 
         public int MaxFocusPoints { get; set; } = 0;
@@ -32,9 +28,9 @@ namespace DA_Models.CharacterModels
 
         public ICollection<ProfessionSkill>? PassiveSkills { get; set; }
 
-        public SpellcasterType Spellcaster { get; set; }
+        public SpellcasterType CasterType { get; set; } = SpellcasterType.None;
 
-        public ICollection<SpellCircle>? SpellCircles { get;set; }
+        public ICollection<SpellCircleDTO>? SpellCircles { get;set; }
 
 
         public bool IsApproved { get; set; } = false;
@@ -44,7 +40,7 @@ namespace DA_Models.CharacterModels
         public int ProfessionSkillRoll { get; set; } = 0;
 
 
-        public AttributeDTO? RelatedAttributeD { get; set; }
+        public AttributeDTO? RelatedAttribute { get; set; }
 
         public ProfessionDTO()
         {
@@ -79,12 +75,14 @@ namespace DA_Models.CharacterModels
         }
         public void CalculateClassParams(IEnumerable<AttributeDTO> attributes)
         {
-            if (string.IsNullOrEmpty(RelatedAttribute))
+            if (string.IsNullOrEmpty(RelatedAttributeName))
                 return;
-            var attr = attributes.FirstOrDefault(u => u.Name == RelatedAttribute);
+            var attr = attributes.FirstOrDefault(u => u.Name == RelatedAttributeName);
             if (attr is null)
                 return;
-            ProfessionSkillRoll = attr.Modifier + ClassLevel;
+            attr.SumAll();
+            RelatedAttribute = attr;
+            ProfessionSkillRoll = attr.GetModifier()  + ClassLevel;
             MaxFocusPoints = ProfessionSkillRoll * 4 + 4;
             if (MaxFocusPoints < 4)
                 MaxFocusPoints = 4;
@@ -92,17 +90,17 @@ namespace DA_Models.CharacterModels
 
         public void AddPropertyListener(AttributeDTO attr)
         {
-            RelatedAttributeD = attr;
-            if (RelatedAttributeD == null) return;
-            RelatedAttributeD.ModifierChanged += A_PropertyChanged;
+            if (attr == null) return;
+            RelatedAttribute = attr;
+            RelatedAttribute.ModifierChanged += A_PropertyChanged;
         }
 
         private void A_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName != nameof(RelatedAttributeD.Modifier)) return;
-            if (RelatedAttributeD == null) return;
+            if (e.PropertyName != nameof(RelatedAttribute.Modifier)) return;
+            if (RelatedAttribute == null) return;
 
-            ProfessionSkillRoll = RelatedAttributeD.Modifier + ClassLevel;
+            ProfessionSkillRoll = RelatedAttribute.Modifier + ClassLevel;
             MaxFocusPoints = ProfessionSkillRoll * 4 + 4;
             if (MaxFocusPoints < 4)
                 MaxFocusPoints = 4;

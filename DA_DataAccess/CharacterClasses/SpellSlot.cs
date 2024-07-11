@@ -15,10 +15,14 @@ namespace DA_DataAccess.CharacterClasses
         public bool InSpellbook { get; set; }
         public int Prepared { get; set; }
 
-        public ICollection<Spell>? Spell { get; set; }
+        //public ICollection<Spell>? Spell { get; set; }
+
+        [ForeignKey(nameof(SpellId))]
+        public int SpellId { get; set; }
+        public Spell Spell { get; set; } = new();
 
         [ForeignKey(nameof(SpellCircle))]
         public int SpellCircleId { get; set; }
-        public virtual SpellCircle SpellCircle { get; set; }
+        public virtual SpellCircle? SpellCircle { get; set; }
     }
 }

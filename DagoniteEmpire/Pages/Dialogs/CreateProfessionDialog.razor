@@ -30,8 +30,8 @@
                                 <div class="d-flex flex-column px-1">
                                     <label class="class-section py-1">Related attribute</label>
                                     <InputSelect style="width: 150px;height: 32px;border: 1px solid RGB(206 212 218); border-radius: 4px; padding: 0px 4px 0px 4px;"
-                                                 ValueExpression="@(()=>_createProfession.ProfessionDTO.RelatedAttribute)"
-                                                 Value="@_createProfession.ProfessionDTO.RelatedAttribute"
+                                                 ValueExpression="@(()=>_createProfession.ProfessionDTO.RelatedAttributeName)"
+                                                 Value="@_createProfession.ProfessionDTO.RelatedAttributeName"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
                                         <option value="0" selected disabled>--Select--</option>
                                         @foreach(var attr in SD.Attributes.All)
@@ -102,8 +102,8 @@
                                 <div class="d-flex flex-column px-1">
                                     <label class="class-section py-1">Related attribute</label>
                                     <InputSelect style="height: 32px;border: 1px solid RGB(206 212 218); border-radius: 4px; padding: 0px 4px 0px 4px;"
-                                                 ValueExpression="@(()=>_createProfession.ProfessionDTO.RelatedAttribute)"
-                                                 Value="@_createProfession.ProfessionDTO.RelatedAttribute"
+                                                 ValueExpression="@(()=>_createProfession.ProfessionDTO.RelatedAttributeName)"
+                                                 Value="@_createProfession.ProfessionDTO.RelatedAttributeName"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
                                         
                                         <option value="0" selected disabled>--Select--</option>
@@ -365,7 +365,7 @@
             ErrorMessage = $"Create name and description of class";
             return;
         }
-        if (string.IsNullOrEmpty(CreateProfession.ProfessionDTO.RelatedAttribute))
+        if (string.IsNullOrEmpty(CreateProfession.ProfessionDTO.RelatedAttributeName))
         {
             ErrorMessage = $"Choose attribute related to class";
             return;
@@ -399,7 +399,7 @@
         {
             if (attrName != null && attrName != "0")
             {
-                CreateProfession.ProfessionDTO.RelatedAttribute = attrName;
+                CreateProfession.ProfessionDTO.RelatedAttributeName = attrName;
                 var attr = Attributes.FirstOrDefault(p => p.Name == attrName);
                 if (attr == null) return;
                 CreateProfession.ProfessionDTO.AddPropertyListener(attr);

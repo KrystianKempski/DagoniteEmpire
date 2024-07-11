@@ -546,15 +546,19 @@
                     await AddSSRelatedBaseSkill(obj);
                 }
 
-                TraitsChange();
+                await TraitsChange();
 
-                await ChangeProfRelatedAttribute(AllParams.Profession.RelatedAttribute);
+                await ChangeProfRelatedAttribute();
                 AllParams.Profession.CalculateClassParams(AllParams.Attributes);
 
 
 
                 IsLoading = false;
                 StateHasChanged();
+            }
+            catch(WarningException ex)
+            {
+                await _jsRuntime.ToastrWarning(ex.ToString());
             }
             catch (Exception ex)
             {
@@ -1043,17 +1047,16 @@
 
     }
 
-    private async Task ChangeProfRelatedAttribute(string attrName)
+    private async Task ChangeProfRelatedAttribute()
     {
         try
         {
-            if (attrName != null && attrName != "0")
+            if (string.IsNullOrEmpty(AllParams.Profession.RelatedAttributeName) == false)
             {
-                AllParams.Profession.RelatedAttribute = attrName;
-                var attr = AllParams.Attributes.FirstOrDefault(p => p.Name == attrName);
-                if (attr == null) return;
+                var attr = AllParams.Attributes.FirstOrDefault(p => p.Name == AllParams.Profession.RelatedAttributeName);
+                if (attr == null)
+                    throw new Exception();
                 AllParams.Profession.AddPropertyListener(attr);
-                return;
             }
         }
         catch (Exception ex)
@@ -1061,7 +1064,6 @@
             IsLoading = false;
             await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
         }
-
     }
 
     public async Task ConfirmLeave_Click(bool isConfirmed)
@@ -1082,7 +1084,7 @@
 
     private async Task GetDescription(string description) => AllParams.Character.Description = description;
 
-    protected async void TraitsChange()
+    protected async Task TraitsChange()
     {
 
         IEnumerable<FeatureDTO>[] allFeatures = { AllParams.Attributes, AllParams.BaseSkills, AllParams.SpecialSkills };

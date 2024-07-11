@@ -82,17 +82,69 @@ namespace DA_Common
             public static readonly string[] All = { Melee, Shooting, Acrobatics, SleightOfHands, Athletics, Talk, Deceit, Perception, Knowledge, Craft, Survival, AnimalHandle, Medicine };
         }
 
-     //circle 0  1  2  3  4  5  6  7  8  9
-        public static readonly int[,] SpellsKnown = { 
-            { 4, 2, 0, 0, 0, 0, 0, 0, 0, 0 },               // lvl 0
-            { 4, 3, 2, 1, 0, 0, 0, 0, 0, 0 },               // lvl 1
-            { 4, 4, 3, 3, 2, 0, 0, 0, 0, 0 },               // lvl 2
-            { 4, 4, 4, 4, 3, 2, 1, 0, 0, 0 },               // lvl 3
-            { 4, 3, 2, 1, 0, 0, 0, 0, 0, 0 },               // lvl 4
-            { 4, 4, 4, 4, 4, 3, 3, 2, 0, 0 },               // lvl 5
-            { 4, 4, 4, 4, 4, 4, 3, 3, 2, 1 },               // lvl 6
-            { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,},               // lvl 7
+      //circle 0  1  2  3  4  5  6  7  8  9
+        public static readonly int[,,] SpellsPerDay = {
+          {
+            //WIZARD
+             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },               // lvl 0
+             { 4, 2, 0, 0, 0, 0, 0, 0, 0, 0 },               // lvl 1
+             { 4, 3, 2, 1, 0, 0, 0, 0, 0, 0 },               // lvl 2
+             { 4, 4, 3, 3, 2, 0, 0, 0, 0, 0 },               // lvl 3
+             { 4, 4, 4, 4, 3, 2, 1, 0, 0, 0 },               // lvl 4
+             { 4, 4, 4, 4, 4, 4, 3, 2, 1, 0 },               // lvl 5
+             { 4, 4, 4, 4, 4, 4, 4, 3, 3, 2 },               // lvl 6
+             { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 },               // lvl 7
+          }
+            ,
+          {
+            //SORCERER
+            {  0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },               // lvl 0
+            { 99, 4, 0, 0, 0, 0, 0, 0, 0, 0 },               // lvl 1
+            { 99, 6, 4, 0, 0, 0, 0, 0, 0, 0 },               // lvl 2
+            { 99, 6, 6, 5, 3, 0, 0, 0, 0, 0 },               // lvl 3
+            { 99, 6, 6, 6, 6, 4, 0, 0, 0, 0 },               // lvl 4
+            { 99, 6, 6, 6, 6, 6, 5, 3, 0, 0 },               // lvl 5
+            { 99, 6, 6, 6, 6, 6, 6, 6, 5, 3 },               // lvl 6
+            { 99, 6, 6, 6, 6, 6, 6, 6, 6, 6,},               // lvl 7
+          }
         } ;
+      //circle 0  1  2  3  4  5  6  7  8  9
+        public static readonly int[,,] SpellsKnown = {
+          {
+            //WIZARD
+             { 4, 5, 0, 0, 0, 0, 0, 0, 0, 0 },               // lvl 1
+             { 4, 5, 4, 2, 0, 0, 0, 0, 0, 0 },               // lvl 2
+             { 4, 5, 4, 4, 4, 0, 0, 0, 0, 0 },               // lvl 3
+             { 4, 5, 4, 4, 4, 4, 2, 0, 0, 0 },               // lvl 4
+             { 4, 4, 4, 4, 4, 4, 4, 4, 2, 0 },               // lvl 5
+             { 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 },               // lvl 6
+             { 4, 4, 4, 4, 4, 4, 4, 4, 4, 6 },               // lvl 7
+          }
+            ,
+          {
+            //SORCERER
+            { 5, 2, 0, 0, 0, 0, 0, 0, 0, 0 },               // lvl 1
+            { 6, 4, 2, 0, 0, 0, 0, 0, 0, 0 },               // lvl 2
+            { 8, 5, 3, 2, 1, 0, 0, 0, 0, 0 },               // lvl 3
+            { 9, 5, 5, 4, 3, 2, 0, 0, 0, 0 },               // lvl 4
+            { 9, 5, 5, 4, 4, 4, 3, 2, 0, 0 },               // lvl 5
+            { 9, 5, 5, 4, 4, 4, 3, 3, 2, 1 },               // lvl 6
+            { 9, 5, 5, 4, 4, 4, 3, 3, 3, 3,},               // lvl 7
+          }
+        };
+        //circle 0  1  2  3  4  5  6  7  8  9
+        public static readonly int[,] AbilityModifBonusSpell = {
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },               // +0
+            { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },               // +1
+            { 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },               // +2
+            { 0, 1, 1, 1, 0, 0, 0, 0, 0, 0 },               // +3
+            { 0, 1, 1, 1, 1, 0, 0, 0, 0, 0 },               // +4
+            { 0, 2, 1, 1, 1, 1, 0, 0, 0, 0 },               // +5
+            { 0, 2, 2, 1, 1, 1, 1, 0, 0, 0 },               // +6
+            { 0, 2, 2, 2, 1, 1, 1, 1, 0, 0 },               // +7
+            { 0, 2, 2, 2, 2, 1, 1, 1, 1, 0,},               // +8
+            { 0, 3, 2, 2, 2, 2, 1, 1, 1, 1,},               // +9
+        };
 
     }
     public static class MyIcon
@@ -100,8 +152,6 @@ namespace DA_Common
         public const string Bookmark = "icons/bookmarklet.svg";
         public const string Scroll = "icons/scroll.svg";
         public const string Quill = "icons/quill.svg";
-
-
     }
 
     public enum EquipmentType
@@ -115,6 +165,7 @@ namespace DA_Common
     public enum SpellcasterType
     {
         Wizard,
-        Sorcerer
+        Sorcerer,
+        None,
     }
 }

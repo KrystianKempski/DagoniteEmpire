@@ -10,11 +10,11 @@ namespace DA_DataAccess.CharacterClasses
     public class Spell
     {
         [Key] public int Id { get; set; }
-        public bool IsApproved { get; set; }
-        public string Name { get; set; }
+        public bool IsApproved { get; set; } = false;
+        public string Name { get; set; } = string.Empty;
         public int Level { get; set; }
-        public string Description { get; set; }
-        public string Link { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string Link { get; set; } = string.Empty;
         public IEnumerable<SpellSlot>? SpellSlots { get; set; }
 
     }

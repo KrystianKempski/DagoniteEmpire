@@ -222,6 +222,7 @@
         var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Edit Campaign", parameters);
         var result = await dialog.Result;
 
+
         if (!result.Canceled)
         {
             NewCampaign = (CampaignDTO)result.Data;

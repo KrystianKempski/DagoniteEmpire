@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240704105712_addSpells")]
-    partial class addSpells
+    [Migration("20240709072159_changespell")]
+    partial class changespell
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -335,6 +335,9 @@ namespace DA_DataAccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CasterType")
+                        .HasColumnType("integer");
+
                     b.Property<int>("ClassLevel")
                         .HasColumnType("integer");
 
@@ -358,7 +361,7 @@ namespace DA_DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("RelatedAttribute")
+                    b.Property<string>("RelatedAttributeName")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -581,9 +584,14 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("SpellCircleId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("SpellId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("SpellCircleId");
+
+                    b.HasIndex("SpellId");
 
                     b.ToTable("SpellSlots");
                 });
@@ -1027,21 +1035,6 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("RaceTraitRace");
                 });
 
-            modelBuilder.Entity("SpellSpellSlot", b =>
-                {
-                    b.Property<int>("SpellId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("SpellSlotsId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("SpellId", "SpellSlotsId");
-
-                    b.HasIndex("SpellSlotsId");
-
-                    b.ToTable("SpellSpellSlot");
-                });
-
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitAdv", b =>
                 {
                     b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
@@ -1237,6 +1230,14 @@ namespace DA_DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("DA_DataAccess.CharacterClasses.Spell", "Spell")
+                        .WithMany("SpellSlots")
+                        .HasForeignKey("SpellId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Spell");
+
                     b.Navigation("SpellCircle");
                 });
 
@@ -1368,21 +1369,6 @@ namespace DA_DataAccess.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("SpellSpellSlot", b =>
-                {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Spell", null)
-                        .WithMany()
-                        .HasForeignKey("SpellId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DA_DataAccess.CharacterClasses.SpellSlot", null)
-                        .WithMany()
-                        .HasForeignKey("SpellSlotsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
                 {
                     b.Navigation("Attributes");
@@ -1408,6 +1394,11 @@ namespace DA_DataAccess.Migrations
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>
                 {
                     b.Navigation("Characters");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Spell", b =>
+                {
+                    b.Navigation("SpellSlots");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpellCircle", b =>
