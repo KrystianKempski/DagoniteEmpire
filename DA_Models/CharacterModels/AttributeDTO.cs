@@ -15,33 +15,35 @@ namespace DA_Models.CharacterModels
 
         public override int BaseBonus { get; set; } = 6;
         private int _modifier = 0;
-        public int Modifier { 
-            get => _modifier;
-            set
+        public int Modifier {
+            get
             {
-                if(_modifier == value) return;
-                _modifier = value;
+                int mod = (int)Math.Floor((SumBonus - 10) / 2.0);
+                if (_modifier == mod) return _modifier;
+                _modifier = mod;
                 OnModifierChanged(nameof(Modifier));
+                return mod;
             }
-         }
+        }
+
+        private int _modifierAbsolute = 0;
+        public int ModifierAbsolute
+        {
+            get
+            {
+                int mod = (int)Math.Floor((SumAbsolute - 10) / 2.0);
+                if (_modifier == mod) return _modifierAbsolute;
+                _modifierAbsolute = mod;
+               // OnModifierChanged(nameof(Modifier));
+                return mod;
+            }
+        }
 
         public event PropertyChangedEventHandler? ModifierChanged=null;
 
         protected virtual void OnModifierChanged(string propertyName)
         {
             ModifierChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public override int SumAll()
-        {
-            SumBonus = base.SumAll();// BaseBonus + RaceBonus + GearBonus + TempBonuses + HealthBonus+ TraitBonus + OtherBonuses;
-            GetModifier();
-            return SumBonus;
-        }
-        public int GetModifier()
-        {
-            Modifier = (int)Math.Floor((SumBonus - 10) / 2.0);
-            return Modifier;
         }
     }
 }

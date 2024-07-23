@@ -17,17 +17,14 @@ namespace DA_Models.CharacterModels
 
         public string RelatedAttribute1 { get; set; }
         public string RelatedAttribute2 { get; set; }
-
-
-        private int _sumBonus = 0;
         public override int SumBonus
         {
-            get => _sumBonus;
-            set
+            get
             {
-                if (_sumBonus == value) return;
-                _sumBonus = value;
+                if (_sumBonus == base.SumBonus) return _sumBonus;
+                _sumBonus = base.SumBonus;
                 OnSumChanged(nameof(SumBonus));
+                return _sumBonus;
             }
         }
 
@@ -37,7 +34,5 @@ namespace DA_Models.CharacterModels
         {
             SumChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-
     }
 }

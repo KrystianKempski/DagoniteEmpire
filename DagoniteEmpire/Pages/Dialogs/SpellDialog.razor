@@ -1,23 +1,39 @@
 ﻿@using DA_DataAccess.CharacterClasses
 @inject ISnackbar Snackbar
+@inject ISpellRepository _spellRepository
 
 <MudDialog>
     <TitleContent>
-        <img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />
-@*         <MudIcon Icon="@MyIcon.Scroll" Class="mr-3 mb-n1" /> *@
-        @if (IsEdit)
-        {
-            <MudText Typo="Typo.h6">Edit Spell</MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.h6">Create Spell</MudText>
-        }
+        <div class="d-flex p-0">
+            <img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />
+            @if (IsEdit)
+            {
+                <MudText Typo="Typo.h6">Edit Spell</MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.h6">Create Spell</MudText>
+            }
+        </div>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="@Spell.Name" Label="Spell name" />
-        <MudTextField @bind-Value="@Spell.Link" Label="Link to spell" />
-        <MudTextField @bind-Value="@Spell.Description" Label="Description" />
+        <InputSelect class="form-select p-1 mb-2"
+                     ValueExpression="@(()=>SelectedSpell)"
+                     Value="@SelectedSpell"
+                     ValueChanged="@((string value) => ApprovedSpellHandle(value))">
+            <option value="" selected disabled>--Select spell--</option>
+            @if (SpellList is not null && SpellList.Any())
+            {
+                @foreach (var spell in SpellList)
+                {
+                    <option value="@spell.Name">@spell.Name</option>
+                }
+            }
+            <option value="New spell">New spell</option>
+        </InputSelect>
+        <MudTextField @bind-Value="@Spell.Name" Label="Spell name" ReadOnly="@Spell.IsApproved"/>
+        <MudTextField @bind-Value="@Spell.Link" Label="Link to spell" ReadOnly="@Spell.IsApproved" />
+        <MudTextField @bind-Value="@Spell.Description" Label="Description" ReadOnly="@Spell.IsApproved" />
         @if (IsAdminOrMG)
         {
             <MudCheckBox @bind-Value="@Spell.IsApproved" Size="Size.Medium">Is Approved</MudCheckBox>
@@ -39,6 +55,36 @@
     public bool IsEdit { get; set; }
     [Parameter]
     public bool IsAdminOrMG { get; set; }
+
+    private string SelectedSpell { get; set; } = "";
+    public IEnumerable<Spell> SpellList { get; set; } = new List<Spell>();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        SpellList = await _spellRepository.GetAll();
+        if (!IsEdit)
+            SelectedSpell = "New spell";
+        else
+            SelectedSpell = Spell.Name;
+
+    }
+
+    private async Task ApprovedSpellHandle(string spellName)
+    {
+        if (spellName == "New spell")
+        {
+            SelectedSpell = "New spell";
+            Spell = new();
+            return;
+        }
+        Spell? spell = SpellList.FirstOrDefault(s => s.Name == spellName);
+        if (spell is not null)
+        {
+            Spell = spell;
+            SelectedSpell = Spell.Name;
+        }
+    }
 
     private void Cancel() => MudDialog.Cancel();
 

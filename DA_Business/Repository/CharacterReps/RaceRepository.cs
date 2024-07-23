@@ -252,7 +252,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Race Repository Update");
             }
-            return null;
         }
     }
 }

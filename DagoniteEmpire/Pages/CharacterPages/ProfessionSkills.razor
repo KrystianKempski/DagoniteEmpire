@@ -265,15 +265,18 @@
             </MudTabPanel>
             <MudTabPanel Text="Spells" Disabled="false" Style="font-weight: bold;">
                 @*  SPELLS  *@
-                <div class="spell-type my-2">
-                    <InputSelect @bind-Value="ProfessionDTO.CasterType" class="form-select" @bind-Value:after="SpellcasterTypeHandle">
-                        <option checked="@(ProfessionDTO.CasterType == SpellcasterType.Sorcerer)" value="@SpellcasterType.Sorcerer">
-                            Sorcerer
-                        </option>
-                        <option checked="@(ProfessionDTO.CasterType == SpellcasterType.Wizard)" value="@SpellcasterType.Wizard">
-                            Wizard
-                        </option>
-                    </InputSelect>
+                <div class="d-flex my-2">
+                    <div class="spell-type my-2">
+                        <InputSelect @bind-Value="ProfessionDTO.CasterType" class="form-select" @bind-Value:after="SpellcasterTypeHandle">
+                            <option checked="@(ProfessionDTO.CasterType == SpellcasterType.Sorcerer)" value="@SpellcasterType.Sorcerer">
+                                Sorcerer
+                            </option>
+                            <option checked="@(ProfessionDTO.CasterType == SpellcasterType.Wizard)" value="@SpellcasterType.Wizard">
+                                Wizard
+                            </option>
+                        </InputSelect>
+                    </div>
+                    <button disabled="@IsSpellTypeDisabled" class="btn btn-secondary mx-2" @onclick="Rest">Rest</button>
                 </div>
 
                 <MudTable RowClass="cell-small"  T="SpellCircleDTO" Items="@SpellCircles" Breakpoint="Breakpoint.Sm" @ref="CircleTable">
@@ -356,7 +359,6 @@
     private MudTable<SpellCircleDTO> CircleTable;
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
-
     private MudTable<SpellCircle> mudTable;
 
 
@@ -371,6 +373,8 @@
         var user = authState.User;
         if (user == null)
             return; // failed to load
+
+
 
         IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
         ReadOnly = !IsAdminOrMG;
@@ -405,11 +409,13 @@
         AllParams.Character = await _characterRepository.GetById(Id);
         AllParams.Attributes = await _attributeRepository.GetAll(Id);
         //AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
+
         ProfessionDTO = await _professionRepository.GetById(AllParams.Character.ProfessionId);
         if(ProfessionDTO.SpellCircles is not null)
         {
             SpellCircles = ProfessionDTO.SpellCircles;
         }
+
 
         if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
             throw new Exception("No related class attribute");
@@ -563,25 +569,31 @@
         }
     }
 
-    private void SpellcasterTypeHandle()
+    private async Task SpellcasterTypeHandle()
     {
         IsSpellTypeDisabled = false;
 
+        await Rest();
+    }
+
+    private async Task Rest()
+    {
         if (ProfessionDTO.CasterType != SpellcasterType.None)
         {
-            if(ProfessionDTO.SpellCircles is not null){
+            if (ProfessionDTO.SpellCircles is not null)
+            {
 
-                foreach(var circle in ProfessionDTO.SpellCircles)
+                foreach (var circle in ProfessionDTO.SpellCircles)
                 {
                     if (circle.SpellSlots is not null)
                     {
-                        foreach(var slot in circle.SpellSlots)
+                        foreach (var slot in circle.SpellSlots)
                         {
                             if (ProfessionDTO.CasterType == SpellcasterType.Sorcerer)
                             {
                                 slot.Prepared = circle.PerDay;
                             }
-                            else 
+                            else
                             {
                                 slot.Prepared = 0;
                             }
@@ -614,6 +626,14 @@
         if (!result.Canceled)
         {
             spellSlot.Spell = (Spell)result.Data;
+            spellSlot.SpellId = spellSlot.Spell.Id;
+            // if (spellSlot.Spell.Id > 0)
+            //     spellSlot.SpellId = spellSlot.Spell.Id;
+            // else
+            // {
+            //     if(spellSlot.SpellId > 0)
+            //         spellSlot.Spell.Id = spellSlot.SpellId;
+            // }
             StateHasChanged();
         }
     }

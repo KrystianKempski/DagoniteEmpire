@@ -27,14 +27,22 @@ namespace DA_Models.CharacterModels
 
         public int HealthBonus { get; set; } = 0;
 
-        public virtual int SumBonus { get; set; } = 0;
+        protected int _sumBonus;
+        public virtual int SumBonus { 
+            get => _sumBonus = BaseBonus + RaceBonus + GearBonus + TraitBonus + TempBonuses + HealthBonus + OtherBonuses;
+        }
+        private int _sumAbsolute;
+        public virtual int SumAbsolute
+        {
+            get => _sumAbsolute = BaseBonus + RaceBonus + GearBonus + TraitBonus + OtherBonuses;
+        }
 
-        public virtual void DecrRace() { if (RaceBonus > -6) RaceBonus--; SumAll(); }
-        public virtual void IncrRace() { if (RaceBonus < 6) RaceBonus++; SumAll(); }
+        public virtual void DecrRace() { if (RaceBonus > -6) RaceBonus--;  }
+        public virtual void IncrRace() { if (RaceBonus < 6) RaceBonus++;  }
 
-        public virtual void DecrGear() { if (GearBonus > -6) GearBonus--; SumAll(); }
-        public  virtual void IncrGear() { if (GearBonus < 6) GearBonus++;SumAll(); }
-        public virtual void ChangeTrait(int val) { TraitBonus+=val; SumAll(); }
+        public virtual void DecrGear() { if (GearBonus > -6) GearBonus--;  }
+        public  virtual void IncrGear() { if (GearBonus < 6) GearBonus++; }
+        public virtual void ChangeTrait(int val) { TraitBonus+=val; }
         //public virtual void CalcTrait()
         //{
         //    foreach (var bonus in TraitBonusesRelated)
@@ -43,18 +51,13 @@ namespace DA_Models.CharacterModels
         //            TraitBonus += bonus.BonusValue;
         //    }
         //}
-        public virtual void DecrHeal() {  HealthBonus--; SumAll();}
-        public virtual void IncrHeal() {  HealthBonus++; SumAll();}
+        public virtual void DecrHeal() {  HealthBonus--; }
+        public virtual void IncrHeal() {  HealthBonus++; }
 
-        public virtual void DecrOther() { if (OtherBonuses > -6) OtherBonuses--; SumAll(); }
-        public virtual void IncrOther() { if (OtherBonuses < 6) OtherBonuses++;SumAll(); }
-        public virtual void DecrTemp() { TempBonuses--;SumAll(); }
-        public virtual void IncrTemp() { TempBonuses++; SumAll();}
+        public virtual void DecrOther() { if (OtherBonuses > -6) OtherBonuses--;  }
+        public virtual void IncrOther() { if (OtherBonuses < 6) OtherBonuses++; }
+        public virtual void DecrTemp() { TempBonuses--; }
+        public virtual void IncrTemp() { TempBonuses++; }
 
-        public virtual int SumAll()
-        {
-            SumBonus = BaseBonus + RaceBonus + GearBonus + TraitBonus + TempBonuses + HealthBonus + OtherBonuses;
-            return SumBonus;
-        }
     }
 }

@@ -80,9 +80,9 @@ namespace DA_Models.CharacterModels
             var attr = attributes.FirstOrDefault(u => u.Name == RelatedAttributeName);
             if (attr is null)
                 return;
-            attr.SumAll();
+            //attr.SumAll();
             RelatedAttribute = attr;
-            ProfessionSkillRoll = attr.GetModifier()  + ClassLevel;
+            ProfessionSkillRoll = attr.ModifierAbsolute  + ClassLevel;
             MaxFocusPoints = ProfessionSkillRoll * 4 + 4;
             if (MaxFocusPoints < 4)
                 MaxFocusPoints = 4;
@@ -100,7 +100,7 @@ namespace DA_Models.CharacterModels
             if (e.PropertyName != nameof(RelatedAttribute.Modifier)) return;
             if (RelatedAttribute == null) return;
 
-            ProfessionSkillRoll = RelatedAttribute.Modifier + ClassLevel;
+            ProfessionSkillRoll = RelatedAttribute.ModifierAbsolute + ClassLevel;
             MaxFocusPoints = ProfessionSkillRoll * 4 + 4;
             if (MaxFocusPoints < 4)
                 MaxFocusPoints = 4;

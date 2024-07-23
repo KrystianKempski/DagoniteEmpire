@@ -237,7 +237,6 @@ namespace DA_Business.Repository.ChatRepos
             catch (Exception ex) {
                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
             }
-            return objDTO;
         }
     }
 }

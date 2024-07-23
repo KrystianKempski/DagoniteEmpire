@@ -15,7 +15,7 @@ namespace DA_DataAccess.CharacterClasses
         public int Level { get; set; }
         public string Description { get; set; } = string.Empty;
         public string Link { get; set; } = string.Empty;
-        public IEnumerable<SpellSlot>? SpellSlots { get; set; }
+        public ICollection<SpellSlot>? SpellSlots { get; set; }
 
     }
 }

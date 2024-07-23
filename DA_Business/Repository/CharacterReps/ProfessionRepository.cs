@@ -13,6 +13,8 @@ using System.Text;
 using System.Threading.Tasks;
 using DagoniteEmpire.Exceptions;
 using System.Diagnostics;
+using Abp.Extensions;
+using Castle.MicroKernel.Internal;
 
 namespace DA_Business.Repository.CharacterReps
 {
@@ -68,9 +70,8 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Profession Repository Create");
             }
-            return null;
                 
-}
+        }
 
         public async Task<int> Delete(int id)
         {
@@ -110,13 +111,13 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<ProfessionDTO>> GetAll()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(u => u.ActiveSkills).Include(p => p.PassiveSkills));
+            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(u => u.ActiveSkills).Include(p => p.PassiveSkills).Include(p => p.SpellCircles));
         }
 
         public async Task<IEnumerable<ProfessionDTO>> GetAllApproved()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(u => u.ActiveSkills).Include(p => p.PassiveSkills).Where(t=>t.IsApproved == true));
+            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(u => u.ActiveSkills).Include(p => p.PassiveSkills).Include(p => p.SpellCircles).Where(t=>t.IsApproved == true));
         }
 
         public async Task<ProfessionDTO> GetById(int id)
@@ -138,7 +139,11 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Professions.Include(u => u.ActiveSkills).Include(p => p.PassiveSkills).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                var obj = await contex.Professions
+                    .Include(u => u.ActiveSkills)
+                    .Include(p => p.PassiveSkills)
+                    .Include(p => p.SpellCircles).ThenInclude(c=>c.SpellSlots)
+                    .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
                     var updateProfession = _mapper.Map<ProfessionDTO, Profession>(objDTO);
@@ -217,7 +222,10 @@ namespace DA_Business.Repository.CharacterReps
                                 {
                                     foreach (var existingSlot in existingChild.SpellSlots)
                                     {
-                                        contex.SpellSlots.Remove(existingSlot);
+                                        if (!updateProfession.SpellCircles.Any(c => c.Id == existingChild.Id))
+                                        {
+                                            contex.SpellCircles.Remove(existingChild);
+                                        }
                                     }
                                 }
                                 contex.SpellCircles.Remove(existingChild);
@@ -232,7 +240,7 @@ namespace DA_Business.Repository.CharacterReps
                             SpellCircle? existingChild;
                             if (!obj.SpellCircles.IsNullOrEmpty())
                             {
-                                existingChild = obj.SpellCircles.FirstOrDefault(c => c.Id == childTrait.Id);
+                                existingChild = obj.SpellCircles.FirstOrDefault(c => c.Id == childTrait.Id && c.Id != default(int));
                             }
                             else
                             {
@@ -253,8 +261,10 @@ namespace DA_Business.Repository.CharacterReps
                                     {
                                         if (!childTrait.SpellSlots.Any(c => c.Id == existingSlot.Id))
                                         {
+
                                             contex.SpellSlots.Remove(existingSlot);
                                         }
+
                                     }
                                 }
                                 // Update and Insert spell Slot
@@ -265,7 +275,7 @@ namespace DA_Business.Repository.CharacterReps
                                         SpellSlot? existingSlot;
                                         if (!existingChild.SpellSlots.IsNullOrEmpty())
                                         {
-                                            existingSlot = existingChild.SpellSlots.FirstOrDefault(c => c.Id == spellSlot.Id);
+                                            existingSlot = existingChild.SpellSlots.FirstOrDefault(c => c.Id == spellSlot.Id && c.Id != default(int));
                                         }
                                         else
                                         {
@@ -274,10 +284,18 @@ namespace DA_Business.Repository.CharacterReps
                                         }
 
                                         if (existingSlot != null)
-                                            // Update bonus
+                                        {
+                                            // Update slot
                                             contex.Entry(existingSlot).CurrentValues.SetValues(spellSlot);
+                                            // update spell
+                                            Spell existingSpell = contex.Spells.Include(t => t.SpellSlots).FirstOrDefault(c => c.Id == spellSlot.SpellId && c.Id != default(int));
+                                            if (existingSpell != null)
+                                                contex.Entry(existingSpell).CurrentValues.SetValues(spellSlot.Spell);
+                                            else
+                                                existingSlot.Spell = spellSlot.Spell;
+                                        }
                                         else
-                                            // Insert bonus
+                                            // Insert SpellSlot
                                             existingChild.SpellSlots.Add(spellSlot);
                                     }
                                 }
@@ -302,7 +320,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Profession Repository Update");
             }
-            return null;
         }
     }
 }

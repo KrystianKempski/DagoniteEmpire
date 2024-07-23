@@ -14,6 +14,11 @@ namespace DA_Models.CharacterModels
     {
         public string RelatedBaseSkillName { get; set; }
         public override string FeatureType { get; set; } = SD.FeatureSpecialSkill;
+
+        public override int SumBonus
+        {
+            get => _sumBonus = base.SumBonus + AttributeBonus + BaseSkillBonus;
+        }
         public int AttributeBonus { get; set; } = 0;
         public int BaseSkillBonus { get; set; } = 0;
 
@@ -48,7 +53,6 @@ namespace DA_Models.CharacterModels
             if (RelatedAttribute == null) return;
 
             AttributeBonus = RelatedAttribute.Modifier;
-            SumAll();
         }
 
         private void BS_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -57,14 +61,8 @@ namespace DA_Models.CharacterModels
             if (RelatedBaseSkill == null) return;
 
             BaseSkillBonus = RelatedBaseSkill.SumBonus;
-            SumAll();
         }
 
-        public override int SumAll()
-        {
-            SumBonus = base.SumAll() + AttributeBonus + BaseSkillBonus;
-            return SumBonus;
-        }
 
     }
 }

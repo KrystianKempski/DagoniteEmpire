@@ -27,9 +27,9 @@ namespace DA_DataAccess.CharacterClasses
                 throw new WarningException("Error calculating spells. Maybe choose spellcaster type"); ;
 
             KnownSpells = SD.SpellsKnown[(int)Profession.CasterType, Profession.ClassLevel, Level];
-            if(Profession.RelatedAttribute.GetModifier()>0)
+            if(Profession.RelatedAttribute.Modifier>0)
                 PerDay = SD.SpellsPerDay[(int)Profession.CasterType, Profession.ClassLevel, Level] +
-                             SD.AbilityModifBonusSpell[Profession.ClassLevel, Profession.RelatedAttribute.GetModifier()];
+                             SD.AbilityModifBonusSpell[Profession.ClassLevel, Profession.RelatedAttribute.Modifier];
             
         }
     }

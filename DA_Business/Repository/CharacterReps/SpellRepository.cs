@@ -64,7 +64,9 @@ namespace DA_Business.Repository.CharacterReps
 
             using var contex = await _db.CreateDbContextAsync();
 
-           return contex.Spells.Where(u => u.IsApproved);
+            var result = await contex.Spells.Where(u => u.IsApproved).ToListAsync();
+
+            return result;
         }
 
         public async Task<Spell> GetById(int id)

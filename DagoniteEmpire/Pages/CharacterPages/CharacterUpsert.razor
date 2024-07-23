@@ -536,10 +536,10 @@
                 }
 
                 // calculate all stats
-                foreach (var obj in AllParams.Attributes)
-                    obj.SumAll();
-                foreach (var obj in AllParams.BaseSkills)
-                    obj.SumAll();
+                // foreach (var obj in AllParams.Attributes)
+                //     obj.SumAll();
+                // foreach (var obj in AllParams.BaseSkills)
+                //     obj.SumAll();
                 foreach (var obj in AllParams.SpecialSkills)
                 {
                     await ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
@@ -705,7 +705,7 @@
         _navigationManager.NavigateTo("/character");
 
     }
-    public async void DeleteCharacterHandler()
+    public async Task DeleteCharacterHandler()
     {
         try
         {
@@ -795,7 +795,7 @@
                 if (ok)
                 {
                     obj.BaseBonus++;
-                    obj.SumAll();
+                    //obj.SumAll();
                 }
                 else
                     await _jsRuntime.AttrLimit("Not enough attribute points");
@@ -811,7 +811,7 @@
             {
                 AllParams.Character.CurrentExpPoints -= obj.BaseBonus * 2;
                 obj.BaseBonus++;
-                obj.SumAll();
+                //obj.SumAll();
             }
             else
                 await _jsRuntime.AttrLimit("Not enough experience points");
@@ -834,7 +834,7 @@
                     AllParams.Character.AttributePoints += (obj.BaseBonus - 10);
                 }
                 obj.BaseBonus--;
-                obj.SumAll();
+                //obj.SumAll();
             }else
                 await _jsRuntime.AttrLimit("Minimum base bonus limit is 6");
         }
@@ -864,7 +864,7 @@
                     AllParams.Character.UsedExpPoints += expChange;
                     obj.BaseBonus++;
 
-                    obj.SumAll();
+                    //obj.SumAll();
                 }
                 else
                     await _jsRuntime.BaseSkillLimit("Not enought experience points");
@@ -891,7 +891,7 @@
             AllParams.Character.UsedExpPoints -= expChange;
             obj.BaseBonus--;
 
-            obj.SumAll();
+            //obj.SumAll();
         }
     }
 
@@ -934,7 +934,7 @@
                     AllParams.Character.UsedExpPoints += expChange;
                     obj.BaseBonus++;
 
-                    obj.SumAll();
+                    //obj.SumAll();
                 }
                 else
                     await _jsRuntime.SpecialSkillLimit("Not enought experience points");
@@ -961,7 +961,7 @@
             AllParams.Character.UsedExpPoints -= expChange;
             obj.BaseBonus--;
 
-            obj.SumAll();
+            //obj.SumAll();
         }
     }
 
@@ -980,7 +980,7 @@
                     if (attr == null) return;
                     obj.AttributeBonus = attr.Modifier;
                     obj.AddPropertyListener(attr);
-                    obj.SumAll();
+                    //obj.SumAll();
                 }
                 return;
             }
@@ -1035,7 +1035,7 @@
                 if (baseSkill == null) return;
                 obj.BaseSkillBonus = baseSkill.SumBonus;
                 obj.AddPropertyListener(baseSkill);
-                obj.SumAll();
+                //obj.SumAll();
                 return;
             }
         }
@@ -1112,7 +1112,7 @@
                 }
                 if (sum)
                 {
-                    obj.SumAll();
+                    //obj.SumAll();
                     sum = false;
                 }
             }
@@ -1135,7 +1135,7 @@
         StateHasChanged();
     }
 
-    private async void CalculateTraits(ICollection<TraitDTO> traits, string TraitType)
+    private async Task CalculateTraits(ICollection<TraitDTO> traits, string TraitType)
     {
         FeatureDTO? feature = null;
         // calculate all traits adv
@@ -1174,7 +1174,7 @@
                 {
                     int newVal = (int)feature.GetType().GetProperty(bonusName).GetValue(feature, null) + bonus.BonusValue;
                     feature.GetType().GetProperty(bonusName).SetValue(feature, newVal);
-                    feature.SumAll();
+                    //feature.SumAll();
                 }
             }
         }
