@@ -212,7 +212,7 @@ namespace DA_Business.Repository.CharacterReps
                                             if (!existingTrait.Bonuses.IsNullOrEmpty())
                                             {
                                                 existingChildBonus = existingTrait.Bonuses
-                                               .FirstOrDefault(c => c.Id == childBonus.Id && c.Id != default(int));
+                                                    .FirstOrDefault(c => c.Id == childBonus.Id && c.Id != default(int));
                                             }
                                             else
                                             {

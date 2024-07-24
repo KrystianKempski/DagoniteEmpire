@@ -142,7 +142,7 @@ namespace DA_Business.Repository.CharacterReps
                 var obj = await contex.Professions
                     .Include(u => u.ActiveSkills)
                     .Include(p => p.PassiveSkills)
-                    .Include(p => p.SpellCircles).ThenInclude(c=>c.SpellSlots)
+                    .Include(p => p.SpellCircles).ThenInclude(c => c.SpellSlots).ThenInclude(s => s.Spell)
                     .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
@@ -293,6 +293,7 @@ namespace DA_Business.Repository.CharacterReps
                                                 contex.Entry(existingSpell).CurrentValues.SetValues(spellSlot.Spell);
                                             else
                                                 existingSlot.Spell = spellSlot.Spell;
+            
                                         }
                                         else
                                             // Insert SpellSlot
@@ -301,8 +302,19 @@ namespace DA_Business.Repository.CharacterReps
                                 }
                             }
                             else
+                            {
+
                                 // Insert bonus
+                                foreach(var slot in childTrait.SpellSlots)
+                                {
+                                    if (contex.Spells.FirstOrDefault(s => s.Id == slot.SpellId)!=null)
+                                    {
+                                        slot.Spell = null;
+                                    }
+                                }
                                 obj.SpellCircles.Add(childTrait);
+
+                            }
                         }
                     }
                     await contex.SaveChangesAsync();

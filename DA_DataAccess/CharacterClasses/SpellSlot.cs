@@ -17,12 +17,12 @@ namespace DA_DataAccess.CharacterClasses
 
         //public ICollection<Spell>? Spell { get; set; }
 
+        public int? SpellId { get; set; }
         [ForeignKey(nameof(SpellId))]
-        public int SpellId { get; set; }
-        public Spell Spell { get; set; } = new();
+        public virtual Spell? Spell { get; set; }
 
-        [ForeignKey(nameof(SpellCircle))]
         public int SpellCircleId { get; set; }
+        [ForeignKey(nameof(SpellCircleId))]
         public virtual SpellCircle? SpellCircle { get; set; }
     }
 }

@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class changespell : Migration
+    public partial class spells23 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -511,7 +511,7 @@ namespace DA_DataAccess.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     InSpellbook = table.Column<bool>(type: "boolean", nullable: false),
                     Prepared = table.Column<int>(type: "integer", nullable: false),
-                    SpellId = table.Column<int>(type: "integer", nullable: false),
+                    SpellId = table.Column<int>(type: "integer", nullable: true),
                     SpellCircleId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -527,8 +527,7 @@ namespace DA_DataAccess.Migrations
                         name: "FK_SpellSlots_Spells_SpellId",
                         column: x => x.SpellId,
                         principalTable: "Spells",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(

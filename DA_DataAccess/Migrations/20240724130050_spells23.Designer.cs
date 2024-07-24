@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240709072159_changespell")]
-    partial class changespell
+    [Migration("20240724130050_spells23")]
+    partial class spells23
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -584,7 +584,7 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("SpellCircleId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("SpellId")
+                    b.Property<int?>("SpellId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
@@ -1232,9 +1232,7 @@ namespace DA_DataAccess.Migrations
 
                     b.HasOne("DA_DataAccess.CharacterClasses.Spell", "Spell")
                         .WithMany("SpellSlots")
-                        .HasForeignKey("SpellId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SpellId");
 
                     b.Navigation("Spell");
 

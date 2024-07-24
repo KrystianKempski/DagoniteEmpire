@@ -19,7 +19,7 @@ namespace DA_DataAccess.CharacterClasses
         public ICollection<SpellSlot>? SpellSlots { get; set; }
         public int ProfessionId { get; set; }
         [ForeignKey(nameof(ProfessionId))]
-        public virtual Profession Profession { get; set; }
+        public virtual Profession? Profession { get; set; }
 
     }
 }

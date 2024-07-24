@@ -626,14 +626,13 @@
         if (!result.Canceled)
         {
             spellSlot.Spell = (Spell)result.Data;
-            spellSlot.SpellId = spellSlot.Spell.Id;
-            // if (spellSlot.Spell.Id > 0)
-            //     spellSlot.SpellId = spellSlot.Spell.Id;
-            // else
-            // {
-            //     if(spellSlot.SpellId > 0)
-            //         spellSlot.Spell.Id = spellSlot.SpellId;
-            // }
+            //spellSlot.SpellId = spellSlot.Spell.Id;
+            if (spellSlot.Spell.Id > 0)
+            {
+
+                spellSlot.SpellId = spellSlot.Spell.Id;
+                //spellSlot.Spell = null;
+            }
             StateHasChanged();
         }
     }
