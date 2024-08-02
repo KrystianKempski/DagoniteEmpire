@@ -31,6 +31,7 @@
             }
             <option value="New spell">New spell</option>
         </InputSelect>
+        <MudTextField @bind-Value="@Spell.Level" Label="Circle" ReadOnly="true" />
         <MudTextField @bind-Value="@Spell.Name" Label="Spell name" ReadOnly="@Spell.IsApproved"/>
         <MudTextField @bind-Value="@Spell.Link" Label="Link to spell" ReadOnly="@Spell.IsApproved" />
         <MudTextField @bind-Value="@Spell.Description" Label="Description" ReadOnly="@Spell.IsApproved" />
@@ -62,7 +63,7 @@
     protected override async Task OnInitializedAsync()
     {
 
-        SpellList = await _spellRepository.GetAll();
+        SpellList = await _spellRepository.GetAll(Spell.Level);
         if (!IsEdit)
             SelectedSpell = "New spell";
         else
@@ -75,7 +76,9 @@
         if (spellName == "New spell")
         {
             SelectedSpell = "New spell";
+            int lvl = Spell.Level;
             Spell = new();
+            Spell.Level = lvl;
             return;
         }
         Spell? spell = SpellList.FirstOrDefault(s => s.Name == spellName);

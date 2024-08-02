@@ -7,7 +7,7 @@
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentRepository _equipmentRepository
 @inject ISpellRepository _spellRepository
-@inject ISpellRepository _spellSlotRepository
+@inject ISpellSlotRepository _spellSlotRepository
 @inject ISpellCircleRepository _spellCircleRepository
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
@@ -19,8 +19,8 @@
 
     @if (IsLoading)
     {
-        <div class="text-center">
-            <img src="/images/loading.gif">
+        <div class="text-center my-auto">
+            <img src="/images/loading.gif" width="60px">
         </div>
     }
     else
@@ -41,7 +41,7 @@
                 {
                     <div class="d-flex flex-column px-1">
                         <label class="column-section py-1">Class Level</label>
-                        <SfNumericTextBox CssClass="prof-variables" Width="100px" ShowSpinButton="false" @bind-Value="@ProfessionDTO.ClassLevel" OnChange="ChangeProfLevel"></SfNumericTextBox>
+                        <SfNumericTextBox CssClass="e-style" Width="100px" ShowSpinButton="false" @bind-Value="@ProfessionDTO.ClassLevel" OnChange="ChangeProfLevel"></SfNumericTextBox>
                     </div>
                 }
                 else
@@ -128,7 +128,7 @@
             </SfRichTextEditor>
         </div>
 
-        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-2">
+        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="px-2">
             <MudTabPanel Text="Active class skills" Style="font-weight: bold;">
                 @*  ACTIVE SKILLS  *@
                 <div class="wide-screen-table mx-1">
@@ -265,8 +265,8 @@
             </MudTabPanel>
             <MudTabPanel Text="Spells" Disabled="false" Style="font-weight: bold;">
                 @*  SPELLS  *@
-                <div class="d-flex my-2">
-                    <div class="spell-type my-2">
+                <div class="d-flex my-1">
+                    <div class="spell-type me-2">
                         <InputSelect @bind-Value="ProfessionDTO.CasterType" class="form-select" @bind-Value:after="SpellcasterTypeHandle">
                             <option checked="@(ProfessionDTO.CasterType == SpellcasterType.Sorcerer)" value="@SpellcasterType.Sorcerer">
                                 Sorcerer
@@ -276,62 +276,140 @@
                             </option>
                         </InputSelect>
                     </div>
-                    <button disabled="@IsSpellTypeDisabled" class="btn btn-secondary mx-2" @onclick="Rest">Rest</button>
+                    <button disabled="@IsSpellTypeDisabled" class="btn btn-secondary" @onclick="Rest">Rest</button>
+                    <button disabled="@IsSpellTypeDisabled" class="btn btn-secondary ms-2" @onclick="AddSpellCircle">Add Circle</button>
                 </div>
 
-                <MudTable RowClass="cell-small"  T="SpellCircleDTO" Items="@SpellCircles" Breakpoint="Breakpoint.Sm" @ref="CircleTable">
-                    <HeaderContent>
-                        <MudTh Style="text-align:center; width: 60px; padding: 4px;">Level</MudTh>
-                        <MudTh Style="text-align:center; width: 60px; padding: 4px;">Known</MudTh>
-                        <MudTh Style="text-align:center; width: 60px; padding: 4px;">PerDay</MudTh>
-                        <MudTh Style="text-align:center; padding: 4px;">Spell slots</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd Style="text-align:center; width: 60px; padding: 4px; font-size:26px; font-weight:bold" DataLabel="Level">@context.Level</MudTd>
-                        <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="Known">@context.KnownSpells</MudTd>
-                        <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="PerDay">@context.PerDay</MudTd>
-                        <MudTd Style="text-align:center; padding: 4px;" DataLabel="Spell slots">
-                            <MudTable T="SpellSlot" Items="@context.SpellSlots" Hover="true" Breakpoint="Breakpoint.Sm">
-                                <RowTemplate Context="slotContext">
-                                    @if(slotContext.Spell is not null)
-                                    {
-                                        <MudTd Style="padding: 4px;" DataLabel="Prepared">
-                                            <MudLink Href="@slotContext.Spell.Link">@slotContext.Spell.Name</MudLink>
+                 <div class="wide-screen-table">
+                    <MudTable RowClass="cell-small" T="SpellCircleDTO" Items="@SpellCircles" Breakpoint="Breakpoint.None" @ref="CircleTable">
+                        <HeaderContent>
+                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Level</MudTh>
+                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Known</MudTh>
+                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Today</MudTh>
+                            <MudTh Style="text-align:center; padding: 4px;  font-size:13px; font-weight:bold;">Spell slots</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd Style="text-align:center; width: 60px; padding: 4px; font-size:26px; font-weight:bold" DataLabel="Level">@context.Level</MudTd>
+                            <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="Known">@context.KnownSpells</MudTd>
+                            <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="Today">@context.PerDay</MudTd>
+                            <MudTd Style="text-align:center; padding: 4px;" DataLabel="Spell slots">
+                                <MudTable T="SpellSlot" Items="@context.SpellSlots" Hover="true" Breakpoint="Breakpoint.None">
+                                    <RowTemplate Context="slotContext">
+                                        @if(slotContext.Spell is not null)
+                                        {
+                                            <MudTd Style="padding: 4px;" DataLabel="Prepared">
+                                                <MudTooltip >
+                                                    <ChildContent>
+                                                        <MudLink Href="@slotContext.Spell.Link">@slotContext.Spell.Name</MudLink>
+                                                    </ChildContent>
+                                                    <TooltipContent>
+                                                        <MudText Class="mud-tooltip mud-tooltip-default tooltiptext">
+                                                            @slotContext.Spell.Description
+                                                        </MudText>
+                                                    </TooltipContent>
+                                                </MudTooltip> 
+                                            </MudTd>
+                                        }
+                                        else
+                                        {
+                                            <MudTd Style="padding: 4px;" DataLabel="Prepared">Select Spell</MudTd>
+                                        }
+                                        <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
+                                        
+                                            <MudNumericField Class="dense-numeric-field text-center" IconSize="Size.Small"
+                                                             ShrinkLabel="true" Value=@slotContext.Prepared ValueChanged="(int newValue)=>ChangePrepared(slotContext,context,newValue)" Immediate="true"
+                                                             For="@(() => slotContext.Prepared)"  />
                                         </MudTd>
+                                        <MudTd Style="width: 60px; padding: 4px;" DataLabel="actions">
+                                            <div class="d-flex px-0">
+                                                @if(slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false){
+                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Change spell"></MudIconButton>
+                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;"  OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Delete spell"></MudIconButton>
+                                                }else{
+                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="Add new spell"></MudIconButton>
+                                                }
+                                            </div>
+                                        </MudTd>
+                                    </RowTemplate>
+                                </MudTable>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </div>
+                <div class="short-screen-table">
+                    @foreach (var context in @SpellCircles){
+                        <MudPaper Class="pa-1 my-1" Elevation="3">
+
+                            <MudSimpleTable Elevation="1" Style="margin-bottom:2px;">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Level</th>
+                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Known</th>
+                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Today</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="text-align:center; padding: 4px; font-size:22px;font-weight:bold;">@context.Level</td>
+                                        <td style="text-align:center; padding: 4px; font-size:16px;font-weight:bold;">@context.KnownSpells</td>
+                                        <td style="text-align:center; padding: 4px; font-size:16px;font-weight:bold;">@context.PerDay</td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+
+                            <MudTable T="SpellSlot" Items="@context.SpellSlots" Hover="true" Breakpoint="Breakpoint.None">
+                                <RowTemplate Context="slotContext">
+                                    @if (slotContext.Spell is not null)
+                                    {
+                                        <MudTooltip >
+                                            <ChildContent>
+                                                <MudTd Style="padding: 4px;" DataLabel="Prepared" >
+                                                    <MudLink Href="@slotContext.Spell.Link">@slotContext.Spell.Name</MudLink>
+                                                </MudTd>
+                                            </ChildContent>
+                                            <TooltipContent>
+                                                <MudText Class="mud-tooltip mud-tooltip-default tooltiptext">
+                                                    @slotContext.Spell.Description
+                                                </MudText>
+                                            </TooltipContent>
+                                        </MudTooltip>
                                     }
                                     else
                                     {
                                         <MudTd Style="padding: 4px;" DataLabel="Prepared">Select Spell</MudTd>
                                     }
                                     <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
-                                        
+
                                         <MudNumericField Class="dense-numeric-field text-center" IconSize="Size.Small"
                                                          ShrinkLabel="true" Value=@slotContext.Prepared ValueChanged="(int newValue)=>ChangePrepared(slotContext,context,newValue)" Immediate="true"
-                                                         For="@(() => slotContext.Prepared)"  />
+                                                         For="@(() => slotContext.Prepared)" />
                                     </MudTd>
                                     <MudTd Style="width: 60px; padding: 4px;" DataLabel="actions">
                                         <div class="d-flex px-0">
-                                            @if(slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false){
+                                            @if (slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false)
+                                            {
                                                 <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Change spell"></MudIconButton>
-                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;"  OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Delete spell"></MudIconButton>
-                                            }else{
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Delete spell"></MudIconButton>
+                                            }
+                                            else
+                                            {
                                                 <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="Add new spell"></MudIconButton>
                                             }
                                         </div>
                                     </MudTd>
                                 </RowTemplate>
                             </MudTable>
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
-                <button disabled="@IsSpellTypeDisabled" class="btn btn-secondary my-2" @onclick="AddSpellCircle">Add Spell Circle</button>
+                        </MudPaper>
+                    }
+                </div>
+               
             </MudTabPanel>
         </MudTabs>
 
         <label class="warnign-message">@ErrorMessage</label>
-        <div class="d-flex ">
-            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary ma-2">Save</button>
-            <button @onclick="OnCancelBtnClick" class="btn btn-secondary ma-2">Cancel</button>
+        <div class="d-flex mt-2">
+            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary mx-2">Save</button>
+            <button @onclick="OnCancelBtnClick" class="btn btn-secondary mx-2">Cancel</button>
         </div>
     }
 </div>
@@ -343,6 +421,26 @@
     }
     .mud-input-control {
         margin-top: 0px !important;
+    }
+
+    .e-numeric.e-style .e-control.e-numerictextbox {
+      
+        padding: 2px;
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        display: block;
+        text-align: center;
+        position: absolute;
+    }
+
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
     }
 </style>
 
@@ -549,11 +647,6 @@
             circle.Profession = ProfessionDTO;
             circle.Level = newLevel;
             circle.CalculateSpells();
-            circle.SpellSlots = new List<SpellSlot>();
-            for(int i=0; i < circle.KnownSpells; i++)
-            {
-                circle.SpellSlots.Add(new SpellSlot());
-            }
 
             SpellCircles.Add(circle);
             StateHasChanged();
@@ -585,6 +678,7 @@
 
                 foreach (var circle in ProfessionDTO.SpellCircles)
                 {
+                    circle.CalculateSpells();
                     if (circle.SpellSlots is not null)
                     {
                         foreach (var slot in circle.SpellSlots)
@@ -610,6 +704,7 @@
             return;
 
         Spell spell = new();
+        spell.Level = spellSlot.SpellCircle != null ? spellSlot.SpellCircle.Level : 0;
         if (isEdit && spellSlot.Spell is not null)
         {
             spell.Id = spellSlot.Spell.Id;
@@ -632,12 +727,14 @@
 
                 spellSlot.SpellId = spellSlot.Spell.Id;
                 //spellSlot.Spell = null;
+            }else{
+                spellSlot.SpellId = spellSlot.Spell.Id;
             }
             StateHasChanged();
         }
     }
 
-    public async Task ChangePrepared(SpellSlot slot, SpellCircleDTO circle, int newValue) // your model.Amt type
+    public void ChangePrepared(SpellSlot slot, SpellCircleDTO circle, int newValue) // your model.Amt type
     {
 
         int allPreparedSpells = 0;
@@ -693,8 +790,11 @@
 
     }
 
-    private async Task DeleteSpell(SpellSlot spellSlot)
+    private void DeleteSpell(SpellSlot spellSlot)
     {
+        spellSlot.Spell = null;
+        spellSlot.SpellId = null;
 
+        StateHasChanged();
     }
 }

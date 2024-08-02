@@ -18,6 +18,8 @@ namespace DA_Business.Repository.CharacterReps.IRepository
 
         Task<ApplicationUser> UpdateUserDetailsAsync(ApplicationUser updatedUser);
 
+        Task<ApplicationUser> GetCurrentUserDetailsAsync();
+
         Task MakeMessageRedAsync(string contactId);
     }
 }

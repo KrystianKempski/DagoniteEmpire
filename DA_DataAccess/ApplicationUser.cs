@@ -13,6 +13,8 @@ namespace DA_DataAccess
         public string Name { get; set; }
         public virtual ICollection<ChatMessage> ChatMessagesFromUsers { get; set; }
         public virtual ICollection<ChatMessage> ChatMessagesToUsers { get; set; }
+
+        public int SelectedCharacterId { get; set; }
         public ApplicationUser()
         {
             ChatMessagesFromUsers = new HashSet<ChatMessage>();

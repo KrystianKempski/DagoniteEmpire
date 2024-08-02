@@ -1,6 +1,8 @@
-﻿using DA_Common;
+﻿using AutoMapper;
+using DA_Common;
 using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
+using Microsoft.AspNetCore.Rewrite;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -21,16 +23,39 @@ namespace DA_DataAccess.CharacterClasses
         public int ProfessionId { get; set; }
         public ProfessionDTO? Profession { get; set; }
 
+
         public void CalculateSpells()
         {
             if (Profession == null || Profession.CasterType == SpellcasterType.None || Profession.RelatedAttribute is null)
                 throw new WarningException("Error calculating spells. Maybe choose spellcaster type"); ;
 
             KnownSpells = SD.SpellsKnown[(int)Profession.CasterType, Profession.ClassLevel, Level];
-            if(Profession.RelatedAttribute.Modifier>0)
+            if(Profession.RelatedAttribute.ModifierAbsolute>0)
                 PerDay = SD.SpellsPerDay[(int)Profession.CasterType, Profession.ClassLevel, Level] +
-                             SD.AbilityModifBonusSpell[Profession.ClassLevel, Profession.RelatedAttribute.Modifier];
+                             SD.AbilityModifBonusSpell[Profession.ClassLevel, Profession.RelatedAttribute.ModifierAbsolute];
+
+            if(SpellSlots is  null)
+            {
+                SpellSlots = new List<SpellSlot>();
+            }
             
+            if(SpellSlots.Count < KnownSpells)
+            {
+                for (int i = SpellSlots.Count; i < KnownSpells; i++)
+                {
+                    SpellCircle circle = new();
+                    circle.Level = Level;
+                    SpellSlots.Add(new SpellSlot(circle));
+                }
+            }
+            else if(SpellSlots.Count > KnownSpells)
+            {
+                int i = SpellSlots.Count;
+                while (i > KnownSpells)
+                {
+                    SpellSlots.Remove(SpellSlots.ElementAt(i-1));
+                }  
+            }
         }
     }
 }

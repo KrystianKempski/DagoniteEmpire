@@ -62,6 +62,17 @@ namespace DA_Business.Repository.CharacterReps
             return await user;
         }
 
+        public async Task<ApplicationUser> GetCurrentUserDetailsAsync()
+        {
+            var state = await _authState.GetAuthenticationStateAsync();
+            var users = state.User;
+            string? currentUserId = users?.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
+
+            var user = _userManager.Users.Where(user => user.Id == currentUserId).FirstOrDefaultAsync();
+
+            return await user;
+        }
+
         public async Task<ApplicationUser> UpdateUserDetailsAsync(ApplicationUser updatedUser)
         {
             using var contex = await _db.CreateDbContextAsync();

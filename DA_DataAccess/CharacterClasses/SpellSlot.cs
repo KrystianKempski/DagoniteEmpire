@@ -24,5 +24,10 @@ namespace DA_DataAccess.CharacterClasses
         public int SpellCircleId { get; set; }
         [ForeignKey(nameof(SpellCircleId))]
         public virtual SpellCircle? SpellCircle { get; set; }
+        public SpellSlot() { }
+        public SpellSlot(SpellCircle circle) : this()
+        {
+            this.SpellCircle = circle;
+        }
     }
 }

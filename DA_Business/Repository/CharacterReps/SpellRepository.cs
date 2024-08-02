@@ -59,12 +59,12 @@ namespace DA_Business.Repository.CharacterReps
             }
         }
 
-        public async Task<IEnumerable<Spell>> GetAll()
+        public async Task<IEnumerable<Spell>> GetAll(int lvl)
         {
 
             using var contex = await _db.CreateDbContextAsync();
 
-            var result = await contex.Spells.Where(u => u.IsApproved).ToListAsync();
+            var result = await contex.Spells.Where(u => u.IsApproved && u.Level <= lvl).ToListAsync();
 
             return result;
         }

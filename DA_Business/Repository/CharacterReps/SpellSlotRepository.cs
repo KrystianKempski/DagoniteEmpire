@@ -86,31 +86,68 @@ namespace DA_Business.Repository.CharacterReps
                 var obj = await contex.SpellSlots.Include(t=>t.Spell).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
-                    // Update parent
-                    contex.Entry(obj).CurrentValues.SetValues(objDTO);
+                    //// Update parent
+                    //contex.Entry(obj).CurrentValues.SetValues(objDTO);
 
-                    // Delete trait bonuses
-                    if (obj.Spell is not null)
-                    {
-                        contex.Spells.Remove(obj.Spell);
-                    }
+                    // // Delete spell
+                    //if (obj.Spell is not null)
+                    //{
+                    //    if (obj.Spell.IsApproved == true)
+                    //    {
+                    //        obj.Spell = null;
+                    //        obj.SpellId = 0;
+                    //    }
+                    //    else
+                    //        contex.Spells.Remove(obj.Spell);
+                    //}
 
-                    // Update and Insert bonuses
-                    if (objDTO.Spell is not null)
+                    //// Update and Insert bonuses
+                    //if (objDTO.Spell is not null)
+                    //{
+                    //    Spell? existingChild;
+                    //    existingChild = await contex.Spells.Include(t => t.SpellSlots).FirstOrDefaultAsync(u => u.Id == objDTO.Spell.Id);
+                    //    if (existingChild != null)
+                    //    {
+                    //        obj.SpellId = existingChild.Id;
+                    //        obj.Spell = existingChild;
+                    //    }
+                    //    else
+                    //    {
+                    //       var spell =  await contex.Spells.AddAsync(objDTO.Spell);
+                    //       obj.Spell = spell.Entity;
+                    //    }
+                    //} 
+
+                    // Update slot
+                    // update spell
+                    Spell existingSpell = contex.Spells.Include(t => t.SpellSlots).FirstOrDefault(c => c.Id == obj.SpellId && c.Id != default(int));
+
+                    // remove spell
+                    if ((objDTO.SpellId is null || objDTO.SpellId == 0) &&  existingSpell is not null)
                     {
-                        Spell? existingChild;
-                        existingChild = await contex.Spells.FirstOrDefaultAsync(u => u.Id == objDTO.Spell.Id);
-                        if (existingChild != null)
+                        if (existingSpell.IsApproved && existingSpell.SpellSlots is not null && existingSpell.SpellSlots.Any())
                         {
-                            obj.SpellId = existingChild.Id;
-                            obj.Spell = existingChild;
+                            existingSpell.SpellSlots.Remove(obj);
                         }
                         else
                         {
-                           var spell =  await contex.Spells.AddAsync(objDTO.Spell);
-                           obj.Spell = spell.Entity;
+                            contex.Spells.Remove(existingSpell);
                         }
-                    } 
+                    }
+
+                    contex.Entry(obj).CurrentValues.SetValues(objDTO);
+                    if (obj.Spell is not null && objDTO.Spell is not null)
+                    {
+
+                        contex.Entry(obj.Spell).CurrentValues.SetValues(objDTO.Spell);
+                    //else
+                        obj.Spell = objDTO.Spell;
+                    }
+                    else
+                    {
+                        obj.Spell = null;
+                        obj.SpellId = default(int);
+                    }
 
                     var addedObj =  contex.SpellSlots.Update(obj);
                     await contex.SaveChangesAsync();
