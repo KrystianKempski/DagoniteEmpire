@@ -4,6 +4,7 @@
 @inject ISpecialSkillRepository _specialSkillRepository
 @inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject NavigationManager _navigationManager
+@inject IChatManager _chatManager
 @inject IJSRuntime _jsRuntime
 
 <_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this character"></_DeleteConfirmation>
@@ -19,14 +20,24 @@
     <div class="page">
 
         <div class="row mt-4">
-            <div class="col-12">
-                <h4 class="card-title">@Title</h4>
+            <div class="row p-0">
+                <div class="col-12 col-md-8">
+                    <h4 class="card-title px-2">@Title</h4>
+                </div>
+                <div class="col-12 col-md-4 p-0">
+                    <SfComboBox TValue="int" TItem="CharacterDTO" AllowCustom=true Placeholder="Select character for game" DataSource="@ApprovedCharacters" @bind-Value="CurrentlyUsedCharacterId">
+                        <ComboBoxEvents TValue="int" TItem="CharacterDTO" ValueChange="@ValueChangeHandler"></ComboBoxEvents>
+                        <ComboBoxFieldSettings Value="Id" Text="NPCName"></ComboBoxFieldSettings>
+                    </SfComboBox>
+                </div>
             </div>
+            
         </div>
         <div class="row mt-4">
             <div class="col-12">
-                <SfGrid ID="Grid"DataSource="@Characters" AllowPaging="true"
+                <SfGrid ID="Grid" DataSource="@Characters" AllowPaging="true"
                         Toolbar="@ToolbarItems">
+                    
                     <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
                     <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
                         <GridColumns>
@@ -40,34 +51,61 @@
                         </GridColumns>
                     </SfGrid>
             </div>
+            
         </div>
     </div>
+    
 }
+
 @code {
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
+    private IEnumerable<CharacterDTO> ApprovedCharacters { get; set; } = new List<CharacterDTO>();
     public bool IsLoading { get; set; } = true;
     public bool IsAdminOrMG { get; set; } = true;
     private int DeleteCharacterId { get; set; } = 0;
     private string Title { get; set; } = "Your characters";
+    private int CurrentlyUsedCharacterId = 0;
 
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationState;
-        if (!authState.User.Identity.IsAuthenticated)
+        try
         {
-            var uri = new Uri(_navigationManager.Uri);
-            _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}",forceLoad:true);
+
+            var authState = await AuthenticationState;
+            if (!authState.User.Identity.IsAuthenticated)
+            {
+                var uri = new Uri(_navigationManager.Uri);
+                _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}",forceLoad:true);
+            }
+           
+        }catch(Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
         }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        try
         {
-            await LoadCharacters();
+            if (firstRender)
+            {
+                var user = await _chatManager.GetCurrentUserDetailsAsync();
+                if (user is not null && user.SelectedCharacterId > 0)
+                {
+                    CurrentlyUsedCharacterId = user.SelectedCharacterId;
+                }
+                await LoadCharacters();
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
         }
     }
 
@@ -93,11 +131,13 @@
 
             Title = "All avalible characters";
             Characters = await _characterRepository.GetAll();
+            ApprovedCharacters = await _characterRepository.GetAllApproved();
         }
         else
         {
             Title = "Characters of " + user.Identity.Name;
             Characters = await _characterRepository.GetAllForUser(user.Identity.Name);
+            ApprovedCharacters = await _characterRepository.GetAllApproved(user.Identity.Name);
         }
         IsLoading = false;
         StateHasChanged();
@@ -117,7 +157,7 @@
             HandleDelete(args.RowData.Id);
         }
     }
-    
+
     private void HandleDelete(int id)
     {
         DeleteCharacterId = id;
@@ -138,12 +178,22 @@
             // }
 
             await _characterRepository.Delete(DeleteCharacterId);
-           // await _jsRuntime.ToastrSuccess("Product deleted succesfully.");
+            // await _jsRuntime.ToastrSuccess("Product deleted succesfully.");
             await LoadCharacters();
             await _jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
         }
         IsLoading = false;
         StateHasChanged();
+    }
+
+    private async Task ValueChangeHandler(ChangeEventArgs<int, CharacterDTO> args)
+    {
+        var char12 =  args.Value;
+        var user = await _chatManager.GetCurrentUserDetailsAsync();
+        if (user is not null && args.Value> 0)
+        {
+            user.SelectedCharacterId = args.Value;
+        }
     }
   
 }

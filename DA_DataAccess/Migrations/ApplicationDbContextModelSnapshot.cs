@@ -1064,6 +1064,9 @@ namespace DA_DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("SelectedCharacterId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("ShowBadge")
                         .HasColumnType("boolean");
 

@@ -22,8 +22,15 @@
             <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
                 <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/character"> <MudIcon Class="px-1" Icon="@Icons.Material.Filled.PeopleAlt"></MudIcon>Character list</MudButton>
                 <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/campaignlist"><MudIcon Class="px-1" Icon="@Icons.Material.Filled.Chat"></MudIcon>Campaign</MudButton>
-                <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary"
-                       Link="@ClassLink"><MudIcon Class="px-1" Icon="@Icons.Material.Filled.AutoFixHigh"></MudIcon>Class</MudButton>
+            <AuthorizeView>
+                <Authorized>
+                    <CharacterNavButtons></CharacterNavButtons>
+                </Authorized>
+                <NotAuthorized>
+
+                </NotAuthorized>
+            </AuthorizeView>
+                
 
             </div>
  
@@ -75,15 +82,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var user = _chatManager.GetCurrentUserDetailsAsync();
-        ClassLink = "#";
-        if (user is not null && user.Result is not null)
-        {
-            if (user.Result.SelectedCharacterId > 0)
-            {
-                
-            }
-        }
+        
 
     }   
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+        }
+    }
 }

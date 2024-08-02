@@ -1,0 +1,54 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@inject IChatManager _chatManager
+@inject IJSRuntime _jsRuntime
+@inject ISnackbar _snackBar
+@inject NavigationManager _navigationManager;
+@inject AuthenticationStateProvider _stateProvider
+
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
+
+
+<MudButton OnClick="GoToClass" Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary">
+    <MudIcon Class="px-1" Icon="@Icons.Material.Filled.AutoFixHigh"></MudIcon>Class</MudButton>
+
+
+@code {
+    private string ClassLink { get; set; } = "#";
+    private string CurrentUserId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+          
+    }
+    private async Task GoToClass()
+    {
+        try
+        {
+            var user = await _chatManager.GetCurrentUserDetailsAsync();
+
+            if (user is not null && user.SelectedCharacterId > 0)
+            {
+                ClassLink = "/profession/" + user.SelectedCharacterId;
+                var uri = new Uri(_navigationManager.Uri);
+                _navigationManager.NavigateTo(ClassLink, forceLoad: true);
+            }
+            else
+            {
+                _snackBar.Add("No character have yet been approved and selected as main", Severity.Info);
+            }
+        }
+        catch (Exception e)
+        {
+            _snackBar.Add("Uknnown error", Severity.Error);
+        }
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await _stateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+        CurrentUserId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
+
+    }
+
+}

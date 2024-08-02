@@ -64,13 +64,26 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<ApplicationUser> GetCurrentUserDetailsAsync()
         {
-            var state = await _authState.GetAuthenticationStateAsync();
-            var users = state.User;
-            string? currentUserId = users?.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
+            //var state = await _authState.GetAuthenticationStateAsync();
+            //var users = state.User;
+            //string? userId = users?.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
 
-            var user = _userManager.Users.Where(user => user.Id == currentUserId).FirstOrDefaultAsync();
+            //using var contex = await _db.CreateDbContextAsync();
+            //var appUser = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.Id == userId);
 
-            return await user;
+            using var contex = await _db.CreateDbContextAsync();
+            var user = (await _authState.GetAuthenticationStateAsync()).User;
+
+            var userId = user.Claims.Where(a => a.Type == ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
+            var appUser = await _userManager.Users.FirstOrDefaultAsync(user => user.Id == userId);
+
+            //Task<ApplicationUser> user = _userManager.Users.Where(user => user.Id == currentUserId).FirstOrDefaultAsync();
+            //if(user == null)
+            //{
+            //    return null;
+            //}
+
+            return appUser;
         }
 
         public async Task<ApplicationUser> UpdateUserDetailsAsync(ApplicationUser updatedUser)

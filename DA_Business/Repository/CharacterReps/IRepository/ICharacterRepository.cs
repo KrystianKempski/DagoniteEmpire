@@ -20,5 +20,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         public Task<IEnumerable<CharacterDTO>> GetAllForUser(string userName);
 
         public Task<IEnumerable<CharacterDTO>> GetAllForCampaign(int campaignId);
+
+        public Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName=null);
     }
 }

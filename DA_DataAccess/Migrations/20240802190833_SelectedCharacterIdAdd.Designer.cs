@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240726131239_spellsfixs")]
-    partial class spellsfixs
+    [Migration("20240802190833_SelectedCharacterIdAdd")]
+    partial class SelectedCharacterIdAdd
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1066,6 +1066,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("SelectedCharacterId")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("ShowBadge")
                         .HasColumnType("boolean");

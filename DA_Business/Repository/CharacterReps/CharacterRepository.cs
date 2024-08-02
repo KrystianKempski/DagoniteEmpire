@@ -490,5 +490,14 @@ namespace DA_Business.Repository.CharacterReps
             catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
         }
 
+        public async Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            if (userName == null || userName.Length < 3)
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.Equipment).Where(u =>u.IsApproved == true));
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.Equipment).Where(u => u.UserName == userName && u.IsApproved == true));
+
+        }
+
     }
 }
