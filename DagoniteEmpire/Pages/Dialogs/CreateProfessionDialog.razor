@@ -1,5 +1,6 @@
 ﻿@using DA_DataAccess.CharacterClasses
 @inject IJSRuntime _jsruntime
+@inject IUserService _userService
 <div class="race">
 
 
@@ -13,9 +14,7 @@
 
                      @if (IsLoading)
                     {
-                        <div class="text-center">
-                            <img src="/images/loading.gif" width="60px">
-                        </div>
+                        <LoadingPage></LoadingPage>
                     }
                     else
                     {
@@ -48,7 +47,7 @@
                                         <option value="@SD.Charisma"> @SD.Charisma</option> *@
                                     </InputSelect>
                                 </div>
-                                @if (AllParams.IsAdminOrMG)
+                                @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="column-section py-1">Class Level</label>
@@ -71,7 +70,7 @@
                                     <label class="column-section py-1">Focus points</label>
                                      <label class="prof-variables">@_createProfession.ProfessionDTO.MaxFocusPoints</label>
                                 </div>
-                                @if (AllParams.IsAdminOrMG)
+                                @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="class-section py-1">Approve</label>
@@ -89,7 +88,7 @@
                                         <label class="class-section py-1">Class name</label>
                                         <SfTextBox Placeholder="Insert class name" @bind-Value="@_createProfession.ProfessionDTO.Name"></SfTextBox>
                                     </div>
-                                    @if (AllParams.IsAdminOrMG)
+                                    @if (UserInfo?.IsAdminOrMG == true)
                                     {
                                         <div class="d-flex flex-column px-1">
                                             <label class="class-section py-1">Approve</label>
@@ -114,7 +113,7 @@
                                     </InputSelect>
                                 </div>
                                 <div class="d-flex">
-                                    @if (AllParams.IsAdminOrMG)
+                                    @if (UserInfo?.IsAdminOrMG == true)
                                     {
                                         <div class="d-flex flex-column px-1 variables">
                                             <label class="column-section py-1">Class Level</label>
@@ -309,6 +308,8 @@
 @code {
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
+
+    public UserInfo? UserInfo { get; set; }
     [Parameter]
     public IEnumerable<AttributeDTO> Attributes { get; set; }
 
@@ -413,6 +414,10 @@
         {
             IsLoading = false;
         }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
     }
 
 }

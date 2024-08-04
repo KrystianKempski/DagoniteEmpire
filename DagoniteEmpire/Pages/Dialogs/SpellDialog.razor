@@ -1,6 +1,7 @@
 ﻿@using DA_DataAccess.CharacterClasses
 @inject ISnackbar Snackbar
 @inject ISpellRepository _spellRepository
+@inject IUserService _userService
 
 <MudDialog>
     <TitleContent>
@@ -35,7 +36,7 @@
         <MudTextField @bind-Value="@Spell.Name" Label="Spell name" ReadOnly="@Spell.IsApproved"/>
         <MudTextField @bind-Value="@Spell.Link" Label="Link to spell" ReadOnly="@Spell.IsApproved" />
         <MudTextField @bind-Value="@Spell.Description" Label="Description" ReadOnly="@Spell.IsApproved" />
-        @if (IsAdminOrMG)
+        @if (UserInfo?.IsAdminOrMG == true)
         {
             <MudCheckBox @bind-Value="@Spell.IsApproved" Size="Size.Medium">Is Approved</MudCheckBox>
         }
@@ -50,19 +51,19 @@
     [CascadingParameter]
     MudDialogInstance MudDialog { get; set; }
 
+    public UserInfo? UserInfo { get; set; }
+
     [Parameter]
     public Spell Spell { get; set; }
     [Parameter]
     public bool IsEdit { get; set; }
-    [Parameter]
-    public bool IsAdminOrMG { get; set; }
 
     private string SelectedSpell { get; set; } = "";
     public IEnumerable<Spell> SpellList { get; set; } = new List<Spell>();
 
     protected override async Task OnInitializedAsync()
     {
-
+        UserInfo = await _userService.GetUserInfo();
         SpellList = await _spellRepository.GetAll(Spell.Level);
         if (!IsEdit)
             SelectedSpell = "New spell";

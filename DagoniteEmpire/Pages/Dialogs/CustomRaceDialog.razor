@@ -1,4 +1,4 @@
-﻿@inject AuthenticationStateProvider GetAuthenticationStateAsync
+﻿@inject IUserService _userService
 <div class="race">
 
 
@@ -12,9 +12,7 @@
 
                      @if (IsLoading)
                     {
-                        <div class="text-center">
-                            <img src="/images/loading.gif" width="60px">
-                        </div>
+                        <LoadingPage></LoadingPage>
                     }
                     else
                     {
@@ -23,7 +21,7 @@
                                 <label class="fw-bold py-1">Race name</label>
                                 <SfTextBox Placeholder="Insert race name" @bind-Value="@_customRaceComponent.RaceDTO.Name"></SfTextBox>
                             </div>
-                            @if (AllParams.IsAdminOrMG)
+                            @if (UserInfo?.IsAdminOrMG == true)
                             {
                                 <div class="d-flex flex-column px-1">
                                     <label class="fw-bold py-1">Approve</label>
@@ -79,6 +77,7 @@
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; } = new();
 
+    public UserInfo? UserInfo { get; set; }
     private CustomRaceModel _customRaceComponent = new();
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
 
@@ -161,5 +160,9 @@
         this.DescrEdit.RefreshUIAsync();
         ErrorMessage = string.Empty;
         StateHasChanged();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
     }
 }

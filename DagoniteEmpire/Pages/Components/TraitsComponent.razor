@@ -1,5 +1,6 @@
 ﻿@inject ITraitRepository<TraitAdvDTO> _traitAdvRepository
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
+@inject IUserService _userService
 <div class="traits">
     <div class="table-container">
     <table class="table align-middle">
@@ -42,12 +43,12 @@
     </table>
     </div>
     <div class="row">
-        @if (TraitType == SD.TraitType_Advantage && (AllParams.IsAdminOrMG || AllParams.Character.IsApproved == false))
+        @if (TraitType == SD.TraitType_Advantage && (UserInfo?.IsAdminOrMG == true  || AllParams.Character.IsApproved == false))
         {
             <label class="balance">Traits balance: @AllParams.Character.TraitBalance </label>
         }
 
-        @if (AllParams.IsAdminOrMG || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Advantage)
+        @if (UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Advantage)
         {
             <div class="buttons-row">
                 <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add new</button>
@@ -75,6 +76,8 @@
 
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
+
+    public UserInfo? UserInfo { get; set; }
 
     [Parameter]
     public string TraitType { get; set; } = string.Empty;
@@ -133,6 +136,12 @@
             if (_traitsChosen == value) return;
             _traitsChosen = value;
         }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        UserInfo = await _userService.GetUserInfo();
     }
 
     private async Task AddCustomTrait()

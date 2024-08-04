@@ -14,10 +14,10 @@ namespace DA_Business.Repository.CharacterReps
 {
     public class BaseSkillRepository : IBaseSkillRepository
     {
-        private readonly ApplicationDbContext _db;
+        private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
 
-        public BaseSkillRepository(ApplicationDbContext db, IMapper mapper)
+        public BaseSkillRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
         {
             _db = db;
             _mapper = mapper;
@@ -26,9 +26,10 @@ namespace DA_Business.Repository.CharacterReps
         {
             try
             {
+                using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<BaseSkillDTO, BaseSkill>(objDTO);
-                var addedObj = _db.BaseSkills.Add(obj);
-                await _db.SaveChangesAsync();
+                var addedObj = contex.BaseSkills.Add(obj);
+                await contex.SaveChangesAsync();
 
                 return _mapper.Map<BaseSkill, BaseSkillDTO>(addedObj.Entity);
             }
@@ -41,25 +42,28 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<int> Delete(int id)
         {
-            var obj = await _db.BaseSkills.FirstOrDefaultAsync(u => u.Id == id);
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.BaseSkills.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                _db.BaseSkills.Remove(obj);
-                return _db.SaveChanges();
+                contex.BaseSkills.Remove(obj);
+                return contex.SaveChanges();
             }
             return 0;
         }
 
         public async Task<IEnumerable<BaseSkillDTO>> GetAll(int? charId = null)
         {
+            using var contex = await _db.CreateDbContextAsync();
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(_db.BaseSkills/*.Include(u => u.TraitBonusRelated)*/);
-            return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(_db.BaseSkills./*Include(u => u.TraitBonusRelated).*/Where(u => u.CharacterId == charId).OrderBy(u => u.Index));
+                return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(contex.BaseSkills/*.Include(u => u.TraitBonusRelated)*/);
+            return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(contex.BaseSkills./*Include(u => u.TraitBonusRelated).*/Where(u => u.CharacterId == charId).OrderBy(u => u.Index));
         }
 
         public async Task<BaseSkillDTO> GetById(int id)
         {
-            var obj = await _db.BaseSkills./*Include(u => u.TraitBonusRelated).*/FirstOrDefaultAsync(u => u.Id == id);
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.BaseSkills./*Include(u => u.TraitBonusRelated).*/FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<BaseSkill, BaseSkillDTO>(obj);
@@ -69,7 +73,8 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<BaseSkillDTO> Update(BaseSkillDTO objDTO)
         {
-            var obj = await _db.BaseSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.BaseSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
                 obj.Name = objDTO.Name;
@@ -83,8 +88,8 @@ namespace DA_Business.Repository.CharacterReps
                 obj.RelatedAttribute1 = objDTO.RelatedAttribute1;
                 obj.RelatedAttribute2 = objDTO.RelatedAttribute2;
                 obj.Index = objDTO.Index;
-                _db.BaseSkills.Update(obj);
-                await _db.SaveChangesAsync();
+                contex.BaseSkills.Update(obj);
+                await contex.SaveChangesAsync();
                 return _mapper.Map<BaseSkill,BaseSkillDTO>(obj);    
             }
             return objDTO;

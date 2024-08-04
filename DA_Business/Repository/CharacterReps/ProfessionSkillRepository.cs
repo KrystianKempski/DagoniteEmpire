@@ -18,12 +18,9 @@ namespace DA_Business.Repository.CharacterReps
     public class ProfessionSkillRepository : IProfessionSkillRepository
     {
         private readonly IDbContextFactory<ApplicationDbContext> _db;
-        private readonly IMapper _mapper;
-
-        public ProfessionSkillRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
+        public ProfessionSkillRepository(IDbContextFactory<ApplicationDbContext> db)
         {
             _db = db;
-            _mapper = mapper;
         }
         public async Task<ProfessionSkill> Create(ProfessionSkill objDTO)
         {

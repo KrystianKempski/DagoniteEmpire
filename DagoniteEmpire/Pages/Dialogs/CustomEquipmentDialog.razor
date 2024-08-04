@@ -1,4 +1,4 @@
-﻿@inject AuthenticationStateProvider GetAuthenticationStateAsync
+﻿@inject IUserService _userService
 <div class="race">
 
 
@@ -12,9 +12,7 @@
 
                      @if (IsLoading)
                     {
-                        <div class="text-center">
-                            <img src="/images/loading.gif" width="60px">
-                        </div>
+                        <LoadingPage></LoadingPage>
                     }
                     else
                     {
@@ -32,7 +30,7 @@
                                     <label class="fw-bold py-1">Price</label>
                                     <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Price"></SfNumericTextBox>
                                 </div>
-                                @if (AllParams.IsAdminOrMG)
+                                @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="fw-bold py-1">Approve</label>
@@ -60,7 +58,7 @@
                                     <label class="fw-bold py-1">Price</label>
                                     <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Price"></SfNumericTextBox>
                                 </div>
-                                @if (AllParams.IsAdminOrMG)
+                                @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="fw-bold py-1">Approve</label>
@@ -115,6 +113,8 @@
 @code {
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
+
+    public UserInfo? UserInfo { get; set; }
     private CustomEquipmentModel _customEquipmentComponent = new();
     [Parameter]
     public CustomEquipmentModel CustomEquipmentComponent
@@ -194,5 +194,9 @@
         this.DescrEdit.RefreshUIAsync();
         ErrorMessage = string.Empty;
         StateHasChanged();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
     }
 }

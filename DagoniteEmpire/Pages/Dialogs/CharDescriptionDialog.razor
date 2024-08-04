@@ -1,4 +1,5 @@
-﻿<div class="description-frame">
+﻿@inject IUserService _userService
+<div class="description-frame">
 
     <div class="sheet-img">
         @* <img src="../images/old_paper2.png" class="stretch" /> *@
@@ -11,7 +12,7 @@
                 <p>Here write a description of your character</p>
             </SfRichTextEditor>
         </div>
-        @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+        @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
         {
             <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>
         }
@@ -53,6 +54,7 @@
     [Parameter]
     public EventCallback<string> DescriptionConfirmation { get; set; }
 
+    public UserInfo? UserInfo { get; set; }
     [Parameter]
     public string SavedDescription { get; set; } = "<p>Here write a description of your character</p>";
 
@@ -104,6 +106,11 @@
     private async Task DialogOpen()
     {
         this.DescrEdit.RefreshUIAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
     }
 
 }

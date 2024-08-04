@@ -20,7 +20,6 @@ namespace DA_Business.Repository.CharacterReps
 {
     public class ProfessionRepository : IProfessionRepository
     {
-        //private readonly ApplicationDbContext _db;
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
 
@@ -105,7 +104,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Profession Repository Delete");
             }
-            return 0;
         }
 
         public async Task<IEnumerable<ProfessionDTO>> GetAll()

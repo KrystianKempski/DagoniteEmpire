@@ -20,7 +20,6 @@ namespace DA_Business.Repository.CharacterReps
 {
     public class CharacterRepository : ICharacterRepository
     {
-        //private readonly ApplicationDbContext _db;
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
 

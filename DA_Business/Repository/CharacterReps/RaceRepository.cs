@@ -55,10 +55,8 @@ namespace DA_Business.Repository.CharacterReps
             catch (Exception ex)
             {
                 throw new RepositoryErrorException("Error in Race Repository Create");
-            }
-            return null;
-                
-}
+            }                
+        }
 
         public async Task<int> Delete(int id)
         {
@@ -86,7 +84,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Race Repository Delete");
             }
-            return 0;
         }
 
         public async Task<IEnumerable<RaceDTO>> GetAll()

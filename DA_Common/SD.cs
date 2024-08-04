@@ -152,6 +152,10 @@ namespace DA_Common
         public const string Bookmark = "icons/bookmarklet.svg";
         public const string Scroll = "icons/scroll.svg";
         public const string Quill = "icons/quill.svg";
+        public const string Anvil_white = "icons/anvil_white.svg";
+        public const string Helm_white = "icons/barbute_white.svg";
+        public const string Anvil = "icons/anvil.svg";
+        public const string Helm = "icons/barbute.svg";
     }
 
     public enum EquipmentType

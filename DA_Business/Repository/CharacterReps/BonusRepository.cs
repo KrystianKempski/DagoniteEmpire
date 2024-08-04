@@ -14,10 +14,10 @@ namespace DA_Business.Repository.CharacterReps
 {
     public class BonusRepository : IBonusRepository
     {
-        private readonly ApplicationDbContext _db;
+        private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
 
-        public BonusRepository(ApplicationDbContext db, IMapper mapper)
+        public BonusRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
         {
             _db = db;
             _mapper = mapper;
@@ -26,9 +26,10 @@ namespace DA_Business.Repository.CharacterReps
         {
             try
             {
+                using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<BonusDTO, Bonus>(objDTO);
-                var addedObj = _db.Bonuses.Add(obj);
-                await _db.SaveChangesAsync();
+                var addedObj = contex.Bonuses.Add(obj);
+                await contex.SaveChangesAsync();
 
                 return _mapper.Map<Bonus, BonusDTO>(addedObj.Entity);
             }
@@ -41,25 +42,28 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<int> Delete(int id)
         {
-            var obj = await _db.Bonuses.FirstOrDefaultAsync(u => u.Id == id);
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.Bonuses.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                _db.Bonuses.Remove(obj);
-                return _db.SaveChanges();
+                contex.Bonuses.Remove(obj);
+                return contex.SaveChanges();
             }
             return 0;
         }
 
         public async Task<IEnumerable<BonusDTO>> GetAll(int? traitId = null)
         {
+            using var contex = await _db.CreateDbContextAsync();
             if (traitId == null || traitId < 1)
-                return _mapper.Map<IEnumerable<Bonus>, IEnumerable<BonusDTO>>(_db.Bonuses);
-           return _mapper.Map<IEnumerable<Bonus>, IEnumerable<BonusDTO>>(_db.Bonuses.Where(u => u.TraitId == traitId).OrderBy(u=>u.Index));
+                return _mapper.Map<IEnumerable<Bonus>, IEnumerable<BonusDTO>>(contex.Bonuses);
+           return _mapper.Map<IEnumerable<Bonus>, IEnumerable<BonusDTO>>(contex.Bonuses.Where(u => u.TraitId == traitId).OrderBy(u=>u.Index));
         }
 
         public async Task<BonusDTO> GetById(int id)
         {
-            var obj = await _db.Bonuses.FirstOrDefaultAsync(u => u.Id == id);
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.Bonuses.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Bonus, BonusDTO>(obj);
@@ -69,7 +73,8 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<BonusDTO> Update(BonusDTO objDTO)
         {
-            var obj = await _db.Bonuses.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.Bonuses.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
 
@@ -78,16 +83,16 @@ namespace DA_Business.Repository.CharacterReps
                 obj.BonusValue = objDTO.BonusValue;        
                 obj.Description = objDTO.Description;     
                 obj.Index = objDTO.Index;     
-                obj.TraitId = objDTO.TraitId;  
-                _db.Bonuses.Update(obj);
-                await _db.SaveChangesAsync();
+                obj.TraitId = objDTO.TraitId;
+                contex.Bonuses.Update(obj);
+                await contex.SaveChangesAsync();
                 return _mapper.Map<Bonus, BonusDTO>(obj);
             }
             else
             {
                 obj = _mapper.Map<BonusDTO, Bonus>(objDTO);
-                var addedObj = _db.Bonuses.Add(obj);
-                await _db.SaveChangesAsync();
+                var addedObj = contex.Bonuses.Add(obj);
+                await contex.SaveChangesAsync();
 
                 return _mapper.Map<Bonus, BonusDTO>(addedObj.Entity);
             }

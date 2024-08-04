@@ -3,34 +3,37 @@
 @inject IJSRuntime _jsRuntime
 @inject ISnackbar _snackBar
 @inject NavigationManager _navigationManager;
-@inject AuthenticationStateProvider _stateProvider
+@inject IUserService _userService
 
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 
 
 <MudButton OnClick="GoToClass" Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary">
-    <MudIcon Class="px-1" Icon="@Icons.Material.Filled.AutoFixHigh"></MudIcon>Class</MudButton>
+    <img src="@MyIcon.Anvil_white" width="25px" height="24px" class="anvil-icon" />
+    Class
+</MudButton>
+<MudButton OnClick="GoToCharacter" Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary">
+    <img src="@MyIcon.Helm_white" width="25px" height="24px" class="helm-icon" />
+    Character
+</MudButton>
 
 
 @code {
-    private string ClassLink { get; set; } = "#";
-    private string CurrentUserId;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-          
-    }
+    public UserInfo? UserInfo { get; set; }
+
+
     private async Task GoToClass()
     {
         try
         {
-            var user = await _chatManager.GetCurrentUserDetailsAsync();
 
-            if (user is not null && user.SelectedCharacterId > 0)
+            UserInfo = await _userService.GetUserInfo();
+
+            if (UserInfo is not null && UserInfo.SelectedCharacterId > 0)
             {
-                ClassLink = "/profession/" + user.SelectedCharacterId;
-                var uri = new Uri(_navigationManager.Uri);
-                _navigationManager.NavigateTo(ClassLink, forceLoad: true);
+                string classLink = "/profession/" + UserInfo.SelectedCharacterId;
+                _navigationManager.NavigateTo(classLink);
             }
             else
             {
@@ -43,11 +46,28 @@
         }
 
     }
-    protected override async Task OnInitializedAsync()
+
+    private async Task GoToCharacter()
     {
-        var state = await _stateProvider.GetAuthenticationStateAsync();
-        var user = state.User;
-        CurrentUserId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
+        try
+        {
+            UserInfo = await _userService.GetUserInfo();
+
+            if (UserInfo is not null && UserInfo.SelectedCharacterId > 0)
+            {
+                string characterLink = "/character/edit/" + UserInfo.SelectedCharacterId;
+
+                _navigationManager.NavigateTo(characterLink);
+            }
+            else
+            {
+                _snackBar.Add("No character have yet been approved and selected as main", Severity.Info);
+            }
+        }
+        catch (Exception e)
+        {
+            _snackBar.Add("Uknnown error", Severity.Error);
+        }
 
     }
 

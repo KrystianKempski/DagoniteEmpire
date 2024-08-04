@@ -16,8 +16,6 @@ namespace DA_Business.Repository.CharacterReps
 {
     public class TraitEquipmentRepository : ITraitRepository<TraitEquipmentDTO>
     {
-       // private readonly ApplicationDbContext _db;
-
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
 
@@ -41,7 +39,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Trait-Equipment Repository Create");
             }
-            return null;
                 
 }
 
@@ -62,7 +59,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Trait-Equipment Repository Delete"); ;
             }
-            return 0;
         }
 
         public async Task<IEnumerable<TraitEquipmentDTO>> GetAll(int? charId =null)
@@ -169,7 +165,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Trait-Equipment Repository Update");
             }
-            return null;
         }
     }
 }

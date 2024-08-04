@@ -17,12 +17,10 @@ namespace DA_Business.Repository.CharacterReps
     public class SpellSlotRepository : ISpellSlotRepository
     {
         private readonly IDbContextFactory<ApplicationDbContext> _db;
-        private readonly IMapper _mapper;
 
-        public SpellSlotRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
+        public SpellSlotRepository(IDbContextFactory<ApplicationDbContext> db)
         {
             _db = db;
-            _mapper = mapper;
         }
         public async Task<SpellSlot> Create(SpellSlot objDTO)
         {

@@ -1,5 +1,6 @@
 ﻿@page "/campaignlist"
 
+@using DA_Business.Services.Interfaces
 @using Syncfusion.Blazor.Navigations;
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
 @inject NavigationManager _navigationManager
@@ -9,9 +10,9 @@
 @inject ICharacterRepository _characterRepository
 @inject ICampaignRepository _campaignRepository
 @inject IChapterRepository _chapterRepository
-@inject AuthenticationStateProvider GetAuthenticationStateAsync
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
+@inject IUserService _userService
 
 
 @using Microsoft.AspNetCore.SignalR.Client;
@@ -19,13 +20,11 @@
 <_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this campaign"></_DeleteConfirmation>
 <MudContainer Class="pr-1" Fixed="false">
     @if (IsLoading == true){
-        <div class="text-center">
-            <img src="images/loading.gif" width="60px">
-        </div>
+        <LoadingPage></LoadingPage>
     }else{
         <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
         <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns</MudText>
-        @if (IsAdminOrMG)
+        @if (UserInfo?.IsAdminOrMG == true)
         {
             <div class="camp">
 
@@ -59,7 +58,7 @@
 
                             <MudStack Spacing="0" Row="true">
                                 <MudText Class="flex-grow-1" Typo="Typo.h6">@camp.Name</MudText>
-                                @if (IsAdminOrMG)
+                                @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))"></MudIconButton>
                                     <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))"></MudIconButton>
@@ -114,12 +113,12 @@
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private List<CampaignDTO> Campaigns { get; set; } = new List<CampaignDTO>();
     public bool IsLoading { get; set; } = true;
-    public bool IsAdminOrMG { get; set; } = true;
     private string Title { get; set; } = "Your characters";
     private CharacterDTO SelectedCharacter  = new();
     public CampaignDTO NewCampaign { get; set; } = new();
-    [CascadingParameter]
-    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+
+    public UserInfo? UserInfo { get; set; }
     private int DeleteCampaignId;
 
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
@@ -127,18 +126,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationState;
-        if (!authState.User.Identity.IsAuthenticated)
+        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo?.IsAuthenticated == false)
         {
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
 
-        var user = authState.User;
-        if (user == null)
-            return; // failed to load
-
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -167,13 +161,13 @@
         {
             new BreadcrumbItem("Campaign", href: $"/campaignlist/"),
         };
-        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
-        var user = authstate.User;
-        if (user == null)
-            return; // failed to load
+        // var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
+        // var user = authstate.User;
+        // if (user == null)
+        //     return; // failed to load
 
 
-        if (IsAdminOrMG)
+        if (UserInfo?.IsAdminOrMG == true)
         {
             Title = "All avalible campaingns";
             Characters = await _characterRepository.GetAll();
@@ -182,8 +176,8 @@
         }
         else
         {
-            Title = "Characters of " + user.Identity.Name;
-            Characters = await _characterRepository.GetAllForUser(user.Identity.Name);
+            Title = "Characters of " + UserInfo?.UserName;
+            Characters = await _characterRepository.GetAllForUser(UserInfo?.UserName);
             if (Characters.Any())
             {
                 SelectedCharacter = Characters.First();
@@ -208,9 +202,7 @@
         {
             NewCampaign = (CampaignDTO)result.Data;
 
-            var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
-            if (authstate is not null)
-                NewCampaign.GameMaster = authstate.User.Identity.Name;
+            NewCampaign.GameMaster = UserInfo?.UserName;
 
             Campaigns.Add(await _campaignRepository.Create(NewCampaign));
         }

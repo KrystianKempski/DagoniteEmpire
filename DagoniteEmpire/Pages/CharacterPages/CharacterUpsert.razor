@@ -11,7 +11,7 @@
 @inject IRaceRepository _raceRepository
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentRepository _equipmentRepository
-@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject IUserService _userService
 @inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
 @using DA_Models
@@ -25,9 +25,7 @@
     <div class="col-12">
          @if (IsLoading)
         {
-            <div class=" text-center">
-                <img class="loading-gif" src="/images/loading.gif" width="60px">
-            </div>
+            <LoadingPage></LoadingPage>
         }
         else
         {
@@ -37,7 +35,7 @@
                     <div class="row">
                         <div class="form-group col-md-4 px-1">
                             <label>Character name</label>
-                            @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                            @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
                                 <input type="text" @bind-value="AllParams.Character.NPCName" class="form-control"></input>
                             }
@@ -48,7 +46,7 @@
                             </div>
                         <div class="form-group col-md-1 px-1">
                             <label>Age</label>
-                            @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                            @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
                                 <InputNumber  @bind-Value="AllParams.Character.Age" class="form-control col-2"></InputNumber>
                             }
@@ -60,7 +58,7 @@
                        
                         <div class="form-group col-md-3 px-1">
                             <label>Character Type</label>
-                            @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                            @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
                                 <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
                                     <option checked="@(AllParams.Character!.NPCType == "Hero")" value="Hero">
@@ -79,12 +77,11 @@
                                 <input readonly type="text" @bind-value="AllParams.Character.NPCType" class="form-control"></input>
                             }
                         </div>
-                        @if (AllParams.IsAdminOrMG)
+                        @if (UserInfo?.IsAdminOrMG == true)
                         {
                             <div class="form-group col-md-1 px-1">
                                 <label>Is Approved?</label>
                                 <MudCheckBox @bind-Value="@AllParams.Character.IsApproved" Size="Size.Medium"></MudCheckBox>
-                                @* <SfCheckBox ControlSize="60" @bind-Checked="@AllParams.Character.IsApproved"></SfCheckBox> *@
                             </div>
                         }
                     </div>
@@ -102,7 +99,7 @@
                             <div class="portrait-imageframe">
                                 <img src="@AllParams.Character.ImageUrl" class="portrait-image" />
                                 <div class="portrait-input">
-                                    @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                                    @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                                     {
                                         <label class="input-label" for="input">@ChooseFile</label>
                                         <InputFile id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
@@ -115,7 +112,7 @@
                                     <span class="points-indicator ml-auto">@AllParams.Character.CurrentExpPoints</span>
                             </div>
                             <div class="points-control">
-                                @if (AllParams.Character.IsApproved == false || AllParams.IsAdminOrMG)
+                                @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                                 {
                                     <label class="points-label">Avalible attribute points:</label>
                                     <span class="points-indicator ml-auto">@AllParams.Character.AttributePoints</span>
@@ -453,6 +450,8 @@
 
 @code {
 
+    public UserInfo? UserInfo { get; set; }
+
     [Parameter]
     public int Id { get; set; }
 
@@ -472,24 +471,21 @@
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
     private string ChooseFile = "Choose file";
-    [CascadingParameter]
-    public Task<AuthenticationState> AuthenticationState { get; set; }
+
 
     protected override async Task OnInitializedAsync()
     {
 
         AllParams = new();
-        var authState = await AuthenticationState;
-        if (!authState.User.Identity.IsAuthenticated)
+
+        UserInfo = await _userService.GetUserInfo();
+
+        if (UserInfo?.IsAuthenticated == false)
         {
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
-        var user = authState.User;
-        if (user == null)
-            return; // failed to load
 
-        AllParams.IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
 
     }
 
@@ -517,10 +513,8 @@
                     AllParams.CurrentRace = new();
                     AllParams.Profession = new();
                     AllParams.Equipment = new List<EquipmentDTO>();
-                    var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
-                    var user = authstate.User;
-                    AllParams.Character.UserName = user.Identity.Name;
-                    IsDukeAllowed = !user.IsInRole(SD.Role_HeroPlayer);
+                    AllParams.Character.UserName = UserInfo?.UserName;
+                    IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer);
 
                     if (IsDukeAllowed)
                         AllParams.Character.NPCType = "Hero";
@@ -535,11 +529,6 @@
                     await LoadCharacter();
                 }
 
-                // calculate all stats
-                // foreach (var obj in AllParams.Attributes)
-                //     obj.SumAll();
-                // foreach (var obj in AllParams.BaseSkills)
-                //     obj.SumAll();
                 foreach (var obj in AllParams.SpecialSkills)
                 {
                     await ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
@@ -1074,7 +1063,7 @@
         {
             IsLeaveAllowed = true;
             _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
-            _navigationManager.NavigateTo(TargetLocation, true);
+            _navigationManager.NavigateTo(TargetLocation);
         }
         IsLoading = false;
         StateHasChanged();

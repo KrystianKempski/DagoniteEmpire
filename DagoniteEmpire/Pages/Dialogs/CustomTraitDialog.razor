@@ -1,5 +1,5 @@
 ﻿@using DA_DataAccess.CharacterClasses
-@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject IUserService _userService
 <div class="traits">
 
     <SfDialog Width="50%" Height="50%" @bind-Visible="@_customTraitModel.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
@@ -11,9 +11,7 @@
 
                     @if (IsLoading)
                     {
-                        <div class="text-center my-auto">
-                            <img src="/images/loading.gif" width="60px">
-                        </div>
+                        <LoadingPage></LoadingPage>
                     }
                     else
                     {
@@ -35,7 +33,7 @@
                                     </div>
                                 </div>
                             }
-                            @if (AllParams.IsAdminOrMG)
+                            @if (UserInfo?.IsAdminOrMG == true)
                             {
                             <div class="d-flex flex-column px-1">
                                 <label class="fw-bold py-1">Approve</label>
@@ -154,6 +152,7 @@
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
 
+    public UserInfo? UserInfo { get; set; }
     [Parameter]
     public EventCallback<CustomTraitModel> CustomTraitModelChanged { get; set; }
     [Parameter]
@@ -304,10 +303,9 @@
         CustomTraitModel.TraitDTO.Bonuses.Add(bonus);
     }
 
-
-    // private void OnStartTraitDialog()
-    // {
-    //     IsTraitDialVisible = true;
-    // }
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
+    }
 
 }

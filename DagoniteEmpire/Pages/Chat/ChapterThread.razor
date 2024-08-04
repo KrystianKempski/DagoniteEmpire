@@ -1,5 +1,6 @@
 ﻿@page "/chapter/{id:int}/{charId:int}"
 
+@using DA_Business.Services.Interfaces
 @using Syncfusion.Blazor.Navigations;
 @inject NavigationManager _navigationManager
 @inject ISnackbar _snackBar
@@ -8,7 +9,7 @@
 @inject ICharacterRepository _characterRepository
 @inject IChapterRepository _chapterRepository
 @inject IPostRepository _postRepository
-@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject IUserService _userService
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
 
@@ -17,9 +18,7 @@
 
 <MudContainer Class="pr-1"  Fixed="false">
     @if (IsLoading == true){
-        <div class="text-center">
-            <img src="images/loading.gif" width="60px">
-        </div>
+        <LoadingPage></LoadingPage>
     }else{
 
 
@@ -150,7 +149,7 @@
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     public PostDTO NewPost { get; set; } = new();
     public bool IsLoading { get; set; } = true;
-    public bool IsAdminOrMG { get; set; } = true;
+    //public bool IsAdminOrMG { get; set; } = true;
     private string Title { get; set; } = "Campaign name";
     private CharacterDTO SelectedCharacter  = null;
     private bool IsEditMode = false;
@@ -180,32 +179,28 @@
         new ToolbarItemModel() { Command = ToolbarCommand.Redo },
         new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
     };
-    [CascadingParameter]
-    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    public UserInfo? UserInfo { get; set; }
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
     
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationState;
-        if (!authState.User.Identity.IsAuthenticated)
+
+        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo?.IsAuthenticated == false)
         {
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
 
-        var user = authState.User;
-        if (user == null)
-            return; // failed to load
 
-
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-        if (IsAdminOrMG)
+        if (UserInfo?.IsAdminOrMG == true)
         {
             SelectedCharacter = new()
                 {
                     NPCName = "Game Master",
-                    UserName = user.Identity.Name,
+                    UserName = UserInfo.UserName,
                 };
         }
     }
@@ -230,7 +225,7 @@
         Posts = (await _postRepository.GetAll(Id)).ToList();
         Characters = (await _characterRepository.GetAll()).ToList();
 
-        if (IsAdminOrMG)
+        if (UserInfo?.IsAdminOrMG == true)
         {
             SelectedCharacter = await _characterRepository.GetByName(SD.NPCName_GameMaster);
         }

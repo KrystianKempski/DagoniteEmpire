@@ -61,7 +61,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Trait-Adv Repository Delete"); ;
             }
-            return 0;
         }
 
         public async Task<IEnumerable<TraitAdvDTO>> GetAll(int? charId =null)

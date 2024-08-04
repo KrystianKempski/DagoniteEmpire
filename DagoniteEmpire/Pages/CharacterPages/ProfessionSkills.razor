@@ -1,5 +1,6 @@
 ﻿
 @page "/profession/{id:int}"
+@using DA_Business.Services.Interfaces
 @using DA_DataAccess.CharacterClasses
 @inject IJSRuntime _jsruntime
 @inject ICharacterRepository _characterRepository
@@ -11,7 +12,7 @@
 @inject ISpellCircleRepository _spellCircleRepository
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
-@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject IUserService _userService
 
 @inject IJSRuntime _jsRuntime
 
@@ -19,9 +20,7 @@
 
     @if (IsLoading)
     {
-        <div class="text-center my-auto">
-            <img src="/images/loading.gif" width="60px">
-        </div>
+        <LoadingPage></LoadingPage>
     }
     else
     {
@@ -37,7 +36,7 @@
                     <label class="class-section py-1">Related attribute</label>
                     <label class="prof-variables" style="width: 150px;">@ProfessionDTO.RelatedAttributeName</label>
                 </div>
-                @if (IsAdminOrMG)
+                @if (UserInfo?.IsAdminOrMG == true)
                 {
                     <div class="d-flex flex-column px-1">
                         <label class="column-section py-1">Class Level</label>
@@ -60,7 +59,7 @@
                     <label class="column-section py-1">Focus points</label>
                     <label class="prof-variables">@ProfessionDTO.MaxFocusPoints</label>
                 </div>
-                @if (IsAdminOrMG)
+                @if (UserInfo?.IsAdminOrMG == true)
                 {
                     <div class="d-flex flex-column px-1">
                         <label class="class-section py-1">Approve</label>
@@ -78,7 +77,7 @@
                         <label class="class-section py-1">Class name</label>
                         <SfTextBox Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></SfTextBox>
                     </div>
-                    @if (IsAdminOrMG)
+                    @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <div class="d-flex flex-column px-1">
                             <label class="class-section py-1">Approve</label>
@@ -93,7 +92,7 @@
                     <label class="prof-variables">@ProfessionDTO.RelatedAttributeName</label>
                 </div>
                 <div class="d-flex">
-                    @if (IsAdminOrMG)
+                    @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <div class="d-flex flex-column px-1 variables">
                             <label class="column-section py-1">Class Level</label>
@@ -447,6 +446,7 @@
 
 @code {
 
+
     [Parameter]
     public int Id { get; set; }
     public int AvalibleSpells { get; set; } = 0;
@@ -455,27 +455,22 @@
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
     private ICollection<SpellCircleDTO> SpellCircles = new List<SpellCircleDTO>();
     private MudTable<SpellCircleDTO> CircleTable;
-    [CascadingParameter]
-    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    public UserInfo? UserInfo { get; set; }
+
     private MudTable<SpellCircle> mudTable;
 
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationState;
-        if (!authState.User.Identity.IsAuthenticated)
+        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo?.IsAuthenticated == false)
         {
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
-        var user = authState.User;
-        if (user == null)
-            return; // failed to load
 
-
-
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-        ReadOnly = !IsAdminOrMG;
+        ReadOnly = (UserInfo?.IsAdminOrMG == false);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -521,20 +516,12 @@
         if (ProfessionDTO.CasterType != SpellcasterType.None)
             IsSpellTypeDisabled = false;
 
-        var authstate = await GetAuthenticationStateAsync.GetAuthenticationStateAsync();
-        var user = authstate.User;
-        if (user == null)
-            return; // failed to load
-
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-
-        ProfessionDTO.CalculateClassParams(AllParams.Attributes);
+         ProfessionDTO.CalculateClassParams(AllParams.Attributes);
     }
 
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; } = true;
     private bool IsSpellTypeDisabled { get; set; } = true;
-    public bool IsAdminOrMG { get; set; } = false;
     public bool ReadOnly { get; set; } = false;
 
     public IEditorSettings EditParams = new NumericEditCellParams
@@ -714,7 +701,7 @@
             spell.Name = spellSlot.Spell.Name;
             spell.IsApproved = spellSlot.Spell.IsApproved;
         }
-        var parameters = new DialogParameters<SpellDialog> { { x => x.Spell, spell }, { x => x.IsEdit, isEdit }, { x => x.IsAdminOrMG, IsAdminOrMG } };
+        var parameters = new DialogParameters<SpellDialog> { { x => x.Spell, spell }, { x => x.IsEdit, isEdit } };
         var dialog = await DialogService.ShowAsync<SpellDialog>("Edit spell", parameters);
         var result = await dialog.Result;
 

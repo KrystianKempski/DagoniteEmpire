@@ -44,7 +44,6 @@ namespace DA_Business.Repository.CharacterReps
 
                 throw new RepositoryErrorException("Error in Trait-race Repository Create");
             }
-            return null;
                 
 }
 
@@ -63,7 +62,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Trait-race Repository delete");
             }
             return 0;
         }
@@ -170,7 +169,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Trait-race Repository Update");
             }
-            return null;
         }
 
     }

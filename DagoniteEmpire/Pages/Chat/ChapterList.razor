@@ -1,5 +1,6 @@
 ﻿@page "/campaign/{id:int}/{charId:int}"
 
+@using DA_Business.Services.Interfaces
 @using Syncfusion.Blazor.Navigations;
 @inject NavigationManager _navigationManager
 @inject ISnackbar _snackBar
@@ -8,7 +9,7 @@
 @inject ICharacterRepository _characterRepository
 @inject ICampaignRepository _campaignRepository
 @inject IChapterRepository _chapterRepository
-@inject AuthenticationStateProvider GetAuthenticationStateAsync
+@inject IUserService _userService
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
 
@@ -17,16 +18,14 @@
 
 <MudContainer Class="pr-1" Fixed="false">
     @if (IsLoading == true){
-        <div class="text-center">
-            <img src="images/loading.gif" width="60px">
-        </div>
+        <LoadingPage></LoadingPage>
     }else{
         <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
         @if (Campaign is not null)
         {
             <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />Chapter list of @Campaign.Name</MudText>
         }
-        @if (IsAdminOrMG)
+        @if (UserInfo?.IsAdminOrMG == true)
         {
             <div class="camp">
                 <MudPaper Height="100px" Width="100%" Class="pa-3 mb-2 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateChapter">
@@ -57,7 +56,7 @@
 
                             <MudStack Spacing="0" Row="true">
                                 <MudText Class="flex-grow-1" Typo="Typo.h6">@chap.Name</MudText>
-                                @if (IsAdminOrMG)
+                                @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditChapter(chap))"></MudIconButton>
                                     <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteChapter(chap))"></MudIconButton>
@@ -112,27 +111,25 @@
     private List<ChapterDTO> Chapters { get; set; } = new List<ChapterDTO>();
     public ChapterDTO NewChapter { get; set; } = new();
     public bool IsLoading { get; set; } = true;
-    public bool IsAdminOrMG { get; set; } = true;
+    //public bool IsAdminOrMG { get; set; } = true;
     private string Title { get; set; } = "Campaign name";
     private CharacterDTO SelectedCharacter  = null;
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    public UserInfo? UserInfo { get; set; }
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationState;
-        if (!authState.User.Identity.IsAuthenticated)
+
+        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo?.IsAuthenticated == false)
         {
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
 
-        var user = authState.User;
-        if (user == null)
-            return; // failed to load
-
-        IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

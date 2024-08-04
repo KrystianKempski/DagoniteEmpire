@@ -17,7 +17,6 @@ namespace DA_Business.Repository.CharacterReps
 {
     public class EquipmentRepository : IEquipmentRepository
     {
-        //private readonly ApplicationDbContext _db;
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
 
@@ -52,10 +51,8 @@ namespace DA_Business.Repository.CharacterReps
             catch (Exception ex)
             {
                 throw new RepositoryErrorException("Error in Equipment Repository Create");
-            }
-            return null;
-                
-}
+            }                
+        }
 
         public async Task<int> Delete(int id)
         {

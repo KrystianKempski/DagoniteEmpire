@@ -1,10 +1,8 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
-@inject NavigationManager _navigationManager
+﻿@using DA_Business.Services
+@using Microsoft.AspNetCore.SignalR.Client
 @inject ISnackbar _snackBar
-
 @inject IJSRuntime _jsRuntime
-@inject IChatManager _chatManager
-@inject AuthenticationStateProvider _stateProvider;
+@inject IUserService _userService;
 @inherits LayoutComponentBase
 
 <PageTitle>DagoniteEmpire</PageTitle>
@@ -24,11 +22,10 @@
                 <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/campaignlist"><MudIcon Class="px-1" Icon="@Icons.Material.Filled.Chat"></MudIcon>Campaign</MudButton>
             <AuthorizeView>
                 <Authorized>
-                    <CharacterNavButtons></CharacterNavButtons>
+                    <CascadingValue Value="@UserInfo">
+                        <CharacterNavButtons></CharacterNavButtons>
+                    </CascadingValue>
                 </Authorized>
-                <NotAuthorized>
-
-                </NotAuthorized>
             </AuthorizeView>
                 
 
@@ -43,7 +40,9 @@
     </MudAppBar>
     <div class="small-screen">
         <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
-            <NavMenu />
+            <CascadingValue Value="@UserInfo">
+                <NavMenu />
+            </CascadingValue>
         </MudDrawer>
     </div>
     
@@ -52,14 +51,13 @@
             <Authorized>
                <Chat></Chat>   
             </Authorized>
-            <NotAuthorized>
-                    
-            </NotAuthorized>
         </AuthorizeView>
     </MudContainer>
 
     <MudMainContent>
+        <CascadingValue Value="@UserInfo">
             @Body
+        </CascadingValue>
     </MudMainContent>
     
 </MudLayout>
@@ -69,8 +67,7 @@
 @code {
 
     private MudTheme Theme = new MudTheme();
-    private int SelectedCharacter = 0;
-    private string ClassLink;
+    public UserInfo UserInfo = new UserInfo();
 
     void DrawerStartToggle()
     {
@@ -82,7 +79,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        
+
 
     }   
 
@@ -90,6 +87,7 @@
     {
         if (firstRender)
         {
+            await _userService.InitUserInfoAtStart();
         }
     }
 }
