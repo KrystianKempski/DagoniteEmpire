@@ -29,6 +29,13 @@
         }
         else
         {
+            @if(IsLeaveAllowed == false)
+            {
+                <div class="save-btn"> 
+                    <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button>
+
+                </div>
+            }
             <section class="section-create-character">
                 <div class="container-fluid">
                     <h3 class="char-title card-title mb-3 ml-3 mt-2">@Title character</h3>
@@ -420,7 +427,7 @@
                 </div>
             </section>
             <div class="form-group py-2">
-            <button @onclick="UpsertCharacter" class="btn btn-primary">Save character</button>
+            @* <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button> *@
                 <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
             </div>
            
@@ -460,7 +467,7 @@
     private string Title { get; set; } = "Create";
     public bool IsLoading { get; set; } = true;
     private bool ModifChanged = false;
-    private bool IsLeaveAllowed { get; set; } = false;
+    private bool IsLeaveAllowed { get; set; } = true;
     private bool IsDukeAllowed { get; set; } = false;
     private string TargetLocation { get; set; } = "";
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
@@ -541,7 +548,7 @@
                 AllParams.Profession.CalculateClassParams(AllParams.Attributes);
 
 
-
+                IsLeaveAllowed = true;
                 IsLoading = false;
                 StateHasChanged();
             }
@@ -681,21 +688,28 @@
                     obj.CharacterId = Id;
                     await _specialSkillRepository.Update(obj);
                 }
+
+            }
+            // if main character is no approved anymore - delete its id from user info
+            if (UserInfo?.SelectedCharacterId == AllParams.Character.Id && AllParams.Character.IsApproved == false)
+            {
+                await _userService.SetSelectedCharId(0);
             }
         }
         catch (Exception ex)
         {
             IsLoading = false;
             await _jsRuntime.ToastrError("Error while adding character");
+            IsLeaveAllowed = true;
+            _navigationManager.NavigateTo("/character");
         }
         IsLeaveAllowed = true;
         IsLoading = false;
         StateHasChanged();
-        _navigationManager.NavigateTo("/character");
-
     }
     public async Task DeleteCharacterHandler()
     {
+        
         try
         {
             if (AllParams.Character.Id == 0)
@@ -717,6 +731,7 @@
                 }
                 await _characterRepository.Delete(AllParams.Character.Id);
             }
+            IsLeaveAllowed = false;
         }
         catch (Exception ex)
         {
@@ -727,6 +742,7 @@
 
     private async Task HandleImageUpload(InputFileChangeEventArgs e)
     {
+        
         IsLoading = true;
         try
         {
@@ -741,6 +757,7 @@
                         fileInfo.Extension.ToLower() == ".jpeg")
                     {
                         AllParams.Character.ImageUrl = await _fileUpload.UploadFile(file);
+                        IsLeaveAllowed = false;
                     }
                     else
                     {
@@ -759,6 +776,7 @@
 
     private async Task IncrAttr(AttributeDTO obj)
     {
+        
         var ok = false;
         if (AllParams.Character.IsApproved == false)
         {
@@ -784,7 +802,7 @@
                 if (ok)
                 {
                     obj.BaseBonus++;
-                    //obj.SumAll();
+                    IsLeaveAllowed = false;
                 }
                 else
                     await _jsRuntime.AttrLimit("Not enough attribute points");
@@ -800,7 +818,7 @@
             {
                 AllParams.Character.CurrentExpPoints -= obj.BaseBonus * 2;
                 obj.BaseBonus++;
-                //obj.SumAll();
+                IsLeaveAllowed = false;
             }
             else
                 await _jsRuntime.AttrLimit("Not enough experience points");
@@ -810,6 +828,7 @@
 
     private async Task DecrAttr(AttributeDTO obj)
     {
+        
         if (AllParams.Character.IsApproved == false)
         {
             if (obj.BaseBonus > 6)
@@ -823,7 +842,7 @@
                     AllParams.Character.AttributePoints += (obj.BaseBonus - 10);
                 }
                 obj.BaseBonus--;
-                //obj.SumAll();
+                IsLeaveAllowed = false;
             }else
                 await _jsRuntime.AttrLimit("Minimum base bonus limit is 6");
         }
@@ -836,6 +855,7 @@
 
     private async Task IncrBSBonus(BaseSkillDTO obj)
     {
+        
         try
         {
             var relatedAttribute1 = AllParams.Attributes.FirstOrDefault(u => u.Name == obj.RelatedAttribute1).BaseBonus;
@@ -852,8 +872,7 @@
                     AllParams.Character.CurrentExpPoints -= expChange;
                     AllParams.Character.UsedExpPoints += expChange;
                     obj.BaseBonus++;
-
-                    //obj.SumAll();
+                    IsLeaveAllowed = false;
                 }
                 else
                     await _jsRuntime.BaseSkillLimit("Not enought experience points");
@@ -873,20 +892,21 @@
 
     private async Task DecrBSBonus(BaseSkillDTO obj)
     {
+        
         var expChange = 3 * obj.BaseBonus;
         if (obj.BaseBonus > 0)
         {
             AllParams.Character.CurrentExpPoints += expChange;
             AllParams.Character.UsedExpPoints -= expChange;
             obj.BaseBonus--;
-
-            //obj.SumAll();
+            IsLeaveAllowed = false;
         }
     }
 
 
     private void CharacterTypeHandle()
     {
+        IsLeaveAllowed = false;
         if (AllParams.Character.NPCType == "Hero")
         {
             AllParams.Character.AttributePoints = 100;
@@ -906,8 +926,10 @@
             obj.BaseBonus = 0;
     }
 
+
     private async Task IncrSSBonus(SpecialSkillDTO obj)
     {
+        
         try
         {
             var limit = AllParams.BaseSkills.FirstOrDefault(u => u.Name == obj.RelatedBaseSkillName).SumBonus;
@@ -922,8 +944,7 @@
                     AllParams.Character.CurrentExpPoints -= expChange;
                     AllParams.Character.UsedExpPoints += expChange;
                     obj.BaseBonus++;
-
-                    //obj.SumAll();
+                    IsLeaveAllowed = false;
                 }
                 else
                     await _jsRuntime.SpecialSkillLimit("Not enought experience points");
@@ -943,20 +964,21 @@
 
     private async Task DecrSSBonus(SpecialSkillDTO obj)
     {
+       
         var expChange = 1 * obj.BaseBonus;
         if (obj.BaseBonus > 0)
         {
             AllParams.Character.CurrentExpPoints += expChange;
             AllParams.Character.UsedExpPoints -= expChange;
             obj.BaseBonus--;
-
-            //obj.SumAll();
+            IsLeaveAllowed = false;
         }
     }
 
 
     private async Task ChangeSSRelatedAttribute(string attrName, string specSkillName)
     {
+        
         try
         {
             if (attrName != null && attrName != "0" && specSkillName != null)
@@ -969,7 +991,7 @@
                     if (attr == null) return;
                     obj.AttributeBonus = attr.Modifier;
                     obj.AddPropertyListener(attr);
-                    //obj.SumAll();
+                    IsLeaveAllowed = false;
                 }
                 return;
             }
@@ -983,6 +1005,7 @@
     }
     private void SpecialSkillNameChanged(string specSkillName, SpecialSkillDTO specSkill)
     {
+        
         try
         {
             if (!string.IsNullOrEmpty(specSkillName) && specSkill!= null)
@@ -1003,6 +1026,7 @@
                 {
                     specSkill.Name = specSkillName;
                 }
+                IsLeaveAllowed = false;
                 StateHasChanged();
             }
         }
@@ -1016,6 +1040,7 @@
 
     private async Task AddSSRelatedBaseSkill(SpecialSkillDTO obj)
     {
+        
         try
         {
             if (obj != null && obj.RelatedBaseSkillName != null && obj.Name != null)
@@ -1024,7 +1049,7 @@
                 if (baseSkill == null) return;
                 obj.BaseSkillBonus = baseSkill.SumBonus;
                 obj.AddPropertyListener(baseSkill);
-                //obj.SumAll();
+                IsLeaveAllowed = false;
                 return;
             }
         }
@@ -1038,6 +1063,7 @@
 
     private async Task ChangeProfRelatedAttribute()
     {
+        
         try
         {
             if (string.IsNullOrEmpty(AllParams.Profession.RelatedAttributeName) == false)
@@ -1046,6 +1072,7 @@
                 if (attr == null)
                     throw new Exception();
                 AllParams.Profession.AddPropertyListener(attr);
+                IsLeaveAllowed = false;
             }
         }
         catch (Exception ex)
@@ -1075,7 +1102,7 @@
 
     protected async Task TraitsChange()
     {
-
+        IsLeaveAllowed = false;
         IEnumerable<FeatureDTO>[] allFeatures = { AllParams.Attributes, AllParams.BaseSkills, AllParams.SpecialSkills };
         bool sum = false;
 
@@ -1101,7 +1128,6 @@
                 }
                 if (sum)
                 {
-                    //obj.SumAll();
                     sum = false;
                 }
             }
@@ -1171,6 +1197,7 @@
 
     private async Task AutoChooseRelatedAttribute()
     {
+        IsLeaveAllowed = false;
         IsLoading = true;
         StateHasChanged();
         foreach(var skill in AllParams.SpecialSkills){
@@ -1204,13 +1231,13 @@
 
             context.PreventNavigation();
             HandleLeavePage();
-            //add some window with question
         }
 
         return ValueTask.CompletedTask;
     }
     private async Task AddSpecialSkill(BaseSkillDTO baseSkill)
     {
+        IsLeaveAllowed = false;
         var newSkill = new SpecialSkillDTO();
         newSkill.RelatedBaseSkill = baseSkill;
         newSkill.RelatedBaseSkillName = baseSkill.Name;

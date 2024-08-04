@@ -4,7 +4,7 @@
         "debug": false,
         "newestOnTop": false,
         "progressBar": false,
-        "positionClass": "toast-top-right",
+        "positionClass": "toast-bottom-right",
         "preventDuplicates": true,
         "onclick": null,
         "showDuration": "300",
@@ -20,22 +20,22 @@
 
   
     if (type === "success") {
-        toastr.success(message, 'Success', { timeOut: 5000, positionClas: "toast-top-right"});
+        toastr.success(message, 'Success', { timeOut: 5000, positionClas: "toast-bottom-right"});
     }
     if (type === "error") {
-        toastr.error(message, 'Error', { timeOut: 5000, positionClas: "toast-top-right" });
+        toastr.error(message, 'Error', { timeOut: 5000, positionClas: "toast-bottom-right" });
     }
     if (type === "warning") {
-        toastr.error(message, 'Warning', { timeOut: 5000, positionClas: "toast-top-right" });
+        toastr.error(message, 'Warning', { timeOut: 5000, positionClas: "toast-bottom-right" });
     }
     if (type === "attributeLimit") {
-        toastr.warning(message, 'Attribute Limit', { timeOut: 5000, positionClas: "toast-top-right" });
+        toastr.warning(message, 'Attribute Limit', { timeOut: 5000, positionClas: "toast-bottom-right" });
     }
     if (type === "baseSkillLimit") {
-        toastr.warning(message, 'Base Skill Limit', { timeOut: 5000, positionClas: "toast-top-right" });
+        toastr.warning(message, 'Base Skill Limit', { timeOut: 5000, positionClas: "toast-bottom-right" });
     }
     if (type === "specialSkillLimit") {
-        toastr.warning(message, 'Special Skill Limit', { timeOut: 5000, positionClas: "toast-top-right" });
+        toastr.warning(message, 'Special Skill Limit', { timeOut: 5000, positionClas: "toast-bottom-right" });
     }
 }
 

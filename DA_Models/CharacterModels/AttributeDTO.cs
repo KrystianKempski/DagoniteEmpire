@@ -32,7 +32,7 @@ namespace DA_Models.CharacterModels
             get
             {
                 int mod = (int)Math.Floor((SumAbsolute - 10) / 2.0);
-                if (_modifier == mod) return _modifierAbsolute;
+                if (_modifierAbsolute == mod) return _modifierAbsolute;
                 _modifierAbsolute = mod;
                // OnModifierChanged(nameof(Modifier));
                 return mod;
