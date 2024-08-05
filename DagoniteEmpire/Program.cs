@@ -85,7 +85,7 @@ builder.Services.Configure<EmailConfiguration>(options =>
 var app = builder.Build();
 
 
-Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(builder.Configuration["SyncfusionKey"]);
+Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(builder.Configuration["Ngo9BigBOggjHTQxAR8/V1NAaF5cWWJCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWXdedXVTRWRYUkZ/WEQ="]);
 
 
 
