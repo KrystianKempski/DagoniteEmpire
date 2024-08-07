@@ -14,9 +14,13 @@
 @inject IUserService _userService
 @inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
+@inject IMapper _mapper
+@using AutoMapper
+@using DA_DataAccess.CharacterClasses
 @using DA_Models
 
 @using Syncfusion.Blazor.Navigations
+@using System.Text.Json
 
 @inject NavigationManager _navigationManager
 <_LeavePage IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click" ></_LeavePage>
@@ -427,7 +431,7 @@
                 </div>
             </section>
             <div class="form-group py-2">
-            @* <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button> *@
+           @*   <button @onclick="SaveToJSON" class="btn btn-primary">Save to Json</button>  *@
                 <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
             </div>
            
@@ -709,7 +713,7 @@
     }
     public async Task DeleteCharacterHandler()
     {
-        
+
         try
         {
             if (AllParams.Character.Id == 0)
@@ -742,7 +746,7 @@
 
     private async Task HandleImageUpload(InputFileChangeEventArgs e)
     {
-        
+
         IsLoading = true;
         try
         {
@@ -776,7 +780,7 @@
 
     private async Task IncrAttr(AttributeDTO obj)
     {
-        
+
         var ok = false;
         if (AllParams.Character.IsApproved == false)
         {
@@ -828,7 +832,7 @@
 
     private async Task DecrAttr(AttributeDTO obj)
     {
-        
+
         if (AllParams.Character.IsApproved == false)
         {
             if (obj.BaseBonus > 6)
@@ -855,7 +859,7 @@
 
     private async Task IncrBSBonus(BaseSkillDTO obj)
     {
-        
+
         try
         {
             var relatedAttribute1 = AllParams.Attributes.FirstOrDefault(u => u.Name == obj.RelatedAttribute1).BaseBonus;
@@ -892,7 +896,7 @@
 
     private async Task DecrBSBonus(BaseSkillDTO obj)
     {
-        
+
         var expChange = 3 * obj.BaseBonus;
         if (obj.BaseBonus > 0)
         {
@@ -929,7 +933,7 @@
 
     private async Task IncrSSBonus(SpecialSkillDTO obj)
     {
-        
+
         try
         {
             var limit = AllParams.BaseSkills.FirstOrDefault(u => u.Name == obj.RelatedBaseSkillName).SumBonus;
@@ -964,7 +968,7 @@
 
     private async Task DecrSSBonus(SpecialSkillDTO obj)
     {
-       
+
         var expChange = 1 * obj.BaseBonus;
         if (obj.BaseBonus > 0)
         {
@@ -978,7 +982,7 @@
 
     private async Task ChangeSSRelatedAttribute(string attrName, string specSkillName)
     {
-        
+
         try
         {
             if (attrName != null && attrName != "0" && specSkillName != null)
@@ -1005,7 +1009,7 @@
     }
     private void SpecialSkillNameChanged(string specSkillName, SpecialSkillDTO specSkill)
     {
-        
+
         try
         {
             if (!string.IsNullOrEmpty(specSkillName) && specSkill!= null)
@@ -1040,7 +1044,7 @@
 
     private async Task AddSSRelatedBaseSkill(SpecialSkillDTO obj)
     {
-        
+
         try
         {
             if (obj != null && obj.RelatedBaseSkillName != null && obj.Name != null)
@@ -1063,7 +1067,7 @@
 
     private async Task ChangeProfRelatedAttribute()
     {
-        
+
         try
         {
             if (string.IsNullOrEmpty(AllParams.Profession.RelatedAttributeName) == false)
@@ -1166,6 +1170,20 @@
         AllParams.SpecialSkills.Add(newSkill);
         StateHasChanged();
     }
+
+    // private async Task SaveToJSON()
+    // {
+    //     // try{
+    //     //     var charac = _mapper.Map<CharacterDTO, Character>(AllParams.Character);
+    //     //     string jsonString = JsonSerializer.Serialize<Character>(charac);
+    //     //     ;
+    //     // }
+    //     // catch(Exception ex)
+    //     // {
+    //     //     ;
+    //     // }
+
+    // }
 
     public void Dispose() => registration?.Dispose();
 }
