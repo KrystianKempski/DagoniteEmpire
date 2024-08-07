@@ -1,5 +1,6 @@
 ﻿@inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject IUserService _userService
+@inject NavigationManager _navigationManager
 <div class="equipment">
     <h3 class="my-3 ml-3 text-center">EQUIPMENT</h3>
     <div class="table-container">
@@ -72,8 +73,10 @@
         <div class="buttons-row">
             <button @onclick="@(()=>AddCustomEquipment())" class="add-trait">Add new</button>
             <button @onclick="@(()=>AddExistingEquipment())" class="add-trait">Existing items</button>
-            @* @if()
-            <button @onclick="@(()=>GoToItemPage())" class="add-trait">Existing items</button> *@
+            @if (AllParams.Character.IsApproved == true && PageMode)
+            {
+                <button @onclick="@(()=>GoToItemPage())" class="add-trait">Existing items</button>
+            }
         </div>
     </div>
 
@@ -94,6 +97,11 @@
 
     [Parameter]
     public EventCallback OnTraitsChange { get; set; }
+
+    [Parameter]
+    public bool PageMode { get; set; }
+
+    UserInfo? UserInfo { get; set; }
 
     private SfRichTextEditor DescrEdit = new();
 
@@ -120,6 +128,7 @@
                     obj = value.EquipmentDTO;
                 }
 
+                AllParams.TraitsChange();
                 OnTraitsChange.InvokeAsync();
             }
             if (_customEquipmentComponent == value) return;
@@ -142,6 +151,7 @@
                         AllParams.Equipment.Add(equ);
                     }
                 }
+                AllParams.TraitsChange();
                 OnTraitsChange.InvokeAsync();
                 CalculateEquipWeightAndPrice();
 
@@ -176,6 +186,11 @@
         EquipmentChosen.IsVisible = true;
     }
 
+    private async Task GoToItemPage()
+    {
+        _navigationManager.NavigateTo($"/equipment/{AllParams.Character.Id}");
+    }
+
     private async Task EditEquipment(EquipmentDTO equ)
     {
         CustomEquipmentComponent.EquipmentDTO = equ;
@@ -197,6 +212,7 @@
             }
         }
         AllParams.Equipment = AllParams.Equipment.Where(u => u.Name != equ.Name).ToList();
+        await AllParams.TraitsChange();
         OnTraitsChange.InvokeAsync();
         CalculateEquipWeightAndPrice();
     }
@@ -233,6 +249,7 @@
     {
         if (firstRender)
         {
+            UserInfo = await _userService.GetUserInfo();
             CalculateEquipWeightAndPrice();
         }
     }

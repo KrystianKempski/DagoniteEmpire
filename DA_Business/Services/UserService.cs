@@ -33,30 +33,42 @@ namespace DA_Business.Services
 
         public async Task InitUserInfoAtStart()
         {
-            if (_userInfo.UserId is null)
+            try
             {
-                var user = (await _authState.GetAuthenticationStateAsync()).User;
-                _userInfo.UserId = user.Claims.Where(a => a.Type == System.Security.Claims.ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
-                if (user == null)
-                    return; // failed to load
+                if (_userInfo.UserId is null)
+                {
 
-                _userInfo.IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-                _userInfo.UserName = user.Identity?.Name;
-                _userInfo.IsAuthenticated = user.Identity?.IsAuthenticated;
-                if (user.IsInRole(SD.Role_HeroPlayer))
-                {
-                    _userInfo.Role = SD.Role_HeroPlayer;
-                }else if (user.IsInRole(SD.Role_DukePlayer)){
-                    _userInfo.Role = SD.Role_DukePlayer;
+
+                    var user = (await _authState.GetAuthenticationStateAsync()).User;
+                    if (user is null)
+                        return; // failed to load
+
+                    _userInfo.IsAuthenticated = user.Identity?.IsAuthenticated;
+                    _userInfo.UserId = user.Claims.Where(a => a.Type == System.Security.Claims.ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
+                    _userInfo.IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+                    _userInfo.UserName = user.Identity?.Name;
+                    if (user.IsInRole(SD.Role_HeroPlayer))
+                    {
+                        _userInfo.Role = SD.Role_HeroPlayer;
+                    }else if (user.IsInRole(SD.Role_DukePlayer)){
+                        _userInfo.Role = SD.Role_DukePlayer;
+                    }
+                    else if (user.IsInRole(SD.Role_Admin))
+                    {
+                        _userInfo.Role = SD.Role_Admin;
+                    }
+                    else if (user.IsInRole(SD.Role_GameMaster))
+                    {
+                        _userInfo.Role = SD.Role_GameMaster;
+                    }
+                    if (user.Identity?.IsAuthenticated is null)
+                        return;
+                    await GetUserInfo();
                 }
-                else if (user.IsInRole(SD.Role_Admin))
-                {
-                    _userInfo.Role = SD.Role_Admin;
-                }
-                else if (user.IsInRole(SD.Role_GameMaster))
-                {
-                    _userInfo.Role = SD.Role_GameMaster;
-                }
+            }
+            catch (Exception ex)
+            {
+                ;
             }
         }
 
@@ -69,14 +81,16 @@ namespace DA_Business.Services
                 {
                     using var contex = await _db.CreateDbContextAsync();
                     var user = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.Id == _userInfo.UserId);
-                    _userInfo.SelectedCharacterId = user.SelectedCharacterId;
-                    _userInfo.IsUserUpdated = true;
+                    if(user is not null)
+                    {
+                        _userInfo.SelectedCharacterId = user.SelectedCharacterId;
+                        _userInfo.IsUserUpdated = true;
+                    }
                 }
             }
             else
             {
                 await InitUserInfoAtStart();
-                return await GetUserInfo();
             }
             return _userInfo;
         }

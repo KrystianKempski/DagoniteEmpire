@@ -1,6 +1,8 @@
 ﻿@page
+@using DA_Business.Services.Interfaces
  @using Microsoft.AspNetCore.Identity
  @inject SignInManager<ApplicationUser> _signInManager
+ @inject IUserService _userService
 
 @functions{
     public async Task<IActionResult> OnGet()
@@ -8,6 +10,15 @@
         if (_signInManager.IsSignedIn(User))
         {
             await _signInManager.SignOutAsync();
+            var userInfo = await _userService.GetUserInfo();
+            if(userInfo is not null)
+            {
+                userInfo.IsAdminOrMG = null;
+                userInfo.UserName = null;
+                userInfo.IsAuthenticated = false;
+                userInfo.UserId = null;
+                userInfo.IsUserUpdated = false;
+            }
         }
         return Redirect("~/");
     }

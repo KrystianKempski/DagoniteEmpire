@@ -76,14 +76,13 @@
 
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
+    [Parameter]
+    public EventCallback OnTraitsChange { get; set; }
 
     public UserInfo? UserInfo { get; set; }
 
     [Parameter]
     public string TraitType { get; set; } = string.Empty;
-
-    [Parameter]
-    public EventCallback OnTraitsChange { get; set; }
 
 
     private CustomTraitModel _customTraitComponent = new();
@@ -106,6 +105,7 @@
                 }
 
                 TraitsChanged.InvokeAsync(Traits);
+                AllParams.TraitsChange();
                 OnTraitsChange.InvokeAsync();
                 CalculateTraitBalance();
             }
@@ -130,6 +130,7 @@
                     }
                 }
                 TraitsChanged.InvokeAsync(Traits);
+                AllParams.TraitsChange();
                 OnTraitsChange.InvokeAsync();
                 CalculateTraitBalance();
             }

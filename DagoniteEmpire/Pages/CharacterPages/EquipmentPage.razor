@@ -1,0 +1,210 @@
+﻿@page "/equipment/{id:int}"
+@using DA_Business.Services.Interfaces
+@using DA_DataAccess.CharacterClasses
+@inject IJSRuntime _jsruntime
+@inject ICharacterRepository _characterRepository
+@inject IAttributeRepository _attributeRepository
+@inject IEquipmentRepository _equipmentRepository
+@inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
+@inject IDialogService DialogService
+@inject NavigationManager _navigationManager
+@inject IUserService _userService
+
+@inject IJSRuntime _jsRuntime
+
+<div class="equipment">
+    <div class="equipment border">
+        <CascadingValue Value="@AllParams">
+            <EquipmentComponent PageMode=true></EquipmentComponent>
+        </CascadingValue>
+    </div>
+</div>
+
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+    public AllParamsModel AllParams { get; set; } = new();
+
+
+
+    UserInfo? UserInfo { get; set; }
+
+    private bool IsLoading { get; set; } = true;
+
+    private SfRichTextEditor DescrEdit = new();
+
+    private decimal EquipmentWeight;
+    private decimal EquipmentPrice;
+
+
+    private CustomEquipmentModel _customEquipmentComponent = new();
+    private CustomEquipmentModel CustomEquipmentComponent
+    {
+        get => _customEquipmentComponent;
+        set
+        {
+            if (value.EquipmentDTO != null)
+            {
+                var obj = AllParams.Equipment.FirstOrDefault(u => u.Name == value.EquipmentDTO.Name);
+                if (obj == null)
+                {
+                    AllParams.Equipment.Add(value.EquipmentDTO);
+
+                }
+                else
+                {
+                    obj = value.EquipmentDTO;
+                }
+
+                AllParams.TraitsChange();
+                //OnTraitsChange.InvokeAsync();
+            }
+            if (_customEquipmentComponent == value) return;
+            _customEquipmentComponent = value;
+        }
+    }
+
+    private EquipmentChosenModel _equipmentChosen;
+    private EquipmentChosenModel EquipmentChosen
+    {
+        get => _equipmentChosen;
+        set
+        {
+            if (value.EquipmentChosen != null && value.EquipmentChosen.Count() > 0)
+            {
+                foreach (var equ in value.EquipmentChosen)
+                {
+                    if (AllParams.Equipment.FirstOrDefault(u => u.Name == equ.Name) == null)
+                    {
+                        AllParams.Equipment.Add(equ);
+                    }
+                }
+                AllParams.TraitsChange();
+                //OnTraitsChange.InvokeAsync();
+                CalculateEquipWeightAndPrice();
+
+            }
+            if (_equipmentChosen == value) return;
+            _equipmentChosen = value;
+
+        }
+    }
+
+    private async Task CalculateEquipWeightAndPrice()
+    {
+        EquipmentWeight = 0.0m;
+        EquipmentPrice = 0.0m;
+        foreach (var equ in AllParams.Equipment)
+        {
+            EquipmentWeight += equ.Weight;
+            EquipmentPrice += equ.Price;
+        }
+        StateHasChanged();
+    }
+
+    private async Task AddCustomEquipment()
+    {
+        CustomEquipmentComponent.EquipmentDTO = new();
+        CustomEquipmentComponent.Traits = new List<TraitDTO>();
+        CustomEquipmentComponent.IsVisible = true;
+    }
+    private async Task AddExistingEquipment()
+    {
+        EquipmentChosen = new();
+        EquipmentChosen.IsVisible = true;
+    }
+
+    private async Task GoToItemPage()
+    {
+        _navigationManager.NavigateTo($"/equipment/{AllParams.Character.Id}");
+    }
+
+    private async Task EditEquipment(EquipmentDTO equ)
+    {
+        CustomEquipmentComponent.EquipmentDTO = equ;
+        CustomEquipmentComponent.Traits = CustomEquipmentComponent.EquipmentDTO.Traits.OfType<TraitDTO>().ToList();
+        CustomEquipmentComponent.IsVisible = true;
+        CustomEquipmentComponent.IsEditMode = true;
+        CalculateEquipWeightAndPrice();
+    }
+
+    private async Task DeleteEquipment(EquipmentDTO equ)
+    {
+        if (equ.Id != 0)
+        {
+
+            if (equ.IsApproved == false)
+            {
+                await _traitEquipmentRepository.Delete(equ.Id);
+
+            }
+        }
+        AllParams.Equipment = AllParams.Equipment.Where(u => u.Name != equ.Name).ToList();
+        await AllParams.TraitsChange();
+        //OnTraitsChange.InvokeAsync();
+        CalculateEquipWeightAndPrice();
+    }
+
+
+    private async Task IncrCount(EquipmentDTO obj)
+    {
+
+        decimal unitWeigh = obj.Weight / obj.Count;
+        decimal unitPrice = obj.Price / obj.Count;
+        obj.Count++;
+        obj.Weight = unitWeigh * obj.Count;
+        obj.Price = unitPrice * obj.Count;
+
+        CalculateEquipWeightAndPrice();
+    }
+
+    private async Task DecrCount(EquipmentDTO obj)
+    {
+        if (obj.Count > 1)
+        {
+            decimal unitWeigh = obj.Weight / obj.Count;
+            decimal unitPrice = obj.Price / obj.Count;
+
+            obj.Count--;
+
+            obj.Weight = unitWeigh * obj.Count;
+            obj.Price = unitPrice * obj.Count;
+            CalculateEquipWeightAndPrice();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                IsLoading = true;
+
+                StateHasChanged();
+
+                await LoadCharacter();
+
+                IsLoading = false;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                IsLoading = false;
+                await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+            }
+        }
+    }
+
+    private async Task LoadCharacter()
+    {
+        AllParams.Character = await _characterRepository.GetById(Id);
+        AllParams.Attributes = await _attributeRepository.GetAll(Id);
+        AllParams.Equipment = (await _equipmentRepository.GetAll(Id)).ToList();
+    }
+
+}

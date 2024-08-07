@@ -22,9 +22,7 @@
                 <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/campaignlist"><MudIcon Class="px-1" Icon="@Icons.Material.Filled.Chat"></MudIcon>Campaign</MudButton>
             <AuthorizeView>
                 <Authorized>
-                    <CascadingValue Value="@UserInfo">
-                        <CharacterNavButtons></CharacterNavButtons>
-                    </CascadingValue>
+                    <CharacterNavButtons></CharacterNavButtons>
                 </Authorized>
             </AuthorizeView>
                 
@@ -40,9 +38,7 @@
     </MudAppBar>
     <div class="small-screen">
         <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
-            <CascadingValue Value="@UserInfo">
-                <NavMenu />
-            </CascadingValue>
+            <NavMenu />
         </MudDrawer>
     </div>
     
@@ -79,15 +75,16 @@
 
     protected override async Task OnInitializedAsync()
     {
-
+        await _userService.InitUserInfoAtStart();
 
     }   
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await _userService.InitUserInfoAtStart();
-        }
+        //await _userService.InitUserInfoAtStart();
+        // if (firstRender)
+        // {
+        //     await _userService.InitUserInfoAtStart();
+        // }
     }
 }

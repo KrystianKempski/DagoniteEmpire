@@ -1103,97 +1103,10 @@
     protected async Task TraitsChange()
     {
         IsLeaveAllowed = false;
-        IEnumerable<FeatureDTO>[] allFeatures = { AllParams.Attributes, AllParams.BaseSkills, AllParams.SpecialSkills };
-        bool sum = false;
-
-        //clear all traits bonuses
-        foreach (var feat in allFeatures)
-        {
-            foreach (var obj in feat)
-            {
-                if (obj.TraitBonus != 0)
-                {
-                    obj.TraitBonus = 0;
-                    sum = true;
-                }
-                if (obj.RaceBonus != 0)
-                {
-                    obj.RaceBonus = 0;
-                    sum = true;
-                }
-                if (obj.GearBonus != 0)
-                {
-                    obj.GearBonus = 0;
-                    sum = true;
-                }
-                if (sum)
-                {
-                    sum = false;
-                }
-            }
-        }
-
-        // calculate all traits adv
-        CalculateTraits(AllParams.Traits, SD.TraitType_Advantage);
-
-        // calculate all race traits
-        CalculateTraits(AllParams.CurrentRace.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Race);
-
-        foreach (var equ in AllParams.Equipment)
-        {
-            if (equ.Traits != null)
-            {
-                CalculateTraits(equ.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
-            }
-        }
 
         StateHasChanged();
     }
 
-    private async Task CalculateTraits(ICollection<TraitDTO> traits, string TraitType)
-    {
-        FeatureDTO? feature = null;
-        // calculate all traits adv
-        string bonusName;
-        switch (TraitType)
-        {
-            case SD.TraitType_Advantage: bonusName = nameof(feature.TraitBonus); break;
-            case SD.TraitType_Gear: bonusName = nameof(feature.GearBonus); break;
-            case SD.TraitType_Race: bonusName = nameof(feature.RaceBonus); break;
-            default: bonusName = string.Empty; break;
-        }
-
-        foreach (var trait in traits)
-        {
-            if (trait.TraitType != SD.TraitType_Advantage)
-                AllParams.Character.TraitBalance += trait.TraitValue;
-
-            foreach (var bonus in trait.Bonuses)
-            {
-                switch (bonus.FeatureType)
-                {
-                    case SD.FeatureAttribute:
-                        feature = AllParams.Attributes.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    case SD.FeatureBaseSkill:
-                        feature = AllParams.BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    case SD.FeatureSpecialSkill:
-                        feature = AllParams.SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
-                        break;
-                    default:
-                        feature = null;
-                        break;
-                }
-                if (feature != null)
-                {
-                    int newVal = (int)feature.GetType().GetProperty(bonusName).GetValue(feature, null) + bonus.BonusValue;
-                    feature.GetType().GetProperty(bonusName).SetValue(feature, newVal);
-                    //feature.SumAll();
-                }
-            }
-        }
-    }
 
     private async Task AutoChooseRelatedAttribute()
     {

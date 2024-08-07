@@ -101,7 +101,7 @@
                 {
                     obj = value.RaceDTO;
                 }
-
+                AllParams.TraitsChange();
                 OnTraitsChange.InvokeAsync();
             }
             if (_customRaceComponent == value) return;
@@ -170,7 +170,7 @@
             ShowNameLabel = false;
             AllParams.CurrentRace = AllParams.Races.FirstOrDefault(r => r.Name == raceName);
         }
-
+        await AllParams.TraitsChange();
         OnTraitsChange.InvokeAsync();
         SelectedRace = raceName;
         StateHasChanged();

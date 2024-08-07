@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -16,6 +17,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 
 using DA_DataAccess;
+using DA_Business.Services.Interfaces;
 namespace DagoniteEmpire.Areas.Identity.Pages.Account
 {
     public class LoginModel : PageModel
@@ -23,12 +25,14 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
         private readonly SignInManager<ApplicationUser>_signInManager;
         private readonly ILogger<LoginModel> _logger;
         private readonly UserManager<ApplicationUser>_userManager;
+        private readonly IUserService _userService;
 
-        public LoginModel(SignInManager<ApplicationUser>signInManager, ILogger<LoginModel> logger, UserManager<ApplicationUser>userManager)
+        public LoginModel(SignInManager<ApplicationUser>signInManager, ILogger<LoginModel> logger, UserManager<ApplicationUser>userManager, IUserService userService)
         {
             _signInManager = signInManager;
             _logger = logger;
             _userManager = userManager;
+            _userService = userService;
         }
 
         /// <summary>
@@ -129,6 +133,9 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+
+                   // await _userService.InitUserInfoAtStart();
+
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
