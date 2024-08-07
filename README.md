@@ -43,4 +43,7 @@ Multiple frameworks and tools were used for best apperience and user-friendly in
 
 ## 🏗️ Deploy
 Application is built automatically when new release is published using Github Actions as a Docker image and pushed to DockerHub. FluxCD residing on private Kubernetes cluster is monitoring DockerHub registry and when a new version is ready it recreates the app container with new image wihitn 5 minutes. Deployment configuration is set using custom helm chart available in [drik-homelab-helm-charts](https://github.com/drikqlis/drik-homelab-helm-charts) repository and managed by FluxCD.
+
+## :building_construction:	Build info
+To build application PostreSQL server is required
  
