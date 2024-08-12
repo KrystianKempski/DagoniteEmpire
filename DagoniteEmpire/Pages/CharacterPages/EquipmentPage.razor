@@ -12,170 +12,48 @@
 
 @inject IJSRuntime _jsRuntime
 
-<div class="equipment">
-    <div class="equipment border">
-        <CascadingValue Value="@AllParams">
-            <EquipmentComponent PageMode=true></EquipmentComponent>
-        </CascadingValue>
+<div class="container-fluid">
+    <div class="row">
+        <div class="equipment border">
+            <CascadingValue Value="@AllParams">
+                <EquipmentComponent PageMode=true></EquipmentComponent>
+            </CascadingValue>
+        </div>
+
+        <div class="item-placement">
+            <div class="sheet-img">
+                <img src="../images/CharacterItemPlacement.webp" class="stretch" />
+            </div>
+            <div class="input">
+            @* <InputSelect style="width: 100%; padding: 2px 0px 2px 0px; background-color: transparent; border: 1px solid RGB(206 212 218); border-radius: 4px;"
+                         ValueExpression="@(()=>SelectedRace)"
+                         Value="@SelectedRace"
+                         ValueChanged="@((string value) => ChangeItem(value))">
+                <option value="0" selected disabled>--Select item--</option>
+                @foreach (var race in AllParams.Equipment)
+                {
+                    <option value="@race.Name">@race.Name</option>
+                }
+                <option value="Custom race">Custom race</option>
+            </InputSelect> *@
+
+                </div>
+        </div>
     </div>
 </div>
 
 
 
 @code {
-
     [Parameter]
     public int Id { get; set; }
-
     public AllParamsModel AllParams { get; set; } = new();
-
-
 
     UserInfo? UserInfo { get; set; }
 
     private bool IsLoading { get; set; } = true;
 
-    private SfRichTextEditor DescrEdit = new();
 
-    private decimal EquipmentWeight;
-    private decimal EquipmentPrice;
-
-
-    private CustomEquipmentModel _customEquipmentComponent = new();
-    private CustomEquipmentModel CustomEquipmentComponent
-    {
-        get => _customEquipmentComponent;
-        set
-        {
-            if (value.EquipmentDTO != null)
-            {
-                var obj = AllParams.Equipment.FirstOrDefault(u => u.Name == value.EquipmentDTO.Name);
-                if (obj == null)
-                {
-                    AllParams.Equipment.Add(value.EquipmentDTO);
-
-                }
-                else
-                {
-                    obj = value.EquipmentDTO;
-                }
-
-                AllParams.TraitsChange();
-                //OnTraitsChange.InvokeAsync();
-            }
-            if (_customEquipmentComponent == value) return;
-            _customEquipmentComponent = value;
-        }
-    }
-
-    private EquipmentChosenModel _equipmentChosen;
-    private EquipmentChosenModel EquipmentChosen
-    {
-        get => _equipmentChosen;
-        set
-        {
-            if (value.EquipmentChosen != null && value.EquipmentChosen.Count() > 0)
-            {
-                foreach (var equ in value.EquipmentChosen)
-                {
-                    if (AllParams.Equipment.FirstOrDefault(u => u.Name == equ.Name) == null)
-                    {
-                        AllParams.Equipment.Add(equ);
-                    }
-                }
-                AllParams.TraitsChange();
-                //OnTraitsChange.InvokeAsync();
-                CalculateEquipWeightAndPrice();
-
-            }
-            if (_equipmentChosen == value) return;
-            _equipmentChosen = value;
-
-        }
-    }
-
-    private async Task CalculateEquipWeightAndPrice()
-    {
-        EquipmentWeight = 0.0m;
-        EquipmentPrice = 0.0m;
-        foreach (var equ in AllParams.Equipment)
-        {
-            EquipmentWeight += equ.Weight;
-            EquipmentPrice += equ.Price;
-        }
-        StateHasChanged();
-    }
-
-    private async Task AddCustomEquipment()
-    {
-        CustomEquipmentComponent.EquipmentDTO = new();
-        CustomEquipmentComponent.Traits = new List<TraitDTO>();
-        CustomEquipmentComponent.IsVisible = true;
-    }
-    private async Task AddExistingEquipment()
-    {
-        EquipmentChosen = new();
-        EquipmentChosen.IsVisible = true;
-    }
-
-    private async Task GoToItemPage()
-    {
-        _navigationManager.NavigateTo($"/equipment/{AllParams.Character.Id}");
-    }
-
-    private async Task EditEquipment(EquipmentDTO equ)
-    {
-        CustomEquipmentComponent.EquipmentDTO = equ;
-        CustomEquipmentComponent.Traits = CustomEquipmentComponent.EquipmentDTO.Traits.OfType<TraitDTO>().ToList();
-        CustomEquipmentComponent.IsVisible = true;
-        CustomEquipmentComponent.IsEditMode = true;
-        CalculateEquipWeightAndPrice();
-    }
-
-    private async Task DeleteEquipment(EquipmentDTO equ)
-    {
-        if (equ.Id != 0)
-        {
-
-            if (equ.IsApproved == false)
-            {
-                await _traitEquipmentRepository.Delete(equ.Id);
-
-            }
-        }
-        AllParams.Equipment = AllParams.Equipment.Where(u => u.Name != equ.Name).ToList();
-        await AllParams.TraitsChange();
-        //OnTraitsChange.InvokeAsync();
-        CalculateEquipWeightAndPrice();
-    }
-
-
-    private async Task IncrCount(EquipmentDTO obj)
-    {
-
-        decimal unitWeigh = obj.Weight / obj.Count;
-        decimal unitPrice = obj.Price / obj.Count;
-        obj.Count++;
-        obj.Weight = unitWeigh * obj.Count;
-        obj.Price = unitPrice * obj.Count;
-
-        CalculateEquipWeightAndPrice();
-    }
-
-    private async Task DecrCount(EquipmentDTO obj)
-    {
-        if (obj.Count > 1)
-        {
-            decimal unitWeigh = obj.Weight / obj.Count;
-            decimal unitPrice = obj.Price / obj.Count;
-
-            obj.Count--;
-
-            obj.Weight = unitWeigh * obj.Count;
-            obj.Price = unitPrice * obj.Count;
-            CalculateEquipWeightAndPrice();
-        }
-    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

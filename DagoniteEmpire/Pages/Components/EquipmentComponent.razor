@@ -73,9 +73,9 @@
         <div class="buttons-row">
             <button @onclick="@(()=>AddCustomEquipment())" class="add-trait">Add new</button>
             <button @onclick="@(()=>AddExistingEquipment())" class="add-trait">Existing items</button>
-            @if (AllParams.Character.IsApproved == true && PageMode)
+            @if (AllParams.Character.IsApproved == true && PageMode == false)
             {
-                <button @onclick="@(()=>GoToItemPage())" class="add-trait">Existing items</button>
+                <button @onclick="@(()=>GoToItemPage())" class="add-trait">Details</button>
             }
         </div>
     </div>

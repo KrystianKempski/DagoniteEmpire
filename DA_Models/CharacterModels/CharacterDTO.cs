@@ -1,4 +1,5 @@
-﻿using DA_DataAccess.CharacterClasses;
+﻿using DA_Common;
+using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography.X509Certificates;
@@ -30,7 +31,7 @@ namespace DA_Models.CharacterModels
         public ICollection<AttributeDTO>? Attributes { get; set; }
         public ICollection<BaseSkillDTO>? BaseSkills { get; set; }
         public ICollection<SpecialSkillDTO>? SpecialSkills { get; set; }
-        public ICollection <TraitAdvDTO>? TraitsAdv { get; set; }
+        public ICollection<TraitAdvDTO>? TraitsAdv { get; set; }
         public ICollection<EquipmentDTO>? Equipment { get; set; }
         public ICollection<CampaignDTO>? Campaigns { get; set; }
         public ICollection<PostDTO>? Posts { get; set; }
@@ -41,6 +42,9 @@ namespace DA_Models.CharacterModels
         public EquipmentDTO Armor { get; set; }
         public EquipmentDTO Weapon { get; set; }
 
+
         public override string ToString() => NPCName;
+
     }
+
 }

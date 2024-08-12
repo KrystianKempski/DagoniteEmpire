@@ -11,6 +11,10 @@ namespace DA_Models.ComponentModels
 {
     public class AllParamsModel
     {
+        public AllParamsModel()
+        {
+            InitBattleProperties();
+        }
         public CharacterDTO Character { get; set; } = new CharacterDTO();
         public RaceDTO CurrentRace { get; set; } = new RaceDTO();
         public ProfessionDTO Profession { get; set; } = new ProfessionDTO();
@@ -21,8 +25,21 @@ namespace DA_Models.ComponentModels
         public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
         public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
         public ICollection<EquipmentDTO> Equipment { get; set; } = new List<EquipmentDTO>();
+        public ICollection<BattlePropertyDTO> BattleProperties { get; set; } = new List<BattlePropertyDTO>();
+        public void InitBattleProperties()
+        {
+            BattleProperties = new List<BattlePropertyDTO>();
+            foreach (var prop in SD.BattleProperty.All)
+            {
+                BattleProperties.Add(new BattlePropertyDTO() { Name = prop, BaseBonus = 0 });
+            }
+            foreach (var prop in SD.WeaponQuality.All)
+            {
+                BattleProperties.Add(new BattlePropertyDTO() { Name = prop, BaseBonus = 0 });
+            }
+        }
 
-        public bool IsAdminOrMG { get; set; } = false;
+    public bool IsAdminOrMG { get; set; } = false;
 
         public async Task TraitsChange()
         {
@@ -64,7 +81,7 @@ namespace DA_Models.ComponentModels
 
             foreach (var equ in Equipment)
             {
-                if (equ.Traits != null)
+                if (equ.Traits != null && equ.IsEquipped)
                 {
                     CalculateTraits(equ.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
                 }
@@ -101,6 +118,9 @@ namespace DA_Models.ComponentModels
                             break;
                         case SD.FeatureSpecialSkill:
                             feature = SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
+                            break;
+                        case SD.FeatureWeaponQuality:
+                            feature = BattleProperties.FirstOrDefault(u => u.Name == bonus.FeatureName);
                             break;
                         default:
                             feature = null;

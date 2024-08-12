@@ -568,6 +568,7 @@ namespace DagoniteEmpire.Service
                     item = new Equipment()
                     {
                         Name = "Long sword",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Main tool of all adventurers",
                         ShortDescr = "Main tool of all adventurers",
                         Count = 1,
@@ -584,6 +585,7 @@ namespace DagoniteEmpire.Service
                     item = new Equipment()
                     {
                         Name = "Leather armor",
+                        EquipmentType = SD.EquipmentType.Body,
                         Description = "Light but sturdy",
                         ShortDescr = "Light but sturdy",
                         Weight = 10.0m,
@@ -601,6 +603,7 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Bandage",
                         Description = "For dressing wounds",
+                        EquipmentType = SD.EquipmentType.Other,
                         ShortDescr = "For dressing wounds",
                         Weight = 0.2m,
                         Price = 0.01m,
@@ -616,6 +619,7 @@ namespace DagoniteEmpire.Service
                     item = new Equipment()
                     {
                         Name = "Wound balm",
+                        EquipmentType = SD.EquipmentType.Other,
                         Description = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 Dose for ligth and medium wounds, 2 for heavy, and 4 for critical",
                         ShortDescr = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 Dose for ligth and medium wounds, 2 for heavy, and 4 for critical",
                         Weight = 1.0m,
@@ -632,6 +636,7 @@ namespace DagoniteEmpire.Service
                     item = new Equipment()
                     {
                         Name = "Dagger",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Small and deadly",
                         ShortDescr = "Small and deadly",
                         Weight = 1.0m,
@@ -648,6 +653,7 @@ namespace DagoniteEmpire.Service
                     item = new Equipment()
                     {
                         Name = "Rope",
+                        EquipmentType = SD.EquipmentType.Other,
                         Description = "20 feat of strong rope",
                         ShortDescr = "20 feat of strong rope",
                         Weight = 5.0m,

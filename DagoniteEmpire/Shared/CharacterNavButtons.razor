@@ -16,6 +16,12 @@
     <img src="@MyIcon.Helm_white" width="25px" height="24px" class="helm-icon" />
     Character
 </MudButton>
+<MudButton OnClick="GoToEquipment" Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary">
+    <img src="@MyIcon.Helm_white" width="25px" height="24px" class="helm-icon" />
+    Equipment
+</MudButton>
+
+
 
 
 @code {
@@ -70,5 +76,29 @@
         }
 
     }
+    private async Task GoToEquipment()
+    {
+        try
+        {
+            UserInfo = await _userService.GetUserInfo();
+
+            if (UserInfo is not null && UserInfo.SelectedCharacterId > 0)
+            {
+                string characterLink = "/equipment/" + UserInfo.SelectedCharacterId;
+
+                _navigationManager.NavigateTo(characterLink);
+            }
+            else
+            {
+                _snackBar.Add("No character have yet been approved and selected as main", Severity.Info);
+            }
+        }
+        catch (Exception e)
+        {
+            _snackBar.Add("Uknnown error", Severity.Error);
+        }
+
+    }
+
 
 }

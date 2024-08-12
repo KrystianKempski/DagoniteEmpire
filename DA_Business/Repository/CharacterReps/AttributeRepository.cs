@@ -83,17 +83,6 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await contex.Attributes.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
-                //obj.CharacterId = objDTO.CharacterId;        //is it nessesary?
-                //obj.OtherBonuses = objDTO.OtherBonuses;        //is it nessesary?
-                //obj.RaceBonus = objDTO.RaceBonus;  //is it nessesary?
-                //obj.BaseBonus = objDTO.BaseBonus;
-                //obj.HealthBonus = objDTO.HealthBonus;
-                //obj.GearBonus = objDTO.GearBonus;
-                //obj.Index = objDTO.Index;
-                //await contex.Attributes.Update(obj);
-                //await contex.Attributes.SaveChangesAsync();
-                //return _mapper.Map<Attribute, AttributeDTO>(obj);
-
                 // Update parent
                 contex.Entry(obj).CurrentValues.SetValues(objDTO);
                 await contex.SaveChangesAsync();
