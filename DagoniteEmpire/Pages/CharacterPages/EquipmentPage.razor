@@ -5,6 +5,8 @@
 @inject ICharacterRepository _characterRepository
 @inject IAttributeRepository _attributeRepository
 @inject IEquipmentRepository _equipmentRepository
+@inject IBaseSkillRepository _baseSkillRepository
+@inject ISpecialSkillRepository _specialSkillRepository
 @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
@@ -13,6 +15,10 @@
 @inject IJSRuntime _jsRuntime
 
 <div class="container-fluid">
+    <div class="save-btn">
+        <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
+
+    </div>
     <div class="row">
         <div class="equipment border">
             <CascadingValue Value="@AllParams">
@@ -24,9 +30,15 @@
             <div class="sheet-img">
                 <img src="../images/CharacterItemPlacement.webp" class="stretch" />
             </div>
-            <div class="input">
-            @* <InputSelect style="width: 100%; padding: 2px 0px 2px 0px; background-color: transparent; border: 1px solid RGB(206 212 218); border-radius: 4px;"
-                         ValueExpression="@(()=>SelectedRace)"
+            <div class="input headgear">
+                @* <InputSelect @bind-Value="SelectedHead" class="form-select p-1">
+                    @foreach (var eq in Heads)
+                    {
+                        <option  value="@eq"> @eq.Name</option>
+                    }
+                </InputSelect> *@
+                @* <InputSelect class="form-select p-1"
+                         ValueExpression="@((string)=>SelectGear)"
                          Value="@SelectedRace"
                          ValueChanged="@((string value) => ChangeItem(value))">
                 <option value="0" selected disabled>--Select item--</option>
@@ -36,6 +48,27 @@
                 }
                 <option value="Custom race">Custom race</option>
             </InputSelect> *@
+
+                @* <InputSelect TValue="EquipmentDTO" class="form-select p-1"
+                             ValueExpression="@(()=>SelectedHead)"
+                             Value="@SelectedHead"
+                             ValueChanged="@((EquipmentDTO value) => ChangeGear(value, SD.EquipmentType.Head))">
+                    @foreach (var eq in Heads)
+                    {
+                        <option value="@eq"> @eq.Name</option>
+                    }
+                </InputSelect> *@
+
+                @if (Heads.Count() > 0)
+                {
+
+                    <MudSelect T="EquipmentDTO" @bind-Value="SelectedHead" ToStringFunc="@converter" Label="Head" AnchorOrigin="Origin.BottomCenter">
+                        @foreach (var eq in Heads)
+                        {
+                            <MudSelectItem Value="@eq">@eq.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
 
                 </div>
         </div>
@@ -52,6 +85,9 @@
     UserInfo? UserInfo { get; set; }
 
     private bool IsLoading { get; set; } = true;
+
+    public ICollection<EquipmentDTO> Heads { get; set; } = new List<EquipmentDTO>();
+    public EquipmentDTO SelectedHead { get; set; } = new();
 
 
 
@@ -83,6 +119,95 @@
         AllParams.Character = await _characterRepository.GetById(Id);
         AllParams.Attributes = await _attributeRepository.GetAll(Id);
         AllParams.Equipment = (await _equipmentRepository.GetAll(Id)).ToList();
+
+        Heads = (await _equipmentRepository.GetAll(Id)).Where(u => u.EquipmentType == SD.EquipmentType.Head).ToList();
+        SelectedHead = AllParams.Character.Head?? new();
     }
+
+    private async Task SaveChanges()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        try
+        {
+            // update equipment (in character)
+            AllParams.Character.Equipment = AllParams.Equipment;
+            AllParams.Character.Head = SelectedHead;
+
+            // update character with TraitAdv collection properly filled
+            await _characterRepository.Update(AllParams.Character);
+            foreach (var obj in AllParams.Attributes)
+            {
+                obj.CharacterId = Id;
+                await _attributeRepository.Update(obj);
+            }
+            foreach (var obj in AllParams.BaseSkills)
+            {
+                obj.CharacterId = Id;
+                await _baseSkillRepository.Update(obj);
+            }
+            foreach (var obj in AllParams.SpecialSkills)
+            {
+                obj.CharacterId = Id;
+                await _specialSkillRepository.Update(obj);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while changing equipment");
+        }
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task ChangeGear(EquipmentDTO gearName)
+    {
+
+        try
+        {
+
+            SelectedHead = gearName;
+            // if (attrName != null && attrName != "0" && specSkillName != null)
+            // {
+            //     var obj = AllParams.SpecialSkills.FirstOrDefault(u => u.Name == specSkillName);
+            //     if (obj != null)
+            //     {
+            //         obj.ChosenAttribute = attrName;
+            //         var attr = AllParams.Attributes.FirstOrDefault(p => p.Name == attrName);
+            //         if (attr == null) return;
+            //         obj.AttributeBonus = attr.Modifier;
+            //         obj.AddPropertyListener(attr);
+            //         IsLeaveAllowed = false;
+            //     }
+            //     return;
+            // }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+
+    }
+
+    
+
+    Func<EquipmentDTO, string> converter = p => p?.Name;
+
+    public readonly string Name;
+    // Note: this is important so the MudSelect can compare equipment
+    public override bool Equals(object o)
+    {
+        var other = o as EquipmentDTO;
+        return other?.Name == Name;
+    }
+
+    // Note: this is important too!
+    public override int GetHashCode() => Name?.GetHashCode() ?? 0;
+
+    // Implement this for the equipment to display correctly in MudSelect
+    public override string ToString() => Name;
 
 }

@@ -3,6 +3,7 @@ using System;
 using DA_DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240812174453_roles")]
+    partial class roles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -231,16 +234,7 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("Age")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ArmorId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ArmsId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("AttributePoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("BodyId")
                         .HasColumnType("integer");
 
                     b.Property<int>("CurrentExpPoints")
@@ -248,18 +242,6 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
-
-                    b.Property<int>("FaceId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("FeetId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("HandsId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("HeadId")
-                        .HasColumnType("integer");
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("text");
@@ -279,21 +261,6 @@ namespace DA_DataAccess.Migrations
                     b.Property<int?>("RaceId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Ring1Id")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Ring2Id")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ShouldersId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ThroatId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TorsoId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("TraitBalance")
                         .HasColumnType("integer");
 
@@ -303,12 +270,6 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("WaistId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("WeaponId")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

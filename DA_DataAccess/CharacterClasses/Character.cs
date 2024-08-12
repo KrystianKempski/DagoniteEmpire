@@ -52,5 +52,23 @@ namespace DA_DataAccess.CharacterClasses
         [ForeignKey(nameof(ProfessionId))]
         public Profession? Profession { get; set; } = null;
 
+        public int ArmorId { get; set; } = 0;
+        public int WeaponId { get; set; } = 0;
+
+        public int FaceId { get; set; } = 0;
+        public int ThroatId { get; set; } = 0;
+       public int BodyId { get; set; } = 0;
+       public int HandsId { get; set; } = 0;
+       public int WaistId { get; set; } = 0;
+       public int FeetId { get; set; } = 0;
+       public int HeadId { get; set; } = 0;
+
+       public int ShouldersId { get; set; } = 0;
+       public int TorsoId { get; set; } = 0;
+       public int ArmsId { get; set; } = 0;
+
+       public int Ring1Id { get; set; } = 0;
+       public int Ring2Id { get; set; } = 0;
+
     }
 }

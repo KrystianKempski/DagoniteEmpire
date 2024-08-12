@@ -676,22 +676,22 @@ namespace DagoniteEmpire.Service
 
                 // add character
 
-               if (_db.Characters.FirstOrDefault(c => c.NPCName == "Mściwój") == null)
-                {
-                    string contents = File.ReadAllText(@"../seederFiles/AttributesMsciwoj");
-                    object value = _db.Database.ExecuteSqlRaw(contents);
-                    //    var charac = new Character() { UserName = "player", NPCName = "Mściwój" };
-                    //    var attributes = new Feature() { Name = SD.Attributes.Strength, BaseBonus = 18  }
+               //if (_db.Characters.FirstOrDefault(c => c.NPCName == "Mściwój") == null)
+               // {
+               //     string contents = File.ReadAllText(@"../seederFiles/AttributesMsciwoj");
+               //     object value = _db.Database.ExecuteSqlRaw(contents);
+               //     //    var charac = new Character() { UserName = "player", NPCName = "Mściwój" };
+               //     //    var attributes = new Feature() { Name = SD.Attributes.Strength, BaseBonus = 18  }
 
-                    //    var profession = _db.Professions.FirstOrDefault(c => c.Name == "Warrior");
-                    //    var race = _db.Races.FirstOrDefault(c => c.Name == "Dwarf");
-                    //    charac.ProfessionId = profession.Id;
-                    //    charac.RaceId = race.Id;
-                    //    charac.ImageUrl = "../images/Msciwoj.webp";
+               //     //    var profession = _db.Professions.FirstOrDefault(c => c.Name == "Warrior");
+               //     //    var race = _db.Races.FirstOrDefault(c => c.Name == "Dwarf");
+               //     //    charac.ProfessionId = profession.Id;
+               //     //    charac.RaceId = race.Id;
+               //     //    charac.ImageUrl = "../images/Msciwoj.webp";
 
-                    //    _db.Characters.Add(charac);
-                    //    _db.SaveChanges();
-                }
+               //     //    _db.Characters.Add(charac);
+               //     //    _db.SaveChanges();
+               // }
             }
             catch (Exception ex)
             {

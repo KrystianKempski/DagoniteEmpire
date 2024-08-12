@@ -39,9 +39,21 @@ namespace DA_Models.CharacterModels
         public int RaceId { get; set; } = 0;
         public int ProfessionId { get; set; } = 0;
         public bool IsApproved { get; set; } = false;
-        public EquipmentDTO Armor { get; set; }
-        public EquipmentDTO Weapon { get; set; }
+        public EquipmentDTO? Armor { get; set; }
+        public EquipmentDTO? Weapon { get; set; }
+        public EquipmentDTO? Face { get; set; }
+        public EquipmentDTO? Throat { get; set; }
+        public EquipmentDTO? Body { get; set; }
+        public EquipmentDTO? Hands { get; set; }
+        public EquipmentDTO? Waist { get; set; }
+        public EquipmentDTO? Feet { get; set; }
+        public EquipmentDTO? Head { get; set; }
+        public EquipmentDTO? Shoulders { get; set; }
+        public EquipmentDTO? Torso { get; set; }
+        public EquipmentDTO? Arms { get; set; }
 
+        public EquipmentDTO? Ring1 { get; set; }
+        public EquipmentDTO? Ring2 { get; set; }
 
         public override string ToString() => NPCName;
 

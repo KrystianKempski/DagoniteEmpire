@@ -179,19 +179,22 @@ namespace DA_Business.Repository.CharacterReps
                 {
                     var updatedChar = _mapper.Map<CharacterDTO, Character>(objDTO);
                     var traits = await contex.TraitsAdv.ToListAsync();
+                    // Update character built-in types
+                    contex.Entry(obj).CurrentValues.SetValues(objDTO);
 
-                    obj.Age = updatedChar.Age;
-                    obj.NPCName = updatedChar.NPCName;
-                    obj.IsApproved = updatedChar.IsApproved;
-                    obj.Description = updatedChar.Description;
-                    obj.CurrentExpPoints = updatedChar.CurrentExpPoints;
-                    obj.UsedExpPoints = updatedChar.UsedExpPoints;
-                    obj.AttributePoints = updatedChar.AttributePoints;
-                    obj.NPCType = updatedChar.NPCType;
-                    obj.ImageUrl = updatedChar.ImageUrl;
-                    obj.TraitBalance = updatedChar.TraitBalance;
-                    obj.RaceId = updatedChar.RaceId;
-                    obj.ProfessionId = updatedChar.ProfessionId;
+                    //obj.Age = updatedChar.Age;
+                    //obj.NPCName = updatedChar.NPCName;
+                    //obj.IsApproved = updatedChar.IsApproved;
+                    //obj.Description = updatedChar.Description;
+                    //obj.CurrentExpPoints = updatedChar.CurrentExpPoints;
+                    //obj.UsedExpPoints = updatedChar.UsedExpPoints;
+                    //obj.AttributePoints = updatedChar.AttributePoints;
+                    //obj.NPCType = updatedChar.NPCType;
+                    //obj.ImageUrl = updatedChar.ImageUrl;
+                    //obj.TraitBalance = updatedChar.TraitBalance;
+                    //obj.RaceId = updatedChar.RaceId;
+                    //obj.ProfessionId = updatedChar.ProfessionId;
+                    
 
                     /// UPDATE TRAITS
 
