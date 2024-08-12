@@ -1,11 +1,13 @@
 ﻿using Syncfusion.Blazor.RichTextEditor;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using static MudBlazor.CategoryTypes;
 
 namespace DA_Common
 {
@@ -30,27 +32,43 @@ namespace DA_Common
 
         public const string NPCName_GameMaster = "Game Master";
         // Weapon qualities
-        public const string WeaponQuality_Fast = "Fast";
-        public const string WeaponQuality_Slow = "Slow";
-        public const string WeaponQuality_Parrying = "Parrying";
-        public const string WeaponQuality_ShieldDestructive = "Shield destructive";
-        public const string WeaponQuality_ArmorPiercing = "Armor piercing";
-        public const string WeaponQuality_Long = "Long";
-        public const string WeaponQuality_Heavy = "Heavy";
-        public const string WeaponQuality_Devastating = "Devastating";
-        public const string WeaponQuality_Weak = "Weak";
-        public const string WeaponQuality_Stunning = "Stunning";
-        public const string WeaponQuality_Stumbling = "Stumbling";
-        public const string WeaponQuality_Snatching = "Snatching";
-        public const string WeaponQuality_Armor = "Armor";
-        public const string WeaponQuality_ArmorDefenceBonus = "Armor defence bonus";
-        public const string WeaponQuality_ArmorBane = "ArmorBane";
-        public const string WeaponQuality_Durability = "Durability";
-        public const string WeaponQuality_ShieldDefenceBonus = "Shield defence bonus";
-        public const string WeaponQuality_Bulky = "Bulky";
-        public const string WeaponQuality_Precise = "Precise";
-        public const string WeaponQuality_Range  = "Range";
-        public const string WeaponQuality_Ligh = "Ligh";
+  
+
+        public readonly struct WeaponQuality
+        {
+            public const string Fast = "Fast";
+            public const string Slow = "Slow";
+            public const string Parrying = "Parrying";
+            public const string ShieldDestructive = "Shield destructive";
+            public const string ArmorPiercing = "Armor piercing";
+            public const string Long = "Long";
+            public const string Heavy = "Heavy";
+            public const string Devastating = "Devastating";
+            public const string Weak = "Weak";
+            public const string Stunning = "Stunning";
+            public const string Stumbling = "Stumbling";
+            public const string Snatching = "Snatching";
+            public const string Armor = "Armor";
+            public const string ArmorDefenceBonus = "Armor defence bonus";
+            public const string ArmorBane = "ArmorBane";
+            public const string Durability = "Durability";
+            public const string ShieldDefenceBonus = "Shield defence bonus";
+            public const string Bulky = "Bulky";
+            public const string Precise = "Precise";
+            public const string Range = "Range";
+            public const string Light = "Light";
+
+            public static readonly string[] All = { Fast, Slow, Parrying, ShieldDestructive, ArmorPiercing, Long, Heavy, Devastating,
+                Weak, Stunning, Stumbling, Snatching, Armor, ArmorDefenceBonus,ArmorBane ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light };
+        }
+
+        public readonly struct BattleProperty
+        {
+            public const string AttackBonus = "AttackBonus";
+            public const string DamageBonus = "DamageBonus";
+            public const string DefenceBonus = "DefenceBonus";
+            public static readonly string[] All = { AttackBonus, DamageBonus, DefenceBonus };
+        }
 
         public readonly struct Attributes
         {
@@ -81,8 +99,29 @@ namespace DA_Common
             public const string Medicine = "Medicine";
             public static readonly string[] All = { Melee, Shooting, Acrobatics, SleightOfHands, Athletics, Talk, Deceit, Perception, Knowledge, Craft, Survival, AnimalHandle, Medicine };
         }
+        public readonly struct EquipmentType
+        {
+            public const string Other = "Other";
+            public const string WeaponMelee = "WeaponMelee";
+            public const string WeaponRanged = "WeaponRanged";
+            public const string Shield = "Shield";
+            public const string Face = "Face";
+            public const string Throat = "Throat";
+            public const string Body = "Body";
+            public const string Hands = "Hands";
+            public const string Waist = "Waist";
+            public const string Feet = "Feet";
+            public const string Head = "Head";
+            public const string Shoulders = "Shoulders";
+            public const string Torso = "Torso";
+            public const string Arms = "Arms";
+            public const string Rings = "Rings";
+            public static readonly string[] All = { Other, WeaponMelee, WeaponRanged, Shield, Face, Throat, Body, Hands, Waist, Feet, Head, Shoulders, Torso, Arms, Rings };
+        }
 
-      //circle 0  1  2  3  4  5  6  7  8  9
+
+
+        //circle 0  1  2  3  4  5  6  7  8  9
         public static readonly int[,,] SpellsPerDay = {
           {
             //WIZARD
@@ -158,13 +197,6 @@ namespace DA_Common
         public const string Helm = "icons/barbute.svg";
     }
 
-    public enum EquipmentType
-    {
-        Other,
-        Armor,
-        WeaponMelee,
-        WeaponRanged,
-    }
 
     public enum SpellcasterType
     {

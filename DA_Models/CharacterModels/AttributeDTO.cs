@@ -15,7 +15,8 @@ namespace DA_Models.CharacterModels
 
         public override int BaseBonus { get; set; } = 6;
         private int _modifier = 0;
-        public int Modifier {
+        public int Modifier
+        {
             get
             {
                 int mod = (int)Math.Floor((SumBonus - 10) / 2.0);
@@ -34,12 +35,12 @@ namespace DA_Models.CharacterModels
                 int mod = (int)Math.Floor((SumAbsolute - 10) / 2.0);
                 if (_modifierAbsolute == mod) return _modifierAbsolute;
                 _modifierAbsolute = mod;
-               // OnModifierChanged(nameof(Modifier));
+                // OnModifierChanged(nameof(Modifier));
                 return mod;
             }
         }
 
-        public event PropertyChangedEventHandler? ModifierChanged=null;
+        public event PropertyChangedEventHandler? ModifierChanged = null;
 
         protected virtual void OnModifierChanged(string propertyName)
         {

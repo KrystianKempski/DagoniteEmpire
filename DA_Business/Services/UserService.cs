@@ -35,7 +35,7 @@ namespace DA_Business.Services
         {
             try
             {
-                if (_userInfo.UserId is null)
+                if (_userInfo.UserName is null)
                 {
 
 
@@ -44,7 +44,7 @@ namespace DA_Business.Services
                         return; // failed to load
 
                     _userInfo.IsAuthenticated = user.Identity?.IsAuthenticated;
-                    _userInfo.UserId = user.Claims.Where(a => a.Type == System.Security.Claims.ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
+                    //_userInfo.UserId = user.Claims.Where(a => a.Type == System.Security.Claims.ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
                     _userInfo.IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
                     _userInfo.UserName = user.Identity?.Name;
                     if (user.IsInRole(SD.Role_HeroPlayer))
@@ -80,7 +80,7 @@ namespace DA_Business.Services
                 if (_userInfo.IsUserUpdated == false)
                 {
                     using var contex = await _db.CreateDbContextAsync();
-                    var user = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.Id == _userInfo.UserId);
+                    var user = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName == _userInfo.UserName);
                     if(user is not null)
                     {
                         _userInfo.SelectedCharacterId = user.SelectedCharacterId;
@@ -100,7 +100,7 @@ namespace DA_Business.Services
             if (_userInfo is not null)
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var user = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.Id == _userInfo.UserId);
+                var user = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName == _userInfo.UserName);
                 if(user != null)
                 {
 

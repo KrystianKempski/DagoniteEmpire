@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class SelectedCharacterIdAdd : Migration
+    public partial class newest : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
