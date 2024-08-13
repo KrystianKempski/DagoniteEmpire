@@ -194,7 +194,8 @@ namespace DA_Business.Repository.CharacterReps
                     //obj.TraitBalance = updatedChar.TraitBalance;
                     //obj.RaceId = updatedChar.RaceId;
                     //obj.ProfessionId = updatedChar.ProfessionId;
-                    
+                    obj.HeadId = objDTO.Head.Id;
+
 
                     /// UPDATE TRAITS
 

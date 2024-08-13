@@ -27,7 +27,7 @@
         {   
             <div class="equipment border">
                 <CascadingValue Value="@AllParams">
-                    <EquipmentComponent OnTraitsChange="LoadPossibleGears" PageMode=true></EquipmentComponent>
+                    <EquipmentComponent  OnTraitsChange="LoadPossibleGears" PageMode=true></EquipmentComponent>
                 </CascadingValue>
             </div>
 
@@ -35,66 +35,65 @@
             <div class="sheet-img">
                 <img src="../images/CharacterItemPlacement.webp" class="stretch" />
                 <div class="input headgear">
-               
-                <CascadingValue Value="@AllParams">
-                        <EquipItemComponent GearType="@SD.EquipmentType.Head"> </EquipItemComponent>
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Head]" GearItem="@SD.EquipmentType.Head"> </EquipItemComponent>
                     </CascadingValue>
-                   @*  <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGear[(int)EquippedItems.Head])"
-                                 Value="@SelectedGear[(int)EquippedItems.Head]"
-                                 ValueChanged="@((string value) => ChangeGear(value, SD.EquipmentType.Head))">
-                        @foreach (var eq in Heads){
-                            <option value="@eq.Name"> @eq.Name</option>
-                        }
-                    </InputSelect> *@
                 </div>
-            @* <div class="input throats">
-                <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGear[(int)EquippedItems.Throat])"
-                             Value="@SelectedGear[(int)EquippedItems.Throat]"
-                             ValueChanged="@((string value) => ChangeGear(value, SD.EquipmentType.Throat))">
-                    @foreach (var eq in Throats)
-                    {
-                        <option value="@eq.Name"> @eq.Name</option>
-                    }
-                </InputSelect>
-            </div>
-            <div class="input hands">
-                <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGear[(int)EquippedItems.Hands])"
-                             Value="@SelectedGear[(int)EquippedItems.Hands]"
-                             ValueChanged="@((string value) => ChangeGear(value, SD.EquipmentType.Hands))">
-                        @foreach (var eq in Hands)
-                        {
-                            <option value="@eq.Name"> @eq.Name</option>
-                        }
-                    </InputSelect>
+                <div class="input face">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Face]" GearItem="@SD.EquipmentType.Face"> </EquipItemComponent>
+                    </CascadingValue>
                 </div>
-                <div class="input headgear">
-                    <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGear[(int)EquippedItems.Head])"
-                                 Value="@SelectedGear[(int)EquippedItems.Head]"
-                                 ValueChanged="@((string value) => ChangeGear(value, SD.EquipmentType.Head))">
-                        @foreach (var eq in Heads){
-                            <option value="@eq.Name"> @eq.Name</option>
-                        }
-                    </InputSelect>
+                <div class="input throat">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Throat]" GearItem="@SD.EquipmentType.Throat"> </EquipItemComponent>
+                    </CascadingValue>
                 </div>
-                <div class="input headgear">
-                    <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGear[(int)EquippedItems.Head])"
-                                 Value="@SelectedGear[(int)EquippedItems.Head]"
-                                 ValueChanged="@((string value) => ChangeGear(value, SD.EquipmentType.Head))">
-                        @foreach (var eq in Heads){
-                            <option value="@eq.Name"> @eq.Name</option>
-                        }
-                    </InputSelect>
+                <div class="input body">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Body]" GearItem="@SD.EquipmentType.Body"> </EquipItemComponent>
+                    </CascadingValue>
                 </div>
-            <div class="input headgear">
-                <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGear[(int)EquippedItems.Head])"
-                             Value="@SelectedGear[(int)EquippedItems.Head]"
-                             ValueChanged="@((string value) => ChangeGear(value, SD.EquipmentType.Head))">
-                    @foreach (var eq in Heads)
-                    {
-                        <option value="@eq.Name"> @eq.Name</option>
-                    }
-                </InputSelect>
-            </div> *@
+                <div class="input hands">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Hands]" GearItem="@SD.EquipmentType.Hands"> </EquipItemComponent>
+                    </CascadingValue>
+                </div>
+                <div class="input waist">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Waist]" GearItem="@SD.EquipmentType.Waist"> </EquipItemComponent>
+                    </CascadingValue>
+                </div>
+                <div class="input feet">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Feet]" GearItem="@SD.EquipmentType.Feet"> </EquipItemComponent>
+                    </CascadingValue>
+                </div>
+                <div class="input shoulders">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Shoulders]" GearItem="@SD.EquipmentType.Shoulders"> </EquipItemComponent>
+                    </CascadingValue>
+                </div>
+                <div class="input torso">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Torso]" GearItem="@SD.EquipmentType.Torso"> </EquipItemComponent>
+                    </CascadingValue>
+                </div>
+                <div class="input arms">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Arms]" GearItem="@SD.EquipmentType.Arms"> </EquipItemComponent>
+                    </CascadingValue>
+                </div>
+                 <div class="input ring1">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Ring1]" GearItem="Ring1"> </EquipItemComponent>
+                    </CascadingValue>
+                </div>
+                <div class="input ring2">
+                    <CascadingValue Value="@AllParams">
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Ring2]" GearItem="Ring2"> </EquipItemComponent>
+                    </CascadingValue>
+                </div>
             </div>
         }
             
@@ -112,18 +111,7 @@
 
     private bool IsLoading { get; set; } = true;
 
-    public ICollection<EquipmentDTO> Heads { get; set; } = new List<EquipmentDTO>();
-    public ICollection<EquipmentDTO> Throats { get; set; } = new List<EquipmentDTO>();
-    public ICollection<EquipmentDTO> Hands { get; set; } = new List<EquipmentDTO>();
-    public ICollection<EquipmentDTO> Bodies { get; set; } = new List<EquipmentDTO>();
-    public ICollection<EquipmentDTO> Faces { get; set; } = new List<EquipmentDTO>();
-    public ICollection<EquipmentDTO> Feets { get; set; } = new List<EquipmentDTO>();
-    public ICollection<EquipmentDTO> Shoulders { get; set; } = new List<EquipmentDTO>();
-    public ICollection<EquipmentDTO> Waists { get; set; } = new List<EquipmentDTO>();
-    public ICollection<EquipmentDTO> Rings { get; set; } = new List<EquipmentDTO>();
-
-    public List<String> SelectedGear { get; set; } = new List<string>((int)EquippedItems.Ring2+1);
-
+    public List<EquipItemComponent> EquipItemComp { get; set; } = new List<EquipItemComponent>();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -134,6 +122,11 @@
                 IsLoading = true;
 
                 StateHasChanged();
+
+                for(int i = 0; i< (int)EquippedItems.Ring2+1; i++)
+                {
+                    EquipItemComp.Add(new EquipItemComponent());
+                }
 
                 await LoadCharacter();
 
@@ -153,48 +146,15 @@
         AllParams.Character = await _characterRepository.GetById(Id);
         AllParams.Attributes = await _attributeRepository.GetAll(Id);
         AllParams.Equipment = (await _equipmentRepository.GetAll(Id)).ToList();
-        
-        if (AllParams.Character.Head is not null)
-            SelectedGear[(int)EquippedItems.Head] = AllParams.Character.Head.Name;
-        if (AllParams.Character.Throat is not null)
-            SelectedGear[(int)EquippedItems.Throat] = AllParams.Character.Throat.Name;
-        if (AllParams.Character.Hands is not null)
-            SelectedGear[(int)EquippedItems.Hands] = AllParams.Character.Hands.Name;
-        if (AllParams.Character.Body is not null)
-            SelectedGear[(int)EquippedItems.Body] = AllParams.Character.Body.Name;
-        if (AllParams.Character.Face is not null)
-            SelectedGear[(int)EquippedItems.Face] = AllParams.Character.Face.Name;
-        if (AllParams.Character.Feet is not null)
-            SelectedGear[(int)EquippedItems.Feet] = AllParams.Character.Feet.Name;
-        if (AllParams.Character.Shoulders is not null)
-            SelectedGear[(int)EquippedItems.Shoulders] = AllParams.Character.Shoulders.Name;
-        if (AllParams.Character.Waist is not null)
-            SelectedGear[(int)EquippedItems.Waist] = AllParams.Character.Waist.Name;
-        if (AllParams.Character.Ring1 is not null)
-            SelectedGear[(int)EquippedItems.Ring1] = AllParams.Character.Ring1.Name;
-        if (AllParams.Character.Ring2 is not null)
-            SelectedGear[(int)EquippedItems.Ring2] = AllParams.Character.Ring2.Name;
-        if (AllParams.Character.Torso is not null)
-            SelectedGear[(int)EquippedItems.Torso] = AllParams.Character.Torso.Name;
-        if (AllParams.Character.Arms is not null)
-            SelectedGear[(int)EquippedItems.Arms] = AllParams.Character.Arms.Name;
-
-
-        await LoadPossibleGears();
 
     }
 
     private async Task LoadPossibleGears()
     {
-        Heads = AllParams.Equipment.Where(u => u.EquipmentType == SD.EquipmentType.Head).ToList();
-        Throats = AllParams.Equipment.Where(u => u.EquipmentType == SD.EquipmentType.Throat).ToList();
-        Hands = AllParams.Equipment.Where(u => u.EquipmentType == SD.EquipmentType.Hands).ToList();
-        Bodies = AllParams.Equipment.Where(u => u.EquipmentType == SD.EquipmentType.Body).ToList();
-        Faces = AllParams.Equipment.Where(u => u.EquipmentType == SD.EquipmentType.Face).ToList();
-        Feets = AllParams.Equipment.Where(u => u.EquipmentType == SD.EquipmentType.Feet).ToList();
-        Shoulders = AllParams.Equipment.Where(u => u.EquipmentType == SD.EquipmentType.Shoulders).ToList();
-        Waists = AllParams.Equipment.Where(u => u.EquipmentType == SD.EquipmentType.Waist).ToList();
-        Rings = AllParams.Equipment.Where(u => u.EquipmentType == SD.EquipmentType.Rings).ToList();
+        foreach(var e in EquipItemComp)
+        {
+            e.ReloadGears();
+        }
     }
 
     private async Task SaveChanges()
@@ -235,39 +195,40 @@
         StateHasChanged();
     }
 
-    private async Task ChangeGear(string eq, string type)
-    {
-        try
-        {
+    // private async Task ChangeGear(string eq, string type)
+    // {
+    //     try
+    //     {
 
-            if (AllParams.Character.Head is not null && AllParams.Character.Head.Name == eq)
-                return;
+    //         if (AllParams.Character.Head is not null && AllParams.Character.Head.Name == eq)
+    //             return;
 
-            EquipmentDTO newGear = (EquipmentDTO)AllParams.Character.GetType().GetProperty(type).GetValue(AllParams.Character, null);
-            //feature.GetType().GetProperty(bonusName).SetValue(feature, newVal);
+    //         EquipmentDTO newGear = (EquipmentDTO)AllParams.Character.GetType().GetProperty(type).GetValue(AllParams.Character, null);
+    //         //feature.GetType().GetProperty(bonusName).SetValue(feature, newVal);
 
-            //unequip gear
-            if (newGear is not null)
-            {
-                var removedEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Id == newGear.Id);
-                if (removedEquipment is not null)
-                    removedEquipment.IsEquipped = false;
+    //         //unequip gear
+    //         if (newGear is not null)
+    //         {
+    //             var removedEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Id == newGear.Id);
+    //             if (removedEquipment is not null)
+    //                 removedEquipment.IsEquipped = false;
 
-                newGear.IsEquipped = false;
-            }
-            var putOnEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Name == eq);
-            if (putOnEquipment is not null)
-            {
-                putOnEquipment.IsEquipped = true;
-                newGear = putOnEquipment;
-            }
+    //             newGear.IsEquipped = false;
+    //         }
+    //         var putOnEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Name == eq);
+    //         if (putOnEquipment is not null)
+    //         {
+    //             putOnEquipment.IsEquipped = true;
+    //             AllParams.Character.GetType().GetProperty(type).SetValue(AllParams.Character, putOnEquipment);
+    //             //newGear = putOnEquipment;
+    //         }
 
-        }
-        catch (Exception ex)
-        {
-            IsLoading = false;
-            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
-        }
-    }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         IsLoading = false;
+    //         await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+    //     }
+    // }
    
 }

@@ -1,7 +1,8 @@
 ﻿<div>
     <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGear)"
-                 Value="@SelectedGear"
-                 ValueChanged="@((string value) => ChangeGear(value, SD.EquipmentType.Head))">
+            Value="@SelectedGear"
+            ValueChanged="@((string value) => ChangeGear(value))">
+        <option value="Empty">Empty</option>
         @foreach (var eq in AllGearsOfType)
         {
             <option value="@eq.Name"> @eq.Name</option>
@@ -10,13 +11,14 @@
 </div>
 
 @code {
-    private string SelectedGear ="";
+    private string SelectedGear ="Empty";
 
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
 
     [Parameter]
-    public string GearType { get; set; } = "";
+    public string GearItem { get; set; } = "";
+    private string GearType;
 
 
     public ICollection<EquipmentDTO> AllGearsOfType { get; set; } = new List<EquipmentDTO>(); 
@@ -25,21 +27,34 @@
     {
         if (firstRender)
         {
-            System.Threading.Thread.Sleep(1000);
-            AllGearsOfType = AllParams.Equipment.Where(u => u.EquipmentType == GearType).ToList();
+            GearType = GearItem;
+            if (GearType == "Ring1" || GearType == "Ring2") GearType = "Rings";
+            EquipmentDTO newGear = (EquipmentDTO)AllParams.Character.GetType().GetProperty(GearItem).GetValue(AllParams.Character, null);
+            if (newGear is not null)
+            {
+                SelectedGear = newGear.Name;
+            }
+            ReloadGears();
         }
     }
 
-    private async Task ChangeGear(string eq, string type)
+    public void ReloadGears()
+    {
+        if (AllParams is not null)
+        {
+            AllGearsOfType = AllParams.Equipment.Where(u => u.EquipmentType == GearType).ToList();
+            StateHasChanged();
+        }
+    }
+
+    private async Task ChangeGear(string eq)
     {
         try
         {
-
             if (AllParams.Character.Head is not null && AllParams.Character.Head.Name == eq)
                 return;
 
-            EquipmentDTO newGear = (EquipmentDTO)AllParams.Character.GetType().GetProperty(type).GetValue(AllParams.Character, null);
-            //feature.GetType().GetProperty(bonusName).SetValue(feature, newVal);
+            EquipmentDTO newGear = (EquipmentDTO)AllParams.Character.GetType().GetProperty(GearItem).GetValue(AllParams.Character, null);
 
             //unequip gear
             if (newGear is not null)
@@ -47,14 +62,16 @@
                 var removedEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Id == newGear.Id);
                 if (removedEquipment is not null)
                     removedEquipment.IsEquipped = false;
-
-                newGear.IsEquipped = false;
             }
+
+            if (eq == "Empty")
+                return;
+
             var putOnEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Name == eq);
             if (putOnEquipment is not null)
             {
                 putOnEquipment.IsEquipped = true;
-                newGear = putOnEquipment;
+                AllParams.Character.GetType().GetProperty(GearItem).SetValue(AllParams.Character, putOnEquipment);
             }
 
         }

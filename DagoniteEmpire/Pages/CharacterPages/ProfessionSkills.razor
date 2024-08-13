@@ -498,25 +498,32 @@
 
     private async Task LoadCharacter()
     {
+        try{
 
-        AllParams.Character = await _characterRepository.GetById(Id);
-        AllParams.Attributes = await _attributeRepository.GetAll(Id);
-        //AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
+            AllParams.Character = await _characterRepository.GetById(Id);
+            AllParams.Attributes = await _attributeRepository.GetAll(Id);
+            //AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
 
-        ProfessionDTO = await _professionRepository.GetById(AllParams.Character.ProfessionId);
-        if(ProfessionDTO.SpellCircles is not null)
-        {
-            SpellCircles = ProfessionDTO.SpellCircles;
+            ProfessionDTO = await _professionRepository.GetById(AllParams.Character.ProfessionId);
+            if(ProfessionDTO.SpellCircles is not null)
+            {
+                SpellCircles = ProfessionDTO.SpellCircles;
+            }
+
+
+            if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
+                throw new Exception("No related class attribute");
+
+            if (ProfessionDTO.CasterType != SpellcasterType.None)
+                IsSpellTypeDisabled = false;
+
+            ProfessionDTO.CalculateClassParams(AllParams.Attributes);
         }
-
-
-        if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
-            throw new Exception("No related class attribute");
-
-        if (ProfessionDTO.CasterType != SpellcasterType.None)
-            IsSpellTypeDisabled = false;
-
-         ProfessionDTO.CalculateClassParams(AllParams.Attributes);
+        catch(Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+        }
     }
 
     private string ErrorMessage { get; set; } = string.Empty;
