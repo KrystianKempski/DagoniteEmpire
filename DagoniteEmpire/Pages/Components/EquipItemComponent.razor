@@ -1,0 +1,68 @@
+﻿<div>
+    <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGear)"
+                 Value="@SelectedGear"
+                 ValueChanged="@((string value) => ChangeGear(value, SD.EquipmentType.Head))">
+        @foreach (var eq in AllGearsOfType)
+        {
+            <option value="@eq.Name"> @eq.Name</option>
+        }
+    </InputSelect>
+</div>
+
+@code {
+    private string SelectedGear ="";
+
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
+
+    [Parameter]
+    public string GearType { get; set; } = "";
+
+
+    public ICollection<EquipmentDTO> AllGearsOfType { get; set; } = new List<EquipmentDTO>(); 
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            System.Threading.Thread.Sleep(1000);
+            AllGearsOfType = AllParams.Equipment.Where(u => u.EquipmentType == GearType).ToList();
+        }
+    }
+
+    private async Task ChangeGear(string eq, string type)
+    {
+        try
+        {
+
+            if (AllParams.Character.Head is not null && AllParams.Character.Head.Name == eq)
+                return;
+
+            EquipmentDTO newGear = (EquipmentDTO)AllParams.Character.GetType().GetProperty(type).GetValue(AllParams.Character, null);
+            //feature.GetType().GetProperty(bonusName).SetValue(feature, newVal);
+
+            //unequip gear
+            if (newGear is not null)
+            {
+                var removedEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Id == newGear.Id);
+                if (removedEquipment is not null)
+                    removedEquipment.IsEquipped = false;
+
+                newGear.IsEquipped = false;
+            }
+            var putOnEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Name == eq);
+            if (putOnEquipment is not null)
+            {
+                putOnEquipment.IsEquipped = true;
+                newGear = putOnEquipment;
+            }
+
+        }
+        catch (Exception ex)
+        {
+           // IsLoading = false;
+           // await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+    }
+
+}

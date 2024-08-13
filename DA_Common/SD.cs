@@ -204,4 +204,24 @@ namespace DA_Common
         Sorcerer,
         None,
     }
+
+    public enum EquippedItems
+    {
+        Other,
+        WeaponMelee,
+        WeaponRanged, 
+        Shield, 
+        Face,
+        Throat, 
+        Body, 
+        Hands, 
+        Waist, 
+        Feet,
+        Head,
+        Shoulders,
+        Torso, 
+        Arms,
+        Ring1,
+        Ring2
+    }
 }

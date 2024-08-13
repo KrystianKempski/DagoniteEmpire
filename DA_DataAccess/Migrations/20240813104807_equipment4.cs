@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class roles : Migration
+    public partial class equipment4 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -414,7 +414,21 @@ namespace DA_DataAccess.Migrations
                     TraitBalance = table.Column<int>(type: "integer", nullable: false),
                     RaceId = table.Column<int>(type: "integer", nullable: true),
                     IsApproved = table.Column<bool>(type: "boolean", nullable: false),
-                    ProfessionId = table.Column<int>(type: "integer", nullable: false)
+                    ProfessionId = table.Column<int>(type: "integer", nullable: false),
+                    ArmorId = table.Column<int>(type: "integer", nullable: false),
+                    WeaponId = table.Column<int>(type: "integer", nullable: false),
+                    FaceId = table.Column<int>(type: "integer", nullable: false),
+                    ThroatId = table.Column<int>(type: "integer", nullable: false),
+                    BodyId = table.Column<int>(type: "integer", nullable: false),
+                    HandsId = table.Column<int>(type: "integer", nullable: false),
+                    WaistId = table.Column<int>(type: "integer", nullable: false),
+                    FeetId = table.Column<int>(type: "integer", nullable: false),
+                    HeadId = table.Column<int>(type: "integer", nullable: false),
+                    ShouldersId = table.Column<int>(type: "integer", nullable: false),
+                    TorsoId = table.Column<int>(type: "integer", nullable: false),
+                    ArmsId = table.Column<int>(type: "integer", nullable: false),
+                    Ring1Id = table.Column<int>(type: "integer", nullable: false),
+                    Ring2Id = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
