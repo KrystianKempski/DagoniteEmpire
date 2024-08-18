@@ -15,7 +15,7 @@ namespace DA_DataAccess.CharacterClasses
 
         public ICollection<TraitEquipment>? Traits { get; set; } = null;
 
-        public ICollection<Character>? Characters { get; set; } = null;
+        public ICollection<EquipmentSlot>? EquipmentSlots { get; set; } = null;
 
         public string Name { get; set; }                        //for example "axe"
         public int Index { get; set; }
@@ -25,10 +25,7 @@ namespace DA_DataAccess.CharacterClasses
         public string ShortDescr { get; set; }                  // short item descr
         public decimal Price { get; set; }
         public decimal Weight { get; set; }
-        public int Count { get; set; }      = 1;                // how many items in equipment
         public bool IsApproved { get; set; }                    // Equipment have to be approved by Game Master
-
-        public bool IsEquipped { get; set; } = false;
         public string EquipmentType { get; set; } = "other";
 
         //public ICollection<WeaponQuality>? WeaponQualities { get; set; } = null;

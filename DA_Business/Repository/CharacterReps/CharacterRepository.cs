@@ -125,10 +125,12 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<CharacterDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Characters.Include(t => t.TraitsAdv).ThenInclude(b=>b.Bonuses).Include(r=>r.Race).Include(r => r.Profession).Include(r => r.Equipment).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.Characters.Include(t => t.TraitsAdv).ThenInclude(b=>b.Bonuses).Include(r=>r.Race).Include(r => r.Profession).Include(r => r.Equipment).
+                FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                return _mapper.Map<Character, CharacterDTO>(obj);
+                var res = _mapper.Map<Character, CharacterDTO>(obj);
+                return res;
             }
             return new CharacterDTO();
         }
@@ -182,18 +184,6 @@ namespace DA_Business.Repository.CharacterReps
                     // Update character built-in types
                     contex.Entry(obj).CurrentValues.SetValues(objDTO);
 
-                    //obj.Age = updatedChar.Age;
-                    //obj.NPCName = updatedChar.NPCName;
-                    //obj.IsApproved = updatedChar.IsApproved;
-                    //obj.Description = updatedChar.Description;
-                    //obj.CurrentExpPoints = updatedChar.CurrentExpPoints;
-                    //obj.UsedExpPoints = updatedChar.UsedExpPoints;
-                    //obj.AttributePoints = updatedChar.AttributePoints;
-                    //obj.NPCType = updatedChar.NPCType;
-                    //obj.ImageUrl = updatedChar.ImageUrl;
-                    //obj.TraitBalance = updatedChar.TraitBalance;
-                    //obj.RaceId = updatedChar.RaceId;
-                    //obj.ProfessionId = updatedChar.ProfessionId;
                     obj.HeadId = objDTO.Head.Id;
 
 

@@ -24,6 +24,7 @@ namespace DA_DataAccess.Data
         public DbSet<ImageFile> ImageFiles { get; set; }
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
         public DbSet<Equipment> Equipment { get; set; }
+        public DbSet<EquipmentSlot> EquipmentSlots { get; set; }
         public DbSet<TraitAdv> TraitsAdv { get; set; }
         public DbSet<TraitRace> TraitsRace { get; set; }
         public DbSet<TraitEquipment> TraitsEquipment { get; set; }
@@ -64,7 +65,12 @@ namespace DA_DataAccess.Data
                 .HasForeignKey(d => d.ToUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
 
-          
+            modelBuilder.Entity<Character>()
+                .HasOne(d => d.Head)
+                .WithOne(p => p.Characters)
+                .HasForeignKey(d => d.ToUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
         }
     }
 }

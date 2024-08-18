@@ -34,7 +34,7 @@ namespace DA_DataAccess.CharacterClasses
         public ICollection<SpecialSkill>? SpecialSkills { get; set; }
         public ICollection<TraitAdv>? TraitsAdv { get; set; }
 
-        public ICollection<Equipment>? Equipment { get; set; }
+        public ICollection<EquipmentSlot>? EquipmentSlots { get; set; }
 
         public ICollection<Campaign>? Campaigns { get; set; }
 
@@ -48,27 +48,49 @@ namespace DA_DataAccess.CharacterClasses
         public bool IsApproved { get; set; }
 
         public int ProfessionId { get; set; } = 0;
-
         [ForeignKey(nameof(ProfessionId))]
         public Profession? Profession { get; set; } = null;
 
-        public int ArmorId { get; set; } = 0;
-        public int WeaponId { get; set; } = 0;
-
-        public int FaceId { get; set; } = 0;
-        public int ThroatId { get; set; } = 0;
-       public int BodyId { get; set; } = 0;
-       public int HandsId { get; set; } = 0;
-       public int WaistId { get; set; } = 0;
-       public int FeetId { get; set; } = 0;
-       public int HeadId { get; set; } = 0;
-
-       public int ShouldersId { get; set; } = 0;
-       public int TorsoId { get; set; } = 0;
-       public int ArmsId { get; set; } = 0;
-
-       public int Ring1Id { get; set; } = 0;
-       public int Ring2Id { get; set; } = 0;
+        ////used equipment
+        //public int WeaponId { get; set; } = 0;
+        //[ForeignKey(nameof(WeaponId))]
+        //public Equipment? Weapon { get; set; } = null;
+        //public int FaceId { get; set; } = 0;
+        //[ForeignKey(nameof(FaceId))]
+        //public Equipment? Face { get; set; } = null;
+        //public int ThroatId { get; set; } = 0;
+        //[ForeignKey(nameof(ThroatId))]
+        //public Equipment? Throat { get; set; } = null;
+        //public int BodyId { get; set; } = 0;
+        //[ForeignKey(nameof(BodyId))]
+        //public Equipment? Body { get; set; } = null;
+        //public int HandsId { get; set; } = 0;
+        //[ForeignKey(nameof(HandsId))]
+        //public Equipment? Hands { get; set; } = null;
+        //public int WaistId { get; set; } = 0;
+        //[ForeignKey(nameof(WaistId))]
+        //public Equipment? Waist { get; set; } = null;
+        //public int FeetId { get; set; } = 0;
+        //[ForeignKey(nameof(FeetId))]
+        //public Equipment? Feet { get; set; } = null;
+        //public int HeadId { get; set; } = 0;
+        //[ForeignKey(nameof(HeadId))]
+        //public Equipment? Head { get; set; } = null;
+        //public int ShouldersId { get; set; } = 0;
+        //[ForeignKey(nameof(ShouldersId))]
+        //public Equipment? Shoulders { get; set; } = null;
+        //public int TorsoId { get; set; } = 0;
+        //[ForeignKey(nameof(TorsoId))]
+        //public Equipment? Torso { get; set; } = null;
+        //public int ArmsId { get; set; } = 0;
+        //[ForeignKey(nameof(ArmsId))]
+        //public Equipment? Arms { get; set; } = null;
+        //public int Ring1Id { get; set; } = 0;
+        //[ForeignKey(nameof(Ring1Id))]
+        //public Equipment? Ring1 { get; set; } = null;
+        //public int Ring2Id { get; set; } = 0;
+        //[ForeignKey(nameof(Ring2Id))]
+        //public Equipment? Ring2 { get; set; } = null;
 
     }
 }
