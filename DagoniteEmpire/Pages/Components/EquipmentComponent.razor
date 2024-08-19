@@ -15,11 +15,11 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var obj in AllParams.Equipment)
+                @foreach (var obj in AllParams.EquipmentSlots)
                 {
                     <tr>
                         <td class="nobottomborder">
-                            <label class="name-label">@obj.Name</label>
+                            <label class="name-label">@obj.Equipment.Name</label>
                         </td>
                         <td class="text-center nobottomborder">
                             <div class="control">
@@ -45,7 +45,7 @@
                     </tr>
                     <tr >
                         <td colspan="5">
-                            <label class="text-label">@obj.ShortDescr</label>
+                            <label class="text-label">@obj.Equipment.ShortDescr</label>
                         </td>
                     </tr>
                 }
@@ -115,17 +115,17 @@
         get => _customEquipmentComponent;
         set
         {
-            if (value.EquipmentDTO != null)
+            if (value.EquipmentSlotDTO != null)
             {
-                var obj = AllParams.Equipment.FirstOrDefault(u => u.Name == value.EquipmentDTO.Name);
+                var obj = AllParams.EquipmentSlots.FirstOrDefault(u => u.Equipment.Name == value.EquipmentSlotDTO.Equipment.Name);
                 if (obj == null)
                 {
-                    AllParams.Equipment.Add(value.EquipmentDTO);
+                    AllParams.EquipmentSlots.Add(value.EquipmentSlotDTO);
 
                 }
                 else
                 {
-                    obj = value.EquipmentDTO;
+                    obj = value.EquipmentSlotDTO;
                 }
 
                 AllParams.TraitsChange();
@@ -136,7 +136,7 @@
         }
     }
 
-    private EquipmentChosenModel _equipmentChosen;
+    private EquipmentChosenModel _equipmentChosen = new ();
     private EquipmentChosenModel EquipmentChosen
     {
         get => _equipmentChosen;
@@ -146,9 +146,9 @@
             {
                 foreach (var equ in value.EquipmentChosen)
                 {
-                    if (AllParams.Equipment.FirstOrDefault(u => u.Name == equ.Name) == null)
+                    if (AllParams.EquipmentSlots.FirstOrDefault(u => u.Equipment.Name == equ.Equipment.Name) == null)
                     {
-                        AllParams.Equipment.Add(equ);
+                        AllParams.EquipmentSlots.Add(equ);
                     }
                 }
                 AllParams.TraitsChange();
@@ -166,17 +166,17 @@
     {
         EquipmentWeight = 0.0m;
         EquipmentPrice = 0.0m;
-        foreach (var equ in AllParams.Equipment)
+        foreach (var slot in AllParams.EquipmentSlots)
         {
-            EquipmentWeight += equ.Weight;
-            EquipmentPrice += equ.Price;
+            EquipmentWeight += slot.Equipment.Weight;
+            EquipmentPrice += slot.Equipment.Price;
         }
         StateHasChanged();
     }
 
     private async Task AddCustomEquipment()
     {
-        CustomEquipmentComponent.EquipmentDTO = new();
+        CustomEquipmentComponent.EquipmentSlotDTO = new();
         CustomEquipmentComponent.Traits = new List<TraitDTO>();
         CustomEquipmentComponent.IsVisible = true;
     }
@@ -191,51 +191,51 @@
         _navigationManager.NavigateTo($"/equipment/{AllParams.Character.Id}");
     }
 
-    private async Task EditEquipment(EquipmentDTO equ)
+    private async Task EditEquipment(EquipmentSlotDTO slot)
     {
-        CustomEquipmentComponent.EquipmentDTO = equ;
-        CustomEquipmentComponent.Traits = CustomEquipmentComponent.EquipmentDTO.Traits.OfType<TraitDTO>().ToList();
+        CustomEquipmentComponent.EquipmentSlotDTO = slot;
+        CustomEquipmentComponent.Traits = CustomEquipmentComponent.EquipmentSlotDTO.Equipment?.Traits.OfType<TraitDTO>().ToList();
         CustomEquipmentComponent.IsVisible = true;
         CustomEquipmentComponent.IsEditMode = true;
         CalculateEquipWeightAndPrice();
     }
 
-    private async Task DeleteEquipment(EquipmentDTO equ)
+    private async Task DeleteEquipment(EquipmentSlotDTO slot)
     {
-        if (equ.Id != 0)
+        if (slot.Id != 0)
         {
 
-            if (equ.IsApproved == false)
+            if (slot.Equipment.IsApproved == false)
             {
-                await _traitEquipmentRepository.Delete(equ.Id);
+               // await _traitEquipmentRepository.Delete(slot.Equipment.Id);
 
             }
         }
-        AllParams.Equipment = AllParams.Equipment.Where(u => u.Name != equ.Name).ToList();
+        AllParams.EquipmentSlots = AllParams.EquipmentSlots.Where(u => u.Equipment.Name != slot.Equipment.Name).ToList();
         await AllParams.TraitsChange();
         OnTraitsChange.InvokeAsync();
         CalculateEquipWeightAndPrice();
     }
 
 
-    private async Task IncrCount(EquipmentDTO obj)
+    private async Task IncrCount(EquipmentSlotDTO obj)
     {
 
-        decimal unitWeigh = obj.Weight / obj.Count;
-        decimal unitPrice = obj.Price / obj.Count;
+        decimal unitWeigh = obj.Equipment.Weight / obj.Count;
+        decimal unitPrice = obj.Equipment.Price / obj.Count;
         obj.Count++;
-        obj.Weight = unitWeigh * obj.Count;
-        obj.Price = unitPrice * obj.Count;
+        obj.Equipment.Weight = unitWeigh * obj.Count;
+        obj.Equipment.Price = unitPrice * obj.Count;
 
         CalculateEquipWeightAndPrice();
     }
 
-    private async Task DecrCount(EquipmentDTO obj)
+    private async Task DecrCount(EquipmentSlotDTO obj)
     {
         if (obj.Count>1)
         {
-            decimal unitWeigh = obj.Weight / obj.Count;
-            decimal unitPrice = obj.Price / obj.Count;
+            decimal unitWeigh = obj.Equipment.Weight / obj.Count;
+            decimal unitPrice = obj.Equipment.Price / obj.Count;
 
             obj.Count--;
 

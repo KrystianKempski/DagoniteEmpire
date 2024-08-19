@@ -81,7 +81,7 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<EquipmentSlotDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.EquipmentSlots.Include(u => u.Equipment).ThenInclude(b => b.Traits).ThenInclude(b => b.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.EquipmentSlots?.Include(u => u.Equipment)?.ThenInclude(b => b.Traits)?.ThenInclude(b => b.Bonuses)?.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<EquipmentSlot, EquipmentSlotDTO>(obj);
@@ -102,129 +102,149 @@ namespace DA_Business.Repository.CharacterReps
                     // Update built-in type members
                     contex.Entry(obj).CurrentValues.SetValues(updatedEquipment);
 
+                    //contex.Entry(obj.Equipment).CurrentValues.SetValues(updatedEquipment.Equipment);
 
-                    // Delete equipment traits
-                    if (obj.Equipment is not null && obj.Equipment.Traits is not null)
+                    // Delete equipment
+
+                    if (obj.Equipment.Id != updatedEquipment.Equipment.Id)
                     {
-                        foreach (var existingChild in obj.Equipment.Traits.ToList())
+                        if (obj.Equipment.IsApproved == true)
                         {
-                            if (!updatedEquipment.Traits.Any(c => c.Id == existingChild.Id))
+                            var detachedEquipment = contex.Equipment.FirstOrDefault(e => e.Id == objDTO.Equipment.Id);
+                            if (detachedEquipment != null && !detachedEquipment.EquipmentSlots.IsNullOrEmpty() && detachedEquipment.EquipmentSlots.Contains(obj))
                             {
-                                if (existingChild.TraitApproved == true)
-                                {
-                                    var detachedTrait = contex.TraitsEquipment.Include(t => t.Bonuses).Include(c => c.Equipment).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
-                                    if (detachedTrait != null && !detachedTrait.Equipment.IsNullOrEmpty() && detachedTrait.Equipment.Contains(obj))
-                                    {
-                                        detachedTrait.Equipment.Remove(obj);
-                                        contex.TraitsEquipment.Update(detachedTrait);
-                                    }
-                                }
-                                else
-                                    contex.TraitsEquipment.Remove(existingChild);
+                                detachedEquipment.EquipmentSlots.Remove(obj);
+                                contex.Equipment.Update(detachedEquipment);
                             }
+                        }
+                        else
+                        {
+                            contex.Equipment.Remove(obj.Equipment);
                         }
                     }
 
 
-                    // Update and Insert traits
-                    if (updatedEquipment.Traits is not null)
-                    {
-                        foreach (var trait in updatedEquipment.Traits)
-                        {
-                            TraitEquipment? existingTrait = null;
-                            if (obj.Traits is not null)
-                            {
-                                existingTrait = obj.Traits
-                                    .FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
-                            }
-                            else
-                            {
-                                obj.Traits = new List<TraitEquipment>();
-                            }
+                    //// Delete equipment traits
+                    //if (obj.Equipment is not null && obj.Equipment.Traits is not null)
+                    //{
+                    //    foreach (var existingChild in obj.Equipment.Traits.ToList())
+                    //    {
+                    //        if (!updatedEquipment.Equipment.Traits.Any(c => c.Id == existingChild.Id))
+                    //        {
+                    //            if (existingChild.TraitApproved == true)
+                    //            {
+                    //                var detachedTrait = contex.TraitsEquipment.Include(t => t.Bonuses).Include(c => c.Equipment).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
+                    //                if (detachedTrait != null && !detachedTrait.Equipment.IsNullOrEmpty() && detachedTrait.Equipment.Contains(obj.Equipment))
+                    //                {
+                    //                    detachedTrait.Equipment.Remove(obj.Equipment);
+                    //                    contex.TraitsEquipment.Update(detachedTrait);
+                    //                }
+                    //            }
+                    //            else
+                    //                contex.TraitsEquipment.Remove(existingChild);
+                    //        }
+                    //    }
+                    //}
 
-                            if (existingTrait == null)
-                            {
-                                existingTrait = contex.TraitsEquipment.Include(t => t.Bonuses).Include(c => c.Equipment).FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
-                            }
 
-                            if (existingTrait is not null)
-                            {
-                                if (existingTrait.TraitApproved && obj.Traits.Contains(existingTrait) == false)
-                                {
-                                    if (existingTrait.Equipment is null)
-                                        existingTrait.Equipment = new List<Equipment>();
-                                    existingTrait.Equipment.Add(obj);
-                                    contex.Traits.Update(existingTrait);
-                                }
-                                else
-                                {
-                                    // Update trait built-in types
-                                    contex.Entry(existingTrait).CurrentValues.SetValues(trait);
-                                    // update bonuses
+                    //// Update and Insert traits
+                    //if (updatedEquipment.Equipment is not null && updatedEquipment.Equipment.Traits is not null)
+                    //{
+                    //    foreach (var trait in updatedEquipment.Equipment.Traits)
+                    //    {
+                    //        TraitEquipment? existingTrait = null;
+                    //        if (obj.Equipment.Traits is not null)
+                    //        {
+                    //            existingTrait = obj.Equipment.Traits
+                    //                .FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
+                    //        }
+                    //        else
+                    //        {
+                    //            obj.Equipment.Traits = new List<TraitEquipment>();
+                    //        }
 
-                                    // Delete trait bonuses
-                                    if (!existingTrait.Bonuses.IsNullOrEmpty())
-                                    {
-                                        foreach (var existingChildBonus in existingTrait.Bonuses.ToList())
-                                        {
-                                            if (!trait.Bonuses.Any(c => c.Id == existingChildBonus.Id))
-                                            {
-                                                contex.Bonuses.Remove(existingChildBonus);
-                                            }
-                                        }
-                                    }
+                    //        if (existingTrait == null)
+                    //        {
+                    //            existingTrait = contex.TraitsEquipment.Include(t => t.Bonuses).Include(c => c.Equipment).FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
+                    //        }
+
+                    //        if (existingTrait is not null)
+                    //        {
+                    //            if (existingTrait.TraitApproved && obj.Equipment.Traits.Contains(existingTrait) == false)
+                    //            {
+                    //                if (existingTrait.Equipment is null)
+                    //                    existingTrait.Equipment = new List<Equipment>();
+                    //                existingTrait.Equipment.Add(obj.Equipment);
+                    //                contex.Traits.Update(existingTrait);
+                    //            }
+                    //            else
+                    //            {
+                    //                // Update trait built-in types
+                    //                contex.Entry(existingTrait).CurrentValues.SetValues(trait);
+                    //                // update bonuses
+
+                    //                // Delete trait bonuses
+                    //                if (!existingTrait.Bonuses.IsNullOrEmpty())
+                    //                {
+                    //                    foreach (var existingChildBonus in existingTrait.Bonuses.ToList())
+                    //                    {
+                    //                        if (!trait.Bonuses.Any(c => c.Id == existingChildBonus.Id))
+                    //                        {
+                    //                            contex.Bonuses.Remove(existingChildBonus);
+                    //                        }
+                    //                    }
+                    //                }
                                     
 
-                                    // Update and Insert bonuses
-                                    if (trait.Bonuses is not null)
-                                    {
-                                        foreach (var childBonus in trait.Bonuses)
-                                        {
-                                            Bonus? existingChildBonus;
-                                            if (!existingTrait.Bonuses.IsNullOrEmpty())
-                                            {
-                                                existingChildBonus = existingTrait.Bonuses
-                                               .FirstOrDefault(c => c.Id == childBonus.Id && c.Id != default(int));
-                                            }
-                                            else
-                                            {
-                                                existingTrait.Bonuses = new List<Bonus>();
-                                                existingChildBonus = null;
-                                            }
+                    //                // Update and Insert bonuses
+                    //                if (trait.Bonuses is not null)
+                    //                {
+                    //                    foreach (var childBonus in trait.Bonuses)
+                    //                    {
+                    //                        Bonus? existingChildBonus;
+                    //                        if (!existingTrait.Bonuses.IsNullOrEmpty())
+                    //                        {
+                    //                            existingChildBonus = existingTrait.Bonuses
+                    //                           .FirstOrDefault(c => c.Id == childBonus.Id && c.Id != default(int));
+                    //                        }
+                    //                        else
+                    //                        {
+                    //                            existingTrait.Bonuses = new List<Bonus>();
+                    //                            existingChildBonus = null;
+                    //                        }
 
-                                            if (existingChildBonus != null)
-                                                // Update bonus
-                                                contex.Entry(existingChildBonus).CurrentValues.SetValues(childBonus);
-                                            else
-                                                // Insert bonus
-                                                existingTrait.Bonuses.Add(childBonus);
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                                // Insert trait
-                                obj.Traits.Add(trait);
-                        }
-                    }
+                    //                        if (existingChildBonus != null)
+                    //                            // Update bonus
+                    //                            contex.Entry(existingChildBonus).CurrentValues.SetValues(childBonus);
+                    //                        else
+                    //                            // Insert bonus
+                    //                            existingTrait.Bonuses.Add(childBonus);
+                    //                    }
+                    //                }
+                    //            }
+                    //        }
+                    //        else
+                    //            // Insert trait
+                    //            obj.Equipment.Traits.Add(trait);
+                    //    }
+                    //}
                     await contex.SaveChangesAsync();
-                    return _mapper.Map<Equipment, EquipmentDTO>(obj);
+                    return _mapper.Map<EquipmentSlot, EquipmentSlotDTO>(obj);
                 }
                 else
                 {
-                    obj = _mapper.Map<EquipmentDTO, Equipment>(objDTO);
+                    obj = _mapper.Map<EquipmentSlotDTO, EquipmentSlot>(objDTO);
 
-                    var addedObj = contex.Equipment.Add(obj);
+                    var addedObj = contex.EquipmentSlots.Add(obj);
                     await contex.SaveChangesAsync();
 
-                    return _mapper.Map<Equipment, EquipmentDTO>(addedObj.Entity);
+                    return _mapper.Map<EquipmentSlot, EquipmentSlotDTO>(addedObj.Entity);
                 }
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Equipment Repository Update");
+                throw new RepositoryErrorException("Error in EquipmentSlot Repository Update");
             }
-            return null;
         }
     }
 }

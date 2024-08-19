@@ -10,7 +10,7 @@
 @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject IRaceRepository _raceRepository
 @inject IProfessionRepository _professionRepository
-@inject IEquipmentRepository _equipmentRepository
+@inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IUserService _userService
 @inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
@@ -523,7 +523,7 @@
                     AllParams.TraitsAdv = new List<TraitAdvDTO>();
                     AllParams.CurrentRace = new();
                     AllParams.Profession = new();
-                    AllParams.Equipment = new List<EquipmentDTO>();
+                    AllParams.EquipmentSlots = new List<EquipmentSlotDTO>();
                     AllParams.Character.UserName = UserInfo?.UserName;
                     IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer);
 
@@ -580,7 +580,7 @@
             AllParams.Traits.Add(new TraitAdvDTO(t, AllParams.Character)));
         AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
         AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
-        AllParams.Equipment = (await _equipmentRepository.GetAll(Id)).ToList();
+        AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
         AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
     }
 
@@ -617,7 +617,7 @@
                 AllParams.Traits.ToList().ForEach(t => AllParams.TraitsAdv.Add(new(t, AllParams.Character)));
                 AllParams.Character.TraitsAdv = AllParams.TraitsAdv;
                 // create equipment (in character)
-                AllParams.Character.Equipment = AllParams.Equipment;
+                AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
                 // create profession
                 professionDTO = await _professionRepository.Create(AllParams.Profession);
@@ -673,7 +673,7 @@
                 AllParams.Traits.ToList().ForEach(t => AllParams.Character.TraitsAdv.Add(new(t, AllParams.Character))); //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
 
                 // update equipment (in character)
-                AllParams.Character.Equipment = AllParams.Equipment;
+                AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
                 // update character with TraitAdv collection properly filled
                 await _characterRepository.Update(AllParams.Character);

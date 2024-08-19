@@ -65,6 +65,7 @@ builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IProfessionRepository, ProfessionRepository>();
 builder.Services.AddScoped<IProfessionSkillRepository, ProfessionSkillRepository>();
 builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();
+builder.Services.AddScoped<IEquipmentSlotRepository, EquipmentSlotRepository>();
 builder.Services.AddScoped<ISpellCircleRepository, SpellCircleRepository>();
 builder.Services.AddScoped<ISpellSlotRepository, SpellSlotRepository>();
 builder.Services.AddScoped<ISpellRepository, SpellRepository>();

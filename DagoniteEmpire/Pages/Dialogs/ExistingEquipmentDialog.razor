@@ -87,12 +87,12 @@
 
     private async Task OnSaveBtnClick()
     {
-
-        EquipmentChosen.EquipmentChosen = Grid.SelectedRecords;
+        var list = new List<EquipmentSlotDTO>();
+        Grid.SelectedRecords.ForEach(e =>list.Add(new(e)));
+        EquipmentChosen.EquipmentChosen = list;
         ErrorMessage = string.Empty;
 
         EquipmentChosen.IsVisible = false;
-
 
         await EquipmentChosenChanged.InvokeAsync(EquipmentChosen);
     }

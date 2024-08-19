@@ -18,9 +18,9 @@ namespace DA_Models.CharacterModels
         public string ShortDescr {  get; set; } = string.Empty;             // short item descr
         public decimal Price { get; set; }
         public decimal Weight { get; set; }
-        public int Count { get; set; } = 1;                                 // how many items in equipment
+        //public int Count { get; set; } = 1;                                 // how many items in equipment
         public bool IsApproved { get; set; }                                // Equipment have to be approved by Game Master
-        public bool IsEquipped { get; set; } = false;
+       // public bool IsEquipped { get; set; } = false;
         public string EquipmentType { get; set; } = "other";
         public ICollection<TraitEquipmentDTO>? Traits { get; set; } = new List<TraitEquipmentDTO>();
         public ICollection<CharacterDTO>? Characters { get; set; } = new List<CharacterDTO>();

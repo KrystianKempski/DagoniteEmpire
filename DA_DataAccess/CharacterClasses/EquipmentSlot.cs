@@ -15,10 +15,10 @@ namespace DA_DataAccess.CharacterClasses
         public int Count { get; set; } = 1;                // how many items in equipment
         public int EquipmentID { get; set; } = 0;
         [ForeignKey(nameof(EquipmentID))]
-        public Equipment Equipment { get; set; }
-        public bool IsEquipped { get; set; }
+        public Equipment Equipment { get; set; } = new();
+        public bool IsEquipped { get; set; } = false;
 
-        public string EquimpmentType { get; set; } = "";
+        public string SlotType { get; set; } = "other";
 
         public int CharacterID { get; set; } = 0;
         [ForeignKey(nameof(CharacterID))]

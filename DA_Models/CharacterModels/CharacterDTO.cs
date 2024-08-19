@@ -32,39 +32,39 @@ namespace DA_Models.CharacterModels
         public ICollection<BaseSkillDTO>? BaseSkills { get; set; }
         public ICollection<SpecialSkillDTO>? SpecialSkills { get; set; }
         public ICollection<TraitAdvDTO>? TraitsAdv { get; set; }
-        public ICollection<EquipmentDTO>? Equipment { get; set; }
+        public ICollection<EquipmentSlotDTO>? EquipmentSlots { get; set; }
         public ICollection<CampaignDTO>? Campaigns { get; set; }
         public ICollection<PostDTO>? Posts { get; set; }
         public ICollection<ChapterDTO>? Chapters { get; set; }
         public int RaceId { get; set; } = 0;
         public int ProfessionId { get; set; } = 0;
         public bool IsApproved { get; set; } = false;
-        public int WeaponId { get; set; } = 0;
-        public EquipmentDTO? Weapon { get; set; }
-        public int FaceId { get; set; } = 0;
-        public EquipmentDTO? Face { get; set; }
-        public int ThroatId { get; set; } = 0;
-        public EquipmentDTO? Throat { get; set; }
-        public int BodyId { get; set; } = 0;
-        public EquipmentDTO? Body { get; set; }
-        public int HandsId { get; set; } = 0;
-        public EquipmentDTO? Hands { get; set; }
-        public int WaistId { get; set; } = 0;
-        public EquipmentDTO? Waist { get; set; }
-        public int FeetId { get; set; } = 0;
-        public EquipmentDTO? Feet { get; set; }
-        public int HeadId { get; set; } = 0;
-        public EquipmentDTO? Head { get; set; }
-        public int ShouldersId { get; set; } = 0;
-        public EquipmentDTO? Shoulders { get; set; }
-        public int TorsoId { get; set; } = 0;
-        public EquipmentDTO? Torso { get; set; }
-        public int ArmsId { get; set; } = 0;
-        public EquipmentDTO? Arms { get; set; }
-        public int Ring1Id { get; set; } = 0;
-        public EquipmentDTO? Ring1 { get; set; }
-        public int Ring2Id { get; set; } = 0;
-        public EquipmentDTO? Ring2 { get; set; }
+        //public int WeaponId { get; set; } = 0;
+        //public EquipmentDTO? Weapon { get; set; }
+        //public int FaceId { get; set; } = 0;
+        //public EquipmentDTO? Face { get; set; }
+        //public int ThroatId { get; set; } = 0;
+        //public EquipmentDTO? Throat { get; set; }
+        //public int BodyId { get; set; } = 0;
+        //public EquipmentDTO? Body { get; set; }
+        //public int HandsId { get; set; } = 0;
+        //public EquipmentDTO? Hands { get; set; }
+        //public int WaistId { get; set; } = 0;
+        //public EquipmentDTO? Waist { get; set; }
+        //public int FeetId { get; set; } = 0;
+        //public EquipmentDTO? Feet { get; set; }
+        //public int HeadId { get; set; } = 0;
+        //public EquipmentDTO? Head { get; set; }
+        //public int ShouldersId { get; set; } = 0;
+        //public EquipmentDTO? Shoulders { get; set; }
+        //public int TorsoId { get; set; } = 0;
+        //public EquipmentDTO? Torso { get; set; }
+        //public int ArmsId { get; set; } = 0;
+        //public EquipmentDTO? Arms { get; set; }
+        //public int Ring1Id { get; set; } = 0;
+        //public EquipmentDTO? Ring1 { get; set; }
+        //public int Ring2Id { get; set; } = 0;
+        //public EquipmentDTO? Ring2 { get; set; }
 
         public override string ToString() => NPCName;
 

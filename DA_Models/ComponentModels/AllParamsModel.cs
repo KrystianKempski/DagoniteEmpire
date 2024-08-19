@@ -24,7 +24,7 @@ namespace DA_Models.ComponentModels
         public ICollection<TraitAdvDTO> TraitsAdv { get; set; } = new List<TraitAdvDTO>();
         public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
         public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
-        public ICollection<EquipmentDTO> Equipment { get; set; } = new List<EquipmentDTO>();
+        public ICollection<EquipmentSlotDTO> EquipmentSlots { get; set; } = new List<EquipmentSlotDTO>();
         public ICollection<BattlePropertyDTO> BattleProperties { get; set; } = new List<BattlePropertyDTO>();
         public void InitBattleProperties()
         {
@@ -79,11 +79,11 @@ namespace DA_Models.ComponentModels
             // calculate all race traits
             CalculateTraits(CurrentRace.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Race);
 
-            foreach (var equ in Equipment)
+            foreach (var slot in EquipmentSlots)
             {
-                if (equ.Traits != null && equ.IsEquipped)
+                if (slot.Equipment is not null && slot.Equipment.Traits != null && slot.IsEquipped)
                 {
-                    CalculateTraits(equ.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
+                    CalculateTraits(slot.Equipment.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
                 }
             }
         }

@@ -20,22 +20,22 @@
                             <div class="d-flex ">
                                 <div class="d-flex flex-column flex-grow-1 pe-1">
                                     <label class="fw-bold py-1">Item name</label>
-                                    <SfTextBox Placeholder="Insert item name" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Name"></SfTextBox>
+                                    <SfTextBox Placeholder="Insert item name" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Name"></SfTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Weight</label>
-                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Weight"></SfNumericTextBox>
+                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Weight"></SfNumericTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Price</label>
-                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Price"></SfNumericTextBox>
+                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Price"></SfNumericTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Type</label>
-                                    <InputSelect  @bind-Value="_customEquipmentComponent.EquipmentDTO.EquipmentType" class="form-select p-1">
+                                    <InputSelect @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType" class="form-select p-1">
                                         @foreach (var eq in SD.EquipmentType.All)
                                         {
-                                            <option selected="@(eq==CustomEquipmentComponent.EquipmentDTO.EquipmentType)" value="@eq"> @eq</option>
+                                            <option selected="@(eq==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType)" value="@eq"> @eq</option>
                                         }
                                     </InputSelect>
                                 </div>
@@ -44,7 +44,7 @@
                                     <div class="d-flex flex-column px-1">
                                         <label class="fw-bold py-1">Approve</label>
                                         <div class="justify-content-center mx-auto my-auto">
-                                            <SfCheckBox @bind-Checked="_customEquipmentComponent.EquipmentDTO.IsApproved"></SfCheckBox>
+                                            <SfCheckBox @bind-Checked="_customEquipmentComponent.EquipmentSlotDTO.Equipment.IsApproved"></SfCheckBox>
                                         </div>
                                     </div>
                                 }
@@ -55,24 +55,24 @@
                             <div class="d-flex ">
                                 <div class="d-flex flex-column flex-grow-1 pe-1">
                                     <label class="fw-bold py-1">Item name</label>
-                                    <SfTextBox Placeholder="Insert item name" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Name"></SfTextBox>
+                                    <SfTextBox Placeholder="Insert item name" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Name"></SfTextBox>
                                 </div>
                             </div>
                             <div class="d-flex ">
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Weight</label>
-                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Weight"></SfNumericTextBox>
+                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Weight"></SfNumericTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Price</label>
-                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Price"></SfNumericTextBox>
+                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Price"></SfNumericTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Type</label>
-                                    <InputSelect @bind-Value="_customEquipmentComponent.EquipmentDTO.EquipmentType" class="form-select p-1">
+                                    <InputSelect @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType" class="form-select p-1">
                                         @foreach (var eq in SD.EquipmentType.All)
                                         {
-                                            <option selected="@(eq==CustomEquipmentComponent.EquipmentDTO.EquipmentType)" value="@eq"> @eq</option>
+                                            <option selected="@(eq==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType)" value="@eq"> @eq</option>
                                         }
                                     </InputSelect>
                                 </div>
@@ -81,7 +81,7 @@
                                     <div class="d-flex flex-column px-1">
                                         <label class="fw-bold py-1">Approve</label>
                                         <div class="justify-content-center mx-auto my-auto">
-                                            <SfCheckBox @bind-Checked="_customEquipmentComponent.EquipmentDTO.IsApproved"></SfCheckBox>
+                                            <SfCheckBox @bind-Checked="_customEquipmentComponent.EquipmentSlotDTO.Equipment.IsApproved"></SfCheckBox>
                                         </div>
                                     </div>
                                 }
@@ -89,13 +89,13 @@
                         </div>
                         <div class="d-flex flex-column flex-grow-1">
                             <label class="fw-bold  p-1">Item description</label>
-                            <SfRichTextEditor Height="350px" @ref="DescrEdit" @bind-Value="@_customEquipmentComponent.EquipmentDTO.Description" ShowTooltip="true">
+                            <SfRichTextEditor Height="350px" @ref="DescrEdit" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Description" ShowTooltip="true">
                                 <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
                             </SfRichTextEditor>
                         </div>
 
                         <label class="fw-bold pt-4">Item traits</label>
-                        @if (_customEquipmentComponent.EquipmentDTO.Traits != null)
+                        @if (_customEquipmentComponent.EquipmentSlotDTO.Equipment.Traits != null)
                         {
                             <div class="traits">
                                 <TraitsComponent @bind-Traits="@CustomEquipmentComponent.Traits" TraitType="@TraitType"></TraitsComponent>
@@ -141,12 +141,12 @@
         set{
             if (_customEquipmentComponent == value) return;
             _customEquipmentComponent = value;
-            if (_customEquipmentComponent.EquipmentDTO != null)
+            if (_customEquipmentComponent.EquipmentSlotDTO.Equipment != null)
             {
-                _customEquipmentComponent.EquipmentDTO.Traits = new List<TraitEquipmentDTO>();
+                _customEquipmentComponent.EquipmentSlotDTO.Equipment.Traits = new List<TraitEquipmentDTO>();
                 foreach (var trait in _customEquipmentComponent.Traits)
                 {
-                    _customEquipmentComponent.EquipmentDTO.Traits.Add(new TraitEquipmentDTO(trait, _customEquipmentComponent.EquipmentDTO));
+                    _customEquipmentComponent.EquipmentSlotDTO.Equipment.Traits.Add(new TraitEquipmentDTO(trait, _customEquipmentComponent.EquipmentSlotDTO.Equipment));
                 }
             }
             IsLoading = false;
@@ -180,22 +180,22 @@
     private async Task OnSaveRaceBtnClick()
     {
 
-        if (string.IsNullOrEmpty(CustomEquipmentComponent.EquipmentDTO.Name) || string.IsNullOrEmpty(CustomEquipmentComponent.EquipmentDTO.Description))
+        if (string.IsNullOrEmpty(CustomEquipmentComponent.EquipmentSlotDTO.Equipment.Name) || string.IsNullOrEmpty(CustomEquipmentComponent.EquipmentSlotDTO.Equipment.Description))
         {
             ErrorMessage = $"Create name and item description";
             return;
         }
-        if (CustomEquipmentComponent.EquipmentDTO != null)
+        if (CustomEquipmentComponent.EquipmentSlotDTO.Equipment != null)
         {
-            CustomEquipmentComponent.EquipmentDTO.Traits = new List<TraitEquipmentDTO>();
+            CustomEquipmentComponent.EquipmentSlotDTO.Equipment.Traits = new List<TraitEquipmentDTO>();
             foreach (var trait in CustomEquipmentComponent.Traits)
             {
-                CustomEquipmentComponent.EquipmentDTO.Traits.Add(new TraitEquipmentDTO(trait, CustomEquipmentComponent.EquipmentDTO));
+                CustomEquipmentComponent.EquipmentSlotDTO.Equipment.Traits.Add(new TraitEquipmentDTO(trait, CustomEquipmentComponent.EquipmentSlotDTO.Equipment));
             }
             var shortDescr = (await DescrEdit.GetTextAsync());
             if (shortDescr.Length>100)
                 shortDescr= shortDescr?[0..100] + "...";
-            CustomEquipmentComponent.EquipmentDTO.ShortDescr = shortDescr;
+            CustomEquipmentComponent.EquipmentSlotDTO.Equipment.ShortDescr = shortDescr;
         }
         ErrorMessage = string.Empty;
         CustomEquipmentComponent.IsVisible = false;

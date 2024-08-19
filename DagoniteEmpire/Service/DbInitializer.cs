@@ -571,7 +571,6 @@ namespace DagoniteEmpire.Service
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Main tool of all adventurers",
                         ShortDescr = "Main tool of all adventurers",
-                        Count = 1,
                         Weight = 3.0m,
                         Price = 1.0m,
 
@@ -590,7 +589,6 @@ namespace DagoniteEmpire.Service
                         ShortDescr = "Light but sturdy",
                         Weight = 10.0m,
                         Price = 5.0m,
-                        Count = 1,
                         IsApproved = true,
 
                     };
@@ -607,7 +605,6 @@ namespace DagoniteEmpire.Service
                         ShortDescr = "For dressing wounds",
                         Weight = 0.2m,
                         Price = 0.01m,
-                        Count = 1,
                         IsApproved = true,
 
                     };
@@ -624,7 +621,6 @@ namespace DagoniteEmpire.Service
                         ShortDescr = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 Dose for ligth and medium wounds, 2 for heavy, and 4 for critical",
                         Weight = 1.0m,
                         Price = 0.1m,
-                        Count = 1,
                         IsApproved = true,
 
                     };
@@ -641,7 +637,6 @@ namespace DagoniteEmpire.Service
                         ShortDescr = "Small and deadly",
                         Weight = 1.0m,
                         Price = 0.1m,
-                        Count = 1,
                         IsApproved = true,
 
                     };
@@ -658,7 +653,6 @@ namespace DagoniteEmpire.Service
                         ShortDescr = "20 feat of strong rope",
                         Weight = 5.0m,
                         Price = 0.1m,
-                        Count = 1,
                         IsApproved = true,
 
                     };

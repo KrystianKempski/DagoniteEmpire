@@ -4,7 +4,7 @@
 @inject IJSRuntime _jsruntime
 @inject ICharacterRepository _characterRepository
 @inject IAttributeRepository _attributeRepository
-@inject IEquipmentRepository _equipmentRepository
+@inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IBaseSkillRepository _baseSkillRepository
 @inject ISpecialSkillRepository _specialSkillRepository
 @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
@@ -145,7 +145,7 @@
     {
         AllParams.Character = await _characterRepository.GetById(Id);
         AllParams.Attributes = await _attributeRepository.GetAll(Id);
-        AllParams.Equipment = (await _equipmentRepository.GetAll(Id)).ToList();
+        AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
 
     }
 
@@ -164,7 +164,7 @@
         try
         {
             // update equipment (in character)
-            AllParams.Character.Equipment = AllParams.Equipment;
+            AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
             //AllParams.Character.Head = SelectedHead;
 
             // update character with TraitAdv collection properly filled
@@ -195,40 +195,4 @@
         StateHasChanged();
     }
 
-    // private async Task ChangeGear(string eq, string type)
-    // {
-    //     try
-    //     {
-
-    //         if (AllParams.Character.Head is not null && AllParams.Character.Head.Name == eq)
-    //             return;
-
-    //         EquipmentDTO newGear = (EquipmentDTO)AllParams.Character.GetType().GetProperty(type).GetValue(AllParams.Character, null);
-    //         //feature.GetType().GetProperty(bonusName).SetValue(feature, newVal);
-
-    //         //unequip gear
-    //         if (newGear is not null)
-    //         {
-    //             var removedEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Id == newGear.Id);
-    //             if (removedEquipment is not null)
-    //                 removedEquipment.IsEquipped = false;
-
-    //             newGear.IsEquipped = false;
-    //         }
-    //         var putOnEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Name == eq);
-    //         if (putOnEquipment is not null)
-    //         {
-    //             putOnEquipment.IsEquipped = true;
-    //             AllParams.Character.GetType().GetProperty(type).SetValue(AllParams.Character, putOnEquipment);
-    //             //newGear = putOnEquipment;
-    //         }
-
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         IsLoading = false;
-    //         await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
-    //     }
-    // }
-   
 }

@@ -5,7 +5,7 @@
         <option value="Empty">Empty</option>
         @foreach (var eq in AllGearsOfType)
         {
-            <option value="@eq.Name"> @eq.Name</option>
+            <option value="@eq.Equipment.Name"> @eq.Equipment.Name</option>
         }
     </InputSelect>
 </div>
@@ -20,8 +20,10 @@
     public string GearItem { get; set; } = "";
     private string GearType;
 
+    public EquipmentSlotDTO? SelectedItem { get; set; }
 
-    public ICollection<EquipmentDTO> AllGearsOfType { get; set; } = new List<EquipmentDTO>(); 
+
+    public ICollection<EquipmentSlotDTO> AllGearsOfType { get; set; } = new List<EquipmentSlotDTO>(); 
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -29,10 +31,10 @@
         {
             GearType = GearItem;
             if (GearType == "Ring1" || GearType == "Ring2") GearType = "Rings";
-            EquipmentDTO newGear = (EquipmentDTO)AllParams.Character.GetType().GetProperty(GearItem).GetValue(AllParams.Character, null);
-            if (newGear is not null)
+            SelectedItem = AllParams.Character?.EquipmentSlots?.FirstOrDefault(s => s.SlotType==GearType);
+            if (SelectedItem is not null)
             {
-                SelectedGear = newGear.Name;
+                SelectedGear = SelectedItem.Equipment.Name;
             }
             ReloadGears();
         }
@@ -42,7 +44,7 @@
     {
         if (AllParams is not null)
         {
-            AllGearsOfType = AllParams.Equipment.Where(u => u.EquipmentType == GearType).ToList();
+            AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.SlotType == GearType).ToList();
             StateHasChanged();
         }
     }
@@ -51,33 +53,27 @@
     {
         try
         {
-            if (AllParams.Character.Head is not null && AllParams.Character.Head.Name == eq)
-                return;
-
-            EquipmentDTO newGear = (EquipmentDTO)AllParams.Character.GetType().GetProperty(GearItem).GetValue(AllParams.Character, null);
-
             //unequip gear
-            if (newGear is not null)
+            if (SelectedItem is not null)
             {
-                var removedEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Id == newGear.Id);
-                if (removedEquipment is not null)
-                    removedEquipment.IsEquipped = false;
+                SelectedItem.IsEquipped = false;
             }
 
             if (eq == "Empty")
                 return;
 
-            var putOnEquipment = AllParams.Character?.Equipment?.FirstOrDefault(u => u.Name == eq);
+            var putOnEquipment = AllParams.Character?.EquipmentSlots?.FirstOrDefault(u => u.Equipment.Name == eq);
             if (putOnEquipment is not null)
             {
                 putOnEquipment.IsEquipped = true;
-                AllParams.Character.GetType().GetProperty(GearItem).SetValue(AllParams.Character, putOnEquipment);
+                SelectedItem = putOnEquipment;
             }
 
         }
         catch (Exception ex)
         {
-           // IsLoading = false;
+            ;
+            // IsLoading = false;
            // await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
         }
     }

@@ -79,15 +79,13 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Equipment Repository Delete");
             }
-            return 0;
         }
 
-        public async Task<IEnumerable<EquipmentDTO>> GetAll(int? charId = null)
+        public async Task<IEnumerable<EquipmentDTO>> GetAll()
         {
             using var contex = await _db.CreateDbContextAsync();
-            if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses));
-            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses).Where(u => u.Characters.FirstOrDefault(c => c.Id == charId) != null));
+            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses));
+           
         }
 
         public async Task<IEnumerable<EquipmentDTO>> GetAllApproved()
@@ -242,7 +240,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Equipment Repository Update");
             }
-            return null;
         }
     }
 }

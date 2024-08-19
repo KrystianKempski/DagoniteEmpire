@@ -65,11 +65,11 @@ namespace DA_DataAccess.Data
                 .HasForeignKey(d => d.ToUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
 
-            modelBuilder.Entity<Character>()
-                .HasOne(d => d.Head)
-                .WithOne(p => p.Characters)
-                .HasForeignKey(d => d.ToUserId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+            //modelBuilder.Entity<Character>()
+            //    .HasOne(d => d.Head)
+            //    .WithOne(p => p.Characters)
+            //    .HasForeignKey(d => d.ToUserId)
+            //    .OnDelete(DeleteBehavior.ClientSetNull);
 
         }
     }

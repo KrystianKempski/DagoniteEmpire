@@ -27,6 +27,7 @@ namespace DA_Business.Mapper
             CreateMap<Race, RaceDTO>().ReverseMap();
             CreateMap<Profession, ProfessionDTO>().ReverseMap();
             CreateMap<Equipment, EquipmentDTO>().ReverseMap();
+            CreateMap<EquipmentSlot, EquipmentSlotDTO>().ReverseMap();
             CreateMap<Chapter,ChapterDTO>().ReverseMap();
             CreateMap<Post, PostDTO>().ReverseMap();
             CreateMap<Campaign, CampaignDTO>().ReverseMap();

@@ -9,7 +9,7 @@ namespace DA_Models.ComponentModels
 {
     public class EquipmentChosenModel
     {
-        public List<EquipmentDTO> EquipmentChosen { get; set; }
+        public List<EquipmentSlotDTO> EquipmentChosen { get; set; }
         public bool IsVisible { get; set; } = false;
     }
 }
