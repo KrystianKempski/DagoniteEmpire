@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240819094130_equipmentSlots")]
-    partial class equipmentSlots
+    [Migration("20240820064506_updateEquipmentSlots")]
+    partial class updateEquipmentSlots
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -320,15 +320,15 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("Count")
                         .HasColumnType("integer");
 
-                    b.Property<string>("EquimpmentType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("EquipmentID")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsEquipped")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("SlotType")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

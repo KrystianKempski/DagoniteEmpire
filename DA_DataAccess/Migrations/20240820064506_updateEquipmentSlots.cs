@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class equipmentSlots : Migration
+    public partial class updateEquipmentSlots : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -670,7 +670,7 @@ namespace DA_DataAccess.Migrations
                     Count = table.Column<int>(type: "integer", nullable: false),
                     EquipmentID = table.Column<int>(type: "integer", nullable: false),
                     IsEquipped = table.Column<bool>(type: "boolean", nullable: false),
-                    EquimpmentType = table.Column<string>(type: "text", nullable: false),
+                    SlotType = table.Column<string>(type: "text", nullable: false),
                     CharacterID = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>

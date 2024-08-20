@@ -317,15 +317,15 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("Count")
                         .HasColumnType("integer");
 
-                    b.Property<string>("EquimpmentType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("EquipmentID")
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsEquipped")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("SlotType")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

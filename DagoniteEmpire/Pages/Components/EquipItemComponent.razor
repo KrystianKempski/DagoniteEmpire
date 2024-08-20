@@ -17,8 +17,12 @@
     public AllParamsModel AllParams { get; set; }
 
     [Parameter]
-    public string GearItem { get; set; } = "";
-    private string GearType;
+    public string SlotType { get; set; } = "";
+
+    [Parameter]
+    public EventCallback OnGearChange { get; set; }
+
+    public string ItemType { get; set; } = "";
 
     public EquipmentSlotDTO? SelectedItem { get; set; }
 
@@ -29,12 +33,21 @@
     {
         if (firstRender)
         {
-            GearType = GearItem;
-            if (GearType == "Ring1" || GearType == "Ring2") GearType = "Rings";
-            SelectedItem = AllParams.Character?.EquipmentSlots?.FirstOrDefault(s => s.SlotType==GearType);
+
+            ItemType = SlotType;
+            if (ItemType == SD.SlotType.Ring1 || ItemType == SD.SlotType.Ring2)
+                ItemType = SD.EquipmentType.Rings;
+
+
+            SelectedItem = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SlotType);
+
             if (SelectedItem is not null)
             {
                 SelectedGear = SelectedItem.Equipment.Name;
+            }
+            else
+            {
+                SelectedGear = "Empty";
             }
             ReloadGears();
         }
@@ -44,7 +57,36 @@
     {
         if (AllParams is not null)
         {
-            AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.SlotType == GearType).ToList();
+            bool resetGear = false;
+            if (ItemType == SD.EquipmentType.Rings)
+                resetGear = true;
+
+            if (SlotType == SD.SlotType.WeaponMain1 || SlotType == SD.SlotType.WeaponMain2)
+            {
+                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
+                                                                     u.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged).ToList();
+                resetGear = true;
+            }
+            else if (SlotType == SD.SlotType.WeaponOff1 || SlotType == SD.SlotType.WeaponOff2)
+            {
+                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
+                                                                     u.Equipment.EquipmentType == SD.EquipmentType.Shield).ToList();
+                resetGear = true;
+            }
+            else
+            {
+                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == ItemType).ToList();
+            }
+
+            if (resetGear)
+            {
+                SelectedItem = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SlotType);
+                if (SelectedItem is not null)
+                    SelectedGear = SelectedItem.Equipment.Name;
+                else
+                    SelectedGear = "Empty";
+            }
+
             StateHasChanged();
         }
     }
@@ -57,18 +99,21 @@
             if (SelectedItem is not null)
             {
                 SelectedItem.IsEquipped = false;
+                SelectedItem.SlotType = "other";
             }
 
             if (eq == "Empty")
                 return;
 
-            var putOnEquipment = AllParams.Character?.EquipmentSlots?.FirstOrDefault(u => u.Equipment.Name == eq);
+            var putOnEquipment = AllParams.EquipmentSlots?.FirstOrDefault(u => u.Equipment.Name == eq);
             if (putOnEquipment is not null)
             {
                 putOnEquipment.IsEquipped = true;
+                putOnEquipment.SlotType = SlotType;
                 SelectedItem = putOnEquipment;
             }
 
+            OnGearChange.InvokeAsync();
         }
         catch (Exception ex)
         {

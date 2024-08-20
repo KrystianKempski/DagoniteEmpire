@@ -320,36 +320,14 @@ namespace DA_Business.Repository.CharacterReps
                     }
                     /// UPDATE EQUIPMENT
 
-                    // Delete equimpment
-                    //if (obj.Equipment is not null)
-                    //{
-                    //    foreach (var existingChild in obj.Equipment.ToList())
-                    //    {
-                    //        if (!updatedChar.Equipment.Any(c => c.Id == existingChild.Id))
-                    //        {
-                    //            if (existingChild.IsApproved == true)
-                    //            {
-                    //                //detach approved/non-deleting trait from character
-                    //                var detachedEquipment = contex.Equipment.Include(t => t.Traits).Include(c => c.EquipmentSlots).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
-                    //                if (detachedEquipment != null && !detachedEquipment.EquipmentSlots.IsNullOrEmpty() && detachedEquipment.EquipmentSlots.Contains(obj))
-                    //                {
-                    //                    detachedEquipment.EquipmentSlots.Remove(existingChild);
-                    //                    contex.Equipment.Update(detachedEquipment);
-                    //                }
-                    //            }
-                    //            else
-                    //                contex.Equipment.Remove(existingChild);
-                    //        }
-
-                    //    }
-                    //}
+                    
 
                     // Delete equipment
                     if (obj.EquipmentSlots is not null)
                     {
                         foreach (var existingSlot in obj.EquipmentSlots.ToList())
                         {
-                            if (updatedChar.EquipmentSlots.Any(s=>s.Id == existingSlot.Id))
+                            if (!updatedChar.EquipmentSlots.Any(s=>s.Id == existingSlot.Id))
                             {
                                 if (existingSlot.Equipment.IsApproved == true)
                                 {
@@ -373,11 +351,12 @@ namespace DA_Business.Repository.CharacterReps
                     {
                         foreach (var slot in updatedChar.EquipmentSlots)
                         {
+                            // Update built-in type members
                             EquipmentSlot? existingSlot = null;
                             if (obj.EquipmentSlots is not null)
                             {
                                 existingSlot = obj.EquipmentSlots
-                                    .FirstOrDefault(c => c.Id == slot.Equipment.Id && c.Id != default(int));
+                                    .FirstOrDefault(c => c.Id == slot.Id && c.Id != default(int));
                             }
                             else
                             {
@@ -387,7 +366,7 @@ namespace DA_Business.Repository.CharacterReps
                             if (existingSlot == null)
                             {
                                 existingSlot = contex.EquipmentSlots
-                                    .Include(e=>e.Equipment).ThenInclude(t => t.Traits)
+                                    ?.Include(e=>e.Equipment)?.ThenInclude(t => t.Traits)?.ThenInclude(t => t.Bonuses)
                                     .Include(c => c.Character)
                                     .FirstOrDefault(c => c.Id == slot.Id && c.Id != default(int));
                             }
@@ -400,6 +379,10 @@ namespace DA_Business.Repository.CharacterReps
                                     ?.Include(c => c.EquipmentSlots)
                                     ?.FirstOrDefault(c => c.Id == slot.EquipmentID && c.Id != default(int));
 
+                                //contex.Entry(existingSlot).CurrentValues.SetValues(slot);
+                                existingSlot.Count = slot.Count;
+                                existingSlot.SlotType = slot.SlotType;
+                                existingSlot.IsEquipped = slot.IsEquipped;
 
                                 if (existingItem is not null)
                                 {
@@ -530,7 +513,7 @@ namespace DA_Business.Repository.CharacterReps
                                 }
                             }
                             else
-                                // Insert trait
+                                // Insert slot
                                 obj.EquipmentSlots.Add(slot);
                         }
                     }

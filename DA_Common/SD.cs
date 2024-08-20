@@ -118,6 +118,28 @@ namespace DA_Common
             public const string Rings = "Rings";
             public static readonly string[] All = { Other, WeaponMelee, WeaponRanged, Shield, Face, Throat, Body, Hands, Waist, Feet, Head, Shoulders, Torso, Arms, Rings };
         }
+        public readonly struct SlotType
+        {
+            public const string Other = "Other";
+            public const string WeaponMain1 = "WeaponMain1";
+            public const string WeaponOff1 = "WeaponOff1";
+            public const string WeaponMain2 = "WeaponMain2";
+            public const string WeaponOff2 = "WeaponOff2";
+            public const string Shield = "Shield";
+            public const string Face = "Face";
+            public const string Throat = "Throat";
+            public const string Body = "Body";
+            public const string Hands = "Hands";
+            public const string Waist = "Waist";
+            public const string Feet = "Feet";
+            public const string Head = "Head";
+            public const string Shoulders = "Shoulders";
+            public const string Torso = "Torso";
+            public const string Arms = "Arms";
+            public const string Ring1 = "Ring1";
+            public const string Ring2 = "Ring2";
+            public static readonly string[] All = { Other, WeaponMain1, WeaponOff1, WeaponMain2, WeaponOff2, Shield, Face, Throat, Body, Hands, Waist, Feet, Head, Shoulders, Torso, Arms, Ring1,Ring2 };
+        }
 
 
 
@@ -208,8 +230,10 @@ namespace DA_Common
     public enum EquippedItems
     {
         Other,
-        WeaponMelee,
-        WeaponRanged, 
+        WeaponMain1,
+        WeaponOff1,
+        WeaponMain2,
+        WeaponOff2,
         Shield, 
         Face,
         Throat, 

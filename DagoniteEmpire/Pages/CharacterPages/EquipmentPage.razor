@@ -36,64 +36,109 @@
                 <img src="../images/CharacterItemPlacement.webp" class="stretch" />
                 <div class="input headgear">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Head]" GearItem="@SD.EquipmentType.Head"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Head]" OnGearChange="GearChange" SlotType="@SD.EquipmentType.Head"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input face">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Face]" GearItem="@SD.EquipmentType.Face"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Face]" OnGearChange="GearChange" SlotType="@SD.SlotType.Face"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input throat">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Throat]" GearItem="@SD.EquipmentType.Throat"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Throat]" OnGearChange="GearChange" SlotType="@SD.SlotType.Throat"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input body">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Body]" GearItem="@SD.EquipmentType.Body"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Body]" OnGearChange="GearChange" SlotType="@SD.SlotType.Body"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input hands">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Hands]" GearItem="@SD.EquipmentType.Hands"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Hands]" OnGearChange="GearChange" SlotType="@SD.SlotType.Hands"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input waist">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Waist]" GearItem="@SD.EquipmentType.Waist"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Waist]" OnGearChange="GearChange" SlotType="@SD.SlotType.Waist"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input feet">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Feet]" GearItem="@SD.EquipmentType.Feet"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Feet]" OnGearChange="GearChange" SlotType="@SD.SlotType.Feet"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input shoulders">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Shoulders]" GearItem="@SD.EquipmentType.Shoulders"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Shoulders]" OnGearChange="GearChange" SlotType="@SD.SlotType.Shoulders"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input torso">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Torso]" GearItem="@SD.EquipmentType.Torso"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Torso]" OnGearChange="GearChange" SlotType="@SD.SlotType.Torso"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input arms">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Arms]" GearItem="@SD.EquipmentType.Arms"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Arms]" OnGearChange="GearChange" SlotType="@SD.SlotType.Arms"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                  <div class="input ring1">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Ring1]" GearItem="Ring1"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Ring1]" OnGearChange="GearChange" SlotType="@SD.SlotType.Ring1"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
                 <div class="input ring2">
                     <CascadingValue Value="@AllParams">
-                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Ring2]" GearItem="Ring2"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.Ring2]" OnGearChange="GearChange" SlotType="@SD.SlotType.Ring2"> </EquipItemComponent>
                     </CascadingValue>
                 </div>
+            </div>
+            <div class="equipment border">
+                <CascadingValue Value="@AllParams">
+                    
+                    <div class="row w-100 border m-1 p-1">
+                        <div class="set-label">
+                            <label>Weapon set 1</label>
+                        </div>
+                        <div class="col-6 p-1">
+                            <label>Main hand</label>
+                            <div class="weapon main1">
+                                <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.WeaponMain1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponMain1"> </EquipItemComponent>
+                            </div>
+                        </div>
+
+                        <div class="col-6 p-1">
+                            <label>Off hand</label>
+                            <div class="weapon off1">
+                                <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.WeaponOff1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff1"> </EquipItemComponent>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row w-100 border m-1 p-1">
+                        <div class="set-label">
+                            <label>Weapon set 2</label>
+
+                        </div>
+                        <div class="col-6 p-1">
+                            <label>Main hand</label>
+                            <div class="weapon main2">
+                                <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.WeaponMain2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponMain2"> </EquipItemComponent>
+                            </div>
+                        </div>
+
+                        <div class="col-6 p-1">
+                            <label>Off hand</label>
+                            <div class="weapon off2">
+                                <EquipItemComponent @ref="EquipItemComp[(int)EquippedItems.WeaponOff2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff2"> </EquipItemComponent>
+                            </div>
+                        </div>
+                    </div>
+                </CascadingValue>
+
             </div>
         }
             
@@ -165,7 +210,6 @@
         {
             // update equipment (in character)
             AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
-            //AllParams.Character.Head = SelectedHead;
 
             // update character with TraitAdv collection properly filled
             await _characterRepository.Update(AllParams.Character);
@@ -192,6 +236,13 @@
             await _jsRuntime.ToastrError("Error while changing equipment");
         }
         IsLoading = false;
+        StateHasChanged();
+    }
+
+    protected async Task GearChange()
+    {
+        // update equipment (in character)
+        LoadPossibleGears();
         StateHasChanged();
     }
 
