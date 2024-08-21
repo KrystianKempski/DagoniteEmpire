@@ -27,6 +27,7 @@ namespace DA_DataAccess.CharacterClasses
         public decimal Weight { get; set; }
         public bool IsApproved { get; set; }                    // Equipment have to be approved by Game Master
         public string EquipmentType { get; set; } = "other";
+        public string RelatedSkill { get; set; } = "";
 
         //public ICollection<WeaponQuality>? WeaponQualities { get; set; } = null;
 

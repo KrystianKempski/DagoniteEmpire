@@ -22,6 +22,7 @@ namespace DA_Models.CharacterModels
         public bool IsApproved { get; set; }                                // Equipment have to be approved by Game Master
        // public bool IsEquipped { get; set; } = false;
         public string EquipmentType { get; set; } = "other";
+        public string RelatedSkill { get; set; } = "";
         public ICollection<TraitEquipmentDTO>? Traits { get; set; } = new List<TraitEquipmentDTO>();
         public ICollection<CharacterDTO>? Characters { get; set; } = new List<CharacterDTO>();
     }

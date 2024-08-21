@@ -1,0 +1,220 @@
+﻿@inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
+@inject IUserService _userService
+@inject NavigationManager _navigationManager
+
+<div class="equipment">
+    <CascadingValue Value="@AllParams">
+    <div class="row w-100 border m-1 p-1">
+        <div class="set-label">
+            <input class="px-1" type="checkbox" checked="@WeaponSet1" @onchange="WeaponSetChanged">
+            <label>Weapon set 1</label>
+        </div>
+        <div class="col-6 p-1">
+            <label>Main hand</label>
+            <div class="weapon main1">
+                <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponMain1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponMain1"> </EquipItemComponent>
+            </div>
+        </div>
+
+        <div class="col-6 p-1">
+            <label>Off hand</label>
+            <div class="weapon off1">
+                <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponOff1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff1"> </EquipItemComponent>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row w-100 border m-1 p-1">
+        <div class="set-label">
+            <input class="px-1" type="checkbox" checked="@WeaponSet2" @onchange="WeaponSetChanged">
+            <label>Weapon set 2</label>
+
+        </div>
+        <div class="col-6 p-1">
+            <label>Main hand</label>
+            <div class="weapon main2">
+                <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponMain2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponMain2"> </EquipItemComponent>
+            </div>
+        </div>
+
+        <div class="col-6 p-1">
+            <label>Off hand</label>
+            <div class="weapon off2">
+                <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponOff2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff2"> </EquipItemComponent>
+            </div>
+        </div>
+    </div>
+
+    </CascadingValue>
+    <div class="row w-100 border">
+       
+        <div class="col-6 pt-2 pb-2 ps-2 pe-1">
+            <div class="border">
+                <div class="set-label">
+                    <label>Attack</label>
+                </div>
+                <div class="d-flex px-4">
+                    <label class="flex-grow-1">Base: </label>
+                    <div class="">
+                        @AttackBase
+                    </div>
+                </div>
+                <div class="d-flex px-4">
+                    <label class="flex-grow-1">vs Dodge: </label>
+                    <div class="">
+                        @AttackDodge
+                    </div>
+                </div>
+                 <div class="d-flex px-4">
+                    <label class="flex-grow-1">vs Armor: </label>
+                    <div class="">
+                        @AttackArmor
+                    </div>
+                </div>
+                 <div class="d-flex px-4">
+                     <label class="flex-grow-1">vs Shield: </label>
+                    <div class="">
+                        @AttackShield
+                    </div>
+                </div>
+                 <div class="d-flex px-4">
+                    <label class="flex-grow-1">vs Parry: </label>
+                    <div class="">
+                        @AttackParry
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6  pt-2 pb-2 ps-1 pe-2">
+            <div class="border">
+                <div class="set-label">
+                    <label>Defence</label>
+                </div>
+
+                <div class="d-flex px-4">
+                    <label class="flex-grow-1">Armor: </label>
+                    <div class="">
+                        @ArmorClass
+                    </div>
+                </div>
+                <div class="d-flex px-4">
+                    <label class="flex-grow-1">Dodge: </label>
+                    <div class="">
+                        @DefenceDodge
+                    </div>
+                </div>
+                <div class="d-flex px-4">
+                    <label class="flex-grow-1">Armor: </label>
+                    <div class="">
+                        @DefenceArmor
+                    </div>
+                </div>
+                <div class="d-flex px-4">
+                    <label class="flex-grow-1">Shield: </label>
+                    <div class="">
+                        @DefenceShield
+                    </div>
+                </div>
+                <div class="d-flex px-4">
+                    <label class="flex-grow-1">Parry: </label>
+                    <div class="">
+                        @DefenceParry
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; } = new();
+
+    public bool WeaponSet1 { get; set; }
+    public bool WeaponSet2 { get; set; }
+
+    public int AttackBase { get; set; }
+    public int AttackDodge { get; set; }
+    public int AttackArmor { get; set; }
+    public int AttackShield { get; set; }
+    public int AttackParry { get; set; }
+
+    public int ArmorClass { get; set; }
+    public int DefenceDodge { get; set; }
+    public int DefenceArmor { get; set; }
+    public int DefenceShield { get; set; }
+    public int DefenceParry { get; set; }
+
+    public EquipmentDTO? WeaponUsed { get; set; }
+    public EquipmentDTO? ShieldUsed { get; set; }
+    public EquipmentDTO? ArmorUsed { get; set; }
+
+    public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp { get; set; } = new Dictionary<EquippedItems, EquipItemComponent>();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                WeaponSet1 = AllParams.Character.WeaponSet == 0 ? true : false;
+                WeaponSet2 = !WeaponSet1;
+
+                for (EquippedItems i = EquippedItems.WeaponMain1; i <= EquippedItems.WeaponOff2; i++)
+                {
+                    EquipItemComp[i] = new EquipItemComponent();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ;                
+            }
+        }
+    }
+    private async Task LoadAttackStats()
+    {
+        string slotType = WeaponSet1 ? SD.SlotType.WeaponMain2 : SD.SlotType.WeaponMain1;
+        string relatedSkill;
+
+        WeaponUsed = AllParams.Character?.EquipmentSlots?.FirstOrDefault(s => s.SlotType == slotType)?.Equipment;
+        if (WeaponUsed is not null)
+        {
+           // relatedSkill = WeaponUsed.
+        }
+
+
+    }
+
+    private async Task LoadPossibleGears()
+    {
+        foreach (var e in EquipItemComp)
+        {
+            e.Value.ReloadGears();
+        }
+    }
+
+    protected async Task GearChange()
+    {
+        // update equipment (in character)
+        LoadPossibleGears();
+        StateHasChanged();
+    }
+
+    protected async Task WeaponSetChanged()
+    {
+        if (WeaponSet1)
+        {
+            WeaponSet1 = false;
+            WeaponSet2 = true;
+        }
+        else
+        {
+            WeaponSet1 = true;
+            WeaponSet2 = false;
+        }
+        AllParams.Character.WeaponSet = WeaponSet2 ? 1 : 0;
+    }
+}

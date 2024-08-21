@@ -99,6 +99,29 @@ namespace DA_Common
             public const string Medicine = "Medicine";
             public static readonly string[] All = { Melee, Shooting, Acrobatics, SleightOfHands, Athletics, Talk, Deceit, Perception, Knowledge, Craft, Survival, AnimalHandle, Medicine };
         }
+
+        public readonly struct SpecialSkills
+        {
+            public readonly struct Melee
+            {
+                public const string Heavy = "Heavy weapons";
+                public const string Swords = "Swords and sabres";
+                public const string Fencing = "Fencing weapons";
+                public const string Light = "Light weapons";
+                public const string Shields = "Shields";
+                public const string Polearms = "Polearms";
+            };
+            public readonly struct Shooting
+            {
+                public const string Bows = "Bows";
+                public const string Crossbows = "Crossbows";
+                public const string Throwing = "Throwing weapons";
+                public const string Slingshots = "Slingshots";
+                public const string Javelins = "Javelins";
+                public const string Firearms = "Firearms";
+                public const string Grenades = "Grenades";
+            }
+        }
         public readonly struct EquipmentType
         {
             public const string Other = "Other";

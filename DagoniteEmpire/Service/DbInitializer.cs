@@ -571,6 +571,7 @@ namespace DagoniteEmpire.Service
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Main tool of all adventurers",
                         ShortDescr = "Main tool of all adventurers",
+                        RelatedSkill = SD.SpecialSkills.Melee.Swords,
                         Weight = 3.0m,
                         Price = 1.0m,
 
@@ -635,6 +636,7 @@ namespace DagoniteEmpire.Service
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Small and deadly",
                         ShortDescr = "Small and deadly",
+                        RelatedSkill = SD.SpecialSkills.Melee.Light,
                         Weight = 1.0m,
                         Price = 0.1m,
                         IsApproved = true,
@@ -651,6 +653,19 @@ namespace DagoniteEmpire.Service
                         EquipmentType = SD.EquipmentType.Other,
                         Description = "20 feat of strong rope",
                         ShortDescr = "20 feat of strong rope",
+                        Traits= new Trait()
+                        {
+                            Descr="This weapon is small and fast",
+                            Name = "Weapon qualities",
+                            TraitType = SD.TraitType_Gear,
+                            Bonuses = new Bonus()
+                            {
+                                BonusValue = 3,
+                                Description = "Fast",
+                                FeatureName = "Fast",
+
+                            }
+                        }
                         Weight = 5.0m,
                         Price = 0.1m,
                         IsApproved = true,
