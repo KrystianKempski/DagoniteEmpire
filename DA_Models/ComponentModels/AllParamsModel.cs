@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static DA_Common.SD;
 using static MudBlazor.CategoryTypes;
 
 namespace DA_Models.ComponentModels
@@ -25,17 +26,18 @@ namespace DA_Models.ComponentModels
         public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
         public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
         public ICollection<EquipmentSlotDTO> EquipmentSlots { get; set; } = new List<EquipmentSlotDTO>();
-        public ICollection<BattlePropertyDTO> BattleProperties { get; set; } = new List<BattlePropertyDTO>();
+        public IDictionary<string, BattlePropertyDTO> BattleProperties { get; set; }
+
+        //public Dictionary<string, int> BattleStats { get; set; } = new();
         public void InitBattleProperties()
-        {
-            BattleProperties = new List<BattlePropertyDTO>();
+        { 
             foreach (var prop in SD.BattleProperty.All)
             {
-                BattleProperties.Add(new BattlePropertyDTO() { Name = prop, BaseBonus = 0 });
+                BattleProperties[prop] = new BattlePropertyDTO() { Name = prop, BaseBonus = 0 };
             }
             foreach (var prop in SD.WeaponQuality.All)
             {
-                BattleProperties.Add(new BattlePropertyDTO() { Name = prop, BaseBonus = 0 });
+                BattleProperties[prop] = new BattlePropertyDTO() { Name = prop, BaseBonus = 0 };
             }
         }
 
@@ -120,7 +122,8 @@ namespace DA_Models.ComponentModels
                             feature = SpecialSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
                             break;
                         case SD.FeatureWeaponQuality:
-                            feature = BattleProperties.FirstOrDefault(u => u.Name == bonus.FeatureName);
+                            if(bonus.FeatureName is not null)
+                                feature = BattleProperties[bonus.FeatureName];
                             break;
                         default:
                             feature = null;
@@ -133,6 +136,130 @@ namespace DA_Models.ComponentModels
                     }
                 }
             }
+        }
+
+        private void GetWeaponQualityFromEquipment(EquipmentDTO equip)
+        {
+            if (equip is null || equip.Traits is null)
+            {
+                return;
+            }
+            BattlePropertyDTO? battleProp;
+            foreach (var trait in equip.Traits)
+            {
+                foreach (var bonus in trait.Bonuses)
+                {
+                    if (bonus.FeatureType == SD.FeatureWeaponQuality && bonus.FeatureName is not null)
+                    {
+                        battleProp = BattleProperties[bonus.FeatureName];
+                        if(battleProp is not null)
+                            battleProp.BaseBonus += bonus.BonusValue;
+                    }
+                }
+            }
+        }
+
+        private void AddGearBonusToSpecialSkill(string skillName, int value)
+        {
+            var skill = SpecialSkills.FirstOrDefault(s => s.Name == skillName);
+            skill.GearBonus += value;
+        }
+        private void ClearGearBonusToSpecialSkill(string skillName)
+        {
+            var skill = SpecialSkills.FirstOrDefault(s => s.Name == skillName);
+            skill.GearBonus=0;
+        }
+        public async Task CalculateBattleStats()
+        {
+            string slotTypeMain = Character.WeaponSet == 1 ? SD.SlotType.WeaponMain2 : SD.SlotType.WeaponMain1;
+            string slotTypeOff = Character.WeaponSet == 1 ? SD.SlotType.WeaponOff2 : SD.SlotType.WeaponOff1;
+
+
+
+            //clear BattleProperies values;
+            foreach (var prop in BattleProperties)
+            {
+                prop.Value.BaseBonus = 0;
+                prop.Value.GearBonus = 0;
+            }
+            //// clear Battle stats bonuses to skills
+            foreach (var skill in SpecialSkills)
+            {
+                if (skill.GearBonus != 0)
+                {
+                    skill.GearBonus = 0;
+                }
+            }
+            //recalcutate gear traits
+            foreach (var slot in EquipmentSlots)
+            {
+                if (slot.Equipment is not null && slot.Equipment.Traits != null && slot.IsEquipped)
+                {
+                    CalculateTraits(slot.Equipment.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
+                }
+            }
+
+            EquipmentDTO? WeaponUsed = Character?.EquipmentSlots?.FirstOrDefault(s => s.SlotType == slotTypeMain)?.Equipment;
+            if(WeaponUsed is not null)
+                GetWeaponQualityFromEquipment(WeaponUsed);
+            WeaponUsed = Character?.EquipmentSlots?.FirstOrDefault(s => s.SlotType == slotTypeOff)?.Equipment;
+            if (WeaponUsed is not null)
+                GetWeaponQualityFromEquipment(WeaponUsed);
+
+            // calculate base propertiers 
+            foreach (var prop in BattleProperties)
+            {
+                if (prop.Value.SumBonus == 0) continue;
+
+                switch (prop.Key)
+                {
+                    case SD.WeaponQuality.Parrying:
+                        BattleProperties[SD.BattleProperty.DefenceDodge].GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Fast:
+                        BattleProperties[SD.BattleProperty.AttackDodge].GearBonus += prop.Value.SumBonus;
+                        BattleProperties[SD.BattleProperty.AttackParry].GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Slow:
+                        BattleProperties[SD.BattleProperty.AttackDodge].GearBonus -= prop.Value.SumBonus;
+                        BattleProperties[SD.BattleProperty.AttackParry].GearBonus -= prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Heavy:
+                        BattleProperties[SD.BattleProperty.AttackParry].GearBonus += 3 * prop.Value.SumBonus;
+                        BattleProperties[SD.BattleProperty.AttackShield].GearBonus += prop.Value.SumBonus;
+                        BattleProperties[SD.BattleProperty.AttackArmor].GearBonus += prop.Value.SumBonus;
+                        BattleProperties[SD.BattleProperty.DefenceDodge].GearBonus -= prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Devastating:
+                        BattleProperties[SD.BattleProperty.DamageBonus].GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Weak:
+                        BattleProperties[SD.BattleProperty.DamageBonus].GearBonus -= prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Precise:
+                        BattleProperties[SD.BattleProperty.AttackBase].GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Bulky:
+                        BattleProperties[SD.BattleProperty.AttackBase].GearBonus -= prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.ArmorDefenceBonus:
+                        BattleProperties[SD.BattleProperty.DefenceArmor].GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.ShieldDefenceBonus:
+                        BattleProperties[SD.BattleProperty.DefenceShield].GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.ArmorBane:
+                        BattleProperties[SD.BattleProperty.DefenceDodge].GearBonus -= prop.Value.SumBonus;
+                        foreach (var skill in SD.SpecialSkills.ArmorBaneSkills)
+                        {
+                            AddGearBonusToSpecialSkill(skill, -prop.Value.SumBonus);
+                        }
+                        break;
+                }
+            }
+
+
+
         }
 
     }

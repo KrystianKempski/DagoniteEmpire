@@ -38,8 +38,11 @@
                         </td>
                         <td class="text-center nobottomborder">
                             <div class="row m-0">
-                                <button @onclick="@(()=>EditEquipment(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
-                                <button @onclick="@(()=>DeleteEquipment(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
+                                @if (obj.Equipment.IsApproved == false || UserInfo?.IsAdminOrMG == true)
+                                {
+                                    <button @onclick="@(()=>EditEquipment(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
+                                    <button @onclick="@(()=>DeleteEquipment(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
+                                }
                             </div>
                         </td>
                     </tr>

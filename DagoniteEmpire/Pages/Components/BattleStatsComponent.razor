@@ -55,33 +55,33 @@
                     <label>Attack</label>
                 </div>
                 <div class="d-flex px-4">
-                    <label class="flex-grow-1">Base: </label>
+                    <label class="flex-grow-1">Base @RelatedAttackSkill: </label>
                     <div class="">
-                        @AttackBase
+                        @AllParams.BattleProperties[SD.BattleProperty.AttackBase].Name
                     </div>
                 </div>
                 <div class="d-flex px-4">
                     <label class="flex-grow-1">vs Dodge: </label>
                     <div class="">
-                        @AttackDodge
+                        @AllParams.BattleProperties[SD.BattleProperty.AttackDodge].Name
                     </div>
                 </div>
                  <div class="d-flex px-4">
                     <label class="flex-grow-1">vs Armor: </label>
                     <div class="">
-                        @AttackArmor
+                        @AllParams.BattleProperties[SD.BattleProperty.AttackArmor].Name
                     </div>
                 </div>
                  <div class="d-flex px-4">
                      <label class="flex-grow-1">vs Shield: </label>
                     <div class="">
-                        @AttackShield
+                        @AllParams.BattleProperties[SD.BattleProperty.AttackShield].Name
                     </div>
                 </div>
                  <div class="d-flex px-4">
                     <label class="flex-grow-1">vs Parry: </label>
                     <div class="">
-                        @AttackParry
+                        @AllParams.BattleProperties[SD.BattleProperty.AttackParry].Name
                     </div>
                 </div>
             </div>
@@ -95,31 +95,31 @@
                 <div class="d-flex px-4">
                     <label class="flex-grow-1">Armor: </label>
                     <div class="">
-                        @ArmorClass
+                        @AllParams.BattleProperties[SD.BattleProperty.ArmorClass].Name
                     </div>
                 </div>
                 <div class="d-flex px-4">
                     <label class="flex-grow-1">Dodge: </label>
                     <div class="">
-                        @DefenceDodge
+                        @AllParams.BattleProperties[SD.BattleProperty.DefenceDodge].Name
                     </div>
                 </div>
                 <div class="d-flex px-4">
                     <label class="flex-grow-1">Armor: </label>
                     <div class="">
-                        @DefenceArmor
+                        @AllParams.BattleProperties[SD.BattleProperty.DefenceArmor].Name
                     </div>
                 </div>
                 <div class="d-flex px-4">
                     <label class="flex-grow-1">Shield: </label>
                     <div class="">
-                        @DefenceShield
+                        @AllParams.BattleProperties[SD.BattleProperty.DefenceShield].Name
                     </div>
                 </div>
                 <div class="d-flex px-4">
                     <label class="flex-grow-1">Parry: </label>
                     <div class="">
-                        @DefenceParry
+                        @AllParams.BattleProperties[SD.BattleProperty.DefenceParry].Name
                     </div>
                 </div>
             </div>
@@ -135,17 +135,9 @@
     public bool WeaponSet1 { get; set; }
     public bool WeaponSet2 { get; set; }
 
-    public int AttackBase { get; set; }
-    public int AttackDodge { get; set; }
-    public int AttackArmor { get; set; }
-    public int AttackShield { get; set; }
-    public int AttackParry { get; set; }
+   
 
-    public int ArmorClass { get; set; }
-    public int DefenceDodge { get; set; }
-    public int DefenceArmor { get; set; }
-    public int DefenceShield { get; set; }
-    public int DefenceParry { get; set; }
+    public string RelatedAttackSkill { get; set; }
 
     public EquipmentDTO? WeaponUsed { get; set; }
     public EquipmentDTO? ShieldUsed { get; set; }
@@ -167,6 +159,7 @@
                     EquipItemComp[i] = new EquipItemComponent();
                 }
 
+                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -182,8 +175,14 @@
         WeaponUsed = AllParams.Character?.EquipmentSlots?.FirstOrDefault(s => s.SlotType == slotType)?.Equipment;
         if (WeaponUsed is not null)
         {
-           // relatedSkill = WeaponUsed.
+            relatedSkill = WeaponUsed.RelatedSkill;
+            RelatedAttackSkill = "(" + relatedSkill + ")";
+            AttackBase = AllParams.Character.SpecialSkills.FirstOrDefault(s => s.Name == relatedSkill).SumBonus;
         }
+
+        AllParams.CalculateBattleStats();
+
+       
 
 
     }

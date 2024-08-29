@@ -513,8 +513,16 @@ namespace DA_Business.Repository.CharacterReps
                                 }
                             }
                             else
+                            {
                                 // Insert slot
+                                //slot.CharacterID = obj.Id;
+                                if (slot.Equipment.Id != slot.EquipmentID && slot.Equipment.Id != 0)
+                                {
+                                    slot.EquipmentID = slot.Equipment.Id;
+                                    slot.Equipment = null;
+                                }
                                 obj.EquipmentSlots.Add(slot);
+                            }
                         }
                     }
 

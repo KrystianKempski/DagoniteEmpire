@@ -64,10 +64,20 @@ namespace DA_Common
 
         public readonly struct BattleProperty
         {
-            public const string AttackBonus = "AttackBonus";
+            public const string AttackBase = "AttackBase";
+            public const string AttackDodge = "AttackDodge";
+            public const string AttackArmor = "AttackArmor";
+            public const string AttackShield = "AttackShield";
+            public const string AttackParry = "AttackParry";
             public const string DamageBonus = "DamageBonus";
-            public const string DefenceBonus = "DefenceBonus";
-            public static readonly string[] All = { AttackBonus, DamageBonus, DefenceBonus };
+
+            public const string ArmorClass = "ArmorClass";
+            public const string DefenceDodge = "DefenceDodge";
+            public const string DefenceArmor = "DefenceArmor";
+            public const string DefenceShield = "DefenceShield";
+            public const string DefenceParry = "DefenceParry";
+            public static readonly string[] All = { AttackBase, AttackDodge, AttackArmor, AttackShield, AttackParry,DamageBonus,
+                                                    ArmorClass, DefenceDodge, DefenceArmor, DefenceShield, DefenceParry };
         }
 
         public readonly struct Attributes
@@ -100,6 +110,8 @@ namespace DA_Common
             public static readonly string[] All = { Melee, Shooting, Acrobatics, SleightOfHands, Athletics, Talk, Deceit, Perception, Knowledge, Craft, Survival, AnimalHandle, Medicine };
         }
 
+        
+
         public readonly struct SpecialSkills
         {
             public readonly struct Melee
@@ -121,6 +133,28 @@ namespace DA_Common
                 public const string Firearms = "Firearms";
                 public const string Grenades = "Grenades";
             }
+            public readonly struct Acrobatics
+            {
+                public const string Jumping = "Jumping";
+                public const string Climbing = "Climbing";
+                public const string Balance = "Balance";
+                public const string Running = "Running";
+                public const string Dodge = "Dodge";
+            }
+            public readonly struct SleightOfHands
+            {
+                public const string Pickpocketing = "Pickpocketing";
+                public const string Lockpicking = "Lockpicking";
+                public const string DisarmingTraps = "Disarming traps";
+                public const string Tricks = "Tricks";
+                public const string Handcraft = "Handcraft";
+            }
+
+            public static readonly string[] ArmorBaneSkills = { Acrobatics.Jumping, Acrobatics.Climbing, Acrobatics.Balance, Acrobatics.Running, Acrobatics.Dodge,
+                                                                SleightOfHands.Pickpocketing, "Sneak"};
+
+
+
         }
         public readonly struct EquipmentType
         {

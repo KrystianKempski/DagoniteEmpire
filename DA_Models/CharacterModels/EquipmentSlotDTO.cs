@@ -19,6 +19,9 @@ namespace DA_Models.CharacterModels
         public bool IsEquipped { get; set; } = false;
         public string SlotType { get; set; } = "other";
 
+        public int CharacterID { get; set; } = 0;
+        public CharacterDTO Character { get; set; }
+
         public EquipmentSlotDTO() { }
         public EquipmentSlotDTO(EquipmentDTO eq) 
         {
