@@ -1,6 +1,6 @@
 ﻿<div>
-    <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGear)"
-            Value="@SelectedGear"
+    <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGearName)"
+                 Value="@SelectedGearName"
             ValueChanged="@((string value) => ChangeGear(value))">
         <option value="Empty">Empty</option>
         @foreach (var eq in AllGearsOfType)
@@ -11,7 +11,7 @@
 </div>
 
 @code {
-    private string SelectedGear ="Empty";
+    private string SelectedGearName ="Empty";
 
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
@@ -33,7 +33,6 @@
     {
         if (firstRender)
         {
-
             ItemType = SlotType;
             if (ItemType == SD.SlotType.Ring1 || ItemType == SD.SlotType.Ring2)
                 ItemType = SD.EquipmentType.Rings;
@@ -43,11 +42,11 @@
 
             if (SelectedItem is not null)
             {
-                SelectedGear = SelectedItem.Equipment.Name;
+                SelectedGearName = SelectedItem.Equipment.Name;
             }
             else
             {
-                SelectedGear = "Empty";
+                SelectedGearName = "Empty";
             }
             ReloadGears();
         }
@@ -82,9 +81,9 @@
             {
                 SelectedItem = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SlotType);
                 if (SelectedItem is not null)
-                    SelectedGear = SelectedItem.Equipment.Name;
+                    SelectedGearName = SelectedItem.Equipment.Name;
                 else
-                    SelectedGear = "Empty";
+                    SelectedGearName = "Empty";
             }
 
             StateHasChanged();
@@ -101,9 +100,13 @@
                 SelectedItem.IsEquipped = false;
                 SelectedItem.SlotType = "other";
             }
-
+            SelectedGearName = eq;
             if (eq == "Empty")
+            {
+                SelectedItem = null;
+                OnGearChange.InvokeAsync();
                 return;
+            }
 
             var putOnEquipment = AllParams.EquipmentSlots?.FirstOrDefault(u => u.Equipment.Name == eq);
             if (putOnEquipment is not null)

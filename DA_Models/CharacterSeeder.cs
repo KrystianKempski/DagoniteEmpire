@@ -11,45 +11,52 @@ namespace DA_Models
 {
     public class CharacterSeeder
     {
-        static public ICollection<AttributeDTO> GetAttributes()
+        static public IDictionary<string,AttributeDTO> GetAttributes()
         {
-            var attributes = new List<AttributeDTO>()
+            var attributes = new Dictionary<string,AttributeDTO>()
             {
-                new AttributeDTO()
-                {
-                    Name = SD.Attributes.Strength,
-                    Index = 0,
+                { SD.Attributes.Strength, new AttributeDTO()
+                    {
+                        Name = SD.Attributes.Strength,
+                        Index = 0,
+                    }
                 },
-                new AttributeDTO()
-                {
-                    Name = SD.Attributes.Dexterity,
-                    Index = 1,
+                { SD.Attributes.Dexterity, new AttributeDTO()
+                    {
+                        Name = SD.Attributes.Dexterity,
+                        Index = 1,
+                    }
+                 },
+                { SD.Attributes.Endurance, new AttributeDTO()
+                    {
+                        Name = SD.Attributes.Endurance,
+                        Index = 2,
+                        TempBonuses = 0,
+                    }
                 },
-                new AttributeDTO()
-                {
-                    Name = SD.Attributes.Endurance,
-                    Index = 2,
-                    TempBonuses = 0,
+                { SD.Attributes.Intelligence, new AttributeDTO()
+                    {
+                        Name = SD.Attributes.Intelligence,
+                        Index = 3,
+                    }
                 },
-                new AttributeDTO()
-                {
-                    Name = SD.Attributes.Intelligence,
-                    Index = 3,
+                { SD.Attributes.Instinct, new AttributeDTO()
+                    {
+                        Name = SD.Attributes.Instinct,
+                        Index = 4,
+                    }
                 },
-                new AttributeDTO()
-                {
-                    Name = SD.Attributes.Instinct,
-                    Index = 4,
+                { SD.Attributes.Willpower, new AttributeDTO()
+                    {
+                        Name = SD.Attributes.Willpower,
+                        Index = 5,
+                    }
                 },
-                new AttributeDTO()
-                {
-                    Name = SD.Attributes.Willpower,
-                    Index = 5,
-                },
-                new AttributeDTO()
-                {
-                    Name = SD.Attributes.Charisma,
-                    Index = 6,
+                { SD.Attributes.Charisma, new AttributeDTO()
+                    {
+                        Name = SD.Attributes.Charisma,
+                        Index = 6,
+                    }
                 },
             };
             return attributes;

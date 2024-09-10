@@ -3,55 +3,87 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
+using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static DA_Common.SD;
 
 namespace DA_Business.Repository.CharacterReps
 {
     public class SpecialSkillRepository : ISpecialSkillRepository
     {
-        private readonly ApplicationDbContext _db;
+        private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
 
-        public SpecialSkillRepository(ApplicationDbContext db, IMapper mapper)
+        public SpecialSkillRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
         {
             _db = db;
             _mapper = mapper;
         }
         public async Task<SpecialSkillDTO> Create(SpecialSkillDTO objDTO)
         {
+            using var contex = await _db.CreateDbContextAsync();
             var obj = _mapper.Map<SpecialSkillDTO, SpecialSkill>(objDTO);
-            var addedObj = _db.SpecialSkills.Add(obj);
-            await _db.SaveChangesAsync();
+            var addedObj = await contex.SpecialSkills.AddAsync(obj);
+            await contex.SaveChangesAsync();
 
             return _mapper.Map<SpecialSkill, SpecialSkillDTO>(addedObj.Entity);
         }
 
         public async Task<int> Delete(int id)
         {
-            var obj = await _db.SpecialSkills.FirstOrDefaultAsync(u => u.Id == id);
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.SpecialSkills.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                _db.SpecialSkills.Remove(obj);
-                return _db.SaveChanges();
+                contex.SpecialSkills.Remove(obj);
+                await contex.SaveChangesAsync();
             }
             return 0;
         }
 
-        public async Task<IEnumerable<SpecialSkillDTO>> GetAll(int? charId = null)
+        public async Task<IDictionary<string, SpecialSkillDTO>> GetAll(int? charId = null)
         {
-            if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills/*.Include(u => u.TraitBonusRelated)*/);
-           return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(_db.SpecialSkills/*.Include(u => u.TraitBonusRelated)*/.Where(u => u.CharacterId == charId).OrderBy(u=>u.Index));
+            try
+            {
+                List<SpecialSkill> obj;
+                using var contex = await _db.CreateDbContextAsync();
+                if (charId == null || charId < 1)
+                {
+                    obj = contex.SpecialSkills.ToList();
+                }
+                else
+                {
+                    obj = contex.SpecialSkills.Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToList();
+                }
+
+                if (obj != null && obj.Any())
+                {
+                    var list = _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(obj);
+                    IDictionary<string, SpecialSkillDTO> result = new Dictionary<string, SpecialSkillDTO>();
+                    foreach (var atr in list)
+                    {
+                        result[atr.Name] = atr;
+                    }
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            }
+
+            return new Dictionary<string, SpecialSkillDTO>();
         }
 
         public async Task<SpecialSkillDTO> GetById(int id)
         {
-            var obj = await _db.SpecialSkills./*Include(u => u.TraitBonusRelated).*/FirstOrDefaultAsync(u => u.Id == id);
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.SpecialSkills.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<SpecialSkill, SpecialSkillDTO>(obj);
@@ -61,32 +93,20 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<SpecialSkillDTO> Update(SpecialSkillDTO objDTO)
         {
-            var obj = await _db.SpecialSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.SpecialSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
-                obj.Name = objDTO.Name;    
-                obj.CharacterId = objDTO.CharacterId;       
-                obj.OtherBonuses = objDTO.OtherBonuses;        
-                obj.RaceBonus = objDTO.RaceBonus;  
-                obj.BaseBonus = objDTO.BaseBonus;
-                obj.GearBonus = objDTO.GearBonus;
-                obj.TraitBonus = objDTO.TraitBonus;
-                obj.TempBonuses = objDTO.TempBonuses;
-                obj.RelatedBaseSkillName = objDTO.RelatedBaseSkillName;
-                obj.RelatedAttribute1 = objDTO.RelatedAttribute1;
-                obj.RelatedAttribute2 = objDTO.RelatedAttribute2;
-                obj.ChosenAttribute = objDTO.ChosenAttribute;
-                obj.Editable = objDTO.Editable;
-                obj.Index = objDTO.Index; 
-                _db.SpecialSkills.Update(obj);
-                await _db.SaveChangesAsync();
+                // Update parent
+                contex.Entry(obj).CurrentValues.SetValues(objDTO);
+                await contex.SaveChangesAsync();
                 return _mapper.Map<SpecialSkill, SpecialSkillDTO>(obj);
             }
             else
             {
                 obj = _mapper.Map<SpecialSkillDTO, SpecialSkill>(objDTO);
-                var addedObj = _db.SpecialSkills.Add(obj);
-                await _db.SaveChangesAsync();
+                var addedObj = await contex.SpecialSkills.AddAsync(obj);
+                await contex.SaveChangesAsync();
 
                 return _mapper.Map<SpecialSkill, SpecialSkillDTO>(addedObj.Entity);
             }

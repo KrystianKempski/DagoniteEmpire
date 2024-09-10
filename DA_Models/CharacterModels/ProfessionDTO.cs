@@ -73,11 +73,11 @@ namespace DA_Models.CharacterModels
             };
             Description = string.Empty;
         }
-        public void CalculateClassParams(IEnumerable<AttributeDTO> attributes)
+        public void CalculateClassParams(IDictionary<string, AttributeDTO> attributes)
         {
             if (string.IsNullOrEmpty(RelatedAttributeName))
                 return;
-            var attr = attributes.FirstOrDefault(u => u.Name == RelatedAttributeName);
+            var attr = attributes[RelatedAttributeName];
             if (attr is null)
                 return;
             //attr.SumAll();
@@ -92,7 +92,7 @@ namespace DA_Models.CharacterModels
         {
             if (attr == null) return;
             RelatedAttribute = attr;
-            RelatedAttribute.ModifierChanged += A_PropertyChanged;
+            //RelatedAttribute.ModifierChanged += A_PropertyChanged;
         }
 
         private void A_PropertyChanged(object sender, PropertyChangedEventArgs e)

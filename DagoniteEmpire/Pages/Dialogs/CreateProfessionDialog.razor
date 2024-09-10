@@ -303,7 +303,7 @@
 
     public UserInfo? UserInfo { get; set; }
     [Parameter]
-    public IEnumerable<AttributeDTO> Attributes { get; set; }
+    public IDictionary<string, AttributeDTO> Attributes { get; set; }
 
 
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
@@ -393,7 +393,7 @@
             if (attrName != null && attrName != "0")
             {
                 CreateProfession.ProfessionDTO.RelatedAttributeName = attrName;
-                var attr = Attributes.FirstOrDefault(p => p.Name == attrName);
+                var attr = Attributes[attrName];
                 if (attr == null) return;
                 CreateProfession.ProfessionDTO.AddPropertyListener(attr);
 

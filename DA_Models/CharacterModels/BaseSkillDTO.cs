@@ -23,16 +23,16 @@ namespace DA_Models.CharacterModels
             {
                 if (_sumBonus == base.SumBonus) return _sumBonus;
                 _sumBonus = base.SumBonus;
-                OnSumChanged(nameof(SumBonus));
+                //OnSumChanged(nameof(SumBonus));
                 return _sumBonus;
             }
         }
 
-        public event PropertyChangedEventHandler? SumChanged = null;
+        //public event PropertyChangedEventHandler? SumChanged = null;
 
-        protected virtual void OnSumChanged(string propertyName)
-        {
-            SumChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        //protected virtual void OnSumChanged(string propertyName)
+        //{
+        //    SumChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        //}
     }
 }

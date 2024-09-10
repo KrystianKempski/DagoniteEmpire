@@ -65,7 +65,7 @@
                                     @if (obj.FeatureType == SD.FeatureAttribute)
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes.Values.ToArray()" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>
@@ -81,7 +81,7 @@
                                     else if (obj.FeatureType == SD.FeatureSpecialSkill)
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills.GetAllArray()" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>

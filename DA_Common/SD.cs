@@ -149,9 +149,18 @@ namespace DA_Common
                 public const string Tricks = "Tricks";
                 public const string Handcraft = "Handcraft";
             }
+            public readonly struct Athletics
+            {
+                public const string Wrestling = "Wrestling";
+                public const string Lifting = "Lifting";
+                public const string Armor = "Armor";
+                public const string Threatening = "Threatening";
+                public const string PainResistance = "Pain Resistance";
+                public const string Swimming = "Swimming";
+            }
 
             public static readonly string[] ArmorBaneSkills = { Acrobatics.Jumping, Acrobatics.Climbing, Acrobatics.Balance, Acrobatics.Running, Acrobatics.Dodge,
-                                                                SleightOfHands.Pickpocketing, "Sneak"};
+                                                                SleightOfHands.Pickpocketing, "Sneak",Athletics.Swimming};
 
 
 

@@ -131,7 +131,7 @@
                     obj = value.EquipmentSlotDTO;
                 }
 
-                AllParams.TraitsChange();
+                AllParams.GearChange();
                 OnTraitsChange.InvokeAsync();
             }
             if (_customEquipmentComponent == value) return;
@@ -154,7 +154,7 @@
                         AllParams.EquipmentSlots.Add(equ);
                     }
                 }
-                AllParams.TraitsChange();
+                AllParams.GearChange();
                 OnTraitsChange.InvokeAsync();
                 CalculateEquipWeightAndPrice();
 
@@ -215,7 +215,7 @@
             }
         }
         AllParams.EquipmentSlots = AllParams.EquipmentSlots.Where(u => u.Equipment.Name != slot.Equipment.Name).ToList();
-        await AllParams.TraitsChange();
+        await AllParams.GearChange();
         OnTraitsChange.InvokeAsync();
         CalculateEquipWeightAndPrice();
     }

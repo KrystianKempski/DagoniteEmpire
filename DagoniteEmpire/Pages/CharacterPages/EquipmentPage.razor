@@ -43,7 +43,7 @@
                         <EquipItemComponent @ref="EquipItemComp[EquippedItems.Throat]" OnGearChange="GearChange" SlotType="@SD.SlotType.Throat"> </EquipItemComponent>
                 </div>
                 <div class="input body">
-                        <EquipItemComponent @ref="EquipItemComp[EquippedItems.Body]" OnGearChange="GearChange" SlotType="@SD.SlotType.Body"> </EquipItemComponent>
+                        <EquipItemComponent @ref="EquipItemComp[EquippedItems.Body]" OnGearChange="ArmorChange" SlotType="@SD.SlotType.Body"> </EquipItemComponent>
                 </div>
                 <div class="input hands">
                         <EquipItemComponent @ref="EquipItemComp[EquippedItems.Hands]" OnGearChange="GearChange" SlotType="@SD.SlotType.Hands"> </EquipItemComponent>
@@ -131,7 +131,8 @@
         AllParams.Character = await _characterRepository.GetById(Id);
         AllParams.Attributes = await _attributeRepository.GetAll(Id);
         AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
-        AllParams.SpecialSkills = (await _specialSkillRepository.GetAll(Id)).ToList();
+        AllParams.BaseSkills = (await _baseSkillRepository.GetAll(Id)).ToList();
+        AllParams.SpecialSkills.Init((await _specialSkillRepository.GetAll(Id)));
     }
 
     private async Task SaveChanges()
@@ -145,21 +146,6 @@
 
             // update character with TraitAdv collection properly filled
             await _characterRepository.Update(AllParams.Character);
-            // foreach (var obj in AllParams.Attributes)
-            // {
-            //     obj.CharacterId = Id;
-            //     await _attributeRepository.Update(obj);
-            // }
-            // foreach (var obj in AllParams.BaseSkills)
-            // {
-            //     obj.CharacterId = Id;
-            //     await _baseSkillRepository.Update(obj);
-            // }
-            // foreach (var obj in AllParams.SpecialSkills)
-            // {
-            //     obj.CharacterId = Id;
-            //     await _specialSkillRepository.Update(obj);
-            // }
 
         }
         catch (Exception ex)
@@ -183,6 +169,15 @@
     {
         // update equipment (in character)
         LoadPossibleGears();
+        AllParams.GearChange();
+        StateHasChanged();
+    }
+
+    protected async Task ArmorChange()
+    {
+        // update equipment (in character)
+        LoadPossibleGears();
+        AllParams.GearChange();
         StateHasChanged();
     }
 

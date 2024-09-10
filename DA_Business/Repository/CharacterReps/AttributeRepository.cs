@@ -46,23 +46,37 @@ namespace DA_Business.Repository.CharacterReps
             return 0;
         }
 
-        public async Task<IEnumerable<AttributeDTO>> GetAll(int? charId = null)
+        public async Task<IDictionary<string,AttributeDTO>> GetAll(int? charId = null)
         {
-            using var contex = await _db.CreateDbContextAsync();
-            if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(contex.Attributes/*.Include(u => u.TraitBonusRelated)*/);
             try
             {
-                var obj = contex.Attributes./*Include(u => u.TraitBonusRelated).*/Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToList();
+                List<Attribute> obj;
+                using var contex = await _db.CreateDbContextAsync();
+                if (charId == null || charId < 1)
+                {
+                    obj = contex.Attributes.ToList();
+                }
+                else
+                {
+                    obj = contex.Attributes.Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToList();
+                }     
+           
                 if (obj != null && obj.Any())
-                    return _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(obj);
+                {
+                    var list = _mapper.Map<IEnumerable<Attribute>, IEnumerable<AttributeDTO>>(obj);
+                    IDictionary<string, AttributeDTO> result = new Dictionary<string, AttributeDTO>();
+                    foreach (var atr in list)
+                    {
+                        result[atr.Name] = atr;
+                    }
+                    return result;
+                }
             }
             catch (Exception ex) { 
                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); 
             }
 
-
-            return new List<AttributeDTO>();
+            return new Dictionary<string, AttributeDTO>();
         }
 
         public async Task<AttributeDTO> GetById(int id)

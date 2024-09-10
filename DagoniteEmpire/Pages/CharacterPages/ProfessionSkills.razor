@@ -447,8 +447,8 @@
 @code {
 
 
-    [Parameter]
-    public int Id { get; set; }
+        [Parameter]
+        public int Id { get; set; }
     public int AvalibleSpells { get; set; } = 0;
     public ProfessionDTO ProfessionDTO { get; set; } = new();
     private AllParamsModel AllParams { get; set; } = new();
@@ -613,8 +613,8 @@
             if (attrName != null && attrName != "0")
             {
                 ProfessionDTO.RelatedAttributeName = attrName;
-                ProfessionDTO.RelatedAttribute = AllParams.Attributes.FirstOrDefault(a => a.Name == attrName);
-                ProfessionDTO.CalculateClassParams(AllParams.Attributes);
+                ProfessionDTO.RelatedAttribute = AllParams.Attributes[attrName];
+            ProfessionDTO.CalculateClassParams(AllParams.Attributes);
                 StateHasChanged();
                 return;
             }

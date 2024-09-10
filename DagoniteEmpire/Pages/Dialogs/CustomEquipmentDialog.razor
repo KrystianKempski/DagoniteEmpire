@@ -44,7 +44,7 @@
                                     <div class="d-flex flex-column flex-grow-1 px-1">
                                         <label class="fw-bold py-1">Weapon Type</label>
                                         <InputSelect @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill" class="form-select p-1">
-                                            @foreach (var eq in AllParams.SpecialSkills.Where(s=>s.RelatedBaseSkillName == SD.BaseSkills.Melee))
+                                            @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Melee))
                                             {
                                                 <option selected="@(eq.Name==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
                                             }
@@ -55,7 +55,7 @@
                                     <div class="d-flex flex-column flex-grow-1 px-1">
                                         <label class="fw-bold py-1">Weapon Type</label>
                                         <InputSelect @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill" class="form-select p-1">
-                                            @foreach (var eq in AllParams.SpecialSkills.Where(s => s.RelatedBaseSkillName == SD.BaseSkills.Shooting).ToList())
+                                            @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Shooting))
                                             {
                                                 <option selected="@(eq.Name==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
                                             }
