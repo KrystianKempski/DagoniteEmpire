@@ -702,6 +702,46 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Dagger") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Wooden shield",
+                        EquipmentType = SD.EquipmentType.Shield,
+                        Description = "Just regular wooden shield",
+                        ShortDescr = "Just regular wooden shield",
+                        Traits = new List<TraitEquipment>() {
+                            new TraitEquipment(){
+                                Descr = "This weapon is small and fast",
+                                Name = "Weapon qualities",
+                                TraitType = SD.TraitType_Gear,
+                                SummaryDescr = "Shield Defence bonus 4, Armor Penalty 3",
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description =  SD.WeaponQuality.ShieldDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    }
+                                }
+                            }
+                        },
+                        RelatedSkill = SD.SpecialSkills.Melee.Light,
+                        Weight = 1.0m,
+                        Price = 0.1m,
+                        IsApproved = true,
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
 
                 //// add proffesion
                 //if(_db.Professions.FirstOrDefault(c => c.Name == "Warrior") is null)
@@ -713,22 +753,22 @@ namespace DagoniteEmpire.Service
 
                 // add character
 
-               //if (_db.Characters.FirstOrDefault(c => c.NPCName == "Mściwój") == null)
-               // {
-               //     string contents = File.ReadAllText(@"../seederFiles/AttributesMsciwoj");
-               //     object value = _db.Database.ExecuteSqlRaw(contents);
-               //     //    var charac = new Character() { UserName = "player", NPCName = "Mściwój" };
-               //     //    var attributes = new Feature() { Name = SD.Attributes.Strength, BaseBonus = 18  }
+                //if (_db.Characters.FirstOrDefault(c => c.NPCName == "Mściwój") == null)
+                // {
+                //     string contents = File.ReadAllText(@"../seederFiles/AttributesMsciwoj");
+                //     object value = _db.Database.ExecuteSqlRaw(contents);
+                //     //    var charac = new Character() { UserName = "player", NPCName = "Mściwój" };
+                //     //    var attributes = new Feature() { Name = SD.Attributes.Strength, BaseBonus = 18  }
 
-               //     //    var profession = _db.Professions.FirstOrDefault(c => c.Name == "Warrior");
-               //     //    var race = _db.Races.FirstOrDefault(c => c.Name == "Dwarf");
-               //     //    charac.ProfessionId = profession.Id;
-               //     //    charac.RaceId = race.Id;
-               //     //    charac.ImageUrl = "../images/Msciwoj.webp";
+                //     //    var profession = _db.Professions.FirstOrDefault(c => c.Name == "Warrior");
+                //     //    var race = _db.Races.FirstOrDefault(c => c.Name == "Dwarf");
+                //     //    charac.ProfessionId = profession.Id;
+                //     //    charac.RaceId = race.Id;
+                //     //    charac.ImageUrl = "../images/Msciwoj.webp";
 
-               //     //    _db.Characters.Add(charac);
-               //     //    _db.SaveChanges();
-               // }
+                //     //    _db.Characters.Add(charac);
+                //     //    _db.SaveChanges();
+                // }
             }
             catch (Exception ex)
             {

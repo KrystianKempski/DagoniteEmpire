@@ -50,7 +50,7 @@ namespace DA_Common
             public const string Snatching = "Snatching";
             public const string Armor = "Armor";
             public const string ArmorDefenceBonus = "Armor defence bonus";
-            public const string ArmorBane = "ArmorBane";
+            public const string ArmorPenalty = "Armor Penalty";
             public const string Durability = "Durability";
             public const string ShieldDefenceBonus = "Shield defence bonus";
             public const string Bulky = "Bulky";
@@ -59,7 +59,7 @@ namespace DA_Common
             public const string Light = "Light";
 
             public static readonly string[] All = { Fast, Slow, Parrying, ShieldDestructive, ArmorPiercing, Long, Heavy, Devastating,
-                Weak, Stunning, Stumbling, Snatching, Armor, ArmorDefenceBonus,ArmorBane ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light };
+                Weak, Stunning, Stumbling, Snatching, Armor, ArmorDefenceBonus,ArmorPenalty ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light };
         }
 
         public readonly struct BattleProperty
@@ -159,7 +159,7 @@ namespace DA_Common
                 public const string Swimming = "Swimming";
             }
 
-            public static readonly string[] ArmorBaneSkills = { Acrobatics.Jumping, Acrobatics.Climbing, Acrobatics.Balance, Acrobatics.Running, Acrobatics.Dodge,
+            public static readonly string[] ArmorPenaltySkills = { Acrobatics.Jumping, Acrobatics.Climbing, Acrobatics.Balance, Acrobatics.Running, Acrobatics.Dodge,
                                                                 SleightOfHands.Pickpocketing, "Sneak",Athletics.Swimming};
 
 

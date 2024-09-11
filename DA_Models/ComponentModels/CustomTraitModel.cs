@@ -14,5 +14,6 @@ namespace DA_Models.ComponentModels
 
         public bool IsVisible { get; set; } = false;
         public bool IsEditMode { get; set; } = false;
+        public bool IsWeaponQualityMode { get; set; } = false;
     }
 }

@@ -51,7 +51,11 @@
         @if (UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Advantage)
         {
             <div class="buttons-row">
-                <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add new</button>
+                <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add trait</button>
+                @if (TraitType == SD.TraitType_Gear && WeaponQualityAvalible)
+                {
+                    <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Add weapon qualities</button>
+                }
                 <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing traits</button>
             </div>
         }
@@ -59,6 +63,7 @@
 
     @if (CustomTraitComponent != null)
     {
+        <CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
         <CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
     }
     @if (TraitsChosen != null)
@@ -84,6 +89,9 @@
     [Parameter]
     public string TraitType { get; set; } = string.Empty;
 
+    [Parameter]
+    public bool WeaponQualityAvalible { get; set; } = false;
+
 
     private CustomTraitModel _customTraitComponent = new();
     private CustomTraitModel CustomTraitComponent
@@ -107,7 +115,8 @@
                 TraitsChanged.InvokeAsync(Traits);
                 AllParams.TraitsChange(TraitType);
                 OnTraitsChange.InvokeAsync();
-                CalculateTraitBalance();
+                if(_customTraitComponent.IsWeaponQualityMode == false)
+                    CalculateTraitBalance();
             }
             if (_customTraitComponent == value) return;
             _customTraitComponent = value;
@@ -150,25 +159,40 @@
         CustomTraitComponent.TraitDTO = new();
         CustomTraitComponent.IsVisible = true;
         CustomTraitComponent.IsEditMode = false;
-        //CalculateTraitBalance();
+        CustomTraitComponent.IsWeaponQualityMode = false;
     }
+    private async Task AddWeaponQualities()
+    {
+        CustomTraitComponent.TraitDTO = new();
+        CustomTraitComponent.IsVisible = true;
+        CustomTraitComponent.IsEditMode = false;
+        CustomTraitComponent.IsWeaponQualityMode = true;
+    }
+
     private async Task AddExistingTrait()
     {
         TraitsChosen = new();
         TraitsChosen.IsVisible = true;
         TraitsChosen.TraitType = TraitType;
-        //CalculateTraitBalance();
     }
 
     private async Task EditTrait(TraitDTO trait)
     {
         CustomTraitComponent.TraitDTO = trait;
         CustomTraitComponent.IsVisible = true;
-        CustomTraitComponent.IsEditMode = true;
-        CalculateTraitBalance();
+        CustomTraitComponent.IsEditMode = false;
+        if(trait.TraitType == SD.TraitType_Gear  && trait.Bonuses.First().FeatureType == SD.FeatureWeaponQuality)
+        {
+            CustomTraitComponent.IsWeaponQualityMode = true;
+        }
+        else
+        {
+            CustomTraitComponent.IsWeaponQualityMode = false;
+            CalculateTraitBalance();
+        }
     }
 
-    private async Task CalculateTraitBalance()
+    private void CalculateTraitBalance()
     {
         AllParams.Character.TraitBalance = 0;
         foreach (var trait in Traits)

@@ -62,6 +62,7 @@
                                         </InputSelect>
                                     </div>
                                 }
+
                                 @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
@@ -121,7 +122,7 @@
                         @if (_customEquipmentComponent.EquipmentSlotDTO.Equipment.Traits != null)
                         {
                             <div class="traits">
-                                <TraitsComponent @bind-Traits="@CustomEquipmentComponent.Traits" TraitType="@TraitType"></TraitsComponent>
+                                <TraitsComponent @bind-Traits="@CustomEquipmentComponent.Traits" TraitType="@TraitType" WeaponQualityAvalible="@WeaponQualityAvalible()"></TraitsComponent>
                             </div>
                         }
                     <label class="warnign-message">@ErrorMessage</label>
@@ -135,7 +136,7 @@
 
             <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
             </DialogButton>
-            <DialogButton OnClick="@OnSaveRaceBtnClick" Content="Save" IsPrimary="true">
+            <DialogButton OnClick="@OnSaveItemBtnClick" Content="Save" IsPrimary="true">
             </DialogButton>
         </DialogButtons>
     </SfDialog>
@@ -164,7 +165,7 @@
         set{
             if (_customEquipmentComponent == value) return;
             _customEquipmentComponent = value;
-            if (_customEquipmentComponent.EquipmentSlotDTO.Equipment != null)
+            if (_customEquipmentComponent.EquipmentSlotDTO.Equipment is not null)
             {
                 _customEquipmentComponent.EquipmentSlotDTO.Equipment.Traits = new List<TraitEquipmentDTO>();
                 foreach (var trait in _customEquipmentComponent.Traits)
@@ -200,7 +201,15 @@
         new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
     };
 
-    private async Task OnSaveRaceBtnClick()
+    private bool WeaponQualityAvalible()
+    {
+        return (_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged ||
+            _customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
+            _customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.Shield ||
+            _customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.Body);
+    }
+
+    private async Task OnSaveItemBtnClick()
     {
 
         if (string.IsNullOrEmpty(CustomEquipmentComponent.EquipmentSlotDTO.Equipment.Name) || string.IsNullOrEmpty(CustomEquipmentComponent.EquipmentSlotDTO.Equipment.Description))
@@ -219,20 +228,25 @@
             if (shortDescr.Length>100)
                 shortDescr= shortDescr?[0..100] + "...";
             CustomEquipmentComponent.EquipmentSlotDTO.Equipment.ShortDescr = shortDescr;
+
+            if (CustomEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.Shield)
+                CustomEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill = SD.SpecialSkills.Melee.Shields;
+            if (CustomEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.Body)
+                CustomEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill = SD.SpecialSkills.Athletics.Armor;
         }
         ErrorMessage = string.Empty;
         CustomEquipmentComponent.IsVisible = false;
 
         await CustomEquipmentComponentChanged.InvokeAsync(CustomEquipmentComponent);
     }
-    private async Task OnCancelBtnClick()
+    private void OnCancelBtnClick()
     {
         CustomEquipmentComponent.IsVisible = false;
     }
     private async Task DialogOpen()
-    {  //_customEquipmentComponent = new();
+    {  
 
-        this.DescrEdit.RefreshUIAsync();
+        await this.DescrEdit.RefreshUIAsync();
         ErrorMessage = string.Empty;
         StateHasChanged();
     }

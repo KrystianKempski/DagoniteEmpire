@@ -20,9 +20,13 @@
                 </div>
                     @if (Weapons[EquippedItems.WeaponMain1] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponMain1].RelatedSkill) == false)
                     {
-                        <label class="weapon-prop-label">Related skill:</label>
-                        <div class="weapon-prop-value">
-                            @Weapons[EquippedItems.WeaponMain1].RelatedSkill
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Skill (@Weapons[EquippedItems.WeaponMain1].RelatedSkill): </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponMain1].RelatedSkill).SumBonus
+                            </div>
                         </div>
                     
                         @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponMain1]){
@@ -31,11 +35,11 @@
                                 <div class="d-flex">
 
                                     <div class="flex-grow-1 weapon-prop-label">
-                                        <label> @prop.Name: </label>
+                                        <label>@prop.Name: </label>
                                     </div>
                                     @if (prop.SumBonus != 0)
                                     {
-                                        <div class="weapon-prop-value m-0">
+                                        <div class="weapon-prop-value">
                                             @prop.SumBonus
                                         </div>
                                     }
@@ -52,9 +56,13 @@
                 </div>
                     @if (Weapons[EquippedItems.WeaponOff1] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponOff1].RelatedSkill) == false)
                     {
-                        <label class="weapon-prop-label">Related skill:</label>
-                        <div class="weapon-prop-value">
-                            @Weapons[EquippedItems.WeaponOff1].RelatedSkill
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Skill (@Weapons[EquippedItems.WeaponOff1].RelatedSkill): </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponOff1].RelatedSkill).SumBonus
+                            </div>
                         </div>
                     
                         @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponOff1])
@@ -68,7 +76,7 @@
                                     </div>
                                     @if (prop.SumBonus != 0)
                                     {
-                                        <div class="weapon-prop-value m-0">
+                                        <div class="weapon-prop-value">
                                             @prop.SumBonus
                                         </div>
                                     }
@@ -93,9 +101,13 @@
                 </div>
                     @if (Weapons[EquippedItems.WeaponMain2] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponMain2].RelatedSkill) == false)
                     {
-                        <label class="weapon-prop-label">Related skill:</label>
-                        <div class="weapon-prop-value">
-                            @Weapons[EquippedItems.WeaponMain2].RelatedSkill
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Skill (@Weapons[EquippedItems.WeaponMain2].RelatedSkill): </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponMain2].RelatedSkill).SumBonus
+                            </div>
                         </div>
                    
                         @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponMain2])
@@ -109,7 +121,7 @@
                                     </div>
                                     @if (prop.SumBonus != 0)
                                     {
-                                        <div class="weapon-prop-value m-0">
+                                        <div class="weapon-prop-value">
                                             @prop.SumBonus
                                         </div>
                                     }
@@ -126,9 +138,13 @@
                 </div>
                     @if (Weapons[EquippedItems.WeaponOff2] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponOff2].RelatedSkill) == false)
                     {
-                        <label class="weapon-prop-label">Related skill:</label>
-                        <div class="weapon-prop-value">
-                            @Weapons[EquippedItems.WeaponOff2].RelatedSkill
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Skill (@Weapons[EquippedItems.WeaponOff2].RelatedSkill): </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponOff2].RelatedSkill).SumBonus
+                            </div>
                         </div>
                     
                         @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponOff2])
@@ -142,7 +158,7 @@
                                     </div>
                                     @if (prop.SumBonus != 0)
                                     {
-                                        <div class="weapon-prop-value m-0">
+                                        <div class="weapon-prop-value">
                                             @prop.SumBonus
                                         </div>
                                     }
@@ -191,6 +207,12 @@
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackParry).SumBonus
                         </div>
                     </div>
+                    <div class="d-flex px-4">
+                        <label class="flex-grow-1">Bonus damage: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.DamageBonus).SumBonus
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-6  pt-2 pb-2 ps-1 pe-2">
@@ -199,9 +221,9 @@
                         <label>Defence</label>
                     </div>
                     <div class="d-flex px-4">
-                        <label class="flex-grow-1">Damage Reduction: </label>
+                        <label class="flex-grow-1">Armor penalty: </label>
                         <div class="">
-                            @AllParams.BattleProperties.Get(SD.BattleProperty.ArmorClass).SumBonus
+                                @AllParams.BattleProperties.Get(SD.WeaponQuality.ArmorPenalty).SumBonus
                         </div>
                     </div>
                     <div class="d-flex px-4">
@@ -226,6 +248,12 @@
                         <label class="flex-grow-1">Parry: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceParry).SumBonus
+                        </div>
+                    </div>
+                    <div class="d-flex px-4">
+                        <label class="flex-grow-1">Damage Reduction: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.ArmorClass).SumBonus
                         </div>
                     </div>
                 </div>

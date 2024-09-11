@@ -51,11 +51,11 @@ namespace DA_Models.ComponentModels
                 throw new Exception("No trait type");
 
             if(TraitType == SD.TraitType_Advantage)
-                AdvTraitsChange();
+                await AdvTraitsChange();
             else if (TraitType == SD.TraitType_Race)
-                RaceTraitsChange();
+                await RaceTraitsChange();
             else if(TraitType == SD.TraitType_Gear)
-                GearChange();
+                await GearChange();
         }
 
         public async Task AdvTraitsChange()
@@ -75,7 +75,7 @@ namespace DA_Models.ComponentModels
             }
 
             // calculate all traits adv
-            CalculateTraits(Traits, SD.TraitType_Advantage);
+            await CalculateTraits(Traits, SD.TraitType_Advantage);
         }
 
         public async Task RaceTraitsChange()
@@ -95,7 +95,7 @@ namespace DA_Models.ComponentModels
             }
 
             // calculate all race traits
-            CalculateTraits(CurrentRace.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Race);
+            await CalculateTraits(CurrentRace.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Race);
         }
 
         public async Task GearChange()

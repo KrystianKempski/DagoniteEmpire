@@ -5,7 +5,7 @@
     <SfDialog Width="50%" Height="50%" @bind-Visible="@_customTraitModel.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>
-            <Header>Create a new Trait</Header>
+            <Header>@HeaderName</Header>
             <Content>
                  <div class="main-table">
 
@@ -15,44 +15,50 @@
                     }
                     else
                     {
-                        <div class="d-flex ">
-                            <div class="d-flex flex-column flex-grow-1">
-                            <label class="fw-bold py-1">Trait name</label>
-                                <SfTextBox Placeholder="Insert trait name" @bind-Value="@_customTraitModel.TraitDTO.Name"></SfTextBox>
-                            </div>
-                            @if (TraitType == SD.TraitType_Advantage)
-                            {
-                                <div class="d-flex flex-column px-1">
-                                    <label class="fw-bold py-1">Trait value</label>
-                                    <SfNumericTextBox Width="100px" TValue="int" @bind-Value="@_customTraitModel.TraitDTO.TraitValue"></SfNumericTextBox>
+                        @if(CustomTraitModel.IsWeaponQualityMode){
+                        }
+                        else
+                        {
+                            
+                            <div class="d-flex ">
+                                <div class="d-flex flex-column flex-grow-1">
+                                <label class="fw-bold py-1">Trait name</label>
+                                    <SfTextBox Placeholder="Insert trait name" @bind-Value="@_customTraitModel.TraitDTO.Name"></SfTextBox>
                                 </div>
+                                @if (TraitType == SD.TraitType_Advantage)
+                                {
+                                    <div class="d-flex flex-column px-1">
+                                        <label class="fw-bold py-1">Trait value</label>
+                                        <SfNumericTextBox Width="100px" TValue="int" @bind-Value="@_customTraitModel.TraitDTO.TraitValue"></SfNumericTextBox>
+                                    </div>
+                                    <div class="d-flex flex-column px-1">
+                                        <label class="fw-bold py-1">Unique</label>
+                                        <div class="justify-content-center mx-auto my-auto">
+                                            <SfCheckBox @bind-Checked="_customTraitModel.TraitDTO.IsUnique "></SfCheckBox>
+                                        </div>
+                                    </div>
+                                }
+                                @if (UserInfo?.IsAdminOrMG == true)
+                                {
                                 <div class="d-flex flex-column px-1">
-                                    <label class="fw-bold py-1">Unique</label>
+                                    <label class="fw-bold py-1">Approve</label>
                                     <div class="justify-content-center mx-auto my-auto">
-                                        <SfCheckBox @bind-Checked="_customTraitModel.TraitDTO.IsUnique "></SfCheckBox>
+                                            <SfCheckBox @bind-Checked="_customTraitModel.TraitDTO.TraitApproved"></SfCheckBox>
                                     </div>
                                 </div>
-                            }
-                            @if (UserInfo?.IsAdminOrMG == true)
-                            {
-                            <div class="d-flex flex-column px-1">
-                                <label class="fw-bold py-1">Approve</label>
-                                <div class="justify-content-center mx-auto my-auto">
-                                        <SfCheckBox @bind-Checked="_customTraitModel.TraitDTO.TraitApproved"></SfCheckBox>
+                                }
+                            </div>
+                            <div class="align-items-start bonus-name py-0">
+                                <label class="fw-bold  py-1">Trait description</label>
+                            </div>
+                            <div class="align-items-start">
+                                <div class="col-12 bonus-name py-0">
+                                    <SfTextBox Multiline=true Placeholder="Insert general trait description" @bind-Value="@_customTraitModel.TraitDTO.Descr"></SfTextBox>
                                 </div>
                             </div>
-                            }
-                        </div>
-                        <div class="align-items-start bonus-name py-0">
-                            <label class="fw-bold  py-1">Trait description</label>
-                        </div>
-                        <div class="align-items-start">
-                            <div class="col-12 bonus-name py-0">
-                                <SfTextBox Multiline=true Placeholder="Insert general trait description" @bind-Value="@_customTraitModel.TraitDTO.Descr"></SfTextBox>
-                            </div>
-                        </div>
                         
-                        <label class="fw-bold pt-4">Bonuses and penalties</label>
+                            <label class="fw-bold pt-4">Bonuses and penalties</label>
+                        }
                         @if (_customTraitModel.TraitDTO.Bonuses != null)
                         {
                             @foreach (var obj in _customTraitModel.TraitDTO.Bonuses)
@@ -60,7 +66,7 @@
                                 <label class="bonus-cell">Bonus @obj.Index</label>
                                 <div class="bonuses-columns">
                                         <div class="bonus-cell">
-                                        <SfDropDownList TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType"></SfDropDownList>
+                                        <SfDropDownList TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType" Enabled="@IsNotWeaponQuality()"></SfDropDownList>
                                         </div>
                                     @if (obj.FeatureType == SD.FeatureAttribute)
                                     {
@@ -121,7 +127,10 @@
                                 </div>
                             }
                         }
-                        <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
+                        <div class="d-flex">
+                            <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
+                            <button class="add-bonus-button" @onclick="OnDeleteBonusBtnClick"><i class="fa-solid fa-minus"></i></button>
+                         </div>
                     <label class="warnign-message">@ErrorMessage</label>
                     } 
                 </div> 
@@ -172,8 +181,13 @@
             CustomTraitModelChanged.InvokeAsync(value);
         }
     }
+    private string HeaderName = "Create a new Trait";
 
-    
+    private bool IsNotWeaponQuality()
+    {
+        return !CustomTraitModel.IsWeaponQualityMode;
+    }
+
     public class WeaponQualityList
     {
         public string Id { get; set; }
@@ -192,7 +206,7 @@
         new WeaponQualityList() { Id= SD.WeaponQuality.Snatching},
         new WeaponQualityList() { Id= SD.WeaponQuality.Armor},
         new WeaponQualityList() { Id= SD.WeaponQuality.ArmorDefenceBonus},
-        new WeaponQualityList() { Id= SD.WeaponQuality.ArmorBane},
+        new WeaponQualityList() { Id= SD.WeaponQuality.ArmorPenalty},
         new WeaponQualityList() { Id= SD.WeaponQuality.Durability},
         new WeaponQualityList() { Id= SD.WeaponQuality.ShieldDefenceBonus},
         new WeaponQualityList() { Id= SD.WeaponQuality.Bulky},
@@ -201,36 +215,46 @@
         new WeaponQualityList() { Id= SD.WeaponQuality.Light},
       };
 
-
-
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
 
-    List<string> FeatureData = new List<string>
+    private List<string> FeatureData = new List<string>
     {
         SD.FeatureAttribute,
         SD.FeatureBaseSkill,
         SD.FeatureSpecialSkill,
-        SD.FeatureWeaponQuality,
         SD.FeatureOther
     };
-
 
     private async Task OnSaveTraitBtnClick()
     {
 
-        if (CustomTraitModel.TraitDTO.Bonuses == null || CustomTraitModel.TraitDTO.Bonuses.Count == 0)
+        if (CustomTraitModel.IsWeaponQualityMode)
         {
-            ErrorMessage = $"There must be at least one bonus in trait";
-            return;
+            CustomTraitModel.TraitDTO.Name = "Weapon parameters";
+            CustomTraitModel.TraitDTO.Descr = "";
+        }
+        else
+        {
+            if (CustomTraitModel.TraitDTO.Bonuses == null || CustomTraitModel.TraitDTO.Bonuses.Count == 0)
+            {
+                ErrorMessage = $"There must be at least one bonus in trait";
+                return;
+            }
+
+            if (string.IsNullOrEmpty(CustomTraitModel.TraitDTO.Name) || string.IsNullOrEmpty(CustomTraitModel.TraitDTO.Descr))
+            {
+                ErrorMessage = $"Create name and description of trait";
+                return;
+            }
+            if (CustomTraitModel.IsEditMode == false && AllParams.Traits.Where(t => t.Name == CustomTraitModel.TraitDTO.Name).Count() > 0)
+            {
+                ErrorMessage = $"That trait name already exists";
+                return;
+            }
         }
         foreach (var bonus in CustomTraitModel.TraitDTO.Bonuses)
         {
-            if (bonus.BonusValue == 0 && bonus.Description==string.Empty)
-            {
-                ErrorMessage = $"Please fill all input fiels in bonus";
-                return;
-            }
             if (bonus.BonusValue == 0 && bonus.Description == string.Empty)
             {
                 ErrorMessage = $"Please fill all input fiels in bonus";
@@ -242,22 +266,15 @@
             ErrorMessage = $"Bonuses cannot relate to the same feature more than once";
             return;
         }
-        if (string.IsNullOrEmpty(CustomTraitModel.TraitDTO.Name) || string.IsNullOrEmpty(CustomTraitModel.TraitDTO.Descr))
-        {
-            ErrorMessage = $"Create name and description of trait";
-            return;
-        }
-        if (CustomTraitModel.IsEditMode == false && AllParams.Traits.Where(t => t.Name == CustomTraitModel.TraitDTO.Name).Count() > 0)
-        {
-            ErrorMessage = $"That trait name already exists";
-            return;
-        }
-        
+
 
         ErrorMessage = string.Empty;
 
         CustomTraitModel.IsVisible = false;
-        CustomTraitModel.TraitDTO.SummaryDescr = CustomTraitModel.TraitDTO.Descr + ". ";
+        if (CustomTraitModel.IsWeaponQualityMode)
+            CustomTraitModel.TraitDTO.SummaryDescr = "";
+        else
+            CustomTraitModel.TraitDTO.SummaryDescr = CustomTraitModel.TraitDTO.Descr + ". ";
 
         foreach (var bonus in CustomTraitModel.TraitDTO.Bonuses)
         {
@@ -278,8 +295,11 @@
 
         }
 
+        if (CustomTraitModel.IsWeaponQualityMode)
+            CustomTraitModel.TraitDTO.Descr = CustomTraitModel.TraitDTO.SummaryDescr;
+
         CustomTraitModel.TraitDTO.TraitType = TraitType;
-        
+
         await CustomTraitModelChanged.InvokeAsync(CustomTraitModel);
     }
     private async Task OnCancelBtnClick()
@@ -289,8 +309,42 @@
 
     private async Task DialogOpen()
     {
-             
+
         ErrorMessage = string.Empty;
+        if (CustomTraitModel.IsWeaponQualityMode)
+        {
+            if (CustomTraitModel.IsEditMode)
+            {
+                HeaderName = "Edit weapon properties";
+            }
+            else
+            {
+                HeaderName = "Create weapon properties";
+            }
+            FeatureData = new List<string>
+            {
+                SD.FeatureWeaponQuality
+            };
+        }
+        else
+        {
+            FeatureData = new List<string>
+            {
+                SD.FeatureAttribute,
+                SD.FeatureBaseSkill,
+                SD.FeatureSpecialSkill,
+                SD.FeatureOther
+            };
+            if (CustomTraitModel.IsEditMode)
+            {
+                HeaderName = "Edit trait";
+            }
+            else
+            {
+                HeaderName = "Create a new trait";
+            }
+
+        }
         StateHasChanged();
     }
     private async Task OnAddBonusBtnClick()
@@ -300,12 +354,26 @@
             CustomTraitModel.TraitDTO.Bonuses = new List<BonusDTO>();
         var bonus = new BonusDTO();
         bonus.Index = CustomTraitModel.TraitDTO.Bonuses.Count() + 1;
+        if(CustomTraitModel.IsWeaponQualityMode == true)
+        {
+            bonus.FeatureType = SD.FeatureWeaponQuality;
+        }
         CustomTraitModel.TraitDTO.Bonuses.Add(bonus);
+    }
+
+    private async Task OnDeleteBonusBtnClick()
+    {
+        ErrorMessage = string.Empty;
+        if (CustomTraitModel.TraitDTO.Bonuses is not null && CustomTraitModel.TraitDTO.Bonuses.Count() > 0)
+        {
+            CustomTraitModel.TraitDTO.Bonuses.Remove(CustomTraitModel.TraitDTO.Bonuses.Last());
+        }
     }
 
     protected override async Task OnInitializedAsync()
     {
         UserInfo = await _userService.GetUserInfo();
+        
     }
 
 }
