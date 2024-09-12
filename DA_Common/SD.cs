@@ -48,6 +48,7 @@ namespace DA_Common
             public const string Stunning = "Stunning";
             public const string Stumbling = "Stumbling";
             public const string Snatching = "Snatching";
+            public const string Disarming = "Disarming";
             public const string Armor = "Armor";
             public const string ArmorDefenceBonus = "Armor defence bonus";
             public const string ArmorPenalty = "Armor Penalty";
@@ -57,9 +58,10 @@ namespace DA_Common
             public const string Precise = "Precise";
             public const string Range = "Range";
             public const string Light = "Light";
+            public const string Reload = "Reload";
 
             public static readonly string[] All = { Fast, Slow, Parrying, ShieldDestructive, ArmorPiercing, Long, Heavy, Devastating,
-                Weak, Stunning, Stumbling, Snatching, Armor, ArmorDefenceBonus,ArmorPenalty ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light };
+                Weak, Stunning, Stumbling, Snatching,Disarming, Armor, ArmorDefenceBonus,ArmorPenalty ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light,Reload };
         }
 
         public readonly struct BattleProperty

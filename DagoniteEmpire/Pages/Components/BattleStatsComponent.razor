@@ -319,7 +319,7 @@
         }
     }
 
-    private async Task LoadPossibleGears()
+    public void LoadPossibleGears()
     {
         foreach (var e in EquipItemComp)
         {
@@ -330,7 +330,7 @@
     protected async Task GearChange()
     {
         // update equipment (in character)
-        await LoadPossibleGears();
+        LoadPossibleGears();
         await LoadAttackStats();
         StateHasChanged();
     }

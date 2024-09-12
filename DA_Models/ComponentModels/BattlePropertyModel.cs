@@ -127,8 +127,7 @@ namespace DA_Models.ComponentModels
                                 Get(SD.BattleProperty.DefenceShield).GearBonus += prop.Value.SumBonus;
                             break;
                         case SD.WeaponQuality.ArmorPenalty:
-                            var dodge = Get(SD.BattleProperty.DefenceDodge);
-                            dodge.GearBonus -= prop.Value.SumBonus;
+                            Get(SD.BattleProperty.DefenceDodge).GearBonus -= prop.Value.SumBonus;
                             //add bane to skills which are difficult to use with armor
                             foreach (var skill in SD.SpecialSkills.ArmorPenaltySkills)
                                 AddGearBonusToSpecialSkill(skill, -prop.Value.SumBonus);

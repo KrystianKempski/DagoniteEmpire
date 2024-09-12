@@ -3,8 +3,8 @@
 @inject NavigationManager _navigationManager
 <div class="equipment">
     <h3 class="my-3 ml-3 text-center">EQUIPMENT</h3>
-    <div class="table-container">
-        <table class="table align-middle">
+    <div class="table-container" >
+        <table class="table align-middle" >
             <thead>
                 <tr>
                     <th scope="col" class="name-row">Name</th>
@@ -57,7 +57,6 @@
                         <label class="name-label">All equipment: </label>
                     </td>
                     <td >
-                        
                     </td>
                     <td class="text-center">
                         <label class="text-label text-center">@EquipmentPrice.ToString("F3")</label>
@@ -171,8 +170,8 @@
         EquipmentPrice = 0.0m;
         foreach (var slot in AllParams.EquipmentSlots)
         {
-            EquipmentWeight += slot.Equipment.Weight;
-            EquipmentPrice += slot.Equipment.Price;
+            EquipmentWeight += slot.Weight;
+            EquipmentPrice += slot.Price;
         }
         StateHasChanged();
     }
@@ -223,13 +222,7 @@
 
     private async Task IncrCount(EquipmentSlotDTO obj)
     {
-
-        decimal unitWeigh = obj.Equipment.Weight / obj.Count;
-        decimal unitPrice = obj.Equipment.Price / obj.Count;
         obj.Count++;
-        obj.Equipment.Weight = unitWeigh * obj.Count;
-        obj.Equipment.Price = unitPrice * obj.Count;
-
         CalculateEquipWeightAndPrice();
     }
 
@@ -237,13 +230,7 @@
     {
         if (obj.Count>1)
         {
-            decimal unitWeigh = obj.Equipment.Weight / obj.Count;
-            decimal unitPrice = obj.Equipment.Price / obj.Count;
-
             obj.Count--;
-
-            obj.Weight = unitWeigh * obj.Count;
-            obj.Price = unitPrice * obj.Count;
             CalculateEquipWeightAndPrice();
         }
     }

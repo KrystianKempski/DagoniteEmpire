@@ -49,22 +49,39 @@ namespace DA_Business.Repository.CharacterReps
                     }
                 });
                 //handle equipment
-                var equipmentSlots = await contex.EquipmentSlots.ToListAsync();
-                equipmentSlots.ForEach(es =>
+                //var equipmentSlots = await contex.EquipmentSlots.ToListAsync();
+                //equipmentSlots.ForEach(es =>
+                //{
+                //    if (obj.EquipmentSlots.Any(nt => nt.Id == es.Id))
+                //    {
+                //        var untracked = obj.EquipmentSlots.FirstOrDefault(nt => nt.Id == es.Id);
+                //        obj.EquipmentSlots.Remove(untracked);
+                //        obj.EquipmentSlots.Add(es);
+                //    }
+                //});
+
+                // Update and Insert equimpment
+                if (obj.EquipmentSlots is not null)
                 {
-                    if (obj.EquipmentSlots.Any(nt => nt.Id == es.Id))
+                    foreach (var slot in obj.EquipmentSlots)
                     {
-                        var untracked = obj.EquipmentSlots.FirstOrDefault(nt => nt.Id == es.Id);
-                        obj.EquipmentSlots.Remove(untracked);
-                        obj.EquipmentSlots.Add(es);
+                        // Insert slot
+                        if (slot.Equipment.Id != slot.EquipmentID && slot.Equipment.Id != 0)
+                        {
+                            slot.EquipmentID = slot.Equipment.Id;
+                            slot.Equipment = null;
+                        }
+                        //obj.EquipmentSlots.Add(slot);
                     }
-                });
+                }
 
                 var addedObj = contex.Characters.Add(obj);
                 await contex.SaveChangesAsync();
                 return _mapper.Map<Character, CharacterDTO>(addedObj.Entity);
             }
-            catch (Exception ex) {throw new RepositoryErrorException("Error in"+ System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) {
+                throw new RepositoryErrorException("Error in"+ System.Reflection.MethodBase.GetCurrentMethod().Name); 
+            }
         }
 
         public async Task<int> Delete(int id)

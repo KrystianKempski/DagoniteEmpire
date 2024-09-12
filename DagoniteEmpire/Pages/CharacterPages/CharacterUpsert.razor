@@ -25,7 +25,8 @@
 @inject NavigationManager _navigationManager
 <_LeavePage IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click" ></_LeavePage>
 <div class="page">
-
+    
+    <CascadingValue Value="@AllParams">
     <div class="col-12">
          @if (IsLoading)
         {
@@ -257,15 +258,11 @@
                         </div>
 
                         <div class="races border">
-                            <CascadingValue Value="@AllParams">
-                                <RaceComponent OnTraitsChange="TraitsChange"></RaceComponent>
-                            </CascadingValue>
+                            <RaceComponent OnTraitsChange="TraitsChange"></RaceComponent>
                         </div>
 
                         <div class="profession border">
-                            <CascadingValue Value="@AllParams">
-                                <ProfessionComponent @bind-Profession="@AllParams.Profession"></ProfessionComponent>
-                            </CascadingValue>
+                            <ProfessionComponent @bind-Profession="@AllParams.Profession"></ProfessionComponent>
                         </div>
 
                         <div class="traits border">
@@ -274,21 +271,15 @@
                             </div>
                             <h3 class="my-3 ml-3 text-center">TRAITS</h3>
                             <div class="trait-container">
-                                <CascadingValue Value="@AllParams">
-                                    <TraitsComponent  OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.Traits" TraitType="@SD.TraitType_Advantage"></TraitsComponent>
-                                </CascadingValue>
+                                <TraitsComponent  OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.Traits" TraitType="@SD.TraitType_Advantage"></TraitsComponent>
                             </div>
                         </div>
 
                         <div class="description border">
-                            <CascadingValue Value="@AllParams">
-                                <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
-                            </CascadingValue>
+                            <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
                         </div>
                         <div class="equipment border">
-                            <CascadingValue Value="@AllParams">
-                                <EquipmentComponent OnTraitsChange="TraitsChange"></EquipmentComponent>
-                            </CascadingValue>
+                            <EquipmentComponent OnTraitsChange="TraitsChange"></EquipmentComponent>
                         </div>
                     </div>
                 </div>
@@ -437,7 +428,7 @@
            
         }
     </div>
-
+    </CascadingValue>
 </div>
 
 <style>

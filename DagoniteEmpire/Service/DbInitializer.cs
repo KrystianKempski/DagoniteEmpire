@@ -563,56 +563,7 @@ namespace DagoniteEmpire.Service
                 /// EQUIPMENT
 
                 Equipment item;
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Long sword") == null)
-                {
-                    item = new Equipment()
-                    {
-                        Name = "Long sword",
-                        EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Main tool of all adventurers",
-                        ShortDescr = "Main tool of all adventurers",
-                        RelatedSkill = SD.SpecialSkills.Melee.Swords,
-                        Weight = 3.0m,
-                        Price = 1.0m,
-                        Traits = new List<TraitEquipment>() 
-                        {
-                            new TraitEquipment(){
-                                Descr = "Weapon qualities",
-                                Name = "Weapon qualities",
-                                SummaryDescr = "Parrying 4",
-                                TraitType = SD.TraitType_Gear,
-                                Bonuses = new List<Bonus>()
-                                {
-                                    new Bonus{
-                                        BonusValue = 4,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Parrying,
-                                        FeatureName = SD.WeaponQuality.Parrying,
-                                    },
-                                }
-                            }
-                        },
-                        IsApproved = true,
-                    };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
-                }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Leather armor") == null)
-                {
-                    item = new Equipment()
-                    {
-                        Name = "Leather armor",
-                        EquipmentType = SD.EquipmentType.Body,
-                        Description = "Light but sturdy",
-                        ShortDescr = "Light but sturdy",
-                        Weight = 10.0m,
-                        Price = 5.0m,
-                        IsApproved = true,
 
-                    };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
-                }
                 if (_db.Equipment.FirstOrDefault(u => u.Name == "Bandage") == null)
                 {
                     item = new Equipment()
@@ -645,6 +596,501 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Rope") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Rope",
+                        EquipmentType = SD.EquipmentType.Other,
+                        Description = "20 feat of strong rope",
+                        ShortDescr = "20 feat of strong rope",
+
+                        Weight = 5.0m,
+                        Price = 0.1m,
+                        IsApproved = true,
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                
+
+                // ARMORS
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Light leather armor") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Light leather armor",
+                        EquipmentType = SD.EquipmentType.Body,
+                        Description = "Light but sturdy",
+                        ShortDescr = "Light but sturdy",
+                        Weight = 10.0m,
+                        Price = 5.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Armor  2, Armor defence bonus -4, Armor penalty 1",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Armor  3, Armor defence bonus -4, Armor penalty 1",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Armor,
+                                        FeatureName = SD.WeaponQuality.Armor,
+                                    },
+                                     new Bonus{
+                                        BonusValue = -4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 1,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Leather scale armor") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Leather scale armor",
+                        EquipmentType = SD.EquipmentType.Body,
+                        Description = "Offers good protection and mobility",
+                        ShortDescr = "Offers good protection and mobility",
+                        Weight = 15.0m,
+                        Price = 10.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Armor  4, Armor defence bonus -2, Armor penalty 3",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Armor  5, Armor defence bonus -2, Armor penalty 3",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Armor,
+                                        FeatureName = SD.WeaponQuality.Armor,
+                                    },
+                                     new Bonus{
+                                        BonusValue = -2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Steal scale armor") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Steal scale armor",
+                        EquipmentType = SD.EquipmentType.Body,
+                        Description = "Offers good protection and mobility",
+                        ShortDescr = "Offers good protection and mobility",
+                        Weight = 20.0m,
+                        Price = 20.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Armor  6, Armor defence bonus 1, Armor penalty 4",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Armor  6, Armor defence bonus 1, Armor penalty 4",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 6,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Armor,
+                                        FeatureName = SD.WeaponQuality.Armor,
+                                    },
+                                     new Bonus{
+                                        BonusValue = 1,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Half plate") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Half plate",
+                        EquipmentType = SD.EquipmentType.Body,
+                        Description = "Good protection of solid steal",
+                        ShortDescr = "Good protection of solid steal",
+                        Weight = 30.0m,
+                        Price = 50.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Armor  8, Armor defence bonus 3, Armor penalty 5",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Armor  6, Armor defence bonus 1, Armor penalty 5",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 8,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Armor,
+                                        FeatureName = SD.WeaponQuality.Armor,
+                                    },
+                                     new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 5,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Full plate") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Full plate",
+                        EquipmentType = SD.EquipmentType.Body,
+                        Description = "Best protection there is",
+                        ShortDescr = "Best protection there is",
+                        Weight = 40.0m,
+                        Price = 80.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Armor  10, Armor defence bonus 5, Armor penalty 6",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Armor  10, Armor defence bonus 5, Armor penalty 6",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 10,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Armor,
+                                        FeatureName = SD.WeaponQuality.Armor,
+                                    },
+                                     new Bonus{
+                                        BonusValue = 5,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 6,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                //SHIELDS
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Wooden buckler") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Wooden buckler",
+                        EquipmentType = SD.EquipmentType.Shield,
+                        RelatedSkill = SD.SpecialSkills.Melee.Shields,
+                        Description = "Small, but better than nothing",
+                        ShortDescr = "Small, but better than nothing",
+                        Weight = 2.0m,
+                        Price = 0.6m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Shield defence bonus 2, Armor penalty 1",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Shield defence bonus 2, Armor penalty 1",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                     new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 1,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Metal buckler") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Metal buckler",
+                        EquipmentType = SD.EquipmentType.Shield,
+                        RelatedSkill = SD.SpecialSkills.Melee.Shields,
+                        Description = "Small, but better than nothing",
+                        ShortDescr = "Small, but better than nothing",
+                        Weight = 2.0m,
+                        Price = 2.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Shield defence bonus 2, Armor penalty 0",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Shield defence bonus 2, Armor penalty 0",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                     new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Wooden shield") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Wooden shield",
+                        EquipmentType = SD.EquipmentType.Shield,
+                        RelatedSkill = SD.SpecialSkills.Melee.Shields,
+                        Description = "Simple, wooden shield",
+                        ShortDescr = "Simple, wooden shield",
+                        Weight = 5.0m,
+                        Price = 1.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Shield defence bonus 4, Armor penalty 3",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Shield defence bonus 4, Armor penalty 3",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                     new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+               
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Metal shield") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Metal shield",
+                        EquipmentType = SD.EquipmentType.Shield,
+                        RelatedSkill = SD.SpecialSkills.Melee.Shields,
+                        Description = "Strong, metal shield",
+                        ShortDescr = "Strong, metal shield",
+                        Weight = 5.0m,
+                        Price = 6.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Shield defence bonus 4, Armor penalty 2",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Shield defence bonus 4, Armor penalty 2",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                     new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Big wooden shield") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Big wooden shield",
+                        EquipmentType = SD.EquipmentType.Shield,
+                        RelatedSkill = SD.SpecialSkills.Melee.Shields,
+                        Description = "Biger for better protection",
+                        ShortDescr = "Biger for better protectiond",
+                        Weight = 10.0m,
+                        Price = 2.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Shield defence bonus 5, Armor penalty 4",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Shield defence bonus 5, Armor penalty 4",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                     new Bonus{
+                                        BonusValue = 5,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Big metal shield") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Big metal shield",
+                        EquipmentType = SD.EquipmentType.Shield,
+                        RelatedSkill = SD.SpecialSkills.Melee.Shields,
+                        Description = "Biger for better protection",
+                        ShortDescr = "Biger for better protectiond",
+                        Weight = 10.0m,
+                        Price = 9.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Shield defence bonus 5, Armor penalty 4",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Shield defence bonus 5, Armor penalty 4",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                     new Bonus{
+                                        BonusValue = 5,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
+                                        FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
+                                    },
+                                      new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPenalty,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                }
+                            }
+                        },
+
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                // WEAPONS MELEE
                 if (_db.Equipment.FirstOrDefault(u => u.Name == "Dagger") == null)
                 {
                     item = new Equipment()
@@ -653,12 +1099,16 @@ namespace DagoniteEmpire.Service
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Small and deadly",
                         ShortDescr = "Small and deadly",
+                        RelatedSkill = SD.SpecialSkills.Melee.Light,
+                        Weight = 1.0m,
+                        Price = 0.5m,
+                        IsApproved = true,
                         Traits = new List<TraitEquipment>() {
                             new TraitEquipment(){ 
-                                Descr = "This weapon is small and fast",
-                                Name = "Weapon qualities",
+                                Descr = "Fast 3, Light, Armor piercing 3",
+                                Name = "Weapon properties",
                                 TraitType = SD.TraitType_Gear,
-                                SummaryDescr = "Fast 3, Light",
+                                SummaryDescr = "Fast 3, Light, Armor piercing 3",
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
@@ -672,72 +1122,791 @@ namespace DagoniteEmpire.Service
                                         FeatureType = SD.FeatureWeaponQuality,
                                         Description = SD.WeaponQuality.Light,
                                         FeatureName = SD.WeaponQuality.Light,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPiercing,
+                                        FeatureName = SD.WeaponQuality.ArmorPiercing,
                                     }
                                 }
                             }
                         },
-                        RelatedSkill = SD.SpecialSkills.Melee.Light,
-                        Weight = 1.0m,
-                        Price = 0.1m,
-                        IsApproved = true,
 
                     };
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Rope") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Long sword") == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Rope",
-                        EquipmentType = SD.EquipmentType.Other,
-                        Description = "20 feat of strong rope",
-                        ShortDescr = "20 feat of strong rope",
-                        
-                        Weight = 5.0m,
-                        Price = 0.1m,
-                        IsApproved = true,
-
-                    };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
-                }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Dagger") == null)
-                {
-                    item = new Equipment()
-                    {
-                        Name = "Wooden shield",
-                        EquipmentType = SD.EquipmentType.Shield,
-                        Description = "Just regular wooden shield",
-                        ShortDescr = "Just regular wooden shield",
-                        Traits = new List<TraitEquipment>() {
+                        Name = "Long sword",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Main tool of all adventurers",
+                        ShortDescr = "Main tool of all adventurers",
+                        RelatedSkill = SD.SpecialSkills.Melee.Swords,
+                        Weight = 3.0m,
+                        Price = 3.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
                             new TraitEquipment(){
-                                Descr = "This weapon is small and fast",
-                                Name = "Weapon qualities",
+                                Descr = "Parrying 4, Disarming 4",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Parrying 4, Disarming 4",
                                 TraitType = SD.TraitType_Gear,
-                                SummaryDescr = "Shield Defence bonus 4, Armor Penalty 3",
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description =  SD.WeaponQuality.ShieldDefenceBonus,
-                                        FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
+                                        Description = SD.WeaponQuality.Parrying,
+                                        FeatureName = SD.WeaponQuality.Parrying,
                                     },
                                     new Bonus{
-                                        BonusValue = 3,
+                                        BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
-                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                        Description = SD.WeaponQuality.Disarming,
+                                        FeatureName = SD.WeaponQuality.Disarming,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Battle axe") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Battle axe",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Simple and deadly",
+                        ShortDescr = "Simple and deadly",
+                        RelatedSkill = SD.SpecialSkills.Melee.Heavy,
+                        Weight = 3.0m,
+                        Price = 1.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>() {
+                            new TraitEquipment(){
+                                Descr = "Shield destructive 4, Devastating 2",
+                                Name = "Weapon properties",
+                                TraitType = SD.TraitType_Gear,
+                                SummaryDescr = "Shield destructive 4, Devastating 2",
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description =  SD.WeaponQuality.ShieldDestructive,
+                                        FeatureName = SD.WeaponQuality.ShieldDestructive,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Devastating,
+                                        FeatureName = SD.WeaponQuality.Devastating,
                                     }
                                 }
                             }
                         },
-                        RelatedSkill = SD.SpecialSkills.Melee.Light,
-                        Weight = 1.0m,
-                        Price = 0.1m,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Pickaxe") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Pickaxe",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Good for penetrating armor",
+                        ShortDescr = "Good for penetrating armor",
+                        RelatedSkill = SD.SpecialSkills.Melee.Heavy,
+                        Weight = 4.0m,
+                        Price = 2.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Armor piercing 4, Shield destructive 2",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Armor piercing 4, Shield destructive 2",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPiercing,
+                                        FeatureName = SD.WeaponQuality.ArmorPiercing,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ShieldDestructive,
+                                        FeatureName = SD.WeaponQuality.ShieldDestructive,
+                                    },
+                                }
+                            }
+                        },
                         IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Mace") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Mace",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "One handed and good way to stun opponent",
+                        ShortDescr = "One handed and good way to stun opponent",
+                        RelatedSkill = SD.SpecialSkills.Melee.Heavy,
+                        Weight = 5.0m,
+                        Price = 2.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Destructive 2, Stunning 5",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Destructive 2, Stunning 2",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Devastating,
+                                        FeatureName = SD.WeaponQuality.Devastating,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 5,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Stunning,
+                                        FeatureName = SD.WeaponQuality.Stunning,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Morningstar") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Morningstar",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Weapon of heavily armed knights",
+                        ShortDescr = "Weapon of heavily armed knights",
+                        RelatedSkill = SD.SpecialSkills.Melee.Heavy,
+                        Weight = 5.0m,
+                        Price = 6.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Destructive 3, Armor piercing 3",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Destructive 3, Armor piercing 3",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Devastating,
+                                        FeatureName = SD.WeaponQuality.Devastating,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPiercing,
+                                        FeatureName = SD.WeaponQuality.ArmorPiercing,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Short spear") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Short spear",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Basic weapon of all soldiers",
+                        ShortDescr = "Basic weapon of all soldiers",
+                        RelatedSkill = SD.SpecialSkills.Melee.Polearms,
+                        Weight = 1.0m,
+                        Price = 0.5m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Long 2, Fast 3",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Long 2, Fast 3",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Long,
+                                        FeatureName = SD.WeaponQuality.Long,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Fast,
+                                        FeatureName = SD.WeaponQuality.Fast,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Rapier") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Rapier",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Fast and elegant weapon",
+                        ShortDescr = "Fast and elegant weapon",
+                        RelatedSkill = SD.SpecialSkills.Melee.Fencing,
+                        Weight = 2.0m,
+                        Price = 6.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Parrying 2, Armor Piercing 2, Fast 3",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Parrying 2, Armor Piercing 2, Fast 3",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Parrying,
+                                        FeatureName = SD.WeaponQuality.Parrying,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPiercing,
+                                        FeatureName = SD.WeaponQuality.ArmorPiercing,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Fast,
+                                        FeatureName = SD.WeaponQuality.Fast,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
 
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Two-handed flail") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Two-handed flail",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Heavy and slow, but easy to knock down an opponent",
+                        ShortDescr = "Heavy and slow, but easy to knock down an opponent",
+                        RelatedSkill = SD.SpecialSkills.Melee.Heavy,
+                        Weight = 10.0m,
+                        Price = 3.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Heavy 3, Slow 3, Stumbling 7",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Heavy 3, Slow 3, Stumbling 7",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Heavy,
+                                        FeatureName = SD.WeaponQuality.Heavy,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Slow,
+                                        FeatureName = SD.WeaponQuality.Slow,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 7,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Stumbling,
+                                        FeatureName = SD.WeaponQuality.Stumbling,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Warhammer") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Warhammer",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Powerful weapon that can easily stun the enemy",
+                        ShortDescr = "Powerful weapon that can easily stun the enemy",
+                        RelatedSkill = SD.SpecialSkills.Melee.Heavy,
+                        Weight = 15.0m,
+                        Price = 7.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Heavy 5, Slow 4,Devastating 3 Stunning 8",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Heavy 5, Slow 4,Devastating 3 Stunning 8",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 5,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Heavy,
+                                        FeatureName = SD.WeaponQuality.Heavy,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Slow,
+                                        FeatureName = SD.WeaponQuality.Slow,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Devastating,
+                                        FeatureName = SD.WeaponQuality.Devastating,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 8,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Stunning,
+                                        FeatureName = SD.WeaponQuality.Stunning,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Greataxe") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Greataxe",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "A truly devastating weapon",
+                        ShortDescr = "A truly devastating weapon",
+                        RelatedSkill = SD.SpecialSkills.Melee.Heavy,
+                        Weight = 10.0m,
+                        Price = 7.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Heavy 3, Slow 3,Devastating 4, Shield destructive 5",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Heavy 3, Slow 3,Devastating 4, Shield destructive 5",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Heavy,
+                                        FeatureName = SD.WeaponQuality.Heavy,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Slow,
+                                        FeatureName = SD.WeaponQuality.Slow,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Devastating,
+                                        FeatureName = SD.WeaponQuality.Devastating,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 5,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ShieldDestructive,
+                                        FeatureName = SD.WeaponQuality.ShieldDestructive,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Poleaxe") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Poleaxe",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Axe head on long pole",
+                        ShortDescr = "Axe head on long pole",
+                        RelatedSkill = SD.SpecialSkills.Melee.Polearms,
+                        Weight = 12.0m,
+                        Price = 7.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Heavy 4, Slow 4,Shield destructive 6, Long 2",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Heavy 4, Slow 4,Shield destructive 6, Long 2",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Heavy,
+                                        FeatureName = SD.WeaponQuality.Heavy,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Slow,
+                                        FeatureName = SD.WeaponQuality.Slow,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 6,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ShieldDestructive,
+                                        FeatureName = SD.WeaponQuality.ShieldDestructive,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Long,
+                                        FeatureName = SD.WeaponQuality.Long,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Sarissa") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Sarissa",
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Very long spear",
+                        ShortDescr = "Very long spear",
+                        RelatedSkill = SD.SpecialSkills.Melee.Polearms,
+                        Weight = 15.0m,
+                        Price = 3.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Slow 3,Armor piercing 4, Long 3",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Slow 3,Armor piercing 4, Long 3",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Slow,
+                                        FeatureName = SD.WeaponQuality.Slow,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPiercing,
+                                        FeatureName = SD.WeaponQuality.ArmorPiercing,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 3,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Long,
+                                        FeatureName = SD.WeaponQuality.Long,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                // WEAPONS RANGED
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Crossbow, light") == null)
+                { 
+                    item = new Equipment()
+                    {
+                        Name = "Crossbow, light",
+                        EquipmentType = SD.EquipmentType.WeaponRanged,
+                        Description = "Easy to use and slow to reload",
+                        ShortDescr = "Easy to use and slow to reload",
+                        RelatedSkill = SD.SpecialSkills.Shooting.Crossbows,
+                        Weight = 6.0m,
+                        Price = 10.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Armor piercing 2, Fast 4, Reload 1, Range 20",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Armor piercing 2, Fast 4, Reload 1, Range 20",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPiercing,
+                                        FeatureName = SD.WeaponQuality.ArmorPiercing,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Fast,
+                                        FeatureName = SD.WeaponQuality.Fast,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 1,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Reload,
+                                        FeatureName = SD.WeaponQuality.Reload,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 20,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Range,
+                                        FeatureName = SD.WeaponQuality.Range,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Crossbow, heavy") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Crossbow, heavy",
+                        EquipmentType = SD.EquipmentType.WeaponRanged,
+                        Description = "Powerfull but slow",
+                        ShortDescr = "Powerfull but slow",
+                        RelatedSkill = SD.SpecialSkills.Shooting.Crossbows,
+                        Weight = 6.0m,
+                        Price = 10.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Armor piercing 5, Devastating 2, Fast 4, Reload 2, Range 30",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Armor piercing 5, Devastating 2, Fast 4, Reload 2, Range 30",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 5,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPiercing,
+                                        FeatureName = SD.WeaponQuality.ArmorPiercing,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Devastating,
+                                        FeatureName = SD.WeaponQuality.Devastating,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Fast,
+                                        FeatureName = SD.WeaponQuality.Fast,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Reload,
+                                        FeatureName = SD.WeaponQuality.Reload,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 30,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Range,
+                                        FeatureName = SD.WeaponQuality.Range,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Bow, simple") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Bow, simple",
+                        EquipmentType = SD.EquipmentType.WeaponRanged,
+                        Description = "Common tool of hunters",
+                        ShortDescr = "Common tool of hunters",
+                        RelatedSkill = SD.SpecialSkills.Shooting.Bows,
+                        Weight = 3.0m,
+                        Price = 1.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Armor piercing 2,Fast 2, Range 20",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Armor piercing 2,Fast 2, Range 20",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.ArmorPiercing,
+                                        FeatureName = SD.WeaponQuality.ArmorPiercing,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Fast,
+                                        FeatureName = SD.WeaponQuality.Fast,
+                                    },
+
+                                    new Bonus{
+                                        BonusValue = 20,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Range,
+                                        FeatureName = SD.WeaponQuality.Range,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Longbow") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Longbow",
+                        EquipmentType = SD.EquipmentType.WeaponRanged,
+                        Description = "Military archers primary weapon",
+                        ShortDescr = "Military archers primary weapon",
+                        RelatedSkill = SD.SpecialSkills.Shooting.Bows,
+                        Weight = 3.0m,
+                        Price = 1.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Fast 4, Range 40",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Fast 4, Range 40",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Fast,
+                                        FeatureName = SD.WeaponQuality.Fast,
+                                    },
+
+                                    new Bonus{
+                                        BonusValue = 40,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Range,
+                                        FeatureName = SD.WeaponQuality.Range,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == "Slingshot") == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = "Slingshot",
+                        EquipmentType = SD.EquipmentType.WeaponRanged,
+                        Description = "Simple but effective",
+                        ShortDescr = "Simple but effective",
+                        RelatedSkill = SD.SpecialSkills.Shooting.Slingshots,
+                        Weight = 0.5m,
+                        Price = 0.5m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "Devastating 2, Range 20",
+                                Name = "Weapon properties",
+                                SummaryDescr = "Devastating 2, Range 20",
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 4,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Devastating,
+                                        FeatureName = SD.WeaponQuality.Devastating,
+                                    },
+
+                                    new Bonus{
+                                        BonusValue = 40,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.Range,
+                                        FeatureName = SD.WeaponQuality.Range,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
                     };
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
