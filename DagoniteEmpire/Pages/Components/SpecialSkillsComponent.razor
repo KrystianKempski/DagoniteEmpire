@@ -1,0 +1,270 @@
+﻿
+@inject IJSRuntime _jsRuntime
+
+<div class="specialskills-table border">
+    <div class="sheet-img">
+        @*  <img src="../images/old_paper2.png" class="stretch" /> *@
+    </div>
+    <div class="specialskills-control">
+        <label class="specialskills-label">@BaseSkill.Name</label>
+        <span class="specialskills-indicator">@BaseSkill.SumBonus</span>
+    </div>
+    <table class="table align-middle mb-1">
+        <thead>
+            <tr>
+                <th scope="col" class="skillname-row">Skill</th>
+                <th scope="col" class="bonus-row text-center">Base</th>
+                <th scope="col" class="rel-attr-row">Related attribute</th>
+                <th scope="col" class="sum-row text-center">Attr. mod.</th>
+                <th scope="col" class="sum-row text-center">Race</th>
+                <th scope="col" class="sum-row text-center">Gear</th>
+                <th scope="col" class="sum-row text-center">Trait</th>
+                <th scope="col" class="sum-row text-center"> Sum</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var obj in AllParams.SpecialSkills.GetAllSection(BaseSkill.Name))
+            {
+                <tr class="name-tr-small">
+                    <td class="name-td-small" colspan="6">
+                        @if (obj.Editable)
+                        {
+                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid RGB(206 212 218); border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
+                        }
+                        else
+                        {
+                            <label class="names-label">@obj.Name.ToUpper()</label>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <td class="name-td-big">
+                        @if (obj.Editable)
+                        {
+                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid RGB(206 212 218); border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
+                        }
+                        else
+                        {
+                            <label class="names-label">@obj.Name</label>
+                        }
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.BaseBonus</span>
+                            <div class="arrows">
+                                <button @onclick="@(()=>IncrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                <button @onclick="@(()=>DecrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attribute-selector">
+                            @if (obj.Editable)
+                            {
+                                <InputSelect style="width: 100%; background-color: transparent; margin: auto;  border: 1px solid RGB(206 212 218); border-radius: 4px;"
+                                             ValueExpression="@(()=>obj.ChosenAttribute)"
+                                             Value="@obj.ChosenAttribute"
+                                             ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
+                                    <option value="0" selected disabled>--Select--</option>
+                                    @foreach (var att in SD.Attributes.All)
+                                    {
+                                        <option value=@att> @att</option>
+                                    }
+                                </InputSelect>
+                            }
+                            else
+                            {
+                                @if (obj.ChosenAttribute != null && obj.RelatedAttribute1 == "")
+                                {
+                                    <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
+                                }
+                                else
+                                {
+                                    <InputSelect style="width: 100%; background-color: transparent; margin: auto;  border: 1px solid RGB(206 212 218);"
+                                                 ValueExpression="@(()=>obj.ChosenAttribute)"
+                                                 Value="@obj.ChosenAttribute"
+                                                 ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
+                                        <option value="0" selected disabled>--Select--</option>
+                                        <option value="@obj.RelatedAttribute1"> @obj.RelatedAttribute1</option>
+                                        <option value="@obj.RelatedAttribute2"> @obj.RelatedAttribute2</option>
+                                    </InputSelect>
+                                }
+                            }
+                        </div>
+
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.AttributeBonus</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.RaceBonus</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.GearBonus</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.TraitBonus</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="attr-indicator">@obj.SumBonus</span>
+                        </div>
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+    <button @onclick="@(()=>AddSpecialSkill(BaseSkill))" class="add-skill"><i class="fa-solid fa-plus"></i></button>
+</div>
+
+@code {
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
+
+    [Parameter]
+    public BaseSkillDTO BaseSkill { get; set; }
+    [Parameter]
+    public EventCallback OnSpecialSkillChange { get; set; }
+
+    public bool IsLeaveAllowed;
+
+
+    private async Task IncrSSBonus(SpecialSkillDTO obj)
+    {
+
+        try
+        {
+            var limit = AllParams.BaseSkills.FirstOrDefault(u => u.Name == obj.RelatedBaseSkillName).SumBonus;
+            var expChange = 0;
+            string message;
+
+            if (obj.BaseBonus < limit)
+            {
+                expChange = 1 * (obj.BaseBonus + 1);
+                if (AllParams.Character.CurrentExpPoints >= expChange)
+                {
+                    AllParams.Character.CurrentExpPoints -= expChange;
+                    AllParams.Character.UsedExpPoints += expChange;
+                    obj.BaseBonus++;
+                    IsLeaveAllowed = false;
+                }
+                else
+                    await _jsRuntime.SpecialSkillLimit("Not enought experience points");
+            }
+            else
+            {
+                message = "Maximum Special Skill base is limited by : " + obj.RelatedBaseSkillName.ToUpper() + " which is: " + limit.ToString();
+                await _jsRuntime.SpecialSkillLimit(message);
+            }
+        }
+        catch (Exception ex)
+        {
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+    }
+
+    private async Task DecrSSBonus(SpecialSkillDTO obj)
+    {
+
+        var expChange = 1 * obj.BaseBonus;
+        if (obj.BaseBonus > 0)
+        {
+            AllParams.Character.CurrentExpPoints += expChange;
+            AllParams.Character.UsedExpPoints -= expChange;
+            obj.BaseBonus--;
+            IsLeaveAllowed = false;
+        }
+    }
+
+
+    private void SpecialSkillNameChanged(string specSkillName, SpecialSkillDTO specSkill)
+    {
+
+        try
+        {
+            if (!string.IsNullOrEmpty(specSkillName) && specSkill != null)
+            {
+                if (AllParams.SpecialSkills.GetAllArray().FirstOrDefault(u => u.Name.ToLower() == specSkillName.ToLower()) != null)
+                {
+                    _jsRuntime.ToastrWarning("Special skill with this name already exists. Please choose other name");
+                    int num = 1;
+                    string newname = specSkillName;
+                    while (AllParams.SpecialSkills.Get(newname) != null)
+                    {
+                        newname = specSkillName + (num++).ToString();
+                    }
+                    specSkill.Name = newname;
+                    StateHasChanged();
+                }
+                else
+                {
+                    specSkill.Name = specSkillName;
+                }
+                IsLeaveAllowed = false;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+
+    }
+
+    private async Task AddSSRelatedBaseSkill(SpecialSkillDTO obj)
+    {
+
+        try
+        {
+            if (obj != null && obj.RelatedBaseSkillName != null && obj.Name != null)
+            {
+                var baseSkill = AllParams.BaseSkills.FirstOrDefault(p => p.Name == obj.RelatedBaseSkillName);
+                if (baseSkill == null) return;
+                obj.AddPropertyListener(baseSkill);
+                IsLeaveAllowed = false;
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+        }
+
+    }
+
+    private async Task AddSpecialSkill(BaseSkillDTO baseSkill)
+    {
+        IsLeaveAllowed = false;
+        var newSkill = new SpecialSkillDTO();
+        newSkill.RelatedBaseSkill = baseSkill;
+        newSkill.RelatedBaseSkillName = baseSkill.Name;
+        int num = 1;
+        string basename = "new skill", newname = "new skill";
+        while (AllParams.SpecialSkills.Get(newname) != null)
+        {
+            newname = basename + (num++).ToString();
+        }
+        newSkill.Name = newname;
+        newSkill.Editable = true;
+        newSkill.Index = AllParams.SpecialSkills.GetAllSection(baseSkill.Name).Count();
+        if (AllParams.SpecialSkills.Add(newSkill) is null)
+        {
+            await _jsRuntime.ToastrError("Error while adding new skill");
+        }
+    }
+
+    void ChangeSSRelatedAttribute(string attrName,string specialSkillName)
+    {
+        AllParams.SpecialSkills.ChangeSSRelatedAttribute(attrName, specialSkillName);
+    }
+
+}
