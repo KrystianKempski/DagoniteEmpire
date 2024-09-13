@@ -1,6 +1,7 @@
 ﻿
 @inject IJSRuntime _jsRuntime
 
+<_DeleteConfirmation IsParentComponentProcessing="false" DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="@DeletedSpecialSkill"></_DeleteConfirmation>
 <div class="specialskills-table border">
     <div class="sheet-img">
         @*  <img src="../images/old_paper2.png" class="stretch" /> *@
@@ -29,7 +30,11 @@
                     <td class="name-td-small" colspan="6">
                         @if (obj.Editable)
                         {
-                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid RGB(206 212 218); border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
+                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase;
+                                              border: 1px solid RGB(206 212 218); border-radius:4px; background-color: transparent;"
+                                       Value="@obj.Name" class="" ValueChanged="@((string val)=>SpecialSkillNameChanged(val,obj))"
+                                       ValueExpression="@(()=>obj.Name)"></InputText>
+
                         }
                         else
                         {
@@ -41,7 +46,11 @@
                     <td class="name-td-big">
                         @if (obj.Editable)
                         {
-                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid RGB(206 212 218); border-radius:4px; background-color: transparent;" @bind-Value="obj.Name" class=""></InputText>
+                            <InputText style="width: 100%;font-size: 14px;font-weight: bold; padding: 2px 0px 2px 0px; text-transform:uppercase; border: 1px solid RGB(206 212 218); 
+                                              border-radius:4px; background-color: transparent;"
+                                       Value="@obj.Name" class="" ValueChanged="@((string val)=>SpecialSkillNameChanged(val,obj))"
+                                        ValueExpression="@(()=>obj.Name)"></InputText>
+                            
                         }
                         else
                         {
@@ -61,20 +70,28 @@
                         <div class="attribute-selector">
                             @if (obj.Editable)
                             {
-                                <InputSelect style="width: 100%; background-color: transparent; margin: auto;  border: 1px solid RGB(206 212 218); border-radius: 4px;"
-                                             ValueExpression="@(()=>obj.ChosenAttribute)"
-                                             Value="@obj.ChosenAttribute"
-                                             ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
+                                @if (AllParams.Character.IsApproved && string.IsNullOrEmpty(obj.ChosenAttribute) == false)
+                                {
+                                    <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
+                                }
+                                else
+                                {
+                                    <InputSelect style="width: 100%; background-color: transparent; margin: auto;  border: 1px solid RGB(206 212 218); border-radius: 4px;"
+                                                     ValueExpression="@(()=>obj.ChosenAttribute)"
+                                                     Value="@obj.ChosenAttribute"
+                                                     ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
                                     <option value="0" selected disabled>--Select--</option>
                                     @foreach (var att in SD.Attributes.All)
                                     {
                                         <option value=@att> @att</option>
                                     }
-                                </InputSelect>
+                                    </InputSelect>
+                                }
                             }
                             else
                             {
-                                @if (obj.ChosenAttribute != null && obj.RelatedAttribute1 == "")
+                                @if ((obj.ChosenAttribute != null && obj.RelatedAttribute1 == "") 
+                                    || (AllParams.Character.IsApproved && string.IsNullOrEmpty(obj.ChosenAttribute)==false))
                                 {
                                     <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
                                 }
@@ -123,24 +140,24 @@
 
         </tbody>
     </table>
+
     <button @onclick="@(()=>AddSpecialSkill(BaseSkill))" class="add-skill"><i class="fa-solid fa-plus"></i></button>
+    <button @onclick="@(()=>RemoveSpecialSkill())" class="add-skill"><i class="fa-solid fa-minus"></i></button>
+
 </div>
 
 @code {
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
-
     [Parameter]
     public BaseSkillDTO BaseSkill { get; set; }
     [Parameter]
     public EventCallback OnSpecialSkillChange { get; set; }
 
-    public bool IsLeaveAllowed;
-
+    private string DeletedSpecialSkill = "";
 
     private async Task IncrSSBonus(SpecialSkillDTO obj)
     {
-
         try
         {
             var limit = AllParams.BaseSkills.FirstOrDefault(u => u.Name == obj.RelatedBaseSkillName).SumBonus;
@@ -155,7 +172,7 @@
                     AllParams.Character.CurrentExpPoints -= expChange;
                     AllParams.Character.UsedExpPoints += expChange;
                     obj.BaseBonus++;
-                    IsLeaveAllowed = false;
+                    await OnSpecialSkillChange.InvokeAsync();
                 }
                 else
                     await _jsRuntime.SpecialSkillLimit("Not enought experience points");
@@ -181,48 +198,54 @@
             AllParams.Character.CurrentExpPoints += expChange;
             AllParams.Character.UsedExpPoints -= expChange;
             obj.BaseBonus--;
-            IsLeaveAllowed = false;
+            await OnSpecialSkillChange.InvokeAsync();
         }
     }
 
-
-    private void SpecialSkillNameChanged(string specSkillName, SpecialSkillDTO specSkill)
+    private async Task SpecialSkillNameChanged(string specSkillName,SpecialSkillDTO specialSkill)
     {
-
         try
         {
-            if (!string.IsNullOrEmpty(specSkillName) && specSkill != null)
+            if (!string.IsNullOrEmpty(specSkillName))
             {
+                string newname = specSkillName.ToUpper();
+                string oldSkillName = specialSkill.Name;
                 if (AllParams.SpecialSkills.GetAllArray().FirstOrDefault(u => u.Name.ToLower() == specSkillName.ToLower()) != null)
                 {
-                    _jsRuntime.ToastrWarning("Special skill with this name already exists. Please choose other name");
+                    await _jsRuntime.ToastrWarning("Special skill with this name already exists. Please choose other name");
                     int num = 1;
-                    string newname = specSkillName;
                     while (AllParams.SpecialSkills.Get(newname) != null)
                     {
                         newname = specSkillName + (num++).ToString();
                     }
-                    specSkill.Name = newname;
-                    StateHasChanged();
+                    specialSkill.Name = newname;
+                    return;
                 }
-                else
-                {
-                    specSkill.Name = specSkillName;
-                }
-                IsLeaveAllowed = false;
+                newname = specSkillName.ToUpper();
+
+                AllParams.SpecialSkills.ReplaceNames(newname, oldSkillName);
+
+
+                // SpecialSkillDTO temp = AllParams.SpecialSkills.GetAllArray().FirstOrDefault(u => u.Name.ToUpper() == oldSkillName.ToUpper());
+                // SpecialSkillDTO newSkill = new SpecialSkillDTO(temp);
+
+
+                // newSkill.Name = newname;
+                // AllParams.SpecialSkills.Add(newSkill);
+                // AllParams.SpecialSkills.Remove(temp.Name);
+
+                await OnSpecialSkillChange.InvokeAsync();
                 StateHasChanged();
             }
         }
         catch (Exception ex)
         {
-            _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
         }
-
     }
 
     private async Task AddSSRelatedBaseSkill(SpecialSkillDTO obj)
     {
-
         try
         {
             if (obj != null && obj.RelatedBaseSkillName != null && obj.Name != null)
@@ -230,7 +253,7 @@
                 var baseSkill = AllParams.BaseSkills.FirstOrDefault(p => p.Name == obj.RelatedBaseSkillName);
                 if (baseSkill == null) return;
                 obj.AddPropertyListener(baseSkill);
-                IsLeaveAllowed = false;
+                await OnSpecialSkillChange.InvokeAsync();
                 return;
             }
         }
@@ -238,33 +261,72 @@
         {
             await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
         }
-
     }
 
     private async Task AddSpecialSkill(BaseSkillDTO baseSkill)
     {
-        IsLeaveAllowed = false;
-        var newSkill = new SpecialSkillDTO();
-        newSkill.RelatedBaseSkill = baseSkill;
-        newSkill.RelatedBaseSkillName = baseSkill.Name;
-        int num = 1;
-        string basename = "new skill", newname = "new skill";
-        while (AllParams.SpecialSkills.Get(newname) != null)
+        try
         {
-            newname = basename + (num++).ToString();
-        }
-        newSkill.Name = newname;
-        newSkill.Editable = true;
-        newSkill.Index = AllParams.SpecialSkills.GetAllSection(baseSkill.Name).Count();
-        if (AllParams.SpecialSkills.Add(newSkill) is null)
+
+            var newSkill = new SpecialSkillDTO();
+            newSkill.RelatedBaseSkill = baseSkill;
+            newSkill.RelatedBaseSkillName = baseSkill.Name;
+            int num = 1;
+            string basename = "new skill", newname = "new skill";
+            while (AllParams.SpecialSkills.Get(newname) != null)
+            {
+                newname = basename + (num++).ToString();
+            }
+            newSkill.Name = newname;
+            newSkill.Editable = true;
+            newSkill.Index = AllParams.SpecialSkills.GetAllSection(baseSkill.Name).Count();
+            if (AllParams.SpecialSkills.Add(newSkill) is null)
+            {
+                await _jsRuntime.ToastrError("Error while adding new skill");
+            }
+            else
+            {
+                await OnSpecialSkillChange.InvokeAsync();
+            }
+        }catch(Exception ex)
         {
-            await _jsRuntime.ToastrError("Error while adding new skill");
+            ;
         }
     }
 
-    void ChangeSSRelatedAttribute(string attrName,string specialSkillName)
+    private async Task RemoveSpecialSkill()
+    {
+        var newSkill = new SpecialSkillDTO();
+        newSkill = AllParams.SpecialSkills.GetAllSection(BaseSkill.Name).Last();
+        DeletedSpecialSkill = newSkill.Name;
+        if (newSkill.Editable)
+        {
+            await DeleteSpecialSkill();
+        }
+    }
+
+    private async Task DeleteSpecialSkill()
+    {
+        await _jsRuntime.InvokeVoidAsync("ShowDeleteConfirmationModal");
+    }
+
+    public async Task ConfirmDelete_Click(bool isConfirmed)
+    {
+        StateHasChanged();
+        if (isConfirmed == true && string.IsNullOrEmpty(DeletedSpecialSkill) == false)
+        {
+            AllParams.SpecialSkills.Remove(DeletedSpecialSkill);
+            await OnSpecialSkillChange.InvokeAsync();
+        }
+
+        DeletedSpecialSkill = "";
+        StateHasChanged();
+        await _jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
+    }
+
+    public async Task ChangeSSRelatedAttribute(string attrName, string specialSkillName)
     {
         AllParams.SpecialSkills.ChangeSSRelatedAttribute(attrName, specialSkillName);
+        await OnSpecialSkillChange.InvokeAsync();
     }
-
 }

@@ -33,8 +33,8 @@ namespace DA_Models.ComponentInterfaces
 
         public virtual T? Get(string key)
         {
-            if (key.IsNullOrEmpty())
-                return default;
+            if (key.IsNullOrEmpty() || Properties.ContainsKey(key) == false)
+                return default(T);
             return Properties[key];
         }
         public virtual T? Set(string key,T value)
@@ -42,6 +42,21 @@ namespace DA_Models.ComponentInterfaces
             if (key.IsNullOrEmpty())
                 return default(T);
             return Properties[key] = value;
+        }
+
+        public virtual void Remove(string key)
+        {
+            if (key.IsNullOrEmpty() || Properties.ContainsKey(key) == false)
+                return;
+            Properties.Remove(key);
+        }
+
+        public virtual T? Add(string key, T value)
+        {
+            if (key.IsNullOrEmpty() )
+                return default(T);
+            Properties.Add(key,value);
+            return value;
         }
 
         public virtual void Init(IDictionary<string, T> properties)

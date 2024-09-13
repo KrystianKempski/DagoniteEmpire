@@ -12,6 +12,29 @@ namespace DA_Models.CharacterModels
 {
     public class SpecialSkillDTO : FeatureDTO
     {
+        public SpecialSkillDTO() { }
+        public SpecialSkillDTO(SpecialSkillDTO copy)
+        {
+            this.RelatedBaseSkill = copy.RelatedBaseSkill;
+            this.Name = copy.Name;
+            this.Index = copy.Index;
+            this.OtherBonuses = copy.OtherBonuses;
+            this.RaceBonus = copy.RaceBonus;
+            this.RelatedAttribute = copy.RelatedAttribute;
+            this.RelatedAttribute1 = copy.RelatedAttribute1;
+            this.RelatedAttribute2  = copy.RelatedAttribute2;
+            this.RelatedBaseSkillName = copy.RelatedBaseSkillName;
+            this.TempBonuses = copy.TempBonuses;
+            this.HealthBonus = copy.HealthBonus;
+            this.Id = copy.Id;
+            this.Editable = copy.Editable;
+            this.GearBonus = copy.GearBonus;
+            this.FeatureType = copy.FeatureType;
+            this.BaseBonus = copy.BaseBonus;    
+            this.CharacterId = copy.CharacterId;
+            this.TraitBonus = copy.TraitBonus;
+            this._sumBonus = copy._sumBonus;
+        }
         public string RelatedBaseSkillName { get; set; }
         public override string FeatureType { get; set; } = SD.FeatureSpecialSkill;
 
@@ -38,29 +61,11 @@ namespace DA_Models.CharacterModels
         public void AddPropertyListener(AttributeDTO attr)
         {
             RelatedAttribute = attr;
-            //if (RelatedAttribute == null) return;
-            //RelatedAttribute.ModifierChanged += A_PropertyChanged;
         }
         public void AddPropertyListener(BaseSkillDTO baseSkill)
         {
             RelatedBaseSkill = baseSkill;
-            //if (RelatedBaseSkill == null) return;
-            //RelatedBaseSkill.SumChanged += BS_PropertyChanged;
         }
-        //private void A_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        //{
-        //    //if (e.PropertyName != nameof(RelatedAttribute.Modifier)) return;
-        //    //if (RelatedAttribute == null) return;
 
-        //    //AttributeBonus = RelatedAttribute.Modifier;
-        //}
-
-        //private void BS_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        //{
-        //    //if (e.PropertyName != nameof(RelatedBaseSkill.SumBonus)) return;
-        //    //if (RelatedBaseSkill == null) return;
-
-        //    //BaseSkillBonus = RelatedBaseSkill.SumBonus;
-        //}
     }
 }

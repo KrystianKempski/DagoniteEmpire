@@ -422,7 +422,7 @@
 
                 AllParams.SpecialSkills.InitSpecialSkills();
 
-                
+
                 await AllParams.AllTraitsChange();
                 //await TraitsChange();
 
@@ -569,10 +569,22 @@
                 foreach (var obj in AllParams.SpecialSkills.GetAllArray())
                 {
                     obj.CharacterId = Id;
+                    if(obj.Name == "HODOR")
+                    {
+                        int w = 1;
+                    }
+
                     await _specialSkillRepository.Update(obj);
                 }
 
             }
+            // delete any removed special skills from database
+            foreach(var obj in AllParams.SpecialSkills.SkillsToDelete)
+            {
+                await _specialSkillRepository.Delete(obj);
+            }
+            AllParams.SpecialSkills.SkillsToDelete.Clear();
+
             // if main character is no approved anymore - delete its id from user info
             if (UserInfo?.SelectedCharacterId == AllParams.Character.Id && AllParams.Character.IsApproved == false)
             {
@@ -884,28 +896,6 @@
         IsLeaveAllowed = false;
         StateHasChanged();
     }
-    // private async Task AddSpecialSkill(BaseSkillDTO baseSkill)
-    // {
-    //     IsLeaveAllowed = false;
-    //     var newSkill = new SpecialSkillDTO();
-    //     newSkill.RelatedBaseSkill = baseSkill;
-    //     newSkill.RelatedBaseSkillName = baseSkill.Name;
-    //     int num = 1;
-    //     string basename = "new skill", newname = "new skill";
-    //     while (AllParams.SpecialSkills.Get(newname)!=null)
-    //     {
-    //         newname = basename + (num++).ToString();
-    //     }
-    //     newSkill.Name = newname;
-    //     newSkill.Editable = true;
-    //     newSkill.Index = AllParams.SpecialSkills.GetAllSection(baseSkill.Name).Count();
-    //     if(AllParams.SpecialSkills.Add(newSkill) is null)
-    //     {
-    //         await _jsRuntime.ToastrError("Error while adding new skill");
-    //     }
-    //     StateHasChanged();
-    // }
-
     public void Dispose() => registration?.Dispose();
 }
 

@@ -74,7 +74,9 @@ namespace DA_Models.ComponentModels
                         AddWeaponQualityFromEquipment(slot.Equipment);
                 }
 
-                isParrying = Get(SD.WeaponQuality.Parrying).GearBonus>0;
+                var parrySkill = Get(SD.WeaponQuality.Parrying);
+                if(parrySkill is not null)
+                    isParrying = parrySkill.GearBonus > 0;
 
                 // calculate base propertiers 
                 foreach (var prop in GetAll())

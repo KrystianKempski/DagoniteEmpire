@@ -111,5 +111,16 @@ namespace DA_Business.Repository.CharacterReps
                 return _mapper.Map<SpecialSkill, SpecialSkillDTO>(addedObj.Entity);
             }
         }
+        public async Task Delete(SpecialSkillDTO objDTO)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.SpecialSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+            if (obj != null)
+            {
+                contex.SpecialSkills.Remove(obj);
+                await contex.SaveChangesAsync();
+               
+            }
+        }
     }
 }

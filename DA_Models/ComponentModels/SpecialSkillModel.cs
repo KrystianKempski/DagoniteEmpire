@@ -18,6 +18,8 @@ namespace DA_Models.ComponentModels
         {
 
         }
+
+        public ICollection<SpecialSkillDTO> SkillsToDelete { get; set; } = new List<SpecialSkillDTO>();
         public IEnumerable<SpecialSkillDTO> GetAllSection(string baseSkillName)
         {
 
@@ -46,6 +48,26 @@ namespace DA_Models.ComponentModels
             FillRelatedProperties(newSkill);
             Properties.Add(newSkill.Name, newSkill);
             return newSkill;
+        }
+
+        public void Remove(string newSkillName)
+        {
+            if (newSkillName.IsNullOrEmpty())
+                return;
+            var temp = Properties[newSkillName];
+            if(temp.Id>0)
+                SkillsToDelete.Add(Properties[newSkillName]);
+            Properties.Remove(newSkillName);
+        }
+        public void ReplaceNames(string newSkillName, string oldSkillName)
+        {
+
+            SpecialSkillDTO temp = Properties[oldSkillName];
+            SpecialSkillDTO newSkill = new SpecialSkillDTO(temp);
+
+            newSkill.Name = newSkillName;
+            Add(newSkill);
+            Properties.Remove(oldSkillName);
         }
 
         private void FillRelatedProperties(SpecialSkillDTO skill)
@@ -83,8 +105,6 @@ namespace DA_Models.ComponentModels
                 }
             }
         }
-
-
         public void ChangeSSRelatedAttribute(string attrName, string specSkillName)
         {
 
@@ -131,7 +151,6 @@ namespace DA_Models.ComponentModels
 
         public void InitSpecialSkills()
         {
-
             foreach (var obj in _allParams.SpecialSkills.GetAllArray())
             {
                 ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
