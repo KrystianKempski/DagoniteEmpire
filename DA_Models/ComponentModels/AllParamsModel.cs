@@ -122,7 +122,7 @@ namespace DA_Models.ComponentModels
                     await CalculateTraits(slot.Equipment.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
                 }
             }
-            await BattleProperties. CalculateBattleStats();
+            await BattleProperties.CalculateBattleStats();
         }
 
         private async Task CalculateTraits(ICollection<TraitDTO> traits, string TraitType)

@@ -169,45 +169,92 @@
             </div>
         </div>
 
-        
-        <div class="row w-100 border">
+        <div class="row w-100 border m-1 p-0">
+            <div class="d-flex w-100 p-2 pb-0">
+                <div class="d-flex flex-column border w-100">
+                    <div class="set-label">
+                        <label>Equipped armor</label>
+                    </div>
+                    <div class="d-flex flex-row">
+                    @if (Armor is not null && ArmorBattleProperties is not null)
+                    {
+                        <div class="col-6 p-2">
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                    <label>Armor skill: </label>
+                                </div>
+                                <div class="weapon-prop-value">
+                                    @AllParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Armor).SumBonus
+                                </div>
+                            </div>
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                    <label>Armor defence bonus: </label>
+                                </div>
+                                <div class="weapon-prop-value">
+                                    @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorDefenceBonus).GearBonus
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 p-2">
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                    <label>Armor damage reduction: </label>
+                                </div>
+                                <div class="weapon-prop-value">
+                                    @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.Armor).GearBonus
+                                </div>
+                            </div>
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                    <label>Armor penalty: </label>
+                                </div>
+                                <div class="weapon-prop-value">
+                                    @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorPenalty).GearBonus
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    </div>
+                </div>
+            </div>
        
             <div class="col-6 pt-2 pb-2 ps-2 pe-1">
                 <div class="border">
                     <div class="set-label">
                         <label>Attack</label>
                     </div>
-                    <div class="d-flex px-4">
+                    <div class="d-flex px-2">
                         <label class="flex-grow-1">Base: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackBase).SumBonus
                         </div>
                     </div>
-                    <div class="d-flex px-4">
+                    <div class="d-flex ps-4 pe-2">
                         <label class="flex-grow-1">vs Dodge: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackDodge).SumBonus
                         </div>
                     </div>
-                     <div class="d-flex px-4">
+                     <div class="d-flex ps-4 pe-2">
                         <label class="flex-grow-1">vs Armor: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackArmor).SumBonus
                         </div>
                     </div>
-                     <div class="d-flex px-4">
+                        <div class="d-flex ps-4 pe-2">
                          <label class="flex-grow-1">vs Shield: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackShield).SumBonus
                         </div>
                     </div>
-                     <div class="d-flex px-4">
+                        <div class="d-flex ps-4 pe-2">
                         <label class="flex-grow-1">vs Parry: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackParry).SumBonus
                         </div>
                     </div>
-                    <div class="d-flex px-4">
+                    <div class="d-flex px-2">
                         <label class="flex-grow-1">Bonus damage: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DamageBonus).SumBonus
@@ -220,37 +267,37 @@
                     <div class="set-label">
                         <label>Defence</label>
                     </div>
-                    <div class="d-flex px-4">
+                    <div class="d-flex px-2">
                         <label class="flex-grow-1">Armor penalty: </label>
                         <div class="">
                                 @AllParams.BattleProperties.Get(SD.WeaponQuality.ArmorPenalty).SumBonus
                         </div>
                     </div>
-                    <div class="d-flex px-4">
+                    <div class="d-flex px-2">
                         <label class="flex-grow-1">Dodge: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceDodge).SumBonus
                         </div>
                     </div>
-                    <div class="d-flex px-4">
+                    <div class="d-flex px-2">
                         <label class="flex-grow-1">Armor: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceArmor).SumBonus
                         </div>
                     </div>
-                    <div class="d-flex px-4">
+                    <div class="d-flex px-2">
                         <label class="flex-grow-1">Shield: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceShield).SumBonus
                         </div>
                     </div>
-                    <div class="d-flex px-4">
+                    <div class="d-flex px-2">
                         <label class="flex-grow-1">Parry: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceParry).SumBonus
                         </div>
                     </div>
-                    <div class="d-flex px-4">
+                    <div class="d-flex px-2">
                         <label class="flex-grow-1">Damage Reduction: </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.ArmorClass).SumBonus
@@ -277,6 +324,8 @@
     public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp { get; set; } = new Dictionary<EquippedItems, EquipItemComponent>();
     public Dictionary<EquippedItems, IEnumerable<BattlePropertyDTO>?> WeaponBattleProperties { get; set; } = new Dictionary<EquippedItems, IEnumerable<BattlePropertyDTO>?>();
     public Dictionary<EquippedItems, EquipmentDTO?> Weapons { get; set; } = new Dictionary<EquippedItems, EquipmentDTO?>();
+    public  EquipmentDTO? Armor { get; set; } 
+    public IEnumerable<BattlePropertyDTO>? ArmorBattleProperties { get; set; }
     protected override async Task OnInitializedAsync()
     {
         for (EquippedItems i = EquippedItems.WeaponMain1; i <= EquippedItems.WeaponOff2; i++)
@@ -296,7 +345,9 @@
                 WeaponSet1 = AllParams.Character.WeaponSet == 0 ? true : false;
                 WeaponSet2 = !WeaponSet1;
 
+                await AllParams.GearChange();
                 await LoadAttackStats();
+                await LoadArmorStats();
                 IsLoading = false;
                 StateHasChanged();
             }
@@ -308,14 +359,21 @@
     }
     private async Task LoadAttackStats()
     {
-        await AllParams.GearChange();
-
         for (EquippedItems i = EquippedItems.WeaponMain1; i <= EquippedItems.WeaponOff2; i++)
         {
             Weapons[i] = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SD.SlotType.All[(int)i])?.Equipment;
             WeaponBattleProperties[i] = AllParams.BattleProperties.GetWeaponQualityListFromItem(Weapons[i]);
         }
     }
+    private async Task LoadArmorStats()
+    {
+        Armor = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SD.SlotType.Body)?.Equipment;
+        if (Armor is not null)
+            ArmorBattleProperties = AllParams.BattleProperties.GetWeaponQualityListFromItem(Armor);
+        else
+            ArmorBattleProperties = null;
+    }
+
 
     public void LoadPossibleGears()
     {
@@ -325,11 +383,13 @@
         }
     }
 
-    protected async Task GearChange()
+    public async Task GearChange()
     {
         // update equipment (in character)
         LoadPossibleGears();
+        await AllParams.GearChange();
         await LoadAttackStats();
+        await LoadArmorStats();
         StateHasChanged();
     }
 
