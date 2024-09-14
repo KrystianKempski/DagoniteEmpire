@@ -71,7 +71,7 @@
                                     @if (obj.FeatureType == SD.FeatureAttribute)
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes.Values.ToArray()" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes.GetAllArray()" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>
@@ -224,6 +224,7 @@
         SD.FeatureAttribute,
         SD.FeatureBaseSkill,
         SD.FeatureSpecialSkill,
+        SD.FeatureWeaponQuality,
         SD.FeatureOther
     };
 
@@ -334,6 +335,7 @@
                 SD.FeatureAttribute,
                 SD.FeatureBaseSkill,
                 SD.FeatureSpecialSkill,
+                SD.FeatureWeaponQuality,
                 SD.FeatureOther
             };
             if (CustomTraitModel.IsEditMode)

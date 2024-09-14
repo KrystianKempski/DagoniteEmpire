@@ -59,10 +59,12 @@ namespace DA_Models.ComponentInterfaces
             return value;
         }
 
-        public virtual void Init(IDictionary<string, T> properties)
+        public virtual void FillPropertiesContainer(IDictionary<string, T> properties)
         {
-            Properties = properties;
+            if(properties is not null)
+                Properties = properties;
         }
-  
+        
+
     }
 }

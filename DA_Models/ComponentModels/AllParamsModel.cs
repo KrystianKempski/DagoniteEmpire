@@ -20,11 +20,13 @@ namespace DA_Models.ComponentModels
         {
             BattleProperties = new BattlePropertyModel(this);
             SpecialSkills = new SpecialSkillModel(this);
+            Attributes = new AttributesModel(this);
         }
         public CharacterDTO Character { get; set; } = new CharacterDTO();
         public RaceDTO CurrentRace { get; set; } = new RaceDTO();
         public ProfessionDTO Profession { get; set; } = new ProfessionDTO();
-        public IDictionary<string,AttributeDTO> Attributes { get; set; } =new Dictionary<string, AttributeDTO>();
+        public AttributesModel Attributes { get; set; }
+        //public IDictionary<string,AttributeDTO> Attributes { get; set; } =new Dictionary<string, AttributeDTO>();
         public IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = Enumerable.Empty<BaseSkillDTO>();
         //public ICollection<SpecialSkillDTO> SpecialSkills { get; set; } = new HashSet<SpecialSkillDTO>();
 
@@ -60,7 +62,7 @@ namespace DA_Models.ComponentModels
 
         public async Task AdvTraitsChange()
         {
-            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.Values.ToArray(), BaseSkills, SpecialSkills.GetAllArray() };
+            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
 
             //clear all traits bonuses
             foreach (var feat in allFeatures)
@@ -80,7 +82,7 @@ namespace DA_Models.ComponentModels
 
         public async Task RaceTraitsChange()
         {
-            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.Values.ToArray(), BaseSkills, SpecialSkills.GetAllArray() };
+            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
 
             //clear all traits bonuses
             foreach (var feat in allFeatures)
@@ -100,7 +102,7 @@ namespace DA_Models.ComponentModels
 
         public async Task GearChange()
         {
-            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.Values.ToArray(), BaseSkills, SpecialSkills.GetAllArray() };
+            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
 
             //clear all traits bonuses
             foreach (var feat in allFeatures)
@@ -148,7 +150,7 @@ namespace DA_Models.ComponentModels
                     switch (bonus.FeatureType)
                     {
                         case SD.FeatureAttribute:
-                            feature = Attributes[bonus.FeatureName];
+                            feature = Attributes.Get(bonus.FeatureName);
                             break;
                         case SD.FeatureBaseSkill:
                             feature = BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);

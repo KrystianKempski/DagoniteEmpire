@@ -151,7 +151,7 @@
                             </thead>
                                 <tbody>
                                
-                                    @foreach (var obj in AllParams.Attributes.Values)
+                                    @foreach (var obj in AllParams.Attributes.GetAllArray())
                                 {
                                     <tr>
                                         <td class="name-row" colspan="6">
@@ -395,9 +395,9 @@
                 {
                     //create
                     AllParams.Character = new CharacterDTO();
-                    AllParams.Attributes = CharacterSeeder.GetAttributes();
+                    AllParams.Attributes.FillPropertiesContainer(CharacterSeeder.GetAttributes());
                     AllParams.BaseSkills = CharacterSeeder.GetBaseSkills();
-                    AllParams.SpecialSkills.Init(CharacterSeeder.GetSpecialSkills());
+                    AllParams.SpecialSkills.FillPropertiesContainer(CharacterSeeder.GetSpecialSkills());
                     AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
                     AllParams.Traits = new List<TraitDTO>();
                     AllParams.TraitsAdv = new List<TraitAdvDTO>();
@@ -420,14 +420,14 @@
                     await LoadCharacter();
                 }
 
-                AllParams.SpecialSkills.InitSpecialSkills();
+                AllParams.SpecialSkills.AddRelatedParametes();
 
 
                 await AllParams.AllTraitsChange();
                 //await TraitsChange();
 
                 await ChangeProfRelatedAttribute();
-                AllParams.Profession.CalculateClassParams(AllParams.Attributes);
+                AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());
 
 
                 IsLeaveAllowed = true;
@@ -448,9 +448,9 @@
     private async Task LoadCharacter()
     {
         AllParams.Character = await _characterRepository.GetById(Id);
-        AllParams.Attributes = await _attributeRepository.GetAll(Id);
+        AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
         AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
-        AllParams.SpecialSkills.Init(await _specialSkillRepository.GetAll(Id));
+        AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
         AllParams.TraitsAdv = (await _traitAdvRepository.GetAll(Id)).ToList(); 
         //need Traits in base class to use Component
         AllParams.Traits = new List<TraitDTO>();
@@ -503,7 +503,7 @@
                     AllParams.Character.ProfessionId = professionDTO.Id;
 
                 var charac = await _characterRepository.Create(AllParams.Character);
-                foreach (var obj in AllParams.Attributes.Values)
+                foreach (var obj in AllParams.Attributes.GetAllArray())
                 {
                     obj.CharacterId = charac.Id;
                     await _attributeRepository.Create(obj);
@@ -556,7 +556,7 @@
 
                 // update character with TraitAdv collection properly filled
                 await _characterRepository.Update(AllParams.Character);
-                foreach (var obj in AllParams.Attributes.Values)
+                foreach (var obj in AllParams.Attributes.GetAllArray())
                 {
                     obj.CharacterId = Id;
                     await _attributeRepository.Update(obj);
@@ -607,7 +607,7 @@
             if (AllParams.Character.Id == 0)
             {
                 //delete Attributes
-                foreach (var att in AllParams.Attributes.Values)
+                foreach (var att in AllParams.Attributes.GetAllArray())
                 {
                     await _attributeRepository.Delete(att.Id);
                 }
@@ -668,90 +668,43 @@
 
     private async Task IncrAttr(AttributeDTO obj)
     {
+        var result = await AllParams.Attributes.IncrAttr(obj);
 
-        var ok = false;
-        if (AllParams.Character.IsApproved == false)
+        if(string.IsNullOrEmpty(result) == false)
         {
-            if (obj.BaseBonus < 18)
-            {
-                if (obj.BaseBonus < 11)
-                {
-                    if (AllParams.Character.AttributePoints > 0 && AllParams.Character.IsApproved == false)
-                    {
-                        ok = true;
-                        AllParams.Character.AttributePoints--;
-                    }
-                }
-                else
-                {
-                    if (AllParams.Character.AttributePoints >= (obj.BaseBonus - 9))
-                    {
-                        AllParams.Character.AttributePoints -= obj.BaseBonus - 9;
-                        ok = true;
-                    }
-                }
-
-                if (ok)
-                {
-                    obj.BaseBonus++;
-                    IsLeaveAllowed = false;
-                }
-                else
-                    await _jsRuntime.AttrLimit("Not enough attribute points");
-            }
-            else
-            {
-                await _jsRuntime.AttrLimit("Maximium base bonus limit is 18");
-            }
-        }
-        else if (AllParams.Character.IsApproved)
-        {
-            if (AllParams.Character.CurrentExpPoints >= obj.BaseBonus * 2)
-            {
-                AllParams.Character.CurrentExpPoints -= obj.BaseBonus * 2;
-                obj.BaseBonus++;
-                IsLeaveAllowed = false;
-            }
-            else
-                await _jsRuntime.AttrLimit("Not enough experience points");
-        }
-    }
-
-
-    private async Task DecrAttr(AttributeDTO obj)
-    {
-
-        if (AllParams.Character.IsApproved == false)
-        {
-            if (obj.BaseBonus > 6)
-            {
-                if (obj.BaseBonus < 11)
-                {
-                    AllParams.Character.AttributePoints++;
-                }
-                else
-                {
-                    AllParams.Character.AttributePoints += (obj.BaseBonus - 10);
-                }
-                obj.BaseBonus--;
-                IsLeaveAllowed = false;
-            }else
-                await _jsRuntime.AttrLimit("Minimum base bonus limit is 6");
+            await _jsRuntime.AttrLimit(result);
         }
         else
         {
-            await _jsRuntime.AttrLimit("To revert changes reload page");
+            IsLeaveAllowed = false;
         }
     }
+    private async Task DecrAttr(AttributeDTO obj)
+    {
+        if (AllParams.Character.IsApproved == true)
+        {
+            await _jsRuntime.AttrLimit("To revert changes refresh page without saving");
+            return;
+        }
+        var result = await AllParams.Attributes.DecrAttr(obj);
 
+        if (string.IsNullOrEmpty(result) == false)
+        {
+            await _jsRuntime.AttrLimit(result);
+        }
+        else
+        {
+            IsLeaveAllowed = false;
+        }
+    }
 
     private async Task IncrBSBonus(BaseSkillDTO obj)
     {
 
         try
         {
-            var relatedAttribute1 = AllParams.Attributes[obj.RelatedAttribute1].BaseBonus;
-            var relatedAttribute2 = AllParams.Attributes[obj.RelatedAttribute2].BaseBonus;
+            var relatedAttribute1 = AllParams.Attributes.Get(obj.RelatedAttribute1).BaseBonus;
+            var relatedAttribute2 = AllParams.Attributes.Get(obj.RelatedAttribute2).BaseBonus;
             var limit = Math.Floor((double)(relatedAttribute1 + relatedAttribute2) / 6.0) + 1;
             var expChange = 0;
             string message;
@@ -784,6 +737,10 @@
 
     private async Task DecrBSBonus(BaseSkillDTO obj)
     {
+        if (AllParams.Character.IsApproved == true){
+            await _jsRuntime.BaseSkillLimit("To revert changes refresh page without saving");
+            return;
+        }
 
         var expChange = 3 * obj.BaseBonus;
         if (obj.BaseBonus > 0)
@@ -812,7 +769,7 @@
             AllParams.Profession.ClassLevel = 3;
         }
 
-        foreach (var obj in AllParams.Attributes.Values)
+        foreach (var obj in AllParams.Attributes.GetAllArray())
             obj.BaseBonus = 6;
         foreach (var obj in AllParams.BaseSkills)
             obj.BaseBonus = 0;
@@ -826,7 +783,7 @@
         {
             if (string.IsNullOrEmpty(AllParams.Profession.RelatedAttributeName) == false)
             {
-                var attr = AllParams.Attributes[AllParams.Profession.RelatedAttributeName];
+                var attr = AllParams.Attributes.Get(AllParams.Profession.RelatedAttributeName);
                 if (attr == null)
                     throw new Exception();
                 AllParams.Profession.AddPropertyListener(attr);

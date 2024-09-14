@@ -33,14 +33,6 @@ namespace DA_Models.ComponentModels
             return skill;
         }
 
-        public void Init(ICollection<SpecialSkillDTO> properties)        {
-            foreach (var skill in properties)
-            {
-                FillRelatedProperties(skill);
-                Properties[skill.Name] = skill;
-
-            }
-        }
         public SpecialSkillDTO? Add(SpecialSkillDTO newSkill)
         {
             if (newSkill is null || newSkill.Name.IsNullOrEmpty())
@@ -76,7 +68,7 @@ namespace DA_Models.ComponentModels
                 return;
 
             if (skill.RelatedAttribute is null && skill.ChosenAttribute.IsNullOrEmpty() == false)
-                skill.RelatedAttribute = _allParams.Attributes[skill.ChosenAttribute];
+                skill.RelatedAttribute = _allParams.Attributes.Get(skill.ChosenAttribute);
 
             if (skill.RelatedBaseSkill is null && skill.RelatedBaseSkillName.IsNullOrEmpty() == false)
                 skill.RelatedBaseSkill = _allParams.BaseSkills.FirstOrDefault(u => u.Name == skill.RelatedBaseSkillName);
@@ -89,8 +81,8 @@ namespace DA_Models.ComponentModels
             {
                 if (skill.RelatedAttribute1 != "")
                 {
-                    var attr1 = _allParams.Attributes[skill.RelatedAttribute1];
-                    var attr2 = _allParams.Attributes[skill.RelatedAttribute2];
+                    var attr1 = _allParams.Attributes.Get(skill.RelatedAttribute1);
+                    var attr2 = _allParams.Attributes.Get(skill.RelatedAttribute2);
                     if (attr1 != null && attr2 != null)
                     {
                         if (attr1.SumBonus >= attr2.SumBonus)
@@ -116,10 +108,7 @@ namespace DA_Models.ComponentModels
                     if (obj != null)
                     {
                         obj.ChosenAttribute = attrName;
-                        var attr = _allParams.Attributes[attrName];
-                        if (attr == null) return;
-                        //obj.AttributeBonus = attr.Modifier;
-                        obj.AddPropertyListener(attr);
+                        obj.AddPropertyListener(_allParams.Attributes.Get(attrName));
                     }
                     return;
                 }
@@ -149,12 +138,20 @@ namespace DA_Models.ComponentModels
             }
         }
 
-        public void InitSpecialSkills()
+        public void AddRelatedParametes()
         {
             foreach (var obj in _allParams.SpecialSkills.GetAllArray())
             {
                 ChangeSSRelatedAttribute(obj.ChosenAttribute, obj.Name);
                 AddSSRelatedBaseSkill(obj);
+            }
+        }
+
+        public void FillPropertiesContainer(ICollection<SpecialSkillDTO> properties)
+        {
+            foreach (var property in properties)
+            {
+                Properties[property.Name] = property;
             }
         }
     }

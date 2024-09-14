@@ -302,8 +302,6 @@
     public AllParamsModel AllParams { get; set; }
 
     public UserInfo? UserInfo { get; set; }
-    [Parameter]
-    public IDictionary<string, AttributeDTO> Attributes { get; set; }
 
 
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
@@ -318,7 +316,7 @@
             _createProfession = value;
             if (_createProfession.ProfessionDTO != null)
             {
-                _createProfession.ProfessionDTO.CalculateClassParams(Attributes);
+                _createProfession.ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
             }
             IsLoading = false;
             StateHasChanged();
@@ -382,7 +380,7 @@
 
     private async Task ChangeProfLevel()
     {
-        CreateProfession.ProfessionDTO.CalculateClassParams(Attributes);
+        CreateProfession.ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
         StateHasChanged();
     }
 
@@ -393,11 +391,11 @@
             if (attrName != null && attrName != "0")
             {
                 CreateProfession.ProfessionDTO.RelatedAttributeName = attrName;
-                var attr = Attributes[attrName];
+                var attr = AllParams.Attributes.Get(attrName);
                 if (attr == null) return;
                 CreateProfession.ProfessionDTO.AddPropertyListener(attr);
 
-                CreateProfession.ProfessionDTO.CalculateClassParams(Attributes);
+                CreateProfession.ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
                 StateHasChanged();
                 return;
             }

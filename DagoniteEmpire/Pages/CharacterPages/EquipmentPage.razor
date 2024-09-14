@@ -127,10 +127,10 @@
     private async Task LoadCharacter()
     {
         AllParams.Character = await _characterRepository.GetById(Id);
-        AllParams.Attributes = await _attributeRepository.GetAll(Id);
+        AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
         AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
         AllParams.BaseSkills = (await _baseSkillRepository.GetAll(Id)).ToList();
-        AllParams.SpecialSkills.Init((await _specialSkillRepository.GetAll(Id)));
+        AllParams.SpecialSkills.FillPropertiesContainer((await _specialSkillRepository.GetAll(Id)));
     }
 
     private async Task SaveChanges()

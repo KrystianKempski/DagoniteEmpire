@@ -13,8 +13,6 @@ namespace DA_Models.CharacterModels
     public class BaseSkillDTO :FeatureDTO
     {
         public override string FeatureType { get; set; } = SD.FeatureBaseSkill;
-
-
         public string RelatedAttribute1 { get; set; }
         public string RelatedAttribute2 { get; set; }
         public override int SumBonus
@@ -23,16 +21,8 @@ namespace DA_Models.CharacterModels
             {
                 if (_sumBonus == base.SumBonus) return _sumBonus;
                 _sumBonus = base.SumBonus;
-                //OnSumChanged(nameof(SumBonus));
                 return _sumBonus;
             }
         }
-
-        //public event PropertyChangedEventHandler? SumChanged = null;
-
-        //protected virtual void OnSumChanged(string propertyName)
-        //{
-        //    SumChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        //}
     }
 }

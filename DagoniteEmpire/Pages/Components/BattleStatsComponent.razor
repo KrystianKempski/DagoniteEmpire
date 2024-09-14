@@ -168,57 +168,58 @@
                     }
             </div>
         </div>
-
-        <div class="row w-100 border m-1 p-0">
-            <div class="d-flex w-100 p-2 pb-0">
-                <div class="d-flex flex-column border w-100">
-                    <div class="set-label">
-                        <label>Equipped armor</label>
+        @if (Armor is not null && ArmorBattleProperties is not null)
+        {
+        <div class="d-flex w-100 p-0 my-1">
+            <div class="d-flex flex-column border w-100">
+                <div class="set-label">
+                    <label>Equipped armor</label>
+                </div>
+                <div class="d-flex flex-row">
+                    <div class="col-6 p-2">
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Armor skill: </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Armor).SumBonus
+                            </div>
+                        </div>
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Armor defence bonus: </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorDefenceBonus).GearBonus
+                            </div>
+                        </div>
                     </div>
-                    <div class="d-flex flex-row">
-                    @if (Armor is not null && ArmorBattleProperties is not null)
-                    {
-                        <div class="col-6 p-2">
-                            <div class="d-flex">
-                                <div class="flex-grow-1 weapon-prop-label">
-                                    <label>Armor skill: </label>
-                                </div>
-                                <div class="weapon-prop-value">
-                                    @AllParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Armor).SumBonus
-                                </div>
+                    <div class="col-6 p-2">
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Armor damage reduction: </label>
                             </div>
-                            <div class="d-flex">
-                                <div class="flex-grow-1 weapon-prop-label">
-                                    <label>Armor defence bonus: </label>
-                                </div>
-                                <div class="weapon-prop-value">
-                                    @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorDefenceBonus).GearBonus
-                                </div>
+                            <div class="weapon-prop-value">
+                                @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.Armor).GearBonus
                             </div>
                         </div>
-                        <div class="col-6 p-2">
-                            <div class="d-flex">
-                                <div class="flex-grow-1 weapon-prop-label">
-                                    <label>Armor damage reduction: </label>
-                                </div>
-                                <div class="weapon-prop-value">
-                                    @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.Armor).GearBonus
-                                </div>
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Armor penalty: </label>
                             </div>
-                            <div class="d-flex">
-                                <div class="flex-grow-1 weapon-prop-label">
-                                    <label>Armor penalty: </label>
-                                </div>
-                                <div class="weapon-prop-value">
-                                    @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorPenalty).GearBonus
-                                </div>
+                            <div class="weapon-prop-value">
+                                @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorPenalty).GearBonus
                             </div>
                         </div>
-                    }
                     </div>
                 </div>
             </div>
-       
+        </div>
+        }
+        <div class="row w-100 border m-1 p-0"> 
+                <div class="set-label">
+                    <label>Summary</label>
+                </div>
             <div class="col-6 pt-2 pb-2 ps-2 pe-1">
                 <div class="border">
                     <div class="set-label">

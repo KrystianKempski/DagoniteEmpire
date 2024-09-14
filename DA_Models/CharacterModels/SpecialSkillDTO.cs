@@ -60,11 +60,13 @@ namespace DA_Models.CharacterModels
 
         public void AddPropertyListener(AttributeDTO attr)
         {
-            RelatedAttribute = attr;
+            if(attr is not null)
+                RelatedAttribute = attr;
         }
         public void AddPropertyListener(BaseSkillDTO baseSkill)
         {
-            RelatedBaseSkill = baseSkill;
+            if (baseSkill is not null)
+                RelatedBaseSkill = baseSkill;
         }
 
     }
