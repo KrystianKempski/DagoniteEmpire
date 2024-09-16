@@ -65,7 +65,7 @@ namespace DA_Models.ComponentModels
 
         public ICollection<WoundDTO> GetAll()
         {
-            return Wounds.ToList();
+            return Wounds;
         }
         public WoundDTO? Get(int id)
         {
@@ -75,6 +75,5 @@ namespace DA_Models.ComponentModels
         {
             return (ICollection<WoundDTO>)Wounds.Where(w => w.Location == location);
         }
-
     }
 }

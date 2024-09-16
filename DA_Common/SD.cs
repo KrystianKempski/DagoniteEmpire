@@ -1,13 +1,16 @@
 ﻿using Syncfusion.Blazor.RichTextEditor;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using static MudBlazor.CategoryTypes;
+using static Npgsql.PostgresTypes.PostgresCompositeType;
 
 namespace DA_Common
 {
@@ -206,15 +209,47 @@ namespace DA_Common
             public static readonly string[] All = { Other, WeaponMain1, WeaponOff1, WeaponMain2, WeaponOff2, Shield, Face, Throat, Body, Hands, Waist, Feet, Head, Shoulders, Torso, Arms, Ring1,Ring2 };
         }
 
-        public readonly struct Wound
+        public readonly struct WoundSeverity
         {
             public const string Light = "Light";
             public const string Moderate = "Moderate";
             public const string Heavy = "Heavy";
             public const string Critical = "Critical";
             public const string Deadly = "Deadly";
+            public static readonly string[] All = { Light, Moderate, Heavy, Critical, Deadly };
         }
-
+        public readonly struct WoundLocation
+        {
+            public const string Head = "Head";
+            public const string Neck = "Neck";
+            public const string MainArm = "Main arm";
+            public const string OffArm = "Off arm";
+            public const string MainHand = "Main hand";
+            public const string OffHand = "Off hand";
+            public const string Back = "Back";
+            public const string LeftLeg = "Left Leg";
+            public const string RightLeg = "Right Leg";
+            public const string Face = "Face";
+            public const string Body = "Body";
+            public static readonly string[] All = { Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, Body, RightLeg, Face, Body };
+        }
+        public enum WoundLocationEnum
+        {
+            Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, RightLeg, Face, Body
+        }
+        public static readonly string[,] WoundAttributes = { 
+            { SD.Attributes.Instinct, SD.Attributes.Intelligence, }, //Head
+            { SD.Attributes.Endurance, SD.Attributes.Dexterity, }, //Neck
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //Main arm
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //OffArm
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //MainHand
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //OffHand
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //Back
+            { SD.Attributes.Dexterity, SD.Attributes.Endurance, }, //LeftLeg
+            { SD.Attributes.Dexterity, SD.Attributes.Endurance, }, //RightLeg
+            { SD.Attributes.Charisma, SD.Attributes.Instinct, }, //Face
+            { SD.Attributes.Strength, SD.Attributes.Endurance, }, //Body
+        };
 
         //circle 0  1  2  3  4  5  6  7  8  9
         public static readonly int[,,] SpellsPerDay = {
@@ -279,6 +314,89 @@ namespace DA_Common
             { 0, 2, 2, 2, 2, 1, 1, 1, 1, 0,},               // +8
             { 0, 3, 2, 2, 2, 2, 1, 1, 1, 1,},               // +9
         };
+
+        public struct Month
+        {
+            public string Name;
+            public int Number;
+            public string Season;
+            public int Days;
+        }
+
+        public readonly struct Calendar
+        {
+            public static readonly int StartYear = 625;
+
+            public static readonly Month[] Months = { 
+                new(){Name = "Abadius",Number = 1,Season = "Winter",Days = 31 },
+                new() { Name = "Calistril ", Number = 2, Season = "Winter", Days = 28},
+                new() { Name = "Pharast ", Number = 3, Season = "Spring", Days = 31},
+                new() { Name = "Gozran", Number = 4, Season = "Spring", Days = 30},
+                new() { Name = "Desnus", Number = 5, Season = "Spring", Days = 31},
+                new() { Name = "Sarenith", Number = 6, Season = "Summer", Days = 30},
+                new() { Name = "Erastus", Number = 7, Season = "Summer", Days = 31},
+                new() { Name = "Arodus", Number = 8, Season = "Summer", Days = 31},
+                new() { Name = "Rova", Number = 9, Season = "Fall", Days = 30},
+                new() { Name = "Lamashan", Number = 10, Season = "Fall", Days = 31},
+                new() { Name = "Neth", Number = 11, Season = "Fall", Days = 30},
+                new() { Name = "Kuthona", Number = 12, Season = "Winter", Days = 31}
+            };
+
+            public const string Moonday = "Moonday";
+            public const string Toilday = "Toilday";
+            public const string Wealday = "Wealday";
+            public const string Oathday = "Oathday";
+            public const string Fireday = "Fireday";
+            public const string Starday = "Starday";
+            public const string Sunday = "Sunday";
+
+            public static readonly string[] AllWeek = { Moonday, Toilday, Wealday, Oathday, Fireday, Starday, Sunday };
+
+            public static string GetDayOfWeek( int day, int month)
+            {
+                int days = day;
+                for (int i = 0; i < month-1; i++)
+                {
+                    days += Months[i].Days;
+                }
+                int dayOfWeek = days % 7;
+
+                return AllWeek[dayOfWeek];
+            }
+
+            public static string GetDate( int day, int month,int year = 0)
+            {
+                if (day == 0 || month == 0)
+                    return "";
+                while(day > Months[month - 1].Days)
+                {
+                    day = day - Months[month - 1].Days;
+                    month++;
+                }
+
+                string dayOfWeek =  GetDayOfWeek(day, month);
+                string dayNum;
+                if (day == 1)
+                    dayNum = "1st";
+                else if(day == 2)
+                {
+                    dayNum = "2nd";
+                }
+                else
+                {
+                    dayNum = day.ToString() + "th";
+                }
+                if(year > 0)
+                    return dayOfWeek + ", " + dayNum + " of " + Months[month + 1] + ", year " + year.ToString();
+
+                return dayOfWeek + ", " + dayNum + " of " + Months[month + 1];
+            }
+
+            public Calendar()
+            {
+            }
+
+        }
 
     }
     public static class MyIcon

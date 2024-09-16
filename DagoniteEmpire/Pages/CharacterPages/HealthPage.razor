@@ -26,46 +26,66 @@
 
             <MudGrid Spacing="4" Justify="Justify.Center">
                 <MudItem xs="6" sm="4" lg="3">
-                    <MudPaper Class="pa-4">
+                    <MudPaper Class="p-2 m-2 text-center">
                         <MudStack Spacing="2">
-                            <h3>Max wounds</h3>
+                            <h4>Max wounds</h4>
                             <MudDivider />
-                            <h2>@AllParams.Health.MaxWounds</h2>
+                            <h4>@AllParams.Health.MaxWounds</h4>
                         </MudStack>
                     </MudPaper>
                 </MudItem>
                 <MudItem xs="6" sm="4" lg="3">
-                    <MudPaper Class="pa-4">
+                        <MudPaper Class="p-2 m-2 text-center">
                         <MudStack Spacing="2">
-                            <h3>Current wounds</h3>
+                            <h4>Current wounds</h4>
                             <MudDivider />
-                            <h2>@AllParams.Health.CurrentWounds</h2>
+                            <h4>@AllParams.Health.CurrentWounds</h4>
                         </MudStack>
                     </MudPaper>
                 </MudItem>
                 <MudItem xs="6" sm="4" lg="3">
-                    <MudPaper Class="pa-4">
+                        <MudPaper Class="p-2 m-2 text-center">
                         <MudStack Spacing="2">
-                            <h3>Healing modyfier</h3>
+                            <h4>Healing modyfier</h4>
                             <MudDivider />
-                            <h2>@AllParams.Health.HealingModyfier%</h2>
+                            <h4>@AllParams.Health.HealingModyfier %</h4>
                         </MudStack>
                     </MudPaper>
                 </MudItem>
             </MudGrid>
-                    
+            <div class="p-3">
 
-               
-
- 
-            <div class="sheet-img">
-                <img src="../images/CharacterItemPlacement.webp" class="stretch" />
+                <MudDataGrid @ref="WoundsGrid" MultiSelection="true" Items="@Wounds" ReadOnly="true" Filterable="false" Class="px-0 py-2"
+                             Hideable="true" Groupable="true" GroupExpanded="true" Elevation="2" >
+                    <ToolBarContent >
+                        <MudStack Spacing="2" Class="px-0">
+                            <MudText Class="px-0" Typo="Typo.h6">Current wounds</MudText>
+                            <MudButton Class="pa-0 align-content-start" OnClick="@(() => AddWound())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add wound</MudButton>
+                        </MudStack>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Value" Title="Wound level" Filterable="false" Groupable="false" />
+                        <PropertyColumn Property="x => x.Severity"  />
+                        <PropertyColumn Property="x => x.Penalty"  />
+                            <PropertyColumn Property="x => x.Date" Title="Injury date" />
+                            <PropertyColumn Property="x => x.DateEnd" Title="When healed" />
+                        <PropertyColumn Property="x => x.Description" />
+                            <PropertyColumn Property="x => x.Location" Grouping GroupBy="@_groupBy" Hidden="true">
+                            <GroupTemplate>
+                                <span style="font-weight:bold">@context.Grouping.Key (@GetWoundAttribute(context.Grouping.Key)) </span>
+                            </GroupTemplate>
+                        </PropertyColumn>
+                        <TemplateColumn Hidden="@IsReadOnly" CellClass="d-flex justify-end" Title="Actions">
+                            <CellTemplate>
+                                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditWound(@context.Item))" />
+                                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteWound(@context.Item))" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
             </div>
-
-
         </CascadingValue>
         }
-            
     </div>
 </div>
 
@@ -74,9 +94,18 @@
 @code {
     [Parameter]
     public int Id { get; set; }
-    public AllParamsModel? AllParams { get; set; } = new();
+    public AllParamsModel AllParams { get; set; } = new();
+
+    MudDataGrid<WoundDTO> WoundsGrid { get; set; }
+
+    private bool IsReadOnly { get { return false; } }
 
     UserInfo? UserInfo { get; set; }
+
+    private ICollection<WoundDTO> Wounds { get; set; } = new List<WoundDTO>();
+    private WoundDTO NewWound { get; set; } = new();
+
+    public string[] Initial = SD.WoundLocation.All;
 
 
     private bool IsLoading { get; set; } = true;
@@ -90,8 +119,8 @@
             try
             {
                 IsLoading = true;
-
-
+                await LoadCharacter();
+                Wounds = AllParams.Health.GetAll();
                 IsLoading = false;
                 StateHasChanged();
             }
@@ -133,12 +162,71 @@
         IsLoading = false;
         StateHasChanged();
     }
-
-    private void LoadPossibleGears()
+    Func<WoundDTO, object> _groupBy = x =>
     {
-        foreach (var e in EquipItemComp)
+        return x.Location;
+    };
+
+
+    private string GetWoundAttribute(object location)
+    {
+        string? locationName = location?.ToString();
+        if(locationName is null)
+            return "";
+        int i = 0;
+        switch (location)
         {
-            e.Value.ReloadGears();
+            case SD.WoundLocation.Head: i = (int)SD.WoundLocationEnum.Head;  break;
+            case SD.WoundLocation.Neck: i = (int)SD.WoundLocationEnum.Neck; break;
+            case SD.WoundLocation.MainHand: i = (int)SD.WoundLocationEnum.MainHand; break;
+            case SD.WoundLocation.OffHand: i = (int)SD.WoundLocationEnum.OffHand; break;
+            case SD.WoundLocation.MainArm: i = (int)SD.WoundLocationEnum.MainArm; break;
+            case SD.WoundLocation.OffArm: i = (int)SD.WoundLocationEnum.OffArm; break;
+            case SD.WoundLocation.Body: i = (int)SD.WoundLocationEnum.Body; break;
+            case SD.WoundLocation.Back: i = (int)SD.WoundLocationEnum.Back; break;
+            case SD.WoundLocation.LeftLeg: i = (int)SD.WoundLocationEnum.LeftLeg; break;
+            case SD.WoundLocation.RightLeg: i = (int)SD.WoundLocationEnum.RightLeg; break;
+            case SD.WoundLocation.Face: i = (int)SD.WoundLocationEnum.Face; break;
+        }
+
+        string res = SD.WoundAttributes[i, 0] + ", " + SD.WoundAttributes[i, 1];
+        return res;
+    }
+    private async Task AddWound()
+    {
+        NewWound = new();
+        var parameters = new DialogParameters<CreateWoundDialog> { { x => x.NewWound, NewWound } };
+
+        var dialog = await DialogService.ShowAsync<CreateWoundDialog>("Create wound", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewWound = (WoundDTO)result.Data;
+            NewWound.CharacterId = AllParams.Character.Id;
+            Wounds.Add(NewWound);
+            StateHasChanged();
         }
     }
+
+    private async Task EditWound(WoundDTO wound)
+    {
+        var parameters = new DialogParameters<CreateWoundDialog> { { x => x.NewWound, wound }, { x => x.IsEdit, true } };
+
+        var dialog = await DialogService.ShowAsync<CreateWoundDialog>("Edit wound", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewWound = (WoundDTO)result.Data;
+            wound = NewWound;
+            StateHasChanged();
+        }
+    }
+    private void DeleteWound(WoundDTO wound)
+    {
+        Wounds.Remove(wound);
+        StateHasChanged();
+    }
+                                    
 }

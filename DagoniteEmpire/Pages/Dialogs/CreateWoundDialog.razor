@@ -1,0 +1,71 @@
+﻿
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+             <MudIcon Icon="@MyIcon.Scroll" Color="Color.Primary" /> 
+            @Title Wound
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudSelect Required="true" @bind-Value="@NewWound.Location" Label="Location" Placeholder="Select location">
+            @foreach(var loc in SD.WoundLocation.All)
+            {
+                <MudSelectItem Value="@loc">@loc</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect Required="true" @bind-Value="@SeverityName" Label="Severity" Placeholder="Select Severity">
+            @foreach (var loc in SD.WoundSeverity.All)
+            {
+                <MudSelectItem Value="@loc">@loc</MudSelectItem>
+            }
+        </MudSelect>
+        <MudTextField Required="true" @bind-Value="@NewWound.Description" Label="Description" Lines="3" />
+        <MudTextField Required="true" @bind-Value="@NewWound.DateMonth" Label="Month" />
+        <MudTextField Required="true" @bind-Value="@NewWound.DateDay" Label="Day" />
+        <MudTextField Required="true" @bind-Value="@NewWound.HealTime" Label="Time to heal" />
+        <MudCheckBox @bind-Value="@NewWound.IsIgnored" Label="Ignored"></MudCheckBox>
+        <MudCheckBox @bind-Value="@NewWound.IsTended" Label="Tended"></MudCheckBox>
+        <MudCheckBox @bind-Value="@NewWound.IsMagicHealed" Label="Magic healed"></MudCheckBox>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="CreateWound">@Title</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public WoundDTO NewWound { get; set; }
+    [Parameter] public bool IsEdit { get; set; } = false;
+    private string Title = "Create";
+    private string SeverityName = "";
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEdit)
+        {
+
+            Title = "Edit";
+            SeverityName = NewWound.Severity;
+        }
+    }
+
+    private void CreateWound()
+    {
+        NewWound.Value = NewWound.GetValueFromSeverity(SeverityName);
+        MudDialog.Close(DialogResult.Ok(NewWound));
+        if (IsEdit)
+            Snackbar.Add("Wound edited", Severity.Success);
+        else 
+            Snackbar.Add("Wound created", Severity.Success);
+    }
+}

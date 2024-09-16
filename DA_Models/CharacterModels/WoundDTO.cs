@@ -12,30 +12,30 @@ namespace DA_Models.CharacterModels
         public int Id { get; set; }
         public string Description { get; set; }
         public string Location { get; set; }
-        public int Value { get; set; } = 0;
+        public int Value { get; set; }
         public bool IsIgnored { get; set; } = false;
-        public bool IsTended { get; set; } = false ;
-        public bool IsMagicHealed { get; set; } = false ;
+        public bool IsTended { get; set; } = false;
+        public bool IsMagicHealed { get; set; } = false;
         public int DateMonth { get; set; }
         public int DateDay { get; set; }
         public int HealTime { get; set; }
-        public string Severity 
-        { 
-            get 
+        public string Severity
+        {
+            get
             {
                 if (Value > 0 && Value < 3)
-                    return SD.Wound.Light;
+                    return SD.WoundSeverity.Light;
                 else if (Value >= 3 && Value < 9)
-                    return SD.Wound.Moderate;
+                    return SD.WoundSeverity.Moderate;
                 else if (Value >= 9 && Value < 18)
-                    return SD.Wound.Heavy;
+                    return SD.WoundSeverity.Heavy;
                 else if (Value >= 18 && Value < 25)
-                    return SD.Wound.Critical;
+                    return SD.WoundSeverity.Critical;
                 else if (Value >= 25)
-                    return SD.Wound.Deadly;
+                    return SD.WoundSeverity.Deadly;
                 else
                     return "";
-            } 
+            }
         }
         public List<AttributeDTO> RelatedAttributes { get; set; } = new List<AttributeDTO> { };
         public int Penalty { get
@@ -53,7 +53,31 @@ namespace DA_Models.CharacterModels
                 else
                     return 0;
             }
-         }
-        public int CharacterId { get; set; }
+        }
+
+        public string Date {
+            get {
+                return SD.Calendar.GetDate(DateDay, DateMonth);
+            }
+        }
+        public string DateEnd { 
+            get{
+                return SD.Calendar.GetDate(DateDay + HealTime, DateMonth);
+            }
+        }
+    public int CharacterId { get; set; }
+
+        public int GetValueFromSeverity(string severity)
+        {
+            switch (severity)
+            {
+                case SD.WoundSeverity.Light: return 1;
+                case SD.WoundSeverity.Moderate: return 3;
+                case SD.WoundSeverity.Heavy: return 9;
+                case SD.WoundSeverity.Critical: return 18;
+                case SD.WoundSeverity.Deadly: return 25;
+                default: return 0;
+            }
+        }
     }
 }
