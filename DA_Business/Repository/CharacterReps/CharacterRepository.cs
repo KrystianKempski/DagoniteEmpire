@@ -48,17 +48,6 @@ namespace DA_Business.Repository.CharacterReps
                         obj.TraitsAdv.Add(t);
                     }
                 });
-                //handle equipment
-                //var equipmentSlots = await contex.EquipmentSlots.ToListAsync();
-                //equipmentSlots.ForEach(es =>
-                //{
-                //    if (obj.EquipmentSlots.Any(nt => nt.Id == es.Id))
-                //    {
-                //        var untracked = obj.EquipmentSlots.FirstOrDefault(nt => nt.Id == es.Id);
-                //        obj.EquipmentSlots.Remove(untracked);
-                //        obj.EquipmentSlots.Add(es);
-                //    }
-                //});
 
                 // Update and Insert equimpment
                 if (obj.EquipmentSlots is not null)

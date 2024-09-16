@@ -1,11 +1,27 @@
-﻿body {
+﻿.page {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-.attribute {
-    width: 330px;
-    padding: 10px;
+.border {
+    border: 1px solid rgb(72, 69, 69);
+    border-radius: 10px;
+    margin: 6px;
+    padding: 0 6px 0 6px;
 }
 
+.save-btn {
+    position: fixed;
+    top: 80px;
+    right: 80px;
+    z-index: 1000;
+}
+
+h3 {
+    color: black;
+    font-family: 'Eagle Lake', serif;
+}
 
 .bonus-row {
     width: 18px;
@@ -21,25 +37,94 @@
     text-align: left;
     padding: 2px;
     vertical-align: middle;
+    overflow:hidden;
 }
 
 .name-row {
     font-size: 13px;
     width: 40px;
     text-align: left;
-    padding: 5px;
+    padding: 2px;
     vertical-align: middle;
+    border: 0px solid black;
+    padding: 2px;
+    letter-spacing: 1px;
+
 }
-/*arrows*/
+
+
+table {
+    table-layout: fixed;
+}
+.char-title {
+    text-transform: uppercase;
+}
+
+td {
+    font-size: 16px;
+    padding: 1px;
+    margin: 0px;
+}
+.add-skill {
+    background-color: transparent;
+    border: 1px solid black;
+    border-radius: 3px;
+}
+
+.rel-attr-row {
+    width: 30px;
+    padding: 2px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.attr-mod-row {
+    width: 14px;
+    font-size: 13px;
+    padding: 2px;
+}
+
+.attribute-selector {
+    font-size: 12px;
+    margin: 0px 0px 0px 0px;
+    width: 100%;
+}
+
+
+i {
+    transition: transform 0.1s;
+}
+
+    i:hover {
+        transform: scale(1.2)
+    }
+
+    i:active {
+        transform: scale(0.9)
+    }
+
+
+.attribute td {
+    padding: 2px;
+}
+
+.attribute .names-label {
+    width: 100%;
+    font-size: 16px;
+    text-align: left;
+    font-weight: bold;
+    text-anchor: start;
+}
+
 .attr-control {
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: row;
-    /*margin: 2px 4px 2px 4px;*/
-    /*margin-left: 2px;*/
-    width: 40px;
-    height: 30px;
     justify-items: right;
-    align-items: center
+    justify-content: center;
+    align-items: center;
+    padding: 2px 0 2px 0;
 }
 
 .attr-indicator {
@@ -49,7 +134,7 @@
     border: 1px solid gray;
     font-size: 12px;
     border-radius: 4px;
-    width: 100%;
+    width: 28px;
     height: 28px;
     margin-top: 0px;
     margin-right: 2px;
@@ -67,9 +152,22 @@
     margin: 0px 0px 0px 0px;
     margin-top: 0px;
     height: 18px;
+    width: 18px;
     font-size: 18px;
     color: dimgray;
     border: 0px solid gray;
     background-color: transparent;
     text-align: start;
+}
+
+.names-label {
+    font-size: 13px;
+    text-align: left;
+    font-weight: bold;
+    text-anchor: start;
+}
+
+.attribute {
+    width: 360px;
+    position: relative;
 }

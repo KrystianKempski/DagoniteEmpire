@@ -41,6 +41,8 @@ namespace DA_DataAccess.CharacterClasses
         public ICollection<Post>? Posts { get; set; }
         public ICollection<Chapter>? Chapters { get; set; }
 
+        public ICollection<Wound>? Wounds { get; set; }
+
         public int? RaceId { get; set; }
         [ForeignKey(nameof(RaceId))]
         public Race? Race { get; set; } = null;

@@ -1,0 +1,144 @@
+﻿@page "/health/{id:int}"
+@using DA_Business.Services.Interfaces
+@using DA_DataAccess.CharacterClasses
+@inject IJSRuntime _jsruntime
+@inject ICharacterRepository _characterRepository
+@inject IAttributeRepository _attributeRepository
+@inject IWoundRepository _woundsRepository
+@inject IDialogService DialogService
+@inject NavigationManager _navigationManager
+@inject IUserService _userService
+
+@inject IJSRuntime _jsRuntime
+
+<div class="container-fluid">
+    <div class="save-btn">
+        <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
+
+    </div>
+    <div class="row">
+        @if (IsLoading == true)
+        {
+            <LoadingPage></LoadingPage>
+        }else
+        {   
+        <CascadingValue Value="@AllParams">
+
+            <MudGrid Spacing="4" Justify="Justify.Center">
+                <MudItem xs="6" sm="4" lg="3">
+                    <MudPaper Class="pa-4">
+                        <MudStack Spacing="2">
+                            <h3>Max wounds</h3>
+                            <MudDivider />
+                            <h2>@AllParams.Health.MaxWounds</h2>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="6" sm="4" lg="3">
+                    <MudPaper Class="pa-4">
+                        <MudStack Spacing="2">
+                            <h3>Current wounds</h3>
+                            <MudDivider />
+                            <h2>@AllParams.Health.CurrentWounds</h2>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="6" sm="4" lg="3">
+                    <MudPaper Class="pa-4">
+                        <MudStack Spacing="2">
+                            <h3>Healing modyfier</h3>
+                            <MudDivider />
+                            <h2>@AllParams.Health.HealingModyfier%</h2>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+                    
+
+               
+
+ 
+            <div class="sheet-img">
+                <img src="../images/CharacterItemPlacement.webp" class="stretch" />
+            </div>
+
+
+        </CascadingValue>
+        }
+            
+    </div>
+</div>
+
+
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    public AllParamsModel? AllParams { get; set; } = new();
+
+    UserInfo? UserInfo { get; set; }
+
+
+    private bool IsLoading { get; set; } = true;
+
+    public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp = new Dictionary<EquippedItems, EquipItemComponent>();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                IsLoading = true;
+
+
+                IsLoading = false;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                IsLoading = false;
+                await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+            }
+        }
+    }
+
+    private async Task LoadCharacter()
+    {
+        AllParams.Character = await _characterRepository.GetById(Id);
+        AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
+        AllParams.Health.FillPropertiesContainer(await _woundsRepository.GetAll(Id));
+    }
+
+    private async Task SaveChanges()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        try
+        {
+            // update character with wounds collection properly filled
+            await _characterRepository.Update(AllParams.Character);
+
+            foreach (var obj in AllParams.Health.GetAll())
+            {
+                obj.CharacterId = AllParams.Character.Id;
+                await _woundsRepository.Update(obj);
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrError("Error while changing equipment");
+        }
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private void LoadPossibleGears()
+    {
+        foreach (var e in EquipItemComp)
+        {
+            e.Value.ReloadGears();
+        }
+    }
+}

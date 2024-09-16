@@ -1,4 +1,7 @@
 ﻿
+table {
+    table-layout: fixed;
+}
 .specialskills-table {
     position: relative;
     width: 460px;
@@ -6,6 +9,7 @@
     margin:4px;
     border-radius: 6px;
 }
+
 
 .specialskills-control {
     display: flex;
@@ -42,30 +46,8 @@
 }
 
 
-.specialskills-table table {
+ table {
     table-layout: fixed;
-}
-
-.specialskills-table .skillname-row {
-    width: 40px;
-}
-
-.specialskills-table .names-label {
-    width: 60px;
-    font-size: 16px;
-    text-align: left;
-    font-weight: bold;
-    text-anchor: start;
-}
-
-.specialskills-names-input {
-    width: 60px;
-    font-size: 16px;
-    text-align: left;
-    font-weight: bold;
-    text-anchor: start;
-    border: 1px solid gray;
-    border-radius: 5px;
 }
 
 .add-skill {
@@ -93,11 +75,6 @@
     font-size: 13px;
 }
 
-.attr-mod-row {
-    width: 14px;
-    font-size: 13px;
-    padding: 2px;
-}
 
 .attribute-selector {
     font-size: 12px;
@@ -106,9 +83,6 @@
 }
 
 
-.bonus-cell {
-    width: 20px;
-}
 
 h3 {
     color: black;
@@ -132,15 +106,12 @@ h3 {
 }
 
 .name-row {
+    display: none;
     font-size: 13px;
     width: 40px;
     text-align: left;
     padding: 2px;
     vertical-align: middle;
-}
-
-.char-title {
-    text-transform: uppercase;
 }
 
 
@@ -149,162 +120,24 @@ td {
     padding: 1px;
     margin: 0px;
 }
-
-.names-label {
-    font-size: 13px;
-    text-align: left;
-    font-weight: bold;
-    text-anchor: start;
-}
-
-::deep .bonus-control {
-    font-size: 12px;
-    width: 50px;
-    text-align: center;
-    margin-left: 0px;
-    padding: 4px 0px 4px 0px;
-}
-
-.attribute {
-    width: 330px;
-    position: relative;
-}
-
-.baseskills {
-    width: 400px;
-    position: relative;
-}
-
-
-.description {
-    display: flex;
-    flex-direction: column;
-    width: 450px;
-    position: relative;
-}
-
-.portrait {
-    width: 330px;
-    position: relative;
-}
-
-.sheet-img {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    left: 0px;
-    top: 0px;
-    z-index: -10;
-}
-
+/*
 .stretch {
     width: 100%;
     height: 100%;
     z-index: -20;
-}
+}*/
 
-.portrait-imageframe {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    /*border: 1px solid RGB(206 212 218);*/
-    border-radius: 4px;
-    /*width: 320px;*/
-    height: 390px;
-    font-size: 12px;
-    overflow: hidden;
-    align-content: center;
-}
-
-.portrait-image {
-    display: flex;
-    width: 100%;
-    max-height: 93%;
-    border: 0px solid white;
-}
-
-.portrait-input {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    font-size: 16px;
-    font-weight: bold;
-    padding: 4px;
-    bottom: 0;
-    overflow: hidden;
-    white-space: nowrap; /* Don't forget this one */
-    text-overflow: ellipsis;
-    z-index: 1000;
-}
-
-.sr-only {
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
-}
-
-.input-label {
-    position: absolute;
-    width: 250px;
-    height: 300px;
-    padding: 30px;
-    text-align: center;
-    align-content: center;
-    background-color: transparent;
-    color: black;
-    border: none; /* 1px solid RGB(206 212 218);*/
-    border-radius: 10px;
-    cursor: pointer;
-    margin-left: auto;
-    margin-right: auto;
-    top: 110px;
-    left: 0;
-    right: 0;
-    z-index: 1500;
-}
-
-.trait-container {
-    padding: 0;
-    width: 100%;
-    height: calc(100% - 64px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
 
 i {
     transition: transform 0.1s;
 }
 
-    i:hover {
-        transform: scale(1.2)
-    }
-
-    i:active {
-        transform: scale(0.9)
-    }
-
-
-
-
-::deep .points-avalible {
-    width: 100px;
-    text-align: right;
+i:hover {
+    transform: scale(1.2)
 }
 
-
-.attribute .names-label {
-    width: 100%;
-    font-size: 16px;
-    text-align: left;
-    font-weight: bold;
-    text-anchor: start;
+i:active {
+    transform: scale(0.9)
 }
 
 .attr-indicator {
@@ -341,52 +174,14 @@ i {
 }
 
 
-.points-control {
-    display: flex;
-    flex-direction: row;
-    margin-top: 3px;
-    margin-bottom: 3px;
-    height: 50px;
-    font-weight: bold;
-    justify-items: left;
-    align-items: center
-}
-
-.points-label {
-    text-align: left;
-    font-size: 16px;
-    font-weight: bold;
-    width: 80%;
-}
-
-.points-indicator {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid gray;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 4px;
-    width: 55px;
-    height: 40px;
-    margin-right: 2px;
-}
-
-
-.specialskills .name-row {
-    display: none;
-}
-
-.specialskills .skillname-row { /*
-    display: inline-block;
-    font-size: 13px;
-    width: 40px;*/
+ .skillname-row { 
+    width:40px;
     text-align: left;
     padding: 2px;
     vertical-align: middle;
 }
 
-.specialskills .names-label {
+ .names-label {
     width: 100%;
     font-size: 16px;
     text-align: left;
@@ -394,23 +189,12 @@ i {
     text-anchor: start;
 }
 
-.specialskills .name-td-big {
+ .name-td-big {
 }
 
-.specialskills .name-td-small {
+ .name-td-small {
     display: none;
 }
-
-.table tr th {
-    /*border-bottom: 1px solid black; */
-}
-
-.table tr td {
-    /* border-bottom: 1px solid black;*/
-}
-
-
-
 
 
 @media (max-width: 400px) {

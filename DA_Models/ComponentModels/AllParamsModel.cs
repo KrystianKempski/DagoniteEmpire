@@ -21,6 +21,7 @@ namespace DA_Models.ComponentModels
             BattleProperties = new BattlePropertyModel(this);
             SpecialSkills = new SpecialSkillModel(this);
             Attributes = new AttributesModel(this);
+            Health = new HealthModel(this);
         }
         public CharacterDTO Character { get; set; } = new CharacterDTO();
         public RaceDTO CurrentRace { get; set; } = new RaceDTO();
@@ -36,6 +37,7 @@ namespace DA_Models.ComponentModels
         public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
         public ICollection<EquipmentSlotDTO> EquipmentSlots { get; set; } = new List<EquipmentSlotDTO>();
         public BattlePropertyModel BattleProperties { get; set; }
+        public HealthModel Health { get; set; }
 
 
     public bool IsAdminOrMG { get; set; } = false;

@@ -132,73 +132,8 @@
                             </div>
                         </div>
 
-                        <div class="attribute border">
-                            <div class="sheet-img">
-                                @* <img src="../images/old_paper2.png" class="stretch" /> *@
-                            </div>
-                            <h3 class="my-3 ml-3 text-center">ATTRIBUTES</h3>
-
-                            <table class="table align-middle mb-1">
-                            <thead>
-                                <tr>
-                                    <th scope="col" class="bonus-row text-center">Base</th>
-                                    <th scope="col" class="sum-row text-center">Race</th>
-                                    <th scope="col" class="sum-row text-center">Gear</th>
-                                    <th scope="col" class="sum-row text-center">Trait</th>
-                                    <th scope="col" class="sum-row text-center">Sum</th>
-                                    <th scope="col" class="sum-row text-center">Mod.</th>
-                                </tr>
-                            </thead>
-                                <tbody>
-                               
-                                    @foreach (var obj in AllParams.Attributes.GetAllArray())
-                                {
-                                    <tr>
-                                        <td class="name-row" colspan="6">
-                                            <label class="names-label text-start">@obj.Name.ToUpper()</label>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.BaseBonus</span>
-                                                <div class="arrows">
-                                                    <button @onclick="@(()=>IncrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                    <button @onclick="@(()=>DecrAttr(obj))"class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.RaceBonus</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.GearBonus</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.TraitBonus</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.SumBonus</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="attr-control">
-                                                <span class="attr-indicator">@obj.Modifier </span> 
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                            </table>
-                        </div>
+                        <AttributeComponent OnAttributesChange="AttributeChange"></AttributeComponent>
+                        
                         <div class="baseskills border">
                             <div class="sheet-img">
                                @*  <img src="../images/old_paper2.png" class="stretch" /> *@
@@ -322,14 +257,6 @@
     .e-richtexteditor .e-source-content {
         background: transparent;
     }
-
-   /*  .e-richtexteditor.e-rte-tb-expand .e-rte-content, .e-richtexteditor.e-rte-tb-expand .e-source-content{
-        border: 1px solid black;
-    }
-
-    .e-richtexteditor.e-rte-tb-expand{
-        border: none;
-    } */
     
 </style>
 
@@ -358,10 +285,7 @@
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
     private string ChooseFile = "Choose file";
-
     private SpecialSkillsComponent SpecialSkilsComp = new();
-
-
 
 
     protected override async Task OnInitializedAsync()
@@ -376,8 +300,6 @@
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
-
-
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -666,37 +588,6 @@
         }
     }
 
-    private async Task IncrAttr(AttributeDTO obj)
-    {
-        var result = await AllParams.Attributes.IncrAttr(obj);
-
-        if(string.IsNullOrEmpty(result) == false)
-        {
-            await _jsRuntime.AttrLimit(result);
-        }
-        else
-        {
-            IsLeaveAllowed = false;
-        }
-    }
-    private async Task DecrAttr(AttributeDTO obj)
-    {
-        if (AllParams.Character.IsApproved == true)
-        {
-            await _jsRuntime.AttrLimit("To revert changes refresh page without saving");
-            return;
-        }
-        var result = await AllParams.Attributes.DecrAttr(obj);
-
-        if (string.IsNullOrEmpty(result) == false)
-        {
-            await _jsRuntime.AttrLimit(result);
-        }
-        else
-        {
-            IsLeaveAllowed = false;
-        }
-    }
 
     private async Task IncrBSBonus(BaseSkillDTO obj)
     {
@@ -804,25 +695,32 @@
         if (isConfirmed == true )
         {
             IsLeaveAllowed = true;
-            _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
+            await _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
             _navigationManager.NavigateTo(TargetLocation);
         }
         IsLoading = false;
         StateHasChanged();
-        _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
+        await _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
     }
     private void HandleLeavePage() => _jsRuntime.InvokeVoidAsync("ShowLeavePageModal");
 
-    private async Task GetDescription(string description) => AllParams.Character.Description = description;
+    private void GetDescription(string description) => AllParams.Character.Description = description;
 
-    protected async Task TraitsChange()
+    protected void TraitsChange()
     {
         IsLeaveAllowed = false;
 
         StateHasChanged();
     }
+    protected void AttributeChange()
+    {
+        IsLeaveAllowed = false;
 
-    private async Task AutoChooseRelatedAttributesForSpecialSkills()
+        StateHasChanged();
+    }
+    
+
+    private void AutoChooseRelatedAttributesForSpecialSkills()
     {
         IsLeaveAllowed = false;
         AllParams.SpecialSkills.AutoChooseRelatedAttribute();

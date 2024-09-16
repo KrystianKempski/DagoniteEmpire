@@ -32,6 +32,7 @@ namespace DA_Business.Mapper
             CreateMap<Post, PostDTO>().ReverseMap();
             CreateMap<Campaign, CampaignDTO>().ReverseMap();
             CreateMap<SpellCircle, SpellCircleDTO>().ReverseMap();
+            CreateMap<Wound, WoundDTO>().ReverseMap();
         }
     }
 }

@@ -49,9 +49,9 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(config =>
     {
-       // config.SignIn.RequireConfirmedEmail = true;
         config.SignIn.RequireConfirmedAccount = true;
     }).AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
+
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
 builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();
@@ -62,6 +62,7 @@ builder.Services.AddScoped<ITraitRepository<TraitRaceDTO>, TraitRaceRepository>(
 builder.Services.AddScoped<ITraitRepository<TraitEquipmentDTO>, TraitEquipmentRepository>();
 builder.Services.AddScoped<IBonusRepository, BonusRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
+builder.Services.AddScoped<IWoundRepository, WoundRepository>();
 builder.Services.AddScoped<IProfessionRepository, ProfessionRepository>();
 builder.Services.AddScoped<IProfessionSkillRepository, ProfessionSkillRepository>();
 builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();

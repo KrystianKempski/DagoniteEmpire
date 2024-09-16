@@ -1,0 +1,339 @@
+﻿@* @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
+@inject IUserService _userService
+@inject NavigationManager _navigationManager
+
+<div class="equipment">
+    @if (IsLoading == true)
+    {
+    }else
+    {  
+        <CascadingValue Value="@AllParams">
+        <div class="row w-100 border m-1 p-1">
+            <div class="set-label">
+                <input class="px-1" type="checkbox" checked="@WeaponSet1" @onchange="WeaponSetChanged">
+                <label>Weapon set 1</label>
+            </div>
+            <div class="col-6 p-1">
+                <label>Main hand</label>
+                <div class="weapon main1">
+                        <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponMain1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponMain1"> </EquipItemComponent>
+                </div>
+                    @if (Weapons[EquippedItems.WeaponMain1] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponMain1].RelatedSkill) == false)
+                    {
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Skill (@Weapons[EquippedItems.WeaponMain1].RelatedSkill): </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponMain1].RelatedSkill).SumBonus
+                            </div>
+                        </div>
+                    
+                        @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponMain1]){
+                            @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
+                            {
+                                <div class="d-flex">
+
+                                    <div class="flex-grow-1 weapon-prop-label">
+                                        <label>@prop.Name: </label>
+                                    </div>
+                                    @if (prop.SumBonus != 0)
+                                    {
+                                        <div class="weapon-prop-value">
+                                            @prop.SumBonus
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    }
+            </div>
+
+            <div class="col-6 p-1">
+                <label>Off hand</label>
+                <div class="weapon off1">
+                    <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponOff1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff1"> </EquipItemComponent>
+                </div>
+                    @if (Weapons[EquippedItems.WeaponOff1] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponOff1].RelatedSkill) == false)
+                    {
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Skill (@Weapons[EquippedItems.WeaponOff1].RelatedSkill): </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponOff1].RelatedSkill).SumBonus
+                            </div>
+                        </div>
+                    
+                        @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponOff1])
+                        {
+                            @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
+                            {
+                                <div class="d-flex">
+
+                                    <div class="flex-grow-1 weapon-prop-label">
+                                        <label> @prop.Name: </label>
+                                    </div>
+                                    @if (prop.SumBonus != 0)
+                                    {
+                                        <div class="weapon-prop-value">
+                                            @prop.SumBonus
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    }
+            </div>
+
+        </div>
+
+        <div class="row w-100 border m-1 p-1">
+            <div class="set-label">
+                <input class="px-1" type="checkbox" checked="@WeaponSet2" @onchange="WeaponSetChanged">
+                <label>Weapon set 2</label>
+
+            </div>
+            <div class="col-6 p-1">
+                <label>Main hand</label>
+                <div class="weapon main2">
+                    <EquipItemComponent  @ref="EquipItemComp[EquippedItems.WeaponMain2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponMain2"> </EquipItemComponent>
+                </div>
+                    @if (Weapons[EquippedItems.WeaponMain2] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponMain2].RelatedSkill) == false)
+                    {
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Skill (@Weapons[EquippedItems.WeaponMain2].RelatedSkill): </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponMain2].RelatedSkill).SumBonus
+                            </div>
+                        </div>
+                   
+                        @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponMain2])
+                        {
+                            @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
+                            {
+                                <div class="d-flex">
+
+                                    <div class="flex-grow-1 weapon-prop-label">
+                                        <label> @prop.Name: </label>
+                                    </div>
+                                    @if (prop.SumBonus != 0)
+                                    {
+                                        <div class="weapon-prop-value">
+                                            @prop.SumBonus
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    }
+            </div>
+
+            <div class="col-6 p-1">
+                <label>Off hand</label>
+                <div class="weapon off2">
+                    <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponOff2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff2"> </EquipItemComponent>
+                </div>
+                    @if (Weapons[EquippedItems.WeaponOff2] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponOff2].RelatedSkill) == false)
+                    {
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Skill (@Weapons[EquippedItems.WeaponOff2].RelatedSkill): </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponOff2].RelatedSkill).SumBonus
+                            </div>
+                        </div>
+                    
+                        @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponOff2])
+                        {
+                            @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
+                            {
+                                <div class="d-flex">
+
+                                    <div class="flex-grow-1 weapon-prop-label">
+                                        <label> @prop.Name: </label>
+                                    </div>
+                                    @if (prop.SumBonus != 0)
+                                    {
+                                        <div class="weapon-prop-value">
+                                            @prop.SumBonus
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    }
+            </div>
+        </div>
+        @if (Armor is not null && ArmorBattleProperties is not null)
+        {
+        <div class="d-flex w-100 p-0 my-1">
+            <div class="d-flex flex-column border w-100">
+                <div class="set-label">
+                    <label>Equipped armor</label>
+                </div>
+                <div class="d-flex flex-row">
+                    <div class="col-6 p-2">
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Armor skill: </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @AllParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Armor).SumBonus
+                            </div>
+                        </div>
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Armor defence bonus: </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorDefenceBonus).GearBonus
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 p-2">
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Armor damage reduction: </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.Armor).GearBonus
+                            </div>
+                        </div>
+                        <div class="d-flex">
+                            <div class="flex-grow-1 weapon-prop-label">
+                                <label>Armor penalty: </label>
+                            </div>
+                            <div class="weapon-prop-value">
+                                @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorPenalty).GearBonus
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        }
+        <div class="row w-100 border m-1 p-0"> 
+                <div class="set-label">
+                    <label>Summary</label>
+                </div>
+            <div class="col-6 pt-2 pb-2 ps-2 pe-1">
+                <div class="border">
+                    <div class="set-label">
+                        <label>Attack</label>
+                    </div>
+                    <div class="d-flex px-2">
+                        <label class="flex-grow-1">Base: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.AttackBase).SumBonus
+                        </div>
+                    </div>
+                    <div class="d-flex ps-4 pe-2">
+                        <label class="flex-grow-1">vs Dodge: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.AttackDodge).SumBonus
+                        </div>
+                    </div>
+                     <div class="d-flex ps-4 pe-2">
+                        <label class="flex-grow-1">vs Armor: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.AttackArmor).SumBonus
+                        </div>
+                    </div>
+                        <div class="d-flex ps-4 pe-2">
+                         <label class="flex-grow-1">vs Shield: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.AttackShield).SumBonus
+                        </div>
+                    </div>
+                        <div class="d-flex ps-4 pe-2">
+                        <label class="flex-grow-1">vs Parry: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.AttackParry).SumBonus
+                        </div>
+                    </div>
+                    <div class="d-flex px-2">
+                        <label class="flex-grow-1">Bonus damage: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.DamageBonus).SumBonus
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6  pt-2 pb-2 ps-1 pe-2">
+                <div class="border">
+                    <div class="set-label">
+                        <label>Defence</label>
+                    </div>
+                    <div class="d-flex px-2">
+                        <label class="flex-grow-1">Armor penalty: </label>
+                        <div class="">
+                                @AllParams.BattleProperties.Get(SD.WeaponQuality.ArmorPenalty).SumBonus
+                        </div>
+                    </div>
+                    <div class="d-flex px-2">
+                        <label class="flex-grow-1">Dodge: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceDodge).SumBonus
+                        </div>
+                    </div>
+                    <div class="d-flex px-2">
+                        <label class="flex-grow-1">Armor: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceArmor).SumBonus
+                        </div>
+                    </div>
+                    <div class="d-flex px-2">
+                        <label class="flex-grow-1">Shield: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceShield).SumBonus
+                        </div>
+                    </div>
+                    <div class="d-flex px-2">
+                        <label class="flex-grow-1">Parry: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceParry).SumBonus
+                        </div>
+                    </div>
+                    <div class="d-flex px-2">
+                        <label class="flex-grow-1">Damage Reduction: </label>
+                        <div class="">
+                            @AllParams.BattleProperties.Get(SD.BattleProperty.ArmorClass).SumBonus
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </CascadingValue>
+    }
+</div>
+
+
+@code {
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set;
+    protected override async Task OnInitializedAsync()
+    {
+      
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+             
+                IsLoading = false;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                ;                
+            }
+        }
+    }
+} *@

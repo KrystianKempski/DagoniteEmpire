@@ -163,9 +163,6 @@ namespace DA_Common
 
             public static readonly string[] ArmorPenaltySkills = { Acrobatics.Jumping, Acrobatics.Climbing, Acrobatics.Balance, Acrobatics.Running, Acrobatics.Dodge,
                                                                 SleightOfHands.Pickpocketing, "Sneak",Athletics.Swimming};
-
-
-
         }
         public readonly struct EquipmentType
         {
@@ -209,6 +206,14 @@ namespace DA_Common
             public static readonly string[] All = { Other, WeaponMain1, WeaponOff1, WeaponMain2, WeaponOff2, Shield, Face, Throat, Body, Hands, Waist, Feet, Head, Shoulders, Torso, Arms, Ring1,Ring2 };
         }
 
+        public readonly struct Wound
+        {
+            public const string Light = "Light";
+            public const string Moderate = "Moderate";
+            public const string Heavy = "Heavy";
+            public const string Critical = "Critical";
+            public const string Deadly = "Deadly";
+        }
 
 
         //circle 0  1  2  3  4  5  6  7  8  9
