@@ -325,7 +325,7 @@ namespace DA_Common
 
         public readonly struct Calendar
         {
-            public static readonly int StartYear = 625;
+            public const int StartYear = 625;
 
             public static readonly Month[] Months = { 
                 new(){Name = "Abadius",Number = 1,Season = "Winter",Days = 31 },
@@ -387,7 +387,7 @@ namespace DA_Common
                     dayNum = day.ToString() + "th";
                 }
                 if(year > 0)
-                    return dayOfWeek + ", " + dayNum + " of " + Months[month + 1] + ", year " + year.ToString();
+                    return dayOfWeek + ", " + dayNum + " of " + Months[month + 1].Name + ", year " + year.ToString();
 
                 return dayOfWeek + ", " + dayNum + " of " + Months[month + 1];
             }

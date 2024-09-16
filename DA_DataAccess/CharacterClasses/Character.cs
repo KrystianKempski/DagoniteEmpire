@@ -54,5 +54,9 @@ namespace DA_DataAccess.CharacterClasses
         public Profession? Profession { get; set; } = null;
 
         public int WeaponSet { get; set; } = 0;
+
+        public int CurrentDay { get; set; }
+        public int CurrentMonth { get; set; }
+        public int CurrentYear { get; set; }
     }
 }

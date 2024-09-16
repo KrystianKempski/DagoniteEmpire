@@ -22,9 +22,13 @@
             }
         </MudSelect>
         <MudTextField Required="true" @bind-Value="@NewWound.Description" Label="Description" Lines="3" />
-        <MudTextField Required="true" @bind-Value="@NewWound.DateMonth" Label="Month" />
+        <MudSelect Required="true" @bind-Value="@NewWound.DateMonth" Label="Month" Placeholder="Select month">
+            @foreach (var loc in SD.Calendar.Months)
+            {
+                <MudSelectItem Value="@loc.Number">@loc.Name</MudSelectItem>
+            }
+        </MudSelect>
         <MudTextField Required="true" @bind-Value="@NewWound.DateDay" Label="Day" />
-        <MudTextField Required="true" @bind-Value="@NewWound.HealTime" Label="Time to heal" />
         <MudCheckBox @bind-Value="@NewWound.IsIgnored" Label="Ignored"></MudCheckBox>
         <MudCheckBox @bind-Value="@NewWound.IsTended" Label="Tended"></MudCheckBox>
         <MudCheckBox @bind-Value="@NewWound.IsMagicHealed" Label="Magic healed"></MudCheckBox>

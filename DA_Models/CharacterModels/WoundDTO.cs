@@ -1,4 +1,5 @@
 ﻿using DA_Common;
+using DA_Models.ComponentModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,9 +17,17 @@ namespace DA_Models.CharacterModels
         public bool IsIgnored { get; set; } = false;
         public bool IsTended { get; set; } = false;
         public bool IsMagicHealed { get; set; } = false;
-        public int DateMonth { get; set; }
-        public int DateDay { get; set; }
-        public int HealTime { get; set; }
+        public int DateMonth { get; set; } = 1;
+        public int DateDay { get; set; } = 1;
+        public int HealTime { get => (int)((0.4 * Value) + 3.5); }
+        public DateModel DateStart
+        {
+            get
+            {
+                return new DateModel(DateDay, DateMonth);
+            }
+        }
+        public DateModel DateReduce {get; set; }
         public string Severity
         {
             get
@@ -55,16 +64,16 @@ namespace DA_Models.CharacterModels
             }
         }
 
-        public string Date {
-            get {
-                return SD.Calendar.GetDate(DateDay, DateMonth);
-            }
-        }
-        public string DateEnd { 
-            get{
-                return SD.Calendar.GetDate(DateDay + HealTime, DateMonth);
-            }
-        }
+        //public string Date {
+        //    get {
+        //        return SD.Calendar.GetDate(DateDay, DateMonth);
+        //    }
+        //}
+        //public string DateEnd { 
+        //    get{
+        //        return SD.Calendar.GetDate(DateDay + HealTime, DateMonth);
+        //    }
+        //}
     public int CharacterId { get; set; }
 
         public int GetValueFromSeverity(string severity)

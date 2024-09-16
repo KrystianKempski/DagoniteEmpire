@@ -60,15 +60,15 @@
                     <ToolBarContent >
                         <MudStack Spacing="2" Class="px-0">
                             <MudText Class="px-0" Typo="Typo.h6">Current wounds</MudText>
-                            <MudButton Class="pa-0 align-content-start" OnClick="@(() => AddWound())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add wound</MudButton>
+                            <MudButton Class="pa-0 justify-content-start w-75" OnClick="@(() => AddWound())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add wound</MudButton>
                         </MudStack>
                     </ToolBarContent>
                     <Columns>
                         <PropertyColumn Property="x => x.Value" Title="Wound level" Filterable="false" Groupable="false" />
                         <PropertyColumn Property="x => x.Severity"  />
                         <PropertyColumn Property="x => x.Penalty"  />
-                            <PropertyColumn Property="x => x.Date" Title="Injury date" />
-                            <PropertyColumn Property="x => x.DateEnd" Title="When healed" />
+                            <PropertyColumn Property="x => x.DateStart" Title="Injury date" />
+                            <PropertyColumn Property="x => CalculateHealTime(x)" Title="Reduce date" />
                         <PropertyColumn Property="x => x.Description" />
                             <PropertyColumn Property="x => x.Location" Grouping GroupBy="@_groupBy" Hidden="true">
                             <GroupTemplate>
@@ -166,6 +166,13 @@
     {
         return x.Location;
     };
+
+    string CalculateHealTime(WoundDTO wound)
+    {
+        int daysToReduce = (int)(wound.HealTime * (2.0 - AllParams.Health.HealingModyfier / 100.0));
+        DateModel date = wound.DateStart + daysToReduce;
+        return date.DateString;
+    }
 
 
     private string GetWoundAttribute(object location)

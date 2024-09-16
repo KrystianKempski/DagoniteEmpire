@@ -1,6 +1,7 @@
 ﻿using DA_Common;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
+using DA_Models.ComponentModels;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography.X509Certificates;
 using Attribute = DA_DataAccess.CharacterClasses.Attribute;
@@ -40,6 +41,11 @@ namespace DA_Models.CharacterModels
         public int ProfessionId { get; set; } = 0;
         public bool IsApproved { get; set; } = false;
         public int WeaponSet { get; set; } = 0;
+        public int CurrentDay { get; set; }
+        public int CurrentMonth { get; set; }
+        public int CurrentYear { get; set; }
+
+        public DateModel CurrentDate { get =>  new DateModel(CurrentDay,CurrentMonth,CurrentYear);  }
         public override string ToString() => NPCName;
 
     }
