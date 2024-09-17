@@ -112,6 +112,7 @@
     UserInfo? UserInfo { get; set; }
 
     private ICollection<WoundDTO> Wounds { get; set; } = new List<WoundDTO>();
+    private ICollection<WoundDTO> DeletedWounds { get; set; } = new List<WoundDTO>();
     private WoundDTO NewWound { get; set; } = new();
 
     public string[] Initial = SD.WoundLocation.All;
@@ -158,8 +159,8 @@
         StateHasChanged();
         try
         {
-            // update character with wounds collection properly filled
-            await _characterRepository.Update(AllParams.Character);
+            //remove deleted wounds from repository 
+
 
             AllParams.Health.UpdateHealthBonusesInAttributes();
             //update database of wounds
@@ -168,12 +169,19 @@
                 obj.CharacterId = AllParams.Character.Id;
                 await _woundsRepository.Update(obj);
             }
+            foreach (var obj in DeletedWounds)
+            {
+                obj.CharacterId = Id;
+                await _woundsRepository.Delete(obj.Id);
+            }
             // update database of attriubutes changed by wounds penalties
             foreach (var obj in AllParams.Attributes.GetAllArray())
             {
                 obj.CharacterId = Id;
                 await _attributeRepository.Update(obj);
             }
+            
+
         }
         catch (Exception ex)
         {
@@ -206,9 +214,9 @@
         string res = "";
         foreach(var name in attributes)
         {
-            res = name + ",";
+            res += name + ", ";
         }
-        res.Remove(res.Length - 1);
+        res = res.Remove(res.Length - 2);
         return res;
     }
     private async Task AddWound()
@@ -247,6 +255,8 @@
     private void DeleteWound(WoundDTO wound)
     {
         Wounds.Remove(wound);
+        if(wound.Id>0)
+            DeletedWounds.Add(wound);
         StateHasChanged();
     }
                                     

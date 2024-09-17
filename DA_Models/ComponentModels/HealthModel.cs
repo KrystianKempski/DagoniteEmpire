@@ -145,8 +145,8 @@ namespace DA_Models.ComponentModels
                 // add health bonus from wounds
                 foreach (var attrName in HealthModel.GetAttributeNamesFromLocation(obj.Location))
                 {
-                    if (string.IsNullOrEmpty(attrName))
-                        _allParams.Attributes.Get(attrName).HealthBonus += obj.Penalty;
+                    if (string.IsNullOrEmpty(attrName)==false)
+                        _allParams.Attributes.Get(attrName).HealthBonus -= obj.Penalty;
                 }
             }
         }

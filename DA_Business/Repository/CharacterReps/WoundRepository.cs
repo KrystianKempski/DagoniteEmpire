@@ -43,10 +43,10 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<int> Delete(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.BaseSkills.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.Wounds.FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                contex.BaseSkills.Remove(obj);
+                contex.Wounds.Remove(obj);
                 return contex.SaveChanges();
             }
             return 0;

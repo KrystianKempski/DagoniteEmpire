@@ -45,7 +45,7 @@
                 <div class="container-fluid">
                     <h3 class="char-title card-title mb-3 ml-3 mt-2">@Title character</h3>
                     <div class="row">
-                        <div class="form-group col-md-4 px-1">
+                        <div class="form-group col-4 col-md-4 px-1">
                             <label>Character name</label>
                             @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
@@ -56,7 +56,7 @@
                                 <input readonly type="text" @bind-value="AllParams.Character.NPCName" class="form-control"></input>
                             }
                             </div>
-                        <div class="form-group col-md-1 px-1">
+                        <div class="form-group col-1 col-md-1 px-1">
                             <label>Age</label>
                             @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
@@ -68,7 +68,7 @@
                             }
                         </div>
                        
-                        <div class="form-group col-md-3 px-1">
+                        <div class="form-group col-3 col-md-3 px-1">
                             <label>Character Type</label>
                             @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
@@ -89,14 +89,17 @@
                                 <input readonly type="text" @bind-value="AllParams.Character.NPCType" class="form-control"></input>
                             }
                         </div>
+                        <div class="col-5 col-md-2 date">
+                            <DateComponent Date="CurrentDate" Editable="UserInfo?.IsAdminOrMG == true"></DateComponent>
+                        </div>
                         @if (UserInfo?.IsAdminOrMG == true)
                         {
-                            <div class="form-group col-md-1 px-1">
+                            <div class="form-group col-2 col-md-1 px-1">
                                 <label>Is Approved?</label>
                                 <MudCheckBox @bind-Value="@AllParams.Character.IsApproved" Size="Size.Medium"></MudCheckBox>
                             </div>
                         }
-                        <DateComponent Date="CurrentDate" Editable="UserInfo?.IsAdminOrMG == true"></DateComponent>
+                            
                     </div>
                 </div>
             </section>

@@ -37,6 +37,7 @@ namespace DA_Models.CharacterModels
         public ICollection<CampaignDTO>? Campaigns { get; set; }
         public ICollection<PostDTO>? Posts { get; set; }
         public ICollection<ChapterDTO>? Chapters { get; set; }
+        public ICollection<WoundDTO>? Wounds { get; set; }
         public int RaceId { get; set; } = 0;
         public int ProfessionId { get; set; } = 0;
         public bool IsApproved { get; set; } = false;
