@@ -18,6 +18,8 @@ namespace DA_DataAccess.CharacterClasses
         public bool IsMagicHealed { get; set; }
         public int DateMonth { get; set; }
         public int DateDay { get; set; }
+        public int DateYear { get; set; }
+        public int DayOfInjury { get; set; }
         public int HealTime { get; set; }
 
         public int CharacterId { get; set; }

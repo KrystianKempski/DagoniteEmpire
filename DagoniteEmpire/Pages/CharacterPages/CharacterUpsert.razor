@@ -96,6 +96,7 @@
                                 <MudCheckBox @bind-Value="@AllParams.Character.IsApproved" Size="Size.Medium"></MudCheckBox>
                             </div>
                         }
+                        <DateComponent Date="CurrentDate" Editable="UserInfo?.IsAdminOrMG == true"></DateComponent>
                     </div>
                 </div>
             </section>
@@ -278,6 +279,7 @@
     private bool IsDukeAllowed { get; set; } = false;
     private string TargetLocation { get; set; } = "";
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
+    private DateModel CurrentDate = new DateModel(1,1);
 
     private List<object> ToolbarItems = new List<object>() {
         new ItemModel() { Text = "Add", PrefixIcon = "e-add", Id = "Grid_add"},//Here Grid is SfGrid ID
@@ -343,7 +345,7 @@
                 }
 
                 AllParams.SpecialSkills.AddRelatedParametes();
-
+                CurrentDate = new DateModel(AllParams.Character.CurrentDate);
 
                 await AllParams.AllTraitsChange();
                 //await TraitsChange();
@@ -389,6 +391,10 @@
         RaceDTO? raceDTO;
         ProfessionDTO? professionDTO;
         IsLoading = true;
+        //update date
+        AllParams.Character.CurrentDay = CurrentDate.Day;
+        AllParams.Character.CurrentMonth = CurrentDate.Month;
+        AllParams.Character.CurrentYear = CurrentDate.Year;
         StateHasChanged();
         try
         {

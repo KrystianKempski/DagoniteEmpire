@@ -1,0 +1,46 @@
+﻿<div class="date d-flex align-items-center justify-content-center">
+    @if (Editable)
+    {
+    <MudNumericField @bind-Value="Date.Day" Label="Day" Variant="Variant.Text" Min="1" Max="31" Style="width:50px;" />
+        <MudSelect @bind-Value="Date.Month" Variant="Variant.Text" Label="Month" Style="width:120px;" >   
+            @foreach (var month in SD.Calendar.Months)
+            {
+                <MudSelectItem Value="@month.Number">@month.Name</MudSelectItem>
+            }
+        </MudSelect>
+    <MudNumericField @bind-Value="Date.Year" Label="Year" Variant="Variant.Text" Min="625" Max="1000" Style="width:60px;" />
+    }
+    else
+    {
+        <MudText Style="font-size:inherit;">@Date.ToString()</MudText>
+    }
+</div>
+
+
+@code {
+    [Parameter]
+    public DateModel Date { get; set; }
+    [Parameter]
+    public bool Editable { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+      
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+             
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                ;                
+            }
+        }
+    }
+}

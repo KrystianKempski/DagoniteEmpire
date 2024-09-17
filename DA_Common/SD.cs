@@ -211,12 +211,13 @@ namespace DA_Common
 
         public readonly struct WoundSeverity
         {
+            public const string Scars = "Scars";
             public const string Light = "Light";
             public const string Moderate = "Moderate";
             public const string Heavy = "Heavy";
             public const string Critical = "Critical";
             public const string Deadly = "Deadly";
-            public static readonly string[] All = { Light, Moderate, Heavy, Critical, Deadly };
+            public static readonly string[] All = { Scars, Light, Moderate, Heavy, Critical, Deadly };
         }
         public readonly struct WoundLocation
         {
@@ -328,9 +329,9 @@ namespace DA_Common
             public const int StartYear = 625;
 
             public static readonly Month[] Months = { 
-                new(){Name = "Abadius",Number = 1,Season = "Winter",Days = 31 },
-                new() { Name = "Calistril ", Number = 2, Season = "Winter", Days = 28},
-                new() { Name = "Pharast ", Number = 3, Season = "Spring", Days = 31},
+                new() {Name = "Abadius",Number = 1,Season = "Winter",Days = 31 },
+                new() { Name = "Calistril", Number = 2, Season = "Winter", Days = 28},
+                new() { Name = "Pharast", Number = 3, Season = "Spring", Days = 31},
                 new() { Name = "Gozran", Number = 4, Season = "Spring", Days = 30},
                 new() { Name = "Desnus", Number = 5, Season = "Spring", Days = 31},
                 new() { Name = "Sarenith", Number = 6, Season = "Summer", Days = 30},
@@ -387,9 +388,9 @@ namespace DA_Common
                     dayNum = day.ToString() + "th";
                 }
                 if(year > 0)
-                    return dayOfWeek + ", " + dayNum + " of " + Months[month + 1].Name + ", year " + year.ToString();
+                    return dayOfWeek + ", " + dayNum + " of " + Months[month - 1].Name + ", year " + year.ToString();
 
-                return dayOfWeek + ", " + dayNum + " of " + Months[month + 1];
+                return dayOfWeek + ", " + dayNum + " of " + Months[month- 1];
             }
 
             public Calendar()

@@ -22,13 +22,13 @@
             }
         </MudSelect>
         <MudTextField Required="true" @bind-Value="@NewWound.Description" Label="Description" Lines="3" />
+        <MudNumericField Required="true" @bind-Value="@NewWound.DateDay" Label="Day" Min="1" Max="31" />
         <MudSelect Required="true" @bind-Value="@NewWound.DateMonth" Label="Month" Placeholder="Select month">
             @foreach (var loc in SD.Calendar.Months)
             {
                 <MudSelectItem Value="@loc.Number">@loc.Name</MudSelectItem>
             }
         </MudSelect>
-        <MudTextField Required="true" @bind-Value="@NewWound.DateDay" Label="Day" />
         <MudCheckBox @bind-Value="@NewWound.IsIgnored" Label="Ignored"></MudCheckBox>
         <MudCheckBox @bind-Value="@NewWound.IsTended" Label="Tended"></MudCheckBox>
         <MudCheckBox @bind-Value="@NewWound.IsMagicHealed" Label="Magic healed"></MudCheckBox>
@@ -43,7 +43,8 @@
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    [Parameter] public WoundDTO NewWound { get; set; }
+    [Parameter] public WoundDTO NewWound { get; set; } = new();
+    [Parameter] public DateModel CurrentDate { get; set; } = new(1,1);
     [Parameter] public bool IsEdit { get; set; } = false;
     private string Title = "Create";
     private string SeverityName = "";
@@ -57,15 +58,21 @@
     {
         if (IsEdit)
         {
-
             Title = "Edit";
             SeverityName = NewWound.Severity;
+        }
+        else
+        {
+            NewWound.DateDay = CurrentDate.Day;
+            NewWound.DateMonth = CurrentDate.Month;
+            NewWound.DateYear = CurrentDate.Year;
         }
     }
 
     private void CreateWound()
     {
         NewWound.Value = NewWound.GetValueFromSeverity(SeverityName);
+        NewWound.DayOfInjury = DateModel.GetDaysFromDate(NewWound.DateDay, NewWound.DateMonth, NewWound.DateYear);
         MudDialog.Close(DialogResult.Ok(NewWound));
         if (IsEdit)
             Snackbar.Add("Wound edited", Severity.Success);

@@ -1,4 +1,5 @@
-﻿using DA_DataAccess.Chat;
+﻿using DA_Common;
+using DA_DataAccess.Chat;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -55,8 +56,8 @@ namespace DA_DataAccess.CharacterClasses
 
         public int WeaponSet { get; set; } = 0;
 
-        public int CurrentDay { get; set; }
-        public int CurrentMonth { get; set; }
-        public int CurrentYear { get; set; }
+        public int CurrentDay { get; set; } = 1;
+        public int CurrentMonth { get; set; } = 1;
+        public int CurrentYear { get; set; } = SD.Calendar.StartYear;
     }
 }

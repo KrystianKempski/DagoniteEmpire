@@ -17,17 +17,20 @@ namespace DA_Models.CharacterModels
         public bool IsIgnored { get; set; } = false;
         public bool IsTended { get; set; } = false;
         public bool IsMagicHealed { get; set; } = false;
+        public int DayOfInjury { get; set; }
         public int DateMonth { get; set; } = 1;
         public int DateDay { get; set; } = 1;
-        public int HealTime { get => (int)((0.4 * Value) + 3.5); }
+        public int DateYear { get; set; } = SD.Calendar.StartYear;
+
+        public int HealTime { get => Value != 0 ? (int)((0.4 * Value) + 3.5) : 0; }
         public DateModel DateStart
         {
             get
             {
-                return new DateModel(DateDay, DateMonth);
+                return new DateModel(DateDay, DateMonth, DateYear);
             }
         }
-        public DateModel DateReduce {get; set; }
+        public DateModel DateReduce { get; set; } = new(1,1);
         public string Severity
         {
             get
@@ -64,16 +67,6 @@ namespace DA_Models.CharacterModels
             }
         }
 
-        //public string Date {
-        //    get {
-        //        return SD.Calendar.GetDate(DateDay, DateMonth);
-        //    }
-        //}
-        //public string DateEnd { 
-        //    get{
-        //        return SD.Calendar.GetDate(DateDay + HealTime, DateMonth);
-        //    }
-        //}
     public int CharacterId { get; set; }
 
         public int GetValueFromSeverity(string severity)
