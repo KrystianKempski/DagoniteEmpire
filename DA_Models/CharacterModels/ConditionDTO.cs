@@ -10,20 +10,19 @@ namespace DA_Models.CharacterModels
 {
     public class ConditionDTO : WoundDTO
     {
-        public ConditionDTO(string name) 
+        public ConditionDTO()
+        {
+        }
+        public ConditionDTO(string name)
         {
             Location = name;
-            Description = Location + "condition";
+            Description = Location + " condition";
+            IsCondition = true;
         }
-        public ConditionDTO(WoundDTO wound)
-        {
-            Location = wound.Location;
-            Description = wound.Description;
-            Value = wound.Value;
-            Id = wound.Id;
-            CharacterId = wound.CharacterId;
-        }
-        public override int Penalty { get
+
+        public override int Penalty 
+        { 
+            get
             {
                 return -Value;
             }

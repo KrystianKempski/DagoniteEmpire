@@ -62,26 +62,29 @@
                         </MudPaper>
                     </MudItem>
             </MudGrid>
-            <div class="p-3">
+            <div class="p-4">
                 <MudText Align="Align.Center" Class="w-100" Typo="Typo.h4" Style="font-family: 'Eagle Lake', serif; padding-bottom: 8px;">Current wounds</MudText>
                 <MudDataGrid @ref="WoundsGrid" MultiSelection="true" Items="@Wounds.Where(w=>w.IsCondition == false)" ReadOnly="true" Filterable="false" Class="px-0 py-1"
-                             Hideable="true" Groupable="true" GroupExpanded="true" Elevation="2" >
+                                 Hideable="true" Groupable="true" GroupExpanded="true" Elevation="2" ColumnResizeMode="ResizeMode.None" >
                     <ToolBarContent >
                         <MudButton Class="pa-0 justify-content-start w-auto" OnClick="@(() => AddWound())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add wound</MudButton>
                     </ToolBarContent>
                     <Columns>
-                        <PropertyColumn Property="x => x.Value" Title="Wound level" Filterable="false" Groupable="false" />
-                        <PropertyColumn Property="x => x.Severity"  />
-                        <PropertyColumn Property="x => x.Penalty"  />
-                            <PropertyColumn Property="x => x.DateStart.ToString()" Title="Injury date" />
-                            <PropertyColumn Property="x =>  x.DateReduce.ToString()" Title="Reduce date" />
-                        <PropertyColumn Property="x => x.Description" />
-                            <PropertyColumn Property="x => x.Location" Grouping GroupBy="@_groupBy" Hidden="true">
+                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.Value" Title="Wound level" Filterable="false" Groupable="false" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.Severity" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.Penalty"  />
+                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.IsIgnored" Title="Ignored" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.IsTended" Title="Tended" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.IsMagicHealed" Title="Magic healed" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:140px;" Property="x => x.DateStart.ToString()" Title="Injury date" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:140px;" Property="x =>  x.DateReduce.ToString()" Title="Reduce date" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="min-width:300px;"Property="x => x.Description" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" Property="x => x.Location" Grouping GroupBy="@_groupBy" Hidden="true">
                             <GroupTemplate>
                                     <span style="font-weight:bold">@context.Grouping.Key (@GetAttributesLabel(context.Grouping.Key)) </span>
                             </GroupTemplate>
                         </PropertyColumn>
-                        <TemplateColumn Hidden="@IsReadOnly" CellClass="d-flex justify-end" Title="Actions">
+                            <TemplateColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Hidden="@IsReadOnly" Title="Actions">
                             <CellTemplate>
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditWound(@context.Item))" />
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteWound(@context.Item))" />
@@ -234,7 +237,7 @@
 
     private ICollection<WoundDTO> Wounds { get; set; } = new List<WoundDTO>();
     private ICollection<WoundDTO> DeletedWounds { get; set; } = new List<WoundDTO>();
-    private IDictionary<string, ConditionDTO> Conditions { get; set; } = new Dictionary<string, ConditionDTO>();
+    private IDictionary<string, WoundDTO> Conditions { get; set; } = new Dictionary<string, WoundDTO>();
     private WoundDTO NewWound { get; set; } = new();
 
     public string[] Initial = SD.WoundLocation.All;
@@ -253,27 +256,20 @@
                 IsLoading = true;
                 await LoadCharacter();
                 Wounds = AllParams.Health.GetAll();
-                // foreach(WoundDTO wound in AllParams.Health.GetAll())
-                // {
-                //     if (SD.Condition.All.Any(wound.Location.Contains))
-                //     {
-                //         Conditions[wound.Location] = new ConditionDTO(wound);
-                //     }
-                //     else
-                //     {
-                //         Wounds.Add(wound);
-                //     }
 
-                // }
                 // add status if not in database
                 foreach(var conName in SD.Condition.All)
                 {
-                    WoundDTO? con = Wounds.FirstOrDefault(w=>w.Location == conName);
+                    WoundDTO? con = Wounds.FirstOrDefault(w => w.Location == conName);
 
-                    if (Conditions.ContainsKey(conName) == false)
+                    if (con is null)
                     {
                         Conditions[conName] = new ConditionDTO(conName);
-                        AllParams.Health.GetAll().Add(Conditions[conName]);
+                        Wounds.Add(Conditions[conName]);
+                    }
+                    else
+                    {
+                        Conditions[conName] = con;
                     }
                 }
                 IsLoading = false;
@@ -291,7 +287,10 @@
     {
         AllParams.Character = await _characterRepository.GetById(Id);
         AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
-        AllParams.Health.FillPropertiesContainer(await _woundsRepository.GetAll(Id));
+        ICollection<WoundDTO> wounds = (await _woundsRepository.GetAll(Id)).ToList();
+        ICollection<WoundDTO> conds = (await _woundsRepository.GetAllCond(Id)).Cast<WoundDTO>().ToList();
+        wounds = wounds.Concat(conds).ToList();
+        AllParams.Health.FillPropertiesContainer(wounds);
         foreach (var wound in AllParams.Health.GetAll())
         {
             AllParams.Health.CalculateHealTime(wound);
@@ -305,19 +304,6 @@
         StateHasChanged();
         try
         {
-            foreach(var conName in SD.Condition.All)
-            {
-                var conNew = Conditions[conName];
-                var conOld = AllParams.Health.Get(conNew.Id);
-                if(conOld is not null)
-                {
-                    conOld.Value = conNew.Value;
-                }
-                else
-                {
-                    AllParams.Health.GetAll().Add(conNew);
-                }
-            }
             AllParams.Health.UpdateHealthBonusesInAttributes();
             //update database of wounds
             foreach (var obj in AllParams.Health.GetAll())
@@ -337,8 +323,6 @@
                 obj.CharacterId = Id;
                 await _attributeRepository.Update(obj);
             }
-
-
         }
         catch (Exception ex)
         {
@@ -389,7 +373,6 @@
             NewWound = (WoundDTO)result.Data;
             NewWound.CharacterId = AllParams.Character.Id;
             Wounds.Add(NewWound);
-            AllParams.Health.GetAll().Add(NewWound);
             AllParams.Health.CalculateHealTime(NewWound);
             StateHasChanged();
         }
@@ -413,7 +396,6 @@
     private void DeleteWound(WoundDTO wound)
     {
         Wounds.Remove(wound);
-        AllParams.Health.GetAll().Remove(wound);
         if(wound.Id>0)
             DeletedWounds.Add(wound);
         StateHasChanged();

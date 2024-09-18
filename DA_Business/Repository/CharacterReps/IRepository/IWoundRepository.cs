@@ -16,5 +16,6 @@ namespace DA_Business.Repository.CharacterReps.IRepository
 
         public Task<WoundDTO> GetById(int id);
         public Task<IEnumerable<WoundDTO>> GetAll(int? charId = null);
+        public Task<IEnumerable<ConditionDTO>> GetAllCond(int? charId = null);
     }
 }

@@ -61,14 +61,32 @@ namespace DA_Business.Repository.CharacterReps
                 if (contex.Wounds is null || contex.Wounds.Any() == false)
                     return new List<WoundDTO>();
                 if (charId == null || charId < 1)
-                    return _mapper.Map<IEnumerable<Wound>, IEnumerable<WoundDTO>>(contex.Wounds);
-                return _mapper.Map<IEnumerable<Wound>, IEnumerable<WoundDTO>>(contex.Wounds.Where(u => u.CharacterId == charId));
+                    return _mapper.Map<IEnumerable<Wound>, IEnumerable<WoundDTO>>(contex.Wounds).Where(u =>u.IsCondition == false);
+                return _mapper.Map<IEnumerable<Wound>, IEnumerable<WoundDTO>>(contex.Wounds.Where(u => u.CharacterId == charId && u.IsCondition == false));
             }
             catch (Exception ex)
             {
                 ;
             }
             return new List<WoundDTO>();
+        }
+        public async Task<IEnumerable<ConditionDTO>> GetAllCond(int? charId = null)
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+
+                if (contex.Wounds is null || contex.Wounds.Any() == false)
+                    return new List<ConditionDTO>();
+                if (charId == null || charId < 1)
+                    return _mapper.Map<IEnumerable<Wound>, IEnumerable<ConditionDTO>>(contex.Wounds).Where(u => u.IsCondition == false);
+                return _mapper.Map<IEnumerable<Wound>, IEnumerable<ConditionDTO>>(contex.Wounds.Where(u => u.CharacterId == charId && u.IsCondition == true));
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
+            return new List<ConditionDTO>();
         }
 
         public async Task<WoundDTO> GetById(int id)
