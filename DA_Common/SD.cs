@@ -252,6 +252,16 @@ namespace DA_Common
             { SD.Attributes.Strength, SD.Attributes.Endurance, }, //Body
         };
 
+        public readonly struct Condition
+        {
+            public const string Nutrition = "Nutrition";
+            public const string Cleanliness = "Cleanliness";
+            public const string Wellbeing = "Well-being";
+            public const string Rest = "Rest";
+            public const string GeneralHealth = "General health";
+            public static readonly string[] All = { Nutrition, Cleanliness, Wellbeing, Rest, GeneralHealth };
+        }
+
         //circle 0  1  2  3  4  5  6  7  8  9
         public static readonly int[,,] SpellsPerDay = {
           {
@@ -409,6 +419,7 @@ namespace DA_Common
         public const string Helm_white = "icons/barbute_white.svg";
         public const string Anvil = "icons/anvil.svg";
         public const string Helm = "icons/barbute.svg";
+        public const string Chest = "icons/chest.svg";
     }
 
 
@@ -439,5 +450,46 @@ namespace DA_Common
         Arms,
         Ring1,
         Ring2
+    }
+
+    public enum Nutrition
+    {
+        BalancedDiet = 2,
+        Fueled =0,
+        Hungry=-2,
+        Starving=-4,
+        Malnourished=-8,
+    }
+    public enum Cleanliness
+    {
+        Groomed = 2,
+        Clean = 0,
+        Dirty = -2,
+        Filthy = -4,
+        Defiled = -8,
+    }
+    public enum Wellbeing
+    {
+        Joyous = 2,
+        Content = 0,
+        Worried = -2,
+        Despaired = -4,
+        Broken = -8,
+    }
+    public enum Rest
+    {
+        WellRested = 2,
+        Rested = 0,
+        Tired = -2,
+        Exhausted = -4,
+        LastBreath = -8,
+    }
+    public enum GeneralHealth
+    {
+        GreatHealth = 2,
+        Stable = 0,
+        Unwell = -2,
+        Sick = -4,
+        Dying = -8,
     }
 }

@@ -29,8 +29,15 @@ namespace DA_Models.ComponentModels
 
                 if(res is not null)
                 {
-                    return ((int)res + 1) / 2 + 2;
+                    int res2 = ((int)res + 1) / 2 + 2;
+                    foreach (var w in Wounds)
+                    {
+                        if(w.Penalty < 0 && w.Location != SD.Condition.Cleanliness && w.Location != SD.Condition.Wellbeing)
+                            res2 -= w.Penalty;
+                    }
+                    return res2;
                 }
+
                 return 0;
             }
         }
@@ -41,7 +48,8 @@ namespace DA_Models.ComponentModels
                 int res = 0;
                 foreach (var w in Wounds)
                 {
-                    res += w.Penalty;
+                    if(w.Location != SD.Condition.Cleanliness && w.Location != SD.Condition.Wellbeing && w.Penalty>0)
+                        res += w.Penalty;
                 }
                 return res;
             }
@@ -77,31 +85,6 @@ namespace DA_Models.ComponentModels
             return (ICollection<WoundDTO>)Wounds.Where(w => w.Location == location);
         }
 
-        public static ICollection<string> GetAttributeNamesFromLocation(string location)
-        {
-            if (string.IsNullOrEmpty(location))
-                return null;
-            ICollection<string> res = new List<string>();
-            int i = 0;
-            switch (location)
-            {
-                case SD.WoundLocation.Head: i = (int)SD.WoundLocationEnum.Head; break;
-                case SD.WoundLocation.Neck: i = (int)SD.WoundLocationEnum.Neck; break;
-                case SD.WoundLocation.MainHand: i = (int)SD.WoundLocationEnum.MainHand; break;
-                case SD.WoundLocation.OffHand: i = (int)SD.WoundLocationEnum.OffHand; break;
-                case SD.WoundLocation.MainArm: i = (int)SD.WoundLocationEnum.MainArm; break;
-                case SD.WoundLocation.OffArm: i = (int)SD.WoundLocationEnum.OffArm; break;
-                case SD.WoundLocation.Body: i = (int)SD.WoundLocationEnum.Body; break;
-                case SD.WoundLocation.Back: i = (int)SD.WoundLocationEnum.Back; break;
-                case SD.WoundLocation.LeftLeg: i = (int)SD.WoundLocationEnum.LeftLeg; break;
-                case SD.WoundLocation.RightLeg: i = (int)SD.WoundLocationEnum.RightLeg; break;
-                case SD.WoundLocation.Face: i = (int)SD.WoundLocationEnum.Face; break;
-            }
-
-            res.Add(SD.WoundAttributes[i, 0]);
-            res.Add(SD.WoundAttributes[i, 1]);
-            return res;
-        }
         public DateModel CalculateHealTime(WoundDTO wound)
         {
             int daysToReduce = (int)(wound.HealTime * (2.0 - HealingModyfier / 100.0));
@@ -117,7 +100,7 @@ namespace DA_Models.ComponentModels
                         case WoundSeverity.Heavy: wound.Value = wound.GetValueFromSeverity(WoundSeverity.Moderate); break;
                         case WoundSeverity.Moderate: wound.Value = wound.GetValueFromSeverity(WoundSeverity.Light); break;
                         case WoundSeverity.Light: wound.Value = wound.GetValueFromSeverity(WoundSeverity.Scars); break;
-                        default: break;
+                        default: return wound.DateStart;
                     }
                     
                     wound.DateDay = dateReduce.Day;
@@ -143,7 +126,7 @@ namespace DA_Models.ComponentModels
             foreach (var obj in _allParams.Health.GetAll())
             {
                 // add health bonus from wounds
-                foreach (var attrName in HealthModel.GetAttributeNamesFromLocation(obj.Location))
+                foreach (var attrName in obj.GetAttributeNamesFromLocation())
                 {
                     if (string.IsNullOrEmpty(attrName)==false)
                         _allParams.Attributes.Get(attrName).HealthBonus -= obj.Penalty;

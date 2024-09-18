@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class updateEquipmentSlots : Migration
+    public partial class AddIsConditionToWound : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -86,7 +86,8 @@ namespace DA_DataAccess.Migrations
                     Price = table.Column<decimal>(type: "numeric", nullable: false),
                     Weight = table.Column<decimal>(type: "numeric", nullable: false),
                     IsApproved = table.Column<bool>(type: "boolean", nullable: false),
-                    EquipmentType = table.Column<string>(type: "text", nullable: false)
+                    EquipmentType = table.Column<string>(type: "text", nullable: false),
+                    RelatedSkill = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -412,7 +413,11 @@ namespace DA_DataAccess.Migrations
                     TraitBalance = table.Column<int>(type: "integer", nullable: false),
                     RaceId = table.Column<int>(type: "integer", nullable: true),
                     IsApproved = table.Column<bool>(type: "boolean", nullable: false),
-                    ProfessionId = table.Column<int>(type: "integer", nullable: false)
+                    ProfessionId = table.Column<int>(type: "integer", nullable: false),
+                    WeaponSet = table.Column<int>(type: "integer", nullable: false),
+                    CurrentDay = table.Column<int>(type: "integer", nullable: false),
+                    CurrentMonth = table.Column<int>(type: "integer", nullable: false),
+                    CurrentYear = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -752,6 +757,37 @@ namespace DA_DataAccess.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Wounds",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Location = table.Column<string>(type: "text", nullable: false),
+                    Value = table.Column<int>(type: "integer", nullable: false),
+                    IsIgnored = table.Column<bool>(type: "boolean", nullable: false),
+                    IsTended = table.Column<bool>(type: "boolean", nullable: false),
+                    IsMagicHealed = table.Column<bool>(type: "boolean", nullable: false),
+                    DateMonth = table.Column<int>(type: "integer", nullable: false),
+                    DateDay = table.Column<int>(type: "integer", nullable: false),
+                    DateYear = table.Column<int>(type: "integer", nullable: false),
+                    DayOfInjury = table.Column<int>(type: "integer", nullable: false),
+                    HealTime = table.Column<int>(type: "integer", nullable: false),
+                    IsCondition = table.Column<bool>(type: "boolean", nullable: false),
+                    CharacterId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Wounds", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Wounds_Characters_CharacterId",
+                        column: x => x.CharacterId,
+                        principalTable: "Characters",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -903,6 +939,11 @@ namespace DA_DataAccess.Migrations
                 name: "IX_SpellSlots_SpellId",
                 table: "SpellSlots",
                 column: "SpellId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Wounds_CharacterId",
+                table: "Wounds",
+                column: "CharacterId");
         }
 
         /// <inheritdoc />
@@ -969,6 +1010,9 @@ namespace DA_DataAccess.Migrations
                 name: "SpellSlots");
 
             migrationBuilder.DropTable(
+                name: "Wounds");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -984,22 +1028,22 @@ namespace DA_DataAccess.Migrations
                 name: "Traits");
 
             migrationBuilder.DropTable(
-                name: "Characters");
-
-            migrationBuilder.DropTable(
                 name: "SpellCircles");
 
             migrationBuilder.DropTable(
                 name: "Spells");
 
             migrationBuilder.DropTable(
+                name: "Characters");
+
+            migrationBuilder.DropTable(
                 name: "Campaigns");
 
             migrationBuilder.DropTable(
-                name: "Races");
+                name: "Professions");
 
             migrationBuilder.DropTable(
-                name: "Professions");
+                name: "Races");
         }
     }
 }

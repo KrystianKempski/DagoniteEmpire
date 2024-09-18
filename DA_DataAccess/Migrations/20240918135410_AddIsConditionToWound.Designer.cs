@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240821123010_addItemRelatedSkill")]
-    partial class addItemRelatedSkill
+    [Migration("20240918135410_AddIsConditionToWound")]
+    partial class AddIsConditionToWound
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -222,7 +222,16 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("AttributePoints")
                         .HasColumnType("integer");
 
+                    b.Property<int>("CurrentDay")
+                        .HasColumnType("integer");
+
                     b.Property<int>("CurrentExpPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentYear")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
@@ -661,6 +670,62 @@ namespace DA_DataAccess.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("Trait");
 
                     b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Wound", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CharacterId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DateDay")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DateMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DateYear")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DayOfInjury")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("HealTime")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsCondition")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsIgnored")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsMagicHealed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsTended")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("Wounds");
                 });
 
             modelBuilder.Entity("DA_DataAccess.Chat.Campaign", b =>
@@ -1265,6 +1330,17 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("SpellCircle");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Wound", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
+                        .WithMany("Wounds")
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
+                });
+
             modelBuilder.Entity("DA_DataAccess.Chat.Chapter", b =>
                 {
                     b.HasOne("DA_DataAccess.Chat.Campaign", "Campaign")
@@ -1404,6 +1480,8 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Posts");
 
                     b.Navigation("SpecialSkills");
+
+                    b.Navigation("Wounds");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Equipment", b =>

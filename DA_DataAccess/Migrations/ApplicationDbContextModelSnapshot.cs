@@ -699,6 +699,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("HealTime")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsCondition")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsIgnored")
                         .HasColumnType("boolean");
 
