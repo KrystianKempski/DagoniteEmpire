@@ -28,11 +28,10 @@ namespace DA_Models.ComponentModels
         }
 
 
-        public async Task CalculateBattleStats()
+        public void CalculateBattleStats()
         {
             try
             {
-
                 string slotTypeMain = _allParams.Character.WeaponSet == 1 ? SD.SlotType.WeaponMain2 : SD.SlotType.WeaponMain1;
                 string slotTypeOff = _allParams.Character.WeaponSet == 1 ? SD.SlotType.WeaponOff2 : SD.SlotType.WeaponOff1;
                 bool isParrying = false;
@@ -81,8 +80,6 @@ namespace DA_Models.ComponentModels
                 // calculate base propertiers 
                 foreach (var prop in GetAll())
                 {
-                    //if (prop.Value.SumBonus == 0) continue;
-
                     switch (prop.Key)
                     {
                         case SD.WeaponQuality.Parrying:

@@ -42,27 +42,27 @@ namespace DA_Models.ComponentModels
 
     public bool IsAdminOrMG { get; set; } = false;
 
-        public async Task AllTraitsChange()
+        public void AllTraitsChange()
         {
             AdvTraitsChange();
             RaceTraitsChange();
             GearChange();
         }
 
-        public async Task TraitsChange(string? TraitType)
+        public void TraitsChange(string? TraitType)
         {
             if (TraitType.IsNullOrEmpty())
                 throw new Exception("No trait type");
 
             if(TraitType == SD.TraitType_Advantage)
-                await AdvTraitsChange();
+                AdvTraitsChange();
             else if (TraitType == SD.TraitType_Race)
-                await RaceTraitsChange();
+                RaceTraitsChange();
             else if(TraitType == SD.TraitType_Gear)
-                await GearChange();
+                GearChange();
         }
 
-        public async Task AdvTraitsChange()
+        public void AdvTraitsChange()
         {
             IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
 
@@ -79,10 +79,10 @@ namespace DA_Models.ComponentModels
             }
 
             // calculate all traits adv
-            await CalculateTraits(Traits, SD.TraitType_Advantage);
+            CalculateTraits(Traits, SD.TraitType_Advantage);
         }
 
-        public async Task RaceTraitsChange()
+        public void RaceTraitsChange()
         {
             IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
 
@@ -99,10 +99,10 @@ namespace DA_Models.ComponentModels
             }
 
             // calculate all race traits
-            await CalculateTraits(CurrentRace.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Race);
+            CalculateTraits(CurrentRace.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Race);
         }
 
-        public async Task GearChange()
+        public void GearChange()
         {
             IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
 
@@ -123,13 +123,13 @@ namespace DA_Models.ComponentModels
             {
                 if (slot.Equipment is not null && slot.Equipment.Traits != null && slot.IsEquipped)
                 {
-                    await CalculateTraits(slot.Equipment.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
+                    CalculateTraits(slot.Equipment.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Gear);
                 }
             }
-            await BattleProperties.CalculateBattleStats();
+            BattleProperties.CalculateBattleStats();
         }
 
-        private async Task CalculateTraits(ICollection<TraitDTO> traits, string TraitType)
+        private void CalculateTraits(ICollection<TraitDTO> traits, string TraitType)
         {
             FeatureDTO? feature = null;
             // calculate all traits adv
@@ -158,7 +158,7 @@ namespace DA_Models.ComponentModels
                             feature = BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
                             break;
                         case SD.FeatureSpecialSkill:
-                            feature = SpecialSkills.Get(bonus.FeatureName);
+                            feature = SpecialSkills.Get(bonus?.FeatureName);
                             break;
                         case SD.FeatureWeaponQuality:
                             if(bonus.FeatureName is not null)
@@ -170,8 +170,9 @@ namespace DA_Models.ComponentModels
                     }
                     if (feature != null)
                     {
-                        int newVal = (int)feature.GetType().GetProperty(bonusName).GetValue(feature, null) + bonus.BonusValue;
-                        feature.GetType().GetProperty(bonusName).SetValue(feature, newVal);
+                        var newVal = (int?)feature?.GetType()?.GetProperty(bonusName)?.GetValue(feature, null) + bonus.BonusValue;
+                        if(newVal is not null)
+                            feature?.GetType()?.GetProperty(bonusName)?.SetValue(feature, newVal);
                     }
                 }
             }

@@ -52,7 +52,7 @@
             <div class="col-6 p-1">
                 <label>Off hand</label>
                 <div class="weapon off1">
-                    <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponOff1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff1"> </EquipItemComponent>
+                        <EquipItemComponent Disabled="CheckIfTwoHanded(EquippedItems.WeaponMain1)" @ref="EquipItemComp[EquippedItems.WeaponOff1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff1"> </EquipItemComponent>
                 </div>
                     @if (Weapons[EquippedItems.WeaponOff1] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponOff1].RelatedSkill) == false)
                     {
@@ -134,7 +134,7 @@
             <div class="col-6 p-1">
                 <label>Off hand</label>
                 <div class="weapon off2">
-                    <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponOff2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff2"> </EquipItemComponent>
+                    <EquipItemComponent Disabled="CheckIfTwoHanded(EquippedItems.WeaponMain2)" @ref="EquipItemComp[EquippedItems.WeaponOff2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff2"> </EquipItemComponent>
                 </div>
                     @if (Weapons[EquippedItems.WeaponOff2] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponOff2].RelatedSkill) == false)
                     {
@@ -311,7 +311,6 @@
     }
 </div>
 
-
 @code {
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
@@ -346,9 +345,9 @@
                 WeaponSet1 = AllParams.Character.WeaponSet == 0 ? true : false;
                 WeaponSet2 = !WeaponSet1;
 
-                await AllParams.GearChange();
-                await LoadAttackStats();
-                await LoadArmorStats();
+                AllParams.GearChange();
+                LoadAttackStats();
+                LoadArmorStats();
                 IsLoading = false;
                 StateHasChanged();
             }
@@ -358,7 +357,7 @@
             }
         }
     }
-    private async Task LoadAttackStats()
+    private void LoadAttackStats()
     {
         for (EquippedItems i = EquippedItems.WeaponMain1; i <= EquippedItems.WeaponOff2; i++)
         {
@@ -366,7 +365,7 @@
             WeaponBattleProperties[i] = AllParams.BattleProperties.GetWeaponQualityListFromItem(Weapons[i]);
         }
     }
-    private async Task LoadArmorStats()
+    private void LoadArmorStats()
     {
         Armor = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SD.SlotType.Body)?.Equipment;
         if (Armor is not null)
@@ -378,23 +377,35 @@
 
     public void LoadPossibleGears()
     {
+        bool unequipNext = false;
         foreach (var e in EquipItemComp)
         {
-            e.Value.ReloadGears();
+            
+            if (unequipNext)
+            {
+                e.Value.ReloadGears(true);
+                unequipNext = false;
+            }
+            else
+            {                
+                e.Value.ReloadGears();  
+            }
+            if (CheckIfTwoHanded(e.Key))
+                unequipNext = true;
         }
     }
 
-    public async Task GearChange()
+    public void GearChange()
     {
         // update equipment (in character)
         LoadPossibleGears();
-        await AllParams.GearChange();
-        await LoadAttackStats();
-        await LoadArmorStats();
+        AllParams.GearChange();
+        LoadAttackStats();
+        LoadArmorStats();
         StateHasChanged();
     }
 
-    protected async Task WeaponSetChanged()
+    protected void WeaponSetChanged()
     {
         if (WeaponSet1)
         {
@@ -407,8 +418,22 @@
             WeaponSet2 = false;
         }
         AllParams.Character.WeaponSet = WeaponSet2 ? 1 : 0;
-        await LoadAttackStats();
+        LoadAttackStats();
         StateHasChanged();
+    }
+
+    public bool CheckIfTwoHanded(EquippedItems itemEnum)
+    {
+        if (itemEnum != EquippedItems.WeaponMain1 && itemEnum != EquippedItems.WeaponMain2)
+            return false;
+        var res = WeaponBattleProperties[itemEnum]?.FirstOrDefault(u => u.Name == SD.WeaponQuality.TwoHanded);
+        if (res == null)
+            return false;
+        //unequip off hand
+        itemEnum ++;
+        Weapons[itemEnum] = null;
+        WeaponBattleProperties[itemEnum] = new List<BattlePropertyDTO>();
+        return true;
     }
 
 }

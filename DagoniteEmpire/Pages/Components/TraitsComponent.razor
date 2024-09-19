@@ -12,7 +12,10 @@
                 {
                     <th scope="col" class="trait-value-row text-center">Value</th>
                 }
-                <th scope="col" class="action-row text-center">Actions</th>
+                @if (IsInfoMode == false)
+                {                      
+                    <th scope="col" class="action-row text-center">Actions</th>
+                }
             </tr>
         </thead>
         <tbody>
@@ -31,12 +34,22 @@
                             <label class="name-label text-center">@obj.TraitValue</label>
                         </td>
                     }
+                    @if (IsInfoMode == false)
+                    {
                     <td>
                         <div class="row m-0">
-                             <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
-                             <button @onclick="@(()=>DeleteTrait(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
+                            @if (obj.TraitApproved)
+                            {
+                                <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-info"></i></button>
+                            }
+                            else
+                            {
+                                <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
+                            }
+                            <button @onclick="@(()=>DeleteTrait(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </td>
+                    }
                 </tr>
             }
         </tbody>
@@ -48,7 +61,7 @@
             <label class="balance">Traits balance: @AllParams.Character.TraitBalance </label>
         }
 
-        @if (UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Advantage)
+        @if (IsInfoMode == false ||  UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Advantage)
         {
             <div class="buttons-row">
                 <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add trait</button>
@@ -60,11 +73,11 @@
             </div>
         }
     </div>
-
+      
     @if (CustomTraitComponent != null)
     {
         <CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
-        <CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
+        //<CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
     }
     @if (TraitsChosen != null)
     {
@@ -91,6 +104,9 @@
 
     [Parameter]
     public bool WeaponQualityAvalible { get; set; } = false;
+
+    [Parameter]
+    public bool IsInfoMode {get; set;} = false;
 
 
     private CustomTraitModel _customTraitComponent = new();
@@ -181,6 +197,10 @@
         CustomTraitComponent.TraitDTO = trait;
         CustomTraitComponent.IsVisible = true;
         CustomTraitComponent.IsEditMode = false;
+        if (trait.TraitApproved)
+        {
+            CustomTraitComponent.IsInfoMode = true;
+        }
         if(trait.TraitType == SD.TraitType_Gear  && trait.Bonuses.First().FeatureType == SD.FeatureWeaponQuality)
         {
             CustomTraitComponent.IsWeaponQualityMode = true;

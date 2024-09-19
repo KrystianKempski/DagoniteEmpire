@@ -62,9 +62,10 @@ namespace DA_Common
             public const string Range = "Range";
             public const string Light = "Light";
             public const string Reload = "Reload";
+            public const string TwoHanded = "Two-handed";
 
             public static readonly string[] All = { Fast, Slow, Parrying, ShieldDestructive, ArmorPiercing, Long, Heavy, Devastating,
-                Weak, Stunning, Stumbling, Snatching,Disarming, Armor, ArmorDefenceBonus,ArmorPenalty ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light,Reload };
+                Weak, Stunning, Stumbling, Snatching,Disarming, Armor, ArmorDefenceBonus,ArmorPenalty ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light,Reload,TwoHanded };
         }
 
         public readonly struct BattleProperty

@@ -170,13 +170,13 @@
             ShowNameLabel = false;
             AllParams.CurrentRace = AllParams.Races.FirstOrDefault(r => r.Name == raceName);
         }
-        await AllParams.RaceTraitsChange();
-        OnTraitsChange.InvokeAsync();
+        AllParams.RaceTraitsChange();
+        await OnTraitsChange.InvokeAsync();
         SelectedRace = raceName;
         StateHasChanged();
     }
 
-    private async Task EditCustomRace()
+    private void EditCustomRace()
     {
         CustomRaceComponent.RaceDTO = AllParams.CurrentRace;
         CustomRaceComponent.Traits = CustomRaceComponent.RaceDTO.Traits.OfType<TraitDTO>().ToList();

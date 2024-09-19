@@ -20,50 +20,62 @@
                             <div class="d-flex ">
                                 <div class="d-flex flex-column flex-grow-1 pe-1">
                                     <label class="fw-bold py-1">Item name</label>
-                                    <SfTextBox Placeholder="Insert item name" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Name"></SfTextBox>
+                                    <SfTextBox Readonly="CustomEquipmentComponent.IsInfoMode" Placeholder="Insert item name" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Name"></SfTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Weight</label>
-                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Weight"></SfNumericTextBox>
+                                    <SfNumericTextBox Readonly="CustomEquipmentComponent.IsInfoMode" Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Weight"></SfNumericTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Price</label>
-                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Price"></SfNumericTextBox>
+                                    <SfNumericTextBox Readonly="CustomEquipmentComponent.IsInfoMode" Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Price"></SfNumericTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Type</label>
-                                    <InputSelect @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType" class="form-select p-1">
-                                        @foreach (var eq in SD.EquipmentType.All)
-                                        {
-                                            <option selected="@(eq==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType)" value="@eq"> @eq</option>
-                                        }
-                                    </InputSelect>
+                                        <InputSelect disabled="CustomEquipmentComponent.IsInfoMode" @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType" class="form-select p-1">
+                                            @foreach (var eq in SD.EquipmentType.All)
+                                            {
+                                                <option selected="@(eq==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType)" value="@eq"> @eq</option>
+                                            }
+                                        </InputSelect>
                                 </div>
 
                                 @if(_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee){
                                     <div class="d-flex flex-column flex-grow-1 px-1">
                                         <label class="fw-bold py-1">Weapon Type</label>
-                                        <InputSelect @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill" class="form-select p-1">
+                                        <InputSelect disabled="CustomEquipmentComponent.IsInfoMode" @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill" class="form-select p-1">
                                             @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Melee))
                                             {
                                                 <option selected="@(eq.Name==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
                                             }
                                         </InputSelect>
                                     </div>
+                                    <div class="d-flex flex-column px-1">
+                                        <label class="fw-bold py-1">"Two handed</label>
+                                        <div class="justify-content-center mx-auto my-auto">
+                                            <SfCheckBox Disabled="CustomEquipmentComponent.IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                        </div>
+                                    </div>
                                 }else if(_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged)
                                 {
                                     <div class="d-flex flex-column flex-grow-1 px-1">
                                         <label class="fw-bold py-1">Weapon Type</label>
-                                        <InputSelect @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill" class="form-select p-1">
+                                        <InputSelect disabled="CustomEquipmentComponent.IsInfoMode" @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill" class="form-select p-1">
                                             @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Shooting))
                                             {
                                                 <option selected="@(eq.Name==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
                                             }
                                         </InputSelect>
                                     </div>
+                                    <div class="d-flex flex-column px-1">
+                                        <label class="fw-bold py-1">"Two handed</label>
+                                        <div class="justify-content-center mx-auto my-auto">
+                                            <SfCheckBox Disabled="CustomEquipmentComponent.IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                        </div>
+                                    </div>
                                 }
 
-                                @if (UserInfo?.IsAdminOrMG == true)
+                                @if (UserInfo?.IsAdminOrMG == true && CustomEquipmentComponent.IsInfoMode == false)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="fw-bold py-1">Approve</label>
@@ -79,33 +91,69 @@
                             <div class="d-flex ">
                                 <div class="d-flex flex-column flex-grow-1 pe-1">
                                     <label class="fw-bold py-1">Item name</label>
-                                    <SfTextBox Placeholder="Insert item name" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Name"></SfTextBox>
+                                    <SfTextBox Readonly="CustomEquipmentComponent.IsInfoMode" Placeholder="Insert item name" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Name"></SfTextBox>
                                 </div>
                             </div>
                             <div class="d-flex ">
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Weight</label>
-                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Weight"></SfNumericTextBox>
+                                    <SfNumericTextBox Readonly="CustomEquipmentComponent.IsInfoMode" Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Weight"></SfNumericTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Price</label>
-                                    <SfNumericTextBox Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Price"></SfNumericTextBox>
+                                    <SfNumericTextBox Readonly="CustomEquipmentComponent.IsInfoMode" Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Price"></SfNumericTextBox>
                                 </div>
                                 <div class="d-flex flex-column flex-grow-1 px-1">
                                     <label class="fw-bold py-1">Type</label>
-                                    <InputSelect @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType" class="form-select p-1">
+                                    <InputSelect disabled="@CustomEquipmentComponent.IsInfoMode" @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType" class="form-select p-1">
                                         @foreach (var eq in SD.EquipmentType.All)
                                         {
                                             <option selected="@(eq==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType)" value="@eq"> @eq</option>
                                         }
                                     </InputSelect>
                                 </div>
-                                @if (UserInfo?.IsAdminOrMG == true)
+                                @if (_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee)
+                                {
+                                    <div class="d-flex flex-column flex-grow-1 px-1">
+                                        <label class="fw-bold py-1">Weapon Type</label>
+                                        <InputSelect disabled="@CustomEquipmentComponent.IsInfoMode" @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill" class="form-select p-1">
+                                            @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Melee))
+                                            {
+                                                <option selected="@(eq.Name==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
+                                            }
+                                        </InputSelect>
+                                    </div>
+                                    <div class="d-flex flex-column px-1">
+                                        <label class="fw-bold py-1">"Two handed</label>
+                                        <div class="justify-content-center mx-auto my-auto">
+                                            <SfCheckBox Disabled="CustomEquipmentComponent.IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                        </div>
+                                    </div>
+                                }
+                                else if (_customEquipmentComponent.EquipmentSlotDTO.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged)
+                                {
+                                    <div class="d-flex flex-column flex-grow-1 px-1">
+                                        <label class="fw-bold py-1">Weapon Type</label>
+                                        <InputSelect disabled="@CustomEquipmentComponent.IsInfoMode" @bind-Value="_customEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill" class="form-select p-1">
+                                            @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Shooting))
+                                            {
+                                                <option selected="@(eq.Name==CustomEquipmentComponent.EquipmentSlotDTO.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
+                                            }
+                                        </InputSelect>
+                                    </div>
+                                    <div class="d-flex flex-column px-1">
+                                        <label class="fw-bold py-1">"Two handed</label>
+                                        <div class="justify-content-center mx-auto my-auto">
+                                            <SfCheckBox Disabled="CustomEquipmentComponent.IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                        </div>
+                                    </div>
+                                }
+                                @if (UserInfo?.IsAdminOrMG == true && CustomEquipmentComponent.IsInfoMode == false)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="fw-bold py-1">Approve</label>
                                         <div class="justify-content-center mx-auto my-auto">
-                                            <SfCheckBox @bind-Checked="_customEquipmentComponent.EquipmentSlotDTO.Equipment.IsApproved"></SfCheckBox>
+                                            <SfCheckBox Disabled="CustomEquipmentComponent.IsInfoMode" @bind-Checked="_customEquipmentComponent.EquipmentSlotDTO.Equipment.IsApproved"></SfCheckBox>
                                         </div>
                                     </div>
                                 }
@@ -113,7 +161,7 @@
                         </div>
                         <div class="d-flex flex-column flex-grow-1">
                             <label class="fw-bold  p-1">Item description</label>
-                            <SfRichTextEditor Height="350px" @ref="DescrEdit" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Description" ShowTooltip="true">
+                            <SfRichTextEditor Readonly="CustomEquipmentComponent.IsInfoMode" Height="350px" @ref="DescrEdit" @bind-Value="@_customEquipmentComponent.EquipmentSlotDTO.Equipment.Description" ShowTooltip="true">
                                 <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
                             </SfRichTextEditor>
                         </div>
@@ -122,7 +170,7 @@
                         @if (_customEquipmentComponent.EquipmentSlotDTO.Equipment.Traits != null)
                         {
                             <div class="traits">
-                                <TraitsComponent @bind-Traits="@CustomEquipmentComponent.Traits" TraitType="@TraitType" WeaponQualityAvalible="@WeaponQualityAvalible()"></TraitsComponent>
+                                <TraitsComponent IsInfoMode="CustomEquipmentComponent.IsInfoMode" @bind-Traits="@CustomEquipmentComponent.Traits" TraitType="@TraitType" WeaponQualityAvalible="@WeaponQualityAvalible()"></TraitsComponent>
                             </div>
                         }
                     <label class="warnign-message">@ErrorMessage</label>
@@ -132,13 +180,22 @@
                 
             </Content>
         </DialogTemplates>
-        <DialogButtons>
-
-            <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
-            </DialogButton>
-            <DialogButton OnClick="@OnSaveItemBtnClick" Content="Save" IsPrimary="true">
-            </DialogButton>
-        </DialogButtons>
+        @if (CustomEquipmentComponent.IsInfoMode)
+        {
+             <DialogButtons>
+                <DialogButton OnClick="@OnCancelBtnClick" Content="OK" IsPrimary="true"></DialogButton>
+            </DialogButtons>
+        }
+        else
+        {
+            <DialogButtons>
+                <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
+                </DialogButton>
+                <DialogButton OnClick="@OnSaveItemBtnClick" Content="Save" IsPrimary="true">
+                </DialogButton>
+            </DialogButtons>
+        }
+        
     </SfDialog>
 
 </div>
@@ -181,10 +238,10 @@
     [Parameter]
     public EventCallback<CustomEquipmentModel> CustomEquipmentComponentChanged { get; set; }
     private SfRichTextEditor DescrEdit = new();
-    private SfDialog Dialog;
     private string TraitType { get; set; } = @SD.TraitType_Gear;
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
+    private bool IsTwoHanded { get; set; } = false;
 
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {

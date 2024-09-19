@@ -1461,6 +1461,12 @@ namespace DagoniteEmpire.Service
                                         Description = SD.WeaponQuality.Stumbling,
                                         FeatureName = SD.WeaponQuality.Stumbling,
                                     },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
+                                    },
                                 }
                             }
                         },
@@ -1512,6 +1518,12 @@ namespace DagoniteEmpire.Service
                                         FeatureType = SD.FeatureWeaponQuality,
                                         Description = SD.WeaponQuality.Stunning,
                                         FeatureName = SD.WeaponQuality.Stunning,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1565,6 +1577,12 @@ namespace DagoniteEmpire.Service
                                         Description = SD.WeaponQuality.ShieldDestructive,
                                         FeatureName = SD.WeaponQuality.ShieldDestructive,
                                     },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
+                                    },
                                 }
                             }
                         },
@@ -1617,6 +1635,12 @@ namespace DagoniteEmpire.Service
                                         Description = SD.WeaponQuality.Long,
                                         FeatureName = SD.WeaponQuality.Long,
                                     },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
+                                    },
                                 }
                             }
                         },
@@ -1662,6 +1686,12 @@ namespace DagoniteEmpire.Service
                                         FeatureType = SD.FeatureWeaponQuality,
                                         Description = SD.WeaponQuality.Long,
                                         FeatureName = SD.WeaponQuality.Long,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1715,6 +1745,12 @@ namespace DagoniteEmpire.Service
                                         FeatureType = SD.FeatureWeaponQuality,
                                         Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1774,6 +1810,12 @@ namespace DagoniteEmpire.Service
                                         Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
                                     },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
+                                    },
                                 }
                             }
                         },
@@ -1821,6 +1863,12 @@ namespace DagoniteEmpire.Service
                                         Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
                                     },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
+                                    },
                                 }
                             }
                         },
@@ -1862,6 +1910,12 @@ namespace DagoniteEmpire.Service
                                         Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
                                     },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
+                                    },
                                 }
                             }
                         },
@@ -1902,6 +1956,12 @@ namespace DagoniteEmpire.Service
                                         FeatureType = SD.FeatureWeaponQuality,
                                         Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 0,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        Description = SD.WeaponQuality.TwoHanded,
+                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }

@@ -15,5 +15,6 @@ namespace DA_Models.ComponentModels
         public ICollection<TraitDTO>? Traits { get; set; } = new List<TraitDTO>();
         public bool IsVisible { get; set; } = false;
         public bool IsEditMode { get; set; } = false;
+        public bool IsInfoMode { get; set; } = false;
     }
 }

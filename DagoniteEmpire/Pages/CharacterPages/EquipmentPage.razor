@@ -161,22 +161,23 @@
         {
             e.Value.ReloadGears();
         }
+
     }
 
-    protected async Task GearChange()
+    protected void GearChange()
     {
         // update equipment (in character)
         LoadPossibleGears();
         //if (BattleStatComp is not null) BattleStatComp.LoadPossibleGears();
-        await AllParams.GearChange();
+        AllParams.GearChange();
         StateHasChanged();
     }
 
-    protected async Task ArmorChange()
+    protected void ArmorChange()
     {
         // update armor 
         LoadPossibleGears();
-        await BattleStatComp.GearChange();
+        BattleStatComp.GearChange();
         StateHasChanged();
     }
 

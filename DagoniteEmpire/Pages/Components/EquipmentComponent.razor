@@ -41,8 +41,13 @@
                                 @if (obj.Equipment.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                                 {
                                     <button @onclick="@(()=>EditEquipment(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
-                                    <button @onclick="@(()=>DeleteEquipment(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
                                 }
+                                else
+                                {
+                                    <button @onclick="@(()=>EditEquipment(obj))" class="col btn-small"><i class="fa-solid fa-info"></i></button>
+                                }
+                                <button @onclick="@(()=>DeleteEquipment(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
+
                             </div>
                         </td>
                     </tr>
@@ -85,7 +90,7 @@
 
     @if (CustomEquipmentComponent != null)
     {
-        <CustomEquipmentDialog @bind-CustomEquipmentComponent="@CustomEquipmentComponent"></CustomEquipmentDialog>
+        <CustomEquipmentDialog  @bind-CustomEquipmentComponent="@CustomEquipmentComponent"></CustomEquipmentDialog>
     }
     @if (EquipmentChosen != null)
     {
@@ -165,7 +170,7 @@
         }
     }
 
-    private async Task CalculateEquipWeightAndPrice()
+    private void CalculateEquipWeightAndPrice()
     {
         EquipmentWeight = 0.0m;
         EquipmentPrice = 0.0m;
@@ -177,27 +182,28 @@
         StateHasChanged();
     }
 
-    private async Task AddCustomEquipment()
+    private void AddCustomEquipment()
     {
         CustomEquipmentComponent.EquipmentSlotDTO = new();
         CustomEquipmentComponent.Traits = new List<TraitDTO>();
         CustomEquipmentComponent.IsVisible = true;
     }
-    private async Task AddExistingEquipment()
+    private void AddExistingEquipment()
     {
         EquipmentChosen = new();
         EquipmentChosen.IsVisible = true;
     }
 
-    private async Task GoToItemPage()
+    private void GoToItemPage()
     {
         _navigationManager.NavigateTo($"/equipment/{AllParams.Character.Id}");
     }
 
-    private async Task EditEquipment(EquipmentSlotDTO slot)
+    private void EditEquipment(EquipmentSlotDTO slot)
     {
         CustomEquipmentComponent.EquipmentSlotDTO = slot;
-        CustomEquipmentComponent.Traits = CustomEquipmentComponent.EquipmentSlotDTO.Equipment?.Traits.OfType<TraitDTO>().ToList();
+        CustomEquipmentComponent.Traits = slot.Equipment?.Traits.OfType<TraitDTO>().ToList();
+        CustomEquipmentComponent.IsInfoMode = slot.Equipment.IsApproved && UserInfo?.IsAdminOrMG == false;
         CustomEquipmentComponent.IsVisible = true;
         CustomEquipmentComponent.IsEditMode = true;
         CalculateEquipWeightAndPrice();
@@ -205,29 +211,19 @@
 
     private async Task DeleteEquipment(EquipmentSlotDTO slot)
     {
-        if (slot.Id != 0)
-        {
-
-            if (slot.Equipment.IsApproved == false)
-            {
-               // await _traitEquipmentRepository.Delete(slot.Equipment.Id);
-
-            }
-        }
         AllParams.EquipmentSlots = AllParams.EquipmentSlots.Where(u => u.Equipment.Name != slot.Equipment.Name).ToList();
-        await AllParams.GearChange();
-        OnTraitsChange.InvokeAsync();
+        AllParams.GearChange();
+        await OnTraitsChange.InvokeAsync();
         CalculateEquipWeightAndPrice();
     }
 
-
-    private async Task IncrCount(EquipmentSlotDTO obj)
+    private void IncrCount(EquipmentSlotDTO obj)
     {
         obj.Count++;
         CalculateEquipWeightAndPrice();
     }
 
-    private async Task DecrCount(EquipmentSlotDTO obj)
+    private void DecrCount(EquipmentSlotDTO obj)
     {
         if (obj.Count>1)
         {

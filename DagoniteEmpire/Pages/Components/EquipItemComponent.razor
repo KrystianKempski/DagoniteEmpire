@@ -1,5 +1,5 @@
 ﻿<div>
-    <InputSelect class="form-select p-1" ValueExpression="@(()=>SelectedGearName)"
+    <InputSelect disabled="@Disabled" class="form-select p-1" ValueExpression="@(()=>SelectedGearName)"
                  Value="@SelectedGearName"
             ValueChanged="@((string value) => ChangeGear(value))">
         <option value="Empty">Empty</option>
@@ -25,6 +25,8 @@
     public string ItemType { get; set; } = "";
 
     public EquipmentSlotDTO? SelectedItem { get; set; }
+    [Parameter]
+    public bool Disabled { get; set; }= false;
 
 
     public ICollection<EquipmentSlotDTO> AllGearsOfType { get; set; } = new List<EquipmentSlotDTO>(); 
@@ -52,34 +54,44 @@
         }
     }
 
-    public void ReloadGears()
+    public void ReloadGears(bool clear=false)
     {
         if (AllParams is not null)
         {
             bool resetGear = false;
+
             if (ItemType == SD.EquipmentType.Rings)
                 resetGear = true;
-
-            if (SlotType == SD.SlotType.WeaponMain1 || SlotType == SD.SlotType.WeaponMain2)
+            if (clear)
             {
-                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
-                                                                     u.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged).ToList();
-                resetGear = true;
-            }
-            else if (SlotType == SD.SlotType.WeaponOff1 || SlotType == SD.SlotType.WeaponOff2)
-            {
-                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
-                                                                     u.Equipment.EquipmentType == SD.EquipmentType.Shield).ToList();
+                AllGearsOfType = new List<EquipmentSlotDTO>();
                 resetGear = true;
             }
             else
             {
-                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == ItemType).ToList();
+                if (SlotType == SD.SlotType.WeaponMain1 || SlotType == SD.SlotType.WeaponMain2)
+                {
+                    AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
+                                                                            u.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged).ToList();
+
+
+                    resetGear = true;
+                }
+                else if (SlotType == SD.SlotType.WeaponOff1 || SlotType == SD.SlotType.WeaponOff2)
+                {
+                    AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
+                                                                            u.Equipment.EquipmentType == SD.EquipmentType.Shield).ToList();
+                    resetGear = true;
+                }
+                else
+                {
+                    AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == ItemType).ToList();
+                }
             }
 
             if (resetGear)
             {
-                SelectedItem = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SlotType);
+                SelectedItem =  AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SlotType);
                 if (SelectedItem is not null)
                     SelectedGearName = SelectedItem.Equipment.Name;
                 else
