@@ -54,7 +54,7 @@
         }
     }
 
-    public void ReloadGears(bool clear=false)
+    public void ReloadGears()
     {
         if (AllParams is not null)
         {
@@ -62,32 +62,33 @@
 
             if (ItemType == SD.EquipmentType.Rings)
                 resetGear = true;
-            if (clear)
+
+            if (SlotType == SD.SlotType.WeaponMain1 || SlotType == SD.SlotType.WeaponMain2)
             {
-                AllGearsOfType = new List<EquipmentSlotDTO>();
+                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
+                                                                        u.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged).ToList();
+                resetGear = true;
+            }
+            else if (SlotType == SD.SlotType.WeaponOff1 || SlotType == SD.SlotType.WeaponOff2)
+            {
+                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
+                                                                        u.Equipment.EquipmentType == SD.EquipmentType.Shield).ToList();
+                // remove two handed weapons from list
+                var deleteItems = new List<EquipmentSlotDTO>();
+                foreach(var weapon in AllGearsOfType)
+                {
+                    var a = AllParams.BattleProperties.GetWeaponQualityListFromItem(weapon.Equipment).FirstOrDefault(b => b.Name == SD.WeaponQuality.TwoHanded);
+                    if (a is not null)
+                        deleteItems.Add(weapon);
+                }
+                deleteItems.ForEach(u => AllGearsOfType.Remove(u));
                 resetGear = true;
             }
             else
             {
-                if (SlotType == SD.SlotType.WeaponMain1 || SlotType == SD.SlotType.WeaponMain2)
-                {
-                    AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
-                                                                            u.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged).ToList();
-
-
-                    resetGear = true;
-                }
-                else if (SlotType == SD.SlotType.WeaponOff1 || SlotType == SD.SlotType.WeaponOff2)
-                {
-                    AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
-                                                                            u.Equipment.EquipmentType == SD.EquipmentType.Shield).ToList();
-                    resetGear = true;
-                }
-                else
-                {
-                    AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == ItemType).ToList();
-                }
+                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == ItemType).ToList();
             }
+
 
             if (resetGear)
             {
@@ -102,7 +103,7 @@
         }
     }
 
-    private async Task ChangeGear(string eq)
+    public async Task ChangeGear(string eq)
     {
         try
         {

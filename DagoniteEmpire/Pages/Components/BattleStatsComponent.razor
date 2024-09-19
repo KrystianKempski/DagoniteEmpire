@@ -379,19 +379,8 @@
     {
         bool unequipNext = false;
         foreach (var e in EquipItemComp)
-        {
-            
-            if (unequipNext)
-            {
-                e.Value.ReloadGears(true);
-                unequipNext = false;
-            }
-            else
-            {                
-                e.Value.ReloadGears();  
-            }
-            if (CheckIfTwoHanded(e.Key))
-                unequipNext = true;
+        {                       
+            e.Value.ReloadGears(); 
         }
     }
 
@@ -401,6 +390,9 @@
         LoadPossibleGears();
         AllParams.GearChange();
         LoadAttackStats();
+        // clear of hand if weapon used is two-handed
+        if (ClearOffHand())
+            return;
         LoadArmorStats();
         StateHasChanged();
     }
@@ -429,11 +421,25 @@
         var res = WeaponBattleProperties[itemEnum]?.FirstOrDefault(u => u.Name == SD.WeaponQuality.TwoHanded);
         if (res == null)
             return false;
-        //unequip off hand
-        itemEnum ++;
-        Weapons[itemEnum] = null;
-        WeaponBattleProperties[itemEnum] = new List<BattlePropertyDTO>();
         return true;
     }
+
+    public bool ClearOffHand()
+    {
+        var mains = new List<EquippedItems>() { EquippedItems.WeaponMain1, EquippedItems.WeaponMain2 };
+        foreach (var e in mains)
+        {
+            if (CheckIfTwoHanded(e))
+            {
+                EquippedItems key = e + 1;
+                if (EquipItemComp[key].SelectedItem != null)
+                {
+                    EquipItemComp[key].ChangeGear("Empty");
+                    return true;
+                }
+            }
+        }
+        return false;
+    } 
 
 }
