@@ -25,9 +25,10 @@ namespace DA_DataAccess.Data
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
         public DbSet<Equipment> Equipment { get; set; }
         public DbSet<EquipmentSlot> EquipmentSlots { get; set; }
-        public DbSet<TraitAdv> TraitsAdv { get; set; }
+        public DbSet<TraitCharacter> TraitsCharacter { get; set; }
         public DbSet<TraitRace> TraitsRace { get; set; }
         public DbSet<TraitEquipment> TraitsEquipment { get; set; }
+        public DbSet<TraitProfession> TraitsProfession { get; set; }
         public DbSet<Wound> Wounds { get; set; }
 
         public DbSet<Profession> Professions { get; set; }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DA_Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,7 @@ namespace DA_Models.CharacterModels
     public class TraitEquipmentDTO : TraitDTO
     {
         public TraitEquipmentDTO() { }
+        public override string TraitType { get; set; } = SD.TraitType_Gear;
         public TraitEquipmentDTO(TraitDTO traitDTO, EquipmentDTO equipmentDTO)
         {
             foreach (var prop in traitDTO.GetType().GetProperties())

@@ -1,4 +1,4 @@
-﻿@inject ITraitRepository<TraitAdvDTO> _traitAdvRepository
+﻿@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 <div class="traits">
 
@@ -78,8 +78,8 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (TraitsChosen.TraitType == SD.TraitType_Advantage)
-            Traits = await _traitAdvRepository.GetAllApproved();
+        if (TraitsChosen.TraitType == SD.TraitType_Character)
+            Traits = await _traitCharacterRepository.GetAllApproved();
         else
             Traits = await _traitRaceRepository.GetAllApproved();
     }

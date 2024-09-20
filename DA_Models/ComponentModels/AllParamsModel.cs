@@ -27,13 +27,12 @@ namespace DA_Models.ComponentModels
         public RaceDTO CurrentRace { get; set; } = new RaceDTO();
         public ProfessionDTO Profession { get; set; } = new ProfessionDTO();
         public AttributesModel Attributes { get; set; }
-        //public IDictionary<string,AttributeDTO> Attributes { get; set; } =new Dictionary<string, AttributeDTO>();
         public IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = Enumerable.Empty<BaseSkillDTO>();
-        //public ICollection<SpecialSkillDTO> SpecialSkills { get; set; } = new HashSet<SpecialSkillDTO>();
 
         public SpecialSkillModel SpecialSkills { get; set; }
-        public ICollection<TraitAdvDTO> TraitsAdv { get; set; } = new List<TraitAdvDTO>();
+        public ICollection<TraitCharacterDTO> TraitsCharacter { get; set; } = new List<TraitCharacterDTO>();
         public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
+        public ICollection<TraitDTO> TraitsProfession { get; set; } = new List<TraitDTO>();
         public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
         public ICollection<EquipmentSlotDTO> EquipmentSlots { get; set; } = new List<EquipmentSlotDTO>();
         public BattlePropertyModel BattleProperties { get; set; }
@@ -54,7 +53,7 @@ namespace DA_Models.ComponentModels
             if (TraitType.IsNullOrEmpty())
                 throw new Exception("No trait type");
 
-            if(TraitType == SD.TraitType_Advantage)
+            if(TraitType == SD.TraitType_Character)
                 AdvTraitsChange();
             else if (TraitType == SD.TraitType_Race)
                 RaceTraitsChange();
@@ -79,7 +78,7 @@ namespace DA_Models.ComponentModels
             }
 
             // calculate all traits adv
-            CalculateTraits(Traits, SD.TraitType_Advantage);
+            CalculateTraits(Traits, SD.TraitType_Character);
         }
 
         public void RaceTraitsChange()
@@ -136,7 +135,7 @@ namespace DA_Models.ComponentModels
             string bonusName;
             switch (TraitType)
             {
-                case SD.TraitType_Advantage: bonusName = nameof(feature.TraitBonus); break;
+                case SD.TraitType_Character: bonusName = nameof(feature.TraitBonus); break;
                 case SD.TraitType_Gear: bonusName = nameof(feature.GearBonus); break;
                 case SD.TraitType_Race: bonusName = nameof(feature.RaceBonus); break;
                 default: bonusName = string.Empty; break;
@@ -144,7 +143,7 @@ namespace DA_Models.ComponentModels
 
             foreach (var trait in traits)
             {
-                if (trait.TraitType != SD.TraitType_Advantage)
+                if (trait.TraitType != SD.TraitType_Character)
                     Character.TraitBalance += trait.TraitValue;
 
                 foreach (var bonus in trait.Bonuses)

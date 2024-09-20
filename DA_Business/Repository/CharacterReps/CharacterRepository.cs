@@ -38,7 +38,7 @@ namespace DA_Business.Repository.CharacterReps
                 obj.Profession = null;
 
                 //handle traits Adv
-                var traits = await contex.TraitsAdv.ToListAsync();
+                var traits = await contex.TraitsCharacter.ToListAsync();
                 traits.ForEach(t =>
                 {
                     if (obj.TraitsAdv.Any(nt => nt.Id == t.Id))
@@ -82,7 +82,7 @@ namespace DA_Business.Repository.CharacterReps
                 var obj = await contex.Characters.Include(c=>c.TraitsAdv).Include(c=>c.EquipmentSlots).FirstOrDefaultAsync(u => u.Id == id);
                 if (!obj.TraitsAdv.IsNullOrEmpty())
                 {
-                    obj.TraitsAdv.Where(t=>t.TraitApproved == false).ToList().ForEach(t => contex.TraitsAdv.Remove(t));
+                    obj.TraitsAdv.Where(t=>t.TraitApproved == false).ToList().ForEach(t => contex.TraitsCharacter.Remove(t));
                 }
                 //delete race
                 var race = await contex.Races.Include(c => c.Traits).FirstOrDefaultAsync(u => u.Id == obj.RaceId && u.RaceApproved == false);
@@ -211,7 +211,7 @@ namespace DA_Business.Repository.CharacterReps
                 if (obj != null)
                 {
                     var updatedChar = _mapper.Map<CharacterDTO, Character>(objDTO);
-                    var traits = await contex.TraitsAdv.ToListAsync();
+                    var traits = await contex.TraitsCharacter.ToListAsync();
                     // Update character built-in types
                     contex.Entry(obj).CurrentValues.SetValues(objDTO);
 
@@ -229,7 +229,7 @@ namespace DA_Business.Repository.CharacterReps
                             {
                                 if (existingChild.TraitApproved == true)
                                 {
-                                    var detachedTrait = contex.TraitsAdv.Include(t => t.Bonuses).Include(c => c.Characters).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
+                                    var detachedTrait = contex.TraitsCharacter.Include(t => t.Bonuses).Include(c => c.Characters).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
                                     if(detachedTrait != null && !detachedTrait.Characters.IsNullOrEmpty() && detachedTrait.Characters.Contains(obj))
                                     {
                                         detachedTrait.Characters.Remove(obj);
@@ -237,7 +237,7 @@ namespace DA_Business.Repository.CharacterReps
                                     }
                                 }
                                 else
-                                    contex.TraitsAdv.Remove(existingChild);
+                                    contex.TraitsCharacter.Remove(existingChild);
                             }
 
                         }
@@ -248,7 +248,7 @@ namespace DA_Business.Repository.CharacterReps
                     {
                         foreach (var trait in updatedChar.TraitsAdv)
                         {
-                            TraitAdv? existingTrait = null;
+                            TraitCharacter? existingTrait = null;
                             if (obj.TraitsAdv is not null)
                             {
                                 existingTrait = obj.TraitsAdv
@@ -256,12 +256,12 @@ namespace DA_Business.Repository.CharacterReps
                             }
                             else 
                             {   
-                                obj.TraitsAdv = new List<TraitAdv>();
+                                obj.TraitsAdv = new List<TraitCharacter>();
                             }
 
                             if (existingTrait == null)
                             {
-                                existingTrait = contex.TraitsAdv.Include(t => t.Bonuses).Include(c=>c.Characters).FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
+                                existingTrait = contex.TraitsCharacter.Include(t => t.Bonuses).Include(c=>c.Characters).FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
                             }
 
                             if (existingTrait is not null)

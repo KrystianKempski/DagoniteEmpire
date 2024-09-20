@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace DA_Models.CharacterModels
 {
-    public class TraitAdvDTO : TraitDTO
+    public class TraitCharacterDTO : TraitDTO
     {
-        public TraitAdvDTO() { }
-        public TraitAdvDTO(TraitDTO traitDTO, CharacterDTO characterDTO) 
+        public TraitCharacterDTO() { }
+        public TraitCharacterDTO(TraitDTO traitDTO, CharacterDTO characterDTO) 
         {
             foreach (var prop in traitDTO.GetType().GetProperties())
             {

@@ -1,4 +1,5 @@
-﻿using DA_DataAccess.CharacterClasses;
+﻿using DA_Common;
+using DA_DataAccess.CharacterClasses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,7 @@ namespace DA_Models.CharacterModels
     public class TraitRaceDTO: TraitDTO
     {
         public TraitRaceDTO() { }
+        public override string TraitType { get; set; } = SD.TraitType_Race;
         public TraitRaceDTO(TraitDTO traitDTO, RaceDTO raceDTO)
         {
             foreach (var prop in traitDTO.GetType().GetProperties())

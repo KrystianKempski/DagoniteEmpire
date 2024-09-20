@@ -28,9 +28,10 @@ namespace DA_Common
         public const string FeatureDukeTraits = "DukeTraits";
         public const string FeatureOther = "Other";
 
-        public const string TraitType_Advantage = "Advantage";
+        public const string TraitType_Character = "Character";
         public const string TraitType_Race = "Race";
         public const string TraitType_Gear = "Gear";
+        public const string TraitType_Profession = "Profession";
         public const string TraitType_Unique = "Unique";
 
         public const string NPCName_GameMaster = "Game Master";

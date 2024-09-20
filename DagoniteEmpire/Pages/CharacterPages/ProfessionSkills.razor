@@ -9,6 +9,7 @@
 @inject IEquipmentRepository _equipmentRepository
 @inject ISpellRepository _spellRepository
 @inject ISpellSlotRepository _spellSlotRepository
+@inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
 @inject ISpellCircleRepository _spellCircleRepository
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
@@ -141,6 +142,7 @@
                                 <th scope="col" class="number-row text-center">DC</th>
                                 <th scope="col" class="number-row text-center">Cost</th>
                                 <th scope="col" class="number-row text-center">Range</th>
+                                <th scope="col" class="number-row text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -151,16 +153,34 @@
                                     {
                                         <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
                                     }
-                                    <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
+                                    <td> <div class="name-cell">
+                                       @*  <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox>  *@
+                                       "@skill.Name"
+                                        </div> </td>
                                     <td>
                                         <div class="bonus-double-cell">
-                                            <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
-                                            </SfTextBox>
+                                            @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                            </SfTextBox> *@
+                                            "@skill.Description"
                                         </div>
                                     </td>
-                                    <td><div class="short-row"><SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.DC"></SfNumericTextBox></div></td>
-                                    <td><div class="short-row"><SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.Cost"></SfNumericTextBox></div></td>
-                                    <td><div class="short-row"><SfTextBox @bind-Value="@skill.Range"></SfTextBox></div></td>
+                                    <td><div class="short-row">
+                                       @*  <SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.DC"></SfNumericTextBox> *@
+                                            @skill.DC
+                                        </div></td>
+                                    <td><div class="short-row">
+                                        @* <SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.Cost"></SfNumericTextBox> *@
+                                            @skill.DC
+                                        </div></td>
+                                    <td><div class="short-row">
+                                        @* <SfTextBox @bind-Value="@skill.Range"></SfTextBox> *@
+                                            @skill.Range
+                                        </div></td>
+                                    <td><div class="short-row">
+
+                                            <button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
+
+                                    </div></td>
                                 </tr>
                             }
                         </tbody>
@@ -186,16 +206,17 @@
                                     {
                                         <td rowspan="4"> <label class="short-row">@skill.Level</label> </td>
                                     }
-                                    <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
+                                    <td> <div class="name-cell">@skill.Name</div> </td>
 
-                                    <td><div class="short-row"><SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.DC"></SfNumericTextBox></div></td>
-                                    <td><div class="short-row"><SfNumericTextBox Format="" ShowSpinButton="false" @bind-Value="@skill.Cost"></SfNumericTextBox></div></td>
-                                    <td><div class="short-row"><SfTextBox @bind-Value="@skill.Range"></SfTextBox></div></td>
+                                    <td><div class="short-row">@skill.DC></div></td>
+                                    <td><div class="short-row">@skill.Cost</div></td>
+                                    <td><div class="short-row">@skill.Range</div></td>
                                 </tr>
                                 <tr>
                                     <td colspan="4">
-                                        <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
-                                        </SfTextBox>
+                                        @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                        </SfTextBox> *@
+                                        @skill.Description
                                     </td>
                                 </tr>
                             }
@@ -222,11 +243,12 @@
                             {
                                 <tr>
                                     <td> <label class="short-row">@skill.Level</label> </td>
-                                    <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
+                                    <td> <div class="name-cell">@skill.Name </div> </td>
                                     <td>
                                         <div class="bonus-double-cell">
-                                            <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
-                                            </SfTextBox>
+                                            @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                            </SfTextBox> *@
+                                            @skill.Description
                                         </div>
                                     </td>
                                 </tr>
@@ -248,12 +270,13 @@
                             {
                                 <tr>
                                     <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
-                                    <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
+                                    <td> <div class="name-cell">@skill.Name </div> </td>
                                 </tr>
                                 <tr>
                                     <td colspan="2">
-                                        <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
-                                        </SfTextBox>
+                                        @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                        </SfTextBox> *@
+                                        @skill.Description
                                     </td>
                                 </tr>
                             }
@@ -410,6 +433,8 @@
             <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary mx-2">Save</button>
             <button @onclick="OnCancelBtnClick" class="btn btn-secondary mx-2">Cancel</button>
         </div>
+
+        <CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
     }
 </div>
 
@@ -447,18 +472,57 @@
 @code {
 
 
-        [Parameter]
-        public int Id { get; set; }
+    [Parameter]
+    public int Id { get; set; }
     public int AvalibleSpells { get; set; } = 0;
     public ProfessionDTO ProfessionDTO { get; set; } = new();
     private AllParamsModel AllParams { get; set; } = new();
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
     private ICollection<SpellCircleDTO> SpellCircles = new List<SpellCircleDTO>();
+    ICollection<TraitProfessionDTO> TraitsProfession = new List<TraitProfessionDTO>();
     private MudTable<SpellCircleDTO> CircleTable;
+    public string TraitType = @SD.TraitType_Profession;
 
     public UserInfo? UserInfo { get; set; }
 
     private MudTable<SpellCircle> mudTable;
+    private TraitDTO? EditedTrait { get; set; } = new();
+
+    private CustomTraitModel _customTraitComponent = new();
+    private CustomTraitModel CustomTraitComponent
+    {
+        get => _customTraitComponent;
+        set
+        {
+            if (value.TraitDTO != null)
+            {
+                EditedTrait = value.TraitDTO;
+
+                //TraitsChanged.InvokeAsync(Traits);
+                AllParams.TraitsChange(TraitType);
+                //OnTraitsChange.InvokeAsync();
+            }
+            if (_customTraitComponent == value) return;
+            _customTraitComponent = value;
+        }
+    }
+
+    private void EditSkill(ProfessionSkill skill)
+    {
+        EditedTrait = TraitsProfession.FirstOrDefault(t => t.ProfessionSkillId == skill.Id);
+        CustomTraitModel ctm = new();
+        ctm.IsEditMode = true;
+        if (EditedTrait == null)
+        {
+            EditedTrait = new TraitProfessionDTO ();
+            ctm.IsEditMode = false;
+            TraitsProfession.Add(new TraitProfessionDTO(EditedTrait, skill.Id));
+        }
+        ctm.TraitDTO = EditedTrait;
+        ctm.IsVisible = true;
+        CustomTraitComponent = ctm;
+
+    }
 
 
     protected override async Task OnInitializedAsync()
@@ -509,7 +573,9 @@
             {
                 SpellCircles = ProfessionDTO.SpellCircles;
             }
-
+            //profession skill traits
+            TraitsProfession = (await _traitProfessionRepository.GetAll(Id)).ToList();
+            //AllParams.TraitsProfession = TraitsProfession.Cast<TraitDTO>().ToList();
 
             if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
                 throw new Exception("No related class attribute");
@@ -614,7 +680,7 @@
             {
                 ProfessionDTO.RelatedAttributeName = attrName;
                 ProfessionDTO.RelatedAttribute = AllParams.Attributes.Get(attrName);
-            ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
+                ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
                 StateHasChanged();
                 return;
             }
@@ -791,4 +857,6 @@
 
         StateHasChanged();
     }
+
+    
 }

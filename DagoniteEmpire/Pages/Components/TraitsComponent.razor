@@ -1,4 +1,4 @@
-﻿@inject ITraitRepository<TraitAdvDTO> _traitAdvRepository
+﻿@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 @inject IUserService _userService
 <div class="traits">
@@ -8,7 +8,7 @@
             <tr>
                 <th scope="col" class="name-row">Name</th>
                 <th scope="col" class="description-row">Description</th>
-                @if (TraitType == SD.TraitType_Advantage)
+                @if (TraitType == SD.TraitType_Character)
                 {
                     <th scope="col" class="trait-value-row text-center">Value</th>
                 }
@@ -28,7 +28,7 @@
                     <td>
                         <label class="name-label">@obj.SummaryDescr</label>
                     </td>
-                    @if (TraitType == SD.TraitType_Advantage)
+                    @if (TraitType == SD.TraitType_Character)
                     {
                         <td class="text-center">
                             <label class="name-label text-center">@obj.TraitValue</label>
@@ -56,12 +56,12 @@
     </table>
     </div>
     <div class="row">
-        @if (TraitType == SD.TraitType_Advantage && (UserInfo?.IsAdminOrMG == true  || AllParams.Character.IsApproved == false))
+        @if (TraitType == SD.TraitType_Character && (UserInfo?.IsAdminOrMG == true  || AllParams.Character.IsApproved == false))
         {
             <label class="balance">Traits balance: @AllParams.Character.TraitBalance </label>
         }
 
-        @if (IsInfoMode == false ||  UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Advantage)
+        @if (IsInfoMode == false ||  UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Character)
         {
             <div class="buttons-row">
                 <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add trait</button>
@@ -77,7 +77,6 @@
     @if (CustomTraitComponent != null)
     {
         <CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
-        //<CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
     }
     @if (TraitsChosen != null)
     {
@@ -172,17 +171,21 @@
 
     private async Task AddCustomTrait()
     {
-        CustomTraitComponent.TraitDTO = new();
-        CustomTraitComponent.IsVisible = true;
-        CustomTraitComponent.IsEditMode = false;
-        CustomTraitComponent.IsWeaponQualityMode = false;
+        CustomTraitModel ctm = new();
+        ctm.TraitDTO = new();
+        ctm.IsVisible = true;
+        ctm.IsEditMode = false;
+        ctm.IsWeaponQualityMode = false;
+        CustomTraitComponent = ctm;
     }
     private async Task AddWeaponQualities()
     {
-        CustomTraitComponent.TraitDTO = new();
-        CustomTraitComponent.IsVisible = true;
-        CustomTraitComponent.IsEditMode = false;
-        CustomTraitComponent.IsWeaponQualityMode = true;
+        CustomTraitModel ctm = new();
+        ctm.TraitDTO = new();
+        ctm.IsVisible = true;
+        ctm.IsEditMode = false;
+        ctm.IsWeaponQualityMode = true;
+        CustomTraitComponent = ctm;
     }
 
     private async Task AddExistingTrait()
@@ -194,22 +197,25 @@
 
     private async Task EditTrait(TraitDTO trait)
     {
-        CustomTraitComponent.TraitDTO = trait;
-        CustomTraitComponent.IsVisible = true;
-        CustomTraitComponent.IsEditMode = false;
+        CustomTraitModel ctm = new();
+        ctm.TraitDTO = trait;
+        ctm.IsVisible = true;
+        ctm.IsEditMode = false;
         if (trait.TraitApproved)
         {
-            CustomTraitComponent.IsInfoMode = true;
+            ctm.IsInfoMode = true;
         }
         if(trait.TraitType == SD.TraitType_Gear  && trait.Bonuses.First().FeatureType == SD.FeatureWeaponQuality)
         {
-            CustomTraitComponent.IsWeaponQualityMode = true;
+            ctm.IsWeaponQualityMode = true;
         }
         else
         {
-            CustomTraitComponent.IsWeaponQualityMode = false;
-            CalculateTraitBalance();
+            ctm.IsWeaponQualityMode = false;
         }
+        CustomTraitComponent = ctm;
+        if(CustomTraitComponent.IsWeaponQualityMode == false)
+            CalculateTraitBalance();
     }
 
     private void CalculateTraitBalance()
@@ -227,9 +233,9 @@
         if (trait.Id != 0)
         {
 
-            if (trait.TraitType == SD.TraitType_Advantage && trait.TraitApproved ==false)
+            if (trait.TraitType == SD.TraitType_Character && trait.TraitApproved ==false)
             {
-                await _traitAdvRepository.Delete(trait.Id);
+                await _traitCharacterRepository.Delete(trait.Id);
 
             }
             else if (trait.TraitType == SD.TraitType_Race && trait.TraitApproved == false)

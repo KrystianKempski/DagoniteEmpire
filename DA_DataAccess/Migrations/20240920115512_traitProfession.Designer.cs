@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240918135410_AddIsConditionToWound")]
-    partial class AddIsConditionToWound
+    [Migration("20240920115512_traitProfession")]
+    partial class traitProfession
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -55,7 +55,7 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("ChapterCharacter");
                 });
 
-            modelBuilder.Entity("CharacterTraitAdv", b =>
+            modelBuilder.Entity("CharacterTraitCharacter", b =>
                 {
                     b.Property<int>("CharactersId")
                         .HasColumnType("integer");
@@ -67,7 +67,7 @@ namespace DA_DataAccess.Migrations
 
                     b.HasIndex("TraitsAdvId");
 
-                    b.ToTable("CharacterTraitAdv");
+                    b.ToTable("CharacterTraitCharacter");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>
@@ -1119,11 +1119,11 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("RaceTraitRace");
                 });
 
-            modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitAdv", b =>
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitCharacter", b =>
                 {
                     b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
 
-                    b.HasDiscriminator().HasValue("TraitAdv");
+                    b.HasDiscriminator().HasValue("TraitCharacter");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitEquipment", b =>
@@ -1131,6 +1131,16 @@ namespace DA_DataAccess.Migrations
                     b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
 
                     b.HasDiscriminator().HasValue("TraitEquipment");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitProfession", b =>
+                {
+                    b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
+
+                    b.Property<int>("ProfessionSkillId")
+                        .HasColumnType("integer");
+
+                    b.HasDiscriminator().HasValue("TraitProfession");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitRace", b =>
@@ -1190,7 +1200,7 @@ namespace DA_DataAccess.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("CharacterTraitAdv", b =>
+            modelBuilder.Entity("CharacterTraitCharacter", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
                         .WithMany()
@@ -1198,7 +1208,7 @@ namespace DA_DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DA_DataAccess.CharacterClasses.TraitAdv", null)
+                    b.HasOne("DA_DataAccess.CharacterClasses.TraitCharacter", null)
                         .WithMany()
                         .HasForeignKey("TraitsAdvId")
                         .OnDelete(DeleteBehavior.Cascade)

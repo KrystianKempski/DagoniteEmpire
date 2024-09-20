@@ -14,32 +14,30 @@ using System.Threading.Tasks;
 
 namespace DA_Business.Repository.CharacterReps
 {
-    public class TraitAdvRepository : ITraitRepository<TraitAdvDTO>
+    public class TraitProfessionRepository : ITraitRepository<TraitProfessionDTO>
     {
-       // private readonly ApplicationDbContext _db;
-
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
 
-        public TraitAdvRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
+        public TraitProfessionRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
         {
             _db = db;
             _mapper = mapper;
         }
-        public async Task<TraitAdvDTO> Create(TraitAdvDTO objDTO)
+        public async Task<TraitProfessionDTO> Create(TraitProfessionDTO objDTO)
         {
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = _mapper.Map<TraitAdvDTO, TraitAdv>(objDTO);
-                var addedObj = await contex.TraitsAdv.AddAsync(obj);
+                var obj = _mapper.Map<TraitProfessionDTO, TraitProfession>(objDTO);
+                var addedObj = await contex.TraitsProfession.AddAsync(obj);
                 await contex.SaveChangesAsync();
 
-                return _mapper.Map<TraitAdv, TraitAdvDTO>(addedObj.Entity);
+                return _mapper.Map<TraitProfession, TraitProfessionDTO>(addedObj.Entity);
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Trait-Adv Repository Create");
+                throw new RepositoryErrorException("Error in Trait Profession Repository Create");
             }
                 
 }
@@ -49,58 +47,53 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.TraitsAdv.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == id && u.TraitApproved == false);
+                var obj = await contex.TraitsProfession.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == id && u.TraitApproved == false);
                 if (obj != null)
                 {
-                    contex.TraitsAdv.Remove(obj);
+                    contex.TraitsProfession.Remove(obj);
                     await contex.SaveChangesAsync();
                 }
                 return 0;
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Trait-Adv Repository Delete"); ;
+                throw new RepositoryErrorException("Error in Trait-Profession Repository Delete"); ;
             }
         }
 
-        public async Task<IEnumerable<TraitAdvDTO>> GetAll(int? charId =null)
+        public async Task<IEnumerable<TraitProfessionDTO>> GetAll(int? profId =null)
         {
 
             using var contex = await _db.CreateDbContextAsync();
-            if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(contex.TraitsAdv.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(contex.TraitsAdv.Include(u => u.Bonuses).Where(u => u.Characters.FirstOrDefault(c=>c.Id == charId)!=null));
+            if (profId == null || profId < 1)
+                return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses));
+           return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses).Where(u => u.ProfessionSkillId == profId));
         }
 
-        public async Task<IEnumerable<TraitAdvDTO>> GetAllApproved(bool addUnique = false)
+        public Task<IEnumerable<TraitProfessionDTO>> GetAllApproved(bool addUnique = false)
         {
-
-            using var contex = await _db.CreateDbContextAsync();
-            if (addUnique)
-                return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(contex.TraitsAdv.Include(u => u.Bonuses).Where(t => t.TraitApproved == true));
-                    
-            return _mapper.Map<IEnumerable<TraitAdv>, IEnumerable<TraitAdvDTO>>(contex.TraitsAdv.Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.IsUnique == false));
+            throw new NotImplementedException();
         }
 
-        public async Task<TraitAdvDTO> GetById(int id)
+        public async Task<TraitProfessionDTO> GetById(int id)
         {
 
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.TraitsAdv.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.TraitsProfession.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                return _mapper.Map<TraitAdv, TraitAdvDTO>(obj);
+                return _mapper.Map<TraitProfession, TraitProfessionDTO>(obj);
             }
-            return new TraitAdvDTO();
+            return new TraitProfessionDTO();
         }
 
-        public async Task<TraitAdvDTO> Update(TraitAdvDTO objDTO)
+        public async Task<TraitProfessionDTO> Update(TraitProfessionDTO objDTO)
         {
             try
             {
-                var newTrait = _mapper.Map<TraitAdvDTO, TraitAdv>(objDTO);
+                var newTrait = _mapper.Map<TraitProfessionDTO, TraitProfession>(objDTO);
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.TraitsAdv.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                var obj = await contex.TraitsProfession.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
                     obj.Name = newTrait.Name;    
@@ -151,21 +144,21 @@ namespace DA_Business.Repository.CharacterReps
                         }
                     }
 
-                    var addedObj =  contex.TraitsAdv.Update(obj);
+                    var addedObj =  contex.TraitsProfession.Update(obj);
                     await contex.SaveChangesAsync();
-                    return _mapper.Map<TraitAdv, TraitAdvDTO>(addedObj.Entity);
+                    return _mapper.Map<TraitProfession, TraitProfessionDTO>(addedObj.Entity);
                 }
                 else
                 {
-                    var addedObj = await contex.TraitsAdv.AddAsync(newTrait);
+                    var addedObj = await contex.TraitsProfession.AddAsync(newTrait);
                     await contex.SaveChangesAsync();
 
-                    return _mapper.Map<TraitAdv, TraitAdvDTO>(addedObj.Entity);
+                    return _mapper.Map<TraitProfession, TraitProfessionDTO>(addedObj.Entity);
                 }
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Trait-Race Repository Update");
+                throw new RepositoryErrorException("Error in Trait-Profession Repository Update");
             }
         }
     }

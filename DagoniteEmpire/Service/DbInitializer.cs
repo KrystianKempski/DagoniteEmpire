@@ -403,17 +403,17 @@ namespace DagoniteEmpire.Service
                     _db.Races.Add(raceElf);
                     _db.SaveChanges();
                 }
-                TraitAdv trait = null;
-                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Lame") == null)
+                TraitCharacter trait = null;
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Lame") == null)
                 {
-                    trait = new TraitAdv()
+                    trait = new TraitCharacter()
                     {
                         Name = "Lame",
                         Descr = "",
                         SummaryDescr = "An old wound or disfigurement makes this character limp. +2 Melee, -1 Charisma",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitType = SD.TraitType_Advantage,
+                        TraitType = SD.TraitType_Character,
                         TraitValue = -4,
                         Bonuses = new List<Bonus>()
                         {
@@ -431,19 +431,19 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsAdv.Add(trait);
+                    _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
                 }
-                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Beautiful") == null)
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Beautiful") == null)
                 {
-                    trait = new TraitAdv()
+                    trait = new TraitCharacter()
                     {
                         Name = "Beautiful",
                         Descr = "",
                         SummaryDescr = "This character is somehow physically beautiful. +2 Charisma, +1 Loyalty",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitType = SD.TraitType_Advantage,
+                        TraitType = SD.TraitType_Character,
                         TraitValue = 4,
                         Bonuses = new List<Bonus>()
                         {
@@ -461,19 +461,19 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsAdv.Add(trait);
+                    _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
                 }
-                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Genius") == null)
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Genius") == null)
                 {
-                    trait = new TraitAdv()
+                    trait = new TraitCharacter()
                     {
                         Name = "Genius",
                         Descr = "",
                         SummaryDescr = "This character is exceptionally intelligent. +3 Intelligence, +3 Instinct",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitType = SD.TraitType_Advantage,
+                        TraitType = SD.TraitType_Character,
                         TraitValue = 10,
                         Bonuses = new List<Bonus>()
                         {
@@ -491,19 +491,19 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsAdv.Add(trait);
+                    _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
                 }
-                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Ugly") == null)
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Ugly") == null)
                 {
-                    trait = new TraitAdv()
+                    trait = new TraitCharacter()
                     {
                         Name = "Ugly",
                         Descr = "",
                         SummaryDescr = "This character is not pleasant to eyes. -2 Charisma, -1 Loyalty",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitType = SD.TraitType_Advantage,
+                        TraitType = SD.TraitType_Character,
                         TraitValue = -4,
                         Bonuses = new List<Bonus>()
                         {
@@ -521,19 +521,19 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsAdv.Add(trait);
+                    _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
                 }
-                if (_db.TraitsAdv.FirstOrDefault(u => u.Name == "Wrathful") == null)
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Wrathful") == null)
                 {
-                    trait = new TraitAdv()
+                    trait = new TraitCharacter()
                     {
                         Name = "Wrathful",
                         Descr = "",
                         SummaryDescr = "This character's outbursts of anger are frequent and violent (somethimes makes will checks). +2 Melee, -2 Talk",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitType = SD.TraitType_Advantage,
+                        TraitType = SD.TraitType_Character,
                         TraitValue = -1,
                         Bonuses = new List<Bonus>()
                         {
@@ -557,7 +557,7 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsAdv.Add(trait);
+                    _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
                 }
                 /// EQUIPMENT

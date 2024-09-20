@@ -20,7 +20,7 @@ namespace DA_Models.CharacterModels
         public int TraitValue { get; set; }
         public bool TraitApproved { get; set; }
         public bool IsUnique { get; set; } = false;
-        public string TraitType { get; set; } = string.Empty;
+        public virtual string TraitType { get; set; } = string.Empty;
 
         public ICollection<BonusDTO> Bonuses { get; set; }
 

@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class AddIsConditionToWound : Migration
+    public partial class traitProfession : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -176,7 +176,8 @@ namespace DA_DataAccess.Migrations
                     SummaryDescr = table.Column<string>(type: "text", nullable: false),
                     TraitApproved = table.Column<bool>(type: "boolean", nullable: false),
                     IsUnique = table.Column<bool>(type: "boolean", nullable: false),
-                    Discriminator = table.Column<string>(type: "text", nullable: false)
+                    Discriminator = table.Column<string>(type: "text", nullable: false),
+                    ProfessionSkillId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -643,7 +644,7 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CharacterTraitAdv",
+                name: "CharacterTraitCharacter",
                 columns: table => new
                 {
                     CharactersId = table.Column<int>(type: "integer", nullable: false),
@@ -651,15 +652,15 @@ namespace DA_DataAccess.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CharacterTraitAdv", x => new { x.CharactersId, x.TraitsAdvId });
+                    table.PrimaryKey("PK_CharacterTraitCharacter", x => new { x.CharactersId, x.TraitsAdvId });
                     table.ForeignKey(
-                        name: "FK_CharacterTraitAdv_Characters_CharactersId",
+                        name: "FK_CharacterTraitCharacter_Characters_CharactersId",
                         column: x => x.CharactersId,
                         principalTable: "Characters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_CharacterTraitAdv_Traits_TraitsAdvId",
+                        name: "FK_CharacterTraitCharacter_Traits_TraitsAdvId",
                         column: x => x.TraitsAdvId,
                         principalTable: "Traits",
                         principalColumn: "Id",
@@ -866,8 +867,8 @@ namespace DA_DataAccess.Migrations
                 column: "RaceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CharacterTraitAdv_TraitsAdvId",
-                table: "CharacterTraitAdv",
+                name: "IX_CharacterTraitCharacter_TraitsAdvId",
+                table: "CharacterTraitCharacter",
                 column: "TraitsAdvId");
 
             migrationBuilder.CreateIndex(
@@ -980,7 +981,7 @@ namespace DA_DataAccess.Migrations
                 name: "ChapterCharacter");
 
             migrationBuilder.DropTable(
-                name: "CharacterTraitAdv");
+                name: "CharacterTraitCharacter");
 
             migrationBuilder.DropTable(
                 name: "ChatMessages");

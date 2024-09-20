@@ -2,7 +2,7 @@
 @inject IUserService _userService
 <div class="traits">
 
-    <SfDialog Width="50%" Height="50%" @bind-Visible="@_customTraitModel.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
+    <SfDialog Width="50%" Height="50%" @bind-Visible="@_professionSkillModel.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
             <Header>@HeaderName</Header>
         <DialogTemplates>
@@ -15,63 +15,47 @@
                     }
                     else
                     {
-                        @if(CustomTraitModel.IsWeaponQualityMode){
-                        }
-                        else
-                        {
                             
-                            <div class="d-flex ">
-                                <div class="d-flex flex-column flex-grow-1">
-                                <label class="fw-bold py-1">Trait name</label>
-                                    <SfTextBox Readonly="CustomTraitModel.IsInfoMode" Placeholder="Insert trait name" @bind-Value="@_customTraitModel.TraitDTO.Name"></SfTextBox>
-                                </div>
-                                @if (TraitType == SD.TraitType_Character)
-                                {
-                                    <div class="d-flex flex-column px-1">
-                                        <label class="fw-bold py-1">Trait value</label>
-                                        <SfNumericTextBox Readonly="CustomTraitModel.IsInfoMode" Width="100px" TValue="int" @bind-Value="@_customTraitModel.TraitDTO.TraitValue"></SfNumericTextBox>
-                                    </div>
-                                    <div class="d-flex flex-column px-1">
-                                        <label class="fw-bold py-1">Unique</label>
-                                        <div class="justify-content-center mx-auto my-auto">
-                                            <SfCheckBox Disabled="CustomTraitModel.IsInfoMode" @bind-Checked="_customTraitModel.TraitDTO.IsUnique "></SfCheckBox>
-                                        </div>
-                                    </div>
-                                }
-                                @if (UserInfo?.IsAdminOrMG == true)
-                                {
-                                <div class="d-flex flex-column px-1">
-                                    <label class="fw-bold py-1">Approve</label>
-                                    <div class="justify-content-center mx-auto my-auto">
-                                            <SfCheckBox @bind-Checked="_customTraitModel.TraitDTO.TraitApproved"></SfCheckBox>
-                                    </div>
-                                </div>
-                                }
+                        <div class="d-flex ">
+                            <div class="d-flex flex-column flex-grow-1">
+                            <label class="fw-bold py-1">Trait name</label>
+                                <SfTextBox Readonly="ProfessionSkillModel.IsInfoMode" Placeholder="Talent name" @bind-Value="@_professionSkillModel.TraitDTO.Name"></SfTextBox>
                             </div>
-                            <div class="align-items-start bonus-name py-0">
-                                <label class="fw-bold  py-1">Trait description</label>
-                            </div>
-                            <div class="align-items-start">
-                                <div class="col-12 bonus-name py-0">
-                                    <SfTextBox Readonly="CustomTraitModel.IsInfoMode" Multiline=true Placeholder="Insert general trait description" @bind-Value="@_customTraitModel.TraitDTO.Descr"></SfTextBox>
+
+                            @if (UserInfo?.IsAdminOrMG == true)
+                            {
+                            <div class="d-flex flex-column px-1">
+                                <label class="fw-bold py-1">Approve</label>
+                                <div class="justify-content-center mx-auto my-auto">
+                                        <SfCheckBox @bind-Checked="ProfessionSkillModel.TraitDTO.TraitApproved"></SfCheckBox>
                                 </div>
                             </div>
+                            }
+                        </div>
+                        <div class="align-items-start bonus-name py-0">
+                            <label class="fw-bold  py-1">Trait description</label>
+                        </div>
+                        <div class="align-items-start">
+                            <div class="col-12 bonus-name py-0">
+                                <SfTextBox Readonly="ProfessionSkillModel.IsInfoMode" Multiline=true Placeholder="Insert general trait description" @bind-Value="@_professionSkillModel.TraitDTO.Descr"></SfTextBox>
+                            </div>
+                        </div>
                         
-                            <label class="fw-bold pt-4">Bonuses and penalties</label>
-                        }
-                        @if (_customTraitModel.TraitDTO.Bonuses != null)
+                        <label class="fw-bold pt-4">Bonuses and penalties</label>
+
+                        @if (_professionSkillModel.TraitDTO.Bonuses != null)
                         {
-                            @foreach (var obj in _customTraitModel.TraitDTO.Bonuses)
+                            @foreach (var obj in _professionSkillModel.TraitDTO.Bonuses)
                             {
                                 <label class="bonus-cell">Bonus @obj.Index</label>
                                 <div class="bonuses-columns">
                                         <div class="bonus-cell">
-                                        <SfDropDownList Readonly="CustomTraitModel.IsInfoMode" TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType" Enabled="@IsNotWeaponQuality()"></SfDropDownList>
+                                        <SfDropDownList Readonly="ProfessionSkillModel.IsInfoMode" TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType" Enabled="@IsNotWeaponQuality()"></SfDropDownList>
                                         </div>
                                     @if (obj.FeatureType == SD.FeatureAttribute)
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList Readonly="CustomTraitModel.IsInfoMode" TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes.GetAllArray()" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList Readonly="ProfessionSkillModel.IsInfoMode" TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes.GetAllArray()" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>
@@ -79,7 +63,7 @@
                                     else if (obj.FeatureType == SD.FeatureBaseSkill)
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList Readonly="CustomTraitModel.IsInfoMode" TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@AllParams.BaseSkills" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList Readonly="ProfessionSkillModel.IsInfoMode" TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@AllParams.BaseSkills" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>
@@ -87,7 +71,7 @@
                                     else if (obj.FeatureType == SD.FeatureSpecialSkill)
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList Readonly="CustomTraitModel.IsInfoMode" TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills.GetAllArray()" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList Readonly="ProfessionSkillModel.IsInfoMode" TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills.GetAllArray()" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>
@@ -95,7 +79,7 @@
                                     else if (obj.FeatureType == SD.FeatureWeaponQuality)
                                     {
                                         <div class="bonus-cell">
-                                            <SfDropDownList Readonly="CustomTraitModel.IsInfoMode" TValue="string" TItem="WeaponQualityList" Width="100%" Placeholder="Select special skill " DataSource="@LocalData" @bind-Value="@obj.FeatureName">
+                                            <SfDropDownList Readonly="ProfessionSkillModel.IsInfoMode" TValue="string" TItem="WeaponQualityList" Width="100%" Placeholder="Select special skill " DataSource="@LocalData" @bind-Value="@obj.FeatureName">
                                                 <DropDownListFieldSettings Value="Id" Text="Id"></DropDownListFieldSettings>
                                             </SfDropDownList>
                                         </div>
@@ -103,7 +87,7 @@
                                     else if(obj.FeatureType == SD.FeatureOther)
                                     {
                                         <div class="bonus-double-cell">
-                                            <SfTextBox Readonly="CustomTraitModel.IsInfoMode" Multiline=true Placeholder="Insert bonus description" @bind-Value="@obj.Description"></SfTextBox>
+                                            <SfTextBox Readonly="ProfessionSkillModel.IsInfoMode" Multiline=true Placeholder="Insert bonus description" @bind-Value="@obj.Description"></SfTextBox>
 
                                         </div>
                                     }
@@ -112,14 +96,14 @@
                                         if (obj.FeatureType == SD.FeatureWeaponQuality)
                                         {
                                             <div class="bonus-cell">
-                                                <SfNumericTextBox Readonly="CustomTraitModel.IsInfoMode" Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                                <SfNumericTextBox Readonly="ProfessionSkillModel.IsInfoMode" Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
                                             </div>
                                         }
                                         else
                                         {
 
                                             <div class="bonus-cell">
-                                                <SfNumericTextBox Readonly="CustomTraitModel.IsInfoMode" Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                                <SfNumericTextBox Readonly="ProfessionSkillModel.IsInfoMode" Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
                                             </div>
                                         }
                                     }
@@ -127,7 +111,8 @@
                                 </div>
                             }
                         }
-                        if(CustomTraitModel.IsInfoMode==false){
+                        if (ProfessionSkillModel.IsInfoMode == false)
+                        {
 
                             <div class="d-flex">
                                 <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
@@ -140,7 +125,8 @@
 
             </Content>
         </DialogTemplates>
-        @if(CustomTraitModel.IsInfoMode==false){
+        @if (ProfessionSkillModel.IsInfoMode == false)
+        {
         <DialogButtons>
 
             <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
@@ -178,10 +164,10 @@
     public string TraitType { get; set; }
 
     private string HeaderName = "Create a new Trait";
-    CustomTraitModel _customTraitModel;
+    private ProfessionSkillModel _professionSkillModel;
 
     [Parameter]
-    public CustomTraitModel CustomTraitModel
+    public CustomTraitModel ProfessionSkillModel
     {
         get => _customTraitModel;
         set{

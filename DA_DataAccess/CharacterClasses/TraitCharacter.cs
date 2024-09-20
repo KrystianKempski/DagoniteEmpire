@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace DA_DataAccess.CharacterClasses
 {
-    public class TraitEquipment : Trait
+    public class TraitCharacter : Trait
     {
-        public ICollection<Equipment>? Equipment { get; set; }
+        public ICollection<Character>? Characters { get; set; }
 
     }
 }

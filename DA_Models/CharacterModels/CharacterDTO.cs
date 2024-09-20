@@ -32,7 +32,7 @@ namespace DA_Models.CharacterModels
         public ICollection<AttributeDTO>? Attributes { get; set; }
         public ICollection<BaseSkillDTO>? BaseSkills { get; set; }
         public ICollection<SpecialSkillDTO>? SpecialSkills { get; set; }
-        public ICollection<TraitAdvDTO>? TraitsAdv { get; set; }
+        public ICollection<TraitCharacterDTO>? TraitsAdv { get; set; }
         public ICollection<EquipmentSlotDTO>? EquipmentSlots { get; set; }
         public ICollection<CampaignDTO>? Campaigns { get; set; }
         public ICollection<PostDTO>? Posts { get; set; }

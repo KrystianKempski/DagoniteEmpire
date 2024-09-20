@@ -5,7 +5,7 @@
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
 @inject ISpecialSkillRepository _specialSkillRepository
-@inject ITraitRepository<TraitAdvDTO> _traitAdvRepository
+@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject IRaceRepository _raceRepository
@@ -210,7 +210,7 @@
                             </div>
                             <h3 class="my-3 ml-3 text-center">TRAITS</h3>
                             <div class="trait-container">
-                                <TraitsComponent  OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.Traits" TraitType="@SD.TraitType_Advantage"></TraitsComponent>
+                                <TraitsComponent  OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.Traits" TraitType="@SD.TraitType_Character"></TraitsComponent>
                             </div>
                         </div>
 
@@ -327,7 +327,7 @@
                     AllParams.SpecialSkills.FillPropertiesContainer(CharacterSeeder.GetSpecialSkills());
                     AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
                     AllParams.Traits = new List<TraitDTO>();
-                    AllParams.TraitsAdv = new List<TraitAdvDTO>();
+                    AllParams.TraitsCharacter = new List<TraitCharacterDTO>();
                     AllParams.CurrentRace = new();
                     AllParams.Profession = new();
                     AllParams.EquipmentSlots = new List<EquipmentSlotDTO>();
@@ -378,11 +378,11 @@
         AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
         AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
         AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
-        AllParams.TraitsAdv = (await _traitAdvRepository.GetAll(Id)).ToList(); 
+        AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).ToList(); 
         //need Traits in base class to use Component
         AllParams.Traits = new List<TraitDTO>();
-        AllParams.TraitsAdv.ToList().ForEach(t =>
-            AllParams.Traits.Add(new TraitAdvDTO(t, AllParams.Character)));
+        AllParams.TraitsCharacter.ToList().ForEach(t =>
+            AllParams.Traits.Add(new TraitCharacterDTO(t, AllParams.Character)));
         AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
         AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
         AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
@@ -423,8 +423,8 @@
                     AllParams.Character.RaceId = 0;
                 }
                 // create traits (in character)
-                AllParams.Traits.ToList().ForEach(t => AllParams.TraitsAdv.Add(new(t, AllParams.Character)));
-                AllParams.Character.TraitsAdv = AllParams.TraitsAdv;
+                AllParams.Traits.ToList().ForEach(t => AllParams.TraitsCharacter.Add(new(t, AllParams.Character)));
+                AllParams.Character.TraitsAdv = AllParams.TraitsCharacter;
                 // create equipment (in character)
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
@@ -479,7 +479,7 @@
                     AllParams.Character.ProfessionId = professionDTO.Id;
 
                 // update Adv traits
-                AllParams.Character.TraitsAdv = new List<TraitAdvDTO>();
+                AllParams.Character.TraitsAdv = new List<TraitCharacterDTO>();
                 AllParams.Traits.ToList().ForEach(t => AllParams.Character.TraitsAdv.Add(new(t, AllParams.Character))); //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
 
                 // update equipment (in character)
