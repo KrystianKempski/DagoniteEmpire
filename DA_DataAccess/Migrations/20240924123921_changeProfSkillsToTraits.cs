@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class traitProfession : Migration
+    public partial class changeProfSkillsToTraits : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -173,11 +173,16 @@ namespace DA_DataAccess.Migrations
                     TraitType = table.Column<string>(type: "text", nullable: false),
                     TraitValue = table.Column<int>(type: "integer", nullable: false),
                     Descr = table.Column<string>(type: "text", nullable: false),
-                    SummaryDescr = table.Column<string>(type: "text", nullable: false),
                     TraitApproved = table.Column<bool>(type: "boolean", nullable: false),
                     IsUnique = table.Column<bool>(type: "boolean", nullable: false),
                     Discriminator = table.Column<string>(type: "text", nullable: false),
-                    ProfessionSkillId = table.Column<int>(type: "integer", nullable: true)
+                    ProfessionId = table.Column<int>(type: "integer", nullable: true),
+                    Level = table.Column<int>(type: "integer", nullable: true),
+                    DC = table.Column<int>(type: "integer", nullable: true),
+                    Cost = table.Column<int>(type: "integer", nullable: true),
+                    Range = table.Column<string>(type: "text", nullable: true),
+                    IsApproved = table.Column<bool>(type: "boolean", nullable: true),
+                    IsActiveSkill = table.Column<bool>(type: "boolean", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -340,38 +345,6 @@ namespace DA_DataAccess.Migrations
                         principalTable: "Campaigns",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ProfessionSkills",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Level = table.Column<int>(type: "integer", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    DC = table.Column<int>(type: "integer", nullable: true),
-                    Cost = table.Column<int>(type: "integer", nullable: true),
-                    Range = table.Column<string>(type: "text", nullable: true),
-                    IsApproved = table.Column<bool>(type: "boolean", nullable: false),
-                    Index = table.Column<long>(type: "bigint", nullable: false),
-                    ActiveProfessionId = table.Column<int>(type: "integer", nullable: true),
-                    PassiveProfessionId = table.Column<int>(type: "integer", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProfessionSkills", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProfessionSkills_Professions_ActiveProfessionId",
-                        column: x => x.ActiveProfessionId,
-                        principalTable: "Professions",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_ProfessionSkills_Professions_PassiveProfessionId",
-                        column: x => x.PassiveProfessionId,
-                        principalTable: "Professions",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -907,16 +880,6 @@ namespace DA_DataAccess.Migrations
                 column: "CharacterId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProfessionSkills_ActiveProfessionId",
-                table: "ProfessionSkills",
-                column: "ActiveProfessionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProfessionSkills_PassiveProfessionId",
-                table: "ProfessionSkills",
-                column: "PassiveProfessionId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_RaceTraitRace_TraitsId",
                 table: "RaceTraitRace",
                 column: "TraitsId");
@@ -997,9 +960,6 @@ namespace DA_DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "Posts");
-
-            migrationBuilder.DropTable(
-                name: "ProfessionSkills");
 
             migrationBuilder.DropTable(
                 name: "RaceTraitRace");

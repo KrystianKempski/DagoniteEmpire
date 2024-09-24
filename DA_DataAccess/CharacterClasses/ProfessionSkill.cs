@@ -14,8 +14,6 @@ namespace DA_DataAccess.CharacterClasses
         public int Id { get; set; }
 
         public int Level { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
         public int? DC { get; set; }
         public int? Cost { get; set; }
         public string? Range { get; set; }

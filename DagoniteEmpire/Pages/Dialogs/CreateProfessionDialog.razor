@@ -165,7 +165,7 @@
                                         <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
                                         <td>
                                             <div class="bonus-double-cell">
-                                                <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                                <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Descr">
                                                 </SfTextBox>
                                             </div>
                                         </td>
@@ -205,7 +205,7 @@
                                         </tr>
                                         <tr>
                                             <td colspan="4">
-                                                <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                                <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Descr">
                                                 </SfTextBox>
                                             </td>
                                         </tr>
@@ -234,7 +234,7 @@
                                             <td> <div class="name-cell"> <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox> </div> </td>
                                             <td>
                                                 <div class="bonus-double-cell">
-                                                    <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                                    <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Descr">
                                                     </SfTextBox>
                                                 </div>
                                             </td>
@@ -261,7 +261,7 @@
                                         </tr>
                                         <tr>
                                             <td colspan="2">
-                                                <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
+                                                <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Descr">
                                                 </SfTextBox>
                                             </td>
                                         </tr>
@@ -343,7 +343,7 @@
         new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
         new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
     };
-    public void ChangeDescription(uint args)
+    public void ChangeDescription(int args)
     {
         //pass ID(column name) of multiline textbox
         _jsruntime.InvokeVoidAsync("ResizeTextArea", $"{args}");
@@ -367,24 +367,24 @@
 
         await CreateProfessionChanged.InvokeAsync(CreateProfession);
     }
-    private async Task OnCancelBtnClick()
+    private void OnCancelBtnClick()
     {
         CreateProfession.IsVisible = false;
     }
-    private async Task DialogOpen()
+    private void DialogOpen()
     { 
         this.DescrEdit.RefreshUIAsync();
         ErrorMessage = string.Empty;
         StateHasChanged();
     }
 
-    private async Task ChangeProfLevel()
+    private void ChangeProfLevel()
     {
         CreateProfession.ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
         StateHasChanged();
     }
 
-    private async Task ChangeRelatedAttribute(string attrName)
+    private void ChangeRelatedAttribute(string attrName)
     {
         try
         {

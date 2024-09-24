@@ -105,14 +105,24 @@ namespace DA_Business.Repository.CharacterReps
 
                 
                 //datele class
-                var profession = await contex.Professions.Include(s=>s.ActiveSkills).Include(u=>u.PassiveSkills).FirstOrDefaultAsync(u => u.Id == obj.ProfessionId && u.IsApproved == false && u.IsUniversal == false);
+                var profession = await contex.Professions./*Include(s=>s.ActiveSkills).Include(u=>u.PassiveSkills).*/FirstOrDefaultAsync(u => u.Id == obj.ProfessionId && u.IsApproved == false && u.IsUniversal == false);
                 if (profession is not null)
                 {
-                    if (!profession.ActiveSkills.IsNullOrEmpty())
-                        profession.ActiveSkills.ToList().ForEach(s =>contex.ProfessionSkills.Remove(s));
-                    if (!profession.PassiveSkills.IsNullOrEmpty())
-                        profession.PassiveSkills.ToList().ForEach(s =>contex.ProfessionSkills.Remove(s));
+                    //if (!profession.ActiveSkills.IsNullOrEmpty())
+                    //    profession.ActiveSkills.ToList().ForEach(s =>contex.ProfessionSkills.Remove(s));
+                    //if (!profession.PassiveSkills.IsNullOrEmpty())
+                    //    profession.PassiveSkills.ToList().ForEach(s =>contex.ProfessionSkills.Remove(s));
                     contex.Professions.Remove(profession);
+                }
+
+                //delete class traits
+                var traitsProffesion = contex.TraitsProfession.Where(u => u.ProfessionId == obj.ProfessionId);
+                if(traitsProffesion is not null)
+                {
+                    foreach(var trait in traitsProffesion)
+                    {
+                        contex.TraitsProfession.Remove(trait);
+                    }
                 }
 
                 return contex.SaveChanges();

@@ -155,13 +155,13 @@
                                     }
                                     <td> <div class="name-cell">
                                        @*  <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox>  *@
-                                       "@skill.Name"
+                                       @skill.Name
                                         </div> </td>
                                     <td>
                                         <div class="bonus-double-cell">
                                             @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
                                             </SfTextBox> *@
-                                            "@skill.Description"
+                                            @skill.Descr
                                         </div>
                                     </td>
                                     <td><div class="short-row">
@@ -216,7 +216,7 @@
                                     <td colspan="4">
                                         @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
                                         </SfTextBox> *@
-                                        @skill.Description
+                                        @skill.Descr
                                     </td>
                                 </tr>
                             }
@@ -248,7 +248,7 @@
                                         <div class="bonus-double-cell">
                                             @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
                                             </SfTextBox> *@
-                                            @skill.Description
+                                            @skill.Descr
                                         </div>
                                     </td>
                                 </tr>
@@ -276,7 +276,7 @@
                                     <td colspan="2">
                                         @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
                                         </SfTextBox> *@
-                                        @skill.Description
+                                        @skill.Descr
                                     </td>
                                 </tr>
                             }
@@ -434,7 +434,7 @@
             <button @onclick="OnCancelBtnClick" class="btn btn-secondary mx-2">Cancel</button>
         </div>
 
-        <CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
+        <CreateProfessionSkillDialog @bind-ProfessionSkillModel="@ProfessionSkillComponent"></CreateProfessionSkillDialog>
     }
 </div>
 
@@ -479,7 +479,8 @@
     private AllParamsModel AllParams { get; set; } = new();
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
     private ICollection<SpellCircleDTO> SpellCircles = new List<SpellCircleDTO>();
-    ICollection<TraitProfessionDTO> TraitsProfession = new List<TraitProfessionDTO>();
+   // ICollection<TraitProfessionDTO> ActiveSkills = new List<TraitProfessionDTO>();
+   // ICollection<TraitProfessionDTO> PassiveSkills = new List<TraitProfessionDTO>();
     private MudTable<SpellCircleDTO> CircleTable;
     public string TraitType = @SD.TraitType_Profession;
 
@@ -488,10 +489,10 @@
     private MudTable<SpellCircle> mudTable;
     private TraitDTO? EditedTrait { get; set; } = new();
 
-    private CustomTraitModel _customTraitComponent = new();
-    private CustomTraitModel CustomTraitComponent
+    private ProfessionSkillModel _professionSkillComponent = new();
+    private ProfessionSkillModel ProfessionSkillComponent
     {
-        get => _customTraitComponent;
+        get => _professionSkillComponent;
         set
         {
             if (value.TraitDTO != null)
@@ -502,28 +503,20 @@
                 AllParams.TraitsChange(TraitType);
                 //OnTraitsChange.InvokeAsync();
             }
-            if (_customTraitComponent == value) return;
-            _customTraitComponent = value;
+            if (_professionSkillComponent == value) return;
+            _professionSkillComponent = value;
         }
     }
 
-    private void EditSkill(ProfessionSkill skill)
+    private void EditSkill(TraitProfessionDTO skill)
     {
-        EditedTrait = TraitsProfession.FirstOrDefault(t => t.ProfessionSkillId == skill.Id);
-        CustomTraitModel ctm = new();
+        ProfessionSkillModel ctm = new();
         ctm.IsEditMode = true;
-        if (EditedTrait == null)
-        {
-            EditedTrait = new TraitProfessionDTO ();
-            ctm.IsEditMode = false;
-            TraitsProfession.Add(new TraitProfessionDTO(EditedTrait, skill.Id));
-        }
-        ctm.TraitDTO = EditedTrait;
+        ctm.TraitDTO = skill;
         ctm.IsVisible = true;
-        CustomTraitComponent = ctm;
+        ProfessionSkillComponent = ctm;
 
     }
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -574,8 +567,9 @@
                 SpellCircles = ProfessionDTO.SpellCircles;
             }
             //profession skill traits
-            TraitsProfession = (await _traitProfessionRepository.GetAll(Id)).ToList();
-            //AllParams.TraitsProfession = TraitsProfession.Cast<TraitDTO>().ToList();
+
+            ProfessionDTO.ActiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == true).ToList();
+            ProfessionDTO.PassiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == false).ToList();
 
             if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
                 throw new Exception("No related class attribute");
@@ -633,6 +627,20 @@
             ProfessionDTO.SpellCircles = SpellCircles;
 
             await _professionRepository.Update(ProfessionDTO);
+
+            if(ProfessionDTO.ActiveSkills is not null){
+                foreach(var profSkill in ProfessionDTO.ActiveSkills)
+                {
+                    await _traitProfessionRepository.Update(profSkill);
+                }
+            }
+            if (ProfessionDTO.PassiveSkills is not null)
+            {
+                foreach (var profSkill in ProfessionDTO.PassiveSkills)
+                {
+                    await _traitProfessionRepository.Update(profSkill);
+                }
+            }
 
             _navigationManager.NavigateTo("#");
             ErrorMessage = string.Empty;

@@ -103,7 +103,6 @@ namespace DA_Business.Repository.CharacterReps
                 {
                     obj.Name = newTrait.Name;    
                     obj.Descr = newTrait.Descr;
-                    obj.SummaryDescr = newTrait.SummaryDescr;
                     obj.Index = newTrait.Index;
                     obj.TraitType = newTrait.TraitType;
                     obj.TraitValue = newTrait.TraitValue;

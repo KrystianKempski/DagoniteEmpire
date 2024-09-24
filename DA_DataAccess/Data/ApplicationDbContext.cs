@@ -32,7 +32,7 @@ namespace DA_DataAccess.Data
         public DbSet<Wound> Wounds { get; set; }
 
         public DbSet<Profession> Professions { get; set; }
-        public DbSet<ProfessionSkill> ProfessionSkills { get; set; }
+        //public DbSet<ProfessionSkill> ProfessionSkills { get; set; }
         public DbSet<SpellCircle> SpellCircles { get; set; }
         public DbSet<SpellSlot> SpellSlots { get; set; }
         public DbSet<Spell> Spells { get; set; }
@@ -46,15 +46,15 @@ namespace DA_DataAccess.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<ProfessionSkill>()
-                .HasOne(a => a.ActiveProfession)
-                .WithMany(y => y.ActiveSkills)
-                .HasForeignKey(a => a.ActiveProfessionId).OnDelete(DeleteBehavior.NoAction);
+            //modelBuilder.Entity<ProfessionSkill>()
+            //    .HasOne(a => a.ActiveProfession)
+            //    .WithMany(y => y.ActiveSkills)
+            //    .HasForeignKey(a => a.ActiveProfessionId).OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<ProfessionSkill>()
-                .HasOne(a => a.PassiveProfession)
-                .WithMany(y => y.PassiveSkills)
-                .HasForeignKey(a => a.PassiveProfessionId).OnDelete(DeleteBehavior.NoAction);
+            //modelBuilder.Entity<ProfessionSkill>()
+            //    .HasOne(a => a.PassiveProfession)
+            //    .WithMany(y => y.PassiveSkills)
+            //    .HasForeignKey(a => a.PassiveProfessionId).OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<ChatMessage>()
                 .HasOne(d => d.FromUser)

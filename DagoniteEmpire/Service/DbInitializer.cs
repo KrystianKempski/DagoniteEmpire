@@ -114,8 +114,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Diversity",
-                                Descr = "",
-                                SummaryDescr = "Human characters gain a +2 racial bonus to one attribute score of their choice at creation to represent their varied nature",
+                                Descr = "Human characters gain a +2 racial bonus to one attribute score of their choice at creation to represent their varied nature",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -124,8 +123,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
-                                Descr = "",
-                                SummaryDescr = "Human characters gain the +1 racial bonus to two basic skills score of their choice at creation to represent their universal nature",
+                                Descr = "Human characters gain the +1 racial bonus to two basic skills score of their choice at creation to represent their universal nature",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -149,8 +147,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
-                                Descr = "",
-                                SummaryDescr = "Dwarves are both tough and wise, but also a bit gruff +2 Endurance, +2 Willpower, -2 Charisma.",
+                                Descr = "Dwarves are both tough and wise, but also a bit gruff +2 Endurance, +2 Willpower, -2 Charisma.",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -180,8 +177,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Hardy",
-                                Descr = "",
-                                SummaryDescr = "Dwarf are hard to overpower, and proficient in armor",
+                                Descr = "Dwarf are hard to overpower, and proficient in armor",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -199,8 +195,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Excelent craftsment",
-                                Descr = "",
-                                SummaryDescr = "All dwarves have natural talent with craftsmenship",
+                                Descr = "All dwarves have natural talent with craftsmenship",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -219,7 +214,6 @@ namespace DagoniteEmpire.Service
                             {
                                 Name="Darkvision",
                                 Descr = "",
-                                SummaryDescr = "This race can see perfectly in the dark up to 60 feet",
                                 TraitApproved = true,
                                 IsUnique=false,
                                 TraitType=SD.TraitType_Race,
@@ -238,7 +232,6 @@ namespace DagoniteEmpire.Service
                             {
                                 Name="Hatred",
                                 Descr = "",
-                                SummaryDescr = "Dwarves gain a +1 racial bonus on attack rolls against humanoid creatures of the orc and goblinoid subtypes because of their special training against these hated foes",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -257,7 +250,6 @@ namespace DagoniteEmpire.Service
                             {
                                 Name="Unpopular amongst people",
                                 Descr = "",
-                                SummaryDescr = "Non-human races receive a penalty for ruling and diplomacy as nobles in the Empire.",
                                 TraitApproved = true,
                                 IsUnique=false,
                                 TraitType=SD.TraitType_Race,
@@ -294,7 +286,6 @@ namespace DagoniteEmpire.Service
                             {
                                 Name="Attribute Score Modifier",
                                 Descr = "",
-                                SummaryDescr = "Elves are nimble, both in body and mind, but their form is frail. +2 Dexterity, +2 Inteligence, -2 Endurance",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -324,8 +315,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Keen Senses",
-                                Descr = "",
-                                SummaryDescr = "Elves' senses are naturally heightened",
+                                Descr = "Elves' senses are naturally heightened",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -343,8 +333,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Elven Magic",
-                                Descr = "",
-                                SummaryDescr = "This ancient race have better connection to winds of magic",
+                                Descr =  "This ancient race have better connection to winds of magic",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -363,7 +352,6 @@ namespace DagoniteEmpire.Service
                             {
                                 Name="Low-Light Vision",
                                 Descr = "",
-                                SummaryDescr = "This race can see twice as far as humans in conditions of dim light.",
                                 TraitApproved = true,
                                 IsUnique=false,
                                 TraitType=SD.TraitType_Race,
@@ -382,7 +370,6 @@ namespace DagoniteEmpire.Service
                             {
                                 Name="Unpopular amongst people",
                                 Descr = "",
-                                SummaryDescr = "Non-human races receive a penalty for ruling and diplomacy as nobles in the Empire.",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -409,8 +396,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Lame",
-                        Descr = "",
-                        SummaryDescr = "An old wound or disfigurement makes this character limp. +2 Melee, -1 Charisma",
+                        Descr = "An old wound or disfigurement makes this character limp",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -439,8 +425,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Beautiful",
-                        Descr = "",
-                        SummaryDescr = "This character is somehow physically beautiful. +2 Charisma, +1 Loyalty",
+                        Descr = "This character is somehow physically beautiful",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -469,8 +454,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Genius",
-                        Descr = "",
-                        SummaryDescr = "This character is exceptionally intelligent. +3 Intelligence, +3 Instinct",
+                        Descr = "This character is exceptionally intelligent",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -499,8 +483,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Ugly",
-                        Descr = "",
-                        SummaryDescr = "This character is not pleasant to eyes. -2 Charisma, -1 Loyalty",
+                        Descr = "This character is not pleasant to eyes",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -529,8 +512,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Wrathful",
-                        Descr = "",
-                        SummaryDescr = "This character's outbursts of anger are frequent and violent (somethimes makes will checks). +2 Melee, -2 Talk",
+                        Descr =  "This character's outbursts of anger are frequent and violent (somethimes makes will checks)",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -630,9 +612,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Armor  2, Armor defence bonus -4, Armor penalty 1",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Armor  3, Armor defence bonus -4, Armor penalty 1",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -676,9 +657,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Armor  4, Armor defence bonus -2, Armor penalty 3",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Armor  5, Armor defence bonus -2, Armor penalty 3",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -722,9 +702,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Armor  6, Armor defence bonus 1, Armor penalty 4",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Armor  6, Armor defence bonus 1, Armor penalty 4",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -768,9 +747,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Armor  8, Armor defence bonus 3, Armor penalty 5",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Armor  6, Armor defence bonus 1, Armor penalty 5",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -814,9 +792,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Armor  10, Armor defence bonus 5, Armor penalty 6",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Armor  10, Armor defence bonus 5, Armor penalty 6",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -862,9 +839,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Shield defence bonus 2, Armor penalty 1",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Shield defence bonus 2, Armor penalty 1",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -904,9 +880,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Shield defence bonus 2, Armor penalty 0",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Shield defence bonus 2, Armor penalty 0",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -939,9 +914,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Shield defence bonus 4, Armor penalty 3",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Shield defence bonus 4, Armor penalty 3",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -981,9 +955,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Shield defence bonus 4, Armor penalty 2",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Shield defence bonus 4, Armor penalty 2",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1023,9 +996,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Shield defence bonus 5, Armor penalty 4",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Shield defence bonus 5, Armor penalty 4",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1064,9 +1036,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Shield defence bonus 5, Armor penalty 4",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Shield defence bonus 5, Armor penalty 4",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1105,10 +1076,9 @@ namespace DagoniteEmpire.Service
                         IsApproved = true,
                         Traits = new List<TraitEquipment>() {
                             new TraitEquipment(){ 
-                                Descr = "Fast 3, Light, Armor piercing 3",
+                                Descr = "",
                                 Name = "Weapon properties",
                                 TraitType = SD.TraitType_Gear,
-                                SummaryDescr = "Fast 3, Light, Armor piercing 3",
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
@@ -1151,9 +1121,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Parrying 4, Disarming 4",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Parrying 4, Disarming 4",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1191,10 +1160,9 @@ namespace DagoniteEmpire.Service
                         IsApproved = true,
                         Traits = new List<TraitEquipment>() {
                             new TraitEquipment(){
-                                Descr = "Shield destructive 4, Devastating 2",
+                                Descr = "",
                                 Name = "Weapon properties",
                                 TraitType = SD.TraitType_Gear,
-                                SummaryDescr = "Shield destructive 4, Devastating 2",
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
@@ -1230,9 +1198,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Armor piercing 4, Shield destructive 2",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Armor piercing 4, Shield destructive 2",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1270,9 +1237,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Destructive 2, Stunning 5",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Destructive 2, Stunning 2",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1310,9 +1276,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Destructive 3, Armor piercing 3",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Destructive 3, Armor piercing 3",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1350,9 +1315,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Long 2, Fast 3",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Long 2, Fast 3",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1390,9 +1354,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Parrying 2, Armor Piercing 2, Fast 3",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Parrying 2, Armor Piercing 2, Fast 3",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1437,9 +1400,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Heavy 3, Slow 3, Stumbling 7",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Heavy 3, Slow 3, Stumbling 7",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1489,9 +1451,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Heavy 5, Slow 4,Devastating 3 Stunning 8",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Heavy 5, Slow 4,Devastating 3 Stunning 8",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1547,9 +1508,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Heavy 3, Slow 3,Devastating 4, Shield destructive 5",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Heavy 3, Slow 3,Devastating 4, Shield destructive 5",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1605,9 +1565,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Heavy 4, Slow 4,Shield destructive 6, Long 2",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Heavy 4, Slow 4,Shield destructive 6, Long 2",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1663,9 +1622,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Slow 3,Armor piercing 4, Long 3",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Slow 3,Armor piercing 4, Long 3",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1716,9 +1674,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Armor piercing 2, Fast 4, Reload 1, Range 20",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Armor piercing 2, Fast 4, Reload 1, Range 20",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1774,9 +1731,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Armor piercing 5, Devastating 2, Fast 4, Reload 2, Range 30",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Armor piercing 5, Devastating 2, Fast 4, Reload 2, Range 30",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1838,9 +1794,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Armor piercing 2,Fast 2, Range 20",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Armor piercing 2,Fast 2, Range 20",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1891,9 +1846,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Fast 4, Range 40",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Fast 4, Range 40",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
@@ -1938,9 +1892,8 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
-                                Descr = "Devastating 2, Range 20",
+                                Descr = "",
                                 Name = "Weapon properties",
-                                SummaryDescr = "Devastating 2, Range 20",
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {

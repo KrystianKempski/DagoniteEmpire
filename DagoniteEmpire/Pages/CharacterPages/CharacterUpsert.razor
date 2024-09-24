@@ -8,6 +8,7 @@
 @inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
+@inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
 @inject IRaceRepository _raceRepository
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
@@ -385,6 +386,8 @@
             AllParams.Traits.Add(new TraitCharacterDTO(t, AllParams.Character)));
         AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
         AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
+        AllParams.Profession.ActiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == true).ToList();
+        AllParams.Profession.PassiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == false).ToList();
         AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
         AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
     }
@@ -432,6 +435,23 @@
                 professionDTO = await _professionRepository.Create(AllParams.Profession);
                 if (professionDTO is not null)
                     AllParams.Character.ProfessionId = professionDTO.Id;
+                // create profession traits
+                if(AllParams.Profession.ActiveSkills is not null)
+                {                    
+                    foreach (var skill in AllParams.Profession.ActiveSkills)
+                    {
+                        skill.ProfessionId = AllParams.Character.ProfessionId;
+                        await _traitProfessionRepository.Create(skill);
+                    }
+                }
+                if (AllParams.Profession.PassiveSkills is not null)
+                {
+                    foreach (var skill in AllParams.Profession.PassiveSkills)
+                    {
+                        skill.ProfessionId = AllParams.Character.ProfessionId;
+                        await _traitProfessionRepository.Create(skill);
+                    }
+                }
 
                 var charac = await _characterRepository.Create(AllParams.Character);
                 foreach (var obj in AllParams.Attributes.GetAllArray())
@@ -477,6 +497,24 @@
                     professionDTO = await _professionRepository.Create(AllParams.Profession);
                 if (professionDTO is not null)
                     AllParams.Character.ProfessionId = professionDTO.Id;
+
+                // update profession traits
+                if (AllParams.Profession.ActiveSkills is not null)
+                {
+                    foreach (var skill in AllParams.Profession.ActiveSkills)
+                    {
+                        skill.ProfessionId = AllParams.Character.ProfessionId;
+                        await _traitProfessionRepository.Update(skill);
+                    }
+                }
+                if (AllParams.Profession.PassiveSkills is not null)
+                {
+                    foreach (var skill in AllParams.Profession.PassiveSkills)
+                    {
+                        skill.ProfessionId = AllParams.Character.ProfessionId;
+                        await _traitProfessionRepository.Update(skill);
+                    }
+                }
 
                 // update Adv traits
                 AllParams.Character.TraitsAdv = new List<TraitCharacterDTO>();
@@ -532,7 +570,6 @@
     }
     public async Task DeleteCharacterHandler()
     {
-
         try
         {
             if (AllParams.Character.Id == 0)

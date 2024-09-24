@@ -9,15 +9,11 @@ namespace DA_Models.ComponentModels
 {
     public class ProfessionSkillModel
     {
-        public TraitDTO TraitDTO { get; set; }
+        public TraitProfessionDTO TraitDTO { get; set; } = new TraitProfessionDTO();
 
         public bool IsVisible { get; set; } = false;
         public bool IsEditMode { get; set; } = false;
         public bool IsInfoMode { get; set; } = false;
-        public int DC { get; set; } 
-        public string Range { get; set; }
-        public int Cost { get; set; }
-
 
     }
 }

@@ -23,6 +23,7 @@ namespace DA_Business.Mapper
             CreateMap<TraitCharacter, TraitCharacterDTO>().ReverseMap();
             CreateMap<TraitRace, TraitRaceDTO>().ReverseMap();
             CreateMap<TraitEquipment, TraitEquipmentDTO>().ReverseMap();
+            CreateMap<TraitProfession, TraitProfessionDTO>().ReverseMap();
             CreateMap<Bonus, BonusDTO>().ReverseMap();
             CreateMap<Race, RaceDTO>().ReverseMap();
             CreateMap<Profession, ProfessionDTO>().ReverseMap();

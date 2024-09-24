@@ -67,7 +67,7 @@ namespace DA_Business.Repository.CharacterReps
             using var contex = await _db.CreateDbContextAsync();
             if (profId == null || profId < 1)
                 return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses).Where(u => u.ProfessionSkillId == profId));
+           return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses).Where(u => u.ProfessionId == profId));
         }
 
         public Task<IEnumerable<TraitProfessionDTO>> GetAllApproved(bool addUnique = false)
@@ -98,7 +98,6 @@ namespace DA_Business.Repository.CharacterReps
                 {
                     obj.Name = newTrait.Name;    
                     obj.Descr = newTrait.Descr;
-                    obj.SummaryDescr = newTrait.SummaryDescr;
                     obj.Index = newTrait.Index;
                     obj.TraitType = newTrait.TraitType;
                     obj.TraitValue = newTrait.TraitValue;

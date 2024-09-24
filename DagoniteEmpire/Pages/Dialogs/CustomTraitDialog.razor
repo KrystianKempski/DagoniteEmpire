@@ -284,29 +284,7 @@
         ErrorMessage = string.Empty;
 
         CustomTraitModel.IsVisible = false;
-        if (CustomTraitModel.IsWeaponQualityMode)
-            CustomTraitModel.TraitDTO.SummaryDescr = "";
-        else
-            CustomTraitModel.TraitDTO.SummaryDescr = CustomTraitModel.TraitDTO.Descr + ". ";
-
-        foreach (var bonus in CustomTraitModel.TraitDTO.Bonuses)
-        {
-
-            if (bonus.Description != null && bonus.Description.Length > 0)
-            {
-                CustomTraitModel.TraitDTO.SummaryDescr += bonus.Description + ", ";
-            }
-            else
-            {
-                string val;
-                if (bonus.BonusValue > 0)
-                    val = $"+{bonus.BonusValue}";
-                else
-                    val = $"{bonus.BonusValue}";
-                CustomTraitModel.TraitDTO.SummaryDescr += $"{val} to {bonus.FeatureName}; ";
-            }
-
-        }
+        
 
         if (CustomTraitModel.IsWeaponQualityMode)
             CustomTraitModel.TraitDTO.Descr = CustomTraitModel.TraitDTO.SummaryDescr;

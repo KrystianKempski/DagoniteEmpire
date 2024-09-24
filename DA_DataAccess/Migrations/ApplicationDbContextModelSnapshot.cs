@@ -395,53 +395,6 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("Professions");
                 });
 
-            modelBuilder.Entity("DA_DataAccess.CharacterClasses.ProfessionSkill", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("ActiveProfessionId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("Cost")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("DC")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<long>("Index")
-                        .HasColumnType("bigint");
-
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("PassiveProfessionId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Range")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActiveProfessionId");
-
-                    b.HasIndex("PassiveProfessionId");
-
-                    b.ToTable("ProfessionSkills");
-                });
-
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>
                 {
                     b.Property<int>("Id")
@@ -644,10 +597,6 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SummaryDescr")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("TraitApproved")
@@ -1134,8 +1083,26 @@ namespace DA_DataAccess.Migrations
                 {
                     b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
 
-                    b.Property<int>("ProfessionSkillId")
+                    b.Property<int?>("Cost")
                         .HasColumnType("integer");
+
+                    b.Property<int?>("DC")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActiveSkill")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProfessionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Range")
+                        .HasColumnType("text");
 
                     b.HasDiscriminator().HasValue("TraitProfession");
                 });
@@ -1279,23 +1246,6 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Character");
 
                     b.Navigation("Equipment");
-                });
-
-            modelBuilder.Entity("DA_DataAccess.CharacterClasses.ProfessionSkill", b =>
-                {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Profession", "ActiveProfession")
-                        .WithMany("ActiveSkills")
-                        .HasForeignKey("ActiveProfessionId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("DA_DataAccess.CharacterClasses.Profession", "PassiveProfession")
-                        .WithMany("PassiveSkills")
-                        .HasForeignKey("PassiveProfessionId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("ActiveProfession");
-
-                    b.Navigation("PassiveProfession");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.SpecialSkill", b =>
@@ -1498,11 +1448,7 @@ namespace DA_DataAccess.Migrations
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Profession", b =>
                 {
-                    b.Navigation("ActiveSkills");
-
                     b.Navigation("Characters");
-
-                    b.Navigation("PassiveSkills");
 
                     b.Navigation("SpellCircles");
                 });

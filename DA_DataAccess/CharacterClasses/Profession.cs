@@ -27,11 +27,11 @@ namespace DA_DataAccess.CharacterClasses
 
         public ICollection<Character>? Characters { get; set; }
 
-        [InverseProperty("ActiveProfession")]
-        public virtual ICollection<ProfessionSkill>? ActiveSkills { get; set; }
+        //[InverseProperty("ActiveProfession")]
+        //public virtual ICollection<ProfessionSkill>? ActiveSkills { get; set; }
 
-        [InverseProperty("PassiveProfession")]
-        public virtual ICollection<ProfessionSkill>? PassiveSkills { get; set; }
+        //[InverseProperty("PassiveProfession")]
+        //public virtual ICollection<ProfessionSkill>? PassiveSkills { get; set; }
         public virtual ICollection<SpellCircle>? SpellCircles { get; set; }
 
     }
