@@ -16,10 +16,12 @@
                 <th scope="col" class="skillname-row">Skill</th>
                 <th scope="col" class="bonus-row text-center">Base</th>
                 <th scope="col" class="rel-attr-row">Related attribute</th>
-                <th scope="col" class="sum-row text-center">Attr. mod.</th>
-                <th scope="col" class="sum-row text-center">Race</th>
-                <th scope="col" class="sum-row text-center">Gear</th>
-                <th scope="col" class="sum-row text-center">Trait</th>
+                <th scope="col" class="info-row text-center">At</th>
+                <th scope="col" class="info-row text-center">Rc</th>
+                <th scope="col" class="info-row text-center">Gr</th>
+                <th scope="col" class="info-row text-center">Tr</th>
+                <th scope="col" class="info-row text-center">Ot</th>
+                <th scope="col" class="info-row text-center">Tp</th>
                 <th scope="col" class="sum-row text-center"> Sum</th>
             </tr>
         </thead>
@@ -60,10 +62,13 @@
                     <td>
                         <div class="attr-control">
                             <span class="attr-indicator">@obj.BaseBonus</span>
-                            <div class="arrows">
-                                <button @onclick="@(()=>IncrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                <button @onclick="@(()=>DecrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                            </div>
+                            @if (AllParams.Character.CurrentExpPoints > 0)
+                            {
+                                <div class="arrows">
+                                    <button @onclick="@(()=>IncrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                    <button @onclick="@(()=>DecrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                </div>
+                            }
                         </div>
                     </td>
                     <td>
@@ -112,27 +117,37 @@
                     </td>
                     <td>
                         <div class="attr-control">
-                            <span class="attr-indicator">@obj.AttributeBonus</span>
+                            <span class="info-indicator">@obj.AttributeBonus</span>
                         </div>
                     </td>
                     <td>
                         <div class="attr-control">
-                            <span class="attr-indicator">@obj.RaceBonus</span>
+                            <span class="info-indicator">@obj.RaceBonus</span>
                         </div>
                     </td>
                     <td>
                         <div class="attr-control">
-                            <span class="attr-indicator">@obj.GearBonus</span>
+                            <span class="info-indicator">@obj.GearBonus</span>
                         </div>
                     </td>
                     <td>
                         <div class="attr-control">
-                            <span class="attr-indicator">@obj.TraitBonus</span>
+                            <span class="info-indicator">@obj.TraitBonus</span>
                         </div>
                     </td>
                     <td>
                         <div class="attr-control">
-                            <span class="attr-indicator">@obj.SumBonus</span>
+                            <span class="info-indicator">@obj.OtherBonuses</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="info-indicator">@obj.TempBonuses</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="attr-control">
+                            <span class="sum-indicator">@obj.SumBonus</span>
                         </div>
                     </td>
                 </tr>
@@ -224,15 +239,6 @@
                 newname = specSkillName.ToUpper();
 
                 AllParams.SpecialSkills.ReplaceNames(newname, oldSkillName);
-
-
-                // SpecialSkillDTO temp = AllParams.SpecialSkills.GetAllArray().FirstOrDefault(u => u.Name.ToUpper() == oldSkillName.ToUpper());
-                // SpecialSkillDTO newSkill = new SpecialSkillDTO(temp);
-
-
-                // newSkill.Name = newname;
-                // AllParams.SpecialSkills.Add(newSkill);
-                // AllParams.SpecialSkills.Remove(temp.Name);
 
                 await OnSpecialSkillChange.InvokeAsync();
                 StateHasChanged();

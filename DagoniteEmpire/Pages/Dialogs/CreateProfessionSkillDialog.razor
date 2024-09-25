@@ -18,7 +18,7 @@
                             
                         <div class="d-flex ">
                             <div class="d-flex flex-column flex-grow-1">
-                            <label class="fw-bold py-1">Talent name</label>
+                            <label class="fw-bold py-1">Profession skill name</label>
                                 <SfTextBox Placeholder="Talent name" @bind-Value="@_professionSkillModel.TraitDTO.Name"></SfTextBox>
                             </div>
 
@@ -33,13 +33,30 @@
                             }
                         </div>
                         <div class="align-items-start bonus-name py-0">
-                            <label class="fw-bold  py-1">Talent description</label>
+                            <label class="fw-bold  py-1">Profession skill description</label>
                         </div>
                         <div class="align-items-start">
                             <div class="col-12 bonus-name py-0">
                                 <SfTextBox Multiline=true Placeholder="Insert general trait description" @bind-Value="@_professionSkillModel.TraitDTO.Descr"></SfTextBox>
                             </div>
                         </div>
+                        @if(_professionSkillModel.TraitDTO.IsActiveSkill)
+                        {
+                            <div class="d-flex">
+                                <div class="d-flex flex-column">
+                                    <label class="fw-bold py-1">DC</label>
+                                    <SfNumericTextBox Placeholder="DC" @bind-Value="@_professionSkillModel.TraitDTO.DC"></SfNumericTextBox>
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <label class="fw-bold py-1">Cost</label>
+                                    <SfNumericTextBox Placeholder="Cost" @bind-Value="@_professionSkillModel.TraitDTO.Cost"></SfNumericTextBox>
+                                </div>
+                                <div class="d-flex flex-column">
+                                    <label class="fw-bold py-1">Range</label>
+                                    <SfTextBox Placeholder="DC" @bind-Value="@_professionSkillModel.TraitDTO.Range"></SfTextBox>
+                                </div>
+                            </div>
+                        }
                         
                         <label class="fw-bold pt-4">Bonuses and penalties</label>
 

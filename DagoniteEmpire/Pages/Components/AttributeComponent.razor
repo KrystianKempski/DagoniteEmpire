@@ -10,11 +10,12 @@
     <thead>
         <tr>
             <th scope="col" class="bonus-row text-center">Base</th>
-            <th scope="col" class="sum-row text-center">Race</th>
-            <th scope="col" class="sum-row text-center">Gear</th>
-            <th scope="col" class="sum-row text-center">Trait</th>
-            <th scope="col" class="sum-row text-center">Health</th>
-            <th scope="col" class="sum-row text-center">Other</th>
+            <th scope="col" class="info-row text-center">Rc</th>
+            <th scope="col" class="info-row text-center">Gr</th>
+            <th scope="col" class="info-row text-center">Tr</th>
+            <th scope="col" class="info-row text-center">Ot</th>
+            <th scope="col" class="info-row text-center">Ht</th>
+            <th scope="col" class="info-row text-center">Tp</th>
             <th scope="col" class="sum-row text-center">Sum</th>
             <th scope="col" class="sum-row text-center">Mod.</th>
         </tr>
@@ -33,45 +34,53 @@
                 <td>
                     <div class="attr-control">
                         <span class="attr-indicator">@obj.BaseBonus</span>
-                        <div class="arrows">
-                            <button @onclick="@(()=>IncrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                            <button @onclick="@(()=>DecrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                        </div>
+                            @if (AllParams.Character.CurrentExpPoints > 0)
+                            {
+                                <div class="arrows">
+                                    <button @onclick="@(()=>IncrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                    <button @onclick="@(()=>DecrAttr(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                </div>
+                            }
                     </div>
                 </td>
                 <td>
                     <div class="attr-control">
-                        <span class="attr-indicator">@obj.RaceBonus</span>
+                        <span class="info-indicator">@obj.RaceBonus</span>
                     </div>
                 </td>
                 <td>
                     <div class="attr-control">
-                        <span class="attr-indicator">@obj.GearBonus</span>
+                        <span class="info-indicator">@obj.GearBonus</span>
                     </div>
                 </td>
                 <td>
                     <div class="attr-control">
-                        <span class="attr-indicator">@obj.TraitBonus</span>
+                        <span class="info-indicator">@obj.TraitBonus</span>
                     </div>
                 </td>
                 <td>
                     <div class="attr-control">
-                        <span class="attr-indicator">@obj.HealthBonus</span>
+                        <span class="info-indicator">@obj.OtherBonuses</span>
                     </div>
                 </td>
                 <td>
                     <div class="attr-control">
-                        <span class="attr-indicator">@obj.OtherBonuses</span>
+                        <span class="info-indicator">@obj.HealthBonus</span>
                     </div>
                 </td>
                 <td>
                     <div class="attr-control">
-                        <span class="attr-indicator">@obj.SumBonus</span>
+                        <span class="info-indicator">@obj.TempBonuses</span>
                     </div>
                 </td>
                 <td>
                     <div class="attr-control">
-                        <span class="attr-indicator">@obj.Modifier </span>
+                            <span class="sum-indicator">@obj.SumBonus</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="attr-control">
+                        <span class="sum-indicator">@obj.Modifier </span>
                     </div>
                 </td>
             </tr>
@@ -100,7 +109,7 @@
         }
         else
         {
-            OnAttributesChange.InvokeAsync();
+            await OnAttributesChange.InvokeAsync();
         }
     }
     private async Task DecrAttr(AttributeDTO obj)
@@ -118,7 +127,7 @@
         }
         else
         {
-            OnAttributesChange.InvokeAsync();
+            await OnAttributesChange.InvokeAsync();
         }
     }
 }

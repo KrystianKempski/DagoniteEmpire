@@ -5,6 +5,8 @@
 @inject IJSRuntime _jsruntime
 @inject ICharacterRepository _characterRepository
 @inject IAttributeRepository _attributeRepository
+@inject IBaseSkillRepository _baseSkillRepository
+@inject ISpecialSkillRepository _specialSkillRepository
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentRepository _equipmentRepository
 @inject ISpellRepository _spellRepository
@@ -25,6 +27,10 @@
     }
     else
     {
+        <div class="save-btn">
+            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
+
+        </div>
 
         <label class="warnign-message">@ErrorMessage</label>
         <div class="wide-screen-table">
@@ -153,34 +159,12 @@
                                     {
                                         <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
                                     }
-                                    <td> <div class="name-cell">
-                                       @*  <SfTextBox Placeholder="Insert skill name" @bind-Value="@skill.Name"></SfTextBox>  *@
-                                       @skill.Name
-                                        </div> </td>
-                                    <td>
-                                        <div class="bonus-double-cell">
-                                            @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
-                                            </SfTextBox> *@
-                                            @skill.Descr
-                                        </div>
-                                    </td>
-                                    <td><div class="short-row">
-                                       @*  <SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.DC"></SfNumericTextBox> *@
-                                            @skill.DC
-                                        </div></td>
-                                    <td><div class="short-row">
-                                        @* <SfNumericTextBox ShowSpinButton="false" @bind-Value="@skill.Cost"></SfNumericTextBox> *@
-                                            @skill.DC
-                                        </div></td>
-                                    <td><div class="short-row">
-                                        @* <SfTextBox @bind-Value="@skill.Range"></SfTextBox> *@
-                                            @skill.Range
-                                        </div></td>
-                                    <td><div class="short-row">
-
-                                            <button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
-
-                                    </div></td>
+                                    <td><div class="name-cell"> @skill.Name</div> </td>
+                                    <td><div class="bonus-double-cell">@skill.SummaryDescr</div></td>
+                                    <td><div class="short-row smaller-text ">@skill.DC</div></td>
+                                    <td><div class="short-row smaller-text ">@skill.Cost</div></td>
+                                    <td><div class="short-row smaller-text ">@skill.Range</div></td>
+                                    <td><div class="short-row"><button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button></div></td>
                                 </tr>
                             }
                         </tbody>
@@ -196,6 +180,7 @@
                                 <th scope="col" class="number-row text-center">DC</th>
                                 <th scope="col" class="number-row text-center">Cost</th>
                                 <th scope="col" class="number-row text-center"> Range</th>
+                                <th scope="col" class="number-row text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -206,18 +191,14 @@
                                     {
                                         <td rowspan="4"> <label class="short-row">@skill.Level</label> </td>
                                     }
-                                    <td> <div class="name-cell">@skill.Name</div> </td>
-
+                                    <td> <div class="name-cell">@skill.Name</div></td>
                                     <td><div class="short-row">@skill.DC></div></td>
                                     <td><div class="short-row">@skill.Cost</div></td>
                                     <td><div class="short-row">@skill.Range</div></td>
+                                    <td><div class="short-row"><button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button></div></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="4">
-                                        @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
-                                        </SfTextBox> *@
-                                        @skill.Descr
-                                    </td>
+                                    <td colspan="4">@skill.SummaryDescr</td>
                                 </tr>
                             }
                         </tbody>
@@ -236,21 +217,17 @@
                                 <th scope="col" class="level-row text-center">Level</th>
                                 <th scope="col" class="name-row text-center">Name</th>
                                 <th scope="col" class="descr-row text-center">Description</th>
+                                <th scope="col" class="number-row text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var skill in ProfessionDTO.PassiveSkills)
                             {
                                 <tr>
-                                    <td> <label class="short-row">@skill.Level</label> </td>
-                                    <td> <div class="name-cell">@skill.Name </div> </td>
-                                    <td>
-                                        <div class="bonus-double-cell">
-                                            @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
-                                            </SfTextBox> *@
-                                            @skill.Descr
-                                        </div>
-                                    </td>
+                                    <td> <label class="short-row">@skill.Level</label></td>
+                                    <td> <div class="name-cell">@skill.Name </div></td>
+                                    <td> <div class="bonus-double-cell">@skill.SummaryDescr</div></td>
+                                    <td><div class="short-row"><button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button></div></td>
                                 </tr>
                             }
                         </tbody>
@@ -263,6 +240,7 @@
                             <tr>
                                 <th scope="col" class="number-row text-center">Level</th>
                                 <th scope="col" class="name-row-short text-center">Name</th>
+                                <th scope="col" class="number-row text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -271,13 +249,10 @@
                                 <tr>
                                     <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
                                     <td> <div class="name-cell">@skill.Name </div> </td>
+                                    <td><div class="short-row"><button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button></div></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="2">
-                                        @* <SfTextBox ID="@skill.Index.ToString()" OnChange="@(()=>ChangeDescription(skill.Index))" Multiline=true Placeholder="Insert skill description" @bind-Value="@skill.Description">
-                                        </SfTextBox> *@
-                                        @skill.Descr
-                                    </td>
+                                    <td colspan="2"> @skill.SummaryDescr</td>
                                 </tr>
                             }
                         </tbody>
@@ -429,12 +404,13 @@
         </MudTabs>
 
         <label class="warnign-message">@ErrorMessage</label>
-        <div class="d-flex mt-2">
+        @* <div class="d-flex mt-2">
             <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary mx-2">Save</button>
             <button @onclick="OnCancelBtnClick" class="btn btn-secondary mx-2">Cancel</button>
-        </div>
-
-        <CreateProfessionSkillDialog @bind-ProfessionSkillModel="@ProfessionSkillComponent"></CreateProfessionSkillDialog>
+        </div> *@
+        <CascadingValue Value="@AllParams">
+            <CreateProfessionSkillDialog @bind-ProfessionSkillModel="@ProfessionSkillComponent"></CreateProfessionSkillDialog>
+        </CascadingValue>
     }
 </div>
 
@@ -479,8 +455,6 @@
     private AllParamsModel AllParams { get; set; } = new();
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
     private ICollection<SpellCircleDTO> SpellCircles = new List<SpellCircleDTO>();
-   // ICollection<TraitProfessionDTO> ActiveSkills = new List<TraitProfessionDTO>();
-   // ICollection<TraitProfessionDTO> PassiveSkills = new List<TraitProfessionDTO>();
     private MudTable<SpellCircleDTO> CircleTable;
     public string TraitType = @SD.TraitType_Profession;
 
@@ -515,7 +489,6 @@
         ctm.TraitDTO = skill;
         ctm.IsVisible = true;
         ProfessionSkillComponent = ctm;
-
     }
 
     protected override async Task OnInitializedAsync()
@@ -526,7 +499,6 @@
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
-
         ReadOnly = (UserInfo?.IsAdminOrMG == false);
     }
 
@@ -559,15 +531,14 @@
 
             AllParams.Character = await _characterRepository.GetById(Id);
             AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
-            //AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
-
+            AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
+            AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
             ProfessionDTO = await _professionRepository.GetById(AllParams.Character.ProfessionId);
             if(ProfessionDTO.SpellCircles is not null)
             {
                 SpellCircles = ProfessionDTO.SpellCircles;
             }
             //profession skill traits
-
             ProfessionDTO.ActiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == true).ToList();
             ProfessionDTO.PassiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == false).ToList();
 
@@ -623,7 +594,6 @@
                 throw new WarningException("Choose class related attribute");
             }
 
-            // await _spellCircleRepository.Update()
             ProfessionDTO.SpellCircles = SpellCircles;
 
             await _professionRepository.Update(ProfessionDTO);
@@ -655,10 +625,6 @@
             IsLoading = false;
             await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
         }
-    }
-    private async Task OnCancelBtnClick()
-    {
-        _navigationManager.NavigateTo("#");
     }
 
     private async Task ChangeProfLevel()

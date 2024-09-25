@@ -10,9 +10,7 @@ namespace DA_Models.CharacterModels
     public class TraitProfessionDTO : TraitDTO
     {
         public TraitProfessionDTO() { }
-
-        public override string TraitType { get; set; } = SD.TraitType_Profession;
-        
+        public override string TraitType { get; set; } = SD.TraitType_Profession;        
         public int ProfessionId { get; set; }
         public int Level { get; set; }
         public int DC { get; set; }

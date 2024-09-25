@@ -39,8 +39,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in Trait Profession Repository Create");
             }
-                
-}
+        }
 
         public async Task<int> Delete(int id)
         {
@@ -63,7 +62,6 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<IEnumerable<TraitProfessionDTO>> GetAll(int? profId =null)
         {
-
             using var contex = await _db.CreateDbContextAsync();
             if (profId == null || profId < 1)
                 return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses));

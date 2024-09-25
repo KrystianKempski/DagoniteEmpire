@@ -46,6 +46,7 @@ namespace DA_Models.ComponentModels
             AdvTraitsChange();
             RaceTraitsChange();
             GearChange();
+            ProfessionTraitsChange();
         }
 
         public void TraitsChange(string? TraitType)
@@ -127,6 +128,28 @@ namespace DA_Models.ComponentModels
             }
             BattleProperties.CalculateBattleStats();
         }
+        public void ProfessionTraitsChange()
+        {
+            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
+
+            //clear all traits bonuses
+            foreach (var feat in allFeatures)
+            {
+                foreach (var obj in feat)
+                {
+                    if (obj.OtherBonuses != 0)
+                    {
+                        obj.OtherBonuses = 0;
+                    }
+                }
+            }
+
+            // calculate all gear traits in equipped items
+            if(Profession.PassiveSkills is not null && Profession.PassiveSkills.Any())
+            {
+               CalculateTraits(Profession.PassiveSkills.Cast<TraitDTO>().ToList(), SD.TraitType_Profession);
+            }
+        }
 
         private void CalculateTraits(ICollection<TraitDTO> traits, string TraitType)
         {
@@ -138,6 +161,7 @@ namespace DA_Models.ComponentModels
                 case SD.TraitType_Character: bonusName = nameof(feature.TraitBonus); break;
                 case SD.TraitType_Gear: bonusName = nameof(feature.GearBonus); break;
                 case SD.TraitType_Race: bonusName = nameof(feature.RaceBonus); break;
+                case SD.TraitType_Profession: bonusName = nameof(feature.OtherBonuses); break;
                 default: bonusName = string.Empty; break;
             }
 

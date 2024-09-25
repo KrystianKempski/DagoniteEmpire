@@ -115,18 +115,23 @@
                             <h3 class="my-3 ml-3 text-center">PORTRAIT</h3>
                             <div class="portrait-imageframe">
                                 <img src="@AllParams.Character.ImageUrl" class="portrait-image" />
-                                <div class="portrait-input">
+                                @* <div class="portrait-input"> *@
                                     @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                                     {
                                         <label class="input-label" for="input">@ChooseFile</label>
                                         <InputFile id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
                                     }
-                                </div>
+                                @* </div> *@
                             </div>
                    
                             <div class="points-control">
                                     <label class="points-label">Avalible experience points:</label>
-                                    <span class="points-indicator ml-auto">@AllParams.Character.CurrentExpPoints</span>
+                                    @if( UserInfo?.IsAdminOrMG == true)
+                                    {
+                                        <span class="points-indicator ml-auto"><MudNumericField Margin="0" Class="dense-numeric-field" Min="0" @bind-Value="AllParams.Character.CurrentExpPoints"></MudNumericField></span>
+                                    }else{
+                                        <span class="points-indicator ml-auto">@AllParams.Character.CurrentExpPoints</span>
+                                    }
                             </div>
                             <div class="points-control">
                                 @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
@@ -137,68 +142,12 @@
                             </div>
                         </div>
 
-                        <AttributeComponent OnAttributesChange="AttributeChange"></AttributeComponent>
+                        <AttributeComponent OnAttributesChange="ParamChange"></AttributeComponent>
                         
-                        <div class="baseskills border">
-                            <div class="sheet-img">
-                               @*  <img src="../images/old_paper2.png" class="stretch" /> *@
-                            </div>
-                            <h3 class="my-3 ml-3 text-center">BASE SKILLS</h3>
-                            <table class="table align-middle">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="name-row">Skill</th>
-                                        <th scope="col" class="bonus-row text-center">Base</th>
-                                        <th scope="col" class="sum-row text-center">Race</th>
-                                        <th scope="col" class="sum-row text-center">Gear</th>
-                                        <th scope="col" class="sum-row text-center">Trait</th>
-                                        <th scope="col" class="sum-row text-center"> Sum</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var obj in AllParams.BaseSkills)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <label class="names-label">@obj.Name.ToUpper()</label>
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.BaseBonus</span>
-                                                    <div class="arrows">
-                                                        <button @onclick="@(()=>IncrBSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
-                                                        <button @onclick="@(()=>DecrBSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.RaceBonus</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.GearBonus</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.TraitBonus</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="attr-control">
-                                                    <span class="attr-indicator">@obj.SumBonus</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
+                        <BaseSkillsComponent OnBaseSkillsChange="ParamChange"></BaseSkillsComponent>
 
                         <div class="races border">
-                            <RaceComponent OnTraitsChange="TraitsChange"></RaceComponent>
+                           <RaceComponent OnTraitsChange="ParamChange"></RaceComponent>
                         </div>
 
                         <div class="profession border">
@@ -211,7 +160,7 @@
                             </div>
                             <h3 class="my-3 ml-3 text-center">TRAITS</h3>
                             <div class="trait-container">
-                                <TraitsComponent  OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.Traits" TraitType="@SD.TraitType_Character"></TraitsComponent>
+                                <TraitsComponent OnTraitsChange="ParamChange" @bind-Traits="@AllParams.Traits" TraitType="@SD.TraitType_Character"></TraitsComponent>
                             </div>
                         </div>
 
@@ -219,7 +168,7 @@
                             <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
                         </div>
                         <div class="equipment border">
-                            <EquipmentComponent OnTraitsChange="TraitsChange"></EquipmentComponent>
+                            <EquipmentComponent OnTraitsChange="ParamChange"></EquipmentComponent>
                         </div>
                     </div>
                 </div>
@@ -247,7 +196,6 @@
                 </div>
             </section>
             <div class="form-group py-2">
-           @*   <button @onclick="SaveToJSON" class="btn btn-primary">Save to Json</button>  *@
                 <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
             </div>
            
@@ -262,7 +210,17 @@
     .e-richtexteditor .e-source-content {
         background: transparent;
     }
-    
+
+    .dense-numeric-field .mud-input-control-input-container .mud-input .mud-input-root {
+        padding: 4px !important;
+    }
+
+    .dense-numeric-field .mud-input-control-input-container .mud-input-underline {
+        margin-top: 0px !important;
+    }
+    /* .mud-input .mud-input-text .mud-input-underline .mud-shrink{
+        margin-top: 0px !important;
+    } */
 </style>
 
 
@@ -634,62 +592,6 @@
         }
     }
 
-
-    private async Task IncrBSBonus(BaseSkillDTO obj)
-    {
-
-        try
-        {
-            var relatedAttribute1 = AllParams.Attributes.Get(obj.RelatedAttribute1).BaseBonus;
-            var relatedAttribute2 = AllParams.Attributes.Get(obj.RelatedAttribute2).BaseBonus;
-            var limit = Math.Floor((double)(relatedAttribute1 + relatedAttribute2) / 6.0) + 1;
-            var expChange = 0;
-            string message;
-
-            if (obj.BaseBonus < limit)
-            {
-                expChange = 3 * (obj.BaseBonus + 1);
-                if (AllParams.Character.CurrentExpPoints >= expChange)
-                {
-                    AllParams.Character.CurrentExpPoints -= expChange;
-                    AllParams.Character.UsedExpPoints += expChange;
-                    obj.BaseBonus++;
-                    IsLeaveAllowed = false;
-                }
-                else
-                    await _jsRuntime.BaseSkillLimit("Not enought experience points");
-            }
-            else
-            {
-                message = "Maximum base bonus is limited by: " + obj.RelatedAttribute1 + " and " + obj.RelatedAttribute2 + " to value of " + limit.ToString();
-                await _jsRuntime.BaseSkillLimit(message);
-            }
-        }
-        catch (Exception ex)
-        {
-            IsLoading = false;
-            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
-        }
-    }
-
-    private async Task DecrBSBonus(BaseSkillDTO obj)
-    {
-        if (AllParams.Character.IsApproved == true){
-            await _jsRuntime.BaseSkillLimit("To revert changes refresh page without saving");
-            return;
-        }
-
-        var expChange = 3 * obj.BaseBonus;
-        if (obj.BaseBonus > 0)
-        {
-            AllParams.Character.CurrentExpPoints += expChange;
-            AllParams.Character.UsedExpPoints -= expChange;
-            obj.BaseBonus--;
-            IsLeaveAllowed = false;
-        }
-    }
-
-
     private void CharacterTypeHandle()
     {
         IsLeaveAllowed = false;
@@ -752,19 +654,12 @@
 
     private void GetDescription(string description) => AllParams.Character.Description = description;
 
-    protected void TraitsChange()
+    protected void ParamChange()
     {
         IsLeaveAllowed = false;
 
         StateHasChanged();
-    }
-    protected void AttributeChange()
-    {
-        IsLeaveAllowed = false;
-
-        StateHasChanged();
-    }
-    
+    }   
 
     private void AutoChooseRelatedAttributesForSpecialSkills()
     {
