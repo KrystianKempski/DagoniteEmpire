@@ -231,7 +231,7 @@
 
     [Parameter]
     public int Id { get; set; }
-    // private ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
+    //private ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
 
     private AllParamsModel AllParams { get; set; }
     private IDisposable? registration;
@@ -339,8 +339,8 @@
         AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
         AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Cast<TraitDTO>().ToList(); 
         //need Traits in base class to use Component
-        //Traits = new List<TraitDTO>();
-        // AllParams.TraitsCharacter.ToList().ForEach(t =>Traits.Add(new TraitCharacterDTO(t, AllParams.Character)));
+        //AllParams.TraitsCharacter = new List<TraitDTO>();
+        //AllParams.TraitsCharacter.ToList().ForEach(t =>Traits.Add(new TraitCharacterDTO(t, AllParams.Character)));
         AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
         AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
         AllParams.Profession.ActiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == true).ToList();
@@ -383,9 +383,9 @@
                     AllParams.Character.RaceId = 0;
                 }
                 // create traits (in character)
-                // Traits.ToList().ForEach(t => AllParams.TraitsCharacter.Add(new(t, AllParams.Character)));
-                // AllParams.TraitsCharacter = Traits;
-                AllParams.Character.Traits = AllParams.TraitsCharacter;
+                //AllParams.TraitsCharacter = Traits;
+                AllParams.TraitsCharacter.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character)));
+                //AllParams.Character.TraitsCharacter = AllParams.TraitsCharacter;
                 // create equipment (in character)
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
@@ -474,8 +474,12 @@
                     }
                 }
 
-                // update Adv traits
-                AllParams.Character.Traits = AllParams.TraitsCharacter;
+                // update Character traits
+                if (AllParams.Character is not null && AllParams.Character.TraitsCharacter is not null)
+                {
+                    AllParams.Character.TraitsCharacter.Clear();
+                    AllParams.TraitsCharacter.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character)));
+                }
                 //Traits.ToList().ForEach(t => AllParams.Character.Traits.Add(new(t, AllParams.Character))); //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
 
                 // update equipment (in character)
@@ -663,7 +667,7 @@
     protected void CharacterTraitsChange()
     {
         IsLeaveAllowed = false;
-       // AllParams.TraitsCharacter = Traits;
+        //AllParams.TraitsCharacter = Traits;
         AllParams.TraitsChange(SD.TraitType_Character);
         StateHasChanged();
     }

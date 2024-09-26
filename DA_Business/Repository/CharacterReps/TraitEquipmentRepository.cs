@@ -63,7 +63,6 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<IEnumerable<TraitEquipmentDTO>> GetAll(int? charId =null)
         {
-
             using var contex = await _db.CreateDbContextAsync();
             if (charId == null || charId < 1)
                 return _mapper.Map<IEnumerable<TraitEquipment>, IEnumerable<TraitEquipmentDTO>>(contex.TraitsEquipment.Include(u => u.Bonuses));
@@ -72,7 +71,6 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<IEnumerable<TraitEquipmentDTO>> GetAllApproved(bool addUnique = false)
         {
-
             using var contex = await _db.CreateDbContextAsync();
             if (addUnique)
                 return _mapper.Map<IEnumerable<TraitEquipment>, IEnumerable<TraitEquipmentDTO>>(contex.TraitsEquipment.Include(u => u.Bonuses).Where(t => t.TraitApproved == true));
@@ -82,7 +80,6 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<TraitEquipmentDTO> GetById(int id)
         {
-
             using var contex = await _db.CreateDbContextAsync();
             var obj = await contex.TraitsEquipment.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)

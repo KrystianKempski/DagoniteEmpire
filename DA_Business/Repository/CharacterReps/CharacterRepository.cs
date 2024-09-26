@@ -41,11 +41,11 @@ namespace DA_Business.Repository.CharacterReps
                 var traits = await contex.TraitsCharacter.ToListAsync();
                 traits.ForEach(t =>
                 {
-                    if (obj.TraitsAdv.Any(nt => nt.Id == t.Id))
+                    if (obj.TraitsCharacter.Any(nt => nt.Id == t.Id))
                     {
-                        var untracked = obj.TraitsAdv.FirstOrDefault(nt => nt.Id == t.Id);
-                        obj.TraitsAdv.Remove(untracked);
-                        obj.TraitsAdv.Add(t);
+                        var untracked = obj.TraitsCharacter.FirstOrDefault(nt => nt.Id == t.Id);
+                        obj.TraitsCharacter.Remove(untracked);
+                        obj.TraitsCharacter.Add(t);
                     }
                 });
 
@@ -79,10 +79,10 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 //delete traits adv
-                var obj = await contex.Characters.Include(c=>c.TraitsAdv).Include(c=>c.EquipmentSlots).FirstOrDefaultAsync(u => u.Id == id);
-                if (!obj.TraitsAdv.IsNullOrEmpty())
+                var obj = await contex.Characters.Include(c=>c.TraitsCharacter).Include(c=>c.EquipmentSlots).FirstOrDefaultAsync(u => u.Id == id);
+                if (!obj.TraitsCharacter.IsNullOrEmpty())
                 {
-                    obj.TraitsAdv.Where(t=>t.TraitApproved == false).ToList().ForEach(t => contex.TraitsCharacter.Remove(t));
+                    obj.TraitsCharacter.Where(t=>t.TraitApproved == false).ToList().ForEach(t => contex.TraitsCharacter.Remove(t));
                 }
                 //delete race
                 var race = await contex.Races.Include(c => c.Traits).FirstOrDefaultAsync(u => u.Id == obj.RaceId && u.RaceApproved == false);
@@ -93,7 +93,7 @@ namespace DA_Business.Repository.CharacterReps
                     contex.Races.Remove(race);
                 }
                 //delete equipment slots
-                if (!obj.TraitsAdv.IsNullOrEmpty())
+                if (!obj.TraitsCharacter.IsNullOrEmpty())
                 {
                     obj.EquipmentSlots.ToList().ForEach(e =>
                     {
@@ -135,13 +135,13 @@ namespace DA_Business.Repository.CharacterReps
             using var contex = await _db.CreateDbContextAsync();
             if (id == null || id < 1)
                 return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
-                    .Include(r => r.TraitsAdv)
+                    .Include(r => r.TraitsCharacter)
                     .Include(r => r.Race)
                     .Include(r => r.Profession)
                     .Include(r=>r.EquipmentSlots)
                     .Where(u=>u.NPCName != SD.NPCName_GameMaster));
             return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
-                .Include(r => r.TraitsAdv)
+                .Include(r => r.TraitsCharacter)
                 .Include(r => r.Race)
                 .Include(r => r.Profession)
                 .Include(r => r.EquipmentSlots)
@@ -152,7 +152,7 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             var obj = await contex.Characters
-                .Include(t => t.TraitsAdv).ThenInclude(b=>b.Bonuses)
+                .Include(t => t.TraitsCharacter).ThenInclude(b=>b.Bonuses)
                 .Include(r=>r.Race).Include(r => r.Profession)
                 .Include(r => r.EquipmentSlots).
                 FirstOrDefaultAsync(u => u.Id == id);
@@ -167,7 +167,7 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             var obj = await contex.Characters
-                .Include(t => t.TraitsAdv).ThenInclude(b => b.Bonuses)
+                .Include(t => t.TraitsCharacter).ThenInclude(b => b.Bonuses)
                 .Include(r => r.Race)
                 .Include(r => r.Profession)
                 .Include(r => r.EquipmentSlots)
@@ -213,7 +213,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = await contex.Characters
-                    .Include(u => u.TraitsAdv).ThenInclude(t => t.Bonuses)
+                    .Include(u => u.TraitsCharacter).ThenInclude(t => t.Bonuses)
                     .Include(u=>u.EquipmentSlots).ThenInclude(e => e.Equipment).ThenInclude(e=>e.Traits).ThenInclude(t=>t.Bonuses)
                     .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
 
@@ -231,11 +231,11 @@ namespace DA_Business.Repository.CharacterReps
                     /// UPDATE TRAITS
 
                     // Delete adv traits
-                    if (obj.TraitsAdv is not null)
+                    if (obj.TraitsCharacter is not null)
                     {
-                        foreach (var existingChild in obj.TraitsAdv.ToList())
+                        foreach (var existingChild in obj.TraitsCharacter.ToList())
                         {
-                            if (!updatedChar.TraitsAdv.Any(c => c.Id == existingChild.Id))
+                            if (!updatedChar.TraitsCharacter.Any(c => c.Id == existingChild.Id))
                             {
                                 if (existingChild.TraitApproved == true)
                                 {
@@ -254,19 +254,19 @@ namespace DA_Business.Repository.CharacterReps
                     }
 
                     // Update and Insert traits
-                    if (updatedChar.TraitsAdv is not null)
+                    if (updatedChar.TraitsCharacter is not null)
                     {
-                        foreach (var trait in updatedChar.TraitsAdv)
+                        foreach (var trait in updatedChar.TraitsCharacter)
                         {
                             TraitCharacter? existingTrait = null;
-                            if (obj.TraitsAdv is not null)
+                            if (obj.TraitsCharacter is not null)
                             {
-                                existingTrait = obj.TraitsAdv
+                                existingTrait = obj.TraitsCharacter
                                     .FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
                             }
                             else 
                             {   
-                                obj.TraitsAdv = new List<TraitCharacter>();
+                                obj.TraitsCharacter = new List<TraitCharacter>();
                             }
 
                             if (existingTrait == null)
@@ -276,7 +276,7 @@ namespace DA_Business.Repository.CharacterReps
 
                             if (existingTrait is not null)
                             {
-                                if (existingTrait.TraitApproved && obj.TraitsAdv.Contains(existingTrait) == false)
+                                if (existingTrait.TraitApproved && obj.TraitsCharacter.Contains(existingTrait) == false)
                                 {
                                     // adding already existing, approved trait to character
                                     if (existingTrait.Characters is null)
@@ -331,7 +331,7 @@ namespace DA_Business.Repository.CharacterReps
                             }
                             else
                                 // Insert trait
-                                obj.TraitsAdv.Add(trait);
+                                obj.TraitsCharacter.Add(trait);
                         }
                     }
                     /// UPDATE EQUIPMENT
