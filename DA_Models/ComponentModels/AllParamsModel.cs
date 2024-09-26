@@ -30,8 +30,8 @@ namespace DA_Models.ComponentModels
         public IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = Enumerable.Empty<BaseSkillDTO>();
 
         public SpecialSkillModel SpecialSkills { get; set; }
-        public ICollection<TraitCharacterDTO> TraitsCharacter { get; set; } = new List<TraitCharacterDTO>();
-        public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
+        public ICollection<TraitDTO> TraitsCharacter { get; set; } = new List<TraitDTO>();
+        //public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
         public ICollection<TraitDTO> TraitsProfession { get; set; } = new List<TraitDTO>();
         public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
         public ICollection<EquipmentSlotDTO> EquipmentSlots { get; set; } = new List<EquipmentSlotDTO>();
@@ -49,7 +49,7 @@ namespace DA_Models.ComponentModels
             ProfessionTraitsChange();
         }
 
-        public void TraitsChange(string? TraitType)
+        public void TraitsChange(string? TraitType = null)
         {
             if (TraitType.IsNullOrEmpty())
                 throw new Exception("No trait type");
@@ -79,7 +79,14 @@ namespace DA_Models.ComponentModels
             }
 
             // calculate all traits adv
-            CalculateTraits(Traits, SD.TraitType_Character);
+            CalculateTraits(TraitsCharacter.Cast<TraitDTO>().ToList(), SD.TraitType_Character);
+
+            // recalculate trait balance
+            Character.TraitBalance = 0;
+            foreach (var trait in TraitsCharacter)
+            {
+                Character.TraitBalance += trait.TraitValue;
+            }
         }
 
         public void RaceTraitsChange()

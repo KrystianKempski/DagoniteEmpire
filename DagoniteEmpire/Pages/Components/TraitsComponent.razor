@@ -1,5 +1,6 @@
 ﻿@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
+@inject IDialogService DialogService
 @inject IUserService _userService
 <div class="traits">
     <div class="table-container">
@@ -73,159 +74,128 @@
             </div>
         }
     </div>
-      
-    @if (CustomTraitComponent != null)
-    {
-        <CustomTraitDialog @bind-CustomTraitModel="@CustomTraitComponent" TraitType="@TraitType"></CustomTraitDialog>
-    }
-    @if (TraitsChosen != null)
-    {
-        <ExistingTraitsDialog @bind-TraitsChosen="@TraitsChosen"></ExistingTraitsDialog>
-    }
 </div>
 
 @code {
-
     [Parameter]
-    public ICollection<TraitDTO> Traits { get; set; } = null;
+    public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
     [Parameter]
     public EventCallback<ICollection<TraitDTO>> TraitsChanged { get; set; }
-
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
     [Parameter]
     public EventCallback OnTraitsChange { get; set; }
-
-    public UserInfo? UserInfo { get; set; }
-
     [Parameter]
     public string TraitType { get; set; } = string.Empty;
-
     [Parameter]
     public bool WeaponQualityAvalible { get; set; } = false;
 
+    public UserInfo? UserInfo { get; set; }
+    public TraitDTO NewTrait { get; set; } = new();
     [Parameter]
     public bool IsInfoMode {get; set;} = false;
 
-
-    private CustomTraitModel _customTraitComponent = new();
-    private CustomTraitModel CustomTraitComponent
-    {
-        get => _customTraitComponent;
-        set
-        {
-            if (value.TraitDTO != null)
-            {
-                var obj = Traits.FirstOrDefault(u => u.Name == value.TraitDTO.Name);
-                if (obj == null)
-                {
-                    Traits.Add(value.TraitDTO);
-
-                }
-                else
-                {
-                    obj = value.TraitDTO;
-                }
-
-                TraitsChanged.InvokeAsync(Traits);
-                AllParams.TraitsChange(TraitType);
-                OnTraitsChange.InvokeAsync();
-                if(_customTraitComponent.IsWeaponQualityMode == false)
-                    CalculateTraitBalance();
-            }
-            if (_customTraitComponent == value) return;
-            _customTraitComponent = value;
-        }
-    }
-
-    private TraitsChosenModel _traitsChosen;
-    private TraitsChosenModel TraitsChosen
-    {
-        get => _traitsChosen;
-        set
-        {
-            if (value.TraitsChosen != null && value.TraitsChosen.Count() > 0)
-            {
-                foreach (var trait in value.TraitsChosen)
-                {
-                    if (Traits.FirstOrDefault(u => u.Name == trait.Name) == null)
-                    {
-                        Traits.Add(trait);
-                    }
-                }
-                TraitsChanged.InvokeAsync(Traits);
-                AllParams.TraitsChange(TraitType);
-                OnTraitsChange.InvokeAsync();
-                CalculateTraitBalance();
-            }
-            if (_traitsChosen == value) return;
-            _traitsChosen = value;
-        }
-    }
-
     protected override async Task OnInitializedAsync()
     {
-
         UserInfo = await _userService.GetUserInfo();
     }
 
     private async Task AddCustomTrait()
     {
-        CustomTraitModel ctm = new();
-        ctm.TraitDTO = new();
-        ctm.IsVisible = true;
-        ctm.IsEditMode = false;
-        ctm.IsWeaponQualityMode = false;
-        CustomTraitComponent = ctm;
+        NewTrait = new();
+        var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
+                                                                    { x => x.TraitType, TraitType },
+                                                                    { x => x.AllParams, AllParams } };
+
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create trait", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewTrait = (TraitDTO)result.Data;
+            Traits.Add(NewTrait);
+            await UpdateTraits();
+            StateHasChanged();
+        }
     }
     private async Task AddWeaponQualities()
     {
-        CustomTraitModel ctm = new();
-        ctm.TraitDTO = new();
-        ctm.IsVisible = true;
-        ctm.IsEditMode = false;
-        ctm.IsWeaponQualityMode = true;
-        CustomTraitComponent = ctm;
+        NewTrait = new();
+        var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
+                                                                    { x => x.TraitType, TraitType },
+                                                                    { x => x.IsWeaponQualityMode, true }, 
+                                                                    { x => x.AllParams, AllParams } };
+
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create weapon quality", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewTrait = (TraitDTO)result.Data;
+            Traits.Add(NewTrait);
+            await UpdateTraits();
+            StateHasChanged();
+        }
     }
 
     private async Task AddExistingTrait()
     {
-        TraitsChosen = new();
-        TraitsChosen.IsVisible = true;
-        TraitsChosen.TraitType = TraitType;
+        List<TraitDTO> ChosenTraits = new List<TraitDTO>();
+
+        NewTrait = new();
+        var parameters = new DialogParameters<ExistingTraitDialog> { { x => x.ChosenTraits, ChosenTraits },
+                                                                   { x => x.TraitType, TraitType },
+                                                                   { x => x.AllParams, AllParams }};
+
+        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select traits", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            ChosenTraits = (List<TraitDTO>)result.Data;
+            if (ChosenTraits is null)
+                throw new Exception("error in trait selection dialog");
+            Traits.Add(NewTrait);
+
+            foreach (var trait in ChosenTraits)
+            {
+                if (Traits.FirstOrDefault(u => u.Name == trait.Name) == null)
+                {
+                    Traits.Add(trait);
+                }
+            }
+            await UpdateTraits();
+            StateHasChanged();
+        }
     }
 
     private async Task EditTrait(TraitDTO trait)
     {
-        CustomTraitModel ctm = new();
-        ctm.TraitDTO = trait;
-        ctm.IsVisible = true;
-        ctm.IsEditMode = false;
+        bool IsInfoMode = false, IsWeaponQualityMode = false;
         if (trait.TraitApproved)
-        {
-            ctm.IsInfoMode = true;
-        }
+            IsInfoMode = true;
         if(trait.TraitType == SD.TraitType_Gear  && trait.Bonuses.First().FeatureType == SD.FeatureWeaponQuality)
-        {
-            ctm.IsWeaponQualityMode = true;
-        }
+            IsWeaponQualityMode = true;
         else
-        {
-            ctm.IsWeaponQualityMode = false;
-        }
-        CustomTraitComponent = ctm;
-        if(CustomTraitComponent.IsWeaponQualityMode == false)
-            CalculateTraitBalance();
-    }
+            IsWeaponQualityMode = false;
 
-    private void CalculateTraitBalance()
-    {
-        AllParams.Character.TraitBalance = 0;
-        foreach (var trait in Traits)
+        NewTrait = new();
+        var parameters = new DialogParameters<CreateTraitDialog> { { x => x.NewTrait, NewTrait },
+                                                                   { x => x.TraitType, TraitType },
+                                                                   { x => x.AllParams, AllParams },
+                                                                   { x => x.IsWeaponQualityMode, IsWeaponQualityMode },
+                                                                   { x => x.IsInfoMode, IsInfoMode }};
+
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Edit trait", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
         {
-            AllParams.Character.TraitBalance += trait.TraitValue;
+            NewTrait = (TraitDTO)result.Data;
+            Traits.Add(NewTrait);
+            await UpdateTraits();
+            StateHasChanged();
         }
-        StateHasChanged();
     }
 
     private async Task DeleteTrait(TraitDTO trait)
@@ -245,7 +215,14 @@
 
         }
         Traits = Traits.Where(u => u.Name != trait.Name).ToList();
+        await UpdateTraits();
+        StateHasChanged();
+    }
+
+    private async Task UpdateTraits()
+    {
         await TraitsChanged.InvokeAsync(Traits);
-        CalculateTraitBalance();
+        //AllParams.TraitsChange(TraitType);
+        await OnTraitsChange.InvokeAsync();
     }
 }

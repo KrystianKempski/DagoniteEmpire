@@ -13,7 +13,8 @@ namespace DA_Models.CharacterModels
         {
             foreach (var prop in traitDTO.GetType().GetProperties())
             {
-                this.GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(traitDTO, null), null);
+                if(this.GetType().GetProperty(prop.Name).CanWrite)
+                    this.GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(traitDTO, null), null);
             }
             if(this.Characters is not null)
             {

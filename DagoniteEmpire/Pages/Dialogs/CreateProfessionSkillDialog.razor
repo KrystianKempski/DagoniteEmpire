@@ -233,7 +233,7 @@
             ErrorMessage = $"Create name and description of trait";
             return;
         }
-        if (ProfessionSkillModel.IsEditMode == false && AllParams.Traits.Where(t => t.Name == ProfessionSkillModel.TraitDTO.Name).Count() > 0)
+        if (ProfessionSkillModel.IsEditMode == false && AllParams.TraitsProfession.Where(t => t.Name == ProfessionSkillModel.TraitDTO.Name).Count() > 0)
         {
             ErrorMessage = $"That trait name already exists";
             return;

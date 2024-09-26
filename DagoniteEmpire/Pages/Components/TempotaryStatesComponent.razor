@@ -1,0 +1,242 @@
+﻿@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
+@inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
+@inject IUserService _userService
+<div class="temps">
+    <div class="table-container">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th scope="col" class="name-row">Name</th>
+                    <th scope="col" class="description-row">Description</th>
+                    @if (TraitType == SD.TraitType_Character)
+                    {
+                        <th scope="col" class="trait-value-row text-center">Value</th>
+                    }
+                    @if (IsInfoMode == false)
+                    {
+                        <th scope="col" class="action-row text-center">Actions</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var obj in Traits)
+                {
+                    <tr>
+                        <td>
+                            <label class="name-label">@obj.Name</label>
+                        </td>
+                        <td>
+                            <label class="name-label">@obj.SummaryDescr</label>
+                        </td>
+                        @if (TraitType == SD.TraitType_Character)
+                        {
+                            <td class="text-center">
+                                <label class="name-label text-center">@obj.TraitValue</label>
+                            </td>
+                        }
+                        @if (IsInfoMode == false)
+                        {
+                            <td>
+                                <div class="row m-0">
+                                    @if (obj.TraitApproved)
+                                    {
+                                        <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-info"></i></button>
+                                    }
+                                    else
+                                    {
+                                        <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
+                                    }
+                                    <button @onclick="@(()=>DeleteTrait(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="row">
+        @if (TraitType == SD.TraitType_Character && (UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false))
+        {
+            <label class="balance">Traits balance: @AllParams.Character.TraitBalance </label>
+        }
+
+        @if (IsInfoMode == false || UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Character)
+        {
+            <div class="buttons-row">
+                <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add trait</button>
+                @if (TraitType == SD.TraitType_Gear && WeaponQualityAvalible)
+                {
+                    <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Add weapon qualities</button>
+                }
+                <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing traits</button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public ICollection<TraitDTO> Traits { get; set; } = null;
+    [Parameter]
+    public EventCallback<ICollection<TraitDTO>> TraitsChanged { get; set; }
+
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
+    [Parameter]
+    public EventCallback OnTraitsChange { get; set; }
+
+    public UserInfo? UserInfo { get; set; }
+
+    [Parameter]
+    public string TraitType { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool WeaponQualityAvalible { get; set; } = false;
+
+    [Parameter]
+    public bool IsInfoMode { get; set; } = false;
+
+
+    private CustomTraitModel _customTraitComponent = new();
+    private CustomTraitModel CustomTraitComponent
+    {
+        get => _customTraitComponent;
+        set
+        {
+            if (value.TraitDTO != null)
+            {
+                var obj = Traits.FirstOrDefault(u => u.Name == value.TraitDTO.Name);
+                if (obj == null)
+                {
+                    Traits.Add(value.TraitDTO);
+
+                }
+                else
+                {
+                    obj = value.TraitDTO;
+                }
+
+                TraitsChanged.InvokeAsync(Traits);
+                AllParams.TraitsChange(TraitType);
+                OnTraitsChange.InvokeAsync();
+                if (_customTraitComponent.IsWeaponQualityMode == false)
+                    CalculateTraitBalance();
+            }
+            if (_customTraitComponent == value) return;
+            _customTraitComponent = value;
+        }
+    }
+
+    private TraitsChosenModel _traitsChosen;
+    private TraitsChosenModel TraitsChosen
+    {
+        get => _traitsChosen;
+        set
+        {
+            if (value.TraitsChosen != null && value.TraitsChosen.Count() > 0)
+            {
+                foreach (var trait in value.TraitsChosen)
+                {
+                    if (Traits.FirstOrDefault(u => u.Name == trait.Name) == null)
+                    {
+                        Traits.Add(trait);
+                    }
+                }
+                TraitsChanged.InvokeAsync(Traits);
+                AllParams.TraitsChange(TraitType);
+                OnTraitsChange.InvokeAsync();
+                CalculateTraitBalance();
+            }
+            if (_traitsChosen == value) return;
+            _traitsChosen = value;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        UserInfo = await _userService.GetUserInfo();
+    }
+
+    private async Task AddCustomTrait()
+    {
+        CustomTraitModel ctm = new();
+        ctm.TraitDTO = new();
+        ctm.IsVisible = true;
+        ctm.IsEditMode = false;
+        ctm.IsWeaponQualityMode = false;
+        CustomTraitComponent = ctm;
+    }
+    private async Task AddWeaponQualities()
+    {
+        CustomTraitModel ctm = new();
+        ctm.TraitDTO = new();
+        ctm.IsVisible = true;
+        ctm.IsEditMode = false;
+        ctm.IsWeaponQualityMode = true;
+        CustomTraitComponent = ctm;
+    }
+
+    private async Task AddExistingTrait()
+    {
+        TraitsChosen = new();
+        TraitsChosen.IsVisible = true;
+        TraitsChosen.TraitType = TraitType;
+    }
+
+    private async Task EditTrait(TraitDTO trait)
+    {
+        CustomTraitModel ctm = new();
+        ctm.TraitDTO = trait;
+        ctm.IsVisible = true;
+        ctm.IsEditMode = false;
+        if (trait.TraitApproved)
+        {
+            ctm.IsInfoMode = true;
+        }
+        if (trait.TraitType == SD.TraitType_Gear && trait.Bonuses.First().FeatureType == SD.FeatureWeaponQuality)
+        {
+            ctm.IsWeaponQualityMode = true;
+        }
+        else
+        {
+            ctm.IsWeaponQualityMode = false;
+        }
+        CustomTraitComponent = ctm;
+        if (CustomTraitComponent.IsWeaponQualityMode == false)
+            CalculateTraitBalance();
+    }
+
+    private void CalculateTraitBalance()
+    {
+        AllParams.Character.TraitBalance = 0;
+        foreach (var trait in Traits)
+        {
+            AllParams.Character.TraitBalance += trait.TraitValue;
+        }
+        StateHasChanged();
+    }
+
+    private async Task DeleteTrait(TraitDTO trait)
+    {
+        if (trait.Id != 0)
+        {
+
+            if (trait.TraitType == SD.TraitType_Character && trait.TraitApproved == false)
+            {
+                await _traitCharacterRepository.Delete(trait.Id);
+
+            }
+            else if (trait.TraitType == SD.TraitType_Race && trait.TraitApproved == false)
+            {
+                await _traitRaceRepository.Delete(trait.Id);
+            }
+
+        }
+        Traits = Traits.Where(u => u.Name != trait.Name).ToList();
+        await TraitsChanged.InvokeAsync(Traits);
+        CalculateTraitBalance();
+    }
+}

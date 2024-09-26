@@ -1,0 +1,319 @@
+﻿@using DA_DataAccess.CharacterClasses
+@inject ISnackbar Snackbar
+@inject IUserService _userService
+
+<MudDialog >
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+                <MudIcon Icon="@MyIcon.Scroll" Color="Color.Primary" />
+                @HeaderName
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+            <div class="main-table">
+
+            @if(IsWeaponQualityMode){
+            }
+            else
+            {
+                <div class="d-flex ">
+                    <div class="d-flex flex-column flex-grow-1">
+                    <label class="fw-bold py-1">Trait name</label>
+                        <SfTextBox Readonly="IsInfoMode" Placeholder="Insert trait name" @bind-Value="@NewTrait.Name"></SfTextBox>
+                    </div>
+                    @if (TraitType == SD.TraitType_Character)
+                    {
+                        <div class="d-flex flex-column px-1">
+                            <label class="fw-bold py-1">Trait value</label>
+                            <SfNumericTextBox Readonly="IsInfoMode" Width="100px" TValue="int" @bind-Value="@NewTrait.TraitValue"></SfNumericTextBox>
+                        </div>
+                        <div class="d-flex flex-column px-1">
+                            <label class="fw-bold py-1">Unique</label>
+                            <div class="justify-content-center mx-auto my-auto">
+                                <SfCheckBox Disabled="IsInfoMode" @bind-Checked="NewTrait.IsUnique "></SfCheckBox>
+                            </div>
+                        </div>
+                    }
+                    @if (UserInfo?.IsAdminOrMG == true)
+                    {
+                    <div class="d-flex flex-column px-1">
+                        <label class="fw-bold py-1">Approve</label>
+                        <div class="justify-content-center mx-auto my-auto">
+                                <SfCheckBox @bind-Checked="NewTrait.TraitApproved"></SfCheckBox>
+                        </div>
+                    </div>
+                    }
+                </div>
+                <div class="align-items-start bonus-name py-0">
+                    <label class="fw-bold  py-1">Trait description</label>
+                </div>
+                <div class="align-items-start">
+                    <div class="col-12 bonus-name py-0">
+                        <SfTextBox Readonly="IsInfoMode" Multiline=true Placeholder="Insert general trait description" @bind-Value="@NewTrait.Descr"></SfTextBox>
+                    </div>
+                </div>
+                        
+                <label class="fw-bold pt-4">Bonuses and penalties</label>
+            }
+            @if (NewTrait.Bonuses != null)
+            {
+                @foreach (var obj in NewTrait.Bonuses)
+                {
+                    <label class="bonus-cell">Bonus @obj.Index</label>
+                    <div class="bonuses-columns">
+                            <div class="bonus-cell">
+                            <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType" Enabled="@IsNotWeaponQuality()"></SfDropDownList>
+                            </div>
+                        @if (obj.FeatureType == SD.FeatureAttribute)
+                        {
+                            <div class="bonus-cell">
+                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes.GetAllArray()" @bind-Value="@obj.FeatureName">
+                                    <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                </SfDropDownList>
+                            </div>
+                        }
+                        else if (obj.FeatureType == SD.FeatureBaseSkill)
+                        {
+                            <div class="bonus-cell">
+                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@AllParams.BaseSkills" @bind-Value="@obj.FeatureName">
+                                    <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                </SfDropDownList>
+                            </div>
+                        }
+                        else if (obj.FeatureType == SD.FeatureSpecialSkill)
+                        {
+                            <div class="bonus-cell">
+                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills.GetAllArray()" @bind-Value="@obj.FeatureName">
+                                    <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                </SfDropDownList>
+                            </div>
+                        }
+                        else if (obj.FeatureType == SD.FeatureWeaponQuality)
+                        {
+                            <div class="bonus-cell">
+                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="string" Width="100%" Placeholder="Select special skill " DataSource="@WeaponQualityList" @bind-Value="@obj.FeatureName">
+                                    <DropDownListFieldSettings Value="Id" Text="Id"></DropDownListFieldSettings>
+                                </SfDropDownList>
+                            </div>
+                        }
+                        else if(obj.FeatureType == SD.FeatureOther)
+                        {
+                            <div class="bonus-double-cell">
+                                <SfTextBox Readonly="IsInfoMode" Multiline=true Placeholder="Insert bonus description" @bind-Value="@obj.Description"></SfTextBox>
+
+                            </div>
+                        }
+                        @if (@obj.FeatureName != null && @obj.FeatureType != SD.FeatureOther)
+                        {
+                            if (obj.FeatureType == SD.FeatureWeaponQuality)
+                            {
+                                <div class="bonus-cell">
+                                    <SfNumericTextBox Readonly="IsInfoMode" Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="bonus-cell">
+                                    <SfNumericTextBox Readonly="IsInfoMode" Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            }
+            @if(IsInfoMode==false)
+            {
+                <div class="d-flex">
+                    <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
+                    <button class="add-bonus-button" @onclick="OnDeleteBonusBtnClick"><i class="fa-solid fa-minus"></i></button>
+                </div>
+            }
+        <label class="warnign-message">@ErrorMessage</label>
+                    
+        </div> 
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public string TraitType { get; set; } = SD.TraitType_Character;
+    [Parameter] public TraitDTO NewTrait { get; set; }
+    [Parameter] public bool IsEditMode { get; set; } = false;
+    [Parameter] public bool IsInfoMode { get; set; } = false;
+    [Parameter] public bool IsWeaponQualityMode { get; set; } = false;
+    [Parameter] public AllParamsModel AllParams { get; set; }
+
+    public string HeaderName { get; set; } = "";
+
+    public UserInfo? UserInfo { get; set; }
+
+
+    private bool IsNotWeaponQuality()
+    {
+        return !IsWeaponQualityMode;
+    }
+
+    List<string> WeaponQualityList = new List<string> {
+        SD.WeaponQuality.Fast,
+        SD.WeaponQuality.Slow,
+        SD.WeaponQuality.Parrying ,
+        SD.WeaponQuality.ShieldDestructive ,
+        SD.WeaponQuality.ArmorPiercing,
+        SD.WeaponQuality.Long,
+        SD.WeaponQuality.Heavy,
+        SD.WeaponQuality.Devastating,
+        SD.WeaponQuality.Weak ,
+        SD.WeaponQuality.Stunning,
+        SD.WeaponQuality.Snatching,
+        SD.WeaponQuality.Disarming,
+        SD.WeaponQuality.Armor,
+        SD.WeaponQuality.ArmorDefenceBonus,
+        SD.WeaponQuality.ArmorPenalty,
+        SD.WeaponQuality.Durability,
+        SD.WeaponQuality.ShieldDefenceBonus,
+        SD.WeaponQuality.Bulky,
+        SD.WeaponQuality.Precise,
+        SD.WeaponQuality.Range,
+        SD.WeaponQuality.Light,
+        SD.WeaponQuality.TwoHanded,
+      };
+
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    private List<string> FeatureData = new List<string>
+    {
+        SD.FeatureAttribute,
+        SD.FeatureBaseSkill,
+        SD.FeatureSpecialSkill,
+        SD.FeatureWeaponQuality,
+        SD.FeatureOther
+    };
+
+    private void OnSaveTraitBtnClick()
+    {
+
+        if (IsWeaponQualityMode)
+        {
+            NewTrait.Name = "Weapon parameters";
+            NewTrait.Descr = "";
+        }
+        else
+        {
+
+            if (string.IsNullOrEmpty(NewTrait.Name) || string.IsNullOrEmpty(NewTrait.Descr))
+            {
+                ErrorMessage = $"Create name and description of trait";
+                return;
+            }
+            if (IsEditMode == false && TraitType == SD.TraitType_Character && AllParams.TraitsCharacter.Where(t => t.Name == NewTrait.Name).Count() > 0)
+            {
+                ErrorMessage = $"That trait name already exists";
+                return;
+            }
+        }
+        foreach (var bonus in NewTrait.Bonuses)
+        {
+            if (bonus.BonusValue == 0 && bonus.Description == string.Empty)
+            {
+                ErrorMessage = $"Please fill all input fiels in bonus";
+                return;
+            }
+        }
+        if (!NewTrait.Bonuses.GroupBy(x => x.FeatureName).All(g => g.Count() == 1))
+        {
+            ErrorMessage = $"Bonuses cannot relate to the same feature more than once";
+            return;
+        }
+
+
+        ErrorMessage = string.Empty;
+
+        if (IsWeaponQualityMode)
+            NewTrait.Descr = NewTrait.SummaryDescr;
+
+        NewTrait.TraitType = TraitType;
+
+        MudDialog.Close(DialogResult.Ok(NewTrait));
+        if (IsEditMode)
+            Snackbar.Add("Trait edited", Severity.Success);
+        else
+            Snackbar.Add("Trait created", Severity.Success);
+
+    }
+    private void OnCancelBtnClick()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void OnAddBonusBtnClick()
+    {
+        ErrorMessage = string.Empty;
+        if (NewTrait.Bonuses == null)
+            NewTrait.Bonuses = new List<BonusDTO>();
+        var bonus = new BonusDTO();
+        bonus.Index = NewTrait.Bonuses.Count() + 1;
+        if(IsWeaponQualityMode == true)
+        {
+            bonus.FeatureType = SD.FeatureWeaponQuality;
+        }
+        NewTrait.Bonuses.Add(bonus);
+    }
+
+    private void OnDeleteBonusBtnClick()
+    {
+        ErrorMessage = string.Empty;
+        if (NewTrait.Bonuses is not null && NewTrait.Bonuses.Count() > 0)
+        {
+            NewTrait.Bonuses.Remove(NewTrait.Bonuses.Last());
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
+        ErrorMessage = string.Empty;
+        if (IsWeaponQualityMode)
+        {
+            if (IsEditMode)
+                HeaderName = "Edit weapon properties";
+            else
+                HeaderName = "Create weapon properties";
+            FeatureData = new List<string>
+            {
+                SD.FeatureWeaponQuality
+            };
+        }
+        else
+        {
+            FeatureData = new List<string>
+            {
+                SD.FeatureAttribute,
+                SD.FeatureBaseSkill,
+                SD.FeatureSpecialSkill,
+                SD.FeatureWeaponQuality,
+                SD.FeatureOther
+            };
+
+            if (TraitType == SD.TraitType_Profession)
+            {
+                HeaderName = "Edit proffestion skill";
+            }
+            else
+            {
+                if (IsEditMode)
+                    HeaderName = "Edit trait";
+                else
+                {
+                    HeaderName = "Create a new trait";
+                }
+            }
+        }
+        
+    }
+
+}

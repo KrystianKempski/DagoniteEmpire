@@ -2,23 +2,18 @@
 @inject IJSRuntime _jsruntime
 @inject IUserService _userService
 <div class="race">
-
-
     <SfDialog Width="80%" Height="80%" @bind-Visible="@_createProfession.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
         <DialogTemplates>
             <Header>Specify class</Header>
-            <Content>
-       
+            <Content>       
                  <div class="main-table">
-
                      @if (IsLoading)
                     {
                         <LoadingPage></LoadingPage>
                     }
                     else
                     {
-
                         <label class="warnign-message">@ErrorMessage</label>
                         <div class="wide-screen-table">
                             <div class="d-flex ">

@@ -142,12 +142,12 @@
                             </div>
                         </div>
 
-                        <AttributeComponent OnAttributesChange="ParamChange"></AttributeComponent>
+                            <AttributeComponent OnAttributesChange="ParamChange"></AttributeComponent>
                         
                         <BaseSkillsComponent OnBaseSkillsChange="ParamChange"></BaseSkillsComponent>
 
                         <div class="races border">
-                           <RaceComponent OnTraitsChange="ParamChange"></RaceComponent>
+                                <RaceComponent OnTraitsChange="ParamChange"></RaceComponent>
                         </div>
 
                         <div class="profession border">
@@ -160,7 +160,7 @@
                             </div>
                             <h3 class="my-3 ml-3 text-center">TRAITS</h3>
                             <div class="trait-container">
-                                <TraitsComponent OnTraitsChange="ParamChange" @bind-Traits="@AllParams.Traits" TraitType="@SD.TraitType_Character"></TraitsComponent>
+                                    <TraitsComponent OnTraitsChange="CharacterTraitsChange" @bind-Traits="@AllParams.TraitsCharacter" TraitType="@SD.TraitType_Character"></TraitsComponent>
                             </div>
                         </div>
 
@@ -168,7 +168,7 @@
                             <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
                         </div>
                         <div class="equipment border">
-                            <EquipmentComponent OnTraitsChange="ParamChange"></EquipmentComponent>
+                                <EquipmentComponent OnTraitsChange="ParamChange"></EquipmentComponent>
                         </div>
                     </div>
                 </div>
@@ -231,6 +231,7 @@
 
     [Parameter]
     public int Id { get; set; }
+    // private ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
 
     private AllParamsModel AllParams { get; set; }
     private IDisposable? registration;
@@ -285,8 +286,7 @@
                     AllParams.BaseSkills = CharacterSeeder.GetBaseSkills();
                     AllParams.SpecialSkills.FillPropertiesContainer(CharacterSeeder.GetSpecialSkills());
                     AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
-                    AllParams.Traits = new List<TraitDTO>();
-                    AllParams.TraitsCharacter = new List<TraitCharacterDTO>();
+                    AllParams.TraitsCharacter = new List<TraitDTO>();
                     AllParams.CurrentRace = new();
                     AllParams.Profession = new();
                     AllParams.EquipmentSlots = new List<EquipmentSlotDTO>();
@@ -337,11 +337,10 @@
         AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
         AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
         AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
-        AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).ToList(); 
+        AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Cast<TraitDTO>().ToList(); 
         //need Traits in base class to use Component
-        AllParams.Traits = new List<TraitDTO>();
-        AllParams.TraitsCharacter.ToList().ForEach(t =>
-            AllParams.Traits.Add(new TraitCharacterDTO(t, AllParams.Character)));
+        //Traits = new List<TraitDTO>();
+        // AllParams.TraitsCharacter.ToList().ForEach(t =>Traits.Add(new TraitCharacterDTO(t, AllParams.Character)));
         AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
         AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
         AllParams.Profession.ActiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == true).ToList();
@@ -384,8 +383,9 @@
                     AllParams.Character.RaceId = 0;
                 }
                 // create traits (in character)
-                AllParams.Traits.ToList().ForEach(t => AllParams.TraitsCharacter.Add(new(t, AllParams.Character)));
-                AllParams.Character.TraitsAdv = AllParams.TraitsCharacter;
+                // Traits.ToList().ForEach(t => AllParams.TraitsCharacter.Add(new(t, AllParams.Character)));
+                // AllParams.TraitsCharacter = Traits;
+                AllParams.Character.Traits = AllParams.TraitsCharacter;
                 // create equipment (in character)
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
@@ -475,8 +475,8 @@
                 }
 
                 // update Adv traits
-                AllParams.Character.TraitsAdv = new List<TraitCharacterDTO>();
-                AllParams.Traits.ToList().ForEach(t => AllParams.Character.TraitsAdv.Add(new(t, AllParams.Character))); //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
+                AllParams.Character.Traits = AllParams.TraitsCharacter;
+                //Traits.ToList().ForEach(t => AllParams.Character.Traits.Add(new(t, AllParams.Character))); //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
 
                 // update equipment (in character)
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
@@ -660,7 +660,14 @@
 
         StateHasChanged();
     }   
-
+    protected void CharacterTraitsChange()
+    {
+        IsLeaveAllowed = false;
+       // AllParams.TraitsCharacter = Traits;
+        AllParams.TraitsChange(SD.TraitType_Character);
+        StateHasChanged();
+    }
+    
     private void AutoChooseRelatedAttributesForSpecialSkills()
     {
         IsLeaveAllowed = false;

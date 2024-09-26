@@ -1,0 +1,66 @@
+﻿@using DA_DataAccess.CharacterClasses
+@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
+@inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
+@inject ISnackbar Snackbar
+
+    <MudDialog >
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                 <MudIcon Icon="@MyIcon.Scroll" Color="Color.Primary" />
+                    @HeaderName
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+        <div class="main-table">
+
+            <SfGrid DataSource="@Traits" @ref="Grid" AllowSelection="true" AllowFiltering="true" AllowPaging="true" Width="100%" Height="100%">
+                <GridPageSettings PageSize="10"></GridPageSettings>
+                <GridFilterSettings ImmediateModeDelay=500 Mode="FilterBarMode.Immediate" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+                <GridSelectionSettings CheckboxOnly="true" PersistSelection="true"></GridSelectionSettings>
+                <GridColumns>
+                    <GridColumn Type="ColumnType.CheckBox" Width="20"></GridColumn>
+                    <GridColumn Field=@nameof(EquipmentDTO.Name) HeaderText="Name" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="80"></GridColumn>
+                    <GridColumn Field=@nameof(EquipmentDTO.EquipmentType) HeaderText="Type" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="60"></GridColumn>
+                    <GridColumn Field=@nameof(EquipmentDTO.Description) HeaderText="Description" FilterSettings="FilterSettings" Width="300"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+    </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
+            <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public AllParamsModel AllParams { get; set; }
+    [Parameter] public List<TraitDTO> ChosenTraits { get; set; } = new List<TraitDTO>();
+    [Parameter] public string TraitType { get; set; } = SD.TraitType_Character;
+
+    private IEnumerable<TraitDTO> Traits;
+    private SfGrid<TraitDTO> Grid;
+    private FilterSettings FilterSettings = new FilterSettings { Operator = Syncfusion.Blazor.Operator.Contains, Type = Syncfusion.Blazor.Grids.FilterType.FilterBar };
+    public string HeaderName { get; set; } = "Add existing traits";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TraitType == SD.TraitType_Character)
+            Traits = await _traitCharacterRepository.GetAllApproved();
+        else
+            Traits = await _traitRaceRepository.GetAllApproved();
+    }
+
+    private void OnSaveTraitBtnClick()
+    {
+        ChosenTraits = Grid.SelectedRecords;
+        MudDialog.Close(DialogResult.Ok(ChosenTraits));
+        Snackbar.Add("Traits selected", Severity.Success);
+    }
+    private void OnCancelBtnClick()
+    {
+        MudDialog.Cancel();
+    }
+}
