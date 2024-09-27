@@ -142,7 +142,7 @@
                             </div>
                         </div>
 
-                            <AttributeComponent OnAttributesChange="ParamChange"></AttributeComponent>
+                        <AttributeComponent OnAttributesChange="ParamChange"></AttributeComponent>
                         
                         <BaseSkillsComponent OnBaseSkillsChange="ParamChange"></BaseSkillsComponent>
 
@@ -160,16 +160,22 @@
                             </div>
                             <h3 class="my-3 ml-3 text-center">TRAITS</h3>
                             <div class="trait-container">
-                                    <TraitsComponent OnTraitsChange="CharacterTraitsChange" @bind-Traits="@AllParams.TraitsCharacter" TraitType="@SD.TraitType_Character"></TraitsComponent>
+                                    <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsCharacter" TraitType="@SD.TraitType_Character"></TraitsComponent>
                             </div>
                         </div>
 
                         <div class="description border">
                             <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
                         </div>
-                        <div class="equipment border">
-                                <EquipmentComponent OnTraitsChange="ParamChange"></EquipmentComponent>
-                        </div>
+                        @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
+                        {
+                            <div class="traits border">
+                                <h3 class="my-3 ml-3 text-center">TEMPORARY STATES</h3>
+                                <div class="trait-container">
+                                        <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsTemporary" TraitType="@SD.TraitType_Temporary"></TraitsComponent>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </section>
@@ -287,6 +293,7 @@
                     AllParams.SpecialSkills.FillPropertiesContainer(CharacterSeeder.GetSpecialSkills());
                     AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
                     AllParams.TraitsCharacter = new List<TraitDTO>();
+                    AllParams.TraitsTemporary = new List<TraitDTO>();
                     AllParams.CurrentRace = new();
                     AllParams.Profession = new();
                     AllParams.EquipmentSlots = new List<EquipmentSlotDTO>();
@@ -337,10 +344,8 @@
         AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
         AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
         AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
-        AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Cast<TraitDTO>().ToList(); 
-        //need Traits in base class to use Component
-        //AllParams.TraitsCharacter = new List<TraitDTO>();
-        //AllParams.TraitsCharacter.ToList().ForEach(t =>Traits.Add(new TraitCharacterDTO(t, AllParams.Character)));
+        AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
+        AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
         AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
         AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
         AllParams.Profession.ActiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == true).ToList();
@@ -383,9 +388,9 @@
                     AllParams.Character.RaceId = 0;
                 }
                 // create traits (in character)
-                //AllParams.TraitsCharacter = Traits;
+                AllParams.Character.TraitsCharacter = new List<TraitCharacterDTO>();
                 AllParams.TraitsCharacter.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character)));
-                //AllParams.Character.TraitsCharacter = AllParams.TraitsCharacter;
+                AllParams.TraitsTemporary.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character,true)));
                 // create equipment (in character)
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
@@ -475,13 +480,11 @@
                 }
 
                 // update Character traits
-                if (AllParams.Character is not null && AllParams.Character.TraitsCharacter is not null)
-                {
-                    AllParams.Character.TraitsCharacter.Clear();
-                    AllParams.TraitsCharacter.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character)));
-                }
-                //Traits.ToList().ForEach(t => AllParams.Character.Traits.Add(new(t, AllParams.Character))); //update Adv trait, convert it from base trait to TraitAdv and add to Character.TraitAdv collection
-
+                if ( AllParams.Character.TraitsCharacter is  null)
+                    AllParams.Character.TraitsCharacter = new List<TraitCharacterDTO>();
+                AllParams.Character.TraitsCharacter.Clear();
+                AllParams.TraitsCharacter.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character)));
+                AllParams.TraitsTemporary.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character, true)));
                 // update equipment (in character)
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
@@ -502,7 +505,6 @@
                     obj.CharacterId = Id;
                     await _specialSkillRepository.Update(obj);
                 }
-
             }
             // delete any removed special skills from database
             foreach(var obj in AllParams.SpecialSkills.SkillsToDelete)
@@ -664,11 +666,10 @@
 
         StateHasChanged();
     }   
-    protected void CharacterTraitsChange()
+    protected void TraitsChange(string traitType)
     {
         IsLeaveAllowed = false;
-        //AllParams.TraitsCharacter = Traits;
-        AllParams.TraitsChange(SD.TraitType_Character);
+        AllParams.TraitsChange(traitType);
         StateHasChanged();
     }
     

@@ -8,8 +8,8 @@ namespace DA_Models.CharacterModels
 {
     public class TraitCharacterDTO : TraitDTO
     {
-        public TraitCharacterDTO() { }
-        public TraitCharacterDTO(TraitDTO traitDTO, CharacterDTO characterDTO) 
+        public TraitCharacterDTO(bool isTemporary = false) { IsTemporary = isTemporary; }
+        public TraitCharacterDTO(TraitDTO traitDTO, CharacterDTO characterDTO, bool isTemporary=false) 
         {
             foreach (var prop in traitDTO.GetType().GetProperties())
             {
@@ -24,10 +24,10 @@ namespace DA_Models.CharacterModels
                     this.Characters.Add(characterDTO);
                 else
                     race = characterDTO;
-                //this.CharacterId = id;
             }
+            IsTemporary = isTemporary;
         }
         public ICollection<CharacterDTO>? Characters { get; set; }
-       // public int? CharacterId { get; set; }
+        public bool IsTemporary { get; set; } = false;
     }
 }

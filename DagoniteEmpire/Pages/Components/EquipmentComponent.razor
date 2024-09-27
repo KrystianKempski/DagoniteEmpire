@@ -1,5 +1,8 @@
 ﻿@inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject IUserService _userService
+@inject IBrowserViewportService _vieportService
+@using DialogOptions = MudBlazor.DialogOptions
+@inject IDialogService DialogService
 @inject NavigationManager _navigationManager
 <div class="equipment">
     <h3 class="my-3 ml-3 text-center">EQUIPMENT</h3>
@@ -87,15 +90,6 @@
         </div>
     </div>
 
-
-    @if (CustomEquipmentComponent != null)
-    {
-        <CustomEquipmentDialog  @bind-CustomEquipmentComponent="@CustomEquipmentComponent"></CustomEquipmentDialog>
-    }
-    @if (EquipmentChosen != null)
-    {
-        <ExistingEquipmentDialog @bind-EquipmentChosen="@EquipmentChosen"></ExistingEquipmentDialog>
-    }
 </div>
 
 @code {
@@ -116,60 +110,6 @@
     private decimal EquipmentPrice;
 
 
-    private CustomEquipmentModel _customEquipmentComponent = new();
-    private CustomEquipmentModel CustomEquipmentComponent
-    {
-        get => _customEquipmentComponent;
-        set
-        {
-            if (value.EquipmentSlotDTO != null)
-            {
-                var obj = AllParams.EquipmentSlots.FirstOrDefault(u => u.Equipment.Name == value.EquipmentSlotDTO.Equipment.Name);
-                if (obj == null)
-                {
-                    AllParams.EquipmentSlots.Add(value.EquipmentSlotDTO);
-
-                }
-                else
-                {
-                    obj = value.EquipmentSlotDTO;
-                }
-
-                AllParams.GearChange();
-                OnTraitsChange.InvokeAsync();
-                CalculateEquipWeightAndPrice();
-            }
-            if (_customEquipmentComponent == value) return;
-            _customEquipmentComponent = value;
-        }
-    }
-
-    private EquipmentChosenModel _equipmentChosen = new ();
-    private EquipmentChosenModel EquipmentChosen
-    {
-        get => _equipmentChosen;
-        set
-        {
-            if (value.EquipmentChosen != null && value.EquipmentChosen.Count() > 0)
-            {
-                foreach (var equ in value.EquipmentChosen)
-                {
-                    if (AllParams.EquipmentSlots.FirstOrDefault(u => u.Equipment.Name == equ.Equipment.Name) == null)
-                    {
-                        AllParams.EquipmentSlots.Add(equ);
-                    }
-                }
-                AllParams.GearChange();
-                OnTraitsChange.InvokeAsync();
-                CalculateEquipWeightAndPrice();
-
-            }
-            if (_equipmentChosen == value) return;
-            _equipmentChosen = value;
-
-        }
-    }
-
     private void CalculateEquipWeightAndPrice()
     {
         EquipmentWeight = 0.0m;
@@ -179,19 +119,58 @@
             EquipmentWeight += slot.Weight;
             EquipmentPrice += slot.Price;
         }
-        StateHasChanged();
+
     }
 
-    private void AddCustomEquipment()
+    private async Task AddCustomEquipment()
     {
-        CustomEquipmentComponent.EquipmentSlotDTO = new();
-        CustomEquipmentComponent.Traits = new List<TraitDTO>();
-        CustomEquipmentComponent.IsVisible = true;
+        EquipmentSlotDTO NewSlot = new();
+        var parameters = new DialogParameters<CreateEquipmentSlotDialog> {  { x => x.NewSlot, NewSlot },
+                                                                          { x => x.AllParams, AllParams } };
+
+        var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Create new item", parameters, await SetOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewSlot =  (EquipmentSlotDTO)result.Data;
+            var obj = AllParams.EquipmentSlots.FirstOrDefault(u => u.Equipment.Name == NewSlot.Equipment.Name);
+            if (obj == null)
+            {
+                AllParams.EquipmentSlots.Add(NewSlot);
+
+            }
+            else
+            {
+                obj = NewSlot;
+            }
+            await UpdateEquipment();
+        }
     }
-    private void AddExistingEquipment()
+    private async Task AddExistingEquipment()
     {
-        EquipmentChosen = new();
-        EquipmentChosen.IsVisible = true;
+        List<EquipmentSlotDTO> SelectedEquipment = new List<EquipmentSlotDTO>();
+        var parameters = new DialogParameters<ExistingEquipmentSelectDialog> {  { x => x.SelectedEquipment, SelectedEquipment },
+                                                                                { x => x.AllParams, AllParams } };
+
+        var dialog = await DialogService.ShowAsync<ExistingEquipmentSelectDialog>("Create new item", parameters, await SetOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            SelectedEquipment = (List<EquipmentSlotDTO>)result.Data;
+            if (SelectedEquipment is not null && SelectedEquipment.Any())
+            {
+                foreach (var equ in SelectedEquipment)
+                {
+                    if (AllParams.EquipmentSlots.FirstOrDefault(u => u.Equipment.Name == equ.Equipment.Name) == null)
+                    {
+                        AllParams.EquipmentSlots.Add(equ);
+                    }
+                }
+                await UpdateEquipment();
+            }
+        }
     }
 
     private void GoToItemPage()
@@ -199,24 +178,33 @@
         _navigationManager.NavigateTo($"/equipment/{AllParams.Character.Id}");
     }
 
-    private void EditEquipment(EquipmentSlotDTO slot)
+    private async Task EditEquipment(EquipmentSlotDTO slot)
     {
-        CustomEquipmentComponent.EquipmentSlotDTO = slot;
-        CustomEquipmentComponent.Traits = slot.Equipment?.Traits.OfType<TraitDTO>().ToList();
-        CustomEquipmentComponent.IsInfoMode = slot.Equipment.IsApproved && UserInfo?.IsAdminOrMG == false;
-        CustomEquipmentComponent.IsVisible = true;
-        CustomEquipmentComponent.IsEditMode = true;
-        CalculateEquipWeightAndPrice();
+        var parameters = new DialogParameters<CreateEquipmentSlotDialog> {  { x => x.NewSlot, slot },
+                                                                            { x => x.AllParams, AllParams } };
+
+        var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Edit item", parameters, await SetOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            slot = (EquipmentSlotDTO)result.Data;
+            await UpdateEquipment();
+        }
     }
 
     private async Task DeleteEquipment(EquipmentSlotDTO slot)
     {
         AllParams.EquipmentSlots = AllParams.EquipmentSlots.Where(u => u.Equipment.Name != slot.Equipment.Name).ToList();
+        await UpdateEquipment();
+    }
+    private async Task UpdateEquipment()
+    {
         AllParams.GearChange();
         await OnTraitsChange.InvokeAsync();
         CalculateEquipWeightAndPrice();
+        StateHasChanged();
     }
-
     private void IncrCount(EquipmentSlotDTO obj)
     {
         obj.Count++;
@@ -240,4 +228,13 @@
             CalculateEquipWeightAndPrice();
         }
     }
+
+    private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Large)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
+    }
+
 }

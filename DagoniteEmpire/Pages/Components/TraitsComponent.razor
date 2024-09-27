@@ -1,7 +1,7 @@
-﻿@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
-@inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
-@inject IDialogService DialogService
+﻿@inject IDialogService DialogService
 @inject IUserService _userService
+@inject IBrowserViewportService _vieportService
+@using DialogOptions = MudBlazor.DialogOptions
 <div class="traits">
     <div class="table-container">
     <table class="table align-middle">
@@ -65,12 +65,12 @@
         @if (IsInfoMode == false ||  UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Character)
         {
             <div class="buttons-row">
-                <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add trait</button>
+                <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add @TraitName</button>
                 @if (TraitType == SD.TraitType_Gear && WeaponQualityAvalible)
                 {
                     <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Add weapon qualities</button>
                 }
-                <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing traits</button>
+                <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing @TraitName </button>
             </div>
         }
     </div>
@@ -84,16 +84,18 @@
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
     [Parameter]
-    public EventCallback OnTraitsChange { get; set; }
+    public EventCallback<string> OnTraitsChange { get; set; }
     [Parameter]
     public string TraitType { get; set; } = string.Empty;
     [Parameter]
     public bool WeaponQualityAvalible { get; set; } = false;
-
-    public UserInfo? UserInfo { get; set; }
-    public TraitDTO NewTrait { get; set; } = new();
+    public UserInfo? UserInfo { get; set; }   
     [Parameter]
     public bool IsInfoMode {get; set;} = false;
+    [Parameter]
+    public string TraitName { get; set; } = "trait";
+    private string AddButtonText ="";
+    private string ExistingButtonText = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -102,12 +104,13 @@
 
     private async Task AddCustomTrait()
     {
-        NewTrait = new();
+        TraitDTO NewTrait = new();
         var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
                                                                     { x => x.TraitType, TraitType },
                                                                     { x => x.AllParams, AllParams } };
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create trait", parameters);
+
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create " + TraitName, parameters, await SetOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -115,18 +118,17 @@
             NewTrait = (TraitDTO)result.Data;
             Traits.Add(NewTrait);
             await UpdateTraits();
-            StateHasChanged();
         }
     }
     private async Task AddWeaponQualities()
     {
-        NewTrait = new();
+        TraitDTO NewTrait = new();
         var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
                                                                     { x => x.TraitType, TraitType },
                                                                     { x => x.IsWeaponQualityMode, true }, 
                                                                     { x => x.AllParams, AllParams } };
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create weapon quality", parameters);
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create weapon quality", parameters, await SetOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -134,20 +136,17 @@
             NewTrait = (TraitDTO)result.Data;
             Traits.Add(NewTrait);
             await UpdateTraits();
-            StateHasChanged();
         }
     }
 
     private async Task AddExistingTrait()
     {
         List<TraitDTO> ChosenTraits = new List<TraitDTO>();
-
-        NewTrait = new();
         var parameters = new DialogParameters<ExistingTraitDialog> { { x => x.ChosenTraits, ChosenTraits },
                                                                    { x => x.TraitType, TraitType },
                                                                    { x => x.AllParams, AllParams }};
 
-        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select traits", parameters);
+        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select " + TraitName, parameters, await SetOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -155,7 +154,6 @@
             ChosenTraits = (List<TraitDTO>)result.Data;
             if (ChosenTraits is null)
                 throw new Exception("error in trait selection dialog");
-            Traits.Add(NewTrait);
 
             foreach (var trait in ChosenTraits)
             {
@@ -165,8 +163,15 @@
                 }
             }
             await UpdateTraits();
-            StateHasChanged();
         }
+    }
+
+    private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Medium)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
     }
 
     private async Task EditTrait(TraitDTO trait)
@@ -179,50 +184,33 @@
         else
             IsWeaponQualityMode = false;
 
-        NewTrait = new();
-        var parameters = new DialogParameters<CreateTraitDialog> { { x => x.NewTrait, NewTrait },
+        var parameters = new DialogParameters<CreateTraitDialog> { { x => x.NewTrait, trait },
+                                                                   { x => x.IsEditMode, true },
                                                                    { x => x.TraitType, TraitType },
                                                                    { x => x.AllParams, AllParams },
                                                                    { x => x.IsWeaponQualityMode, IsWeaponQualityMode },
                                                                    { x => x.IsInfoMode, IsInfoMode }};
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Edit trait", parameters);
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Edit " + TraitName, parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)
         {
-            NewTrait = (TraitDTO)result.Data;
-            Traits.Add(NewTrait);
+            trait = (TraitDTO)result.Data;
             await UpdateTraits();
-            StateHasChanged();
         }
     }
 
     private async Task DeleteTrait(TraitDTO trait)
     {
-        if (trait.Id != 0)
-        {
-
-            if (trait.TraitType == SD.TraitType_Character && trait.TraitApproved ==false)
-            {
-                await _traitCharacterRepository.Delete(trait.Id);
-
-            }
-            else if (trait.TraitType == SD.TraitType_Race && trait.TraitApproved == false)
-            {
-                await _traitRaceRepository.Delete(trait.Id);
-            }
-
-        }
         Traits = Traits.Where(u => u.Name != trait.Name).ToList();
         await UpdateTraits();
-        StateHasChanged();
     }
 
     private async Task UpdateTraits()
     {
         await TraitsChanged.InvokeAsync(Traits);
-        //AllParams.TraitsChange(TraitType);
-        await OnTraitsChange.InvokeAsync();
+        await OnTraitsChange.InvokeAsync(TraitType);
+        StateHasChanged();
     }
 }

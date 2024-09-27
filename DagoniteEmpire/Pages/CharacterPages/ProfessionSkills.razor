@@ -582,6 +582,8 @@
     {
         try
         {
+            IsLoading = true;
+            StateHasChanged();
             if (string.IsNullOrEmpty(ProfessionDTO.Name) || string.IsNullOrEmpty(ProfessionDTO.Description))
             {
                 throw new WarningException("Create name and description of class");
@@ -611,6 +613,8 @@
 
             //_navigationManager.NavigateTo("#");
             ErrorMessage = string.Empty;
+            IsLoading = false;
+            StateHasChanged();
         }
         catch (WarningException ex)
         {

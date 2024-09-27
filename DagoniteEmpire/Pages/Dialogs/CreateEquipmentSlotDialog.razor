@@ -1,0 +1,268 @@
+﻿@using DA_DataAccess.CharacterClasses
+@inject ISnackbar Snackbar
+@inject IUserService _userService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@MyIcon.Scroll" Color="Color.Primary" />
+            @HeaderName
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="main-table">
+                <div class="wide-screen-table">
+                    <div class="d-flex ">
+                        <div class="d-flex flex-column flex-grow-1 pe-1">
+                            <label class="fw-bold py-1">Item name</label>
+                            <SfTextBox Readonly="IsInfoMode" Placeholder="Insert item name" @bind-Value="@NewSlot.Equipment.Name"></SfTextBox>
+                        </div>
+                        <div class="d-flex flex-column px-1">
+                            <label class="fw-bold py-1">Weight</label>
+                            <SfNumericTextBox Readonly="IsInfoMode" Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@NewSlot.Equipment.Weight"></SfNumericTextBox>
+                        </div>
+                        <div class="d-flex flex-column  px-1">
+                            <label class="fw-bold py-1">Price</label>
+                            <SfNumericTextBox Readonly="IsInfoMode" Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@NewSlot.Equipment.Price"></SfNumericTextBox>
+                        </div>
+                        <div class="d-flex flex-column flex-grow-1 px-1">
+                            <label class="fw-bold py-1">Type</label>
+                            <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.EquipmentType" class="form-select p-1">
+                                @foreach (var eq in SD.EquipmentType.All)
+                                {
+                                    <option selected="@(eq==NewSlot.Equipment.EquipmentType)" value="@eq"> @eq</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        @if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee)
+                        {
+                            <div class="d-flex flex-column flex-grow-1 px-1">
+                                <label class="fw-bold py-1">Weapon Type</label>
+                                <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
+                                    @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Melee))
+                                    {
+                                        <option selected="@(eq.Name==NewSlot.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="d-flex flex-column px-1">
+                            <label class="fw-bold py-1">Two-handed</label>
+                                <div class="justify-content-center mx-auto my-auto">
+                                    <SfCheckBox Disabled="IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                </div>
+                            </div>
+                        }
+                        else if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged)
+                        {
+                            <div class="d-flex flex-column flex-grow-1 px-1">
+                                <label class="fw-bold py-1">Weapon Type</label>
+                            <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
+                                    @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Shooting))
+                                    {
+                                        <option selected="@(eq.Name==NewSlot.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="d-flex flex-column px-1">
+                            <label class="fw-bold py-1">Two-handed</label>
+                                <div class="justify-content-center mx-auto my-auto">
+                                    <SfCheckBox Disabled="IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                </div>
+                            </div>
+                        }
+
+                        @if (UserInfo?.IsAdminOrMG == true && IsInfoMode == false)
+                        {
+                            <div class="d-flex flex-column px-1">
+                                <label class="fw-bold py-1">Approve</label>
+                                <div class="justify-content-center mx-auto my-auto">
+                                    <SfCheckBox @bind-Checked="NewSlot.Equipment.IsApproved"></SfCheckBox>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="short-screen-table">
+
+                    <div class="d-flex ">
+                        <div class="d-flex flex-column flex-grow-1 pe-1">
+                            <label class="fw-bold py-1">Item name</label>
+                            <SfTextBox Readonly="IsInfoMode" Placeholder="Insert item name" @bind-Value="@NewSlot.Equipment.Name"></SfTextBox>
+                        </div>
+                    </div>
+                    <div class="d-flex ">
+                        <div class="d-flex flex-column px-1">
+                            <label class="fw-bold py-1">Weight</label>
+                            <SfNumericTextBox Readonly="IsInfoMode" Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@NewSlot.Equipment.Weight"></SfNumericTextBox>
+                        </div>
+                        <div class="d-flex flex-column px-1">
+                            <label class="fw-bold py-1">Price</label>
+                            <SfNumericTextBox Readonly="IsInfoMode" Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@NewSlot.Equipment.Price"></SfNumericTextBox>
+                        </div>
+                        <div class="d-flex flex-column flex-grow-1 px-1">
+                            <label class="fw-bold py-1">Type</label>
+                            <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.EquipmentType" class="form-select p-1">
+                                @foreach (var eq in SD.EquipmentType.All)
+                                {
+                                    <option selected="@(eq==NewSlot.Equipment.EquipmentType)" value="@eq"> @eq</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        @if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee)
+                        {
+                            <div class="d-flex flex-column flex-grow-1 px-1">
+                                <label class="fw-bold py-1">Weapon Type</label>
+                                <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
+                                    @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Melee))
+                                    {
+                                        <option selected="@(eq.Name==NewSlot.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="d-flex flex-column px-1">
+                            <label class="fw-bold py-1">Two-handed</label>
+                                <div class="justify-content-center mx-auto my-auto">
+                                    <SfCheckBox Disabled="IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                </div>
+                            </div>
+                        }
+                        else if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged)
+                        {
+                            <div class="d-flex flex-column flex-grow-1 px-1">
+                                <label class="fw-bold py-1">Weapon Type</label>
+                                <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
+                                    @foreach (var eq in AllParams.SpecialSkills.GetAllSection(SD.BaseSkills.Shooting))
+                                    {
+                                        <option selected="@(eq.Name==NewSlot.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="d-flex flex-column px-1">
+                                <label class="fw-bold py-1">"Two-handed</label>
+                                <div class="justify-content-center mx-auto my-auto">
+                                    <SfCheckBox Disabled="IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                </div>
+                            </div>
+                        }
+                        @if (UserInfo?.IsAdminOrMG == true && IsInfoMode == false)
+                        {
+                            <div class="d-flex flex-column px-1">
+                                <label class="fw-bold py-1">Approve</label>
+                                <div class="justify-content-center mx-auto my-auto">
+                                    <SfCheckBox Disabled="IsInfoMode" @bind-Checked="NewSlot.Equipment.IsApproved"></SfCheckBox>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="d-flex flex-column flex-grow-1">
+                    <label class="fw-bold  p-1">Item description</label>
+                    <SfRichTextEditor Readonly="IsInfoMode" Height="350px" @ref="DescrEdit" @bind-Value="@NewSlot.Equipment.Description" ShowTooltip="true">
+                        <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
+                    </SfRichTextEditor>
+                </div>
+
+                <label class="fw-bold pt-4">Item traits</label>
+                @if (NewSlot.Equipment.Traits != null)
+                {
+                    <div class="traits">
+                        <TraitsComponent IsInfoMode="IsInfoMode" @bind-Traits="@Traits" TraitType="@TraitType" WeaponQualityAvalible="@WeaponQualityAvalible()"></TraitsComponent>
+                    </div>
+                }
+                <label class="warnign-message">@ErrorMessage</label>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveBtnClick">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public EquipmentSlotDTO NewSlot { get; set; }
+    [Parameter] public bool IsEditMode { get; set; } = false;
+    [Parameter] public bool IsInfoMode { get; set; } = false;
+    [Parameter] public bool IsWeaponQualityMode { get; set; } = false;
+    [Parameter] public AllParamsModel AllParams { get; set; }
+    public string TraitType { get; set; } = SD.TraitType_Gear;
+    private bool IsTwoHanded = false;
+    public string HeaderName { get; set; } = "";
+    private SfRichTextEditor DescrEdit = new();
+    private string ErrorMessage { get; set; } = string.Empty;
+
+    public ICollection<TraitDTO>? Traits { get; set; } = new List<TraitDTO>();
+
+    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
+    {
+        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
+        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
+        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
+        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
+        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
+        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
+        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
+    };
+
+    public UserInfo? UserInfo { get; set; }
+
+
+    private bool WeaponQualityAvalible()
+    {
+        return (NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged ||
+            NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
+            NewSlot.Equipment.EquipmentType == SD.EquipmentType.Shield ||
+            NewSlot.Equipment.EquipmentType == SD.EquipmentType.Body);
+    }
+
+    private async Task OnSaveBtnClick()
+    {
+
+        if (string.IsNullOrEmpty(NewSlot.Equipment.Name) || string.IsNullOrEmpty(NewSlot.Equipment.Description))
+        {
+            ErrorMessage = $"Create name and item description";
+            return;
+        }
+        if (NewSlot.Equipment != null)
+        {
+            NewSlot.Equipment.Traits = new List<TraitEquipmentDTO>();
+            foreach (var trait in Traits)
+            {
+                NewSlot.Equipment.Traits.Add(new TraitEquipmentDTO(trait, NewSlot.Equipment));
+            }
+            var shortDescr = (await DescrEdit.GetTextAsync());
+            if (shortDescr.Length > 100)
+                shortDescr = shortDescr?[0..100] + "...";
+            NewSlot.Equipment.ShortDescr = shortDescr;
+
+            if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.Shield)
+                NewSlot.Equipment.RelatedSkill = SD.SpecialSkills.Melee.Shields;
+            if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.Body)
+                NewSlot.Equipment.RelatedSkill = SD.SpecialSkills.Athletics.Armor;
+        }
+        ErrorMessage = string.Empty;
+
+        MudDialog.Close(DialogResult.Ok(NewSlot));
+        if (IsEditMode)
+            Snackbar.Add("Equipment edited", Severity.Success);
+        else
+            Snackbar.Add("Equipment created", Severity.Success);
+    }
+    private void OnCancelBtnClick()
+    {
+        MudDialog.Close(DialogResult.Cancel());
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ErrorMessage = string.Empty;
+        UserInfo = await _userService.GetUserInfo();
+    }
+
+}

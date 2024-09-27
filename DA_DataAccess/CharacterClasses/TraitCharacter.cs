@@ -10,6 +10,7 @@ namespace DA_DataAccess.CharacterClasses
     public class TraitCharacter : Trait
     {
         public ICollection<Character>? Characters { get; set; }
+        public bool IsTemporary { get; set; } = false;
 
     }
 }

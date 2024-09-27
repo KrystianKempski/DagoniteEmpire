@@ -29,6 +29,7 @@ namespace DA_Common
         public const string FeatureOther = "Other";
 
         public const string TraitType_Character = "Character";
+        public const string TraitType_Temporary = "Tempotary";
         public const string TraitType_Race = "Race";
         public const string TraitType_Gear = "Gear";
         public const string TraitType_Profession = "Profession";

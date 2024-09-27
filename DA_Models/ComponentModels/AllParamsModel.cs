@@ -28,10 +28,9 @@ namespace DA_Models.ComponentModels
         public ProfessionDTO Profession { get; set; } = new ProfessionDTO();
         public AttributesModel Attributes { get; set; }
         public IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = Enumerable.Empty<BaseSkillDTO>();
-
         public SpecialSkillModel SpecialSkills { get; set; }
         public ICollection<TraitDTO> TraitsCharacter { get; set; } = new List<TraitDTO>();
-        //public ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
+        public ICollection<TraitDTO> TraitsTemporary { get; set; } = new List<TraitDTO>();
         public ICollection<TraitDTO> TraitsProfession { get; set; } = new List<TraitDTO>();
         public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
         public ICollection<EquipmentSlotDTO> EquipmentSlots { get; set; } = new List<EquipmentSlotDTO>();
@@ -43,7 +42,7 @@ namespace DA_Models.ComponentModels
 
         public void AllTraitsChange()
         {
-            AdvTraitsChange();
+            CharTraitsChange();
             RaceTraitsChange();
             GearChange();
             ProfessionTraitsChange();
@@ -55,14 +54,16 @@ namespace DA_Models.ComponentModels
                 throw new Exception("No trait type");
 
             if(TraitType == SD.TraitType_Character)
-                AdvTraitsChange();
+                CharTraitsChange();
             else if (TraitType == SD.TraitType_Race)
                 RaceTraitsChange();
             else if(TraitType == SD.TraitType_Gear)
                 GearChange();
+            else if (TraitType == SD.TraitType_Temporary)
+                TempTraitsChange();
         }
 
-        public void AdvTraitsChange()
+        public void CharTraitsChange()
         {
             IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
 
@@ -87,6 +88,22 @@ namespace DA_Models.ComponentModels
             {
                 Character.TraitBalance += trait.TraitValue;
             }
+        }
+
+        public void TempTraitsChange()
+        {
+            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
+
+            //clear all traits bonuses
+            foreach (var feat in allFeatures)
+            {
+                foreach (var obj in feat)
+                {
+                    obj.TempBonuses = 0;
+                }
+            }
+            // calculate all traits adv
+            CalculateTraits(TraitsCharacter.Cast<TraitDTO>().ToList(), SD.TraitType_Character);
         }
 
         public void RaceTraitsChange()
@@ -169,6 +186,7 @@ namespace DA_Models.ComponentModels
                 case SD.TraitType_Gear: bonusName = nameof(feature.GearBonus); break;
                 case SD.TraitType_Race: bonusName = nameof(feature.RaceBonus); break;
                 case SD.TraitType_Profession: bonusName = nameof(feature.OtherBonuses); break;
+                case SD.TraitType_Temporary: bonusName = nameof(feature.TempBonuses); break;
                 default: bonusName = string.Empty; break;
             }
 

@@ -91,9 +91,7 @@
         Grid.SelectedRecords.ForEach(e =>list.Add(new(e)));
         EquipmentChosen.EquipmentChosen = list;
         ErrorMessage = string.Empty;
-
         EquipmentChosen.IsVisible = false;
-
         await EquipmentChosenChanged.InvokeAsync(EquipmentChosen);
     }
     private async Task OnCancelBtnClick()

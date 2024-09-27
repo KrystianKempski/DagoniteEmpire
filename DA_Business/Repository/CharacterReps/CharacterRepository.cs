@@ -336,8 +336,6 @@ namespace DA_Business.Repository.CharacterReps
                     }
                     /// UPDATE EQUIPMENT
 
-                    
-
                     // Delete equipment
                     if (obj.EquipmentSlots is not null)
                     {

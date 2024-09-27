@@ -1,0 +1,63 @@
+﻿@inject IEquipmentRepository _equipmentRepository
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@MyIcon.Scroll" Color="Color.Primary" />
+            @HeaderName
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="main-table">
+            <SfGrid DataSource="@Equipment" @ref="Grid" AllowSelection="true" AllowFiltering="true" AllowPaging="true" Width="100%" Height="100%">
+                <GridPageSettings PageSize="10"></GridPageSettings>
+                <GridFilterSettings ImmediateModeDelay=500 Mode="FilterBarMode.Immediate" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+                <GridSelectionSettings CheckboxOnly="true" PersistSelection="true"></GridSelectionSettings>
+                <GridColumns>
+                    <GridColumn Type="ColumnType.CheckBox" Width="20"></GridColumn>
+                    <GridColumn Field=@nameof(EquipmentDTO.Name) HeaderText="Name" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="80"></GridColumn>
+                    <GridColumn Field=@nameof(EquipmentDTO.EquipmentType) HeaderText="Type" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="60"></GridColumn>
+                    <GridColumn Field=@nameof(EquipmentDTO.Description) HeaderText="Description" FilterSettings="FilterSettings" Width="300"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </div>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public AllParamsModel AllParams { get; set; }
+    [Parameter] public ICollection<EquipmentSlotDTO> SelectedEquipment { get; set; } = new List<EquipmentSlotDTO>();
+
+    private IEnumerable<EquipmentDTO> Equipment { get; set; }
+    private SfGrid<EquipmentDTO> Grid = new SfGrid<EquipmentDTO>();
+    private FilterSettings FilterSettings = new FilterSettings { Operator = Syncfusion.Blazor.Operator.Contains, Type = Syncfusion.Blazor.Grids.FilterType.FilterBar };
+    public string HeaderName { get; set; } = "Select equipment";
+
+    private void OnSaveTraitBtnClick()
+    {
+        Grid.SelectedRecords.ForEach(e => SelectedEquipment.Add(new(e)));
+
+        MudDialog.Close(DialogResult.Ok(SelectedEquipment));
+        if (SelectedEquipment.Any())
+            Snackbar.Add("Equipment selected", Severity.Success);
+
+    }
+    private void OnCancelBtnClick()
+    {
+        MudDialog.Cancel();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Equipment = await _equipmentRepository.GetAllApproved();
+    }
+
+}
