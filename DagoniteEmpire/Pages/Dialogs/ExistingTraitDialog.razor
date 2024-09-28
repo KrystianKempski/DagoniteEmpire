@@ -39,6 +39,7 @@
     [Parameter] public AllParamsModel AllParams { get; set; }
     [Parameter] public List<TraitDTO> ChosenTraits { get; set; } = new List<TraitDTO>();
     [Parameter] public string TraitType { get; set; } = SD.TraitType_Character;
+    private string TraitName = "";
 
     private IEnumerable<TraitDTO> Traits;
     private SfGrid<TraitDTO> Grid;
@@ -48,16 +49,31 @@
     protected override async Task OnInitializedAsync()
     {
         if (TraitType == SD.TraitType_Character)
-            Traits = await _traitCharacterRepository.GetAllApproved();
-        else
+            Traits = (await _traitCharacterRepository.GetAllApproved()).ToList().Where(t=>t.IsTemporary == false);
+        else if (TraitType == SD.TraitType_Race)
             Traits = await _traitRaceRepository.GetAllApproved();
+        else if (TraitType == SD.TraitType_Temporary)
+            Traits = (await _traitCharacterRepository.GetAllApproved()).ToList().Where(t => t.IsTemporary == true);
+
+        switch (TraitType)
+        {
+            case SD.TraitType_Character: TraitName = "trait"; break;
+            case SD.TraitType_Temporary: TraitName = "state"; break;
+            case SD.TraitType_Gear: TraitName = "item trait"; break;
+            case SD.TraitType_Profession: TraitName = "skill"; break;
+            case SD.TraitType_Race: TraitName = "trait"; break;
+        }
+        HeaderName = "Add " + TraitName + "s " + "from existing";
     }
 
     private void OnSaveTraitBtnClick()
     {
         ChosenTraits = Grid.SelectedRecords;
         MudDialog.Close(DialogResult.Ok(ChosenTraits));
-        Snackbar.Add("Traits selected", Severity.Success);
+        if (Traits.Any())
+        {            
+            Snackbar.Add("Selected " + TraitName + "s added", Severity.Success);
+        }
     }
     private void OnCancelBtnClick()
     {

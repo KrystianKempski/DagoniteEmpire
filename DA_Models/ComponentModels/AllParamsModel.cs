@@ -43,6 +43,7 @@ namespace DA_Models.ComponentModels
         public void AllTraitsChange()
         {
             CharTraitsChange();
+            TempTraitsChange();
             RaceTraitsChange();
             GearChange();
             ProfessionTraitsChange();
@@ -80,7 +81,7 @@ namespace DA_Models.ComponentModels
             }
 
             // calculate all traits adv
-            CalculateTraits(TraitsCharacter.Cast<TraitDTO>().ToList(), SD.TraitType_Character);
+            CalculateTraits(TraitsCharacter, SD.TraitType_Character);
 
             // recalculate trait balance
             Character.TraitBalance = 0;
@@ -103,7 +104,7 @@ namespace DA_Models.ComponentModels
                 }
             }
             // calculate all traits adv
-            CalculateTraits(TraitsCharacter.Cast<TraitDTO>().ToList(), SD.TraitType_Character);
+            CalculateTraits(TraitsTemporary, SD.TraitType_Temporary);
         }
 
         public void RaceTraitsChange()

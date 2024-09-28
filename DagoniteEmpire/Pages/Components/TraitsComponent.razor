@@ -92,21 +92,27 @@
     public UserInfo? UserInfo { get; set; }   
     [Parameter]
     public bool IsInfoMode {get; set;} = false;
-    [Parameter]
-    public string TraitName { get; set; } = "trait";
+    private string TraitName { get; set; } = "trait";
     private string AddButtonText ="";
     private string ExistingButtonText = "";
+    TraitDTO NewTrait = new();
 
     protected override async Task OnInitializedAsync()
     {
         UserInfo = await _userService.GetUserInfo();
+        switch (TraitType)
+        {
+            case SD.TraitType_Character: TraitName = "trait"; NewTrait = new TraitCharacterDTO(); break;
+            case SD.TraitType_Temporary: TraitName = "state"; NewTrait = new TraitCharacterDTO(true); break;
+            case SD.TraitType_Gear: TraitName = "item trait"; NewTrait = new TraitEquipmentDTO(); break;
+            case SD.TraitType_Profession: TraitName = "skill"; NewTrait = new TraitProfessionDTO(); break;
+            case SD.TraitType_Race: TraitName = "trait"; NewTrait = new TraitRaceDTO(); break;
+        }
     }
 
     private async Task AddCustomTrait()
-    {
-        TraitDTO NewTrait = new();
+    {        
         var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
-                                                                    { x => x.TraitType, TraitType },
                                                                     { x => x.AllParams, AllParams } };
 
 
@@ -122,9 +128,7 @@
     }
     private async Task AddWeaponQualities()
     {
-        TraitDTO NewTrait = new();
         var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
-                                                                    { x => x.TraitType, TraitType },
                                                                     { x => x.IsWeaponQualityMode, true }, 
                                                                     { x => x.AllParams, AllParams } };
 
@@ -186,7 +190,6 @@
 
         var parameters = new DialogParameters<CreateTraitDialog> { { x => x.NewTrait, trait },
                                                                    { x => x.IsEditMode, true },
-                                                                   { x => x.TraitType, TraitType },
                                                                    { x => x.AllParams, AllParams },
                                                                    { x => x.IsWeaponQualityMode, IsWeaponQualityMode },
                                                                    { x => x.IsInfoMode, IsInfoMode }};

@@ -18,5 +18,6 @@ namespace DA_Models.CharacterModels
         public string Range { get; set; } = "";
         public bool IsApproved { get; set; } = false;
         public bool IsActiveSkill { get; set; } = true;
+        public override string TraitLabel { get => "skill"; }
     }
 }

@@ -52,6 +52,7 @@ namespace DA_Models.CharacterModels
         public bool TraitApproved { get; set; }
         public bool IsUnique { get; set; } = false;
         public virtual string TraitType { get; set; } = string.Empty;
+        public virtual string TraitLabel { get =>"trait";} 
 
         public ICollection<BonusDTO> Bonuses { get; set; } = new List<BonusDTO>();
 

@@ -167,6 +167,9 @@
                         <div class="description border">
                             <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
                         </div>
+                            <div class="equipment">
+                                <EquipmentComponent OnTraitsChange="LoadPossibleGears" PageMode=true></EquipmentComponent>
+                            </div>
                         @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                         {
                             <div class="traits border">

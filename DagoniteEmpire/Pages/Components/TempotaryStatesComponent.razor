@@ -103,9 +103,8 @@
 
     private async Task AddCustomTrait()
     {
-        TraitDTO NewTrait = new();
+        TraitDTO NewTrait = new TraitCharacterDTO(true);
         var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
-                                                                    { x => x.TraitType, TraitType },
                                                                     { x => x.AllParams, AllParams } };
 
 
@@ -121,9 +120,8 @@
     }
     private async Task AddWeaponQualities()
     {
-        TraitDTO NewTrait = new();
+        TraitDTO NewTrait = new TraitCharacterDTO(true);
         var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
-                                                                    { x => x.TraitType, TraitType },
                                                                     { x => x.IsWeaponQualityMode, true },
                                                                     { x => x.AllParams, AllParams } };
 
@@ -185,7 +183,6 @@
 
         var parameters = new DialogParameters<CreateTraitDialog> { { x => x.NewTrait, trait },
                                                                    { x => x.IsEditMode, true },
-                                                                   { x => x.TraitType, TraitType },
                                                                    { x => x.AllParams, AllParams },
                                                                    { x => x.IsWeaponQualityMode, IsWeaponQualityMode },
                                                                    { x => x.IsInfoMode, IsInfoMode }};

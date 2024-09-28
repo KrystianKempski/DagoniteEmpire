@@ -12,16 +12,14 @@
     <DialogContent>
             <div class="main-table">
 
-            @if(IsWeaponQualityMode){
-            }
-            else
+            @if(IsWeaponQualityMode == false)
             {
                 <div class="d-flex ">
                     <div class="d-flex flex-column flex-grow-1">
-                    <label class="fw-bold py-1">Trait name</label>
+                        <label class="fw-bold py-1">@NewTrait.TraitLabel name</label>
                         <SfTextBox Readonly="IsInfoMode" Placeholder="Insert trait name" @bind-Value="@NewTrait.Name"></SfTextBox>
                     </div>
-                    @if (TraitType == SD.TraitType_Character)
+                    @if (NewTrait.TraitType == SD.TraitType_Character)
                     {
                         <div class="d-flex flex-column px-1">
                             <label class="fw-bold py-1">Trait value</label>
@@ -45,11 +43,11 @@
                     }
                 </div>
                 <div class="align-items-start bonus-name py-0">
-                    <label class="fw-bold  py-1">Trait description</label>
+                    <label class="fw-bold  py-1">@NewTrait.TraitLabel description</label>
                 </div>
                 <div class="align-items-start">
                     <div class="col-12 bonus-name py-0">
-                        <SfTextBox Readonly="IsInfoMode" Multiline=true Placeholder="Insert general trait description" @bind-Value="@NewTrait.Descr"></SfTextBox>
+                        <SfTextBox Readonly="IsInfoMode" Multiline=true Placeholder="Insert general description" @bind-Value="@NewTrait.Descr"></SfTextBox>
                     </div>
                 </div>
                         
@@ -141,7 +139,6 @@
 @code {
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    [Parameter] public string TraitType { get; set; } = SD.TraitType_Character;
     [Parameter] public TraitDTO NewTrait { get; set; }
     [Parameter] public bool IsEditMode { get; set; } = false;
     [Parameter] public bool IsInfoMode { get; set; } = false;
@@ -149,6 +146,7 @@
     [Parameter] public AllParamsModel AllParams { get; set; }
 
     public string HeaderName { get; set; } = "";
+    //private string TraitName ="";
 
     public UserInfo? UserInfo { get; set; }
 
@@ -210,7 +208,7 @@
                 ErrorMessage = $"Create name and description of trait";
                 return;
             }
-            if (IsEditMode == false && TraitType == SD.TraitType_Character && AllParams.TraitsCharacter.Where(t => t.Name == NewTrait.Name).Count() > 0)
+            if (IsEditMode == false && NewTrait.TraitType == SD.TraitType_Character && AllParams.TraitsCharacter.Where(t => t.Name == NewTrait.Name).Count() > 0)
             {
                 ErrorMessage = $"That trait name already exists";
                 return;
@@ -229,21 +227,15 @@
             ErrorMessage = $"Bonuses cannot relate to the same feature more than once";
             return;
         }
-
-
         ErrorMessage = string.Empty;
-
         if (IsWeaponQualityMode)
             NewTrait.Descr = NewTrait.SummaryDescr;
 
-        NewTrait.TraitType = TraitType;
-
+        NewTrait.TraitType = NewTrait.TraitType;
         MudDialog.Close(DialogResult.Ok(NewTrait));
-        if (IsEditMode)
-            Snackbar.Add("Trait edited", Severity.Success);
-        else
-            Snackbar.Add("Trait created", Severity.Success);
-
+        string message = NewTrait.TraitLabel;
+        message  += IsEditMode ?  "edited" : "added";
+        Snackbar.Add(message, Severity.Success);
     }
     private void OnCancelBtnClick()
     {
@@ -279,10 +271,8 @@
         ErrorMessage = string.Empty;
         if (IsWeaponQualityMode)
         {
-            if (IsEditMode)
-                HeaderName = "Edit weapon properties";
-            else
-                HeaderName = "Create weapon properties";
+            HeaderName = IsEditMode ? "Edit weapon properties" : "Add weapon properties";
+
             FeatureData = new List<string>
             {
                 SD.FeatureWeaponQuality
@@ -298,22 +288,8 @@
                 SD.FeatureWeaponQuality,
                 SD.FeatureOther
             };
-
-            if (TraitType == SD.TraitType_Profession)
-            {
-                HeaderName = "Edit proffestion skill";
-            }
-            else
-            {
-                if (IsEditMode)
-                    HeaderName = "Edit trait";
-                else
-                {
-                    HeaderName = "Create a new trait";
-                }
-            }
-        }
-        
+            
+            HeaderName = IsEditMode ? "Edit " : "Add " + NewTrait.TraitLabel;
+        } 
     }
-
 }

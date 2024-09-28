@@ -27,5 +27,6 @@ namespace DA_Models.CharacterModels
             }
         }
         public ICollection<EquipmentDTO>? Equipment { get; set; }
+        public override string TraitLabel { get => "item property"; }
     }
 }

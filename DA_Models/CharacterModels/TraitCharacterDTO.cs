@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DA_Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,5 +30,7 @@ namespace DA_Models.CharacterModels
         }
         public ICollection<CharacterDTO>? Characters { get; set; }
         public bool IsTemporary { get; set; } = false;
+        public override string TraitLabel { get => IsTemporary?"state":"trait"; }
+        public override string TraitType { get => IsTemporary ? SD.TraitType_Temporary : SD.TraitType_Character; }
     }
 }
