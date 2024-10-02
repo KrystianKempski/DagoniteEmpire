@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class traitsprofession : Migration
+    public partial class traitProfession : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -161,6 +161,34 @@ namespace DA_DataAccess.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Spells", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Traits",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    Index = table.Column<int>(type: "integer", nullable: false),
+                    TraitType = table.Column<string>(type: "text", nullable: false),
+                    TraitValue = table.Column<int>(type: "integer", nullable: false),
+                    Descr = table.Column<string>(type: "text", nullable: false),
+                    TraitApproved = table.Column<bool>(type: "boolean", nullable: false),
+                    IsUnique = table.Column<bool>(type: "boolean", nullable: false),
+                    Discriminator = table.Column<string>(type: "text", nullable: false),
+                    IsTemporary = table.Column<bool>(type: "boolean", nullable: true),
+                    ProfessionId = table.Column<int>(type: "integer", nullable: true),
+                    Level = table.Column<int>(type: "integer", nullable: true),
+                    DC = table.Column<int>(type: "integer", nullable: true),
+                    Cost = table.Column<int>(type: "integer", nullable: true),
+                    Range = table.Column<string>(type: "text", nullable: true),
+                    IsApproved = table.Column<bool>(type: "boolean", nullable: true),
+                    IsActiveSkill = table.Column<bool>(type: "boolean", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Traits", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -344,40 +372,6 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Traits",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: true),
-                    Index = table.Column<int>(type: "integer", nullable: false),
-                    TraitType = table.Column<string>(type: "text", nullable: false),
-                    TraitValue = table.Column<int>(type: "integer", nullable: false),
-                    Descr = table.Column<string>(type: "text", nullable: false),
-                    TraitApproved = table.Column<bool>(type: "boolean", nullable: false),
-                    IsUnique = table.Column<bool>(type: "boolean", nullable: false),
-                    Discriminator = table.Column<string>(type: "text", nullable: false),
-                    IsTemporary = table.Column<bool>(type: "boolean", nullable: true),
-                    ProfessionId = table.Column<int>(type: "integer", nullable: true),
-                    Level = table.Column<int>(type: "integer", nullable: true),
-                    DC = table.Column<int>(type: "integer", nullable: true),
-                    Cost = table.Column<int>(type: "integer", nullable: true),
-                    Range = table.Column<string>(type: "text", nullable: true),
-                    IsApproved = table.Column<bool>(type: "boolean", nullable: true),
-                    IsActiveSkill = table.Column<bool>(type: "boolean", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Traits", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Traits_Professions_ProfessionId",
-                        column: x => x.ProfessionId,
-                        principalTable: "Professions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Characters",
                 columns: table => new
                 {
@@ -418,33 +412,6 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SpellSlots",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    InSpellbook = table.Column<bool>(type: "boolean", nullable: false),
-                    Prepared = table.Column<int>(type: "integer", nullable: false),
-                    SpellId = table.Column<int>(type: "integer", nullable: true),
-                    SpellCircleId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SpellSlots", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_SpellSlots_SpellCircles_SpellCircleId",
-                        column: x => x.SpellCircleId,
-                        principalTable: "SpellCircles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SpellSlots_Spells_SpellId",
-                        column: x => x.SpellId,
-                        principalTable: "Spells",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Bonuses",
                 columns: table => new
                 {
@@ -453,7 +420,7 @@ namespace DA_DataAccess.Migrations
                     FeatureType = table.Column<string>(type: "text", nullable: false),
                     FeatureName = table.Column<string>(type: "text", nullable: true),
                     BonusValue = table.Column<int>(type: "integer", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: false),
                     Index = table.Column<int>(type: "integer", nullable: false),
                     TraitId = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -514,6 +481,33 @@ namespace DA_DataAccess.Migrations
                         principalTable: "Traits",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SpellSlots",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    InSpellbook = table.Column<bool>(type: "boolean", nullable: false),
+                    Prepared = table.Column<int>(type: "integer", nullable: false),
+                    SpellId = table.Column<int>(type: "integer", nullable: true),
+                    SpellCircleId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SpellSlots", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SpellSlots_SpellCircles_SpellCircleId",
+                        column: x => x.SpellCircleId,
+                        principalTable: "SpellCircles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SpellSlots_Spells_SpellId",
+                        column: x => x.SpellId,
+                        principalTable: "Spells",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -911,11 +905,6 @@ namespace DA_DataAccess.Migrations
                 name: "IX_SpellSlots_SpellId",
                 table: "SpellSlots",
                 column: "SpellId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Traits_ProfessionId",
-                table: "Traits",
-                column: "ProfessionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Wounds_CharacterId",

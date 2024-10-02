@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241002112019_traitsprofession")]
-    partial class traitsprofession
+    [Migration("20241002121114_traitProfession")]
+    partial class traitProfession
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -186,6 +186,7 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("FeatureName")
@@ -1113,8 +1114,6 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Range")
                         .HasColumnType("text");
 
-                    b.HasIndex("ProfessionId");
-
                     b.HasDiscriminator().HasValue("TraitProfession");
                 });
 
@@ -1437,15 +1436,6 @@ namespace DA_DataAccess.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("DA_DataAccess.CharacterClasses.TraitProfession", b =>
-                {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Profession", null)
-                        .WithMany("Traits")
-                        .HasForeignKey("ProfessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Character", b =>
                 {
                     b.Navigation("Attributes");
@@ -1471,8 +1461,6 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Characters");
 
                     b.Navigation("SpellCircles");
-
-                    b.Navigation("Traits");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Race", b =>

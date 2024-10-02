@@ -36,16 +36,16 @@ namespace DA_Business.Repository.CharacterReps
                 var obj = _mapper.Map<ProfessionDTO, Profession>(objDTO);
 
                 //handle traitsProfession
-                var traits = await contex.TraitsProfession.ToListAsync();
-                traits.ForEach(t =>
-                {
-                    if (obj.Traits.Any(nt => nt.Id == t.Id))
-                    {
-                        var untracked = obj.Traits.FirstOrDefault(nt => nt.Id == t.Id);
-                        obj.Traits.Remove(untracked);
-                        obj.Traits.Add(t);
-                    }
-                });
+                //var traits = await contex.TraitsProfession.ToListAsync();
+                //traits.ForEach(t =>
+                //{
+                //    if (obj.Traits.Any(nt => nt.Id == t.Id))
+                //    {
+                //        var untracked = obj.Traits.FirstOrDefault(nt => nt.Id == t.Id);
+                //        obj.Traits.Remove(untracked);
+                //        obj.Traits.Add(t);
+                //    }
+                //});
 
                 var addedObj = await contex.Professions.AddAsync(obj);
                 await contex.SaveChangesAsync();
@@ -64,22 +64,9 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Professions.Include(u=>u.Traits).FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await contex.Professions.FirstOrDefaultAsync(u => u.Id == id);
                 if (obj is not null)
                 {
-                    if (obj is not null)
-                    {
-                        var traits = obj.Traits;
-                        foreach (var t in traits)
-                        {
-                            if (t.TraitApproved == false)
-                            {
-                                contex.Traits.Remove(t);
-                            }
-                        }
-                        contex.Professions.Remove(obj);
-                        await contex.SaveChangesAsync();
-                    }
                     contex.Professions.Remove(obj);
                     await contex.SaveChangesAsync();
                 }
@@ -94,20 +81,19 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<ProfessionDTO>> GetAll()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(u => u.Traits).Include(p => p.SpellCircles));
+            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(p => p.SpellCircles));
         }
 
         public async Task<IEnumerable<ProfessionDTO>> GetAllApproved()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(u => u.Traits).Include(p => p.SpellCircles).Where(t=>t.IsApproved == true));
+            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(p => p.SpellCircles).Where(t=>t.IsApproved == true));
         }
 
         public async Task<ProfessionDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
             var obj = await contex.Professions
-                .Include(u => u.Traits)
                 .Include(p => p.SpellCircles).ThenInclude(p=>p.SpellSlots).ThenInclude(p=>p.Spell).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
@@ -122,7 +108,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = await contex.Professions
-                    .Include(u => u.Traits)
                     .Include(p => p.SpellCircles).ThenInclude(c => c.SpellSlots).ThenInclude(s => s.Spell)
                     .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
