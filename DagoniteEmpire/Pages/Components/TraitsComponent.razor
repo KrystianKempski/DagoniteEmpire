@@ -3,6 +3,7 @@
 @inject IBrowserViewportService _vieportService
 @using DialogOptions = MudBlazor.DialogOptions
 <div class="traits">
+
     <div class="table-container">
     <table class="table align-middle">
         <thead>
@@ -62,7 +63,7 @@
             <label class="balance">Traits balance: @AllParams.Character.TraitBalance </label>
         }
 
-        @if (IsInfoMode == false ||  UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Character)
+        @if (IsInfoMode == false && (  UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false || TraitType != SD.TraitType_Character))
         {
             <div class="buttons-row">
                 <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add @TraitName</button>
@@ -95,28 +96,37 @@
     private string TraitName { get; set; } = "trait";
     private string AddButtonText ="";
     private string ExistingButtonText = "";
-    TraitDTO NewTrait = new();
+    private TraitDTO NewTrait;
 
     protected override async Task OnInitializedAsync()
     {
         UserInfo = await _userService.GetUserInfo();
+        NewTrait = CreateNewTrait();
+        TraitName = NewTrait.TraitLabel;
+    }
+
+    private TraitDTO CreateNewTrait()
+    {
         switch (TraitType)
         {
-            case SD.TraitType_Character: TraitName = "trait"; NewTrait = new TraitCharacterDTO(); break;
-            case SD.TraitType_Temporary: TraitName = "state"; NewTrait = new TraitCharacterDTO(true); break;
-            case SD.TraitType_Gear: TraitName = "item trait"; NewTrait = new TraitEquipmentDTO(); break;
-            case SD.TraitType_Profession: TraitName = "skill"; NewTrait = new TraitProfessionDTO(); break;
-            case SD.TraitType_Race: TraitName = "trait"; NewTrait = new TraitRaceDTO(); break;
+            default:
+            case SD.TraitType_Character: NewTrait = new TraitCharacterDTO(); break;
+            case SD.TraitType_Temporary:  NewTrait = new TraitCharacterDTO(true); break;
+            case SD.TraitType_Gear: NewTrait = new TraitEquipmentDTO(); break;
+            case SD.TraitType_Profession:  NewTrait = new TraitProfessionDTO(); break;
+            case SD.TraitType_Race: NewTrait = new TraitRaceDTO(); break;
         }
+        return NewTrait;
     }
 
     private async Task AddCustomTrait()
-    {        
+    {
+        NewTrait = CreateNewTrait();
         var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
                                                                     { x => x.AllParams, AllParams } };
 
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create " + TraitName, parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Add " + NewTrait.TraitLabel, parameters, await SetOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -128,17 +138,36 @@
     }
     private async Task AddWeaponQualities()
     {
+        NewTrait = CreateNewTrait();
+        var weaponPropertyTrait = Traits.FirstOrDefault(t => t.Name == SD.WeaponParametersDescr);
+        bool editMode = false;
+        if (weaponPropertyTrait is not null)
+        {
+            editMode = true;
+            NewTrait = new TraitEquipmentDTO(weaponPropertyTrait,null);
+        }
+        else
+        {
+            NewTrait = new TraitEquipmentDTO();
+        }
         var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
                                                                     { x => x.IsWeaponQualityMode, true }, 
                                                                     { x => x.AllParams, AllParams } };
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create weapon quality", parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Add weapon quality", parameters, await SetOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
         {
             NewTrait = (TraitDTO)result.Data;
-            Traits.Add(NewTrait);
+            if (editMode)
+            {
+                weaponPropertyTrait = NewTrait;
+            }
+            else
+            {                
+                Traits.Add(NewTrait);
+            }
             await UpdateTraits();
         }
     }
@@ -150,7 +179,7 @@
                                                                    { x => x.TraitType, TraitType },
                                                                    { x => x.AllParams, AllParams }};
 
-        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select " + TraitName, parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select " + NewTrait.TraitLabel, parameters, await SetOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -168,15 +197,7 @@
             }
             await UpdateTraits();
         }
-    }
-
-    private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Medium)
-    {
-        DialogOptions options = new() { MaxWidth = maxWidth };
-        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
-            options.FullScreen = true;
-        return options;
-    }
+    }    
 
     private async Task EditTrait(TraitDTO trait)
     {
@@ -208,6 +229,13 @@
     {
         Traits = Traits.Where(u => u.Name != trait.Name).ToList();
         await UpdateTraits();
+    }
+    private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Medium)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
     }
 
     private async Task UpdateTraits()

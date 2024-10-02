@@ -44,7 +44,8 @@ namespace DA_Models.ComponentModels
 
 
                 // get currently used weapon
-                EquipmentDTO? WeaponUsed = null;
+                EquipmentDTO? MainWeaponUsed = null;
+                EquipmentDTO? OffWeaponUsed = null;
                 //get currently used shield
                 EquipmentDTO? ShieldUsed = null;
                 //get currently used armor
@@ -56,13 +57,15 @@ namespace DA_Models.ComponentModels
                     {
                         if (slot.SlotType != slotTypeMain)
                             continue;
-                        WeaponUsed = slot.Equipment;
+                        MainWeaponUsed = slot.Equipment;
                     }
                     if (slot.SlotType == SD.SlotType.WeaponOff1 || slot.SlotType == SD.SlotType.WeaponOff2){
-                        if(slot.SlotType != slotTypeOff || slot.Equipment.EquipmentType != SD.EquipmentType.Shield)
+                        if(slot.SlotType != slotTypeOff)
                             continue;
-                        else
+                        if (slot.Equipment.EquipmentType == SD.EquipmentType.Shield)
                             ShieldUsed = slot.Equipment;
+                        else if (slot.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee || slot.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged)
+                            OffWeaponUsed = slot.Equipment;
                     }
                     if (slot.SlotType == SD.SlotType.Body)
                     {
@@ -132,9 +135,9 @@ namespace DA_Models.ComponentModels
                                 AddGearBonusToSpecialSkill(skill, -prop.Value.SumBonus);
                             break;
                         case SD.BattleProperty.AttackBase:
-                            if (WeaponUsed is not null)
+                            if (MainWeaponUsed is not null)
                             {
-                                Get(SD.BattleProperty.AttackBase).BaseBonus = _allParams.SpecialSkills.Get(WeaponUsed.RelatedSkill).SumBonus;
+                                Get(SD.BattleProperty.AttackBase).BaseBonus = _allParams.SpecialSkills.Get(MainWeaponUsed.RelatedSkill).SumBonus;
                             }
                             break;
                         case SD.BattleProperty.AttackDodge:
@@ -165,9 +168,19 @@ namespace DA_Models.ComponentModels
                                 Get(SD.BattleProperty.DefenceShield).BaseBonus = _allParams.SpecialSkills.Get(SD.SpecialSkills.Melee.Shields).SumBonus;
                             break;
                         case SD.BattleProperty.DefenceParry:
-                            if (WeaponUsed is not null &&  isParrying)
+                            if (isParrying)
                             {
-                                Get(SD.BattleProperty.DefenceParry).BaseBonus = _allParams.SpecialSkills.Get(WeaponUsed.RelatedSkill).SumBonus;
+                                int mainParryingSkillValue = 0, offParryingSkillValue = 0;
+                                if (MainWeaponUsed is not null)
+                                {
+                                    mainParryingSkillValue = _allParams.SpecialSkills.Get(MainWeaponUsed.RelatedSkill).SumBonus;
+                                }
+                                if (OffWeaponUsed is not null)
+                                {
+                                    offParryingSkillValue = _allParams.SpecialSkills.Get(OffWeaponUsed.RelatedSkill).SumBonus;
+                                }
+                                Get(SD.BattleProperty.DefenceParry).BaseBonus = Math.Max(mainParryingSkillValue,offParryingSkillValue);
+                                    
                             }
                             break;
                     }

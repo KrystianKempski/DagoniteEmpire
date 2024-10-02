@@ -116,14 +116,14 @@ namespace DA_Business.Repository.CharacterReps
                 }
 
                 //delete class traits
-                var traitsProffesion = contex.TraitsProfession.Where(u => u.ProfessionId == obj.ProfessionId);
-                if(traitsProffesion is not null)
-                {
-                    foreach(var trait in traitsProffesion)
-                    {
-                        contex.TraitsProfession.Remove(trait);
-                    }
-                }
+                //var traitsProfession = contex.TraitsProfession.Where(u => u.ProfessionId == obj.ProfessionId);
+                //if(traitsProfession is not null)
+                //{
+                //    foreach(var trait in traitsProfession)
+                //    {
+                //        contex.TraitsProfession.Remove(trait);
+                //    }
+                //}
 
                 return contex.SaveChanges();
             }
@@ -334,6 +334,8 @@ namespace DA_Business.Repository.CharacterReps
                                 obj.TraitsCharacter.Add(trait);
                         }
                     }
+                   
+
                     /// UPDATE EQUIPMENT
 
                     // Delete equipment

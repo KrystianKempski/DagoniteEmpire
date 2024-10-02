@@ -1,7 +1,10 @@
 ﻿@using DA_DataAccess.CharacterClasses
 @inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
+@inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 @inject ISnackbar Snackbar
+@using SelectionType = Syncfusion.Blazor.Grids.SelectionType
+@using SelectionMode = Syncfusion.Blazor.Grids.SelectionMode
 
     <MudDialog >
         <TitleContent>
@@ -13,15 +16,14 @@
         <DialogContent>
         <div class="main-table">
 
-            <SfGrid DataSource="@Traits" @ref="Grid" AllowSelection="true" AllowFiltering="true" AllowPaging="true" Width="100%" Height="100%">
+            <SfGrid  DataSource="@Traits" @ref="Grid" AllowSelection="true" AllowFiltering="true" AllowPaging="true" Width="100%" Height="100%">
                 <GridPageSettings PageSize="10"></GridPageSettings>
                 <GridFilterSettings ImmediateModeDelay=500 Mode="FilterBarMode.Immediate" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
-                <GridSelectionSettings CheckboxOnly="true" PersistSelection="true"></GridSelectionSettings>
+                <GridSelectionSettings Mode="selectionMode" Type="selectionType" CheckboxMode="checkboxMode" CheckboxOnly="true" ></GridSelectionSettings>
                 <GridColumns>
                     <GridColumn Type="ColumnType.CheckBox" Width="20"></GridColumn>
-                    <GridColumn Field=@nameof(EquipmentDTO.Name) HeaderText="Name" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="80"></GridColumn>
-                    <GridColumn Field=@nameof(EquipmentDTO.EquipmentType) HeaderText="Type" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="60"></GridColumn>
-                    <GridColumn Field=@nameof(EquipmentDTO.Description) HeaderText="Description" FilterSettings="FilterSettings" Width="300"></GridColumn>
+                    <GridColumn Field=@nameof(TraitDTO.Name) HeaderText="Name" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="80"></GridColumn>
+                    <GridColumn Field=@nameof(TraitDTO.SummaryDescr) HeaderText="Description" FilterSettings="FilterSettings" Width="300"></GridColumn>
                 </GridColumns>
             </SfGrid>
         </div>
@@ -39,7 +41,11 @@
     [Parameter] public AllParamsModel AllParams { get; set; }
     [Parameter] public List<TraitDTO> ChosenTraits { get; set; } = new List<TraitDTO>();
     [Parameter] public string TraitType { get; set; } = SD.TraitType_Character;
+    [Parameter] public bool MultiRowSelection { get; set; } = true;
     private string TraitName = "";
+    private SelectionType selectionType = SelectionType.Multiple;
+    private SelectionMode selectionMode = SelectionMode.Row;
+    private CheckboxSelectionType checkboxMode = CheckboxSelectionType.Default;
 
     private IEnumerable<TraitDTO> Traits;
     private SfGrid<TraitDTO> Grid;
@@ -54,6 +60,19 @@
             Traits = await _traitRaceRepository.GetAllApproved();
         else if (TraitType == SD.TraitType_Temporary)
             Traits = (await _traitCharacterRepository.GetAllApproved()).ToList().Where(t => t.IsTemporary == true);
+        else if (TraitType == SD.TraitType_Profession)
+            Traits = (await _traitProfessionRepository.GetAllApproved()).ToList().Where(t => t.IsActiveSkill == false);
+
+        if (MultiRowSelection)
+        {
+            selectionType = SelectionType.Multiple;
+            checkboxMode = CheckboxSelectionType.Default;
+            selectionMode = SelectionMode.Row;
+        }else{
+            selectionType = SelectionType.Single;
+            checkboxMode = CheckboxSelectionType.ResetOnRowClick;
+            selectionMode = SelectionMode.Cell;
+        }
 
         switch (TraitType)
         {
@@ -64,6 +83,8 @@
             case SD.TraitType_Race: TraitName = "trait"; break;
         }
         HeaderName = "Add " + TraitName + "s " + "from existing";
+
+        StateHasChanged();
     }
 
     private void OnSaveTraitBtnClick()
@@ -71,8 +92,13 @@
         ChosenTraits = Grid.SelectedRecords;
         MudDialog.Close(DialogResult.Ok(ChosenTraits));
         if (Traits.Any())
-        {            
-            Snackbar.Add("Selected " + TraitName + "s added", Severity.Success);
+        {
+            string text = "";
+            if (MultiRowSelection)
+                text = "Selected " + TraitName + "s added";
+            else
+                text = ChosenTraits.First().Name + " selected";
+            Snackbar.Add(text, Severity.Success);
         }
     }
     private void OnCancelBtnClick()

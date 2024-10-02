@@ -10,15 +10,11 @@ namespace DA_DataAccess.CharacterClasses
     public class TraitProfession : Trait
     {
         public int ProfessionId { get; set; }
-
         public int Level { get; set; }
         public int? DC { get; set; }
         public int? Cost { get; set; }
         public string? Range { get; set; }
         public bool IsApproved { get; set; } = false;
-       // public uint Index { get; set; } = 0;
         public bool IsActiveSkill { get; set; } = false;
-        //public int? ActiveProfessionId { get; set; } = null;
-
     }
 }

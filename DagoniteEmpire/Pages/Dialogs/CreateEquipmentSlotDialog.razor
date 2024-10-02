@@ -49,7 +49,7 @@
                             <div class="d-flex flex-column px-1">
                             <label class="fw-bold py-1">Two-handed</label>
                                 <div class="justify-content-center mx-auto my-auto">
-                                    <SfCheckBox Disabled="IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                <SfCheckBox Disabled="IsInfoMode" @bind-Checked="NewSlot.Equipment.IsTwoHanded"></SfCheckBox>
                                 </div>
                             </div>
                         }
@@ -67,7 +67,7 @@
                             <div class="d-flex flex-column px-1">
                             <label class="fw-bold py-1">Two-handed</label>
                                 <div class="justify-content-center mx-auto my-auto">
-                                    <SfCheckBox Disabled="IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                <SfCheckBox Disabled="IsInfoMode" @bind-Checked="NewSlot.Equipment.IsTwoHanded"></SfCheckBox>
                                 </div>
                             </div>
                         }
@@ -123,7 +123,7 @@
                             <div class="d-flex flex-column px-1">
                             <label class="fw-bold py-1">Two-handed</label>
                                 <div class="justify-content-center mx-auto my-auto">
-                                    <SfCheckBox Disabled="IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                <SfCheckBox Disabled="IsInfoMode" @bind-Checked="NewSlot.Equipment.IsTwoHanded"></SfCheckBox>
                                 </div>
                             </div>
                         }
@@ -141,7 +141,7 @@
                             <div class="d-flex flex-column px-1">
                                 <label class="fw-bold py-1">"Two-handed</label>
                                 <div class="justify-content-center mx-auto my-auto">
-                                    <SfCheckBox Disabled="IsInfoMode" @bind-Checked="IsTwoHanded"></SfCheckBox>
+                                <SfCheckBox Disabled="IsInfoMode" @bind-Checked="NewSlot.Equipment.IsTwoHanded"></SfCheckBox>
                                 </div>
                             </div>
                         }
@@ -167,15 +167,24 @@
                 @if (NewSlot.Equipment.Traits != null)
                 {
                     <div class="traits">
-                        <TraitsComponent IsInfoMode="IsInfoMode" @bind-Traits="@Traits" TraitType="@TraitType" WeaponQualityAvalible="@WeaponQualityAvalible()"></TraitsComponent>
+                        <CascadingValue Value="@AllParams">
+                            <TraitsComponent IsInfoMode="IsInfoMode" @bind-Traits="@Traits" TraitType="@TraitType" WeaponQualityAvalible="@WeaponQualityAvalible()"></TraitsComponent>
+                        </CascadingValue>
                     </div>
                 }
                 <label class="warnign-message">@ErrorMessage</label>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="OnSaveBtnClick">Save</MudButton>
+        @if (IsInfoMode == false)
+         {
+            <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
+            <MudButton Color="Color.Error" OnClick="OnSaveBtnClick">Save</MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Error" OnClick="OnCancelBtnClick">OK</MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -188,7 +197,6 @@
     [Parameter] public bool IsWeaponQualityMode { get; set; } = false;
     [Parameter] public AllParamsModel AllParams { get; set; }
     public string TraitType { get; set; } = SD.TraitType_Gear;
-    private bool IsTwoHanded = false;
     public string HeaderName { get; set; } = "";
     private SfRichTextEditor DescrEdit = new();
     private string ErrorMessage { get; set; } = string.Empty;
@@ -223,36 +231,47 @@
 
     private async Task OnSaveBtnClick()
     {
+        try{
 
-        if (string.IsNullOrEmpty(NewSlot.Equipment.Name) || string.IsNullOrEmpty(NewSlot.Equipment.Description))
-        {
-            ErrorMessage = $"Create name and item description";
-            return;
-        }
-        if (NewSlot.Equipment != null)
-        {
-            NewSlot.Equipment.Traits = new List<TraitEquipmentDTO>();
-            foreach (var trait in Traits)
+            if (string.IsNullOrEmpty(NewSlot.Equipment.Name) || string.IsNullOrEmpty(NewSlot.Equipment.Description))
             {
-                NewSlot.Equipment.Traits.Add(new TraitEquipmentDTO(trait, NewSlot.Equipment));
+                ErrorMessage = $"Create name and item description";
+                return;
             }
-            var shortDescr = (await DescrEdit.GetTextAsync());
-            if (shortDescr.Length > 100)
-                shortDescr = shortDescr?[0..100] + "...";
-            NewSlot.Equipment.ShortDescr = shortDescr;
+            if ((NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged ||
+                NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ) && 
+                string.IsNullOrEmpty(NewSlot.Equipment.RelatedSkill))
+            {
+                ErrorMessage = $"Set related skill of item";
+                return;
+            }
+            if (NewSlot.Equipment != null)
+            {
+                NewSlot.Equipment.Traits = new List<TraitEquipmentDTO>();
+                foreach (var trait in Traits)
+                {
+                    NewSlot.Equipment.Traits.Add(new TraitEquipmentDTO(trait, NewSlot.Equipment));
+                }
+                var shortDescr = (await DescrEdit.GetTextAsync());
+                if (shortDescr.Length > 100)
+                    shortDescr = shortDescr?[0..100] + "...";
+                NewSlot.Equipment.ShortDescr = shortDescr;
 
-            if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.Shield)
-                NewSlot.Equipment.RelatedSkill = SD.SpecialSkills.Melee.Shields;
-            if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.Body)
-                NewSlot.Equipment.RelatedSkill = SD.SpecialSkills.Athletics.Armor;
+                if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.Shield)
+                    NewSlot.Equipment.RelatedSkill = SD.SpecialSkills.Melee.Shields;
+                if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.Body)
+                    NewSlot.Equipment.RelatedSkill = SD.SpecialSkills.Athletics.Armor;
+            }
+            ErrorMessage = string.Empty;
+
+            MudDialog.Close(DialogResult.Ok(NewSlot));
+            string info = "Item ";
+            info += IsEditMode ? "edited" : "added";
+            Snackbar.Add(info, Severity.Success);
+        }catch(Exception ex)
+        {
+            Snackbar.Add("Error adding trait", Severity.Error);
         }
-        ErrorMessage = string.Empty;
-
-        MudDialog.Close(DialogResult.Ok(NewSlot));
-        if (IsEditMode)
-            Snackbar.Add("Equipment edited", Severity.Success);
-        else
-            Snackbar.Add("Equipment created", Severity.Success);
     }
     private void OnCancelBtnClick()
     {
@@ -262,7 +281,13 @@
     protected override async Task OnInitializedAsync()
     {
         ErrorMessage = string.Empty;
+        if (NewSlot.Equipment.Traits is not null && NewSlot.Equipment.Traits.Any())
+        {
+            Traits = NewSlot.Equipment.Traits.Cast<TraitDTO>().ToList();
+        }
         UserInfo = await _userService.GetUserInfo();
+        HeaderName = IsEditMode ? "Edit" : "Add";
+        HeaderName += " item";
     }
 
 }

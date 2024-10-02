@@ -34,5 +34,7 @@ namespace DA_DataAccess.CharacterClasses
         //public virtual ICollection<ProfessionSkill>? PassiveSkills { get; set; }
         public virtual ICollection<SpellCircle>? SpellCircles { get; set; }
 
+        //public ICollection<TraitProfession>? Traits { get; set; } = null;
+
     }
 }

@@ -67,10 +67,6 @@
         {
             <div class="buttons-row">
                 <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add @TraitName</button>
-                @if (TraitType == SD.TraitType_Gear && WeaponQualityAvalible)
-                {
-                    <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Add weapon qualities</button>
-                }
                 <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing @TraitName</button>
             </div>
         }
@@ -109,23 +105,6 @@
 
 
         var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create trait", parameters, await SetOptions());
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
-        {
-            NewTrait = (TraitDTO)result.Data;
-            Traits.Add(NewTrait);
-            await UpdateTraits();
-        }
-    }
-    private async Task AddWeaponQualities()
-    {
-        TraitDTO NewTrait = new TraitCharacterDTO(true);
-        var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
-                                                                    { x => x.IsWeaponQualityMode, true },
-                                                                    { x => x.AllParams, AllParams } };
-
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Create weapon quality", parameters, await SetOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)

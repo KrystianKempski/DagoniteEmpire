@@ -34,31 +34,18 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<ProfessionDTO, Profession>(objDTO);
-                //handle profession skills
-                //if (!obj.ActiveSkills.IsNullOrEmpty())
-                //{
-                //    var activeSkills = await contex.ProfessionSkills.ToListAsync();
-                //    activeSkills.ForEach(t =>
-                //    {
-                //        if (obj.ActiveSkills.Any(nt => nt.Id == t.Id))
-                //        {
-                //            var untracked = obj.ActiveSkills.FirstOrDefault(nt => nt.Id == t.Id);
-                //            obj.ActiveSkills.Remove(untracked);
-                //            obj.ActiveSkills.Add(t);
-                //        }
-                //    });
 
-                //    var passiveSkills = await contex.ProfessionSkills.ToListAsync();
-                //    passiveSkills.ForEach(t =>
-                //    {
-                //        if (obj.PassiveSkills.Any(nt => nt.Id == t.Id))
-                //        {
-                //            var untracked = obj.PassiveSkills.FirstOrDefault(nt => nt.Id == t.Id);
-                //            obj.PassiveSkills.Remove(untracked);
-                //            obj.PassiveSkills.Add(t);
-                //        }
-                //    });
-                //}
+                //handle traitsProfession
+                var traits = await contex.TraitsProfession.ToListAsync();
+                traits.ForEach(t =>
+                {
+                    if (obj.Traits.Any(nt => nt.Id == t.Id))
+                    {
+                        var untracked = obj.Traits.FirstOrDefault(nt => nt.Id == t.Id);
+                        obj.Traits.Remove(untracked);
+                        obj.Traits.Add(t);
+                    }
+                });
 
                 var addedObj = await contex.Professions.AddAsync(obj);
                 await contex.SaveChangesAsync();
@@ -77,24 +64,22 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Professions./*Include(u=>u.ActiveSkills).Include(u => u.PassiveSkills).*/FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await contex.Professions.Include(u=>u.Traits).FirstOrDefaultAsync(u => u.Id == id);
                 if (obj is not null)
                 {
-
-                    //if(!obj.ActiveSkills.IsNullOrEmpty())
-                    //{
-                    //    foreach (var s in obj.ActiveSkills)
-                    //    {
-                    //        contex.ProfessionSkills.Remove(s);
-                    //    }
-                    //}
-                    //if (!obj.PassiveSkills.IsNullOrEmpty())
-                    //{
-                    //    foreach (var s in obj.PassiveSkills)
-                    //    {
-                    //        contex.ProfessionSkills.Remove(s);
-                    //    }
-                    //}
+                    if (obj is not null)
+                    {
+                        var traits = obj.Traits;
+                        foreach (var t in traits)
+                        {
+                            if (t.TraitApproved == false)
+                            {
+                                contex.Traits.Remove(t);
+                            }
+                        }
+                        contex.Professions.Remove(obj);
+                        await contex.SaveChangesAsync();
+                    }
                     contex.Professions.Remove(obj);
                     await contex.SaveChangesAsync();
                 }
@@ -109,21 +94,20 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<ProfessionDTO>> GetAll()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions./*Include(u => u.ActiveSkills).Include(p => p.PassiveSkills).*/Include(p => p.SpellCircles));
+            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(u => u.Traits).Include(p => p.SpellCircles));
         }
 
         public async Task<IEnumerable<ProfessionDTO>> GetAllApproved()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions./*Include(u => u.ActiveSkills).Include(p => p.PassiveSkills).*/Include(p => p.SpellCircles).Where(t=>t.IsApproved == true));
+            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(u => u.Traits).Include(p => p.SpellCircles).Where(t=>t.IsApproved == true));
         }
 
         public async Task<ProfessionDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
             var obj = await contex.Professions
-                //.Include(u => u.ActiveSkills)
-                //.Include(p => p.PassiveSkills)
+                .Include(u => u.Traits)
                 .Include(p => p.SpellCircles).ThenInclude(p=>p.SpellSlots).ThenInclude(p=>p.Spell).FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
@@ -138,82 +122,21 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = await contex.Professions
-                    //.Include(u => u.ActiveSkills)
-                    //.Include(p => p.PassiveSkills)
+                    .Include(u => u.Traits)
                     .Include(p => p.SpellCircles).ThenInclude(c => c.SpellSlots).ThenInclude(s => s.Spell)
                     .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
                     var updateProfession = _mapper.Map<ProfessionDTO, Profession>(objDTO);
                     // Update parent
-                    contex.Entry(obj).CurrentValues.SetValues(updateProfession);
-
-                    //// Delete active skills 
-                    //if (obj.ActiveSkills is not null)
-                    //{
-                    //    foreach (var existingChild in obj.ActiveSkills.ToList())
-                    //    {
-                    //        if (!updateProfession.ActiveSkills.Any(c => c.Id == existingChild.Id))
-                    //        {
-                    //            contex.ProfessionSkills.Remove(existingChild);
-                    //        }
-                    //    }
-                    //}
-                    //// Update and Insert ActiveSkills
-                    //if (updateProfession.ActiveSkills is not null)
-                    //{
-                    //    foreach (var newSkill in updateProfession.ActiveSkills)
-                    //    {
-                    //        ProfessionSkill? existingChild;
-                    //        if (!obj.ActiveSkills.IsNullOrEmpty())
-                    //        {
-                    //            existingChild = obj.ActiveSkills.FirstOrDefault(c => c.Id == newSkill.Id && c.Id != default(int));
-                    //        }
-                    //        else
-                    //        {
-                    //            obj.ActiveSkills = new List<ProfessionSkill>();
-                    //            existingChild = null;
-                    //        }
-
-                    //        if (existingChild != null)
-                    //            // Update bonus
-                    //            contex.Entry(existingChild).CurrentValues.SetValues(newSkill);
-                    //        else
-                    //            // Insert bonus
-                    //            obj.ActiveSkills.Add(newSkill);
-                    //    }
-                    //}
-                    //// Update and Insert ActiveSkills
-                    //if (updateProfession.PassiveSkills is not null)
-                    //{
-                    //    foreach (var newSkill in updateProfession.PassiveSkills)
-                    //    {
-                    //        ProfessionSkill? existingChild;
-                    //        if (!obj.PassiveSkills.IsNullOrEmpty())
-                    //        {
-                    //            existingChild = obj.PassiveSkills.FirstOrDefault(c => c.Id == newSkill.Id && c.Id != default(int));
-                    //        }
-                    //        else
-                    //        {
-                    //            obj.PassiveSkills = new List<ProfessionSkill>();
-                    //            existingChild = null;
-                    //        }
-
-                    //        if (existingChild != null)
-                    //            // Update bonus
-                    //            contex.Entry(existingChild).CurrentValues.SetValues(newSkill);
-                    //        else
-                    //            // Insert bonus
-                    //            obj.PassiveSkills.Add(newSkill);
-                    //    }
-                    //}
+                    contex.Entry(obj).CurrentValues.SetValues(updateProfession);                   
 
                     // Delete spell circles
                     if (obj.SpellCircles is not null)
                     {
                         foreach (var existingChild in obj.SpellCircles.ToList())
                         {
-                            //delete those who is not in updated proffestion
+                            //delete those who is not in updated profession
                             if (!updateProfession.SpellCircles.Any(c => c.Id == existingChild.Id))
                             {
                                 if(existingChild.SpellSlots is not null)

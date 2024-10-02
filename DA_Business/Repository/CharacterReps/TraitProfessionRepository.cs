@@ -65,12 +65,16 @@ namespace DA_Business.Repository.CharacterReps
             using var contex = await _db.CreateDbContextAsync();
             if (profId == null || profId < 1)
                 return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses).Where(u => u.ProfessionId == profId));
+            return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses).Where(u => u.ProfessionId == profId));
         }
 
-        public Task<IEnumerable<TraitProfessionDTO>> GetAllApproved(bool addUnique = false)
+        public async Task<IEnumerable<TraitProfessionDTO>> GetAllApproved(bool addUnique = false)
         {
-            throw new NotImplementedException();
+            using var contex = await _db.CreateDbContextAsync();
+            if (addUnique)
+                return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses).Where(t => t.TraitApproved == true));
+
+            return _mapper.Map<IEnumerable<TraitProfession>, IEnumerable<TraitProfessionDTO>>(contex.TraitsProfession.Include(u => u.Bonuses).Where(t => t.TraitApproved == true && t.IsUnique == false));
         }
 
         public async Task<TraitProfessionDTO> GetById(int id)

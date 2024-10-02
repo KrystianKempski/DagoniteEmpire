@@ -71,17 +71,8 @@
             }
             else if (SlotType == SD.SlotType.WeaponOff1 || SlotType == SD.SlotType.WeaponOff2)
             {
-                AllGearsOfType = AllParams.EquipmentSlots.Where(u => u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
-                                                                        u.Equipment.EquipmentType == SD.EquipmentType.Shield).ToList();
-                // remove two handed weapons from list
-                var deleteItems = new List<EquipmentSlotDTO>();
-                foreach(var weapon in AllGearsOfType)
-                {
-                    var a = AllParams.BattleProperties.GetWeaponQualityListFromItem(weapon.Equipment).FirstOrDefault(b => b.Name == SD.WeaponQuality.TwoHanded);
-                    if (a is not null)
-                        deleteItems.Add(weapon);
-                }
-                deleteItems.ForEach(u => AllGearsOfType.Remove(u));
+                AllGearsOfType = AllParams.EquipmentSlots.Where(u => (u.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee ||
+                                                                        u.Equipment.EquipmentType == SD.EquipmentType.Shield) && u.Equipment.IsTwoHanded == false).ToList();
                 resetGear = true;
             }
             else

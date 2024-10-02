@@ -25,5 +25,6 @@ namespace DA_Models.CharacterModels
         public string RelatedSkill { get; set; } = "";
         public ICollection<TraitEquipmentDTO>? Traits { get; set; } = new List<TraitEquipmentDTO>();
         public ICollection<CharacterDTO>? Characters { get; set; } = new List<CharacterDTO>();
+        public bool IsTwoHanded { get; set; } = false;
     }
 }

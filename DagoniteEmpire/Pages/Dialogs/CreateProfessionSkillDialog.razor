@@ -1,157 +1,159 @@
 ﻿@using DA_DataAccess.CharacterClasses
+@inject ISnackbar Snackbar
 @inject IUserService _userService
-<div class="traits">
+@inject IDialogService DialogService
+@inject IBrowserViewportService _vieportService
+@using DialogOptions = MudBlazor.DialogOptions
 
-    <SfDialog Width="50%" Height="50%" @bind-Visible="@_professionSkillModel.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
-        <DialogEvents Opened="@DialogOpen"></DialogEvents>
-            <Header>@HeaderName</Header>
-        <DialogTemplates>
-            <Content>
-                 <div class="main-table">
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@MyIcon.Scroll" Color="Color.Primary" />
+            @HeaderName
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="main-table">
+            <div class="d-flex ">
+                <div class="d-flex flex-column flex-grow-1">
+                <label class="fw-bold py-1">Profession skill name</label>
+                    <SfTextBox Readonly="IsInfoMode" Placeholder="Talent name" @bind-Value="@NewTrait.Name"></SfTextBox>
+                </div>
 
-                    @if (IsLoading)
-                    {
-                        <LoadingPage></LoadingPage>
-                    }
-                    else
-                    {
-                            
-                        <div class="d-flex ">
-                            <div class="d-flex flex-column flex-grow-1">
-                            <label class="fw-bold py-1">Profession skill name</label>
-                                <SfTextBox Placeholder="Talent name" @bind-Value="@_professionSkillModel.TraitDTO.Name"></SfTextBox>
-                            </div>
-
-                            @if (UserInfo?.IsAdminOrMG == true)
-                            {
-                            <div class="d-flex flex-column px-1">
-                                <label class="fw-bold py-1">Approve</label>
-                                <div class="justify-content-center mx-auto my-auto">
-                                    <SfCheckBox @bind-Checked="ProfessionSkillModel.TraitDTO.TraitApproved"></SfCheckBox>
-                                </div>
-                            </div>
-                            }
-                        </div>
-                        <div class="align-items-start bonus-name py-0">
-                            <label class="fw-bold  py-1">Profession skill description</label>
-                        </div>
-                        <div class="align-items-start">
-                            <div class="col-12 bonus-name py-0">
-                                <SfTextBox Multiline=true Placeholder="Insert general trait description" @bind-Value="@_professionSkillModel.TraitDTO.Descr"></SfTextBox>
-                            </div>
-                        </div>
-                        @if(_professionSkillModel.TraitDTO.IsActiveSkill)
-                        {
-                            <div class="d-flex">
-                                <div class="d-flex flex-column">
-                                    <label class="fw-bold py-1">DC</label>
-                                    <SfNumericTextBox Placeholder="DC" @bind-Value="@_professionSkillModel.TraitDTO.DC"></SfNumericTextBox>
-                                </div>
-                                <div class="d-flex flex-column">
-                                    <label class="fw-bold py-1">Cost</label>
-                                    <SfNumericTextBox Placeholder="Cost" @bind-Value="@_professionSkillModel.TraitDTO.Cost"></SfNumericTextBox>
-                                </div>
-                                <div class="d-flex flex-column">
-                                    <label class="fw-bold py-1">Range</label>
-                                    <SfTextBox Placeholder="DC" @bind-Value="@_professionSkillModel.TraitDTO.Range"></SfTextBox>
-                                </div>
-                            </div>
-                        }
+                @if (UserInfo?.IsAdminOrMG == true)
+                {
+                <div class="d-flex flex-column px-1">
+                    <label class="fw-bold py-1">Approve</label>
+                    <div class="justify-content-center mx-auto my-auto">
+                    <SfCheckBox  @bind-Checked="NewTrait.TraitApproved"></SfCheckBox>
+                    </div>
+                </div>
+                }
+            </div>
+            <div class="align-items-start bonus-name py-0">
+                <label class="fw-bold  py-1">Profession skill description</label>
+            </div>
+            <div class="align-items-start">
+                <div class="col-12 bonus-name py-0">
+                    <SfTextBox Readonly="IsInfoMode" Multiline=true Placeholder="Insert general trait description" @bind-Value="@NewTrait.Descr"></SfTextBox>
+                </div>
+            </div>
+           
                         
-                        <label class="fw-bold pt-4">Bonuses and penalties</label>
+            <label class="fw-bold pt-4">Bonuses and penalties</label>
 
-                        @if (_professionSkillModel.TraitDTO.Bonuses != null)
+            @if (NewTrait.Bonuses != null)
+            {
+                @foreach (var obj in NewTrait.Bonuses)
+                {
+                    <label class="bonus-cell">Bonus @obj.Index</label>
+                    <div class="bonuses-columns">
+                            <div class="bonus-cell">
+                            <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType"></SfDropDownList>
+                            </div>
+                        @if (obj.FeatureType == SD.FeatureAttribute)
                         {
-                            @foreach (var obj in _professionSkillModel.TraitDTO.Bonuses)
+                            <div class="bonus-cell">
+                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes.GetAllArray()" @bind-Value="@obj.FeatureName">
+                                    <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                </SfDropDownList>
+                            </div>
+                        }
+                        else if (obj.FeatureType == SD.FeatureBaseSkill)
+                        {
+                            <div class="bonus-cell">
+                                <SfDropDownList Readonly="IsInfoMode"  TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@AllParams.BaseSkills" @bind-Value="@obj.FeatureName">
+                                    <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                </SfDropDownList>
+                            </div>
+                        }
+                        else if (obj.FeatureType == SD.FeatureSpecialSkill)
+                        {
+                            <div class="bonus-cell">
+                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills.GetAllArray()" @bind-Value="@obj.FeatureName">
+                                    <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                </SfDropDownList>
+                            </div>
+                        }
+                        else if (obj.FeatureType == SD.FeatureWeaponQuality)
+                        {
+                            <div class="bonus-cell">
+                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="string" Width="100%" Placeholder="Select weapon quality" DataSource="@WeaponQualityList" @bind-Value="@obj.FeatureName">
+                                    <DropDownListFieldSettings Value="Id" Text="Id"></DropDownListFieldSettings>
+                                </SfDropDownList>
+                            </div>
+                        }
+                        else if(obj.FeatureType == SD.FeatureOther)
+                        {
+                            <div class="bonus-double-cell">
+                                <SfTextBox Readonly="IsInfoMode" Multiline=true Placeholder="Insert bonus description" @bind-Value="@obj.Description"></SfTextBox>
+
+                            </div>
+                        }
+                        @if (@obj.FeatureName != null && @obj.FeatureType != SD.FeatureOther)
+                        {
+                            if (obj.FeatureType == SD.FeatureWeaponQuality)
                             {
-                                <label class="bonus-cell">Bonus @obj.Index</label>
-                                <div class="bonuses-columns">
-                                        <div class="bonus-cell">
-                                        <SfDropDownList TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType"></SfDropDownList>
-                                        </div>
-                                    @if (obj.FeatureType == SD.FeatureAttribute)
-                                    {
-                                        <div class="bonus-cell">
-                                            <SfDropDownList  TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes.GetAllArray()" @bind-Value="@obj.FeatureName">
-                                                <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
-                                            </SfDropDownList>
-                                        </div>
-                                    }
-                                    else if (obj.FeatureType == SD.FeatureBaseSkill)
-                                    {
-                                        <div class="bonus-cell">
-                                            <SfDropDownList  TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@AllParams.BaseSkills" @bind-Value="@obj.FeatureName">
-                                                <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
-                                            </SfDropDownList>
-                                        </div>
-                                    }
-                                    else if (obj.FeatureType == SD.FeatureSpecialSkill)
-                                    {
-                                        <div class="bonus-cell">
-                                            <SfDropDownList TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills.GetAllArray()" @bind-Value="@obj.FeatureName">
-                                                <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
-                                            </SfDropDownList>
-                                        </div>
-                                    }
-                                    else if (obj.FeatureType == SD.FeatureWeaponQuality)
-                                    {
-                                        <div class="bonus-cell">
-                                            <SfDropDownList TValue="string" TItem="string" Width="100%" Placeholder="Select weapon quality" DataSource="@WeaponQualityList" @bind-Value="@obj.FeatureName">
-                                                <DropDownListFieldSettings Value="Id" Text="Id"></DropDownListFieldSettings>
-                                            </SfDropDownList>
-                                        </div>
-                                    }
-                                    else if(obj.FeatureType == SD.FeatureOther)
-                                    {
-                                        <div class="bonus-double-cell">
-                                            <SfTextBox Multiline=true Placeholder="Insert bonus description" @bind-Value="@obj.Description"></SfTextBox>
+                                <div class="bonus-cell">
+                                    <SfNumericTextBox Readonly="IsInfoMode"  Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                </div>
+                            }
+                            else
+                            {
 
-                                        </div>
-                                    }
-                                    @if (@obj.FeatureName != null && @obj.FeatureType != SD.FeatureOther)
-                                    {
-                                        if (obj.FeatureType == SD.FeatureWeaponQuality)
-                                        {
-                                            <div class="bonus-cell">
-                                                <SfNumericTextBox  Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
-                                            </div>
-                                        }
-                                        else
-                                        {
-
-                                            <div class="bonus-cell">
-                                                <SfNumericTextBox  Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
-                                            </div>
-                                        }
-                                    }
-
+                                <div class="bonus-cell">
+                                    <SfNumericTextBox Readonly="IsInfoMode" Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
                                 </div>
                             }
                         }
 
-                        <div class="d-flex">
-                            <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
-                            <button class="add-bonus-button" @onclick="OnDeleteBonusBtnClick"><i class="fa-solid fa-minus"></i></button>
-                            </div>
+                    </div>
+                }
 
-                    <label class="warnign-message">@ErrorMessage</label>
-                    } 
-                </div> 
+                <div class="d-flex">
+                    <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
+                    <button class="add-bonus-button" @onclick="OnDeleteBonusBtnClick"><i class="fa-solid fa-minus"></i></button>
+                    </div>
 
-            </Content>
-        </DialogTemplates>
+            <label class="warnign-message">@ErrorMessage</label>
+            } 
+        </div>
 
-        <DialogButtons>
+        <MudDivider Class="mt-4 mb-2" />
 
-            <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
-            </DialogButton>
-            <DialogButton OnClick="@OnSaveTraitBtnClick" Content="Save" IsPrimary="true">
-            </DialogButton>
-        </DialogButtons>
+        @if (IsActiveSkill)
+        {
+            <div class="d-flex py-2">
+                <div class="d-flex flex-column me-4">
+                    <label class="fw-bold py-1">DC</label>
+                    <SfNumericTextBox Readonly="IsInfoMode" Placeholder="DC" @bind-Value="@NewTrait.DC"></SfNumericTextBox>
+                </div>
+                <div class="d-flex flex-column me-4">
+                    <label class="fw-bold py-1">Cost</label>
+                    <SfNumericTextBox Readonly="IsInfoMode" Placeholder="Cost" @bind-Value="@NewTrait.Cost"></SfNumericTextBox>
+                </div>
+                <div class="d-flex flex-column me-4">
+                    <label class="fw-bold py-1">Range</label>
+                    <SfTextBox Readonly="IsInfoMode" Placeholder="DC" @bind-Value="@NewTrait.Range"></SfTextBox>
+                </div>
+            </div>
+        }
+        else
+        {           
+            <div class="d-flex py-2">
+                <MudButton Class="me-4" Variant="Variant.Filled" OnClick="SelectExistingSkill">Select existing talent</MudButton>
+                <MudButton Variant="Variant.Filled" OnClick="ClearSkill">Clear skill</MudButton>
+            </div>
+        }
 
-    </SfDialog>
+    </DialogContent>
+    <DialogActions>
 
-</div>
+        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+
+    </DialogActions>
+</MudDialog>
 
 <style>
     @@media (max-width: 400px) {
@@ -163,31 +165,17 @@
 </style>
 
 @code {
-    [CascadingParameter]
-    public AllParamsModel AllParams { get; set; }
+    [CascadingParameter] 
+    MudDialogInstance MudDialog { get; set; }
+    [Parameter] public AllParamsModel AllParams { get; set; }
+    [Parameter] public TraitProfessionDTO NewTrait { get; set; }
+    [Parameter] public bool IsEditMode { get; set; } = false;
+    [Parameter] public bool IsInfoMode { get; set; } = false;
+    [Parameter] public bool IsActiveSkill { get; set; } = false;
 
     public UserInfo? UserInfo { get; set; }
-    [Parameter]
-    public EventCallback<ProfessionSkillModel> ProfessionSkillModelChanged { get; set; }
-
     public string TraitType { get; set; } = SD.TraitType_Profession;
-
     private string HeaderName = "Modify talent";
-    private ProfessionSkillModel _professionSkillModel;
-
-    [Parameter]
-    public ProfessionSkillModel ProfessionSkillModel
-    {
-        get => _professionSkillModel;
-        set{
-            if (_professionSkillModel == value) return;
-            _professionSkillModel = value;
-            IsLoading = false;
-            StateHasChanged();
-            ProfessionSkillModelChanged.InvokeAsync(value);
-        }
-    }
-
 
     List<string> WeaponQualityList = new List<string> {
         SD.WeaponQuality.Fast,
@@ -211,11 +199,9 @@
         SD.WeaponQuality.Precise,
         SD.WeaponQuality.Range,
         SD.WeaponQuality.Light,
-        SD.WeaponQuality.TwoHanded,
       };
 
     private string ErrorMessage { get; set; } = string.Empty;
-    private bool IsLoading { get; set; }= true;
 
     private List<string> FeatureData = new List<string>
     {
@@ -226,20 +212,20 @@
         SD.FeatureOther
     };
 
-    private async Task OnSaveTraitBtnClick()
+    private void OnSaveTraitBtnClick()
     {
-        if (string.IsNullOrEmpty(ProfessionSkillModel.TraitDTO.Name) || string.IsNullOrEmpty(ProfessionSkillModel.TraitDTO.Descr))
+        if (string.IsNullOrEmpty(NewTrait.Name) || string.IsNullOrEmpty(NewTrait.Descr))
         {
             ErrorMessage = $"Create name and description of trait";
             return;
         }
-        if (ProfessionSkillModel.IsEditMode == false && AllParams.TraitsProfession.Where(t => t.Name == ProfessionSkillModel.TraitDTO.Name).Count() > 0)
+        if (IsEditMode == false && AllParams.TraitsProfession.Where(t => t.Name == NewTrait.Name).Count() > 0)
         {
             ErrorMessage = $"That trait name already exists";
             return;
         }
-        
-        foreach (var bonus in ProfessionSkillModel.TraitDTO.Bonuses)
+
+        foreach (var bonus in NewTrait.Bonuses)
         {
             if (bonus.BonusValue == 0 && bonus.Description == string.Empty)
             {
@@ -247,29 +233,30 @@
                 return;
             }
         }
-        if (!ProfessionSkillModel.TraitDTO.Bonuses.GroupBy(x => x.FeatureName).All(g => g.Count() == 1))
+        if (!NewTrait.Bonuses.GroupBy(x => x.FeatureName).All(g => g.Count() == 1))
         {
             ErrorMessage = $"Bonuses cannot relate to the same feature more than once";
             return;
         }
 
-        ErrorMessage = string.Empty;
-
-        ProfessionSkillModel.IsVisible = false;
-       
-        ProfessionSkillModel.TraitDTO.TraitType = TraitType;
-
-        await ProfessionSkillModelChanged.InvokeAsync(ProfessionSkillModel);
+        ErrorMessage = string.Empty;       
+        NewTrait.TraitType = TraitType;
+        MudDialog.Close(DialogResult.Ok(NewTrait));
+        string text = "";
+        if (NewTrait.IsActiveSkill)
+            text = "Active skill modified";
+        else
+            text = "Passive skill modified";
+        Snackbar.Add(text, Severity.Success);
     }
     private void OnCancelBtnClick()
     {
-        ProfessionSkillModel.IsVisible = false;
+        MudDialog.Close(DialogResult.Cancel());
     }
-
-    private void DialogOpen()
+    protected override async Task OnInitializedAsync()
     {
-
         ErrorMessage = string.Empty;
+        UserInfo = await _userService.GetUserInfo();
 
         FeatureData = new List<string>
         {
@@ -281,42 +268,83 @@
         };
 
         if (TraitType == SD.TraitType_Profession)
-        {             
-            HeaderName = "Edit proffestion skill";
+        {
+            HeaderName = "Edit profession skill";
         }
         else
         {
-            if (ProfessionSkillModel.IsEditMode)
+            if (IsEditMode)
                 HeaderName = "Edit trait";
             else
                 HeaderName = "Create a new trait";
         }
-
-        
-        StateHasChanged();
     }
+
     private void OnAddBonusBtnClick()
     {
         ErrorMessage = string.Empty;
-        if (ProfessionSkillModel.TraitDTO.Bonuses == null)
-            ProfessionSkillModel.TraitDTO.Bonuses = new List<BonusDTO>();
+        if (NewTrait.Bonuses == null)
+            NewTrait.Bonuses = new List<BonusDTO>();
         var bonus = new BonusDTO();
-        bonus.Index = ProfessionSkillModel.TraitDTO.Bonuses.Count() + 1;
+        bonus.Index = NewTrait.Bonuses.Count() + 1;
 
-        ProfessionSkillModel.TraitDTO.Bonuses.Add(bonus);
+        NewTrait.Bonuses.Add(bonus);
     }
 
     private void OnDeleteBonusBtnClick()
     {
         ErrorMessage = string.Empty;
-        if (ProfessionSkillModel.TraitDTO.Bonuses is not null && ProfessionSkillModel.TraitDTO.Bonuses.Count() > 0)
+        if (NewTrait.Bonuses is not null && NewTrait.Bonuses.Count() > 0)
         {
-            ProfessionSkillModel.TraitDTO.Bonuses.Remove(ProfessionSkillModel.TraitDTO.Bonuses.Last());
+            NewTrait.Bonuses.Remove(NewTrait.Bonuses.Last());
         }
     }
-
-    protected override async Task OnInitializedAsync()
+    private async Task SelectExistingSkill()
     {
-        UserInfo = await _userService.GetUserInfo();        
+
+        List<TraitDTO> ChosenTraits = new List<TraitDTO>();
+        var parameters = new DialogParameters<ExistingTraitDialog> { { x => x.ChosenTraits, ChosenTraits },
+                                                                   { x => x.TraitType, TraitType },
+                                                                   { x => x.MultiRowSelection, false },
+                                                                   { x => x.AllParams, AllParams }};
+
+        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select " + NewTrait.TraitLabel, parameters, await SetDialogOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            ChosenTraits = (List<TraitDTO>)result.Data;
+            if (ChosenTraits is null)
+                throw new Exception("error in trait selection dialog");
+
+            if (ChosenTraits.Any())
+            {
+                //copy properties of selected generic triait to current trait
+                var selectedTrait = (TraitProfessionDTO)ChosenTraits.First();
+
+                foreach (var prop in selectedTrait.GetType().GetProperties())
+                {
+                    if (NewTrait.GetType().GetProperty(prop.Name).CanWrite && prop.Name != "ProfessionId")
+                        NewTrait.GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(selectedTrait, null), null);
+                }
+            }
+        }
+        IsInfoMode = true;
+        StateHasChanged();
     }
+    private void ClearSkill()
+    {
+        NewTrait = new();
+        IsInfoMode = false;
+        StateHasChanged();
+    }
+
+    private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Large)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
+    }
+
 }

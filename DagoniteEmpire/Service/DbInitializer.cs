@@ -76,9 +76,9 @@ namespace DagoniteEmpire.Service
                 }
                 if (_db.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
                 {
-                    var proff = new Profession() { Name = SD.NPCName_GameMaster, Description="", RelatedAttributeName = "" };
+                    var prof = new Profession() { Name = SD.NPCName_GameMaster, Description="", RelatedAttributeName = "" };
 
-                    _db.Professions.Add(proff);
+                    _db.Professions.Add(prof);
                     _db.SaveChanges();
                 }
                 if (_db.Races.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
@@ -390,6 +390,8 @@ namespace DagoniteEmpire.Service
                     _db.Races.Add(raceElf);
                     _db.SaveChanges();
                 }
+
+                /// TRAITS CHARACTER
                 TraitCharacter trait = null;
                 if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Lame") == null)
                 {
@@ -542,6 +544,391 @@ namespace DagoniteEmpire.Service
                     _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
                 }
+
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Ambidextrous") == null)
+                {
+                    trait = new TraitCharacter()
+                    {
+                        Name = "Ambidextrous",
+                        Descr = "Able to use the right and left hands equally well",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Character,
+                        TraitValue = 4,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                /// TRAITS TEMPORARY STATES
+                
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Stunned) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Stunned,
+                        Descr = "This character is dazed, it cannot perform any actions and its defence is imaired",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        TraitValue = 1,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Stumbled) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Stumbled,
+                        Descr = "This character lost its balance, and lies on the ground. To get up it needs to use action (or two if in heavy armor)",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        TraitValue = 0,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Snatched) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Snatched,
+                        Descr = "This character was captured. It cannot move or use captured limb until it gets free",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        TraitValue = 0,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Disarmed) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Disarmed,
+                        Descr = "This character lost it primary weapon",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        TraitValue = 0,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Blinded) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Blinded,
+                        Descr = "This character lost its sight. This causes penalty to defence equal 10, unless there is other way to see incoming attacks. This character can attack with penalty equal to 5",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        TraitValue = 1,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Unaware) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Unaware,
+                        Descr = "This character is unaware of it's enemies. This causes penalty to defence equal to 10. Unaware characters become aware after first attack",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        TraitValue = 0,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Invisible) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Invisible,
+                        Descr = "This character cannot be seen, but enemies are aware of its presence. This causes bonus to attack equal to 5",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        TraitValue = 1,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Flanking) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Flanking,
+                        Descr = "This character attack someone from the back, when they are busy fighting with someone else. This gives bonus to attack equal to 3",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        TraitValue = 1,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Surrounded) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Surrounded,
+                        Descr = "This character is surrounded by enemies. For every other enemy attacking this character there is added penalty to defence equal to 2",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        TraitValue = 1,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+
+                /// TRAITS PROFESSION (PASSIVE)
+                TraitProfession traitProf = null;
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic+ " 1") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.WizardMagic + " 1",
+                        Descr = "Able to cast magic with wizard pool for cantrips and spells of 1st circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 1,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 2") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.WizardMagic + " 2",
+                        Descr = "Able to cast magic with wizard pool for spells of 2st and 3nd circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 2,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 3") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.WizardMagic + " 3",
+                        Descr = "Able to cast magic with wizard pool for spells of 4th circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 3,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 4") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.WizardMagic + " 4",
+                        Descr = "Able to cast magic with wizard pool for spells of 5th and 6th circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 4,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 5") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.WizardMagic + " 5",
+                        Descr = "Able to cast magic with wizard pool for spells of 7th and 8th circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 5,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 6") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.WizardMagic + " 6",
+                        Descr = "Able to cast magic with wizard pool for spells of 9th circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 6,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 7") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.WizardMagic + " 7",
+                        Descr = "Able to cast magic with wizard pool for spells of mythic level",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 7,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic  + " 1") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.SorcererMagic + " 1",
+                        Descr = "Able to cast magic with sorcerer pool for cantrips and spells of 1st circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 1,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 2") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.SorcererMagic + " 2",
+                        Descr = "Able to cast magic with sorcerer pool for spells of 2st and 3nd circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 2,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 3") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.SorcererMagic + " 3",
+                        Descr = "Able to cast magic with sorcerer pool for spells of 4th circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 3,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 4") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.SorcererMagic + " 4",
+                        Descr = "Able to cast magic with sorcerer pool for spells of 5th and 6th circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 4,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 5") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.SorcererMagic + " 5",
+                        Descr = "Able to cast magic with sorcerer pool for spells of 7th and 8th circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 5,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 6") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.SorcererMagic + " 6",
+                        Descr = "Able to cast magic with sorcerer pool for spells of 9th circle",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 6,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 7") == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.SorcererMagic + " 7",
+                        Descr = "Able to cast magic with sorcerer pool for spells of mythic level",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitValue = 7,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.DoubleWeaponFighting) == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.DoubleWeaponFighting,
+                        Descr = "Allow character to figtht with two weapons without penalties, if the second weapon is light",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.GreaterDoubleWeaponFighting) == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.GreaterDoubleWeaponFighting,
+                        Descr = "Allow character to figtht with two weapons without penalties. Requires 14 strength",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.MightyGrip) == null)
+                {
+                    traitProf = new TraitProfession()
+                    {
+                        Name = SD.ProfessionSkills.MightyGrip,
+                        Descr = "Allow character to wield two-handed weapon with one hand. Requires 20 strength",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Profession,
+                    };
+                    _db.TraitsProfession.Add(traitProf);
+                    _db.SaveChanges();
+                }
+
                 /// EQUIPMENT
 
                 Equipment item;
@@ -613,26 +1000,23 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Armor,
                                         FeatureName = SD.WeaponQuality.Armor,
                                     },
                                      new Bonus{
                                         BonusValue = -4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 1,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -658,26 +1042,23 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Armor,
                                         FeatureName = SD.WeaponQuality.Armor,
                                     },
                                      new Bonus{
                                         BonusValue = -2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -703,26 +1084,23 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 6,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Armor,
                                         FeatureName = SD.WeaponQuality.Armor,
                                     },
                                      new Bonus{
                                         BonusValue = 1,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -748,26 +1126,23 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 8,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Armor,
                                         FeatureName = SD.WeaponQuality.Armor,
                                     },
                                      new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 5,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -793,26 +1168,23 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 10,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Armor,
                                         FeatureName = SD.WeaponQuality.Armor,
                                     },
                                      new Bonus{
                                         BonusValue = 5,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ArmorDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 6,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -840,20 +1212,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                      new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 1,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -881,14 +1251,13 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                      new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
                                     },
                                 }
@@ -915,20 +1284,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                      new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -956,20 +1323,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                      new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -997,20 +1362,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                      new Bonus{
                                         BonusValue = 5,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -1037,20 +1400,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                      new Bonus{
                                         BonusValue = 5,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ShieldDefenceBonus,
                                         FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
                                     },
                                       new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPenalty,
                                         FeatureName = SD.WeaponQuality.ArmorPenalty,
                                     },
                                 }
@@ -1077,26 +1438,23 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>() {
                             new TraitEquipment(){ 
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description =  SD.WeaponQuality.Fast,
                                         FeatureName = SD.WeaponQuality.Fast,
                                     },
                                     new Bonus{
                                         BonusValue = 0,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Light,
                                         FeatureName = SD.WeaponQuality.Light,
                                     },
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPiercing,
                                         FeatureName = SD.WeaponQuality.ArmorPiercing,
                                     }
                                 }
@@ -1122,20 +1480,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Parrying,
                                         FeatureName = SD.WeaponQuality.Parrying,
                                     },
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Disarming,
                                         FeatureName = SD.WeaponQuality.Disarming,
                                     },
                                 }
@@ -1161,20 +1517,18 @@ namespace DagoniteEmpire.Service
                         Traits = new List<TraitEquipment>() {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description =  SD.WeaponQuality.ShieldDestructive,
                                         FeatureName = SD.WeaponQuality.ShieldDestructive,
                                     },
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Devastating,
                                         FeatureName = SD.WeaponQuality.Devastating,
                                     }
                                 }
@@ -1199,20 +1553,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPiercing,
                                         FeatureName = SD.WeaponQuality.ArmorPiercing,
                                     },
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ShieldDestructive,
                                         FeatureName = SD.WeaponQuality.ShieldDestructive,
                                     },
                                 }
@@ -1238,20 +1590,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Devastating,
                                         FeatureName = SD.WeaponQuality.Devastating,
                                     },
                                     new Bonus{
                                         BonusValue = 5,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Stunning,
                                         FeatureName = SD.WeaponQuality.Stunning,
                                     },
                                 }
@@ -1277,20 +1627,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Devastating,
                                         FeatureName = SD.WeaponQuality.Devastating,
                                     },
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPiercing,
                                         FeatureName = SD.WeaponQuality.ArmorPiercing,
                                     },
                                 }
@@ -1316,20 +1664,18 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Long,
                                         FeatureName = SD.WeaponQuality.Long,
                                     },
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Fast,
                                         FeatureName = SD.WeaponQuality.Fast,
                                     },
                                 }
@@ -1355,26 +1701,23 @@ namespace DagoniteEmpire.Service
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Parrying,
                                         FeatureName = SD.WeaponQuality.Parrying,
                                     },
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPiercing,
                                         FeatureName = SD.WeaponQuality.ArmorPiercing,
                                     },
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Fast,
                                         FeatureName = SD.WeaponQuality.Fast,
                                     },
                                 }
@@ -1397,37 +1740,29 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 10.0m,
                         Price = 3.0m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Heavy,
                                         FeatureName = SD.WeaponQuality.Heavy,
                                     },
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Slow,
                                         FeatureName = SD.WeaponQuality.Slow,
                                     },
                                     new Bonus{
                                         BonusValue = 7,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Stumbling,
                                         FeatureName = SD.WeaponQuality.Stumbling,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1448,43 +1783,34 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 15.0m,
                         Price = 7.0m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 5,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Heavy,
                                         FeatureName = SD.WeaponQuality.Heavy,
                                     },
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Slow,
                                         FeatureName = SD.WeaponQuality.Slow,
                                     },
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Devastating,
                                         FeatureName = SD.WeaponQuality.Devastating,
                                     },
                                     new Bonus{
                                         BonusValue = 8,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Stunning,
                                         FeatureName = SD.WeaponQuality.Stunning,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1505,43 +1831,34 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 10.0m,
                         Price = 7.0m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Heavy,
                                         FeatureName = SD.WeaponQuality.Heavy,
                                     },
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Slow,
                                         FeatureName = SD.WeaponQuality.Slow,
                                     },
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Devastating,
                                         FeatureName = SD.WeaponQuality.Devastating,
                                     },
                                     new Bonus{
                                         BonusValue = 5,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ShieldDestructive,
                                         FeatureName = SD.WeaponQuality.ShieldDestructive,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1562,43 +1879,34 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 12.0m,
                         Price = 7.0m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Heavy,
                                         FeatureName = SD.WeaponQuality.Heavy,
                                     },
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Slow,
                                         FeatureName = SD.WeaponQuality.Slow,
                                     },
                                     new Bonus{
                                         BonusValue = 6,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ShieldDestructive,
                                         FeatureName = SD.WeaponQuality.ShieldDestructive,
                                     },
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Long,
                                         FeatureName = SD.WeaponQuality.Long,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1619,37 +1927,29 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 15.0m,
                         Price = 3.0m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Slow,
                                         FeatureName = SD.WeaponQuality.Slow,
                                     },
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPiercing,
                                         FeatureName = SD.WeaponQuality.ArmorPiercing,
                                     },
                                     new Bonus{
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Long,
                                         FeatureName = SD.WeaponQuality.Long,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1671,43 +1971,34 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Shooting.Crossbows,
                         Weight = 6.0m,
                         Price = 10.0m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPiercing,
                                         FeatureName = SD.WeaponQuality.ArmorPiercing,
                                     },
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Fast,
                                         FeatureName = SD.WeaponQuality.Fast,
                                     },
                                     new Bonus{
                                         BonusValue = 1,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Reload,
                                         FeatureName = SD.WeaponQuality.Reload,
                                     },
                                     new Bonus{
                                         BonusValue = 20,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1728,49 +2019,39 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Shooting.Crossbows,
                         Weight = 6.0m,
                         Price = 10.0m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 5,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPiercing,
                                         FeatureName = SD.WeaponQuality.ArmorPiercing,
                                     },
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Devastating,
                                         FeatureName = SD.WeaponQuality.Devastating,
                                     },
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Fast,
                                         FeatureName = SD.WeaponQuality.Fast,
                                     },
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Reload,
                                         FeatureName = SD.WeaponQuality.Reload,
                                     },
                                     new Bonus{
                                         BonusValue = 30,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1791,38 +2072,30 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Shooting.Bows,
                         Weight = 3.0m,
                         Price = 1.0m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.ArmorPiercing,
                                         FeatureName = SD.WeaponQuality.ArmorPiercing,
                                     },
                                     new Bonus{
                                         BonusValue = 2,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Fast,
                                         FeatureName = SD.WeaponQuality.Fast,
                                     },
 
                                     new Bonus{
                                         BonusValue = 20,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1843,32 +2116,25 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Shooting.Bows,
                         Weight = 3.0m,
                         Price = 1.0m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Fast,
                                         FeatureName = SD.WeaponQuality.Fast,
                                     },
 
                                     new Bonus{
                                         BonusValue = 40,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }
@@ -1889,32 +2155,25 @@ namespace DagoniteEmpire.Service
                         RelatedSkill = SD.SpecialSkills.Shooting.Slingshots,
                         Weight = 0.5m,
                         Price = 0.5m,
+                        IsTwoHanded = true,
                         Traits = new List<TraitEquipment>()
                         {
                             new TraitEquipment(){
                                 Descr = "",
-                                Name = "Weapon properties",
+                                Name = SD.WeaponParametersDescr,
                                 TraitType = SD.TraitType_Gear,
                                 Bonuses = new List<Bonus>()
                                 {
                                     new Bonus{
                                         BonusValue = 4,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Devastating,
                                         FeatureName = SD.WeaponQuality.Devastating,
                                     },
 
                                     new Bonus{
                                         BonusValue = 40,
                                         FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.Range,
                                         FeatureName = SD.WeaponQuality.Range,
-                                    },
-                                    new Bonus{
-                                        BonusValue = 0,
-                                        FeatureType = SD.FeatureWeaponQuality,
-                                        Description = SD.WeaponQuality.TwoHanded,
-                                        FeatureName = SD.WeaponQuality.TwoHanded,
                                     },
                                 }
                             }

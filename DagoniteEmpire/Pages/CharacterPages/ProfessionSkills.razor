@@ -16,9 +16,11 @@
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
 @inject IUserService _userService
+@inject IBrowserViewportService _vieportService
+@using DialogOptions = MudBlazor.DialogOptions
 
 @inject IJSRuntime _jsRuntime
-
+<div class="container justify-content-around">
 <div class="main-table">
 
     @if (IsLoading)
@@ -152,7 +154,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var skill in ProfessionDTO.ActiveSkills)
+                            @foreach (var skill in ProfessionDTO.Traits.Where(u=>u.IsActiveSkill == true))
                             {
                                 <tr>
                                     @if (skill.Index % 2 == 0)
@@ -184,7 +186,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var skill in ProfessionDTO.ActiveSkills)
+                            @foreach (var skill in ProfessionDTO.Traits.Where(u => u.IsActiveSkill == true))
                             {
                                 <tr>
                                     @if (skill.Index % 2 == 0)
@@ -221,7 +223,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var skill in ProfessionDTO.PassiveSkills)
+                            @foreach (var skill in ProfessionDTO.Traits.Where(u=>u.IsActiveSkill == false))
                             {
                                 <tr>
                                     <td> <label class="short-row">@skill.Level</label></td>
@@ -244,7 +246,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var skill in ProfessionDTO.PassiveSkills)
+                            @foreach (var skill in ProfessionDTO.Traits.Where(u => u.IsActiveSkill == false))
                             {
                                 <tr>
                                     <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
@@ -405,10 +407,8 @@
 
         <label class="warnign-message">@ErrorMessage</label>
 
-        <CascadingValue Value="@AllParams">
-            <CreateProfessionSkillDialog @bind-ProfessionSkillModel="@ProfessionSkillComponent"></CreateProfessionSkillDialog>
-        </CascadingValue>
     }
+</div>
 </div>
 
            
@@ -453,39 +453,31 @@
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
     private ICollection<SpellCircleDTO> SpellCircles = new List<SpellCircleDTO>();
     private MudTable<SpellCircleDTO> CircleTable;
-    public string TraitType = @SD.TraitType_Profession;
+    public string TraitType = SD.TraitType_Profession;
 
     public UserInfo? UserInfo { get; set; }
-
     private MudTable<SpellCircle> mudTable;
     private TraitDTO? EditedTrait { get; set; } = new();
 
-    private ProfessionSkillModel _professionSkillComponent = new();
-    private ProfessionSkillModel ProfessionSkillComponent
+
+    private async Task EditSkill(TraitProfessionDTO skill)
     {
-        get => _professionSkillComponent;
-        set
+        var idToDelete = skill.Id;
+        var parameters = new DialogParameters<CreateProfessionSkillDialog> {{ x => x.NewTrait, skill },
+                                                                            { x => x.IsEditMode, true },
+                                                                            { x => x.IsActiveSkill, skill.IsActiveSkill },
+                                                                            { x => x.AllParams, AllParams } };
+
+        var dialog = await DialogService.ShowAsync<CreateProfessionSkillDialog>("Edit " + skill.TraitLabel, parameters, await SetDialogOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
         {
-            if (value.TraitDTO != null)
-            {
-                EditedTrait = value.TraitDTO;
-
-                //TraitsChanged.InvokeAsync(Traits);
-                AllParams.TraitsChange(TraitType);
-                //OnTraitsChange.InvokeAsync();
-            }
-            if (_professionSkillComponent == value) return;
-            _professionSkillComponent = value;
+            //var profession = skill.Professions;
+            skill = (TraitProfessionDTO)result.Data;
+            AllParams.TraitsChange(TraitType);
+            StateHasChanged();
         }
-    }
-
-    private void EditSkill(TraitProfessionDTO skill)
-    {
-        ProfessionSkillModel ctm = new();
-        ctm.IsEditMode = true;
-        ctm.TraitDTO = skill;
-        ctm.IsVisible = true;
-        ProfessionSkillComponent = ctm;
     }
 
     protected override async Task OnInitializedAsync()
@@ -536,8 +528,7 @@
                 SpellCircles = ProfessionDTO.SpellCircles;
             }
             //profession skill traits
-            ProfessionDTO.ActiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == true).ToList();
-            ProfessionDTO.PassiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == false).ToList();
+            ProfessionDTO.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).ToList();
 
             if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
                 throw new Exception("No related class attribute");
@@ -597,15 +588,9 @@
 
             await _professionRepository.Update(ProfessionDTO);
 
-            if(ProfessionDTO.ActiveSkills is not null){
-                foreach(var profSkill in ProfessionDTO.ActiveSkills)
-                {
-                    await _traitProfessionRepository.Update(profSkill);
-                }
-            }
-            if (ProfessionDTO.PassiveSkills is not null)
+            if(ProfessionDTO.Traits is not null)
             {
-                foreach (var profSkill in ProfessionDTO.PassiveSkills)
+                foreach(var profSkill in ProfessionDTO.Traits)
                 {
                     await _traitProfessionRepository.Update(profSkill);
                 }
@@ -831,6 +816,14 @@
         spellSlot.SpellId = null;
 
         StateHasChanged();
+    }
+
+    private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Large)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
     }
 
     

@@ -151,7 +151,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                @foreach (var skill in _createProfession.ProfessionDTO.ActiveSkills)
+                                @foreach (var skill in _createProfession.ProfessionDTO.Traits.Where(t=>t.IsActiveSkill==true))
                                 {
                                     <tr>
                                         @if (skill.Index%2==0){
@@ -185,7 +185,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var skill in _createProfession.ProfessionDTO.ActiveSkills)
+                                    @foreach (var skill in _createProfession.ProfessionDTO.Traits.Where(t => t.IsActiveSkill == true))
                                     {
                                         <tr>
                                             @if (skill.Index % 2 == 0)
@@ -222,7 +222,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var skill in _createProfession.ProfessionDTO.PassiveSkills)
+                                    @foreach (var skill in _createProfession.ProfessionDTO.Traits.Where(t=>t.IsActiveSkill==false))
                                     {
                                         <tr>
                                             <td> <label class="short-row">@skill.Level</label> </td>
@@ -248,7 +248,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var skill in _createProfession.ProfessionDTO.PassiveSkills)
+                                    @foreach (var skill in _createProfession.ProfessionDTO.Traits.Where(t => t.IsActiveSkill == false))
                                     {
                                         <tr>
                                             <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>

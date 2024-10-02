@@ -2,10 +2,8 @@
 @inject IJSRuntime _jsRuntime
 
 <_DeleteConfirmation IsParentComponentProcessing="false" DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="@DeletedSpecialSkill"></_DeleteConfirmation>
-<div class="specialskills-table border">
-    <div class="sheet-img">
-        @*  <img src="../images/old_paper2.png" class="stretch" /> *@
-    </div>
+<div class="specialskills-table">
+    <MudPaper Class="p-2 m-0  w-100 h-100">
     <div class="specialskills-control">
         <label class="specialskills-label">@BaseSkill.Name</label>
         <span class="specialskills-indicator">@BaseSkill.SumBonus</span>
@@ -62,7 +60,7 @@
                     <td>
                         <div class="attr-control">
                             <span class="attr-indicator">@obj.BaseBonus</span>
-                            @if (AllParams.Character.CurrentExpPoints > 0)
+                            @if (AllParams.Character.CurrentExpPoints > 0 || AllParams.Character.IsApproved == false)
                             {
                                 <div class="arrows">
                                     <button @onclick="@(()=>IncrSSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
@@ -158,7 +156,7 @@
 
     <button @onclick="@(()=>AddSpecialSkill(BaseSkill))" class="add-skill"><i class="fa-solid fa-plus"></i></button>
     <button @onclick="@(()=>RemoveSpecialSkill())" class="add-skill"><i class="fa-solid fa-minus"></i></button>
-
+    </MudPaper>
 </div>
 
 @code {

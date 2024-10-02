@@ -2,6 +2,8 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    display:flex;
+    justify-content: space-around;
 }
 
 .border {
@@ -86,14 +88,10 @@ td {
 .description {
     display: flex;
     flex-direction: column;
-    width: 450px;
+    width: 437px;
     position: relative;
 }
 
-.portrait {
-    width: 330px;
-    position: relative;
-}
 
 .sheet-img {
     width: 100%;
@@ -110,26 +108,7 @@ td {
     z-index: -20;
 }
 
-.portrait-imageframe {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    /*border: 1px solid RGB(206 212 218);*/
-    border-radius: 4px;
-    /*width: 320px;*/
-    height: 390px;
-    font-size: 12px;
-    overflow: hidden;
-    align-content: center;
-}
-.portrait-image {
-    display: flex;
-    width: 100%;
-    max-height: 93%;
-    border: 0px solid white;
 
-}
 .portrait-input {
     position: absolute;
     width: 100%;
@@ -173,14 +152,7 @@ td {
     right: 0;
     z-index: 1500;
 }
-.trait-container {
-    padding: 0;
-    width: 100%;
-    height: calc(100% - 64px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+
 
 i {
     transition: transform 0.1s;
@@ -265,43 +237,6 @@ i:active {
     background-color: transparent;
     text-align: start;
 }
-
-
-.points-control {
-    display: flex;
-    flex-direction: row;
-    margin-top:3px;
-    margin-bottom:3px;
-    height: 50px;
-    font-weight: bold;
-    justify-items: left;
-    align-items: center
-}
-.ontop{
-    z-index:10000;
-}
-
-.points-label {
-    text-align: left;
-    font-size: 16px;
-    font-weight: bold;
-    width: 80%;
-}
-
-.points-indicator {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 1px solid gray;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 4px;
-    width: 55px;
-    height: 40px;
-    margin-right: 2px;
-}
-
-
 
 
 .specialskills {
@@ -418,23 +353,34 @@ i:active {
 
 
 .traits {
-    width: 450px;
+    width: 437px;
     position: relative;
+    min-height:500px;
+    max-height:700px;
 }
-
+.trait-container {
+    padding: 0;
+    width: 100%;
+    height: calc(100% - 64px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+/*
 .races {
     width: 450px;
     position: relative;
 }
 
 .profession {
-    width: 450px;
+    width: 430px;
     position: relative;
 }
-
+*/
 .equipment {
-    width: 450px;
-    max-height: 500px;
+    width: 437px;
+    min-height: 500px;
+    max-height: 700px;
     position: relative;
 }
 

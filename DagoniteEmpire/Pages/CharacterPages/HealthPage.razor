@@ -11,7 +11,7 @@
 
 @inject IJSRuntime _jsRuntime
 
-<div class="container-fluid">
+<div class="container">
     <div class="save-btn">
         <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
 
@@ -23,8 +23,7 @@
         }else
         {   
         <CascadingValue Value="@AllParams">
-
-            <MudGrid Spacing="4" Justify="Justify.Center" Class="pa-0 ma-0">
+            <MudGrid Spacing="0" Justify="Justify.SpaceBetween" Class="pa-1 ma-0">
                 <MudItem xs="12" sm="6" md="4" lg="3">
                     <MudPaper Class="p-2 m-2 text-center">
                         <MudStack Spacing="2">
@@ -62,29 +61,29 @@
                         </MudPaper>
                     </MudItem>
             </MudGrid>
-            <div class="p-4">
+            <div class="p-1">
                 <MudText Align="Align.Center" Class="w-100" Typo="Typo.h4" Style="font-family: 'Eagle Lake', serif; padding-bottom: 8px;">Current wounds</MudText>
-                <MudDataGrid @ref="WoundsGrid" MultiSelection="true" Items="@Wounds.Where(w=>w.IsCondition == false)" ReadOnly="true" Filterable="false" Class="px-0 py-1"
-                                 Hideable="true" Groupable="true" GroupExpanded="true" Elevation="2" ColumnResizeMode="ResizeMode.None" >
+                <MudDataGrid HeaderClass="header-grid" @ref="WoundsGrid" MultiSelection="true" Items="@Wounds.Where(w=>w.IsCondition == false)" ReadOnly="true" Filterable="false" Class="px-0 py-1"
+                                 Hideable="false" SortMode="@SortMode.None" Groupable="true" GroupExpanded="true" Elevation="2" ColumnResizeMode="ResizeMode.None">
                     <ToolBarContent >
                         <MudButton Class="pa-0 justify-content-start w-auto" OnClick="@(() => AddWound())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add wound</MudButton>
                     </ToolBarContent>
                     <Columns>
-                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.Value" Title="Wound level" Filterable="false" Groupable="false" />
-                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.Severity" />
-                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.Penalty"  />
-                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.IsIgnored" Title="Ignored" />
-                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.IsTended" Title="Tended" />
-                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Property="x => x.IsMagicHealed" Title="Magic healed" />
-                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:140px;" Property="x => x.DateStart.ToString()" Title="Injury date" />
-                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="max-width:140px;" Property="x =>  x.DateReduce.ToString()" Title="Reduce date" />
-                        <PropertyColumn HeaderStyle="font-weight:bold" CellStyle="min-width:300px;"Property="x => x.Description" />
-                        <PropertyColumn HeaderStyle="font-weight:bold" Property="x => x.Location" Grouping GroupBy="@_groupBy" Hidden="true">
+                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;" Property="x => x.Value" Title="Wound level" Groupable="false" />
+                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Severity" Groupable="false" />
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.Penalty" Groupable="false" />
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsIgnored" Groupable="false" Title="Ignored" />
+                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsTended" Groupable="false" Title="Tended" />
+                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsMagicHealed" Groupable="false" Title="Magic healed" />
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:140px; padding:4px 4px 4px 12px;" Property="x => x.DateStart.ToString()" Groupable="false" Title="Injury date" />
+                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:140px; padding:4px 4px 4px 12px;" Property="x =>  x.DateReduce.ToString()" Groupable="false" Title="Reduce date" />
+                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" Property="x => x.Description" Groupable="false" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" Property="x => x.Location" Groupable="true" Grouping GroupBy="@_groupBy" Hidden="true">
                             <GroupTemplate>
                                     <span style="font-weight:bold">@context.Grouping.Key (@GetAttributesLabel(context.Grouping.Key)) </span>
                             </GroupTemplate>
                         </PropertyColumn>
-                            <TemplateColumn HeaderStyle="font-weight:bold" CellStyle="max-width:80px;" Hidden="@IsReadOnly" Title="Actions">
+                            <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Hidden="@IsReadOnly" Title="Actions" Groupable="false">
                             <CellTemplate>
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditWound(@context.Item))" />
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteWound(@context.Item))" />
@@ -93,129 +92,126 @@
                     </Columns>
                 </MudDataGrid>
             </div>
-                <MudText Align="Align.Center" Class="w-100" Typo="Typo.h4" Style="font-family: 'Eagle Lake', serif;">Health condition</MudText>
-                <MudGrid Spacing="4" Justify="Justify.Center" Class="pa-0 ma-0">
+            <div class="p-1">
+                <MudText Align="Align.Center" Class="w-100 p-2" Typo="Typo.h4" Style="font-family: 'Eagle Lake', serif;">Health condition</MudText>
+                <MudGrid Spacing="0" Justify="Justify.SpaceBetween" Class="pa-0 ma-0">
                     <MudItem xs="12" sm="6" md="3" lg="2" Class="pa-1">
-                        <MudPaper Class="p-2 m-2 text-center h-100">
+                        <MudPaper Class="p-0 m-0 text-center h-100">
                             <MudStack Spacing="1">
-                                <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">NUTRITION</MudText>
+                                <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">NUTRITION</MudText>
                                 <MudDivider />
-                                <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.body1">Characters hunger level. Give bonus to strength, endurance and dexterity</MudText>
-                                <MudPaper Elevation="0" Class=" d-flex">
-                                    <MudPaper Elevation="0" Class="flex-grow-3">
+                                <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.body1">Characters hunger level. Give bonus to strength, endurance and dexterity</MudText>
+
+                                <MudPaper Elevation="0" Class="w-100">
                                         <MudRadioGroup @bind-Value="Conditions[SD.Condition.Nutrition].Value">
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Nutrition.BalancedDiet">Balanced diet</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Nutrition.Fueled">Fueled</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Nutrition.Hungry">Hungry</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Nutrition.Starving">Starving</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Nutrition.Malnourished">Malnourished</MudRadio>
+                                            <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Nutrition.BalancedDiet">Balanced diet</MudRadio>
+                                            <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Nutrition.Fueled">Fueled</MudRadio>
+                                            <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Nutrition.Hungry">Hungry</MudRadio>
+                                            <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Nutrition.Starving">Starving</MudRadio>
+                                            <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Nutrition.Malnourished">Malnourished</MudRadio>
                                         </MudRadioGroup>
                                     </MudPaper>
-                                    <MudPaper Elevation="0" Class="flex-grow-2 pe-8 pb-8 align-content-center">
+                                    <MudPaper Elevation="0" Class="d-flex w-100 p-2 align-content-center">
                                         <MudText Align="Align.Left" Class="w-100 text-center" Typo="Typo.h6">Bonus </MudText>
                                         <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h5">@Conditions[SD.Condition.Nutrition].Value</MudText>
                                     </MudPaper>
+
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3" lg="2" Class="pa-1">
+                        <MudPaper Class="p-0 m-0 text-center h-100">
+                            <MudStack Spacing="1">
+                                <MudText Align="Align.Center" Class="w-100 text-center  p-2" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">CLEANLINESS</MudText>
+                                <MudDivider />
+                                <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.body1" Style="min-height:40px;">Character's cloaths and body tidiness. Modifies charisma</MudText>
+                                <MudPaper Elevation="0" Class="w-100">
+                                    <MudRadioGroup @bind-Value="Conditions[SD.Condition.Cleanliness].Value">
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Groomed">Groomed</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Clean">Clean</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Dirty">Dirty</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Filthy">Filthy</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Defiled">Defiled</MudRadio>
+                                    </MudRadioGroup>
+                                </MudPaper>
+                                <MudPaper Elevation="0" Class="d-flex w-100 p-2 align-content-center">
+                                    <MudText Align="Align.Left" Class="w-100 text-center" Typo="Typo.h6">Bonus </MudText>
+                                    <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h5">@Conditions[SD.Condition.Cleanliness].Value</MudText>
+                                </MudPaper>
+ 
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3" lg="2" Class="pa-1">
+                        <MudPaper Class="p-0 m-0 text-center h-100">
+                            <MudStack Spacing="1">
+                                <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">WELL-BEING</MudText>
+                                <MudDivider />
+                                <MudText Align="Align.Center" Class="w-100 text-center p-2" Style="min-height:40px;" Typo="Typo.body1">State of mind. Modifies inteligence, instinct and willpower</MudText>
+
+                                <MudPaper Elevation="0" Class="w-100">
+                                    <MudRadioGroup @bind-Value="Conditions[SD.Condition.Wellbeing].Value">
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Wellbeing.Joyous">Joyous</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Wellbeing.Content">Content</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Wellbeing.Worried">Worried</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Wellbeing.Despaired">Despaired</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Wellbeing.Broken">Broken</MudRadio>
+                                    </MudRadioGroup>
+                                </MudPaper>
+                                <MudPaper Elevation="0" Class="d-flex w-100 p-2 align-content-center">
+                                    <MudText Align="Align.Left" Class="w-100 text-center" Typo="Typo.h6">Bonus </MudText>
+                                    <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h5">@Conditions[SD.Condition.Wellbeing].Value</MudText>
                                 </MudPaper>
                             </MudStack>
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12" sm="6" md="3" lg="2" Class="pa-1">
-                        <MudPaper Class="p-2 m-2 text-center h-100">
+                        <MudPaper Class="p-0 m-0 text-center h-100">
                             <MudStack Spacing="1">
-                                <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">CLEANLINESS</MudText>
+                                <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">REST</MudText>
                                 <MudDivider />
-                                <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.body1" Style="min-height:40px;">Character's cloaths and body tidiness. Modifies charisma</MudText>
-                                <MudPaper Elevation="0" Class=" d-flex">
-                                    <MudPaper Elevation="0" Class="flex-grow-3">
-                                        <MudRadioGroup @bind-Value="Conditions[SD.Condition.Cleanliness].Value">
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Cleanliness.Groomed">Groomed</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Cleanliness.Clean">Clean</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Cleanliness.Dirty">Dirty</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Cleanliness.Filthy">Filthy</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Cleanliness.Defiled">Defiled</MudRadio>
-                                        </MudRadioGroup>
-                                    </MudPaper>
-                                    <MudPaper Elevation="0" Class="flex-grow-2 pe-8 pb-8 align-content-center">
-                                        <MudText Align="Align.Left" Class="w-100 text-center" Typo="Typo.h6">Bonus </MudText>
-                                        <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h5">@Conditions[SD.Condition.Cleanliness].Value</MudText>
-                                    </MudPaper>
+                                <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.body1" Style="min-height:40px;">How rested is character. Modifies all attributes</MudText>
+                                <MudPaper Elevation="0" Class="w-100">
+                                    <MudRadioGroup @bind-Value="Conditions[SD.Condition.Rest].Value">
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Rest.WellRested">Well rested</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Rest.Rested">Rested</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Rest.Tired">Tired</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Rest.Exhausted">Exhausted</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Rest.LastBreath">Last breath</MudRadio>
+                                    </MudRadioGroup>
+                                </MudPaper>
+                                <MudPaper Elevation="0" Class="d-flex w-100 p-2 align-content-center">
+                                    <MudText Align="Align.Left" Class="w-100 text-center" Typo="Typo.h6">Bonus </MudText>
+                                    <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h5">@Conditions[SD.Condition.Rest].Value</MudText>
                                 </MudPaper>
                             </MudStack>
                         </MudPaper>
                     </MudItem>
                     <MudItem xs="12" sm="6" md="3" lg="2" Class="pa-1">
-                        <MudPaper Class="p-2 m-2 text-center h-100">
+                        <MudPaper Class="p-0 m-0 text-center h-100">
                             <MudStack Spacing="1">
-                                <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">WELL-BEING</MudText>
+                                <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">HEALTHINESS</MudText>
                                 <MudDivider />
-                                <MudText Align="Align.Center" Class="w-100 text-center" Style="min-height:40px;" Typo="Typo.body1">State of mind. Modifies inteligence, instinct and willpower</MudText>
-                                <MudPaper Elevation="0" Class=" d-flex">
-                                    <MudPaper Elevation="0" Class="flex-grow-3">
-                                        <MudRadioGroup @bind-Value="Conditions[SD.Condition.Wellbeing].Value">
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Wellbeing.Joyous">Joyous</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Wellbeing.Content">Content</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Wellbeing.Worried">Worried</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Wellbeing.Despaired">Despaired</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Wellbeing.Broken">Broken</MudRadio>
-                                        </MudRadioGroup>
-                                    </MudPaper>
-                                    <MudPaper Elevation="0" Class="flex-grow-2 pe-8 pb-8 align-content-center">
-                                        <MudText Align="Align.Left" Class="w-100 text-center" Typo="Typo.h6">Bonus </MudText>
-                                        <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h5">@Conditions[SD.Condition.Wellbeing].Value</MudText>
-                                    </MudPaper>
+                                <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.body1" Style="min-height:40px;">Related to sickness or poisoning. Modifies all attributes</MudText>
+
+                                <MudPaper Elevation="0" Class="w-100">
+                                    <MudRadioGroup @bind-Value="Conditions[SD.Condition.GeneralHealth].Value">
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)GeneralHealth.GreatHealth">Great health</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)GeneralHealth.Stable">Stable</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)GeneralHealth.Unwell">Unwell</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)GeneralHealth.Sick">Sick</MudRadio>
+                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)GeneralHealth.Dying">Dying</MudRadio>
+                                    </MudRadioGroup>
                                 </MudPaper>
-                            </MudStack>
-                        </MudPaper>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="3" lg="2" Class="pa-1">
-                        <MudPaper Class="p-2 m-2 text-center h-100">
-                            <MudStack Spacing="1">
-                                <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">REST</MudText>
-                                <MudDivider />
-                                <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.body1" Style="min-height:40px;">How rested is character. Modifies all attributes</MudText>
-                                <MudPaper Elevation="0" Class=" d-flex">
-                                    <MudPaper Elevation="0" Class="flex-grow-3">
-                                        <MudRadioGroup @bind-Value="Conditions[SD.Condition.Rest].Value">
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Rest.WellRested">Well rested</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Rest.Rested">Rested</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Rest.Tired">Tired</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Rest.Exhausted">Exhausted</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)Rest.LastBreath">Last breath</MudRadio>
-                                        </MudRadioGroup>
-                                    </MudPaper>
-                                    <MudPaper Elevation="0" Class="flex-grow-2 pe-8 pb-8 align-content-center">
-                                        <MudText Align="Align.Left" Class="w-100 text-center" Typo="Typo.h6">Bonus </MudText>
-                                        <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h5">@Conditions[SD.Condition.Rest].Value</MudText>
-                                    </MudPaper>
-                                </MudPaper>
-                            </MudStack>
-                        </MudPaper>
-                    </MudItem>
-                    <MudItem xs="12" sm="6" md="3" lg="2" Class="pa-1">
-                        <MudPaper Class="p-2 m-2 text-center h-100">
-                            <MudStack Spacing="1">
-                                <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h6" Style="font-family: 'Eagle Lake', serif;">HEALTHINESS</MudText>
-                                <MudDivider />
-                                <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.body1" Style="min-height:40px;">Related to sickness or poisoning. Modifies all attributes</MudText>
-                                <MudPaper Elevation="0" Class=" d-flex">
-                                    <MudPaper Elevation="0" Class="flex-grow-3">
-                                        <MudRadioGroup @bind-Value="Conditions[SD.Condition.GeneralHealth].Value">
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)GeneralHealth.GreatHealth">Great health</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)GeneralHealth.Stable">Stable</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)GeneralHealth.Unwell">Unwell</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)GeneralHealth.Sick">Sick</MudRadio>
-                                            <MudRadio Class="w-100 ps-3 ma-0" Value="(int)GeneralHealth.Dying">Dying</MudRadio>
-                                        </MudRadioGroup>
-                                    </MudPaper>
-                                    <MudPaper Elevation="0" Class="flex-grow-2 pe-8 pb-8 align-content-center">
-                                        <MudText Align="Align.Left" Class="w-100 text-center" Typo="Typo.h6">Bonus </MudText>
-                                        <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h5">@Conditions[SD.Condition.GeneralHealth].Value</MudText>
-                                    </MudPaper>
+                                <MudPaper Elevation="0" Class="d-flex w-100 p-2 align-content-center">
+                                    <MudText Align="Align.Left" Class="w-100 text-center" Typo="Typo.h6">Bonus </MudText>
+                                    <MudText Align="Align.Center" Class="w-100 text-center" Typo="Typo.h5">@Conditions[SD.Condition.GeneralHealth].Value</MudText>
                                 </MudPaper>
                             </MudStack>
                         </MudPaper>
                     </MudItem>
                 </MudGrid>
+            </div>
         </CascadingValue>
         }
     </div>

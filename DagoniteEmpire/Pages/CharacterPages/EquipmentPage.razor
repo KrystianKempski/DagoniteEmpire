@@ -11,15 +11,19 @@
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
 @inject IUserService _userService
-
 @inject IJSRuntime _jsRuntime
 
-<div class="container-fluid">
+<_LeavePage ComponentDescription="equipment" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+@if (IsLeaveAllowed == false)
+{
     <div class="save-btn">
         <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
 
     </div>
-    <div class="row">
+}
+<div class="container-fluid justify-content-center">
+    <div class="row justify-content-center">
+
         @if (IsLoading == true)
         {
             <LoadingPage></LoadingPage>
@@ -27,10 +31,10 @@
         {   
         <CascadingValue Value="@AllParams">
             <div class="equipment">
-                    <EquipmentComponent  OnTraitsChange="LoadPossibleGears" PageMode=true></EquipmentComponent>
+                 <MudPaper Class="p-2 m-0 w-100 h-100">
+                    <EquipmentComponent OnItemChange="EquipmentChange" OnTraitsChange="LoadPossibleGears" PageMode=true></EquipmentComponent>
+                 </MudPaper>
             </div>
-
- 
             <div class="sheet-img">
                 <img src="../images/CharacterItemPlacement.webp" class="stretch" />
                 <div class="input headgear">
@@ -60,26 +64,19 @@
                 <div class="input torso">
                         <EquipItemComponent @ref="EquipItemComp[EquippedItems.Torso]" OnGearChange="GearChange" SlotType="@SD.SlotType.Torso"> </EquipItemComponent>
                 </div>
-                <div class="input arms">
-                  
+                <div class="input arms">                  
                         <EquipItemComponent @ref="EquipItemComp[EquippedItems.Arms]" OnGearChange="GearChange" SlotType="@SD.SlotType.Arms"> </EquipItemComponent>
-
                 </div>
-                 <div class="input ring1">
-                  
+                 <div class="input ring1">                  
                         <EquipItemComponent @ref="EquipItemComp[EquippedItems.Ring1]" OnGearChange="GearChange" SlotType="@SD.SlotType.Ring1"> </EquipItemComponent>
-
                 </div>
                 <div class="input ring2">
                         <EquipItemComponent @ref="EquipItemComp[EquippedItems.Ring2]" OnGearChange="GearChange" SlotType="@SD.SlotType.Ring2"> </EquipItemComponent>
                 </div>
             </div>
-
-            <BattleStatsComponent @ref="BattleStatComp"></BattleStatsComponent>
-
+            <BattleStatsComponent OnBattleStatsChange="BattleStatChange" @ref="BattleStatComp"></BattleStatsComponent>
         </CascadingValue>
         }
-            
     </div>
 </div>
 
@@ -91,9 +88,11 @@
     public AllParamsModel? AllParams { get; set; } = new();
 
     UserInfo? UserInfo { get; set; }
-
+    private IDisposable? registration;
     public BattleStatsComponent BattleStatComp = new();
     private bool IsLoading { get; set; } = true;
+    private bool IsLeaveAllowed { get; set; } = true;
+    private string TargetLocation { get; set; } = "";
 
     public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp = new Dictionary<EquippedItems, EquipItemComponent>();
 
@@ -104,14 +103,14 @@
             try
             {
                 IsLoading = true;
-
+                registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
                 StateHasChanged();
                 for (EquippedItems i = EquippedItems.Face; i <= EquippedItems.Ring2; i++)
                 {
                     EquipItemComp[i] = new EquipItemComponent();
                 }
                 await LoadCharacter();
-               
+
 
                 IsLoading = false;
                 StateHasChanged();
@@ -122,6 +121,13 @@
                 await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
             }
         }
+    }
+
+    private void EquipmentChange()
+    {
+        IsLeaveAllowed = false;
+        BattleStatComp.GearChange();
+        StateHasChanged();
     }
 
     private async Task LoadCharacter()
@@ -144,7 +150,6 @@
 
             // update character with TraitAdv collection properly filled
             await _characterRepository.Update(AllParams.Character);
-
         }
         catch (Exception ex)
         {
@@ -152,6 +157,7 @@
             await _jsRuntime.ToastrError("Error while changing equipment");
         }
         IsLoading = false;
+        IsLeaveAllowed = true;
         StateHasChanged();
     }
 
@@ -161,15 +167,15 @@
         {
             e.Value.ReloadGears();
         }
-
+        IsLeaveAllowed = false;
     }
 
     protected void GearChange()
     {
         // update equipment (in character)
         LoadPossibleGears();
-        //if (BattleStatComp is not null) BattleStatComp.LoadPossibleGears();
-        AllParams.GearChange();
+        AllParams.GearTraitChange();
+        IsLeaveAllowed = false;
         StateHasChanged();
     }
 
@@ -178,9 +184,41 @@
         // update armor 
         LoadPossibleGears();
         BattleStatComp.GearChange();
+        IsLeaveAllowed = false;
+        StateHasChanged();
+    }
+    protected void BattleStatChange()
+    {
+        IsLeaveAllowed = false;
         StateHasChanged();
     }
 
+    public async Task ConfirmLeave_Click(bool isConfirmed)
+    {
+        IsLoading = true;
+        StateHasChanged();
+        if (isConfirmed == true)
+        {
+            IsLeaveAllowed = true;
+            await _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
+            _navigationManager.NavigateTo(TargetLocation);
+        }
+        IsLoading = false;
+        StateHasChanged();
+        await _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
+    }
 
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (!IsLeaveAllowed)
+        {
+            TargetLocation = context.TargetLocation;
 
+            context.PreventNavigation();
+            HandleLeavePage();
+        }
+
+        return ValueTask.CompletedTask;
+    }
+    private void HandleLeavePage() => _jsRuntime.InvokeVoidAsync("ShowLeavePageModal");
 }

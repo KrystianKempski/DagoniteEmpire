@@ -11,7 +11,7 @@
             </div>
             <div class="modal-body">
                 Are you sure you want to leave? 
-                Changes to character will not be saved
+                Changes to @ComponentDescription will not be saved
             </div>
             @if (IsParentComponentProcessing == true)
             {
@@ -47,6 +47,8 @@
 
     [Parameter]
     public EventCallback<bool> LeaveConfirmation { get; set; }
+    [Parameter]
+    public string ComponentDescription { get; set; } = "character";
 
     private async Task OnLeaveConfirmation(bool isConfirmation)
     {

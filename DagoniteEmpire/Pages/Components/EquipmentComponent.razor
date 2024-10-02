@@ -41,7 +41,7 @@
                         </td>
                         <td class="text-center nobottomborder">
                             <div class="row m-0">
-                                @if (obj.Equipment.IsApproved == false || UserInfo?.IsAdminOrMG == true)
+                                @if (obj.Equipment.IsApproved == false)
                                 {
                                     <button @onclick="@(()=>EditEquipment(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
                                 }
@@ -95,17 +95,15 @@
 @code {
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; } = new();
-
     [Parameter]
-    public EventCallback OnTraitsChange { get; set; }
-
+    public EventCallback<string> OnTraitsChange { get; set; }
+    [Parameter]
+    public EventCallback OnItemChange { get; set; }
     [Parameter]
     public bool PageMode { get; set; }
 
     UserInfo? UserInfo { get; set; }
-
     private SfRichTextEditor DescrEdit = new();
-
     private decimal EquipmentWeight;
     private decimal EquipmentPrice;
 
@@ -180,7 +178,9 @@
 
     private async Task EditEquipment(EquipmentSlotDTO slot)
     {
+        bool IsInfoMode = slot.Equipment.IsApproved;
         var parameters = new DialogParameters<CreateEquipmentSlotDialog> {  { x => x.NewSlot, slot },
+                                                                            { x => x.IsInfoMode, IsInfoMode },
                                                                             { x => x.AllParams, AllParams } };
 
         var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Edit item", parameters, await SetOptions());
@@ -200,8 +200,9 @@
     }
     private async Task UpdateEquipment()
     {
-        AllParams.GearChange();
-        await OnTraitsChange.InvokeAsync();
+        AllParams.GearTraitChange();
+        await OnTraitsChange.InvokeAsync(SD.TraitType_Gear);
+        await OnItemChange.InvokeAsync();
         CalculateEquipWeightAndPrice();
         StateHasChanged();
     }

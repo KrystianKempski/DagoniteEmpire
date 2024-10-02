@@ -2,7 +2,9 @@
 @inject IUserService _userService
 @inject NavigationManager _navigationManager
 
-<div class="equipment">
+<div class="battlestats">
+    <MudPaper Class="w-100 h-100 p-2">
+
     @if (IsLoading == true)
     {
     }else
@@ -28,6 +30,14 @@
                                 @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponMain1].RelatedSkill).SumBonus
                             </div>
                         </div>
+                        @if (Weapons[EquippedItems.WeaponMain1].IsTwoHanded == true)
+                        {
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                    <label>Two handed weapon</label>
+                                </div>
+                            </div>
+                        }
                     
                         @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponMain1]){
                             @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
@@ -54,36 +64,36 @@
                 <div class="weapon off1">
                         <EquipItemComponent Disabled="CheckIfTwoHanded(EquippedItems.WeaponMain1)" @ref="EquipItemComp[EquippedItems.WeaponOff1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff1"> </EquipItemComponent>
                 </div>
-                    @if (Weapons[EquippedItems.WeaponOff1] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponOff1].RelatedSkill) == false)
-                    {
-                        <div class="d-flex">
-                            <div class="flex-grow-1 weapon-prop-label">
-                                <label>Skill (@Weapons[EquippedItems.WeaponOff1].RelatedSkill): </label>
-                            </div>
-                            <div class="weapon-prop-value">
-                                @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponOff1].RelatedSkill).SumBonus
-                            </div>
+                @if (Weapons[EquippedItems.WeaponOff1] is not null && string.IsNullOrEmpty(Weapons[EquippedItems.WeaponOff1].RelatedSkill) == false)
+                {
+                    <div class="d-flex">
+                        <div class="flex-grow-1 weapon-prop-label">
+                            <label>Skill (@Weapons[EquippedItems.WeaponOff1].RelatedSkill): </label>
                         </div>
+                        <div class="weapon-prop-value">
+                            @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponOff1].RelatedSkill).SumBonus
+                        </div>
+                    </div>
                     
-                        @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponOff1])
+                    @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponOff1])
+                    {
+                        @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
                         {
-                            @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
-                            {
-                                <div class="d-flex">
+                            <div class="d-flex">
 
-                                    <div class="flex-grow-1 weapon-prop-label">
-                                        <label> @prop.Name: </label>
-                                    </div>
-                                    @if (prop.SumBonus != 0)
-                                    {
-                                        <div class="weapon-prop-value">
-                                            @prop.SumBonus
-                                        </div>
-                                    }
+                                <div class="flex-grow-1 weapon-prop-label">
+                                    <label> @prop.Name: </label>
                                 </div>
-                            }
+                                @if (prop.SumBonus != 0)
+                                {
+                                    <div class="weapon-prop-value">
+                                        @prop.SumBonus
+                                    </div>
+                                }
+                            </div>
                         }
                     }
+                }
             </div>
 
         </div>
@@ -109,6 +119,14 @@
                                 @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponMain2].RelatedSkill).SumBonus
                             </div>
                         </div>
+                        @if (Weapons[EquippedItems.WeaponMain2].IsTwoHanded == true)
+                        {
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                    <label>Two handed weapon</label>
+                                </div>
+                            </div>
+                        }
                    
                         @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponMain2])
                         {
@@ -145,7 +163,7 @@
                             <div class="weapon-prop-value">
                                 @AllParams.SpecialSkills.Get(Weapons[EquippedItems.WeaponOff2].RelatedSkill).SumBonus
                             </div>
-                        </div>
+                        </div>                        
                     
                         @foreach (var prop in WeaponBattleProperties[EquippedItems.WeaponOff2])
                         {
@@ -309,23 +327,24 @@
         </div>
     </CascadingValue>
     }
+    </MudPaper>
 </div>
 
 @code {
     [CascadingParameter]
     public AllParamsModel AllParams { get; set; }
+    [Parameter]
+    public EventCallback OnBattleStatsChange { get; set; }
 
     public bool WeaponSet1 { get; set; }
     public bool WeaponSet2 { get; set; }
-
     private bool IsLoading = true;
-
-
     public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp { get; set; } = new Dictionary<EquippedItems, EquipItemComponent>();
     public Dictionary<EquippedItems, IEnumerable<BattlePropertyDTO>?> WeaponBattleProperties { get; set; } = new Dictionary<EquippedItems, IEnumerable<BattlePropertyDTO>?>();
     public Dictionary<EquippedItems, EquipmentDTO?> Weapons { get; set; } = new Dictionary<EquippedItems, EquipmentDTO?>();
     public  EquipmentDTO? Armor { get; set; } 
     public IEnumerable<BattlePropertyDTO>? ArmorBattleProperties { get; set; }
+    
     protected override async Task OnInitializedAsync()
     {
         for (EquippedItems i = EquippedItems.WeaponMain1; i <= EquippedItems.WeaponOff2; i++)
@@ -342,12 +361,7 @@
             {
                 IsLoading = true;
                 StateHasChanged();
-                WeaponSet1 = AllParams.Character.WeaponSet == 0 ? true : false;
-                WeaponSet2 = !WeaponSet1;
-
-                AllParams.GearChange();
-                LoadAttackStats();
-                LoadArmorStats();
+                ReloadBattleGear();
                 IsLoading = false;
                 StateHasChanged();
             }
@@ -356,6 +370,15 @@
                 ;                
             }
         }
+    }
+    public void ReloadBattleGear()
+    {
+        WeaponSet1 = AllParams.Character.WeaponSet == 0 ? true : false;
+        WeaponSet2 = !WeaponSet1;
+
+        AllParams.GearTraitChange();
+        LoadAttackStats();
+        LoadArmorStats();
     }
     private void LoadAttackStats()
     {
@@ -377,27 +400,27 @@
 
     public void LoadPossibleGears()
     {
-        bool unequipNext = false;
         foreach (var e in EquipItemComp)
         {                       
             e.Value.ReloadGears(); 
         }
     }
 
-    public void GearChange()
+    public async Task GearChange()
     {
         // update equipment (in character)
         LoadPossibleGears();
-        AllParams.GearChange();
+        AllParams.GearTraitChange();
         LoadAttackStats();
         // clear of hand if weapon used is two-handed
         if (ClearOffHand())
             return;
         LoadArmorStats();
+        await OnBattleStatsChange.InvokeAsync();
         StateHasChanged();
     }
 
-    protected void WeaponSetChanged()
+    protected async Task WeaponSetChanged()
     {
         if (WeaponSet1)
         {
@@ -411,17 +434,17 @@
         }
         AllParams.Character.WeaponSet = WeaponSet2 ? 1 : 0;
         LoadAttackStats();
+        await OnBattleStatsChange.InvokeAsync();
         StateHasChanged();
     }
 
     public bool CheckIfTwoHanded(EquippedItems itemEnum)
     {
-        if (itemEnum != EquippedItems.WeaponMain1 && itemEnum != EquippedItems.WeaponMain2)
-            return false;
-        var res = WeaponBattleProperties[itemEnum]?.FirstOrDefault(u => u.Name == SD.WeaponQuality.TwoHanded);
-        if (res == null)
-            return false;
-        return true;
+        var item = Weapons[itemEnum];
+        if(item is not null && item.IsTwoHanded)
+            return true;
+
+        return false;
     }
 
     public bool ClearOffHand()

@@ -1,0 +1,94 @@
+﻿@inject IFileUpload _fileUpload;
+@inject IUserService _userService
+@inject IJSRuntime _jsRuntime
+
+<div class="portrait">
+    <MudPaper Class="w-100 h-100 pa-2">
+        <div class="portrait-relative">
+    <h3 class="my-3 ml-3 text-center">PORTRAIT</h3>
+    <div class="portrait-imageframe">
+        <img src="@AllParams.Character.ImageUrl" class="portrait-image" />
+        @* <div class="portrait-input"> *@
+        @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
+        {
+            <label class="input-label" for="input">@ChooseFile</label>
+            <InputFile id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
+        }
+        @* </div> *@
+    </div>
+
+    <div class="points-control">
+        <label class="points-label">Avalible experience points:</label>
+        @if (UserInfo?.IsAdminOrMG == true)
+        {
+            <span class="points-indicator ml-auto"><MudNumericField Margin="0" Class="dense-numeric-field" Min="0" @bind-Value="AllParams.Character.CurrentExpPoints"></MudNumericField></span>
+        }
+        else
+        {
+            <span class="points-indicator ml-auto">@AllParams.Character.CurrentExpPoints</span>
+        }
+    </div>
+    <div class="points-control">
+        @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
+        {
+            <label class="points-label">Avalible attribute points:</label>
+            <span class="points-indicator ml-auto">@AllParams.Character.AttributePoints</span>
+        }
+    </div>
+        </div>
+    </MudPaper>
+</div>
+
+
+@code {
+
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; }
+    [Parameter]
+    public EventCallback OnPortraitChange { get; set; }
+
+    private string ChooseFile = "Choose file";
+    UserInfo? UserInfo { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            UserInfo = await _userService.GetUserInfo();
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                ChooseFile = string.Empty;
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);
+                    if (fileInfo.Extension.ToLower() == ".jpg" ||
+                        fileInfo.Extension.ToLower() == ".png" ||
+                        fileInfo.Extension.ToLower() == ".jpeg")
+                    {
+                        AllParams.Character.ImageUrl = await _fileUpload.UploadFile(file);
+                        await OnPortraitChange.InvokeAsync();
+                    }
+                    else
+                    {
+                        await _jsRuntime.ToastrError("Please select .jpg / .jpeg / .png file only");
+                    }
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await _jsRuntime.ToastrError("Error while image upload: " + ex.ToString());
+        }
+    }
+
+
+}

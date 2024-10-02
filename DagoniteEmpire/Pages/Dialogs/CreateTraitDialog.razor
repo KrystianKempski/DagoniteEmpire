@@ -146,7 +146,6 @@
     [Parameter] public AllParamsModel AllParams { get; set; }
 
     public string HeaderName { get; set; } = "";
-    //private string TraitName ="";
 
     public UserInfo? UserInfo { get; set; }
 
@@ -178,7 +177,6 @@
         SD.WeaponQuality.Precise,
         SD.WeaponQuality.Range,
         SD.WeaponQuality.Light,
-        SD.WeaponQuality.TwoHanded,
       };
 
     private string ErrorMessage { get; set; } = string.Empty;
@@ -197,7 +195,7 @@
 
         if (IsWeaponQualityMode)
         {
-            NewTrait.Name = "Weapon parameters";
+            NewTrait.Name = SD.WeaponParametersDescr;
             NewTrait.Descr = "";
         }
         else
@@ -228,8 +226,6 @@
             return;
         }
         ErrorMessage = string.Empty;
-        if (IsWeaponQualityMode)
-            NewTrait.Descr = NewTrait.SummaryDescr;
 
         NewTrait.TraitType = NewTrait.TraitType;
         MudDialog.Close(DialogResult.Ok(NewTrait));

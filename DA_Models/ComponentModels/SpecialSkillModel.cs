@@ -93,6 +93,7 @@ namespace DA_Models.ComponentModels
                         {
                             skill.ChosenAttribute = attr2.Name;
                         }
+                        ChangeSSRelatedAttribute(skill.ChosenAttribute, skill.Name);
                     }
                 }
             }

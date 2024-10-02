@@ -1,11 +1,13 @@
 ﻿@inject IJSRuntime _jsRuntime
 
-<div class="baseskills border">
+<div class="baseskills">
+    <MudPaper Class="pa-2 m-0 w-100 h-100">
+
     <div class="sheet-img">
         @*  <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
     <h3 class="my-3 ml-3 text-center">BASE SKILLS</h3>
-    <table class="table align-middle">
+    <table class="table align-middle m-0">
         <thead>
             <tr>
                 <th scope="col" class="name-row">Skill</th>
@@ -28,7 +30,7 @@
                     <td>
                         <div class="attr-control">
                             <span class="attr-indicator">@obj.BaseBonus</span>
-                            @if (AllParams.Character.CurrentExpPoints > 0)
+                            @if (AllParams.Character.CurrentExpPoints > 0 || AllParams.Character.IsApproved == false)
                             {
                                 <div class="arrows">
                                     <button @onclick="@(()=>IncrBSBonus(obj))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
@@ -71,6 +73,7 @@
             }
         </tbody>
     </table>
+    </MudPaper>
 </div>
 
 

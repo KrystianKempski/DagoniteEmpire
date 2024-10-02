@@ -1,5 +1,7 @@
 ﻿@inject IDialogService DialogService
 <div class="race">
+    <MudPaper Class="pa-2 m-0  w-100 h-100 overflow-auto">
+
     <div class="sheet-img">
         @* <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
@@ -25,13 +27,13 @@
         <InputText readonly style="width: 100%;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px;; background-color: transparent; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;" @bind-Value="@AllParams.CurrentRace.Name"></InputText>
     }
     
-    <label class="race-descr-label">Race description</label>
+    <label class="race-descr-label">Description</label>
     <div class="richtext-conteiner">
         <SfRichTextEditor Height="100%" @ref="RaceDescrShow" @bind-Value="@AllParams.CurrentRace.Description" Readonly="true" ShowTooltip="false">
             <RichTextEditorToolbarSettings Items="@NoTools" />
         </SfRichTextEditor>
     </div>
-    <label class="race-traits-label">Race traits</label>
+    <label class="race-traits-label">Traits</label>
     <div class="flex-conteiner">
         <table class="table align-middle">
             <thead>
@@ -63,6 +65,7 @@
     {
         <CustomRaceDialog @bind-CustomRaceComponent="@CustomRaceComponent"></CustomRaceDialog>
     }
+    </MudPaper>
 </div> 
 
 

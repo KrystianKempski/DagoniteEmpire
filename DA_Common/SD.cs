@@ -38,7 +38,7 @@ namespace DA_Common
         public const string NPCName_GameMaster = "Game Master";
         // Weapon qualities
   
-
+        public const string WeaponParametersDescr = "Weapon parameters";
         public readonly struct WeaponQuality
         {
             public const string Fast = "Fast";
@@ -64,10 +64,9 @@ namespace DA_Common
             public const string Range = "Range";
             public const string Light = "Light";
             public const string Reload = "Reload";
-            public const string TwoHanded = "Two-handed";
 
             public static readonly string[] All = { Fast, Slow, Parrying, ShieldDestructive, ArmorPiercing, Long, Heavy, Devastating,
-                Weak, Stunning, Stumbling, Snatching,Disarming, Armor, ArmorDefenceBonus,ArmorPenalty ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light,Reload,TwoHanded };
+                Weak, Stunning, Stumbling, Snatching,Disarming, Armor, ArmorDefenceBonus,ArmorPenalty ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light,Reload };
         }
 
         public readonly struct BattleProperty
@@ -265,7 +264,31 @@ namespace DA_Common
             public static readonly string[] All = { Nutrition, Cleanliness, Wellbeing, Rest, GeneralHealth };
         }
 
-        //circle 0  1  2  3  4  5  6  7  8  9
+        public readonly struct TempStates
+        {
+            public const string Stunned = "Stunned";
+            public const string Stumbled = "Stumbled";
+            public const string Snatched = "Snatched";
+            public const string Disarmed = "Disarmed";
+            public const string Blinded = "Blinded";
+            public const string Unaware = "Unaware";
+            public const string Invisible = "Invisible";
+            public const string Flanking = "Flanking";
+            public const string Surrounded = "Surrounded";
+
+            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded };
+        }
+
+        public readonly struct ProfessionSkills
+        {
+            public const string DoubleWeaponFighting = "Double weapon fighting";
+            public const string GreaterDoubleWeaponFighting = "Greater double weapon fighting";
+            public const string MightyGrip = "Mighty grip";
+            public const string WizardMagic = "Wizard magic";
+            public const string SorcererMagic = "Sorcerer magic";
+        }
+
+        //circ 0  1  2  3  4  5  6  7  8  9
         public static readonly int[,,] SpellsPerDay = {
           {
             //WIZARD

@@ -13,7 +13,6 @@
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IUserService _userService
-@inject IFileUpload _fileUpload;
 @inject IJSRuntime _jsRuntime
 @inject IMapper _mapper
 @using AutoMapper
@@ -25,6 +24,7 @@
 
 @inject NavigationManager _navigationManager
 <_LeavePage IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click" ></_LeavePage>
+<div class="container justify-content-around p-1">
 <div class="page">
     
     <CascadingValue Value="@AllParams">
@@ -97,7 +97,7 @@
                         {
                             <div class="form-group col-2 col-md-1 px-1">
                                 <label>Is Approved?</label>
-                                <MudCheckBox @bind-Value="@AllParams.Character.IsApproved" Size="Size.Medium"></MudCheckBox>
+                                <MudCheckBox @bind-Value="@IsApproved" Size="Size.Medium"></MudCheckBox>
                             </div>
                         }
                             
@@ -108,75 +108,47 @@
              <section class="section-create-character">
                 <div class="container-fluid">
                     <div class="row">
-                        <div class="portrait border">
-                            <div class="sheet-img">
-                                @* <img src="../images/old_paper2.png" class="stretch" /> *@
-                            </div>
-                            <h3 class="my-3 ml-3 text-center">PORTRAIT</h3>
-                            <div class="portrait-imageframe">
-                                <img src="@AllParams.Character.ImageUrl" class="portrait-image" />
-                                @* <div class="portrait-input"> *@
-                                    @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
-                                    {
-                                        <label class="input-label" for="input">@ChooseFile</label>
-                                        <InputFile id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
-                                    }
-                                @* </div> *@
-                            </div>
-                   
-                            <div class="points-control">
-                                    <label class="points-label">Avalible experience points:</label>
-                                    @if( UserInfo?.IsAdminOrMG == true)
-                                    {
-                                        <span class="points-indicator ml-auto"><MudNumericField Margin="0" Class="dense-numeric-field" Min="0" @bind-Value="AllParams.Character.CurrentExpPoints"></MudNumericField></span>
-                                    }else{
-                                        <span class="points-indicator ml-auto">@AllParams.Character.CurrentExpPoints</span>
-                                    }
-                            </div>
-                            <div class="points-control">
-                                @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
-                                {
-                                    <label class="points-label">Avalible attribute points:</label>
-                                    <span class="points-indicator ml-auto">@AllParams.Character.AttributePoints</span>
-                                }
-                            </div>
-                        </div>
+
+                        <PortraitComponent OnPortraitChange="ParamChange"></PortraitComponent>
 
                         <AttributeComponent OnAttributesChange="ParamChange"></AttributeComponent>
                         
                         <BaseSkillsComponent OnBaseSkillsChange="ParamChange"></BaseSkillsComponent>
 
-                        <div class="races border">
-                                <RaceComponent OnTraitsChange="ParamChange"></RaceComponent>
+
+                        <RaceComponent OnTraitsChange="ParamChange"></RaceComponent>
+
+                        <ProfessionComponent @bind-Profession="@AllParams.Profession"></ProfessionComponent>
+
+                        <div class="traits p-2">
+                            <MudPaper Class="p-2 m-0 w-100 h-100">
+                                <h3 class="my-3 ml-3 text-center">TRAITS</h3>
+                                <div class="trait-container">
+                                   <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsCharacter" TraitType="@SD.TraitType_Character"></TraitsComponent>
+                                </div>
+                            </MudPaper>
                         </div>
 
-                        <div class="profession border">
-                            <ProfessionComponent @bind-Profession="@AllParams.Profession"></ProfessionComponent>
+                        <div class="description p-2">
+                            <MudPaper Class="p-2 m-0 w-100 h-100">
+                                <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
+                            </MudPaper>
+                        </div>
+                        <div class="equipment p-2">
+                             <MudPaper Class="p-2 m-0 w-100 h-100">
+                                <EquipmentComponent OnTraitsChange="TraitsChange" PageMode=true></EquipmentComponent>
+                             </MudPaper>
                         </div>
 
-                        <div class="traits border">
-                            <div class="sheet-img">
-                                @* <img src="../images/old_paper2.png" class="stretch" /> *@
-                            </div>
-                            <h3 class="my-3 ml-3 text-center">TRAITS</h3>
-                            <div class="trait-container">
-                                    <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsCharacter" TraitType="@SD.TraitType_Character"></TraitsComponent>
-                            </div>
-                        </div>
-
-                        <div class="description border">
-                            <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
-                        </div>
-                            <div class="equipment">
-                                <EquipmentComponent OnTraitsChange="LoadPossibleGears" PageMode=true></EquipmentComponent>
-                            </div>
                         @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                         {
-                            <div class="traits border">
-                                <h3 class="my-3 ml-3 text-center">TEMPORARY STATES</h3>
-                                <div class="trait-container">
-                                        <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsTemporary" TraitType="@SD.TraitType_Temporary"></TraitsComponent>
-                                </div>
+                            <div class="traits p-2">
+                                <MudPaper Class="p-2 m-0 w-100 h-100">
+                                    <h3 class="my-3 ml-3 text-center">TEMPORARY STATES</h3>
+                                    <div class="trait-container">
+                                            <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsTemporary" TraitType="@SD.TraitType_Temporary"></TraitsComponent>
+                                    </div>
+                                </MudPaper>
                             </div>
                         }
                     </div>
@@ -212,6 +184,7 @@
     </div>
     </CascadingValue>
 </div>
+</div>
 
 <style>
 
@@ -240,8 +213,6 @@
 
     [Parameter]
     public int Id { get; set; }
-    //private ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
-
     private AllParamsModel AllParams { get; set; }
     private IDisposable? registration;
     private string Title { get; set; } = "Create";
@@ -258,8 +229,16 @@
         new ItemModel(){ Text = "Edit", PrefixIcon= "e-edit", Id="Grid_edit"},
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
-    private string ChooseFile = "Choose file";
     private SpecialSkillsComponent SpecialSkilsComp = new();
+    private bool IsApproved
+    {
+        get => AllParams.Character.IsApproved;
+        set
+        {
+            AllParams.Character.IsApproved = value;
+            IsLeaveAllowed = false;
+        }
+    }
 
 
     protected override async Task OnInitializedAsync()
@@ -351,8 +330,8 @@
         AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
         AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
         AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
-        AllParams.Profession.ActiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == true).ToList();
-        AllParams.Profession.PassiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == false).ToList();
+        AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).ToList();
+        //AllParams.Profession.PassiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == false).ToList();
         AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
         AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
     }
@@ -402,22 +381,24 @@
                 if (professionDTO is not null)
                     AllParams.Character.ProfessionId = professionDTO.Id;
                 // create profession traits
-                if(AllParams.Profession.ActiveSkills is not null)
-                {                    
-                    foreach (var skill in AllParams.Profession.ActiveSkills)
-                    {
-                        skill.ProfessionId = AllParams.Character.ProfessionId;
-                        await _traitProfessionRepository.Create(skill);
-                    }
-                }
-                if (AllParams.Profession.PassiveSkills is not null)
-                {
-                    foreach (var skill in AllParams.Profession.PassiveSkills)
-                    {
-                        skill.ProfessionId = AllParams.Character.ProfessionId;
-                        await _traitProfessionRepository.Create(skill);
-                    }
-                }
+                // if(AllParams.Profession.Traits is not null)
+                // {
+                //     // foreach (var skill in AllParams.Profession.Traits)
+                //     // {
+                //     //     skill.ProfessionId = AllParams.Character.ProfessionId;
+                //     //     await _traitProfessionRepository.Create(skill);
+                //     // }
+                //     AllParams.Profession
+                //     _professionRepository.Create(AllParams.Profession);
+                // }
+                // if (AllParams.Profession.PassiveSkills is not null)
+                // {
+                //     foreach (var skill in AllParams.Profession.PassiveSkills)
+                //     {
+                //         skill.ProfessionId = AllParams.Character.ProfessionId;
+                //         await _traitProfessionRepository.Create(skill);
+                //     }
+                // }
 
                 var charac = await _characterRepository.Create(AllParams.Character);
                 foreach (var obj in AllParams.Attributes.GetAllArray())
@@ -465,22 +446,22 @@
                     AllParams.Character.ProfessionId = professionDTO.Id;
 
                 // update profession traits
-                if (AllParams.Profession.ActiveSkills is not null)
-                {
-                    foreach (var skill in AllParams.Profession.ActiveSkills)
-                    {
-                        skill.ProfessionId = AllParams.Character.ProfessionId;
-                        await _traitProfessionRepository.Update(skill);
-                    }
-                }
-                if (AllParams.Profession.PassiveSkills is not null)
-                {
-                    foreach (var skill in AllParams.Profession.PassiveSkills)
-                    {
-                        skill.ProfessionId = AllParams.Character.ProfessionId;
-                        await _traitProfessionRepository.Update(skill);
-                    }
-                }
+                // if (AllParams.Profession.ActiveSkills is not null)
+                // {
+                //     foreach (var skill in AllParams.Profession.ActiveSkills)
+                //     {
+                //         skill.ProfessionId = AllParams.Character.ProfessionId;
+                //         await _traitProfessionRepository.Update(skill);
+                //     }
+                // }
+                // if (AllParams.Profession.PassiveSkills is not null)
+                // {
+                //     foreach (var skill in AllParams.Profession.PassiveSkills)
+                //     {
+                //         skill.ProfessionId = AllParams.Character.ProfessionId;
+                //         await _traitProfessionRepository.Update(skill);
+                //     }
+                // }
 
                 // update Character traits
                 if ( AllParams.Character.TraitsCharacter is  null)
@@ -564,40 +545,6 @@
         {
             IsLoading = false;
             await _jsRuntime.ToastrError("Error while deleting: " + ex.ToString());
-        }
-    }
-
-    private async Task HandleImageUpload(InputFileChangeEventArgs e)
-    {
-
-        IsLoading = true;
-        try
-        {
-            if (e.GetMultipleFiles().Count > 0)
-            {
-                ChooseFile = string.Empty;
-                foreach (var file in e.GetMultipleFiles())
-                {
-                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);
-                    if (fileInfo.Extension.ToLower() == ".jpg" ||
-                        fileInfo.Extension.ToLower() == ".png" ||
-                        fileInfo.Extension.ToLower() == ".jpeg")
-                    {
-                        AllParams.Character.ImageUrl = await _fileUpload.UploadFile(file);
-                        IsLeaveAllowed = false;
-                    }
-                    else
-                    {
-                        await _jsRuntime.ToastrError("Please select .jpg / .jpeg / .png file only");
-                    }
-                }
-            }
-            IsLoading = false;
-        }
-        catch (Exception ex)
-        {
-            IsLoading = false;
-            await _jsRuntime.ToastrError("Error while image upload: " + ex.ToString());
         }
     }
 

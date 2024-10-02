@@ -45,8 +45,8 @@ namespace DA_Models.ComponentModels
             CharTraitsChange();
             TempTraitsChange();
             RaceTraitsChange();
-            GearChange();
-            ProfessionTraitsChange();
+            GearTraitChange();
+            ProfTraitsChange();
         }
 
         public void TraitsChange(string? TraitType = null)
@@ -59,9 +59,11 @@ namespace DA_Models.ComponentModels
             else if (TraitType == SD.TraitType_Race)
                 RaceTraitsChange();
             else if(TraitType == SD.TraitType_Gear)
-                GearChange();
+                GearTraitChange();
             else if (TraitType == SD.TraitType_Temporary)
                 TempTraitsChange();
+            else if (TraitType == SD.TraitType_Profession)
+                ProfTraitsChange();
         }
 
         public void CharTraitsChange()
@@ -127,7 +129,7 @@ namespace DA_Models.ComponentModels
             CalculateTraits(CurrentRace.Traits.Cast<TraitDTO>().ToList(), SD.TraitType_Race);
         }
 
-        public void GearChange()
+        public void GearTraitChange()
         {
             IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
 
@@ -153,7 +155,7 @@ namespace DA_Models.ComponentModels
             }
             BattleProperties.CalculateBattleStats();
         }
-        public void ProfessionTraitsChange()
+        public void ProfTraitsChange()
         {
             IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
 
@@ -170,9 +172,9 @@ namespace DA_Models.ComponentModels
             }
 
             // calculate all gear traits in equipped items
-            if(Profession.PassiveSkills is not null && Profession.PassiveSkills.Any())
+            if(Profession.Traits is not null && Profession.Traits.Any())
             {
-               CalculateTraits(Profession.PassiveSkills.Cast<TraitDTO>().ToList(), SD.TraitType_Profession);
+               CalculateTraits(Profession.Traits.Where(t=>t.IsActiveSkill==false).Cast<TraitDTO>().ToList(), SD.TraitType_Profession);
             }
         }
 
