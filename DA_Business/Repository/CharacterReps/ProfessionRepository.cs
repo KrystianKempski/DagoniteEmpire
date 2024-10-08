@@ -35,17 +35,6 @@ namespace DA_Business.Repository.CharacterReps
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<ProfessionDTO, Profession>(objDTO);
 
-                //handle traitsProfession
-                //var traits = await contex.TraitsProfession.ToListAsync();
-                //traits.ForEach(t =>
-                //{
-                //    if (obj.Traits.Any(nt => nt.Id == t.Id))
-                //    {
-                //        var untracked = obj.Traits.FirstOrDefault(nt => nt.Id == t.Id);
-                //        obj.Traits.Remove(untracked);
-                //        obj.Traits.Add(t);
-                //    }
-                //});
 
                 var addedObj = await contex.Professions.AddAsync(obj);
                 await contex.SaveChangesAsync();

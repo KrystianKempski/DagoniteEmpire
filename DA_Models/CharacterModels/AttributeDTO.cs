@@ -22,7 +22,6 @@ namespace DA_Models.CharacterModels
                 int mod = (int)Math.Floor((SumBonus - 10) / 2.0);
                 if (_modifier == mod) return _modifier;
                 _modifier = mod;
-                //OnModifierChanged(nameof(Modifier));
                 return mod;
             }
         }
@@ -35,16 +34,9 @@ namespace DA_Models.CharacterModels
                 int mod = (int)Math.Floor((SumAbsolute - 10) / 2.0);
                 if (_modifierAbsolute == mod) return _modifierAbsolute;
                 _modifierAbsolute = mod;
-                // OnModifierChanged(nameof(Modifier));
                 return mod;
             }
         }
 
-        //public event PropertyChangedEventHandler? ModifierChanged = null;
-
-        //protected virtual void OnModifierChanged(string propertyName)
-        //{
-        //    ModifierChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        //}
     }
 }

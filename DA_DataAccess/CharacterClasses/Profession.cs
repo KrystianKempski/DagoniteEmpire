@@ -18,8 +18,7 @@ namespace DA_DataAccess.CharacterClasses
         public string Description { get; set; } = string.Empty;
         public string RelatedAttributeName { get; set; } = string.Empty;
         public int ClassLevel { get; set; } = 1;
-        public int MaxFocusPoints { get; set; } = 0;
-        public int CurrentCofusPoints { get; set; } = 0;
+        public int CurrentFocusPoints { get; set; } = 0;
         public bool IsApproved { get; set; } = false;
 
         public bool IsUniversal { get; set; } = false;

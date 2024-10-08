@@ -22,12 +22,11 @@ namespace DA_Models.CharacterModels
         }
         public override string TraitType { get; set; } = SD.TraitType_Profession;        
         public int ProfessionId { get; set; }
-        public int Level { get; set; }
         public int DC { get; set; }
         public int Cost { get; set; }
         public string Range { get; set; } = "";
-        //public bool IsApproved { get; set; } = false;
         public bool IsActiveSkill { get; set; } = true;
+        public bool IsInUse { get; set; } = false;
         public override string TraitLabel { get => "skill"; }
     }
 }

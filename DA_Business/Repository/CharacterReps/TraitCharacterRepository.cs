@@ -42,7 +42,30 @@ namespace DA_Business.Repository.CharacterReps
                 throw new RepositoryErrorException("Error in Trait-Adv Repository Create");
             }
                 
-}
+        }
+        public async Task<TraitCharacterDTO> Add(TraitCharacterDTO objDTO,int Id)
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+                var character = await contex.Characters.Include(u=>u.TraitsCharacter).FirstOrDefaultAsync(c => c.Id == Id);
+                if (character == null)
+                    return null;
+                var obj = _mapper.Map<TraitCharacterDTO, TraitCharacter>(objDTO);
+                if(character.TraitsCharacter is null)
+                    character.TraitsCharacter = new List<TraitCharacter>();
+                character.TraitsCharacter.Add(obj);
+
+                await contex.SaveChangesAsync();
+
+                return _mapper.Map<TraitCharacter, TraitCharacterDTO>(obj);
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in Trait-Adv Repository Create");
+            }
+
+        }
 
         public async Task<int> Delete(int id)
         {
@@ -103,13 +126,7 @@ namespace DA_Business.Repository.CharacterReps
                 var obj = await contex.TraitsCharacter.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
-                    obj.Name = newTrait.Name;    
-                    obj.Descr = newTrait.Descr;
-                    obj.Index = newTrait.Index;
-                    obj.TraitType = newTrait.TraitType;
-                    obj.TraitValue = newTrait.TraitValue;
-                    obj.TraitApproved = newTrait.TraitApproved;
-                    obj.IsUnique = newTrait.IsUnique;
+
 
                     // Delete trait bonuses
                     if (!obj.Bonuses.IsNullOrEmpty())
@@ -122,6 +139,9 @@ namespace DA_Business.Repository.CharacterReps
                             }
                         }
                     }
+
+
+                    contex.Entry(obj).CurrentValues.SetValues(objDTO);
 
                     // Update and Insert bonuses
                     if (newTrait.Bonuses is not null)

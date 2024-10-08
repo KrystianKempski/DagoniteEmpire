@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @inject ISnackbar _snackBar
 @inject IJSRuntime _jsRuntime
-@inject IUserService _userService;
+@inject IUserService _userService
 @inherits LayoutComponentBase
 
 <PageTitle>DagoniteEmpire</PageTitle>
@@ -14,22 +14,22 @@
 <MudSnackbarProvider />    
 
 
-<MudLayout>
+<MudLayout >
     <MudAppBar Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Elevation="1">
         <div class="big-screen">
             <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4}; font-family: 'Eagle Lake', serif; font-size: 20px;")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="#">Dagonite Empire</MudButton>
         </div>
             <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
             <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:transparent;")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/character"> <MudIcon Class="px-1" Icon="@Icons.Material.Filled.PeopleAlt"></MudIcon>Character list</MudButton>
-            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:transparent;")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/campaignlist"><MudIcon Class="px-1" Icon="@Icons.Material.Filled.Chat"></MudIcon>Campaign</MudButton>
             <AuthorizeView>
                 <Authorized>
                     <CharacterNavButtons></CharacterNavButtons>
                 </Authorized>
             </AuthorizeView>
-                
+            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:transparent;")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/campaignlist"><MudIcon Class="px-1" Icon="@MyIcon.BookmarkWhite"></MudIcon>Campaign</MudButton>
 
-            </div>
+
+        </div>
  
         <div class="small-screen">
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerStartToggle())" />
@@ -47,20 +47,27 @@
     <MudContainer MaxWidth="MaxWidth.False" Class="m-0 p-0" Style="overflow:hidden; position:relative;">
         <AuthorizeView>
             <Authorized>
-               <Chat></Chat>   
+               <Chat></Chat>
+               <LeftPanel></LeftPanel>
+                
             </Authorized>
         </AuthorizeView>
-    </MudContainer>
+    </MudContainer>    
 
-    <MudMainContent>
-        <CascadingValue Value="@UserInfo">
-            @Body
-        </CascadingValue>
+    <MudMainContent >
+            <CascadingValue Value="@UserInfo">     
+                    @Body
+            </CascadingValue>
     </MudMainContent>
     
 </MudLayout>
 
+@* <style>
 
+    .mud-main-content {
+        margin-left: var(--mud-drawer-width-left);
+    }
+</style> *@
 
 @code {
 
@@ -74,7 +81,6 @@
 
     bool _drawerOpen = false;
 
-
     protected override async Task OnInitializedAsync()
     {
         await _userService.InitUserInfoAtStart();
@@ -84,9 +90,8 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         //await _userService.InitUserInfoAtStart();
-        // if (firstRender)
-        // {
-        //     await _userService.InitUserInfoAtStart();
-        // }
+        if (firstRender)
+        {
+        }
     }
 }

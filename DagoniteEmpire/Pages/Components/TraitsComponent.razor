@@ -40,7 +40,7 @@
                     {
                     <td>
                         <div class="row m-0">
-                            @if (obj.TraitApproved)
+                            @if (obj.TraitApproved || obj.IsRemovable == false)
                             {
                                 <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-info"></i></button>
                             }
@@ -48,7 +48,10 @@
                             {
                                 <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
                             }
-                            <button @onclick="@(()=>DeleteTrait(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
+                            @if(obj.IsRemovable)
+                            {
+                                <button @onclick="@(()=>DeleteTrait(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>                                        
+                            }
                         </div>
                     </td>
                     }
@@ -154,7 +157,7 @@
                                                                     { x => x.IsWeaponQualityMode, true }, 
                                                                     { x => x.AllParams, AllParams } };
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Add weapon quality", parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Add weapon quality", parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -179,7 +182,7 @@
                                                                    { x => x.TraitType, TraitType },
                                                                    { x => x.AllParams, AllParams }};
 
-        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select " + NewTrait.TraitLabel, parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select " + NewTrait.TraitLabel, parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -230,7 +233,7 @@
         Traits = Traits.Where(u => u.Name != trait.Name).ToList();
         await UpdateTraits();
     }
-    private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Medium)
+    private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
     {
         DialogOptions options = new() { MaxWidth = maxWidth };
         if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)

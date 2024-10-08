@@ -41,6 +41,22 @@ namespace DA_Business.Repository.CharacterReps
             }
         }
 
+        public async Task<TraitProfessionDTO> Add(TraitProfessionDTO objDTO, int Id)
+        {
+
+            using var contex = await _db.CreateDbContextAsync();
+            var profession = await contex.Professions.FirstOrDefaultAsync(c => c.Id == Id);
+            if (profession == null)
+                return null;
+            var obj = _mapper.Map<TraitProfessionDTO, TraitProfession>(objDTO);
+            obj.ProfessionId = Id;
+
+            var addedObj = await contex.TraitsProfession.AddAsync(obj);
+            await contex.SaveChangesAsync();
+
+            return _mapper.Map<TraitProfession, TraitProfessionDTO>(addedObj.Entity);
+        }
+
         public async Task<int> Delete(int id)
         {
             try
@@ -49,6 +65,8 @@ namespace DA_Business.Repository.CharacterReps
                 var obj = await contex.TraitsProfession.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == id && u.TraitApproved == false);
                 if (obj != null)
                 {
+                    if (obj.TraitApproved == true)
+                        return 0;
                     contex.TraitsProfession.Remove(obj);
                     await contex.SaveChangesAsync();
                 }
@@ -98,13 +116,13 @@ namespace DA_Business.Repository.CharacterReps
                 var obj = await contex.TraitsProfession.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
-                    obj.Name = newTrait.Name;    
-                    obj.Descr = newTrait.Descr;
-                    obj.Index = newTrait.Index;
-                    obj.TraitType = newTrait.TraitType;
-                    obj.TraitValue = newTrait.TraitValue;
-                    obj.TraitApproved = newTrait.TraitApproved;
-                    obj.IsUnique = newTrait.IsUnique;
+                    //obj.Name = newTrait.Name;    
+                    //obj.Descr = newTrait.Descr;
+                    //obj.Index = newTrait.Index;
+                    //obj.TraitType = newTrait.TraitType;
+                    //obj.TraitValue = newTrait.TraitValue;
+                    //obj.TraitApproved = newTrait.TraitApproved;
+                    //obj.IsUnique = newTrait.IsUnique;
 
                     // Delete trait bonuses
                     if (!obj.Bonuses.IsNullOrEmpty())
@@ -117,6 +135,9 @@ namespace DA_Business.Repository.CharacterReps
                             }
                         }
                     }
+
+
+                    contex.Entry(obj).CurrentValues.SetValues(objDTO);
 
                     // Update and Insert bonuses
                     if (newTrait.Bonuses is not null)

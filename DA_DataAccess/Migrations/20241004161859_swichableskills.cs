@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class traitProfession : Migration
+    public partial class swichableskills : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -119,8 +119,7 @@ namespace DA_DataAccess.Migrations
                     Description = table.Column<string>(type: "text", nullable: false),
                     RelatedAttributeName = table.Column<string>(type: "text", nullable: false),
                     ClassLevel = table.Column<int>(type: "integer", nullable: false),
-                    MaxFocusPoints = table.Column<int>(type: "integer", nullable: false),
-                    CurrentCofusPoints = table.Column<int>(type: "integer", nullable: false),
+                    CurrentFocusPoints = table.Column<int>(type: "integer", nullable: false),
                     IsApproved = table.Column<bool>(type: "boolean", nullable: false),
                     IsUniversal = table.Column<bool>(type: "boolean", nullable: false),
                     CasterType = table.Column<int>(type: "integer", nullable: false)
@@ -172,19 +171,20 @@ namespace DA_DataAccess.Migrations
                     Name = table.Column<string>(type: "text", nullable: true),
                     Index = table.Column<int>(type: "integer", nullable: false),
                     TraitType = table.Column<string>(type: "text", nullable: false),
+                    Level = table.Column<int>(type: "integer", nullable: false),
                     TraitValue = table.Column<int>(type: "integer", nullable: false),
                     Descr = table.Column<string>(type: "text", nullable: false),
                     TraitApproved = table.Column<bool>(type: "boolean", nullable: false),
+                    IsRemovable = table.Column<bool>(type: "boolean", nullable: false),
                     IsUnique = table.Column<bool>(type: "boolean", nullable: false),
                     Discriminator = table.Column<string>(type: "text", nullable: false),
                     IsTemporary = table.Column<bool>(type: "boolean", nullable: true),
                     ProfessionId = table.Column<int>(type: "integer", nullable: true),
-                    Level = table.Column<int>(type: "integer", nullable: true),
                     DC = table.Column<int>(type: "integer", nullable: true),
                     Cost = table.Column<int>(type: "integer", nullable: true),
                     Range = table.Column<string>(type: "text", nullable: true),
-                    IsApproved = table.Column<bool>(type: "boolean", nullable: true),
-                    IsActiveSkill = table.Column<bool>(type: "boolean", nullable: true)
+                    IsActiveSkill = table.Column<bool>(type: "boolean", nullable: true),
+                    IsInUse = table.Column<bool>(type: "boolean", nullable: true)
                 },
                 constraints: table =>
                 {

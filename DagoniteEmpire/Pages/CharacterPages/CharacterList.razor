@@ -2,19 +2,23 @@
 @using DA_Business.Services
 @using Syncfusion.Blazor.Navigations;
 @inject ICharacterRepository _characterRepository
+@inject IMobRepository _mobRepository
 @inject ISpecialSkillRepository _specialSkillRepository
 @inject NavigationManager _navigationManager
 @inject IUserService _userService;
 @inject IJSRuntime _jsRuntime
+@inject IDialogService DialogService
+@inject IBrowserViewportService _vieportService
+@using DialogOptions = MudBlazor.DialogOptions
 
 <_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this character"></_DeleteConfirmation>
 
 @if (IsLoading)
-    {
+{
         <LoadingPage></LoadingPage>
-    }
-    else
-    {
+}
+else
+{
     <div class="page">
 
         <div class="row mt-4">
@@ -49,8 +53,28 @@
                         </GridColumns>
                     </SfGrid>
             </div>
-            
         </div>
+
+        @if (UserInfo?.IsAdminOrMG == true)
+        {
+            <div class="row mt-4">
+                <div class="col-12">
+                    <SfGrid ID="GridMob" DataSource="@Mobs" AllowPaging="true"
+                            Toolbar="@ToolbarItems">
+
+                        <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
+                        <GridEvents OnActionBegin="MobActionHandler" TValue="MobDTO"></GridEvents>
+                        <GridColumns>
+                            <GridColumn Field=@nameof(MobDTO.Campaign.Name) HeaderText="Campaign" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                            <GridColumn Field=@nameof(MobDTO.Name) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                            <GridColumn Field=@nameof(MobDTO.RaceName) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                            <GridColumn Field=@nameof(MobDTO.ProfessionName) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
+                        </GridColumns>
+                    </SfGrid>
+                </div>
+            </div>
+
+        }
     </div>
     
 }
@@ -58,6 +82,7 @@
 @code {
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IEnumerable<CharacterDTO> ApprovedCharacters { get; set; } = new List<CharacterDTO>();
+    private ICollection<MobDTO> Mobs { get; set; } = new List<MobDTO>();
     public bool IsLoading { get; set; } = true;
     private int DeleteCharacterId { get; set; } = 0;
     private string Title { get; set; } = "Your characters";
@@ -92,7 +117,13 @@
         {
             if (firstRender)
             {
+                IsLoading = true;
+                StateHasChanged();
                 await LoadCharacters();
+                await LoadMobs();
+
+                IsLoading = false;
+                StateHasChanged();
             }
         }
         catch (Exception ex)
@@ -110,8 +141,7 @@
 
     private async Task LoadCharacters()
     {
-        IsLoading = true;
-        StateHasChanged();
+
         if(UserInfo is null)
         {
             UserInfo = await _userService.GetUserInfo();
@@ -135,8 +165,15 @@
             Characters = await _characterRepository.GetAllForUser(UserInfo?.UserName);
             ApprovedCharacters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
         }
-        IsLoading = false;
-        StateHasChanged();
+    }
+    private async Task LoadMobs()
+    {
+
+
+        if (UserInfo is not null && UserInfo?.IsAdminOrMG == true)
+        {
+            Mobs = (await _mobRepository.GetAll()).ToList();
+        }
     }
 
     public void ActionHandler(ActionEventArgs<CharacterDTO> args)
@@ -152,6 +189,49 @@
         else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete)){
             HandleDelete(args.RowData.Id);
         }
+    }
+    public async Task MobActionHandler(ActionEventArgs<MobDTO> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Add))
+        {
+            MobDTO NewMob = new();
+            var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, NewMob },
+                                                                     { x => x.IsEdit, false } };
+
+
+            var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add Mob", parameters, await SetDialogOptions());
+            var result = await dialog.Result;
+
+            if (!result.Canceled)
+            {
+                NewMob = (MobDTO)result.Data;
+                Mobs.Add(NewMob);
+            }
+        }
+        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.BeginEdit))
+        {
+            MobDTO NewMob = args.Data;
+            var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, NewMob },
+                                                                     { x => x.IsEdit, true } };
+
+
+            var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add Mob", parameters, await SetDialogOptions());
+            var result = await dialog.Result;
+
+            if (!result.Canceled)
+            {
+                args.Data = (MobDTO)result.Data;
+                Mobs.Add(NewMob);
+            }
+        }
+        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
+        {
+            DeleteMob(args.RowData.Id);
+        }
+    }
+    private void DeleteMob(int id)
+    {
+        
     }
 
     private void HandleDelete(int id)
@@ -184,6 +264,12 @@
         CurrentlyUsedCharacterId = args.Value;
         await _userService.SetSelectedCharId(CurrentlyUsedCharacterId);
     }
-
+    private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
+    }
 }
 

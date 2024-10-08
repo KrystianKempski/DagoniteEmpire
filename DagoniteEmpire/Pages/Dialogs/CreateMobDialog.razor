@@ -1,0 +1,168 @@
+﻿
+@inject ISnackbar Snackbar
+@inject IMobRepository _mobRepository
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@MyIcon.Helm" Color="Color.Primary" />
+            @Title mob character
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <MudTextField Required="true" @bind-Value="@NewMob.Notes" Label="Notes" Lines="3" />
+        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Accept=".png, .jpg" MaximumFileCount="1">
+            <ButtonTemplate>
+                <MudFab HtmlTag="label"
+                        Color="Color.Secondary"
+                        Icon="@Icons.Material.Filled.Image"
+                        Label="Load picture"
+                        for="@context.Id" />
+            </ButtonTemplate>
+        </MudFileUpload>
+
+        <MudStack Row="true">
+            <MudTextField Required="true" @bind-Value="@NewMob.Name" Label="Name"  />
+            <MudTextField Required="true" @bind-Value="@NewMob.RaceName" Label="Race"  />
+            <MudTextField Required="true" @bind-Value="@NewMob.ProfessionName" Label="Class" />
+        </MudStack>
+        <MudTextField Required="true" @bind-Value="@NewMob.Description" Label="Description" Lines="3" />
+        <MudTextField Required="true" @bind-Value="@NewMob.Notes" Label="Notes" Lines="3" />
+        <MudGrid>
+            <MudItem xxl="4">
+                <MudNumericField Required="true" @bind-Value="@NewMob.AttackSkillValue" Label="Attack skill" />
+            </MudItem>
+            <MudItem xxl="4">
+                <MudNumericField Required="true" @bind-Value="@NewMob.ShieldSkillValue" Label="Shield skill" />
+            </MudItem>
+            <MudItem xxl="4">
+                <MudNumericField Required="true" @bind-Value="@NewMob.DodgeSkillValue" Label="Dodge skill" />
+            </MudItem>
+            <MudItem xxl="4">
+                <MudNumericField Required="true" @bind-Value="@NewMob.ArmorSkillValue" Label="Armor skill" />
+            </MudItem>
+            <MudItem xxl="4">
+                <MudNumericField Required="true" @bind-Value="@NewMob.ParrySkillValue" Label="Parry skill" />
+            </MudItem>
+            <MudItem xxl="4">
+                <MudNumericField Required="true" @bind-Value="@NewMob.LiftingSkillValue" Label="Lifting skill" />
+            </MudItem>
+            <MudItem xxl="4">
+                <MudNumericField Required="true" @bind-Value="@NewMob.PainResSkillValue" Label="Pain resistance" />
+            </MudItem>
+            <MudItem xxl="4">
+                <MudNumericField Required="true" @bind-Value="@NewMob.WrestlingSkillValue" Label="Wrestling" />
+            </MudItem>
+
+        </MudGrid>
+
+        <MudPaper>
+            <MudSelect Required="true" @bind-Value="@NewMob.MainWeapon" Label="Month" Placeholder="Main weapon">
+                @foreach (var weapon in SD.BasicWeaponsMelee.All)
+                {
+                    <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                }
+                @foreach (var weapon in SD.BasicWeaponsShooting.All)
+                {
+                    <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect Required="true" @bind-Value="@NewMob.OffWeapon" Label="Month" Placeholder="Second weapon">
+                @foreach (var weapon in SD.BasicWeaponsMelee.All)
+                {
+                    <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                }
+                @foreach (var weapon in SD.BasicWeaponsShooting.All)
+                {
+                    <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect Required="true" @bind-Value="@NewMob.ShieldWeapon" Label="Month" Placeholder="Shield">
+                @foreach (var shield in SD.BasicShields.All)
+                {
+                    <MudSelectItem Value="@shield">@shield</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect Required="true" @bind-Value="@NewMob.Armor" Label="Month" Placeholder="Armor">
+                @foreach (var armor in SD.BasicArmors.All)
+                {
+                    <MudSelectItem Value="@armor">@armor</MudSelectItem>
+                }
+            </MudSelect>
+        </MudPaper>
+
+        <MudText>Current status</MudText>
+        <MudText>@NewMob.Statuses</MudText>
+        <MudButton OnClick="ClearStates">Clear states</MudButton>
+        <MudSelect Value="SelectedState" T="string" ValueChanged="AddState" Label="AddState" AnchorOrigin="Origin.BottomCenter">
+            @foreach (var state in SD.TempStates.All)
+            {
+                <MudSelectItem Value="@state">@state</MudSelectItem>
+            }
+        </MudSelect>
+        
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="CreateMob">@Title</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public MobDTO NewMob { get; set; } = new();
+    [Parameter] public bool IsEdit { get; set; } = false;
+    private string Title = "Create";
+    private string SelectedState = string.Empty;
+    private IList<IBrowserFile> files = new List<IBrowserFile>();
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEdit)
+        {
+            Title = "Edit";
+        }
+        else
+        {
+
+        }
+    }
+
+    private void CreateMob()
+    {
+        if (IsEdit)
+        {
+            _mobRepository.Update(NewMob);
+        }else{
+            _mobRepository.Create(NewMob);
+        }
+
+        MudDialog.Close(DialogResult.Ok(NewMob));
+        if (IsEdit)
+            Snackbar.Add("Mob edited", Severity.Success);
+        else 
+            Snackbar.Add("Mob created", Severity.Success);
+    }
+
+    private void UploadFiles(IBrowserFile file)
+    {
+        files.Add(file);
+        //TODO upload the files to the server
+    }
+
+    private void AddState(string newStatus)
+    {
+        NewMob.Statuses += ", " + newStatus;
+    }
+    private void ClearStates()
+    {
+        NewMob.Statuses = string.Empty;
+    }
+}

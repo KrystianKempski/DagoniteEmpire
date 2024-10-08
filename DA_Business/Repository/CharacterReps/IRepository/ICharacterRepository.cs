@@ -16,11 +16,11 @@ namespace DA_Business.Repository.CharacterReps.IRepository
 
         public Task<CharacterDTO> GetById(int id);
         public Task<CharacterDTO> GetByName(string npcName);
-        public Task<IEnumerable<CharacterDTO>> GetAll(int? id=null);
+        public Task<IEnumerable<CharacterDTO>> GetAll(int? id = null);
         public Task<IEnumerable<CharacterDTO>> GetAllForUser(string userName);
 
         public Task<IEnumerable<CharacterDTO>> GetAllForCampaign(int campaignId);
 
-        public Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName=null);
+        public Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null);
     }
 }

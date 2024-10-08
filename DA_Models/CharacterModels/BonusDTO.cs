@@ -9,6 +9,17 @@ namespace DA_Models.CharacterModels
 {
     public class BonusDTO
     {
+        public BonusDTO() { }
+        public BonusDTO(BonusDTO cpy,int traitId=0)
+        {
+            Id = 0;
+            FeatureType = cpy.FeatureType;
+            FeatureName = cpy.FeatureName;
+            Index = cpy.Index;
+            TraitId = traitId;
+            BonusValue = cpy.BonusValue;
+            Description = cpy.Description;
+        }
         public int Id { get; set; } = 0;
         public string FeatureType{ get; set; }
         public string? FeatureName { get; set; } = null;

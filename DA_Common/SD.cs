@@ -1,16 +1,20 @@
-﻿using Syncfusion.Blazor.RichTextEditor;
+﻿using MudBlazor;
+using Syncfusion.Blazor.RichTextEditor;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using static MudBlazor.CategoryTypes;
+using static MudBlazor.Icons.Custom;
 using static Npgsql.PostgresTypes.PostgresCompositeType;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace DA_Common
 {
@@ -29,7 +33,7 @@ namespace DA_Common
         public const string FeatureOther = "Other";
 
         public const string TraitType_Character = "Character";
-        public const string TraitType_Temporary = "Tempotary";
+        public const string TraitType_Temporary = "Temporary";
         public const string TraitType_Race = "Race";
         public const string TraitType_Gear = "Gear";
         public const string TraitType_Profession = "Profession";
@@ -129,6 +133,7 @@ namespace DA_Common
                 public const string Light = "Light weapons";
                 public const string Shields = "Shields";
                 public const string Polearms = "Polearms";
+                public static readonly string[] All = { Heavy, Swords, Fencing, Light, Shields, Polearms};
             };
             public readonly struct Shooting
             {
@@ -139,6 +144,7 @@ namespace DA_Common
                 public const string Javelins = "Javelins";
                 public const string Firearms = "Firearms";
                 public const string Grenades = "Grenades";
+                public static readonly string[] All = { Bows, Crossbows, Throwing, Slingshots, Javelins, Grenades,  };
             }
             public readonly struct Acrobatics
             {
@@ -147,6 +153,7 @@ namespace DA_Common
                 public const string Balance = "Balance";
                 public const string Running = "Running";
                 public const string Dodge = "Dodge";
+                public static readonly string[] All = { Jumping, Climbing, Balance, Running, Dodge, };
             }
             public readonly struct SleightOfHands
             {
@@ -155,6 +162,7 @@ namespace DA_Common
                 public const string DisarmingTraps = "Disarming traps";
                 public const string Tricks = "Tricks";
                 public const string Handcraft = "Handcraft";
+                public static readonly string[] All = { Pickpocketing, Lockpicking, DisarmingTraps, Tricks, Handcraft,  };
             }
             public readonly struct Athletics
             {
@@ -164,10 +172,18 @@ namespace DA_Common
                 public const string Threatening = "Threatening";
                 public const string PainResistance = "Pain Resistance";
                 public const string Swimming = "Swimming";
+                public static readonly string[] All = { Wrestling, Lifting, Armor, Threatening, PainResistance, Swimming, };
             }
 
             public static readonly string[] ArmorPenaltySkills = { Acrobatics.Jumping, Acrobatics.Climbing, Acrobatics.Balance, Acrobatics.Running, Acrobatics.Dodge,
                                                                 SleightOfHands.Pickpocketing, "Sneak",Athletics.Swimming};
+            public static readonly string[] All =
+            {   Shooting.Bows, Shooting.Crossbows, Shooting.Throwing, Shooting.Slingshots, Shooting.Javelins, Shooting.Grenades,
+                Acrobatics.Jumping, Acrobatics.Climbing, Acrobatics.Balance, Acrobatics.Running, Acrobatics.Dodge,
+                SleightOfHands.Pickpocketing, SleightOfHands.Lockpicking, SleightOfHands.DisarmingTraps, SleightOfHands.Tricks, SleightOfHands.Handcraft,
+                Athletics.Wrestling, Athletics.Lifting, Athletics.Armor, Athletics.Threatening, Athletics.PainResistance, Athletics.Swimming,
+
+            };
         }
         public readonly struct EquipmentType
         {
@@ -209,6 +225,57 @@ namespace DA_Common
             public const string Ring1 = "Ring1";
             public const string Ring2 = "Ring2";
             public static readonly string[] All = { Other, WeaponMain1, WeaponOff1, WeaponMain2, WeaponOff2, Shield, Face, Throat, Body, Hands, Waist, Feet, Head, Shoulders, Torso, Arms, Ring1,Ring2 };
+        }
+
+        public readonly struct BasicWeaponsMelee
+        {
+            public const string Dagger = "Dagger";
+            public const string LongSword = "Long sword";
+            public const string BattleAxe = "Battle axe";
+            public const string Pickaxe = "Pickaxe";
+            public const string Mace = "Mace";
+            public const string Morningstar = "Morningstar";
+            public const string ShorSpear = "Short spear";
+            public const string Rapier = "Rapier";
+            public const string TwoHandedFlail = "Two-handed flail";
+            public const string Warhammer = "Warhammer";
+            public const string Greataxe = "Greataxe";
+            public const string Poleaxe = "Poleaxe";
+            public const string Sarissa = "Sarissa";
+            public static readonly string[] All = { Dagger, LongSword, BattleAxe, Pickaxe, Mace, Morningstar, ShorSpear, Rapier, TwoHandedFlail, Warhammer, Greataxe, Poleaxe, Sarissa };
+        }
+        public readonly struct BasicWeaponsShooting
+        {
+            public const string CrossbowLight = "Crossbow, light";
+            public const string CrossbowHeavy = "Crossbow, heavy";
+            public const string BowSimple = "Bow, simple";
+            public const string Longbow = "Longbow";
+            public const string Slingshot = "Slingshot";
+
+            public static readonly string[] All = { CrossbowLight, CrossbowHeavy, BowSimple, Longbow, Slingshot };
+        }
+
+        public readonly struct BasicShields
+        {
+            public const string WoodenBuckler = "Wooden buckler";
+            public const string MetalBuckler = "Metal buckler";
+            public const string WoodenShield = "Wooden shield";
+            public const string MetalShield = "Metal shield";
+            public const string BigWoodenShield = "Big wooden shield";
+            public const string BigMetalShield = "Big metal shield";
+
+            public static readonly string[] All = { WoodenBuckler, MetalBuckler, WoodenShield, MetalShield, BigWoodenShield, BigMetalShield };
+        }
+
+        public readonly struct BasicArmors
+        {
+            public const string LightLeatherArmor = "Light leather armor";
+            public const string LeatherScaleArmor = "Leather scale armor";
+            public const string StealScaleArmor = "Steal scale armor";
+            public const string HalfPlate = "Half plate";
+            public const string FullPlate = "Full plate";
+
+            public static readonly string[] All = { LightLeatherArmor, LeatherScaleArmor, StealScaleArmor, HalfPlate, FullPlate };
         }
 
         public readonly struct WoundSeverity
@@ -439,6 +506,7 @@ namespace DA_Common
     public static class MyIcon
     {
         public const string Bookmark = "icons/bookmarklet.svg";
+        public const string BookmarkWhite = "icons/bookmarklet_white.svg";
         public const string Scroll = "icons/scroll.svg";
         public const string Quill = "icons/quill.svg";
         public const string Anvil_white = "icons/anvil_white.svg";
@@ -518,4 +586,5 @@ namespace DA_Common
         Sick = -4,
         Dying = -8,
     }
+
 }

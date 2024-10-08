@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using static DA_Common.SD;
 using static MudBlazor.CategoryTypes;
 
+
 namespace DA_Models.ComponentModels
 {
     public class AllParamsModel
@@ -174,7 +175,23 @@ namespace DA_Models.ComponentModels
             // calculate all gear traits in equipped items
             if(Profession.Traits is not null && Profession.Traits.Any())
             {
-               CalculateTraits(Profession.Traits.Where(t=>t.IsActiveSkill==false).Cast<TraitDTO>().ToList(), SD.TraitType_Profession);
+                var traits = Profession.Traits.Where(t => t.IsActiveSkill == false).Cast<TraitDTO>().ToList();
+                CalculateTraits(traits, SD.TraitType_Profession);
+
+                // add spell circles
+                int spellCircle = 0;
+                foreach(var trait in traits)
+                {
+                    if (trait.Name.StartsWith(SD.ProfessionSkills.WizardMagic) || trait.Name.StartsWith(SD.ProfessionSkills.SorcererMagic))
+                        if (trait.Level > spellCircle) spellCircle = trait.Level;
+                }
+                if (spellCircle > 0) {
+                    for(int c = 1; c <= spellCircle; c++)
+                    {
+                        Profession.AddSpellCircle(c);
+                    }
+
+                }
             }
         }
 
@@ -193,10 +210,19 @@ namespace DA_Models.ComponentModels
                 default: bonusName = string.Empty; break;
             }
 
+            Profession.CasterType = SpellcasterType.None;
             foreach (var trait in traits)
             {
-                if (trait.TraitType != SD.TraitType_Character)
+                if (trait.TraitType == SD.TraitType_Character)
                     Character.TraitBalance += trait.TraitValue;
+                else if (trait.TraitType == SD.TraitType_Profession)
+                {
+                    //determine caster type
+                    if (trait.Name.StartsWith(SD.ProfessionSkills.WizardMagic))
+                        Profession.CasterType = SpellcasterType.Wizard;
+                    else if (trait.Name.StartsWith(SD.ProfessionSkills.SorcererMagic))
+                        Profession.CasterType = SpellcasterType.Sorcerer;
+                }
 
                 foreach (var bonus in trait.Bonuses)
                 {

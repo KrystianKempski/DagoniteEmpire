@@ -370,7 +370,7 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("ClassLevel")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CurrentCofusPoints")
+                    b.Property<int>("CurrentFocusPoints")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
@@ -382,9 +382,6 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<bool>("IsUniversal")
                         .HasColumnType("boolean");
-
-                    b.Property<int>("MaxFocusPoints")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -597,8 +594,14 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("Index")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsRemovable")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsUnique")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .HasColumnType("text");
@@ -1099,11 +1102,8 @@ namespace DA_DataAccess.Migrations
                     b.Property<bool>("IsActiveSkill")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsApproved")
+                    b.Property<bool>("IsInUse")
                         .HasColumnType("boolean");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("integer");
 
                     b.Property<int>("ProfessionId")
                         .HasColumnType("integer");

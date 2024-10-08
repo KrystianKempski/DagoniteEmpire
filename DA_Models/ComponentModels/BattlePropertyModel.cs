@@ -15,6 +15,14 @@ namespace DA_Models.ComponentModels
     public class BattlePropertyModel : ParameterModel<BattlePropertyDTO>
     {
 
+        // get currently used weapon
+        public EquipmentDTO? MainWeaponUsed = null;
+        public EquipmentDTO? OffWeaponUsed = null;
+        //get currently used shield
+        public EquipmentDTO? ShieldUsed = null;
+        //get currently used armor
+        public EquipmentDTO? ArmorUsed = null;
+
         public BattlePropertyModel(AllParamsModel allParams) : base(allParams)
         {
             foreach (var prop in SD.BattleProperty.All)
@@ -43,13 +51,6 @@ namespace DA_Models.ComponentModels
                 }
 
 
-                // get currently used weapon
-                EquipmentDTO? MainWeaponUsed = null;
-                EquipmentDTO? OffWeaponUsed = null;
-                //get currently used shield
-                EquipmentDTO? ShieldUsed = null;
-                //get currently used armor
-                EquipmentDTO? ArmorUsed = null;
 
                 foreach (var slot in _allParams.EquipmentSlots)
                 {
@@ -215,13 +216,14 @@ namespace DA_Models.ComponentModels
             }
         }
 
-        public IEnumerable<BattlePropertyDTO> GetWeaponQualityListFromItem(EquipmentDTO? equip)
+        public IEnumerable<BattlePropertyDTO>? GetWeaponQualityListFromItem(EquipmentDTO? equip)
         {
             ICollection<BattlePropertyDTO> weapons = new List<BattlePropertyDTO>();
-            if (equip is null || equip.Traits is null)
-            {
+            if (equip is null)
+                return null;
+            if (equip.Traits is null)
                 return weapons;
-            }
+
             BattlePropertyDTO? battleProp = null;
             foreach (var trait in equip.Traits)
             {

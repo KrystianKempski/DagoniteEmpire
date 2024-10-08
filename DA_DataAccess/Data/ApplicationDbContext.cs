@@ -15,6 +15,7 @@ namespace DA_DataAccess.Data
             AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         }
         public DbSet<Character> Characters { get; set; }
+        public DbSet<Mob> Mobs { get; set; }        
         public DbSet<Attribute> Attributes { get; set; }
         public DbSet<BaseSkill> BaseSkills { get; set; }
         public DbSet<SpecialSkill> SpecialSkills { get; set; }

@@ -42,6 +42,7 @@
     [Parameter] public List<TraitDTO> ChosenTraits { get; set; } = new List<TraitDTO>();
     [Parameter] public string TraitType { get; set; } = SD.TraitType_Character;
     [Parameter] public bool MultiRowSelection { get; set; } = true;
+    [Parameter] public int MinLevel { get; set; } = 0;
     private string TraitName = "";
     private SelectionType selectionType = SelectionType.Multiple;
     private SelectionMode selectionMode = SelectionMode.Row;
@@ -61,7 +62,13 @@
         else if (TraitType == SD.TraitType_Temporary)
             Traits = (await _traitCharacterRepository.GetAllApproved()).ToList().Where(t => t.IsTemporary == true);
         else if (TraitType == SD.TraitType_Profession)
-            Traits = (await _traitProfessionRepository.GetAllApproved()).ToList().Where(t => t.IsActiveSkill == false);
+        {
+            Traits = (await _traitProfessionRepository.GetAllApproved()).ToList().Where(t => t.IsActiveSkill == false && t.Level <= MinLevel);
+            if (AllParams.Profession.CasterType == SpellcasterType.Wizard)
+                Traits = Traits.Where(u => u.Name.StartsWith(SD.ProfessionSkills.SorcererMagic) == false);
+            else if (AllParams.Profession.CasterType == SpellcasterType.Sorcerer)
+                Traits = Traits.Where(u => u.Name.StartsWith(SD.ProfessionSkills.WizardMagic) == false);
+        }
 
         if (MultiRowSelection)
         {

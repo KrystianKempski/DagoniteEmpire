@@ -4,6 +4,7 @@
 @using DA_DataAccess.CharacterClasses
 @inject IJSRuntime _jsruntime
 @inject ICharacterRepository _characterRepository
+@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
 @inject ISpecialSkillRepository _specialSkillRepository
@@ -12,6 +13,7 @@
 @inject ISpellRepository _spellRepository
 @inject ISpellSlotRepository _spellSlotRepository
 @inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
+@inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject ISpellCircleRepository _spellCircleRepository
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
@@ -19,7 +21,7 @@
 @inject IBrowserViewportService _vieportService
 @using DialogOptions = MudBlazor.DialogOptions
 
-@inject IJSRuntime _jsRuntime
+<_LeavePage ComponentDescription="profession" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
 <div class="container justify-content-around">
 <div class="main-table">
 
@@ -66,17 +68,10 @@
                 </div>
                 <div class="d-flex flex-column px-1">
                     <label class="column-section py-1">Focus points</label>
-                    <label class="prof-variables">@ProfessionDTO.MaxFocusPoints</label>
+                        <label class="prof-variables">@ProfessionDTO.CurrentFocusPoints</label>
                 </div>
-                @if (UserInfo?.IsAdminOrMG == true)
-                {
-                    <div class="d-flex flex-column px-1">
-                        <label class="class-section py-1">Approve</label>
-                        <div class="justify-content-center mx-auto my-auto">
-                            <SfCheckBox @bind-Checked="ProfessionDTO.IsApproved"></SfCheckBox>
-                        </div>
-                    </div>
-                }
+
+                <button class="btn btn-secondary mt-4" @onclick="Rest">Rest</button>
             </div>
         </div>
         <div class="short-screen-table">
@@ -122,7 +117,7 @@
                     </div>
                     <div class="d-flex flex-column px-1 variables">
                         <label class="column-section py-1">Focus points</label>
-                        <label class="prof-variables">@ProfessionDTO.MaxFocusPoints</label>
+                            <label class="prof-variables">@ProfessionDTO.CurrentFocusPoints</label>
                     </div>
                 </div>
 
@@ -150,7 +145,7 @@
                                 <th scope="col" class="number-row text-center">DC</th>
                                 <th scope="col" class="number-row text-center">Cost</th>
                                 <th scope="col" class="number-row text-center">Range</th>
-                                <th scope="col" class="number-row text-center">Actions</th>
+                                    <th scope="col" class="number-row text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -159,14 +154,27 @@
                                 <tr>
                                     @if (skill.Index % 2 == 0)
                                     {
-                                        <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
+                                            <td rowspan="2"> <label class="short-row text-center">@skill.Level</label> </td>
                                     }
-                                    <td><div class="name-cell"> @skill.Name</div> </td>
-                                    <td><div class="bonus-double-cell">@skill.SummaryDescr</div></td>
-                                    <td><div class="short-row smaller-text ">@skill.DC</div></td>
-                                    <td><div class="short-row smaller-text ">@skill.Cost</div></td>
-                                    <td><div class="short-row smaller-text ">@skill.Range</div></td>
-                                    <td><div class="short-row"><button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button></div></td>
+                                    <td><div class="name-cell text-center"> @skill.Name</div> </td>
+                                    <td><div class="bonus-double-cell text-center">@skill.SummaryDescr</div></td>
+                                    <td><div class="short-row smaller-text text-center">@skill.DC</div></td>
+                                    <td><div class="short-row smaller-text text-center">@skill.Cost</div></td>
+                                    <td><div class="short-row smaller-text text-center">@skill.Range</div></td>
+                                    <td><div class="action-row text-center">
+                                            <button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="px-2 fa-solid fa-pencil"></i></button>
+                                            @if(ProfessionDTO.ClassLevel >= skill.Level)
+                                            {
+                                            <MudToggleIconButton @bind-Toggled="skill.IsInUse"
+                                                                    Class="pa-2"
+                                                                    @onclick="@(()=>ActivateSkill(skill))"
+                                                                    Icon="@Icons.Material.Filled.RadioButtonUnchecked"
+                                                                    Color="@Color.Default"
+                                                                    ToggledIcon="@Icons.Material.Filled.RadioButtonChecked"
+                                                                    ToggledColor="@Color.Success" />
+                                            }
+                                        </div>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -191,13 +199,26 @@
                                 <tr>
                                     @if (skill.Index % 2 == 0)
                                     {
-                                        <td rowspan="4"> <label class="short-row">@skill.Level</label> </td>
+                                        <td rowspan="4"> <label class="short-row text-center">@skill.Level</label> </td>
                                     }
-                                    <td> <div class="name-cell">@skill.Name</div></td>
-                                    <td><div class="short-row">@skill.DC></div></td>
-                                    <td><div class="short-row">@skill.Cost</div></td>
-                                    <td><div class="short-row">@skill.Range</div></td>
-                                    <td><div class="short-row"><button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button></div></td>
+                                    <td><div class="name-cell text-center">@skill.Name</div></td>
+                                    <td><div class="short-row text-center">@skill.DC></div></td>
+                                    <td><div class="short-row text-center">@skill.Cost</div></td>
+                                    <td><div class="short-row text-center">@skill.Range</div></td>
+                                    <td><div class="short-row text-center">
+                                        <button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
+                                        @if(ProfessionDTO.ClassLevel >= skill.Level)
+                                        {
+                                                <MudToggleIconButton @bind-Toggled="skill.IsInUse"
+                                                                     Class="pa-2"
+                                                                     @onclick="@(()=>ActivateSkill(skill))"
+                                                                     Icon="@Icons.Material.Filled.RadioButtonUnchecked"
+                                                                     Color="@Color.Default"
+                                                                     ToggledIcon="@Icons.Material.Filled.RadioButtonChecked"
+                                                                     ToggledColor="@Color.Success" />
+                                        }
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td colspan="4">@skill.SummaryDescr</td>
@@ -226,10 +247,10 @@
                             @foreach (var skill in ProfessionDTO.Traits.Where(u=>u.IsActiveSkill == false))
                             {
                                 <tr>
-                                    <td> <label class="short-row">@skill.Level</label></td>
-                                    <td> <div class="name-cell">@skill.Name </div></td>
-                                    <td> <div class="bonus-double-cell">@skill.SummaryDescr</div></td>
-                                    <td><div class="short-row"><button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button></div></td>
+                                    <td> <label class="short-row text-center">@skill.Level</label></td>
+                                    <td> <div class="name-cell text-center">@skill.Name </div></td>
+                                    <td> <div class="bonus-double-cel text-centerl">@skill.SummaryDescr</div></td>
+                                        <td><div class="short-row text-center"><button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button></div></td>
                                 </tr>
                             }
                         </tbody>
@@ -262,22 +283,10 @@
                 </div>
 
             </MudTabPanel>
+            @if(ProfessionDTO.CasterType != SpellcasterType.None)
+            {
             <MudTabPanel Text="Spells" Disabled="false" Style="font-weight: bold;">
                 @*  SPELLS  *@
-                <div class="d-flex my-1">
-                    <div class="spell-type me-2">
-                        <InputSelect @bind-Value="ProfessionDTO.CasterType" class="form-select" @bind-Value:after="SpellcasterTypeHandle">
-                            <option checked="@(ProfessionDTO.CasterType == SpellcasterType.Sorcerer)" value="@SpellcasterType.Sorcerer">
-                                Sorcerer
-                            </option>
-                            <option checked="@(ProfessionDTO.CasterType == SpellcasterType.Wizard)" value="@SpellcasterType.Wizard">
-                                Wizard
-                            </option>
-                        </InputSelect>
-                    </div>
-                    <button disabled="@IsSpellTypeDisabled" class="btn btn-secondary" @onclick="Rest">Rest</button>
-                    <button disabled="@IsSpellTypeDisabled" class="btn btn-secondary ms-2" @onclick="AddSpellCircle">Add Circle</button>
-                </div>
 
                  <div class="wide-screen-table">
                     <MudTable RowClass="cell-small" T="SpellCircleDTO" Items="@SpellCircles" Breakpoint="Breakpoint.None" @ref="CircleTable">
@@ -316,7 +325,7 @@
                                         <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
                                         
                                             <MudNumericField Class="dense-numeric-field text-center" IconSize="Size.Small"
-                                                             ShrinkLabel="true" Value=@slotContext.Prepared ValueChanged="(int newValue)=>ChangePrepared(slotContext,context,newValue)" Immediate="true"
+                                                             ShrinkLabel="true" Value=@slotContext.Prepared ValueChanged="(int newValue)=>ChangePreparedSpells(slotContext,context,newValue)" Immediate="true"
                                                              For="@(() => slotContext.Prepared)"  />
                                         </MudTd>
                                         <MudTd Style="width: 60px; padding: 4px;" DataLabel="actions">
@@ -380,7 +389,7 @@
                                     <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
 
                                         <MudNumericField Class="dense-numeric-field text-center" IconSize="Size.Small"
-                                                         ShrinkLabel="true" Value=@slotContext.Prepared ValueChanged="(int newValue)=>ChangePrepared(slotContext,context,newValue)" Immediate="true"
+                                                         ShrinkLabel="true" Value=@slotContext.Prepared ValueChanged="(int newValue)=>ChangePreparedSpells(slotContext,context,newValue)" Immediate="true"
                                                          For="@(() => slotContext.Prepared)" />
                                     </MudTd>
                                     <MudTd Style="width: 60px; padding: 4px;" DataLabel="actions">
@@ -403,10 +412,9 @@
                 </div>
                
             </MudTabPanel>
+            }
         </MudTabs>
-
         <label class="warnign-message">@ErrorMessage</label>
-
     }
 </div>
 </div>
@@ -443,12 +451,10 @@
 
 
 @code {
-
-
     [Parameter]
     public int Id { get; set; }
     public int AvalibleSpells { get; set; } = 0;
-    public ProfessionDTO ProfessionDTO { get; set; } = new();
+    public ProfessionDTO ProfessionDTO { get; set; }
     private AllParamsModel AllParams { get; set; } = new();
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
     private ICollection<SpellCircleDTO> SpellCircles = new List<SpellCircleDTO>();
@@ -458,37 +464,34 @@
     public UserInfo? UserInfo { get; set; }
     private MudTable<SpellCircle> mudTable;
     private TraitDTO? EditedTrait { get; set; } = new();
+    private string ErrorMessage { get; set; } = string.Empty;
+    private bool IsLoading { get; set; } = true;
+    private bool IsSpellTypeDisabled { get; set; } = true;
+    private IDisposable? registration;
+    private bool IsLeaveAllowed { get; set; } = true;
+    private string TargetLocation { get; set; } = "";
 
 
-    private async Task EditSkill(TraitProfessionDTO skill)
+    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
-        var idToDelete = skill.Id;
-        var parameters = new DialogParameters<CreateProfessionSkillDialog> {{ x => x.NewTrait, skill },
-                                                                            { x => x.IsEditMode, true },
-                                                                            { x => x.IsActiveSkill, skill.IsActiveSkill },
-                                                                            { x => x.AllParams, AllParams } };
-
-        var dialog = await DialogService.ShowAsync<CreateProfessionSkillDialog>("Edit " + skill.TraitLabel, parameters, await SetDialogOptions());
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
-        {
-            //var profession = skill.Professions;
-            skill = (TraitProfessionDTO)result.Data;
-            AllParams.TraitsChange(TraitType);
-            StateHasChanged();
-        }
-    }
+        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
+        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
+        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
+        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
+        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
+        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
+    };
 
     protected override async Task OnInitializedAsync()
     {
         UserInfo = await _userService.GetUserInfo();
+
+        registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
         if (UserInfo?.IsAuthenticated == false)
         {
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
-        ReadOnly = (UserInfo?.IsAdminOrMG == false);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -498,12 +501,12 @@
             try
             {
                 IsLoading = true;
-
                 StateHasChanged();
-
                 await LoadCharacter();
+                ProfessionDTO.StartProfessionPage();
 
                 IsLoading = false;
+                IsLeaveAllowed = true;
                 StateHasChanged();
             }
             catch (Exception ex)
@@ -522,7 +525,11 @@
             AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
             AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
             AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
-            ProfessionDTO = await _professionRepository.GetById(AllParams.Character.ProfessionId);
+            AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
+            AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
+            AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
+
+            ProfessionDTO = AllParams.Profession;
             if(ProfessionDTO.SpellCircles is not null)
             {
                 SpellCircles = ProfessionDTO.SpellCircles;
@@ -541,34 +548,10 @@
         catch(Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
         }
     }
 
-    private string ErrorMessage { get; set; } = string.Empty;
-    private bool IsLoading { get; set; } = true;
-    private bool IsSpellTypeDisabled { get; set; } = true;
-    public bool ReadOnly { get; set; } = false;
-
-    public IEditorSettings EditParams = new NumericEditCellParams
-    {
-        Params = new NumericTextBoxModel<object>() { ShowClearButton = true, ShowSpinButton = false }
-    };
-
-    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
-    {
-        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
-        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
-        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
-        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
-        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
-        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-    };
-    public void ChangeDescription(uint args)
-    {
-        //pass ID(column name) of multiline textbox
-        _jsruntime.InvokeVoidAsync("ResizeTextArea", $"{args}");
-    }
     private async Task OnSaveChangesBtnClick()
     {
         try
@@ -588,29 +571,69 @@
 
             await _professionRepository.Update(ProfessionDTO);
 
-            if(ProfessionDTO.Traits is not null)
+            if (ProfessionDTO.Traits is not null)
             {
-                foreach(var profSkill in ProfessionDTO.Traits)
+                foreach (var profSkill in ProfessionDTO.Traits)
                 {
                     await _traitProfessionRepository.Update(profSkill);
                 }
             }
 
-            //_navigationManager.NavigateTo("#");
+            // update Character traits
+            foreach (var trait in ProfessionDTO.TraitsToAdd)
+            {
+                await _traitCharacterRepository.Add(trait,AllParams.Character.Id);
+            }
+            foreach (var trait in ProfessionDTO.TraitsToDelete)
+            {
+                await _traitCharacterRepository.Delete(trait.Id);                
+            }
+
             ErrorMessage = string.Empty;
             IsLoading = false;
+            IsLeaveAllowed = true;
             StateHasChanged();
         }
         catch (WarningException ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrWarning(ex.ToString());
+            await _jsruntime.ToastrWarning(ex.ToString());
         }
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
         }
+    }
+
+    private async Task EditSkill(TraitProfessionDTO skill)
+    {
+        var idToDelete = skill.Id;
+        var parameters = new DialogParameters<CreateProfessionSkillDialog> {{ x => x.NewTrait, skill },
+                                                                            { x => x.IsEditMode, true },
+                                                                            { x => x.IsActiveSkill, skill.IsActiveSkill },
+                                                                            { x => x.AllParams, AllParams } };
+
+        var dialog = await DialogService.ShowAsync<CreateProfessionSkillDialog>("Edit " + skill.TraitLabel, parameters, await SetDialogOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            //var profession = skill.Professions;
+            skill = (TraitProfessionDTO)result.Data;
+            AllParams.TraitsChange(TraitType);
+            IsLeaveAllowed = false;
+            StateHasChanged();
+        }
+    }
+
+
+    public async Task ChangeDescription(uint args)
+    {
+        //pass ID(column name) of multiline textbox
+
+        IsLeaveAllowed = false;
+        await _jsruntime.InvokeVoidAsync("ResizeTextArea", $"{args}");
     }
 
     private async Task ChangeProfLevel()
@@ -618,104 +641,35 @@
         try
         {
             ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
+            IsLeaveAllowed = false;
             StateHasChanged();
         }
         catch (WarningException ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrWarning(ex.ToString());
+            await _jsruntime.ToastrWarning(ex.ToString());
         }
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
         }
-    }
-
-    private async Task ChangeRelatedAttribute(string attrName)
-    {
-        try
-        {
-            if (attrName != null && attrName != "0")
-            {
-                ProfessionDTO.RelatedAttributeName = attrName;
-                ProfessionDTO.RelatedAttribute = AllParams.Attributes.Get(attrName);
-                ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
-                StateHasChanged();
-                return;
-            }
-        }
-        catch(WarningException ex){
-            IsLoading = false;
-            await _jsRuntime.ToastrWarning(ex.ToString());
-        }
-        catch (Exception ex)
-        {
-            IsLoading = false;
-            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
-        }
-    }
-
-    private async Task AddSpellCircle()
-    {
-        try{
-            int newLevel = SpellCircles.Count();
-            if (newLevel > 9)
-                throw new WarningException("Max spell circle level reached");
-            SpellCircleDTO circle = new();
-            circle.ProfessionId = ProfessionDTO.Id;
-            circle.Profession = ProfessionDTO;
-            circle.Level = newLevel;
-            circle.CalculateSpells();
-
-            SpellCircles.Add(circle);
-            StateHasChanged();
-        } 
-        catch(WarningException ex){
-            IsLoading = false;
-            await _jsRuntime.ToastrWarning(ex.ToString());
-        }
-        catch (Exception ex)
-        {
-            IsLoading = false;
-            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
-        }
-    }
-
-    private async Task SpellcasterTypeHandle()
-    {
-        IsSpellTypeDisabled = false;
-
-        await Rest();
     }
 
     private async Task Rest()
     {
-        if (ProfessionDTO.CasterType != SpellcasterType.None)
-        {
-            if (ProfessionDTO.SpellCircles is not null)
-            {
-
-                foreach (var circle in ProfessionDTO.SpellCircles)
-                {
-                    circle.CalculateSpells();
-                    if (circle.SpellSlots is not null)
-                    {
-                        foreach (var slot in circle.SpellSlots)
-                        {
-                            if (ProfessionDTO.CasterType == SpellcasterType.Sorcerer)
-                            {
-                                slot.Prepared = circle.PerDay;
-                            }
-                            else
-                            {
-                                slot.Prepared = 0;
-                            }
-                        }
-                    }
-                }
-            }
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Are you sure you want to rest?",
+            yesText: "Yes", cancelText: "No");
+        if(result is null || result == false){
+            return;
         }
+
+        ProfessionDTO.Rest(AllParams);
+        IsLeaveAllowed = false;
+        await _jsruntime.ToastrSuccess("Character rested");
+        StateHasChanged();
     }
 
     private async Task SaveSpell(SpellSlot? spellSlot, bool isEdit)
@@ -750,11 +704,12 @@
             }else{
                 spellSlot.SpellId = spellSlot.Spell.Id;
             }
+            IsLeaveAllowed = false;
             StateHasChanged();
         }
     }
 
-    public void ChangePrepared(SpellSlot slot, SpellCircleDTO circle, int newValue) // your model.Amt type
+    public void ChangePreparedSpells(SpellSlot slot, SpellCircleDTO circle, int newValue) // your model.Amt type
     {
 
         int allPreparedSpells = 0;
@@ -807,14 +762,14 @@
                 }
             }
         }
-
+        IsLeaveAllowed = false;
     }
 
     private void DeleteSpell(SpellSlot spellSlot)
     {
         spellSlot.Spell = null;
         spellSlot.SpellId = null;
-
+        IsLeaveAllowed = false;
         StateHasChanged();
     }
 
@@ -826,5 +781,47 @@
         return options;
     }
 
-    
+    private async Task ActivateSkill(TraitProfessionDTO skill)
+    {
+        if (string.IsNullOrEmpty(skill.Name))
+        {
+            await _jsruntime.ToastrWarning("Define skill first");
+            return;
+        }
+        string res = "";
+        res = ProfessionDTO.GenerateTemporaryTraits(skill, AllParams);
+      
+        if (string.IsNullOrEmpty(res) == false)
+            await _jsruntime.ToastrWarning(res);
+        IsLeaveAllowed = false;
+    }
+
+    public async Task ConfirmLeave_Click(bool isConfirmed)
+    {
+        IsLoading = true;
+        StateHasChanged();
+        if (isConfirmed == true)
+        {
+            IsLeaveAllowed = true;
+            await _jsruntime.InvokeVoidAsync("HideLeavePageModal");
+            _navigationManager.NavigateTo(TargetLocation);
+        }
+        IsLoading = false;
+        StateHasChanged();
+        await _jsruntime.InvokeVoidAsync("HideLeavePageModal");
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (!IsLeaveAllowed)
+        {
+            TargetLocation = context.TargetLocation;
+
+            context.PreventNavigation();
+            HandleLeavePage();
+        }
+
+        return ValueTask.CompletedTask;
+    }
+    private void HandleLeavePage() => _jsruntime.InvokeVoidAsync("ShowLeavePageModal");
 }

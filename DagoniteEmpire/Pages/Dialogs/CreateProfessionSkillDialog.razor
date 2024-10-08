@@ -134,7 +134,7 @@
                 </div>
                 <div class="d-flex flex-column me-4">
                     <label class="fw-bold py-1">Range</label>
-                    <SfTextBox Readonly="IsInfoMode" Placeholder="DC" @bind-Value="@NewTrait.Range"></SfTextBox>
+                    <SfTextBox Readonly="IsInfoMode" Placeholder="Range" @bind-Value="@NewTrait.Range"></SfTextBox>
                 </div>
             </div>
         }
@@ -305,6 +305,7 @@
         List<TraitDTO> ChosenTraits = new List<TraitDTO>();
         var parameters = new DialogParameters<ExistingTraitDialog> { { x => x.ChosenTraits, ChosenTraits },
                                                                    { x => x.TraitType, TraitType },
+                                                                   { x => x.MinLevel, NewTrait.Level },
                                                                    { x => x.MultiRowSelection, false },
                                                                    { x => x.AllParams, AllParams }};
 
@@ -324,8 +325,10 @@
 
                 foreach (var prop in selectedTrait.GetType().GetProperties())
                 {
-                    if (NewTrait.GetType().GetProperty(prop.Name).CanWrite && prop.Name != "ProfessionId")
-                        NewTrait.GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(selectedTrait, null), null);
+                    if (prop.Name != "ProfessionId" && prop.Name != "Id" && prop.Name != "Level" && NewTrait.GetType().GetProperty(prop.Name).CanWrite ){
+                        var val  = prop.GetValue(selectedTrait, null);
+                        NewTrait.GetType().GetProperty(prop.Name).SetValue(NewTrait, val, null);
+                    }
                 }
             }
         }

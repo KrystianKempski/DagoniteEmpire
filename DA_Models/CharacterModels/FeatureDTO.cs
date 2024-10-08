@@ -43,14 +43,6 @@ namespace DA_Models.CharacterModels
         public virtual void DecrGear() { if (GearBonus > -6) GearBonus--;  }
         public  virtual void IncrGear() { if (GearBonus < 6) GearBonus++; }
         public virtual void ChangeTrait(int val) { TraitBonus+=val; }
-        //public virtual void CalcTrait()
-        //{
-        //    foreach (var bonus in TraitBonusesRelated)
-        //    {
-        //        if (bonus.FeatureName == Name)
-        //            TraitBonus += bonus.BonusValue;
-        //    }
-        //}
         public virtual void DecrHeal() {  HealthBonus--; }
         public virtual void IncrHeal() {  HealthBonus++; }
 

@@ -21,7 +21,9 @@
 
     </div>
 }
-<div class="container-fluid justify-content-center">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-1">
+
+@* <div class="container-fluid justify-content-center"> *@
     <div class="row justify-content-center">
 
         @if (IsLoading == true)
@@ -78,7 +80,8 @@
         </CascadingValue>
         }
     </div>
-</div>
+@* </div> *@
+</MudContainer>
 
 
 
@@ -88,8 +91,8 @@
     public AllParamsModel? AllParams { get; set; } = new();
 
     UserInfo? UserInfo { get; set; }
-    private IDisposable? registration;
     public BattleStatsComponent BattleStatComp = new();
+    private IDisposable? registration;
     private bool IsLoading { get; set; } = true;
     private bool IsLeaveAllowed { get; set; } = true;
     private string TargetLocation { get; set; } = "";

@@ -1,0 +1,302 @@
+﻿@inject ICharacterRepository _characterRepository
+@inject IAttributeRepository _attributeRepository
+@inject IBaseSkillRepository _baseSkillRepository
+@inject ISpecialSkillRepository _specialSkillRepository
+@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
+@inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
+@inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
+@inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
+@inject IRaceRepository _raceRepository
+@inject IProfessionRepository _professionRepository
+@inject IEquipmentSlotRepository _equipmentSlotRepository
+
+<MudPaper>
+    @if (IsLoading)
+    {
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="100%" />
+    }
+    else
+    {
+
+
+        <MudStack Class="pa-1" Spacing="2">
+            <MudButton Class="pa-1" OnClick="OnExpandCollapseClick">
+                <div class="w-100 d-flex px-2 justify-content-between">
+                    @if (AllParams is not null && AllParams.Character is not null && AllParams.Profession is not null && AllParams.CurrentRace is not null)
+                    {
+
+                    <MudImage Width="80" ObjectFit="ObjectFit.ScaleDown" Src="@AllParams.Character.ImageUrl" Alt="Character image" Elevation="25" Class="rounded-lg" />
+                    <div class="flex-grow-1 d-flex flex-column py-2 justify-content-around">
+
+                        <MudText Typo="Typo.h5">@AllParams.Character.NPCName</MudText>
+                        <MudText Typo="Typo.subtitle1">@AllParams.Profession.Name | @AllParams.CurrentRace.Name</MudText>
+                    
+                    </div>
+                    }
+                </div>
+
+            </MudButton>
+            <MudCollapse Expanded="IsExpanded">
+                 <MudGrid Spacing="1" Justify="Justify.SpaceBetween" Class="pa-1 ma-0">
+                    <MudItem xs="4">
+                        <MudText Typo="Typo.button">Attack:  @BattleProperties[SD.BattleProperty.AttackBase].SumBonus</MudText>
+                    </MudItem>
+                     <MudItem xs="4">
+                        <MudText Typo="Typo.button">Dodge:  @BattleProperties[SD.BattleProperty.DefenceDodge].SumBonus</MudText>
+                    </MudItem>
+                     <MudItem xs="4">
+                        <MudText Typo="Typo.button">Parry:  @BattleProperties[SD.BattleProperty.DefenceParry].SumBonus</MudText>
+                     </MudItem>
+                     <MudItem xs="4">
+                        <MudText Typo="Typo.button">Shield:  @BattleProperties[SD.BattleProperty.DefenceShield].SumBonus</MudText>
+                    </MudItem>
+                     <MudItem xs="4">
+                        <MudText Typo="Typo.button">Armor:  @BattleProperties[SD.BattleProperty.DefenceArmor].SumBonus</MudText>
+                    </MudItem>
+                     <MudItem xs="4">
+                        <MudText Typo="Typo.button">Absrb:  @BattleProperties[SD.BattleProperty.ArmorClass].SumBonus</MudText>
+                    </MudItem>
+                     @if (AllParams?.BattleProperties?.MainWeaponUsed is not null)
+                     {
+                        <MudItem xs="6">
+                            <MudPaper Class="p-1 w-100 h-100" Elevation="1">
+
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                        <MudText Typo="Typo.button">Main: @AllParams.BattleProperties.MainWeaponUsed.Name</MudText>
+                                </div>
+                            </div>
+                            @if (AllParams.BattleProperties.MainWeaponUsed.IsTwoHanded == true)
+                            {
+                                <div class="d-flex">
+                                    <div class="flex-grow-1 weapon-prop-label">
+                                        <label>Two handed weapon</label>
+                                    </div>
+                                </div>
+                            }
+                            @if(MainWeaponProps is not null)
+                            {
+                                @foreach (var prop in MainWeaponProps)
+                                {
+                                    @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
+                                    {
+                                        <div class="d-flex">
+
+                                            <div class="flex-grow-1 weapon-prop-label">
+                                                <label>@prop.Name: </label>
+                                            </div>
+                                            @if (prop.SumBonus != 0)
+                                            {
+                                                <div class="weapon-prop-value">
+                                                    @prop.SumBonus
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                }
+                            }
+                            </MudPaper>
+                        </MudItem>
+                     }
+                    @if (AllParams?.BattleProperties?.OffWeaponUsed is not null)
+                    {
+                        <MudItem xs="6">
+                            <MudPaper Class="p-1 w-100 h-100" Elevation="1">
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                        <MudText Typo="Typo.button">Off: @AllParams.BattleProperties.OffWeaponUsed.Name</MudText>
+                                </div>
+                            </div>
+                            @if (AllParams.BattleProperties.OffWeaponUsed.IsTwoHanded == true)
+                            {
+                                <div class="d-flex">
+                                    <div class="flex-grow-1 weapon-prop-label">
+                                        <label>Two handed weapon</label>
+                                    </div>
+                                </div>
+                            }
+                            @if (OffWeaponProps is not null)
+                            {
+                                @foreach (var prop in OffWeaponProps)
+                                {
+                                    @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
+                                    {
+                                        <div class="d-flex">
+
+                                            <div class="flex-grow-1 weapon-prop-label">
+                                                <label>@prop.Name: </label>
+                                            </div>
+                                            @if (prop.SumBonus != 0)
+                                            {
+                                                <div class="weapon-prop-value">
+                                                    @prop.SumBonus
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                }
+                            }
+                            </MudPaper>
+                        </MudItem>
+                    }
+                    @if (AllParams?.BattleProperties?.ArmorUsed is not null)
+                    {
+                        <MudItem xs="6">
+                            <MudPaper Class="p-1 w-100 h-100" Elevation="1">
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                        <MudText Typo="Typo.button">Armor: @AllParams.BattleProperties.ArmorUsed.Name</MudText>
+                                </div>
+                            </div>
+                            @if (ArmorProps is not null)
+                            {
+                                @foreach (var prop in ArmorProps)
+                                {
+                                    @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
+                                    {
+                                        <div class="d-flex">
+
+                                            <div class="flex-grow-1 weapon-prop-label">
+                                                <label>@prop.Name: </label>
+                                            </div>
+                                            @if (prop.SumBonus != 0)
+                                            {
+                                                <div class="weapon-prop-value">
+                                                    @prop.SumBonus
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                }
+                            }
+                            </MudPaper>
+                        </MudItem>
+                    }
+                    @if (AllParams?.BattleProperties?.ShieldUsed is not null)
+                    {
+                        <MudItem xs="6">
+                            <MudPaper Class="p-1 w-100 h-100" Elevation="1">
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                        <MudText Typo="Typo.button">Shield: @AllParams.BattleProperties.ShieldUsed.Name</MudText>
+                                </div>
+                            </div>
+                            @if (ShieldProps is not null)
+                            {
+                                @foreach (var prop in ShieldProps)
+                                {
+                                    @if (prop is not null && string.IsNullOrEmpty(prop.Name) == false)
+                                    {
+                                        <div class="d-flex">
+
+                                            <div class="flex-grow-1 weapon-prop-label">
+                                                <label>@prop.Name: </label>
+                                            </div>
+                                            @if (prop.SumBonus != 0)
+                                            {
+                                                <div class="weapon-prop-value">
+                                                    @prop.SumBonus
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                }
+                            }
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudCollapse>
+        </MudStack>
+    }
+
+
+</MudPaper>
+
+@code {
+    [Parameter]
+    public AllParamsModel? AllParams { get; set; } = null;
+    [Parameter]
+    public int CharacterId { get; set; } = 0;
+
+    private bool IsExpanded = false;
+    private bool IsLoading = false;
+
+    private IDictionary<string, BattlePropertyDTO>? BattleProperties= null;
+    private IEnumerable<BattlePropertyDTO>? MainWeaponProps = null;
+    private IEnumerable<BattlePropertyDTO>? OffWeaponProps = null;
+    private IEnumerable<BattlePropertyDTO>? ArmorProps = null;
+    private IEnumerable<BattlePropertyDTO>? ShieldProps = null;
+
+    private void OnExpandCollapseClick()
+    {
+        IsExpanded = !IsExpanded;
+    }
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+
+            IsLoading = true;
+            StateHasChanged();
+            if(AllParams is null)
+            {
+                await LoadCharacter();
+
+            }
+
+            IsLoading = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (AllParams is null)
+        {
+            IsLoading = true;
+
+            StateHasChanged();
+            await LoadCharacter();
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadCharacter()
+    {
+        AllParams = new();
+        AllParams.Character = await _characterRepository.GetById(CharacterId);
+        AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(CharacterId));
+        AllParams.BaseSkills = await _baseSkillRepository.GetAll(CharacterId);
+        AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(CharacterId));
+        AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(CharacterId)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
+        AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(CharacterId)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
+        AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
+        AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
+        AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).ToList();
+        AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(CharacterId)).ToList();
+        AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
+
+        AllParams.SpecialSkills.AddRelatedParametes();
+        AllParams.AllTraitsChange();
+        //await ChangeProfRelatedAttribute();
+        AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());
+        MainWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.MainWeaponUsed);
+        OffWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.OffWeaponUsed);
+        ArmorProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ArmorUsed);
+        ShieldProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ShieldUsed);
+        BattleProperties = AllParams.BattleProperties.GetAll();
+        if (BattleProperties is null)
+            throw new Exception();
+    }
+
+}

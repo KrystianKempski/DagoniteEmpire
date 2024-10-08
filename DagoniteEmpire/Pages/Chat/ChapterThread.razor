@@ -12,17 +12,37 @@
 @inject IUserService _userService
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
+@* @inject PanelActivation _panelActivation
+@implements IDisposable *@
 
 @using Microsoft.AspNetCore.SignalR.Client;
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
 
-<MudContainer Class="pr-1"  Fixed="false">
-    @if (IsLoading == true){
+@if (IsLoading == true){
         <LoadingPage></LoadingPage>
-    }else{
+}else{
+
+<div class="character-panel">
+    <MudPaper Elevation="1">
+        <MudStack Spacing="2">
+            @foreach (var charac in Chapter.Characters)
+            {
+                <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" CharacterId="charac.Id"></PanelCharacterComponent>
+            }
+
+        </MudStack>
 
 
-        <MudBreadcrumbs Class="px-0" py-2 Items="_items"></MudBreadcrumbs>
+    </MudPaper>
+    
+
+</div>
+
+    <div id="mam" class="margin-side container-lg" >
+
+       @*  <div class="margin "> *@
+
+        <MudBreadcrumbs Class="px-0 py-2" Items="_items"></MudBreadcrumbs>
         @if (Chapter is not null)
         {
             <MudText Typo="Typo.h4"><img src="@MyIcon.Quill" width="40px" height="40px" class="pr-2" />Chapter: @Chapter.Name</MudText>
@@ -38,7 +58,7 @@
                         {
                             string postId = "post_big_number_" + post.Id.ToString();
 
-                                <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="300px">
+                            <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="300px">
                                 <MudPaper Class="d-flex flex-column pa-2" Width="200px">
                                         <MudText Align="Align.Center" Typo="Typo.h5">@post.Character.NPCName</MudText>
                                         <MudImage Src="@post.Character.ImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg" />
@@ -102,7 +122,7 @@
 
             </div>
         }
-    <div id="bottom-container">
+        <div id="bottom-container" class="ma-0">
         <MudPaper Width="100%" Height="300px" Square="true" Class="d-flex  flex-column flex-grow-1 my-2 pa-2">
             <SfRichTextEditor Height="100%" @bind-Value="@NewPost.Content"  ShowTooltip="true">
                     <RichTextEditorToolbarSettings Items="@Tools" />
@@ -115,10 +135,11 @@
                     }
                 </div>
         </MudPaper>
-    </div>
-    }
+         </div>   
+   @*  </div> *@
     
-</MudContainer>
+</div>
+}
 
 <style>
     /*
@@ -136,8 +157,14 @@
 
     .e-richtexteditor .e-rte-content .e-content {
         padding: 4px;
+
     }
+
+   
+
 </style>
+
+
 
 @code{
     [Parameter]
@@ -147,6 +174,7 @@
     private ChapterDTO Chapter { get; set; } 
     private List<PostDTO> Posts { get; set; } = new List<PostDTO>();
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
+    private IDictionary<int, AllParamsModel?> CharacterAllParams { get; set; } = new Dictionary<int, AllParamsModel?>();
     public PostDTO NewPost { get; set; } = new();
     public bool IsLoading { get; set; } = true;
     //public bool IsAdminOrMG { get; set; } = true;
@@ -182,7 +210,7 @@
 
     public UserInfo? UserInfo { get; set; }
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
-    
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -194,7 +222,10 @@
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
 
-
+        if(UserInfo is not null)
+        {
+            StateHasChanged();
+        }
         if (UserInfo?.IsAdminOrMG == true)
         {
             SelectedCharacter = new()
@@ -203,6 +234,8 @@
                     UserName = UserInfo.UserName,
                 };
         }
+
+        // _panelActivation.LeftPanelActive = true;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -219,11 +252,15 @@
     {
         IsLoading = true;
         StateHasChanged();
-      
+
 
         Chapter = await _chapterRepository.GetById(Id);
         Posts = (await _postRepository.GetAll(Id)).ToList();
-        Characters = (await _characterRepository.GetAll()).ToList();
+        foreach(var charac in Chapter.Characters)
+        {
+            CharacterAllParams[charac.Id] = null;
+        }
+        //Characters = (await _characterRepository.GetAll()).ToList();
 
         if (UserInfo?.IsAdminOrMG == true)
         {
@@ -243,7 +280,7 @@
 
         IsLoading = false;
         StateHasChanged();
-       
+
     }
 
     private async Task CreatePost()
@@ -268,7 +305,7 @@
         }
         else
         {
-            
+
             NewPost.ChapterId = Id;
             NewPost.CharacterId = SelectedCharacter.Id;
             NewPost.Character = SelectedCharacter;
@@ -306,9 +343,8 @@
         //pass ID(column name) of multiline textbox
         _jsRuntime.InvokeVoidAsync("ResizeRichTextArea", $"{args}");
     }
-
-
-
-
-
+    // public void Dispose()
+    // {
+    //     _panelActivation.LeftPanelActive = false;
+    // }
 }

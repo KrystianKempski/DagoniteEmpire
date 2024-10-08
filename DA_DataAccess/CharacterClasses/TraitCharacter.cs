@@ -16,6 +16,5 @@ namespace DA_DataAccess.CharacterClasses
 
         public ICollection<Character>? Characters { get; set; }
         public bool IsTemporary { get; set; } = false;
-
     }
 }

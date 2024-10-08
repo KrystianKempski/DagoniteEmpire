@@ -23,7 +23,7 @@ using MudBlazor;
 using DA_Business.Repository.ChatRepos;
 using DA_Business.Services.Interfaces;
 using DA_Business.Services;
-
+using System.Net.NetworkInformation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +74,7 @@ builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
 builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddSingleton<PanelActivation>();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();

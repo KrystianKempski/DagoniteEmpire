@@ -331,7 +331,6 @@
         AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
         AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
         AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).ToList();
-        //AllParams.Profession.PassiveSkills = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).Where(u => u.IsActiveSkill == false).ToList();
         AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
         AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
     }
@@ -380,25 +379,15 @@
                 professionDTO = await _professionRepository.Create(AllParams.Profession);
                 if (professionDTO is not null)
                     AllParams.Character.ProfessionId = professionDTO.Id;
-                // create profession traits
-                // if(AllParams.Profession.Traits is not null)
-                // {
-                //     // foreach (var skill in AllParams.Profession.Traits)
-                //     // {
-                //     //     skill.ProfessionId = AllParams.Character.ProfessionId;
-                //     //     await _traitProfessionRepository.Create(skill);
-                //     // }
-                //     AllParams.Profession
-                //     _professionRepository.Create(AllParams.Profession);
-                // }
-                // if (AllParams.Profession.PassiveSkills is not null)
-                // {
-                //     foreach (var skill in AllParams.Profession.PassiveSkills)
-                //     {
-                //         skill.ProfessionId = AllParams.Character.ProfessionId;
-                //         await _traitProfessionRepository.Create(skill);
-                //     }
-                // }
+                //create profession traits
+                if(AllParams.Profession.Traits is not null)
+                {
+                    foreach (var skill in AllParams.Profession.Traits)
+                    {
+                        skill.ProfessionId = AllParams.Character.ProfessionId;
+                        await _traitProfessionRepository.Create(skill);
+                    }
+                }
 
                 var charac = await _characterRepository.Create(AllParams.Character);
                 foreach (var obj in AllParams.Attributes.GetAllArray())
@@ -446,22 +435,14 @@
                     AllParams.Character.ProfessionId = professionDTO.Id;
 
                 // update profession traits
-                // if (AllParams.Profession.ActiveSkills is not null)
-                // {
-                //     foreach (var skill in AllParams.Profession.ActiveSkills)
-                //     {
-                //         skill.ProfessionId = AllParams.Character.ProfessionId;
-                //         await _traitProfessionRepository.Update(skill);
-                //     }
-                // }
-                // if (AllParams.Profession.PassiveSkills is not null)
-                // {
-                //     foreach (var skill in AllParams.Profession.PassiveSkills)
-                //     {
-                //         skill.ProfessionId = AllParams.Character.ProfessionId;
-                //         await _traitProfessionRepository.Update(skill);
-                //     }
-                // }
+                if (AllParams.Profession.Traits is not null)
+                {
+                    foreach (var skill in AllParams.Profession.Traits)
+                    {
+                        skill.ProfessionId = AllParams.Character.ProfessionId;
+                        await _traitProfessionRepository.Update(skill);
+                    }
+                }
 
                 // update Character traits
                 if ( AllParams.Character.TraitsCharacter is  null)

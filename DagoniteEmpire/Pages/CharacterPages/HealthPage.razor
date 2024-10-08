@@ -11,6 +11,7 @@
 
 @inject IJSRuntime _jsRuntime
 
+<_LeavePage ComponentDescription="health" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
 <div class="container">
     <div class="save-btn">
         <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
@@ -83,7 +84,7 @@
                                     <span style="font-weight:bold">@context.Grouping.Key (@GetAttributesLabel(context.Grouping.Key)) </span>
                             </GroupTemplate>
                         </PropertyColumn>
-                            <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Hidden="@IsReadOnly" Title="Actions" Groupable="false">
+                            <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;"  Title="Actions" Groupable="false">
                             <CellTemplate>
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditWound(@context.Item))" />
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteWound(@context.Item))" />
@@ -223,24 +224,21 @@
     [Parameter]
     public int Id { get; set; }
     public AllParamsModel AllParams { get; set; } = new();
-
     MudDataGrid<WoundDTO> WoundsGrid { get; set; }
 
-    private bool IsReadOnly { get { return false; } }
     private Nutrition NutritionSelect {get;set;}
+    private IDisposable? registration;
+    private bool IsLoading { get; set; } = true;
+    private bool IsLeaveAllowed { get; set; } = true;
+    private string TargetLocation { get; set; } = "";
 
     UserInfo? UserInfo { get; set; }
-
     private ICollection<WoundDTO> Wounds { get; set; } = new List<WoundDTO>();
     private ICollection<WoundDTO> DeletedWounds { get; set; } = new List<WoundDTO>();
     private IDictionary<string, WoundDTO> Conditions { get; set; } = new Dictionary<string, WoundDTO>();
     private WoundDTO NewWound { get; set; } = new();
 
     public string[] Initial = SD.WoundLocation.All;
-
-
-    private bool IsLoading { get; set; } = true;
-
     public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp = new Dictionary<EquippedItems, EquipItemComponent>();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -250,6 +248,8 @@
             try
             {
                 IsLoading = true;
+
+                registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
                 await LoadCharacter();
                 Wounds = AllParams.Health.GetAll();
 
@@ -326,6 +326,7 @@
             await _jsRuntime.ToastrError("Error while saving wounds");
         }
         IsLoading = false;
+        IsLeaveAllowed = true;
         StateHasChanged();
     }
     Func<WoundDTO, object> _groupBy = x =>
@@ -370,6 +371,7 @@
             NewWound.CharacterId = AllParams.Character.Id;
             Wounds.Add(NewWound);
             AllParams.Health.CalculateHealTime(NewWound);
+            IsLeaveAllowed = false;
             StateHasChanged();
         }
     }
@@ -385,7 +387,8 @@
         {
             NewWound = (WoundDTO)result.Data;
             wound = NewWound;
-            AllParams.Health.CalculateHealTime(NewWound);
+            AllParams.Health.CalculateHealTime(NewWound);            
+            IsLeaveAllowed = false;
             StateHasChanged();
         }
     }
@@ -394,7 +397,37 @@
         Wounds.Remove(wound);
         if(wound.Id>0)
             DeletedWounds.Add(wound);
+            
+        IsLeaveAllowed = false;
         StateHasChanged();
     }
-                                    
+
+    public async Task ConfirmLeave_Click(bool isConfirmed)
+    {
+        IsLoading = true;
+        StateHasChanged();
+        if (isConfirmed == true)
+        {
+            IsLeaveAllowed = true;
+            await _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
+            _navigationManager.NavigateTo(TargetLocation);
+        }
+        IsLoading = false;
+        StateHasChanged();
+        await _jsRuntime.InvokeVoidAsync("HideLeavePageModal");
+    }
+
+    private ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (!IsLeaveAllowed)
+        {
+            TargetLocation = context.TargetLocation;
+
+            context.PreventNavigation();
+            HandleLeavePage();
+        }
+
+        return ValueTask.CompletedTask;
+    }
+    private void HandleLeavePage() => _jsRuntime.InvokeVoidAsync("ShowLeavePageModal");
 }

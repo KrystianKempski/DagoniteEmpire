@@ -45,7 +45,20 @@ namespace DA_Business.Repository.CharacterReps
                 throw new RepositoryErrorException("Error in Trait-race Repository Create");
             }
                 
-}
+        }
+
+        public async Task<TraitRaceDTO> Add(TraitRaceDTO objDTO, int Id)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var race = await contex.Races.Include(u => u.Traits).FirstOrDefaultAsync(c => c.Id == Id);
+            if (race == null)
+                return null;
+            var obj = _mapper.Map<TraitRaceDTO, TraitRace>(objDTO);
+            race.Traits.Add(obj);
+            await contex.SaveChangesAsync();
+
+            return _mapper.Map<TraitRace, TraitRaceDTO>(obj);
+        }
 
         public async Task<int> Delete(int id)
         {
@@ -104,28 +117,30 @@ namespace DA_Business.Repository.CharacterReps
                 if (obj != null)
                 {
 
-                    obj.Name = newTrait.Name;
-                    obj.Descr = newTrait.Descr;
-                    obj.Index = newTrait.Index;
-                    obj.TraitType = newTrait.TraitType;
-                    obj.TraitValue = newTrait.TraitValue;
-                    obj.TraitApproved = newTrait.TraitApproved;
-                    obj.IsUnique = newTrait.IsUnique;
+                //    obj.Name = newTrait.Name;
+                //    obj.Descr = newTrait.Descr;
+                //    obj.Index = newTrait.Index;
+                //    obj.TraitType = newTrait.TraitType;
+                //    obj.TraitValue = newTrait.TraitValue;
+                //    obj.TraitApproved = newTrait.TraitApproved;
+                //    obj.IsUnique = newTrait.IsUnique;
 
-                    // Delete trait bonuses
-                    if (!obj.Bonuses.IsNullOrEmpty())
+                // Delete trait bonuses
+                if (!obj.Bonuses.IsNullOrEmpty())
+                {
+                    foreach (var existingChild in obj.Bonuses.ToList())
                     {
-                        foreach (var existingChild in obj.Bonuses.ToList())
+                        if (!newTrait.Bonuses.Any(c => c.Id == existingChild.Id))
                         {
-                            if (!newTrait.Bonuses.Any(c => c.Id == existingChild.Id))
-                            {
-                                contex.Bonuses.Remove(existingChild);
-                            }
+                            contex.Bonuses.Remove(existingChild);
                         }
                     }
+                }
 
-                    // Update and Insert bonuses
-                    if (newTrait.Bonuses is not null)
+                contex.Entry(obj).CurrentValues.SetValues(objDTO);
+
+                // Update and Insert bonuses
+                if (newTrait.Bonuses is not null)
                     {
                         foreach (var childTrait in newTrait.Bonuses)
                         {

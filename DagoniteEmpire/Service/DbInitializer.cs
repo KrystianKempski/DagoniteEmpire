@@ -7,6 +7,7 @@ using DagoniteEmpire.Service.IService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using DA_DataAccess;
+using System;
 
 namespace DagoniteEmpire.Service
 {
@@ -699,7 +700,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with wizard pool for cantrips and spells of 1st circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 1,
+                        Level = 1,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -713,7 +714,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with wizard pool for spells of 2st and 3nd circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 2,
+                        Level = 2,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -727,7 +728,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with wizard pool for spells of 4th circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 3,
+                        Level = 3,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -741,7 +742,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with wizard pool for spells of 5th and 6th circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 4,
+                        Level = 4,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -755,7 +756,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with wizard pool for spells of 7th and 8th circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 5,
+                        Level = 5,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -769,7 +770,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with wizard pool for spells of 9th circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 6,
+                        Level = 6,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -783,7 +784,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with wizard pool for spells of mythic level",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 7,
+                        Level = 7,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -798,7 +799,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with sorcerer pool for cantrips and spells of 1st circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 1,
+                        Level = 1,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -812,7 +813,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with sorcerer pool for spells of 2st and 3nd circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 2,
+                        Level = 2,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -826,7 +827,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with sorcerer pool for spells of 4th circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 3,
+                        Level = 3,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -840,7 +841,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with sorcerer pool for spells of 5th and 6th circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 4,
+                        Level = 4,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -854,7 +855,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with sorcerer pool for spells of 7th and 8th circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 5,
+                        Level = 5,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -868,7 +869,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with sorcerer pool for spells of 9th circle",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 6,
+                        Level = 6,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -882,7 +883,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Able to cast magic with sorcerer pool for spells of mythic level",
                         TraitApproved = true,
                         IsUnique = false,
-                        TraitValue = 7,
+                        Level = 7,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -897,6 +898,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Allow character to figtht with two weapons without penalties, if the second weapon is light",
                         TraitApproved = true,
                         IsUnique = false,
+                        Level = 1,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -907,9 +909,10 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.GreaterDoubleWeaponFighting,
-                        Descr = "Allow character to figtht with two weapons without penalties. Requires 14 strength",
+                        Descr = "Allow character to figth with two weapons without penalties. Requires 14 strength",
                         TraitApproved = true,
                         IsUnique = false,
+                        Level = 3,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -923,6 +926,7 @@ namespace DagoniteEmpire.Service
                         Descr = "Allow character to wield two-handed weapon with one hand. Requires 20 strength",
                         TraitApproved = true,
                         IsUnique = false,
+                        Level = 2,
                         TraitType = SD.TraitType_Profession,
                     };
                     _db.TraitsProfession.Add(traitProf);
@@ -985,7 +989,7 @@ namespace DagoniteEmpire.Service
                 
 
                 // ARMORS
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Light leather armor") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.LightLeatherArmor) == null)
                 {
                     item = new Equipment()
                     {
@@ -1027,11 +1031,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Leather scale armor") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.LeatherScaleArmor) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Leather scale armor",
+                        Name = SD.BasicArmors.LeatherScaleArmor,
                         EquipmentType = SD.EquipmentType.Body,
                         Description = "Offers good protection and mobility",
                         ShortDescr = "Offers good protection and mobility",
@@ -1069,11 +1073,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Steal scale armor") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.StealScaleArmor) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Steal scale armor",
+                        Name = SD.BasicArmors.StealScaleArmor,
                         EquipmentType = SD.EquipmentType.Body,
                         Description = "Offers good protection and mobility",
                         ShortDescr = "Offers good protection and mobility",
@@ -1111,11 +1115,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Half plate") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.HalfPlate) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Half plate",
+                        Name = SD.BasicArmors.HalfPlate,
                         EquipmentType = SD.EquipmentType.Body,
                         Description = "Good protection of solid steal",
                         ShortDescr = "Good protection of solid steal",
@@ -1153,11 +1157,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Full plate") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.FullPlate) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Full plate",
+                        Name = SD.BasicArmors.FullPlate,
                         EquipmentType = SD.EquipmentType.Body,
                         Description = "Best protection there is",
                         ShortDescr = "Best protection there is",
@@ -1196,11 +1200,11 @@ namespace DagoniteEmpire.Service
                     _db.SaveChanges();
                 }
                 //SHIELDS
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Wooden buckler") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.WoodenBuckler) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Wooden buckler",
+                        Name = SD.BasicShields.WoodenBuckler,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
                         Description = "Small, but better than nothing",
@@ -1235,11 +1239,11 @@ namespace DagoniteEmpire.Service
                     _db.SaveChanges();
                 }
 
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Metal buckler") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.MetalBuckler) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Metal buckler",
+                        Name = SD.BasicShields.MetalBuckler,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
                         Description = "Small, but better than nothing",
@@ -1268,11 +1272,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Wooden shield") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.WoodenShield) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Wooden shield",
+                        Name = SD.BasicShields.WoodenShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
                         Description = "Simple, wooden shield",
@@ -1307,11 +1311,11 @@ namespace DagoniteEmpire.Service
                     _db.SaveChanges();
                 }
                
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Metal shield") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.MetalShield) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Metal shield",
+                        Name = SD.BasicShields.MetalShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
                         Description = "Strong, metal shield",
@@ -1346,11 +1350,11 @@ namespace DagoniteEmpire.Service
                     _db.SaveChanges();
                 }
 
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Big wooden shield") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.BigWoodenShield) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Big wooden shield",
+                        Name = SD.BasicShields.BigWoodenShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
                         Description = "Biger for better protection",
@@ -1384,11 +1388,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Big metal shield") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.BigMetalShield) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Big metal shield",
+                        Name = SD.BasicShields.BigMetalShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
                         Description = "Biger for better protection",
@@ -1423,11 +1427,11 @@ namespace DagoniteEmpire.Service
                     _db.SaveChanges();
                 }
                 // WEAPONS MELEE
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Dagger") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Dagger) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Dagger",
+                        Name = SD.BasicWeaponsMelee.Dagger,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Small and deadly",
                         ShortDescr = "Small and deadly",
@@ -1465,11 +1469,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Long sword") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.LongSword) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Long sword",
+                        Name = SD.BasicWeaponsMelee.LongSword,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Main tool of all adventurers",
                         ShortDescr = "Main tool of all adventurers",
@@ -1502,7 +1506,7 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Battle axe") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.BattleAxe) == null)
                 {
                     item = new Equipment()
                     {
@@ -1538,11 +1542,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Pickaxe") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Pickaxe) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Pickaxe",
+                        Name = SD.BasicWeaponsMelee.Pickaxe,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Good for penetrating armor",
                         ShortDescr = "Good for penetrating armor",
@@ -1575,11 +1579,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Mace") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Mace) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Mace",
+                        Name = SD.BasicWeaponsMelee.Mace,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "One handed and good way to stun opponent",
                         ShortDescr = "One handed and good way to stun opponent",
@@ -1612,11 +1616,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Morningstar") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Morningstar) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Morningstar",
+                        Name = SD.BasicWeaponsMelee.Morningstar,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Weapon of heavily armed knights",
                         ShortDescr = "Weapon of heavily armed knights",
@@ -1649,11 +1653,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Short spear") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.ShorSpear) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Short spear",
+                        Name = SD.BasicWeaponsMelee.ShorSpear,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Basic weapon of all soldiers",
                         ShortDescr = "Basic weapon of all soldiers",
@@ -1686,11 +1690,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Rapier") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Rapier) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Rapier",
+                        Name = SD.BasicWeaponsMelee.Rapier,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Fast and elegant weapon",
                         ShortDescr = "Fast and elegant weapon",
@@ -1729,11 +1733,11 @@ namespace DagoniteEmpire.Service
                     _db.SaveChanges();
                 }
 
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Two-handed flail") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.TwoHandedFlail) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Two-handed flail",
+                        Name = SD.BasicWeaponsMelee.TwoHandedFlail,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Heavy and slow, but easy to knock down an opponent",
                         ShortDescr = "Heavy and slow, but easy to knock down an opponent",
@@ -1772,11 +1776,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Warhammer") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Warhammer) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Warhammer",
+                        Name = SD.BasicWeaponsMelee.Warhammer,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Powerful weapon that can easily stun the enemy",
                         ShortDescr = "Powerful weapon that can easily stun the enemy",
@@ -1820,11 +1824,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Greataxe") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Greataxe) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Greataxe",
+                        Name = SD.BasicWeaponsMelee.Greataxe,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "A truly devastating weapon",
                         ShortDescr = "A truly devastating weapon",
@@ -1868,11 +1872,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Poleaxe") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Poleaxe) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Poleaxe",
+                        Name = SD.BasicWeaponsMelee.Poleaxe,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Axe head on long pole",
                         ShortDescr = "Axe head on long pole",
@@ -1916,11 +1920,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Sarissa") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Sarissa) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Sarissa",
+                        Name = SD.BasicWeaponsMelee.Sarissa,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
                         Description = "Very long spear",
                         ShortDescr = "Very long spear",
@@ -1960,11 +1964,11 @@ namespace DagoniteEmpire.Service
                     _db.SaveChanges();
                 }
                 // WEAPONS RANGED
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Crossbow, light") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.CrossbowLight) == null)
                 { 
                     item = new Equipment()
                     {
-                        Name = "Crossbow, light",
+                        Name = SD.BasicWeaponsShooting.CrossbowLight,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
                         Description = "Easy to use and slow to reload",
                         ShortDescr = "Easy to use and slow to reload",
@@ -2008,11 +2012,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Crossbow, heavy") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.CrossbowHeavy) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Crossbow, heavy",
+                        Name = SD.BasicWeaponsShooting.CrossbowHeavy,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
                         Description = "Powerfull but slow",
                         ShortDescr = "Powerfull but slow",
@@ -2061,11 +2065,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Bow, simple") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.BowSimple) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Bow, simple",
+                        Name = SD.BasicWeaponsShooting.BowSimple,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
                         Description = "Common tool of hunters",
                         ShortDescr = "Common tool of hunters",
@@ -2105,11 +2109,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Longbow") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.Longbow) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Longbow",
+                        Name = SD.BasicWeaponsShooting.Longbow,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
                         Description = "Military archers primary weapon",
                         ShortDescr = "Military archers primary weapon",
@@ -2144,11 +2148,11 @@ namespace DagoniteEmpire.Service
                     _db.Equipment.Add(item);
                     _db.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Slingshot") == null)
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.Slingshot) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = "Slingshot",
+                        Name = SD.BasicWeaponsShooting.Slingshot,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
                         Description = "Simple but effective",
                         ShortDescr = "Simple but effective",
