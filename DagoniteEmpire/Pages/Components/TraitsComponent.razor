@@ -1,7 +1,6 @@
 ﻿@inject IDialogService DialogService
 @inject IUserService _userService
 @inject IBrowserViewportService _vieportService
-@using DialogOptions = MudBlazor.DialogOptions
 <div class="traits">
 
     <div class="table-container">
@@ -129,7 +128,7 @@
                                                                     { x => x.AllParams, AllParams } };
 
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Add " + NewTrait.TraitLabel, parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Add " + NewTrait.TraitLabel, parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)

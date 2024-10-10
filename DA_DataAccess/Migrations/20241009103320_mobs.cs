@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class swichableskills : Migration
+    public partial class mobs : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -107,6 +107,43 @@ namespace DA_DataAccess.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ImageFiles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Mobs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Relation = table.Column<int>(type: "integer", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Notes = table.Column<string>(type: "text", nullable: false),
+                    ImageUrl = table.Column<string>(type: "text", nullable: false),
+                    MainWeaponName = table.Column<string>(type: "text", nullable: false),
+                    OffWeaponName = table.Column<string>(type: "text", nullable: false),
+                    ShieldWeaponName = table.Column<string>(type: "text", nullable: false),
+                    ArmorName = table.Column<string>(type: "text", nullable: false),
+                    CampaignId = table.Column<int>(type: "integer", nullable: false),
+                    ChapterId = table.Column<int>(type: "integer", nullable: false),
+                    RaceName = table.Column<string>(type: "text", nullable: true),
+                    IsApproved = table.Column<bool>(type: "boolean", nullable: false),
+                    ProfessionName = table.Column<string>(type: "text", nullable: false),
+                    AttackSkillValue = table.Column<int>(type: "integer", nullable: false),
+                    DodgeSkillValue = table.Column<int>(type: "integer", nullable: false),
+                    ShieldSkillValue = table.Column<int>(type: "integer", nullable: false),
+                    ArmorSkillValue = table.Column<int>(type: "integer", nullable: false),
+                    ParrySkillValue = table.Column<int>(type: "integer", nullable: false),
+                    PainResSkillValue = table.Column<int>(type: "integer", nullable: false),
+                    LiftingSkillValue = table.Column<int>(type: "integer", nullable: false),
+                    WrestlingSkillValue = table.Column<int>(type: "integer", nullable: false),
+                    MaxWounds = table.Column<int>(type: "integer", nullable: false),
+                    CurrentWounds = table.Column<int>(type: "integer", nullable: false),
+                    States = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Mobs", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -378,6 +415,7 @@ namespace DA_DataAccess.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserName = table.Column<string>(type: "text", nullable: false),
+                    Relation = table.Column<int>(type: "integer", nullable: false),
                     NPCName = table.Column<string>(type: "text", nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
                     Age = table.Column<int>(type: "integer", nullable: false),
@@ -959,6 +997,9 @@ namespace DA_DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "ImageFiles");
+
+            migrationBuilder.DropTable(
+                name: "Mobs");
 
             migrationBuilder.DropTable(
                 name: "Posts");

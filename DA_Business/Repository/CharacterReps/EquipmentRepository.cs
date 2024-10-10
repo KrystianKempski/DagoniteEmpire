@@ -104,6 +104,16 @@ namespace DA_Business.Repository.CharacterReps
             }
             return new EquipmentDTO();
         }
+        public async Task<EquipmentDTO> GetByName(string name)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses).FirstOrDefaultAsync(u => u.Name == name);
+            if (obj != null)
+            {
+                return _mapper.Map<Equipment, EquipmentDTO>(obj);
+            }
+            return new EquipmentDTO();
+        }
 
         public async Task<EquipmentDTO> Update(EquipmentDTO objDTO)
         {

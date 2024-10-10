@@ -1,4 +1,5 @@
 ﻿@inject ICharacterRepository _characterRepository
+@inject IMobRepository _mobRepository
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
 @inject ISpecialSkillRepository _specialSkillRepository
@@ -6,9 +7,11 @@
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
+@inject IEquipmentRepository _equipmentRepository
 @inject IRaceRepository _raceRepository
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
+@inject IUserService _userService
 
 <MudPaper>
     @if (IsLoading)
@@ -17,56 +20,65 @@
     }
     else
     {
-
-
-        <MudStack Class="pa-1" Spacing="2">
-            <MudButton Class="pa-1" OnClick="OnExpandCollapseClick">
+        <MudStack Class="pa-1" Spacing="2" >
+            <MudButton Style="@BackgroundColor" Class="pa-1" OnClick="OnExpandCollapseClick">
                 <div class="w-100 d-flex px-2 justify-content-between">
-                    @if (AllParams is not null && AllParams.Character is not null && AllParams.Profession is not null && AllParams.CurrentRace is not null)
-                    {
-
-                    <MudImage Width="80" ObjectFit="ObjectFit.ScaleDown" Src="@AllParams.Character.ImageUrl" Alt="Character image" Elevation="25" Class="rounded-lg" />
+                    <MudImage Width="80" ObjectFit="ObjectFit.ScaleDown" Src="@ImageUrl" Alt="Character image" Elevation="25" Class="rounded-lg" />
                     <div class="flex-grow-1 d-flex flex-column py-2 justify-content-around">
-
-                        <MudText Typo="Typo.h5">@AllParams.Character.NPCName</MudText>
-                        <MudText Typo="Typo.subtitle1">@AllParams.Profession.Name | @AllParams.CurrentRace.Name</MudText>
-                    
+                        <MudText Typo="Typo.h5">@Name</MudText>
+                        <MudText Typo="Typo.subtitle1">@ProfessionName | @RaceName</MudText>                    
                     </div>
-                    }
                 </div>
-
             </MudButton>
             <MudCollapse Expanded="IsExpanded">
-                 <MudGrid Spacing="1" Justify="Justify.SpaceBetween" Class="pa-1 ma-0">
-                    <MudItem xs="4">
-                        <MudText Typo="Typo.button">Attack:  @BattleProperties[SD.BattleProperty.AttackBase].SumBonus</MudText>
-                    </MudItem>
-                     <MudItem xs="4">
-                        <MudText Typo="Typo.button">Dodge:  @BattleProperties[SD.BattleProperty.DefenceDodge].SumBonus</MudText>
-                    </MudItem>
-                     <MudItem xs="4">
-                        <MudText Typo="Typo.button">Parry:  @BattleProperties[SD.BattleProperty.DefenceParry].SumBonus</MudText>
-                     </MudItem>
-                     <MudItem xs="4">
-                        <MudText Typo="Typo.button">Shield:  @BattleProperties[SD.BattleProperty.DefenceShield].SumBonus</MudText>
-                    </MudItem>
-                     <MudItem xs="4">
-                        <MudText Typo="Typo.button">Armor:  @BattleProperties[SD.BattleProperty.DefenceArmor].SumBonus</MudText>
-                    </MudItem>
-                     <MudItem xs="4">
-                        <MudText Typo="Typo.button">Absrb:  @BattleProperties[SD.BattleProperty.ArmorClass].SumBonus</MudText>
-                    </MudItem>
-                     @if (AllParams?.BattleProperties?.MainWeaponUsed is not null)
-                     {
+                <MudPaper Elevation="0" Class="ma-1">
+                    @if(UserInfo?.IsAdminOrMG == true || Relation == Relation.Teammate || Relation == Relation.Ally){
+
+                    <MudPaper Elevation="1" Class="my-1">
+                        <MudText Class="p-1" Typo="Typo.button">ATTACK  ( base: @BattleProperties[SD.BattleProperty.AttackBase].SumBonus )</MudText>
+                        <MudGrid Spacing="1" Justify="Justify.SpaceBetween">
+                            <MudItem xs="3">
+                                <label class="w-100 text-center">Dodge: @BattleProperties[SD.BattleProperty.AttackDodge].SumBonus</label>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <label class="w-100 text-center">Parry: @BattleProperties[SD.BattleProperty.AttackParry].SumBonus</label>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <label class="w-100 text-center">Shield: @BattleProperties[SD.BattleProperty.AttackShield].SumBonus</label>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <label class="w-100 text-center">Armor: @BattleProperties[SD.BattleProperty.AttackArmor].SumBonus</label>
+                            </MudItem>
+                        </MudGrid>
+                        <MudText Class="p-1" Typo="Typo.button">DEFENCE ( absorbtion: @BattleProperties[SD.BattleProperty.ArmorClass].SumBonus )</MudText>
+                        <MudGrid Spacing="1" Justify="Justify.SpaceBetween">
+                            <MudItem xs="3">
+                                <label class="w-100 text-center">Dodge: @BattleProperties[SD.BattleProperty.DefenceDodge].SumBonus</label>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <label class="w-100 text-center">Parry: @BattleProperties[SD.BattleProperty.DefenceParry].SumBonus</label>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <label class="w-100 text-center">Shield: @BattleProperties[SD.BattleProperty.DefenceShield].SumBonus</label>
+                            </MudItem>
+                            <MudItem xs="3">
+                                <label class="w-100 text-center">Armor: @BattleProperties[SD.BattleProperty.DefenceArmor].SumBonus</label>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                    }
+                    <MudGrid Spacing="1" Justify="Justify.SpaceBetween">                    
+                        @if (BattlePropertyModel?.MainWeaponUsed is not null)
+                        {
                         <MudItem xs="6">
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
 
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Main: @AllParams.BattleProperties.MainWeaponUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Main: @BattlePropertyModel.MainWeaponUsed.Name</MudText>
                                 </div>
                             </div>
-                            @if (AllParams.BattleProperties.MainWeaponUsed.IsTwoHanded == true)
+                                @if (BattlePropertyModel.MainWeaponUsed.IsTwoHanded == true)
                             {
                                 <div class="d-flex">
                                     <div class="flex-grow-1 weapon-prop-label">
@@ -98,16 +110,16 @@
                             </MudPaper>
                         </MudItem>
                      }
-                    @if (AllParams?.BattleProperties?.OffWeaponUsed is not null)
+                    @if (BattlePropertyModel?.OffWeaponUsed is not null)
                     {
                         <MudItem xs="6">
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Off: @AllParams.BattleProperties.OffWeaponUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Off: @BattlePropertyModel.OffWeaponUsed.Name</MudText>
                                 </div>
                             </div>
-                            @if (AllParams.BattleProperties.OffWeaponUsed.IsTwoHanded == true)
+                                @if (BattlePropertyModel.OffWeaponUsed.IsTwoHanded == true)
                             {
                                 <div class="d-flex">
                                     <div class="flex-grow-1 weapon-prop-label">
@@ -139,13 +151,13 @@
                             </MudPaper>
                         </MudItem>
                     }
-                    @if (AllParams?.BattleProperties?.ArmorUsed is not null)
+                    @if (BattlePropertyModel?.ArmorUsed is not null)
                     {
                         <MudItem xs="6">
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Armor: @AllParams.BattleProperties.ArmorUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Armor: @BattlePropertyModel.ArmorUsed.Name</MudText>
                                 </div>
                             </div>
                             @if (ArmorProps is not null)
@@ -172,13 +184,13 @@
                             </MudPaper>
                         </MudItem>
                     }
-                    @if (AllParams?.BattleProperties?.ShieldUsed is not null)
+                    @if (BattlePropertyModel?.ShieldUsed is not null)
                     {
                         <MudItem xs="6">
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Shield: @AllParams.BattleProperties.ShieldUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Shield: @BattlePropertyModel.ShieldUsed.Name</MudText>
                                 </div>
                             </div>
                             @if (ShieldProps is not null)
@@ -206,6 +218,7 @@
                         </MudItem>
                     }
                 </MudGrid>
+                </MudPaper>
             </MudCollapse>
         </MudStack>
     }
@@ -217,36 +230,48 @@
     [Parameter]
     public AllParamsModel? AllParams { get; set; } = null;
     [Parameter]
-    public int CharacterId { get; set; } = 0;
+    public MobDTO? Mob { get; set; } = null;
+    [Parameter]
+    public int Id { get; set; } = 0;
+    [Parameter]
+    public bool IsMob { get; set; } = false;
 
     private bool IsExpanded = false;
     private bool IsLoading = false;
-
+    private BattlePropertyModel? BattlePropertyModel = null;
     private IDictionary<string, BattlePropertyDTO>? BattleProperties= null;
     private IEnumerable<BattlePropertyDTO>? MainWeaponProps = null;
     private IEnumerable<BattlePropertyDTO>? OffWeaponProps = null;
     private IEnumerable<BattlePropertyDTO>? ArmorProps = null;
     private IEnumerable<BattlePropertyDTO>? ShieldProps = null;
+    private string ImageUrl = "";
+    private string ProfessionName = "";
+    private string RaceName = "";
+    private string Name = "";
+    private string BackgroundColor = "";
+    private Relation Relation = Relation.Teammate;
+    public UserInfo? UserInfo { get; set; }
+
 
     private void OnExpandCollapseClick()
     {
         IsExpanded = !IsExpanded;
     }
 
-
-
-
     protected override async Task OnInitializedAsync()
     {
         try
         {
-
+            UserInfo = await _userService.GetUserInfo();
             IsLoading = true;
             StateHasChanged();
-            if(AllParams is null)
+            if(AllParams is null && IsMob==false)
             {
                 await LoadCharacter();
-
+            }
+            else
+            {
+                await LoadMob();
             }
 
             IsLoading = false;
@@ -260,7 +285,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (AllParams is null)
+        if (AllParams is null && IsMob == false)
         {
             IsLoading = true;
 
@@ -269,21 +294,30 @@
             IsLoading = false;
             StateHasChanged();
         }
+        if(Mob is null && IsMob)
+        {
+            IsLoading = true;
+
+            StateHasChanged();
+            await LoadMob();
+            IsLoading = false;
+            StateHasChanged();
+        }
     }
 
     private async Task LoadCharacter()
     {
         AllParams = new();
-        AllParams.Character = await _characterRepository.GetById(CharacterId);
-        AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(CharacterId));
-        AllParams.BaseSkills = await _baseSkillRepository.GetAll(CharacterId);
-        AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(CharacterId));
-        AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(CharacterId)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
-        AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(CharacterId)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
+        AllParams.Character = await _characterRepository.GetById(Id);
+        AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
+        AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
+        AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
+        AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
+        AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
         AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
         AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
-        AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).ToList();
-        AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(CharacterId)).ToList();
+        AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.Id)).ToList();
+        AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
         AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
 
         AllParams.SpecialSkills.AddRelatedParametes();
@@ -295,8 +329,64 @@
         ArmorProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ArmorUsed);
         ShieldProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ShieldUsed);
         BattleProperties = AllParams.BattleProperties.GetAll();
+        BattlePropertyModel = AllParams.BattleProperties;
+        ProfessionName = AllParams.Profession.Name;
+        RaceName = AllParams.CurrentRace.Name;
+        ImageUrl = AllParams.Character.ImageUrl;
+        Name = AllParams.Character.NPCName;
+        Relation = AllParams.Character.Relation;
+
+        BackgroundColor = $"background:{Colors.Blue.Lighten5};";
+
         if (BattleProperties is null)
             throw new Exception();
     }
 
+    private async Task LoadMob()
+    {
+        Mob = await _mobRepository.GetById(Id);
+        Mob.BattleProperties = new(Mob);
+        BattlePropertyModel = Mob.BattleProperties;
+        ImageUrl = Mob.ImageUrl;
+        ProfessionName = Mob.ProfessionName;
+        RaceName = Mob.RaceName;
+        Name = Mob.Name;
+        Relation = Mob.Relation;
+        if (string.IsNullOrEmpty(Mob.MainWeaponName) == false)
+        {
+            Mob.MainWeapon = await _equipmentRepository.GetByName(Mob.MainWeaponName);            
+            MainWeaponProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.MainWeapon);
+        }
+        if (string.IsNullOrEmpty(Mob.OffWeaponName) == false)
+        {
+            Mob.OffWeapon = await _equipmentRepository.GetByName(Mob.OffWeaponName);
+            OffWeaponProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.OffWeapon);
+        }
+        if (string.IsNullOrEmpty(Mob.ShieldWeaponName) == false)
+        {
+            Mob.ShieldWeapon = await _equipmentRepository.GetByName(Mob.ShieldWeaponName);
+            ShieldProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.ShieldWeapon);
+        }
+        if (string.IsNullOrEmpty(Mob.ArmorName) == false)
+        {
+            Mob.Armor = await _equipmentRepository.GetByName(Mob.ArmorName);
+            ArmorProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.Armor);
+        }
+        if (Mob.Relation == Relation.Ally)
+        {
+            BackgroundColor = $"background:{Colors.Green.Lighten5};";
+        }else if (Mob.Relation == Relation.Neutral)
+        {
+            BackgroundColor = $"background:{Colors.Yellow.Lighten5};";
+        }
+        else if (Mob.Relation == Relation.Enemy)
+        {
+            BackgroundColor = $"background:{Colors.Red.Lighten5};";
+        }
+
+        BattleProperties = Mob.BattleProperties.GetAll();
+        BattlePropertyModel.CalculateBattleStats();
+        if (BattleProperties is null)
+            throw new Exception();
+    }
 }

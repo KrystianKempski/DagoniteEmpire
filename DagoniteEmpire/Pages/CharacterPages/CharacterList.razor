@@ -2,15 +2,14 @@
 @using DA_Business.Services
 @using Syncfusion.Blazor.Navigations;
 @inject ICharacterRepository _characterRepository
-@inject IMobRepository _mobRepository
 @inject ISpecialSkillRepository _specialSkillRepository
+@inject ICampaignRepository _campaignRepository
 @inject NavigationManager _navigationManager
+@inject IMobRepository _mobRepository
 @inject IUserService _userService;
 @inject IJSRuntime _jsRuntime
 @inject IDialogService DialogService
 @inject IBrowserViewportService _vieportService
-@using DialogOptions = MudBlazor.DialogOptions
-
 <_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this character"></_DeleteConfirmation>
 
 @if (IsLoading)
@@ -41,7 +40,7 @@ else
                         Toolbar="@ToolbarItems">
                     
                     <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
-                    <GridEvents OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
+                    <GridEvents  OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
                         <GridColumns>
                             @if (UserInfo?.IsAdminOrMG == true){
                                  <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
@@ -57,23 +56,26 @@ else
 
         @if (UserInfo?.IsAdminOrMG == true)
         {
-            <div class="row mt-4">
-                <div class="col-12">
-                    <SfGrid ID="GridMob" DataSource="@Mobs" AllowPaging="true"
-                            Toolbar="@ToolbarItems">
-
-                        <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
-                        <GridEvents OnActionBegin="MobActionHandler" TValue="MobDTO"></GridEvents>
-                        <GridColumns>
-                            <GridColumn Field=@nameof(MobDTO.Campaign.Name) HeaderText="Campaign" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                            <GridColumn Field=@nameof(MobDTO.Name) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                            <GridColumn Field=@nameof(MobDTO.RaceName) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                            <GridColumn Field=@nameof(MobDTO.ProfessionName) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                        </GridColumns>
-                    </SfGrid>
-                </div>
-            </div>
-
+            @* <MudDataGrid HeaderClass="header-grid" Items="Mobs" ReadOnly="true" Filterable="false" Class="px-2 py-2"
+                         Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None">
+                <ToolBarContent>
+                    <MudButton Class="pa-0 justify-content-start w-auto" OnClick="@(() => AddMob())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add mob</MudButton>
+                </ToolBarContent>
+                <Columns>
+                    <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;" Property="x => x.Campaign.Name" Title="Campaign name"  />
+                    <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Name"  />
+                    <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.RaceName" Title="Race" />
+                    <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.ProfessionName" Title="Class" />                    
+                    <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="width:80px; padding:4px 4px 4px 12px;" Title="Actions" >
+                        <CellTemplate>
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditMob(@context.Item))" />
+                            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteMob(@context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid> *@
+            
+            <MobsListComponent></MobsListComponent>
         }
     </div>
     
@@ -82,7 +84,6 @@ else
 @code {
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IEnumerable<CharacterDTO> ApprovedCharacters { get; set; } = new List<CharacterDTO>();
-    private ICollection<MobDTO> Mobs { get; set; } = new List<MobDTO>();
     public bool IsLoading { get; set; } = true;
     private int DeleteCharacterId { get; set; } = 0;
     private string Title { get; set; } = "Your characters";
@@ -120,7 +121,6 @@ else
                 IsLoading = true;
                 StateHasChanged();
                 await LoadCharacters();
-                await LoadMobs();
 
                 IsLoading = false;
                 StateHasChanged();
@@ -166,15 +166,6 @@ else
             ApprovedCharacters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
         }
     }
-    private async Task LoadMobs()
-    {
-
-
-        if (UserInfo is not null && UserInfo?.IsAdminOrMG == true)
-        {
-            Mobs = (await _mobRepository.GetAll()).ToList();
-        }
-    }
 
     public void ActionHandler(ActionEventArgs<CharacterDTO> args)
     {
@@ -190,49 +181,7 @@ else
             HandleDelete(args.RowData.Id);
         }
     }
-    public async Task MobActionHandler(ActionEventArgs<MobDTO> args)
-    {
-        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Add))
-        {
-            MobDTO NewMob = new();
-            var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, NewMob },
-                                                                     { x => x.IsEdit, false } };
 
-
-            var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add Mob", parameters, await SetDialogOptions());
-            var result = await dialog.Result;
-
-            if (!result.Canceled)
-            {
-                NewMob = (MobDTO)result.Data;
-                Mobs.Add(NewMob);
-            }
-        }
-        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.BeginEdit))
-        {
-            MobDTO NewMob = args.Data;
-            var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, NewMob },
-                                                                     { x => x.IsEdit, true } };
-
-
-            var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add Mob", parameters, await SetDialogOptions());
-            var result = await dialog.Result;
-
-            if (!result.Canceled)
-            {
-                args.Data = (MobDTO)result.Data;
-                Mobs.Add(NewMob);
-            }
-        }
-        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete))
-        {
-            DeleteMob(args.RowData.Id);
-        }
-    }
-    private void DeleteMob(int id)
-    {
-        
-    }
 
     private void HandleDelete(int id)
     {
@@ -264,12 +213,6 @@ else
         CurrentlyUsedCharacterId = args.Value;
         await _userService.SetSelectedCharId(CurrentlyUsedCharacterId);
     }
-    private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
-    {
-        DialogOptions options = new() { MaxWidth = maxWidth };
-        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
-            options.FullScreen = true;
-        return options;
-    }
+
 }
 

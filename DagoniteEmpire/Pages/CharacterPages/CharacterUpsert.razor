@@ -74,13 +74,13 @@
                             @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
                                 <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
-                                    <option checked="@(AllParams.Character!.NPCType == "Hero")" value="Hero">
-                                        Hero
+                                            <option selected="selected" value="@SD.NPCType.Hero">
+                                                @SD.NPCType.Hero
                                     </option>
                                     @if (IsDukeAllowed)
                                     {
-                                        <option checked="@(AllParams.Character!.NPCType == "Duke")" value="Duke">
-                                            Duke
+                                                <option value="@SD.NPCType.Duke">
+                                                    @SD.NPCType.Duke
                                         </option>
                                     }
                                 </InputSelect>
@@ -282,10 +282,10 @@
                     AllParams.Character.UserName = UserInfo?.UserName;
                     IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer);
 
-                    if (IsDukeAllowed)
-                        AllParams.Character.NPCType = "Hero";
+                    if (IsDukeAllowed == false)
+                        AllParams.Character.NPCType = SD.NPCType.Hero;
                     else
-                        AllParams.Character.NPCType = "Duke";
+                        AllParams.Character.NPCType = SD.NPCType.Duke;
                     CharacterTypeHandle();
                 }
                 else
@@ -532,13 +532,13 @@
     private void CharacterTypeHandle()
     {
         IsLeaveAllowed = false;
-        if (AllParams.Character.NPCType == "Hero")
+        if (AllParams.Character.NPCType == SD.NPCType.Hero)
         {
             AllParams.Character.AttributePoints = 100;
             AllParams.Character.CurrentExpPoints = 250;
             AllParams.Profession.ClassLevel = 2;
         }
-        else if (AllParams.Character.NPCType == "Duke")
+        else if (AllParams.Character.NPCType == SD.NPCType.Duke)
         {
             AllParams.Character.AttributePoints = 100;
             AllParams.Character.CurrentExpPoints = 300;

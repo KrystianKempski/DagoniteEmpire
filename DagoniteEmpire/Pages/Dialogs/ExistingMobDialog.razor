@@ -1,0 +1,56 @@
+﻿
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@MyIcon.Helm" Color="Color.Primary" />
+            @Title mob character
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        
+        <MudDataGrid  MultiSelection="true" Items="Mobs" ReadOnly="true" Filterable="false" Class="px-2 py-2"
+                 Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectedItemsChanged="@SelectedItemsChanged">
+        <ToolBarContent>
+            <MudButton Class="pa-2 justify-content-start w-auto" OnClick="@(() => AddMob())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add mob</MudButton>
+        </ToolBarContent>
+        <Columns>
+            <SelectColumn T="MobDTO" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;" Property="x => x.Campaign.Name" Title="Campaign name" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Name" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.RaceName" Title="Race" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.ProfessionName" Title="Class" />
+            <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="width:80px; padding:4px 4px 4px 12px;" Title="Actions">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditMob(@context.Item))" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteMob(@context.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+     
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Error" OnClick="SaveBtn">Add to chapter</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+
+    void SaveBtn()
+    {
+
+    }
+
+    void SelectedItemsChanged()
+    {
+        
+    }
+
+}

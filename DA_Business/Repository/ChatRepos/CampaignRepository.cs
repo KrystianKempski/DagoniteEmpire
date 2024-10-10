@@ -6,6 +6,7 @@ using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
 
@@ -166,7 +167,6 @@ namespace DA_Business.Repository.ChatRepos
                                         contex.Characters.Update(detachedCharacter);
                                     }
                                 }
-
                             }
                         }
                     }
@@ -177,7 +177,15 @@ namespace DA_Business.Repository.ChatRepos
                         foreach (var childChar in updatedCampaign.Characters)
                         {
                             if (!obj.Characters.Any(c => c.Id == childChar.Id && c.Id != default(int)))
-                                obj.Characters.Add(childChar);
+                            {
+                                var existingCharacter = contex.Characters.Include(u=>u.Campaigns).FirstOrDefault(c => c.Id == childChar.Id && c.Id != default(int));
+                                if(existingCharacter is not null && existingCharacter.Campaigns is not null)
+                                {
+                                    //obj.Characters.Add(childChar);
+                                    existingCharacter.Campaigns.Add(obj);
+                                    contex.Characters.Update(existingCharacter);
+                                }
+                            }
                         }
                     }
 

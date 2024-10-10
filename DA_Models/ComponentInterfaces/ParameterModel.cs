@@ -13,9 +13,9 @@ namespace DA_Models.ComponentInterfaces
 
     public class ParameterModel<T>
     {
-        protected readonly AllParamsModel _allParams;
+        protected readonly AllParamsModel? _allParams;
 
-        public ParameterModel(AllParamsModel allParams)
+        public ParameterModel(AllParamsModel? allParams)
         {
             _allParams = allParams;
         }

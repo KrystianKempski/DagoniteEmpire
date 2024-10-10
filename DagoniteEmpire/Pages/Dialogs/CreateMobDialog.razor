@@ -1,6 +1,8 @@
-﻿
+﻿@inject IFileUpload _fileUpload;
 @inject ISnackbar Snackbar
 @inject IMobRepository _mobRepository
+@inject ICampaignRepository _campaignRepository
+@inject IChapterRepository _chapterRepository
 
 <MudDialog>
     <TitleContent>
@@ -11,102 +13,141 @@
     </TitleContent>
     <DialogContent>
 
-        <MudTextField Required="true" @bind-Value="@NewMob.Notes" Label="Notes" Lines="3" />
-        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Accept=".png, .jpg" MaximumFileCount="1">
-            <ButtonTemplate>
-                <MudFab HtmlTag="label"
-                        Color="Color.Secondary"
-                        Icon="@Icons.Material.Filled.Image"
-                        Label="Load picture"
-                        for="@context.Id" />
-            </ButtonTemplate>
-        </MudFileUpload>
+        <MudPaper Width="320px" Height="320px" Class="pa-2">
+            <div class="portrait-relative">
+                <div class="portrait-imageframe">
+                    <img src="@NewMob.ImageUrl" class="portrait-image" />
+                     <label class="input-label" for="input">@ChooseFile</label>
+                    <InputFile id="input" OnChange="HandleImageUpload" class="sr-only" accept=".jpg,.png,.jpeg"></InputFile>
+                </div>
+            </div>
+        </MudPaper>
 
         <MudStack Row="true">
             <MudTextField Required="true" @bind-Value="@NewMob.Name" Label="Name"  />
             <MudTextField Required="true" @bind-Value="@NewMob.RaceName" Label="Race"  />
             <MudTextField Required="true" @bind-Value="@NewMob.ProfessionName" Label="Class" />
+             <MudSelect Required="true" @bind-Value="@NewMob.Relation" Label="Relation">
+                <MudSelectItem Value="Relation.Ally">@Relation.Ally.ToString()</MudSelectItem>
+                <MudSelectItem Value="Relation.Neutral">@Relation.Neutral.ToString()</MudSelectItem>
+                <MudSelectItem Value="Relation.Enemy">@Relation.Enemy.ToString()</MudSelectItem>
+
+            </MudSelect> 
         </MudStack>
+
         <MudTextField Required="true" @bind-Value="@NewMob.Description" Label="Description" Lines="3" />
-        <MudTextField Required="true" @bind-Value="@NewMob.Notes" Label="Notes" Lines="3" />
+        <MudTextField @bind-Value="@NewMob.Notes" Label="Notes" Lines="3" />
         <MudGrid>
-            <MudItem xxl="4">
+            <MudItem xs="3">
                 <MudNumericField Required="true" @bind-Value="@NewMob.AttackSkillValue" Label="Attack skill" />
             </MudItem>
-            <MudItem xxl="4">
+            <MudItem xs="3">
                 <MudNumericField Required="true" @bind-Value="@NewMob.ShieldSkillValue" Label="Shield skill" />
             </MudItem>
-            <MudItem xxl="4">
+            <MudItem xs="3">
                 <MudNumericField Required="true" @bind-Value="@NewMob.DodgeSkillValue" Label="Dodge skill" />
             </MudItem>
-            <MudItem xxl="4">
+            <MudItem xs="3">
                 <MudNumericField Required="true" @bind-Value="@NewMob.ArmorSkillValue" Label="Armor skill" />
             </MudItem>
-            <MudItem xxl="4">
+            <MudItem xs="3">
                 <MudNumericField Required="true" @bind-Value="@NewMob.ParrySkillValue" Label="Parry skill" />
             </MudItem>
-            <MudItem xxl="4">
+            <MudItem xs="3">
                 <MudNumericField Required="true" @bind-Value="@NewMob.LiftingSkillValue" Label="Lifting skill" />
             </MudItem>
-            <MudItem xxl="4">
+            <MudItem xs="3">
                 <MudNumericField Required="true" @bind-Value="@NewMob.PainResSkillValue" Label="Pain resistance" />
             </MudItem>
-            <MudItem xxl="4">
+            <MudItem xs="3">
                 <MudNumericField Required="true" @bind-Value="@NewMob.WrestlingSkillValue" Label="Wrestling" />
             </MudItem>
 
         </MudGrid>
 
-        <MudPaper>
-            <MudSelect Required="true" @bind-Value="@NewMob.MainWeapon" Label="Month" Placeholder="Main weapon">
-                @foreach (var weapon in SD.BasicWeaponsMelee.All)
-                {
-                    <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
-                }
-                @foreach (var weapon in SD.BasicWeaponsShooting.All)
-                {
-                    <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
-                }
-            </MudSelect>
-            <MudSelect Required="true" @bind-Value="@NewMob.OffWeapon" Label="Month" Placeholder="Second weapon">
-                @foreach (var weapon in SD.BasicWeaponsMelee.All)
-                {
-                    <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
-                }
-                @foreach (var weapon in SD.BasicWeaponsShooting.All)
-                {
-                    <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
-                }
-            </MudSelect>
-            <MudSelect Required="true" @bind-Value="@NewMob.ShieldWeapon" Label="Month" Placeholder="Shield">
-                @foreach (var shield in SD.BasicShields.All)
-                {
-                    <MudSelectItem Value="@shield">@shield</MudSelectItem>
-                }
-            </MudSelect>
-            <MudSelect Required="true" @bind-Value="@NewMob.Armor" Label="Month" Placeholder="Armor">
-                @foreach (var armor in SD.BasicArmors.All)
-                {
-                    <MudSelectItem Value="@armor">@armor</MudSelectItem>
-                }
-            </MudSelect>
-        </MudPaper>
+         <MudGrid>
+            <MudItem xs="6">
+                <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.MainWeaponName" Label="Main weapon">
+                    <MudSelectItem Value="string.Empty">None</MudSelectItem>
+                    @foreach (string weapon in SD.BasicWeaponsMelee.All)
+                    {
+                        <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                    }
+                    @foreach (string weapon in SD.BasicWeaponsShooting.All)
+                    {
+                        <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+                <MudItem xs="6">
+                <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.OffWeaponName" Label="Second weapon">
+                    <MudSelectItem Value="string.Empty">None</MudSelectItem>
+                    @foreach (string weapon in SD.BasicWeaponsMelee.All)
+                    {
+                        <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                    }
+                    @foreach (string weapon in SD.BasicWeaponsShooting.All)
+                    {
+                        <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6">
+                <MudSelect ShrinkLabel="true"  @bind-Value="@NewMob.ShieldWeaponName" Label="Shield">
+                    <MudSelectItem Value="string.Empty">None</MudSelectItem>
+                    @foreach (string shield in SD.BasicShields.All)
+                    {
+                        <MudSelectItem Value="@shield">@shield</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6">
+                <MudSelect ShrinkLabel="true"  @bind-Value="@NewMob.ArmorName" Label="Armor">
+                    <MudSelectItem Value="string.Empty">None</MudSelectItem>
+                    @foreach (string armor in SD.BasicArmors.All)
+                    {
+                        <MudSelectItem Value="@armor">@armor</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+        <MudPaper Class="py-2" Elevation="0">
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudNumericField Required="true" @bind-Value="@NewMob.MaxWounds" Label="Maximum wounds" />
+                <MudNumericField @bind-Value="@NewMob.CurrentWounds" Label="Current wounds" />
+            </MudStack>
 
-        <MudText>Current status</MudText>
-        <MudText>@NewMob.Statuses</MudText>
-        <MudButton OnClick="ClearStates">Clear states</MudButton>
-        <MudSelect Value="SelectedState" T="string" ValueChanged="AddState" Label="AddState" AnchorOrigin="Origin.BottomCenter">
-            @foreach (var state in SD.TempStates.All)
-            {
-                <MudSelectItem Value="@state">@state</MudSelectItem>
-            }
-        </MudSelect>
-        
+            <MudText>Current status: @NewMob.States</MudText>
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudButton OnClick="ClearStates">Clear states</MudButton>
+                <MudSelect Value="SelectedState" T="string" ValueChanged="AddState" Label="AddState" AnchorOrigin="Origin.BottomCenter">
+                    @foreach (string state in SD.TempStates.All)
+                    {
+                        <MudSelectItem Value="@state">@state</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudStack>
+         
+        </MudPaper>
+        <MudStack Row="true" Justify="Justify.SpaceBetween">
+            <MudSelect Value="@NewMob.Campaign" T="CampaignDTO" ValueChanged="SelectCampaign" Label="Select Campaign" Placeholder="Select campagin" AnchorOrigin="Origin.BottomCenter">
+                @foreach (var campaign in Campaigns)
+                {
+                    <MudSelectItem Value="@campaign">@campaign.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect ReadOnly="IsCampaignSelected" Value="NewMob.Chapter" T="ChapterDTO" ValueChanged="SelectCharacter" Label="Select character" AnchorOrigin="Origin.BottomCenter">
+                @foreach (var chapter in Chapters)
+                {
+                    <MudSelectItem Value="@chapter">@chapter.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudStack>
 
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="CreateMob">@Title</MudButton>
+        <MudButton Color="Color.Error" OnClick="SaveMobBtn">@Title</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -117,6 +158,10 @@
     [Parameter] public bool IsEdit { get; set; } = false;
     private string Title = "Create";
     private string SelectedState = string.Empty;
+    private IEnumerable<CampaignDTO> Campaigns { get; set; } = new List<CampaignDTO>();
+    private IEnumerable<ChapterDTO> Chapters { get; set; } = new List<ChapterDTO>();
+    private bool IsCampaignSelected = true;
+    private string ChooseFile = "Choose file";
     private IList<IBrowserFile> files = new List<IBrowserFile>();
     private void Cancel()
     {
@@ -131,11 +176,12 @@
         }
         else
         {
-
+            Title = "Add";
         }
+        Campaigns = await _campaignRepository.GetAll();
     }
 
-    private void CreateMob()
+    private void SaveMobBtn()
     {
         if (IsEdit)
         {
@@ -159,10 +205,63 @@
 
     private void AddState(string newStatus)
     {
-        NewMob.Statuses += ", " + newStatus;
+        if (NewMob.States == string.Empty)
+            NewMob.States += newStatus;
+        else
+            NewMob.States += ", " + newStatus;
     }
     private void ClearStates()
     {
-        NewMob.Statuses = string.Empty;
+        NewMob.States = string.Empty;
     }
+
+    private async Task SelectCampaign(CampaignDTO campaign)
+    {
+        Chapters = await _chapterRepository.GetAll(campaign.Id);
+        if (campaign.Id > 0)
+        {
+            IsCampaignSelected = false;
+            NewMob.Campaign = campaign;
+            NewMob.CampaignId = campaign.Id;
+        }
+    }
+    private void SelectCharacter(ChapterDTO chapter)
+    {
+        if (chapter.Id > 0)
+        {
+            NewMob.Chapter = chapter;
+            NewMob.ChapterId = chapter.Id;
+        }
+    }
+
+    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            if (e.GetMultipleFiles().Count > 0)
+            {
+                ChooseFile = string.Empty;
+                foreach (var file in e.GetMultipleFiles())
+                {
+                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);
+                    if (fileInfo.Extension.ToLower() == ".jpg" ||
+                        fileInfo.Extension.ToLower() == ".png" ||
+                        fileInfo.Extension.ToLower() == ".jpeg")
+                    {
+                        NewMob.ImageUrl = await _fileUpload.UploadFile(file);
+                    }
+                    else
+                    {
+                        Snackbar.Add("Please select .jpg / .jpeg / .png file only",Severity.Warning);
+                    }
+                }
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error while image upload: " + ex.ToString(), Severity.Error);
+        }
+    }
+    
 }

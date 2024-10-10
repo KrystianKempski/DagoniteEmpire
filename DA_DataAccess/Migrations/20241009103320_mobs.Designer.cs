@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241004161859_swichableskills")]
-    partial class swichableskills
+    [Migration("20241009103320_mobs")]
+    partial class mobs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -256,6 +256,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int?>("RaceId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Relation")
+                        .HasColumnType("integer");
+
                     b.Property<int>("TraitBalance")
                         .HasColumnType("integer");
 
@@ -357,6 +360,104 @@ namespace DA_DataAccess.Migrations
                     b.HasIndex("EquipmentID");
 
                     b.ToTable("EquipmentSlots");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.Mob", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ArmorName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ArmorSkillValue")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AttackSkillValue")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CampaignId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentWounds")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("DodgeSkillValue")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("LiftingSkillValue")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MainWeaponName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("MaxWounds")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OffWeaponName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PainResSkillValue")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ParrySkillValue")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProfessionName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RaceName")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Relation")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ShieldSkillValue")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ShieldWeaponName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("States")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("WrestlingSkillValue")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Mobs");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Profession", b =>

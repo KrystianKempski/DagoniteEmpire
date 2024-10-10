@@ -54,6 +54,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(config =>
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
+builder.Services.AddScoped<IMobRepository, MobRepository>();
 builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();
 builder.Services.AddScoped<ISpecialSkillRepository, SpecialSkillRepository>();
 builder.Services.AddScoped<IBaseSkillRepository, BaseSkillRepository>();

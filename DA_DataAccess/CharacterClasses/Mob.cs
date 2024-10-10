@@ -12,23 +12,20 @@ namespace DA_DataAccess.CharacterClasses
     public class Mob
     {
         public int Id { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
-        public string? Notes { get; set; }
-        public string? ImageUrl { get; set; }
-        public string? MainWeaponName { get; set; } = null;
-        public string? OffWeaponName { get; set; } = null;
-        public string? ShieldWeaponName { get; set; } = null;
-        public string? ArmorName { get; set; } = null;
+        public string Name { get; set; } = string.Empty;
+        public Relation Relation { get; set; } = Relation.Enemy;
+        public string Description { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+        public string MainWeaponName { get; set; } = string.Empty;
+        public string OffWeaponName { get; set; } = string.Empty;
+        public string ShieldWeaponName { get; set; } = string.Empty;
+        public string ArmorName { get; set; } = string.Empty;
         public int CampaignId { get; set; }
         public int ChapterId { get; set; }
         public string? RaceName { get; set; }
         public bool IsApproved { get; set; }
-        public int ProfessionName { get; set; } = 0;
-        public int CurrentDay { get; set; } = 1;
-        public int CurrentMonth { get; set; } = 1;
-        public int CurrentYear { get; set; } = SD.Calendar.StartYear;
-
+        public string ProfessionName { get; set; } = string.Empty;
         //battle properties
 
         public int AttackSkillValue { get; set; } = 0;
@@ -36,10 +33,18 @@ namespace DA_DataAccess.CharacterClasses
         public int ShieldSkillValue { get; set; } = 0;
         public int ArmorSkillValue { get; set; } = 0;
         public int ParrySkillValue { get; set; } = 0;
+        public int PainResSkillValue { get; set; } = 0;
+        public int LiftingSkillValue { get; set; } = 0;
+        public int WrestlingSkillValue { get; set; } = 0;
 
         // wounds
         public int MaxWounds { get; set; } = 0;
         public int CurrentWounds { get; set; } = 0;
+
+        public string States { get; set; } = string.Empty;
+
+
+
 
     }
 }

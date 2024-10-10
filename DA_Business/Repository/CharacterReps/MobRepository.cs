@@ -30,10 +30,10 @@ namespace DA_Business.Repository.CharacterReps
         }
         public async Task<MobDTO> Create(MobDTO objDTO)
         {
-            var obj = _mapper.Map<MobDTO, Mob>(objDTO);
-            using var contex = await _db.CreateDbContextAsync();
             try
             {
+                var obj = _mapper.Map<MobDTO, Mob>(objDTO);
+                using var contex = await _db.CreateDbContextAsync();
                 var addedObj = contex.Mobs.Add(obj);
                 await contex.SaveChangesAsync();
                 return _mapper.Map<Mob, MobDTO>(addedObj.Entity);
@@ -65,6 +65,16 @@ namespace DA_Business.Repository.CharacterReps
             using var contex = await _db.CreateDbContextAsync();
              return _mapper.Map<IEnumerable<Mob>, IEnumerable<MobDTO>>(contex.Mobs);
         }
+        public async Task<IEnumerable<MobDTO>> GetAllForCampaing(int campaignId)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            return _mapper.Map<IEnumerable<Mob>, IEnumerable<MobDTO>>(contex.Mobs.Where(m=>m.CampaignId == campaignId));
+        }
+        public async Task<IEnumerable<MobDTO>> GetAllForChapter(int chapterId)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            return _mapper.Map<IEnumerable<Mob>, IEnumerable<MobDTO>>(contex.Mobs.Where(m => m.ChapterId == chapterId));
+        }
 
         public async Task<MobDTO> GetById(int id)
         {
@@ -76,23 +86,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             return new MobDTO();
         }
-        
-        public async Task<IEnumerable<MobDTO>> GetAllForCampaign(int campaignId)
-        {
-            //try
-            //{
-            //    using var contex = await _db.CreateDbContextAsync();
-            //    if (campaignId == null || campaignId == 0)
-            //        return new List<CharacterDTO>();
-            //    return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.Equipment)
-            //        .Where(u => u.Campaigns != null && u.Campaigns.FirstOrDefault(c => c.Id == campaignId) != null));
-            //}
-            //catch (Exception ex)
-            //{
-            //    throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
-            //}
-            return null;
-        }
+
 
         public async Task<MobDTO> Update(MobDTO objDTO)
         {

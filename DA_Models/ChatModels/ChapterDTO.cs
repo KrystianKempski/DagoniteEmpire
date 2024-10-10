@@ -21,5 +21,7 @@ namespace DA_DataAccess.Chat
         public ICollection<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
         public bool IsFinished { get; set; } = false;
         public int CampaignId { get; set; }
+
+        public override string ToString() => Name;
     }
 }

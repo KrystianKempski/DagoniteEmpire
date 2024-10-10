@@ -23,7 +23,7 @@ namespace DA_Models.ComponentModels
         //get currently used armor
         public EquipmentDTO? ArmorUsed = null;
 
-        public BattlePropertyModel(AllParamsModel allParams) : base(allParams)
+        public BattlePropertyModel(AllParamsModel? allParams) : base(allParams)
         {
             foreach (var prop in SD.BattleProperty.All)
             {
@@ -36,10 +36,11 @@ namespace DA_Models.ComponentModels
         }
 
 
-        public void CalculateBattleStats()
+        public virtual void CalculateBattleStats()
         {
             try
             {
+                if (_allParams is null) return;
                 string slotTypeMain = _allParams.Character.WeaponSet == 1 ? SD.SlotType.WeaponMain2 : SD.SlotType.WeaponMain1;
                 string slotTypeOff = _allParams.Character.WeaponSet == 1 ? SD.SlotType.WeaponOff2 : SD.SlotType.WeaponOff1;
                 bool isParrying = false;
@@ -49,8 +50,6 @@ namespace DA_Models.ComponentModels
                     prop.BaseBonus = 0;
                     prop.GearBonus = 0;
                 }
-
-
 
                 foreach (var slot in _allParams.EquipmentSlots)
                 {
@@ -245,6 +244,7 @@ namespace DA_Models.ComponentModels
 
         private void AddGearBonusToSpecialSkill(string skillName, int value)
         {
+            if (_allParams is null) return;
             var skill = _allParams.SpecialSkills.Get(skillName);
             if (skill != null)
                 skill.GearBonus += value;

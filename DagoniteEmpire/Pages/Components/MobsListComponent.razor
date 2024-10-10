@@ -1,0 +1,121 @@
+﻿@using Syncfusion.Blazor.Navigations
+@inject IMobRepository _mobRepository
+@inject ICampaignRepository _campaignRepository
+@inject IUserService _userService;
+@inject ISnackbar _snackBar
+@inject IDialogService DialogService
+@inject IBrowserViewportService _vieportService
+
+<div class="w-100">
+    <MudDataGrid Items="Mobs" ReadOnly="true" Filterable="false" Class="px-2 py-2"
+                 Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None">
+        <ToolBarContent>
+            <MudButton Class="pa-2 justify-content-start w-auto" OnClick="@(() => AddMob())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add mob</MudButton>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;" Property="x => x.Campaign.Name" Title="Campaign name" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Name" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.RaceName" Title="Race" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.ProfessionName" Title="Class" />
+            <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="width:80px; padding:4px 4px 4px 12px;" Title="Actions">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditMob(@context.Item))" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteMob(@context.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+</div>
+
+@code {
+
+    private ICollection<MobDTO> Mobs { get; set; } = new List<MobDTO>();
+    public bool IsLoading { get; set; } = true;
+
+     private List<object> ToolbarMods = new List<object>() {
+        new ItemModel() { Text = "Add Mod", PrefixIcon = "e-add", Id = "GridMob_add"},//Here Grid is SfGrid ID
+        new ItemModel(){ Text = "Edit Mod", PrefixIcon= "e-edit", Id="GridMob_edit"},
+        new ItemModel(){ Text = "Delete Mod", PrefixIcon= "e-delete", Id="GridMob_delete"},
+    };
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            if (firstRender)
+            {
+                IsLoading = true;
+                StateHasChanged();
+                await LoadMobs();
+
+                IsLoading = false;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            _snackBar.Add("Error while initialize: " + ex.ToString(), Severity.Error);
+           // await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+        }
+    }  
+
+
+    private async Task LoadMobs()
+    {
+
+        Mobs = (await _mobRepository.GetAll()).ToList();
+        foreach (var mob in Mobs)
+        {
+            if (mob.CampaignId > 0)
+                mob.Campaign = await _campaignRepository.GetById(mob.CampaignId);
+        }
+    }
+
+
+    public async Task AddMob()
+    {
+        MobDTO NewMob = new();
+        var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, NewMob },
+                                                                  { x => x.IsEdit, false } };
+
+        var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add mob", parameters, await SetDialogOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewMob = (MobDTO)result.Data;
+            Mobs.Add(NewMob);
+        }
+    }
+    public async Task EditMob(MobDTO newMob)
+    {
+        var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, newMob },
+                                                                  { x => x.IsEdit, true } };
+
+        var dialog = await DialogService.ShowAsync<CreateMobDialog>("Edit mob", parameters, await SetDialogOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            newMob = (MobDTO)result.Data;
+            //Mobs.Add(NewMob);
+        }
+    }
+
+    private void DeleteMob(MobDTO mob)
+    {
+        Mobs.Remove(mob);
+        if (mob.Id != 0)
+            _mobRepository.Delete(mob.Id);
+    }
+
+    private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
+    }
+}

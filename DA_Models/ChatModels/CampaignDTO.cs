@@ -19,5 +19,7 @@ namespace DA_DataAccess.Chat
         public ICollection<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
         public string GameMaster { get; set; } = string.Empty;
         public bool IsFinished { get; set; } = false;
+
+        public override string ToString() => Name;
     }
 }

@@ -7,13 +7,13 @@
 @inject IDialogService DialogService
 @inject IJSRuntime _jsRuntime
 @inject ICharacterRepository _characterRepository
+@inject IMobRepository _mobRepository
 @inject IChapterRepository _chapterRepository
 @inject IPostRepository _postRepository
 @inject IUserService _userService
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
-@* @inject PanelActivation _panelActivation
-@implements IDisposable *@
+@inject IBrowserViewportService _vieportService
 
 @using Microsoft.AspNetCore.SignalR.Client;
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
@@ -23,11 +23,21 @@
 }else{
 
 <div class="character-panel">
+    <MudStack Row="true">
+        <MudButton OnClick="GenerateFightSequence">Generate fight </MudButton>
+        <MudButton OnClick="AddNewMob">Add new mob</MudButton>
+        <MudButton OnClick="AddExistingMob">Existing mobs</MudButton>
+
+    </MudStack>
     <MudPaper Elevation="1">
         <MudStack Spacing="2">
             @foreach (var charac in Chapter.Characters)
             {
-                <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" CharacterId="charac.Id"></PanelCharacterComponent>
+                <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+            }
+            @foreach (var mob in Mobs)
+            {
+                <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
             }
 
         </MudStack>
@@ -39,8 +49,6 @@
 </div>
 
     <div id="mam" class="margin-side container-lg" >
-
-       @*  <div class="margin "> *@
 
         <MudBreadcrumbs Class="px-0 py-2" Items="_items"></MudBreadcrumbs>
         @if (Chapter is not null)
@@ -136,7 +144,6 @@
                 </div>
         </MudPaper>
          </div>   
-   @*  </div> *@
     
 </div>
 }
@@ -175,6 +182,7 @@
     private List<PostDTO> Posts { get; set; } = new List<PostDTO>();
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IDictionary<int, AllParamsModel?> CharacterAllParams { get; set; } = new Dictionary<int, AllParamsModel?>();
+    private ICollection<MobDTO> Mobs = new List<MobDTO>();
     public PostDTO NewPost { get; set; } = new();
     public bool IsLoading { get; set; } = true;
     //public bool IsAdminOrMG { get; set; } = true;
@@ -256,11 +264,14 @@
 
         Chapter = await _chapterRepository.GetById(Id);
         Posts = (await _postRepository.GetAll(Id)).ToList();
+        // load characters 
         foreach(var charac in Chapter.Characters)
         {
             CharacterAllParams[charac.Id] = null;
         }
-        //Characters = (await _characterRepository.GetAll()).ToList();
+
+        // load mobs
+        Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
 
         if (UserInfo?.IsAdminOrMG == true)
         {
@@ -343,8 +354,36 @@
         //pass ID(column name) of multiline textbox
         _jsRuntime.InvokeVoidAsync("ResizeRichTextArea", $"{args}");
     }
-    // public void Dispose()
-    // {
-    //     _panelActivation.LeftPanelActive = false;
-    // }
+
+
+    private async Task GenerateFightSequence()
+    {
+
+    }
+    private async Task AddNewMob()
+    {
+        MobDTO NewMob = new();
+        var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, NewMob },
+                                                                  { x => x.IsEdit, false } };
+
+        var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add mob", parameters, await SetDialogOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewMob = (MobDTO)result.Data;
+            Mobs.Add(NewMob);
+        }
+    }
+    private void AddExistingMob(){
+
+    }
+
+    private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
+    }
 }

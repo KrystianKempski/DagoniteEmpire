@@ -40,8 +40,15 @@ namespace DA_Common
         public const string TraitType_Unique = "Unique";
 
         public const string NPCName_GameMaster = "Game Master";
+        public readonly struct NPCType
+        {
+            public const string Hero = "Hero";
+            public const string Duke = "Duke";
+            public const string PC = "PC";
+        }
+
         // Weapon qualities
-  
+
         public const string WeaponParametersDescr = "Weapon parameters";
         public readonly struct WeaponQuality
         {
@@ -516,6 +523,13 @@ namespace DA_Common
         public const string Chest = "icons/chest.svg";
     }
 
+    public enum Relation
+    {
+        Teammate,
+        Ally,
+        Neutral,
+        Enemy,
+    }
 
     public enum SpellcasterType
     {
