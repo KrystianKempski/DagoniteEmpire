@@ -13,6 +13,10 @@
                 {
                     <th scope="col" class="trait-value-row text-center">Value</th>
                 }
+                @if (TraitType == SD.TraitType_Temporary)
+                {
+                    <th scope="col" class="trait-value-row text-center">Duration</th>
+                }
                 @if (IsInfoMode == false)
                 {                      
                     <th scope="col" class="action-row text-center">Actions</th>
@@ -29,7 +33,7 @@
                     <td>
                         <label class="name-label">@obj.SummaryDescr</label>
                     </td>
-                    @if (TraitType == SD.TraitType_Character)
+                    @if (TraitType == SD.TraitType_Character || TraitType == SD.TraitType_Temporary)
                     {
                         <td class="text-center">
                             <label class="name-label text-center">@obj.TraitValue</label>

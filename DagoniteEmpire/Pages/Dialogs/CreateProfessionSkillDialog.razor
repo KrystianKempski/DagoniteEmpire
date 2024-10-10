@@ -336,7 +336,10 @@
     }
     private void ClearSkill()
     {
-        NewTrait = new();
+        NewTrait.Descr= string.Empty;
+        NewTrait.Name = string.Empty;
+        NewTrait.TraitValue = 0;
+        NewTrait.Bonuses = new List<BonusDTO>();
         IsInfoMode = false;
         StateHasChanged();
     }

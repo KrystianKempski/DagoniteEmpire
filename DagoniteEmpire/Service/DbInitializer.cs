@@ -567,7 +567,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter(true)
                     {
                         Name = SD.TempStates.Stunned,
-                        Descr = "This character is dazed, it cannot perform any actions and its defence is imaired",
+                        Descr = "This character is dazed, it cannot perform any actions and its defence is impaired",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,

@@ -17,22 +17,22 @@
             <div class="portrait-relative">
                 <div class="portrait-imageframe">
                     <img src="@NewMob.ImageUrl" class="portrait-image" />
-                     <label class="input-label" for="input">@ChooseFile</label>
+                    <label class="input-label" for="input">@ChooseFile</label>
                     <InputFile id="input" OnChange="HandleImageUpload" class="sr-only" accept=".jpg,.png,.jpeg"></InputFile>
                 </div>
             </div>
         </MudPaper>
 
         <MudStack Row="true">
-            <MudTextField Required="true" @bind-Value="@NewMob.Name" Label="Name"  />
-            <MudTextField Required="true" @bind-Value="@NewMob.RaceName" Label="Race"  />
+            <MudTextField Required="true" @bind-Value="@NewMob.Name" Label="Name" />
+            <MudTextField Required="true" @bind-Value="@NewMob.RaceName" Label="Race" />
             <MudTextField Required="true" @bind-Value="@NewMob.ProfessionName" Label="Class" />
-             <MudSelect Required="true" @bind-Value="@NewMob.Relation" Label="Relation">
+            <MudSelect Required="true" @bind-Value="@NewMob.Relation" Label="Relation">
                 <MudSelectItem Value="Relation.Ally">@Relation.Ally.ToString()</MudSelectItem>
                 <MudSelectItem Value="Relation.Neutral">@Relation.Neutral.ToString()</MudSelectItem>
                 <MudSelectItem Value="Relation.Enemy">@Relation.Enemy.ToString()</MudSelectItem>
 
-            </MudSelect> 
+            </MudSelect>
         </MudStack>
 
         <MudTextField Required="true" @bind-Value="@NewMob.Description" Label="Description" Lines="3" />
@@ -65,7 +65,7 @@
 
         </MudGrid>
 
-         <MudGrid>
+        <MudGrid>
             <MudItem xs="6">
                 <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.MainWeaponName" Label="Main weapon">
                     <MudSelectItem Value="string.Empty">None</MudSelectItem>
@@ -79,7 +79,7 @@
                     }
                 </MudSelect>
             </MudItem>
-                <MudItem xs="6">
+            <MudItem xs="6">
                 <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.OffWeaponName" Label="Second weapon">
                     <MudSelectItem Value="string.Empty">None</MudSelectItem>
                     @foreach (string weapon in SD.BasicWeaponsMelee.All)
@@ -93,7 +93,7 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="6">
-                <MudSelect ShrinkLabel="true"  @bind-Value="@NewMob.ShieldWeaponName" Label="Shield">
+                <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.ShieldWeaponName" Label="Shield">
                     <MudSelectItem Value="string.Empty">None</MudSelectItem>
                     @foreach (string shield in SD.BasicShields.All)
                     {
@@ -102,7 +102,7 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="6">
-                <MudSelect ShrinkLabel="true"  @bind-Value="@NewMob.ArmorName" Label="Armor">
+                <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.ArmorName" Label="Armor">
                     <MudSelectItem Value="string.Empty">None</MudSelectItem>
                     @foreach (string armor in SD.BasicArmors.All)
                     {
@@ -127,7 +127,7 @@
                     }
                 </MudSelect>
             </MudStack>
-         
+
         </MudPaper>
         <MudStack Row="true" Justify="Justify.SpaceBetween">
             <MudSelect Value="@NewMob.Campaign" T="CampaignDTO" ValueChanged="SelectCampaign" Label="Select Campaign" Placeholder="Select campagin" AnchorOrigin="Origin.BottomCenter">
@@ -185,8 +185,8 @@
         Campaigns = await _campaignRepository.GetAll();
         if (CampaignId > 0)
         {
-            NewMob.Campaign = Campaigns.FirstOrDefault(c=>c.Id ==CampaignId) ;
-            if(NewMob.Campaign is not null)
+            NewMob.Campaign = Campaigns.FirstOrDefault(c => c.Id == CampaignId);
+            if (NewMob.Campaign is not null)
                 NewMob.CampaignId = CampaignId;
         }
         if (ChapterId > 0)
@@ -202,14 +202,16 @@
         if (IsEdit)
         {
             _mobRepository.Update(NewMob);
-        }else{
+        }
+        else
+        {
             _mobRepository.Create(NewMob);
         }
 
         MudDialog.Close(DialogResult.Ok(NewMob));
         if (IsEdit)
             Snackbar.Add("Mob edited", Severity.Success);
-        else 
+        else
             Snackbar.Add("Mob created", Severity.Success);
     }
 
@@ -268,7 +270,7 @@
                     }
                     else
                     {
-                        Snackbar.Add("Please select .jpg / .jpeg / .png file only",Severity.Warning);
+                        Snackbar.Add("Please select .jpg / .jpeg / .png file only", Severity.Warning);
                     }
                 }
                 StateHasChanged();
@@ -279,5 +281,5 @@
             Snackbar.Add("Error while image upload: " + ex.ToString(), Severity.Error);
         }
     }
-    
+
 }

@@ -18,35 +18,37 @@
 @using Microsoft.AspNetCore.SignalR.Client;
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
 
-@if (IsLoading == true){
-        <LoadingPage></LoadingPage>
-}else{
-
-<div class="character-panel">
-    <MudStack Row="true">
-        <MudButton OnClick="GenerateFightSequence">Generate fight </MudButton>
-        <MudButton OnClick="AddNewMob">Add new mob</MudButton>
-        <MudButton OnClick="AddExistingMob">Existing mobs</MudButton>
-
-    </MudStack>
-    <MudPaper Elevation="1">
-        <MudStack Spacing="2">
-            @foreach (var charac in Chapter.Characters)
+@if (IsLoading == true)
+{
+    <LoadingPage></LoadingPage>
+}
+else
+{
+    @if (IsLoadingCharacters == false)
+    {
+        <div class="character-panel">
+            @if(UserInfo?.IsAdminOrMG == true)
             {
-                <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+                <MudStack Row="true">
+                    <MudButton OnClick="GenerateFightSequence">Generate fight </MudButton>
+                    <MudButton OnClick="AddNewMob">Add new mob</MudButton>
+                    <MudButton OnClick="AddExistingMob">Existing mobs</MudButton>
+                </MudStack>
             }
-            @foreach (var mob in Mobs)
-            {
-                <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
-            }
-
-        </MudStack>
-
-
-    </MudPaper>
-    
-
-</div>
+            <MudPaper Elevation="1">
+                <MudStack Spacing="2">
+                    @foreach (var charac in Chapter.Characters)
+                    {
+                        <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+                    }
+                    @foreach (var mob in Mobs)
+                    {
+                        <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
+                    }
+                </MudStack>
+            </MudPaper>
+        </div>
+    }    
 
     <div id="mam" class="margin-side container-lg" >
 
@@ -83,8 +85,7 @@
                                         {
                                             <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                         }
-                                    </MudStack>
-                                
+                                    </MudStack>                                
                                     <SfRichTextEditor ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
                                         <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
                                         <RichTextEditorToolbarSettings Items="@NoTools" />
@@ -149,35 +150,28 @@
 }
 
 <style>
-    /*
-        .e-richtexteditor .e-rte-content, .e-richtexteditor .e-source-content{
-        border: none;
-        } */
-
-    .e-richtexteditor.e-rte-tb-expand .e-rte-content, .e-richtexteditor.e-rte-tb-expand .e-source-content{
+    .e-richtexteditor.e-rte-tb-expand .e-rte-content, .e-richtexteditor.e-rte-tb-expand .e-source-content
+    {
         border: none;
     }
 
-    .e-richtexteditor.e-rte-tb-expand{
+    .e-richtexteditor.e-rte-tb-expand
+    {
         border: none;
     }
 
-    .e-richtexteditor .e-rte-content .e-content {
+    .e-richtexteditor .e-rte-content .e-content 
+    {
         padding: 4px;
-
     }
-
-   
-
 </style>
 
 
 
 @code{
-    [Parameter]
-    public int Id { get; set; }
-    [Parameter]
-    public int CharId { get; set; }
+    [Parameter] public int Id { get; set; }
+    [Parameter] public int CharId { get; set; }
+
     private ChapterDTO Chapter { get; set; } 
     private List<PostDTO> Posts { get; set; } = new List<PostDTO>();
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
@@ -185,7 +179,7 @@
     private ICollection<MobDTO> Mobs = new List<MobDTO>();
     public PostDTO NewPost { get; set; } = new();
     public bool IsLoading { get; set; } = true;
-    //public bool IsAdminOrMG { get; set; } = true;
+    public bool IsLoadingCharacters { get; set; } = true;    
     private string Title { get; set; } = "Campaign name";
     private CharacterDTO SelectedCharacter  = null;
     private bool IsEditMode = false;
@@ -290,6 +284,7 @@
         Title = Chapter.Name;
 
         IsLoading = false;
+        IsLoadingCharacters = false;
         StateHasChanged();
 
     }
@@ -341,7 +336,7 @@
         SendButtonText = "Edit Post";
 
     }
-    private async Task CancelEdit()
+    private void CancelEdit()
     {
         NewPost = new();
         IsEditMode = false;
@@ -358,25 +353,49 @@
 
     private async Task GenerateFightSequence()
     {
-
+        // var parameters = new DialogParameters<CreateFightSequenceDialog> {  { x => x.ResultString, NewMob },
+        //                                                                     { x => x.IsEdit, false },
+        //                                                                     { x => x.CampaignId, Chapter.CampaignId },
+        //                                                                     { x => x.ChapterId, Id }};
     }
     private async Task AddNewMob()
     {
         MobDTO NewMob = new();
-        var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, NewMob },
-                                                                  { x => x.IsEdit, false } };
+        var parameters = new DialogParameters<CreateMobDialog> {    { x => x.NewMob, NewMob },
+                                                                    { x => x.IsEdit, false },
+                                                                    { x => x.CampaignId, Chapter.CampaignId },
+                                                                    { x => x.ChapterId, Id }};
 
         var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add mob", parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
         {
-            NewMob = (MobDTO)result.Data;
-            Mobs.Add(NewMob);
+            IsLoadingCharacters = true;
+            StateHasChanged();
+            Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
+            IsLoadingCharacters = false;
+            StateHasChanged();
         }
     }
-    private void AddExistingMob(){
+    private async Task AddExistingMob()
+    {
+        
+        var parameters = new DialogParameters<ExistingMobsDialog> { { x => x.Mobs, Mobs },
+                                                                    { x => x.ChapterId, Id },
+                                                                    { x => x.CampaignId, Chapter.CampaignId }};
 
+        var dialog = await DialogService.ShowAsync<ExistingMobsDialog>("Existing mobs", parameters, await SetDialogOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            IsLoadingCharacters = true;
+            StateHasChanged();
+            Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
+            IsLoadingCharacters = false;
+            StateHasChanged();
+        }
     }
 
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)

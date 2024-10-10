@@ -97,6 +97,22 @@ namespace DA_Common
             public static readonly string[] All = { AttackBase, AttackDodge, AttackArmor, AttackShield, AttackParry,DamageBonus,
                                                     ArmorClass, DefenceDodge, DefenceArmor, DefenceShield, DefenceParry };
         }
+        public readonly struct AttackType
+        {
+            public const string Normal = "Normal";
+            public const string Cautious = "Cautious";
+            public const string Raging = "Raging";
+            public const string Strong = "Strong";
+            public const string Targeted = "Targeted";
+            public const string Charge = "Charge";
+        }
+        public readonly struct DefenceStance
+        {
+            public const string Normal = "Normal";
+            public const string Cautious = "Cautious";
+            public const string Full = "Full";
+            public const string Unbalanced = "Unbalanced";
+        }
 
         public readonly struct Attributes
         {
@@ -127,8 +143,6 @@ namespace DA_Common
             public const string Medicine = "Medicine";
             public static readonly string[] All = { Melee, Shooting, Acrobatics, SleightOfHands, Athletics, Talk, Deceit, Perception, Knowledge, Craft, Survival, AnimalHandle, Medicine };
         }
-
-        
 
         public readonly struct SpecialSkills
         {
@@ -349,8 +363,11 @@ namespace DA_Common
             public const string Invisible = "Invisible";
             public const string Flanking = "Flanking";
             public const string Surrounded = "Surrounded";
+            public const string Unbalanced = "Unbalanced";
+            public const string Cautious = "Cautious";
+            public const string FullDefence = "Full defence";
 
-            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded };
+            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence };
         }
 
         public readonly struct ProfessionSkills

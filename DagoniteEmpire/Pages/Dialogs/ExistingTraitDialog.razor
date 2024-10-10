@@ -15,17 +15,19 @@
         </TitleContent>
         <DialogContent>
         <div class="main-table">
-
-            <SfGrid  DataSource="@Traits" @ref="Grid" AllowSelection="true" AllowFiltering="true" AllowPaging="true" Width="100%" Height="100%">
-                <GridPageSettings PageSize="10"></GridPageSettings>
-                <GridFilterSettings ImmediateModeDelay=500 Mode="FilterBarMode.Immediate" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
-                <GridSelectionSettings Mode="selectionMode" Type="selectionType" CheckboxMode="checkboxMode" CheckboxOnly="true" ></GridSelectionSettings>
-                <GridColumns>
-                    <GridColumn Type="ColumnType.CheckBox" Width="20"></GridColumn>
-                    <GridColumn Field=@nameof(TraitDTO.Name) HeaderText="Name" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="80"></GridColumn>
-                    <GridColumn Field=@nameof(TraitDTO.SummaryDescr) HeaderText="Description" FilterSettings="FilterSettings" Width="300"></GridColumn>
-                </GridColumns>
-            </SfGrid>
+            <MudDataGrid @ref="Grid" ReadOnly="false" T="TraitDTO" MultiSelection="true" Items="Traits" Filterable="true" Class="px-2 py-2" EditMode="DataGridEditMode.Cell" Bordered="true" Dense="true"
+                         FooterClass="d-none" EditTrigger="DataGridEditTrigger.Manual"
+                         Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectedItemsChanged="@SelectedItemsChanged">
+                <Columns>
+                    <SelectColumn  T="TraitDTO" />
+                    <PropertyColumn IsEditable="false" Property="x => x.Name" Title="Name" />
+                    <PropertyColumn IsEditable="false" Property="x => x.SummaryDescr" Title="Description" />
+                    @if (TraitType == SD.TraitType_Temporary)
+                    {
+                        <PropertyColumn IsEditable="true" Property="x => x.TraitValue" Title="Duration" />
+                    }
+                </Columns>
+            </MudDataGrid>
         </div>
     </DialogContent>
         <DialogActions>
@@ -44,13 +46,11 @@
     [Parameter] public bool MultiRowSelection { get; set; } = true;
     [Parameter] public int MinLevel { get; set; } = 0;
     private string TraitName = "";
-    private SelectionType selectionType = SelectionType.Multiple;
-    private SelectionMode selectionMode = SelectionMode.Row;
+    private bool IsCellEditMode = false;
     private CheckboxSelectionType checkboxMode = CheckboxSelectionType.Default;
-
-    private IEnumerable<TraitDTO> Traits;
-    private SfGrid<TraitDTO> Grid;
-    private FilterSettings FilterSettings = new FilterSettings { Operator = Syncfusion.Blazor.Operator.Contains, Type = Syncfusion.Blazor.Grids.FilterType.FilterBar };
+    private MudDataGrid<TraitDTO> Grid = null;
+    private IEnumerable<TraitDTO> Traits { get; set; }
+    private List<TraitDTO> ListOfTraits { get; set; }
     public string HeaderName { get; set; } = "Add existing traits";
 
     protected override async Task OnInitializedAsync()
@@ -60,7 +60,10 @@
         else if (TraitType == SD.TraitType_Race)
             Traits = await _traitRaceRepository.GetAllApproved();
         else if (TraitType == SD.TraitType_Temporary)
+        {
             Traits = (await _traitCharacterRepository.GetAllApproved()).ToList().Where(t => t.IsTemporary == true);
+            //ListOfTraits = Traits.ToList();
+        }
         else if (TraitType == SD.TraitType_Profession)
         {
             Traits = (await _traitProfessionRepository.GetAllApproved()).ToList().Where(t => t.IsActiveSkill == false && t.Level <= MinLevel);
@@ -72,13 +75,9 @@
 
         if (MultiRowSelection)
         {
-            selectionType = SelectionType.Multiple;
-            checkboxMode = CheckboxSelectionType.Default;
-            selectionMode = SelectionMode.Row;
+            IsCellEditMode = false;
         }else{
-            selectionType = SelectionType.Single;
-            checkboxMode = CheckboxSelectionType.ResetOnRowClick;
-            selectionMode = SelectionMode.Cell;
+            IsCellEditMode = false;
         }
 
         switch (TraitType)
@@ -94,9 +93,21 @@
         StateHasChanged();
     }
 
-    private void OnSaveTraitBtnClick()
+
+    private void SelectedItemsChanged(HashSet<TraitDTO> traits)
     {
-        ChosenTraits = Grid.SelectedRecords;
+        var item = Grid.SelectedItem;
+        Grid.Cli
+        traits = new HashSet<TraitDTO>();
+        traits.Add(item);
+        ChosenTraits = traits.ToList();
+        StateHasChanged();
+    }
+
+
+    private async Task OnSaveTraitBtnClick()
+    {
+        
         MudDialog.Close(DialogResult.Ok(ChosenTraits));
         if (Traits.Any())
         {

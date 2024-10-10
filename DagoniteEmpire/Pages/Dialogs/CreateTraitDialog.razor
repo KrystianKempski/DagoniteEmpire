@@ -19,10 +19,15 @@
                         <label class="fw-bold py-1">@NewTrait.TraitLabel name</label>
                         <SfTextBox Readonly="IsInfoMode" Placeholder="Insert trait name" @bind-Value="@NewTrait.Name"></SfTextBox>
                     </div>
-                    @if (NewTrait.TraitType == SD.TraitType_Character)
+                    @if (NewTrait.TraitType == SD.TraitType_Character || NewTrait.TraitType == SD.TraitType_Temporary)
                     {
                         <div class="d-flex flex-column px-1">
-                            <label class="fw-bold py-1">Trait value</label>
+                            @if (NewTrait.TraitType == SD.TraitType_Temporary)
+                            {
+                                <label class="fw-bold py-1">Duration</label>
+                            }else{
+                                <label class="fw-bold py-1">Trait value</label>
+                            }
                             <SfNumericTextBox Readonly="IsInfoMode" Width="100px" TValue="int" @bind-Value="@NewTrait.TraitValue"></SfNumericTextBox>
                         </div>
                         <div class="d-flex flex-column px-1">

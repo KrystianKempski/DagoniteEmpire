@@ -3,6 +3,7 @@ using DA_Common;
 using DA_DataAccess.CharacterClasses;
 using DA_Models.CharacterModels;
 using DA_Models.ComponentInterfaces;
+using Microsoft.AspNetCore.Components.Web.Virtualization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,14 +15,14 @@ namespace DA_Models.ComponentModels
 {
     public class HealthModel 
     {
-        private readonly AllParamsModel _allParams;
+        private readonly AllParamsModel? _allParams;
         private ICollection<WoundDTO> Wounds { get; set; } = new List<WoundDTO>();
 
-        public HealthModel(AllParamsModel allParams)
+        public HealthModel(AllParamsModel? allParams)
         {
             _allParams = allParams;
         }
-        public int MaxWounds 
+        public virtual int MaxWounds 
         { 
             get
             {
@@ -41,7 +42,7 @@ namespace DA_Models.ComponentModels
                 return 0;
             }
         }
-        public int CurrentWounds
+        public virtual int CurrentWounds
         {
             get
             {
@@ -54,7 +55,7 @@ namespace DA_Models.ComponentModels
                 return res;
             }
         }
-        public int HealingModyfier
+        public virtual int HealingModyfier
         {
             get
             {
@@ -67,9 +68,14 @@ namespace DA_Models.ComponentModels
             }
         }
 
-        public void FillPropertiesContainer(IEnumerable<WoundDTO> properties)
+        public virtual void FillPropertiesContainer(IEnumerable<WoundDTO>? properties)
         {
+            if (properties is null) return;
             Wounds = (ICollection<WoundDTO>)properties;
+        }
+        public virtual void AddWound(WoundDTO wound)
+        {
+            Wounds.Add(wound);
         }
 
         public ICollection<WoundDTO> GetAll()

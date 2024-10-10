@@ -1,5 +1,4 @@
-﻿@using Syncfusion.Blazor.Navigations
-@inject IMobRepository _mobRepository
+﻿@inject IMobRepository _mobRepository
 @inject ICampaignRepository _campaignRepository
 @inject IChapterRepository _chapterRepository
 @inject IUserService _userService;
@@ -7,17 +6,27 @@
 @inject IDialogService DialogService
 @inject IBrowserViewportService _vieportService
 
-<div class="w-100">
-    <MudDataGrid Items="Mobs" ReadOnly="true" Filterable="false" Class="px-2 py-2"
-                 Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None">
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@MyIcon.Helm" Color="Color.Primary" />
+            @Title mob characters
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <MudDataGrid T="MobDTO" MultiSelection="true" Items="Mobs" ReadOnly="true" Filterable="true" Class="px-2 py-2"
+                 Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectedItemsChanged="@SelectedItemsChanged">
         <ToolBarContent>
             <MudButton Class="pa-2 justify-content-start w-auto" OnClick="@(() => AddMob())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add mob</MudButton>
         </ToolBarContent>
         <Columns>
-            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;" Property="x => x.Campaign.Name" Title="Campaign name" />
-            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Name" />
-            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.RaceName" Title="Race" />
-            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.ProfessionName" Title="Class" />
+            <SelectColumn T="MobDTO" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="padding:4px 4px 4px 12px;" Property="x => x.Campaign.Name" Title="Campaign name" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="padding:4px 4px 4px 12px;" Property="x => x.Chapter.Name" Title="Chapter name" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="padding:4px 4px 4px 12px;;" Property="x => x.Name" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="padding:4px 4px 4px 12px;; " Property="x => x.RaceName" Title="Race" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="padding:4px 4px 4px 12px;; " Property="x => x.ProfessionName" Title="Class" />
             <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="width:80px; padding:4px 4px 4px 12px;" Title="Actions">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditMob(@context.Item))" />
@@ -26,19 +35,26 @@
             </TemplateColumn>
         </Columns>
     </MudDataGrid>
-</div>
+
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+        <MudButton Color="Color.Error" OnClick="SaveBtn">Add selected to chapter</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
 
-    private ICollection<MobDTO> Mobs { get; set; } = new List<MobDTO>();
-    public bool IsLoading { get; set; } = true;
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public ICollection<MobDTO> Mobs { get; set; } = new List<MobDTO>();
+    [Parameter] public int CampaignId { get; set; } = 0;
+    [Parameter] public int ChapterId { get; set; } = 0;
 
-     private List<object> ToolbarMods = new List<object>() {
-        new ItemModel() { Text = "Add Mod", PrefixIcon = "e-add", Id = "GridMob_add"},//Here Grid is SfGrid ID
-        new ItemModel(){ Text = "Edit Mod", PrefixIcon= "e-edit", Id="GridMob_edit"},
-        new ItemModel(){ Text = "Delete Mod", PrefixIcon= "e-delete", Id="GridMob_delete"},
-    };
+    private IEnumerable<MobDTO> MobsToAdd = new List<MobDTO>();
+    private bool IsLoading = false;
 
+    private string Title = "Add";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -58,10 +74,8 @@
         {
             IsLoading = false;
             _snackBar.Add("Error while initialize: " + ex.ToString(), Severity.Error);
-           // await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
         }
-    }  
-
+    }
 
     private async Task LoadMobs()
     {
@@ -71,16 +85,42 @@
             if (mob.CampaignId > 0)
                 mob.Campaign = await _campaignRepository.GetById(mob.CampaignId);
             if (mob.ChapterId > 0)
-                mob.Chapter = await _chapterRepository.GetById(mob.CampaignId);
+                mob.Chapter = await _chapterRepository.GetById(mob.ChapterId);
         }
     }
 
+    private async Task SaveBtn()
+    {
+        if (MobsToAdd.Any() == false)
+            return;
+        foreach(var mob in MobsToAdd)
+        {
+            mob.CampaignId = CampaignId;
+            mob.ChapterId = ChapterId;
+            await _mobRepository.Update(mob);
+        }
+        Mobs = (await _mobRepository.GetAll()).ToList();
+        MudDialog.Close(DialogResult.Ok(Mobs));
+        _snackBar.Add("Selected mobs added to chapter", Severity.Success);
+    }
+
+    private void Close()
+    {
+        MudDialog.Close();
+    }
+
+    private void SelectedItemsChanged(HashSet<MobDTO> mobs)
+    {
+        MobsToAdd = mobs.ToList();
+    }
 
     public async Task AddMob()
     {
         MobDTO NewMob = new();
         var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, NewMob },
-                                                                  { x => x.IsEdit, false } };
+                                                                  { x => x.IsEdit, false },
+                                                                  { x => x.CampaignId, CampaignId },
+                                                                  { x => x.ChapterId, ChapterId }};
 
         var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add mob", parameters, await SetDialogOptions());
         var result = await dialog.Result;
@@ -102,15 +142,16 @@
         if (!result.Canceled)
         {
             newMob = (MobDTO)result.Data;
-            //Mobs.Add(NewMob);
         }
     }
 
     private void DeleteMob(MobDTO mob)
     {
+        string name = mob.Name;
         Mobs.Remove(mob);
         if (mob.Id != 0)
             _mobRepository.Delete(mob.Id);
+        _snackBar.Add(name + " deleted", Severity.Success);
     }
 
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
@@ -120,4 +161,5 @@
             options.FullScreen = true;
         return options;
     }
+
 }
