@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using static MudBlazor.CategoryTypes;
+using static MudBlazor.Colors;
 using static MudBlazor.Icons.Custom;
 using static Npgsql.PostgresTypes.PostgresCompositeType;
 using static System.Formats.Asn1.AsnWriter;
@@ -97,7 +98,7 @@ namespace DA_Common
             public static readonly string[] All = { AttackBase, AttackDodge, AttackArmor, AttackShield, AttackParry,DamageBonus,
                                                     ArmorClass, DefenceDodge, DefenceArmor, DefenceShield, DefenceParry };
         }
-        public readonly struct AttackType
+        public readonly struct AttackAction
         {
             public const string Normal = "Normal";
             public const string Cautious = "Cautious";
@@ -106,12 +107,13 @@ namespace DA_Common
             public const string Targeted = "Targeted";
             public const string Charge = "Charge";
         }
-        public readonly struct DefenceStance
+
+        public readonly struct DefenceType
         {
-            public const string Normal = "Normal";
-            public const string Cautious = "Cautious";
-            public const string Full = "Full";
-            public const string Unbalanced = "Unbalanced";
+            public const string Dodge = "Dodge";
+            public const string Parry = "Parry";
+            public const string Shield = "Shield";
+            public const string Armor = "Armor";
         }
 
         public readonly struct Attributes
@@ -366,6 +368,7 @@ namespace DA_Common
             public const string Unbalanced = "Unbalanced";
             public const string Cautious = "Cautious";
             public const string FullDefence = "Full defence";
+            public const string Bleeding = "Bleeding";
 
             public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence };
         }
@@ -525,7 +528,80 @@ namespace DA_Common
             }
 
         }
+        public static Tuple<int, string> RollDice()
+        {
+            int result = 0;
+            string text = string.Empty;
+            Random rnd = new Random();
+            int[] dice = { 1, 1, 1 };
+            if (true)
+            {
+                dice[0] = rnd.Next(1, 6);  // creates a number between 1 and 12
+                dice[1] = rnd.Next(1, 6);
+                dice[2] = rnd.Next(1, 6);
 
+                result = dice.Sum();
+                text = $"(3d6: {dice[0].ToString()}+{dice[1].ToString()}+{dice[0].ToString()}= {result})";
+            }
+            return Tuple.Create(result, text);
+        }
+        public static Tuple<bool, string> MakeRollTest(int DC,int skill)
+        {
+            bool result = false;
+            string text = string.Empty;
+            var roll = RollDice();
+            result = skill+roll.Item1 >= DC;
+            var sucess = result ? "Sucess!" : "Fail!";
+            text = $"{skill} + {roll.Item2} is {skill + roll.Item1} vs {DC}. {sucess}";
+
+            return Tuple.Create(result, text);
+        }
+
+        public static string BonusText(int value)
+        {
+            string res = " (";
+            res += value >= 0 ? $"+{value.ToString()}" : value.ToString();
+            res += ")";
+            return res;
+        }
+        public static string WoundSeverityFromDmg(int value)
+        {
+            if (value > 0 && value < 5)
+                return SD.WoundSeverity.Light;
+            else if (value < 9)
+                return SD.WoundSeverity.Moderate;
+            else if (value  < 15)
+                return SD.WoundSeverity.Heavy;
+            else if (value  < 25)
+                return SD.WoundSeverity.Critical;
+            else if (value >= 25)
+                return SD.WoundSeverity.Deadly;
+            else
+                return "";
+        }
+        public static int DCFromWoundSeverity(string value)
+        {
+            switch (value)
+            {
+                case SD.WoundSeverity.Light: return 7;
+                case SD.WoundSeverity.Moderate: return 14;
+                case SD.WoundSeverity.Heavy: return 21;
+                case SD.WoundSeverity.Critical: return 28;
+            }    
+            return 0;
+        }
+        public static int GetValueFromSeverity(string severity)
+        {
+            switch (severity)
+            {
+                case SD.WoundSeverity.Light: return 1;
+                case SD.WoundSeverity.Moderate: return 3;
+                case SD.WoundSeverity.Heavy: return 9;
+                case SD.WoundSeverity.Critical: return 18;
+                case SD.WoundSeverity.Deadly: return 25;
+                default: return 0;
+            }
+        }
     }
     public static class MyIcon
     {

@@ -8,6 +8,7 @@
 <PageTitle>DagoniteEmpire</PageTitle>
 
 <MudThemeProvider/>
+<MudPopoverProvider />
 <MudDialogProvider 
     FullWidth="true" 
     MaxWidth="MaxWidth.Large" />
@@ -15,25 +16,26 @@
 
 
 <MudLayout >
-    <MudAppBar Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4};")" Elevation="1">
+    <MudAppBar Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Elevation="1">
         <div class="big-screen">
-            <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Grey.Lighten5}; background:{Colors.Grey.Darken4}; font-family: 'Eagle Lake', serif; font-size: 20px;")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="#">Dagonite Empire</MudButton>
+            <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; font-family: 'Eagle Lake', serif; font-size: 20px;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton>
         </div>
             <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
-            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:transparent;")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/character"> <MudIcon Class="px-1" Icon="@Icons.Material.Filled.PeopleAlt"></MudIcon>Character list</MudButton>
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:transparent;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="/character"> <MudIcon Class="px-1" Icon="@Icons.Material.Filled.PeopleAlt"></MudIcon>Character list</MudButton>
             <AuthorizeView>
                 <Authorized>
                     <CharacterNavButtons></CharacterNavButtons>
                 </Authorized>
             </AuthorizeView>
-            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:transparent;")" Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" Link="/campaignlist"><MudIcon Class="px-1" Icon="@MyIcon.BookmarkWhite"></MudIcon>Campaign</MudButton>
-
-
-        </div>
- 
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:transparent;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="/campaignlist">
+                <img src="@MyIcon.BookmarkWhite" width="24px" height="24px" class="helm-icon" style="padding-right: 3px;" />
+                Campaign
+            </MudButton>
+            
+        </div> 
         <div class="small-screen">
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerStartToggle())" />
-            <MudButton Style="@($"color:{Colors.Grey.Lighten5}; background:transparent; font-family: 'Eagle Lake', serif; font-size: 12px; padding: 6px;")" Variant="Variant.Filled" DisableElevation="true" Link="#">Dagonite Empire</MudButton>
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:transparent; font-family: 'Eagle Lake', serif; font-size: 12px; padding: 6px;")" Variant="Variant.Text" DropShadow="true" Href="#">Dagonite Empire</MudButton>
         </div>
         <MudSpacer />
         <LoginDisplay />
@@ -47,9 +49,7 @@
     <MudContainer MaxWidth="MaxWidth.False" Class="m-0 p-0" Style="overflow:hidden; position:relative;">
         <AuthorizeView>
             <Authorized>
-               <Chat></Chat>
-               <LeftPanel></LeftPanel>
-                
+               <Chat></Chat>                
             </Authorized>
         </AuthorizeView>
     </MudContainer>    

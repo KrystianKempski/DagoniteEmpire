@@ -102,16 +102,14 @@ namespace DA_Models.ComponentModels
                {
                     switch (wound.Severity)
                     {
-                        case WoundSeverity.Critical: wound.Value = wound.GetValueFromSeverity(WoundSeverity.Heavy); break;
-                        case WoundSeverity.Heavy: wound.Value = wound.GetValueFromSeverity(WoundSeverity.Moderate); break;
-                        case WoundSeverity.Moderate: wound.Value = wound.GetValueFromSeverity(WoundSeverity.Light); break;
-                        case WoundSeverity.Light: wound.Value = wound.GetValueFromSeverity(WoundSeverity.Scars); break;
+                        case WoundSeverity.Critical: wound.Value = SD.GetValueFromSeverity(WoundSeverity.Heavy); break;
+                        case WoundSeverity.Heavy: wound.Value = SD.GetValueFromSeverity(WoundSeverity.Moderate); break;
+                        case WoundSeverity.Moderate: wound.Value = SD.GetValueFromSeverity(WoundSeverity.Light); break;
+                        case WoundSeverity.Light: wound.Value = SD.GetValueFromSeverity(WoundSeverity.Scars); break;
                         default: return wound.DateStart;
                     }
                     
-                    wound.DateDay = dateReduce.Day;
-                    wound.DateMonth = dateReduce.Month;
-                    wound.DateYear = dateReduce.Year;
+                    wound.DateStart = new( dateReduce.Day, dateReduce.Month, dateReduce.Year);
                     daysToReduce = (int)(wound.HealTime * (2.0 - HealingModyfier / 100.0));
                     dateReduce = wound.DateStart + daysToReduce;
                     if (wound.Value == 0)

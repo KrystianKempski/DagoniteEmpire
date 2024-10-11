@@ -15,7 +15,7 @@
         </TitleContent>
         <DialogContent>
         <div class="main-table">
-            <MudDataGrid @ref="Grid" ReadOnly="false" T="TraitDTO" MultiSelection="true" Items="Traits" Filterable="true" Class="px-2 py-2" EditMode="DataGridEditMode.Cell" Bordered="true" Dense="true"
+            <MudDataGrid @ref="Grid" ReadOnly="false" T="TraitDTO" MultiSelection="false" Items="Traits" Filterable="true" Class="px-2 py-2" EditMode="DataGridEditMode.Cell" Bordered="true" Dense="true"
                          FooterClass="d-none" EditTrigger="DataGridEditTrigger.Manual"
                          Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectedItemsChanged="@SelectedItemsChanged">
                 <Columns>
@@ -50,7 +50,6 @@
     private CheckboxSelectionType checkboxMode = CheckboxSelectionType.Default;
     private MudDataGrid<TraitDTO> Grid = null;
     private IEnumerable<TraitDTO> Traits { get; set; }
-    private List<TraitDTO> ListOfTraits { get; set; }
     public string HeaderName { get; set; } = "Add existing traits";
 
     protected override async Task OnInitializedAsync()
@@ -62,7 +61,6 @@
         else if (TraitType == SD.TraitType_Temporary)
         {
             Traits = (await _traitCharacterRepository.GetAllApproved()).ToList().Where(t => t.IsTemporary == true);
-            //ListOfTraits = Traits.ToList();
         }
         else if (TraitType == SD.TraitType_Profession)
         {
@@ -96,10 +94,13 @@
 
     private void SelectedItemsChanged(HashSet<TraitDTO> traits)
     {
-        var item = Grid.SelectedItem;
-        Grid.Cli
-        traits = new HashSet<TraitDTO>();
-        traits.Add(item);
+        if(MultiRowSelection == false)
+        {
+            var item = Grid.SelectedItem ;
+            traits = new HashSet<TraitDTO>();
+            traits.Add(item);
+            Grid.Selection = traits;
+        }
         ChosenTraits = traits.ToList();
         StateHasChanged();
     }

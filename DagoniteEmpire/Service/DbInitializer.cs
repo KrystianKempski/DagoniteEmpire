@@ -570,8 +570,9 @@ namespace DagoniteEmpire.Service
                         Descr = "This character is dazed, it cannot perform any actions and its defence is impaired",
                         TraitApproved = true,
                         IsUnique = false,
+                        Level = 10,
                         TraitType = SD.TraitType_Temporary,
-                        TraitValue = 1,
+                        TraitValue = 99,
                     };
                     _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
@@ -585,7 +586,8 @@ namespace DagoniteEmpire.Service
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
-                        TraitValue = 0,
+                        Level = 5,
+                        TraitValue = 99,
                     };
                     _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
@@ -598,8 +600,9 @@ namespace DagoniteEmpire.Service
                         Descr = "This character was captured. It cannot move or use captured limb until it gets free",
                         TraitApproved = true,
                         IsUnique = false,
+                        Level = 5,
                         TraitType = SD.TraitType_Temporary,
-                        TraitValue = 0,
+                        TraitValue = 99,
                     };
                     _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
@@ -613,7 +616,7 @@ namespace DagoniteEmpire.Service
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
-                        TraitValue = 0,
+                        TraitValue = 99,
                     };
                     _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
@@ -627,8 +630,9 @@ namespace DagoniteEmpire.Service
                         Descr = "This character lost its sight. This causes penalty to defence equal 10, unless there is other way to see incoming attacks. This character can attack with penalty equal to 5",
                         TraitApproved = true,
                         IsUnique = false,
+                        Level = 10,
                         TraitType = SD.TraitType_Temporary,
-                        TraitValue = 1,
+                        TraitValue = 99,
                     };
                     _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
@@ -642,7 +646,8 @@ namespace DagoniteEmpire.Service
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
-                        TraitValue = 0,
+                        Level = 10,
+                        TraitValue = 1,
                     };
                     _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
@@ -652,11 +657,12 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter(true)
                     {
                         Name = SD.TempStates.Invisible,
-                        Descr = "This character cannot be seen, but enemies are aware of its presence. This causes bonus to attack equal to 5",
+                        Descr = "This character cannot be seen, but enemies are aware of its presence. This causes bonus to attack equal to 5, and defence equal to 5",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
-                        TraitValue = 1,
+                        Level = 5,
+                        TraitValue = 99,
                     };
                     _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
@@ -666,11 +672,12 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter(true)
                     {
                         Name = SD.TempStates.Flanking,
-                        Descr = "This character attack someone from the back, when they are busy fighting with someone else. This gives bonus to attack equal to 3",
+                        Descr = "This character attack someone from the back, when they are busy fighting with someone else. This gives bonus to attack equal to 3, and opponent cannot use shield",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
-                        TraitValue = 1,
+                        Level =3,
+                        TraitValue = 99,
                     };
                     _db.TraitsCharacter.Add(trait);
                     _db.SaveChanges();
@@ -684,6 +691,53 @@ namespace DagoniteEmpire.Service
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
+                        Level =2,
+                        TraitValue = 1,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Unbalanced) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Unbalanced,
+                        Descr = "This character lost its balance. For remainging turn he have penalty of 7 to defence",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        Level = 7,
+                        TraitValue = 1,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Cautious) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.Cautious,
+                        Descr = "This character went in semi-defencive state. It gets bonus to all kinds of defence equal to 2",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        Level = 2,
+                        TraitValue = 1,
+                    };
+                    _db.TraitsCharacter.Add(trait);
+                    _db.SaveChanges();
+                }
+                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.FullDefence) == null)
+                {
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = SD.TempStates.FullDefence,
+                        Descr = "This character went in full defence. It gets bonus to all kinds of defence equal to 5, but it cannot attack or make any actions",
+                        TraitApproved = true,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        Level = 5,
                         TraitValue = 1,
                     };
                     _db.TraitsCharacter.Add(trait);

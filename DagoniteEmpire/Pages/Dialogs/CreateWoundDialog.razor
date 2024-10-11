@@ -22,8 +22,8 @@
             }
         </MudSelect>
         <MudTextField Required="true" @bind-Value="@NewWound.Description" Label="Description" Lines="3" />
-        <MudNumericField Required="true" @bind-Value="@NewWound.DateDay" Label="Day" Min="1" Max="31" />
-        <MudSelect Required="true" @bind-Value="@NewWound.DateMonth" Label="Month" Placeholder="Select month">
+        <MudNumericField Required="true" @bind-Value="@DateDay" Label="Day" Min="1" Max="31" />
+        <MudSelect Required="true" @bind-Value="@DateMonth" Label="Month" Placeholder="Select month">
             @foreach (var loc in SD.Calendar.Months)
             {
                 <MudSelectItem Value="@loc.Number">@loc.Name</MudSelectItem>
@@ -48,7 +48,8 @@
     [Parameter] public bool IsEdit { get; set; } = false;
     private string Title = "Create";
     private string SeverityName = "";
-
+    private int DateDay = 0;
+    private int DateMonth = 0;
     private void Cancel()
     {
         MudDialog.Cancel();
@@ -63,16 +64,17 @@
         }
         else
         {
-            NewWound.DateDay = CurrentDate.Day;
-            NewWound.DateMonth = CurrentDate.Month;
-            NewWound.DateYear = CurrentDate.Year;
+            // NewWound.DateDay = CurrentDate.Day;
+            // NewWound.DateMonth = CurrentDate.Month;
+            // NewWound.DateYear = CurrentDate.Year;
+            NewWound.DateStart = new DateModel(CurrentDate.Day, CurrentDate.Month, CurrentDate.Year);
         }
     }
 
     private void CreateWound()
     {
         NewWound.Value = NewWound.GetValueFromSeverity(SeverityName);
-        NewWound.DayOfInjury = DateModel.GetDaysFromDate(NewWound.DateDay, NewWound.DateMonth, NewWound.DateYear);
+        //NewWound.DayOfInjury = DateModel.GetDaysFromDate(NewWound.DateStart);
         MudDialog.Close(DialogResult.Ok(NewWound));
         if (IsEdit)
             Snackbar.Add("Wound edited", Severity.Success);

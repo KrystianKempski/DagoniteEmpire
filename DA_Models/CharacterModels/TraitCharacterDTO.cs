@@ -10,6 +10,7 @@ namespace DA_Models.CharacterModels
     public class TraitCharacterDTO : TraitDTO
     {
         public TraitCharacterDTO(bool isTemporary = false) { IsTemporary = isTemporary; }
+
         public TraitCharacterDTO(TraitDTO traitDTO, CharacterDTO? characterDTO, bool isTemporary=false) 
         {
             foreach (var prop in typeof(TraitDTO).GetProperties())

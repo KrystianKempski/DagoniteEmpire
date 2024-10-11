@@ -19,7 +19,7 @@ namespace DA_DataAccess.CharacterClasses
         public int DateMonth { get; set; }
         public int DateDay { get; set; }
         public int DateYear { get; set; }
-        public int DayOfInjury { get; set; }
+        //public int DayOfInjury { get; set; }
         public int HealTime { get; set; }
         public bool IsCondition { get; set; } = false;
 

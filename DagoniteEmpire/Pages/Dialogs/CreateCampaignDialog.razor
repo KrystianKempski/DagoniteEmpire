@@ -12,7 +12,7 @@
         <MudTextField @bind-Value="@NewCampaign.Name" Label="Campaign name" />
         <MudTextField @bind-Value="@NewCampaign.Description" Label="Description" Lines="5" />
         <MudText Typo="Typo.caption">Choose player characters for campaign</MudText>
-        <MudChipSet @bind-SelectedChips="SelectedCharacters" MultiSelection="true" Filter="true">
+        <MudChipSet T="CharacterDTO" @bind-SelectedChips="SelectedCharacters" SelectionMode="MudBlazor.SelectionMode.MultiSelection">
             @foreach (var adv in AllCharacters)
             {
                 <MudChip Text="@adv.NPCName" Default="NewCampaign.Characters.Any(u=>u.Id == adv.Id)"></MudChip>
@@ -29,9 +29,9 @@
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    [Parameter] public CampaignDTO NewCampaign { get; set; }
+    [Parameter] public CampaignDTO NewCampaign { get; set; } = new();
     [Parameter] public bool IsEdit { get; set; } = false;
-    MudChip[] SelectedCharacters { get; set; }
+    private MudChip<CharacterDTO>[] SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IEnumerable<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
     private string Title { get; set; } = "Create";

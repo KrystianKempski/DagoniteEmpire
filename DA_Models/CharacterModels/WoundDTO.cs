@@ -17,10 +17,10 @@ namespace DA_Models.CharacterModels
         public bool IsIgnored { get; set; } = false;
         public bool IsTended { get; set; } = false;
         public bool IsMagicHealed { get; set; } = false;
-        public int DayOfInjury { get; set; } = 1;
-        public int DateMonth { get; set; } = 1;
-        public int DateDay { get; set; } = 1;
-        public int DateYear { get; set; } = SD.Calendar.StartYear;
+        //public int DayOfInjury { get; set; } = 1;
+        private int DateMonth { get; set; } = 1;
+        private int DateDay { get; set; } = 1;
+        private int DateYear { get; set; } = 1;
         public int CharacterId { get; set; }
         public bool IsCondition { get; set; } = false;
 
@@ -30,6 +30,12 @@ namespace DA_Models.CharacterModels
             get
             {
                 return new DateModel(DateDay, DateMonth, DateYear);
+            }
+            set
+            {
+                DateMonth = value.Month;
+                DateYear = value.Year;
+                DateDay = value.Day;
             }
         }
         public DateModel DateReduce { get; set; } = new(1,1);
@@ -69,18 +75,7 @@ namespace DA_Models.CharacterModels
         }
 
 
-        public int GetValueFromSeverity(string severity)
-        {
-            switch (severity)
-            {
-                case SD.WoundSeverity.Light: return 1;
-                case SD.WoundSeverity.Moderate: return 3;
-                case SD.WoundSeverity.Heavy: return 9;
-                case SD.WoundSeverity.Critical: return 18;
-                case SD.WoundSeverity.Deadly: return 25;
-                default: return 0;
-            }
-        }
+       
         public virtual ICollection<string> GetAttributeNamesFromLocation()
         {
             if (string.IsNullOrEmpty(Location))

@@ -126,6 +126,7 @@
                         <MudSelectItem Value="@state">@state</MudSelectItem>
                     }
                 </MudSelect>
+                <MudNumericField @bind-Value="@StateDuration" Label="Duration" />
             </MudStack>
          
         </MudPaper>
@@ -164,6 +165,7 @@
     private IEnumerable<ChapterDTO> Chapters { get; set; } = new List<ChapterDTO>();
     private bool IsCampaignSelected = true;
     private string ChooseFile = "Choose file";
+    private int StateDuration = 0;
     private IList<IBrowserFile> files = new List<IBrowserFile>();
     private void Cancel()
     {
@@ -222,9 +224,9 @@
     private void AddState(string newStatus)
     {
         if (NewMob.States == string.Empty)
-            NewMob.States += newStatus;
+            NewMob.States += newStatus +":" + StateDuration.ToString();
         else
-            NewMob.States += ", " + newStatus;
+            NewMob.States += ", " + newStatus + ":" + StateDuration.ToString();
     }
     private void ClearStates()
     {

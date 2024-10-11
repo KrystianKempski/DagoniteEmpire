@@ -13,7 +13,7 @@ namespace DA_Models.ComponentModels
         public int Day { get; set; } = 1;
         public int Month { get; set; } = 1;
         public int Year { get; set; } = SD.Calendar.StartYear;
-        private int AllDays  { get=> GetDaysFromDate(Day,Month,Year);   }
+        private int AllDays  { get=> GetDaysFromDate(this);   }
         
         public DateModel(int day, int month, int year = SD.Calendar.StartYear)
         {
@@ -27,21 +27,21 @@ namespace DA_Models.ComponentModels
             Month = newDate.Month;
             Year = newDate.Year;
         }
-        public static int GetDaysFromDate(int day, int month, int year)
+        public static int GetDaysFromDate(DateModel date)
         {
-            if (day < 1 || month < 1 || year < SD.Calendar.StartYear)
+            if (date.Day < 1 || date.Month < 1 || date.Year < SD.Calendar.StartYear)
                 return 0;
-            int days = day;
+            int days = date.Day;
 
             foreach (var m in SD.Calendar.Months)
             {
-                if (m.Number >= month)
+                if (m.Number >= date.Month)
                     break;
                 days += m.Days;
 
             }
 
-            return ((year - SD.Calendar.StartYear) * 365) + days;
+            return ((date.Year - SD.Calendar.StartYear) * 365) + days;
         }
         public static DateModel? GetDateFromDays(int days)
         {
