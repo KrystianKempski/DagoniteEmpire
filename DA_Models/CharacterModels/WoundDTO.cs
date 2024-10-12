@@ -17,10 +17,12 @@ namespace DA_Models.CharacterModels
         public bool IsIgnored { get; set; } = false;
         public bool IsTended { get; set; } = false;
         public bool IsMagicHealed { get; set; } = false;
-        //public int DayOfInjury { get; set; } = 1;
-        private int DateMonth { get; set; } = 1;
-        private int DateDay { get; set; } = 1;
-        private int DateYear { get; set; } = 1;
+
+        public int DateNumber { get; set; } = 0;
+        ////public int DayOfInjury { get; set; } = 1;
+        //private int DateMonth { get; set; } = 1;
+        //private int DateDay { get; set; } = 1;
+        //private int DateYear { get; set; } = 1;
         public int CharacterId { get; set; }
         public bool IsCondition { get; set; } = false;
 
@@ -29,13 +31,11 @@ namespace DA_Models.CharacterModels
         {
             get
             {
-                return new DateModel(DateDay, DateMonth, DateYear);
+                return new DateModel(DateNumber);
             }
             set
             {
-                DateMonth = value.Month;
-                DateYear = value.Year;
-                DateDay = value.Day;
+                DateNumber = value.AllDays;
             }
         }
         public DateModel DateReduce { get; set; } = new(1,1);

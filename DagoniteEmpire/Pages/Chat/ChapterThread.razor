@@ -56,7 +56,7 @@ else
         @if (Chapter is not null)
         {
             <MudText Typo="Typo.h4"><img src="@MyIcon.Quill" width="40px" height="40px" class="pr-2" />Chapter: @Chapter.Name</MudText>
-            <MudText Class="py-2 flex-grow-1" Typo="Typo.h6"> @Chapter.Day, @Chapter.Place </MudText>
+            <MudText Class="py-2 flex-grow-1" Typo="Typo.h6"> @Chapter.Date, @Chapter.DayTime, @Chapter.Place </MudText>
             <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate</MudText>
 
             <div class="big-screen" id="send-message-cont">
@@ -353,10 +353,21 @@ else
 
     private async Task GenerateFightSequence()
     {
-        // var parameters = new DialogParameters<CreateFightSequenceDialog> {  { x => x.ResultString, NewMob },
-        //                                                                     { x => x.IsEdit, false },
-        //                                                                     { x => x.CampaignId, Chapter.CampaignId },
-        //                                                                     { x => x.ChapterId, Id }};
+        var parameters = new DialogParameters<CreateFightSequenceDialog> {  { x => x.CharacterAllParams, CharacterAllParams.Values },
+                                                                            { x => x.Mobs, Mobs },
+                                                                            { x => x.Date, Chapter.Date },
+                                                                            { x => x.ChapterId, Id }};
+        var dialog = await DialogService.ShowAsync<CreateFightSequenceDialog>("Fight sequence", parameters, await SetDialogOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            IsLoadingCharacters = true;
+            StateHasChanged();
+            // Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
+            // IsLoadingCharacters = false;
+            StateHasChanged();
+        }
     }
     private async Task AddNewMob()
     {

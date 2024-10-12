@@ -1,4 +1,6 @@
-﻿using DA_DataAccess.CharacterClasses;
+﻿using DA_Common;
+using DA_DataAccess.CharacterClasses;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using MudBlazor.Charts;
 using System;
 using System.Collections.Generic;
@@ -14,7 +16,8 @@ namespace DA_DataAccess.Chat
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public string Day { get; set; }
+        public string DayTime { get; set; }
+        public int DateNumber { get; set; } = 0;
         public string Place { get; set; }
         public ICollection<Post> Posts { get; set; }
         public DateTime CreatedDate { get; set; }

@@ -12,10 +12,10 @@
         <MudTextField @bind-Value="@NewCampaign.Name" Label="Campaign name" />
         <MudTextField @bind-Value="@NewCampaign.Description" Label="Description" Lines="5" />
         <MudText Typo="Typo.caption">Choose player characters for campaign</MudText>
-        <MudChipSet T="CharacterDTO" @bind-SelectedChips="SelectedCharacters" SelectionMode="MudBlazor.SelectionMode.MultiSelection">
+        <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
             @foreach (var adv in AllCharacters)
             {
-                <MudChip Text="@adv.NPCName" Default="NewCampaign.Characters.Any(u=>u.Id == adv.Id)"></MudChip>
+                <MudChip Text="@adv.NPCName" Value="@adv"></MudChip>
             }
             
         </MudChipSet>
@@ -31,7 +31,7 @@
 
     [Parameter] public CampaignDTO NewCampaign { get; set; } = new();
     [Parameter] public bool IsEdit { get; set; } = false;
-    private MudChip<CharacterDTO>[] SelectedCharacters { get; set; }
+    private IReadOnlyCollection<CharacterDTO> SelectedCharacters = new List<CharacterDTO>();
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IEnumerable<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
     private string Title { get; set; } = "Create";
@@ -40,7 +40,11 @@
     {
         AllCharacters = await _characterRepository.GetAll();
         if (IsEdit)
+        {
+
             Title = "Edit";
+            SelectedCharacters = NewCampaign.Characters.ToList();
+        }
     }
 
     private void Cancel()
@@ -54,9 +58,9 @@
         {            
             foreach (var charac in SelectedCharacters)
             {
-                var adventurer = AllCharacters.FirstOrDefault(c => c.NPCName == charac.Text);
-                if (adventurer is not null && !Characters.Any(c => c.NPCName == charac.Text))
-                    Characters.Add(adventurer);
+                // var adventurer = AllCharacters.FirstOrDefault(c => c.NPCName == charac.NPCName);
+                // if (adventurer is not null && !Characters.Any(c => c.NPCName == charac.NPCName))
+                Characters.Add(charac);
             }
         }
         NewCampaign.Characters = Characters;

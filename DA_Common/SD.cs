@@ -16,6 +16,7 @@ using static MudBlazor.Colors;
 using static MudBlazor.Icons.Custom;
 using static Npgsql.PostgresTypes.PostgresCompositeType;
 using static System.Formats.Asn1.AsnWriter;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DA_Common
 {
@@ -106,6 +107,7 @@ namespace DA_Common
             public const string Strong = "Strong";
             public const string Targeted = "Targeted";
             public const string Charge = "Charge";
+            public static readonly string[] All = { Normal, Cautious, Raging, Strong, Targeted, Charge };
         }
 
         public readonly struct DefenceType
@@ -114,6 +116,7 @@ namespace DA_Common
             public const string Parry = "Parry";
             public const string Shield = "Shield";
             public const string Armor = "Armor";
+            public static readonly string[] All = { Dodge, Parry, Shield, Armor };
         }
 
         public readonly struct Attributes
@@ -607,13 +610,14 @@ namespace DA_Common
     {
         public const string Bookmark = "icons/bookmarklet.svg";
         public const string BookmarkWhite = "icons/bookmarklet_white.svg";
-        public const string Scroll = "icons/scroll.svg";
+        public const string Scroll = "icons\\scroll.svg";
         public const string Quill = "icons/quill.svg";
         public const string Anvil_white = "icons/anvil_white.svg";
         public const string Helm_white = "icons/barbute_white.svg";
         public const string Anvil = "icons/anvil.svg";
         public const string Helm = "icons/barbute.svg";
         public const string Chest = "icons/chest.svg";
+        public const string Goblin = "icons\\goblin.svg";
     }
 
     public enum Relation

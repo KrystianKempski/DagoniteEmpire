@@ -38,6 +38,17 @@ namespace DA_Models.ComponentModels
         public BattlePropertyModel BattleProperties { get; set; }
         public HealthModel Health { get; set; }
 
+        public string States { get
+            {
+                string res = string.Empty;
+                foreach(var state in TraitsTemporary)
+                {
+                    res += $"{state.Name}:{state.TraitValue}, "; 
+                }
+                return res;
+            } 
+        }
+
 
     public bool IsAdminOrMG { get; set; } = false;
 

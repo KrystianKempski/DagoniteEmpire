@@ -17,7 +17,7 @@ namespace DA_DataAccess.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.15")
+                .HasAnnotation("ProductVersion", "7.0.20")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -746,9 +746,6 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("DateYear")
                         .HasColumnType("integer");
 
-                    b.Property<int>("DayOfInjury")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -827,7 +824,10 @@ namespace DA_DataAccess.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<string>("Day")
+                    b.Property<int>("DateNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DayTime")
                         .IsRequired()
                         .HasColumnType("text");
 

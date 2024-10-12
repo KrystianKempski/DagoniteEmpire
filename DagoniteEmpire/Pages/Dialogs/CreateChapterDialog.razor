@@ -11,20 +11,21 @@
     <DialogContent>
         <MudTextField @bind-Value="@NewChapter.Name" Label="Campaign name" />
         <MudTextField @bind-Value="@NewChapter.Description" Label="Description" Lines="3" />
-        <MudTextField @bind-Value="@NewChapter.Day" Label="Date and Time" />
+        @* <MudTextField @bind-Value="@NewChapter.Day" Label="Date and Time" /> *@
+        <DateComponent Date="@NewChapter.Date" Editable="true"></DateComponent>
         <MudTextField @bind-Value="@NewChapter.Place" Label="Location" />
         <MudText Typo="Typo.caption">Choose player characters for chapter</MudText>
-        <MudChipSet T="CharacterDTO" @bind-SelectedChips="SelectedCharacters" SelectionMode="MudBlazor.SelectionMode.MultiSelection" >
+        <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
             @foreach (var adv in AllCharacters)
             {
-                <MudChip Text="@adv.NPCName" Default="NewChapter.Characters.Any(u=>u.Id == adv.Id)"></MudChip>
+                <MudChip Text="@adv.NPCName" Value="@adv"></MudChip>
             }
             
         </MudChipSet>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="CreateCampaign">@Title</MudButton>
+        <MudButton Color="Color.Error" OnClick="CreateCampaign">SAVE</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -35,7 +36,7 @@
     [Parameter] public List<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
     [Parameter] public bool IsEdit { get; set; } = false;
     private string Title = "Create";
-    private MudChip<CharacterDTO>[] SelectedCharacters { get; set; }
+    private IReadOnlyCollection<CharacterDTO> SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
 
     private void Cancel()
@@ -46,24 +47,27 @@
     protected override async Task OnInitializedAsync()
     {
         if (IsEdit)
+        {
             Title = "Edit";
+            SelectedCharacters = NewChapter.Characters.ToList();
+        }
     }
 
     private void CreateCampaign()
     {
-       
+
 
         if (SelectedCharacters is not null)
         {            
 
             foreach (var charac in SelectedCharacters)
             {
-                var adventurer = AllCharacters.FirstOrDefault(c => c.NPCName == charac.Text);
-                if (adventurer is not null && !Characters.Any(c => c.NPCName == charac.Text))
-                    Characters.Add(adventurer);
+                // var adventurer = AllCharacters.FirstOrDefault(c => c.NPCName == charac.NPCName);
+                // if (adventurer is not null && !SelectedCharacters.Any(c => c.NPCName == charac.NPCName))
+                    Characters.Add(charac);
             }
         }
-        //In a real world scenario this bool would probably be a service to delete the item from api/database
+
       
         NewChapter.Characters = Characters;
         NewChapter.CreatedDate = DateTime.Now;

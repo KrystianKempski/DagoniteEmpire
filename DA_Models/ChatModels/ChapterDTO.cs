@@ -1,5 +1,7 @@
-﻿using DA_Models;
+﻿using DA_Common;
+using DA_Models;
 using DA_Models.CharacterModels;
+using DA_Models.ComponentModels;
 using MudBlazor.Charts;
 using System;
 using System.Collections.Generic;
@@ -14,7 +16,16 @@ namespace DA_DataAccess.Chat
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string Day { get; set; } = string.Empty;
+        public int DateNumber { get; set; } = 0;
+        public DateModel Date
+        {
+            get => new DateModel(DateNumber); 
+            set 
+            {
+                DateNumber = value.AllDays;                 
+            }
+        }
+        public string DayTime { get; set; } = string.Empty;
         public string Place { get; set; } = string.Empty;
         public ICollection<PostDTO> Posts { get; set; } = new List<PostDTO>();
         public DateTime CreatedDate { get; set; }

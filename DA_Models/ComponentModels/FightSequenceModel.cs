@@ -18,6 +18,7 @@ namespace DA_Models.ComponentModels
             Date = Date;
         }
         public DateModel Date { get; set; } = new(1, 1);
+        // input variables
         public string AttackerName { get; set; } = string.Empty;
         public string DefenderName { get; set; } = string.Empty;
         public BattlePropertyModel AttackerProps { get; set; } = null;
@@ -32,25 +33,35 @@ namespace DA_Models.ComponentModels
         public int DefenderBalance { get; set; } = 0;
         public int AttackerLifting { get; set; } = 0;
         public int DefenderLifting { get; set; } = 0;
+
+        // select variables
         public string AttackAction { get; set; } = string.Empty;
         public string AttackLocation { get; set; } = string.Empty;
         public string DefenceType { get; set; } = string.Empty;
-        public bool IsHit { get; set; } = false;
-        public int DamageDelt { get; set; } = 0;
-        public bool IsShieldDefenceAllowed { get; set; } = true;
-        public bool IsParryDefenceAllowed { get; set; } = true;
-        public string TestConditionIfHit { get; set; } = string.Empty;
-        public Tuple<int,string> AttackerRoll { get; set; } = new Tuple<int,string>(0, string.Empty);
-        public Tuple<int, string> DefenderRoll { get; set; } = new Tuple<int, string>(0, string.Empty);
 
-        public bool UpdateAttackerNeeded { get; set; } = false;
-        public bool UpdateDefenderNeeded { get; set; } = false;
-       
-        public string ResultStringMG { get; set; } = string.Empty;       
 
+        // private variables
+        private bool IsHit { get; set; } = false;
+        private int AttackValue { get; set; } = 0;
+        private int DefenceValue { get; set; } = 0;
+        private int HitValue { get; set; } = 0;
+        private int AdditionalDamage { get; set; } = 0;
+        private int DamageDelt { get; set; } = 0;
+        private string WoundSeverity { get; set; } = string.Empty;
+        private bool IsShieldDefenceAllowed { get; set; } = true;
+        private bool IsParryDefenceAllowed { get; set; } = true;
+        private string TestConditionIfHit { get; set; } = string.Empty;
+        private Tuple<int, string> AttackerRoll { get; set; } = new Tuple<int, string>(0, string.Empty);
+        private Tuple<int, string> DefenderRoll { get; set; } = new Tuple<int, string>(0, string.Empty);
+        private bool UpdateAttackerNeeded { get; set; } = false;
+        private bool UpdateDefenderNeeded { get; set; } = false;
+
+        // return variables
+        public string ResultStringMG { get; set; } = string.Empty;
         public string AttackerNewStates { get; set; } = string.Empty;
         public string DefenderNewStates { get; set; } = string.Empty;
-        public string DefenderNewWounds { get; set; } = string.Empty;
+
+        // functions
 
         public void AddAttacker(AllParamsModel allParams)
         {
@@ -124,52 +135,64 @@ namespace DA_Models.ComponentModels
                 ;
             }
         }
-        
-        public void MakeAttack()
-        {
-            int AttackValue = 0;
-            int AllAttackValue = 0;
-            int DefenceValue = 0;
-            int AllDefenceValue = 0;
-            int AdditionalDamage = 0;
-            int HitValue = 0;
 
+        public void CalculateAndWriteAttack()
+        {
+            /// Get bonus from attack type
+            WriteWhoAttacksWhoAndHow();
+            /// Get bonus from states
+            WriteBonusesFromStates();
+            /// Add dice rolls  and sum up attack
+            WriteDiceRollsAndAttackSummary();
+            /// Calculate damage
+            if (IsHit)
+            {
+                /// Damage calculation
+                WriteDamageSummary();
+                /// Calculate wound
+                CalculateAndAddWound();
+                /// Test possible states
+                WriteAndCalculatePossibleStates();
+            }
+        }
+
+        public void WriteWhoAttacksWhoAndHow()
+        {
+            int AttackCurrValue = 0;
+            int DefenceCurrValue = 0;
             string defenceString = string.Empty;
             string attackString = string.Empty;
-
-            /// Get bonus from attack type
             switch (DefenceType)
             {
                 default:
                 case SD.DefenceType.Dodge:
-                    AllAttackValue += AttackerProps.Get(SD.BattleProperty.AttackDodge).SumBonus;
-                    AllDefenceValue += DefenderProps.Get(SD.BattleProperty.DefenceDodge).SumBonus;
+                    AttackValue += AttackerProps.Get(SD.BattleProperty.AttackDodge).SumBonus;
+                    DefenceValue += DefenderProps.Get(SD.BattleProperty.DefenceDodge).SumBonus;
                     defenceString = SD.DefenceType.Dodge.ToLower();
                     break;
                 case SD.DefenceType.Parry:
-                    AllAttackValue += AttackerProps.Get(SD.BattleProperty.AttackParry).SumBonus;
-                    AllDefenceValue += DefenderProps.Get(SD.BattleProperty.DefenceParry).SumBonus;
+                    AttackValue += AttackerProps.Get(SD.BattleProperty.AttackParry).SumBonus;
+                    DefenceValue += DefenderProps.Get(SD.BattleProperty.DefenceParry).SumBonus;
                     defenceString = SD.DefenceType.Parry.ToLower();
                     break;
                 case SD.DefenceType.Shield:
-                    AllAttackValue += AttackerProps.Get(SD.BattleProperty.AttackShield).SumBonus;
-                    AllDefenceValue += DefenderProps.Get(SD.BattleProperty.DefenceShield).SumBonus;
+                    AttackValue += AttackerProps.Get(SD.BattleProperty.AttackShield).SumBonus;
+                    DefenceValue += DefenderProps.Get(SD.BattleProperty.DefenceShield).SumBonus;
                     defenceString = "deflect with shield";
                     break;
                 case SD.DefenceType.Armor:
-                    AllAttackValue += AttackerProps.Get(SD.BattleProperty.AttackArmor).SumBonus;
-                    AllDefenceValue += DefenderProps.Get(SD.BattleProperty.DefenceArmor).SumBonus;
+                    AttackValue += AttackerProps.Get(SD.BattleProperty.AttackArmor).SumBonus;
+                    DefenceValue += DefenderProps.Get(SD.BattleProperty.DefenceArmor).SumBonus;
                     defenceString = "deflect with armor";
                     break;
             }
-            
 
             /// Get bonus from attack action
             switch (AttackAction)
             {
                 default:
                 case SD.AttackAction.Cautious:
-                    AttackValue += -3;
+                    AttackCurrValue += -3;
                     TraitCharacterDTO cautious = new TraitCharacterDTO(true);
                     AttackerNewStates += SD.TempStates.Cautious + ":1" + ", ";
                     attackString = "cautiously";
@@ -179,20 +202,20 @@ namespace DA_Models.ComponentModels
                     {
                         default:
                         case SD.WoundLocation.Head:
-                            AttackValue += -5;
+                            AttackCurrValue += -5;
                             AdditionalDamage += 8;
                             TestConditionIfHit += SD.TempStates.Stumbled + ", ";
                             break;
                         case SD.WoundLocation.Neck:
-                            AttackValue += -6;
-                            AdditionalDamage += 9;                            
-                            if(AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
+                            AttackCurrValue += -6;
+                            AdditionalDamage += 9;
+                            if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
                                 TestConditionIfHit += SD.TempStates.Snatched + ", ";
                             else
                                 TestConditionIfHit += SD.TempStates.Bleeding + ", ";
                             break;
                         case SD.WoundLocation.Face:
-                            AttackValue += -6;
+                            AttackCurrValue += -6;
                             AdditionalDamage += 10;
                             TestConditionIfHit += SD.TempStates.Blinded + ", ";
                             break;
@@ -200,17 +223,17 @@ namespace DA_Models.ComponentModels
                         case SD.WoundLocation.MainArm:
                         case SD.WoundLocation.OffArm:
                         case SD.WoundLocation.OffHand:
-                            AttackValue += -2;
+                            AttackCurrValue += -2;
                             if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
                                 TestConditionIfHit += SD.TempStates.Snatched + ", ";
                             break;
                         case SD.WoundLocation.Body:
                             break;
                         case SD.WoundLocation.Back:
-                            break;                        
+                            break;
                         case SD.WoundLocation.LeftLeg:
                         case SD.WoundLocation.RightLeg:
-                            AttackValue += -2;
+                            AttackCurrValue += -2;
                             if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
                                 TestConditionIfHit += SD.TempStates.Snatched + ", ";
                             else
@@ -220,44 +243,50 @@ namespace DA_Models.ComponentModels
                     attackString = $"aiming at the {AttackLocation.ToLower()}";
                     break;
                 case SD.AttackAction.Charge:
-                    AttackValue += 5;
+                    AttackCurrValue += 5;
                     AdditionalDamage += 3;
                     attackString = "charging";
                     break;
                 case SD.AttackAction.Raging:
-                    AttackValue += 7;
+                    AttackCurrValue += 7;
                     AdditionalDamage += 3;
                     AttackerNewStates += SD.TempStates.Unbalanced + ":1" + ", ";
                     attackString = "furiously!";
                     break;
                 case SD.AttackAction.Strong:
-                    AttackValue += 5;
+                    AttackCurrValue += 5;
                     attackString = "with all strength";
                     break;
             }
-            AllAttackValue += AttackValue;
-            AllDefenceValue += DefenceValue;
-            attackString += SD.BonusText(AttackValue);
-            defenceString += SD.BonusText(DefenceValue);
+            AttackValue += AttackCurrValue;
+            DefenceValue += DefenceCurrValue;
+            attackString += SD.BonusText(AttackCurrValue);
+            defenceString += SD.BonusText(DefenceCurrValue);
 
             // add weapon bonus if exists
-            AttackValue = AttackerProps.Get(SD.WeaponQuality.Precise).SumBonus;
-            if (AttackValue > 0)
+            AttackCurrValue = AttackerProps.Get(SD.WeaponQuality.Precise).SumBonus;
+            if (AttackCurrValue > 0)
             {
-                AllAttackValue += AttackValue;
-                attackString += ", with precise weapon" + SD.BonusText(AttackValue);
+                AttackValue += AttackCurrValue;
+                attackString += ", with precise weapon" + SD.BonusText(AttackCurrValue);
             }
-            AttackValue = AttackerProps.Get(SD.WeaponQuality.Bulky).SumBonus;
-            if (AttackValue > 0)
+            AttackCurrValue = AttackerProps.Get(SD.WeaponQuality.Bulky).SumBonus;
+            if (AttackCurrValue > 0)
             {
-                AllAttackValue -= AttackValue;
-                attackString += ", with crude weapon" + SD.BonusText(-AttackValue);
+                AttackValue -= AttackCurrValue;
+                attackString += ", with crude weapon" + SD.BonusText(-AttackCurrValue);
             }
 
 
             ResultStringMG += $"({AttackerName} attacks {attackString}, {DefenderName} tries to {defenceString}.";
+        }
 
-            /// Get bonus from states
+        public void WriteBonusesFromStates()
+        {
+            int AttackCurrValue = 0;
+            int DefenceCurrValue = 0;
+            string defenceString = string.Empty;
+            string attackString = string.Empty;
             // attacker
             if (AttackerStates is not null && AttackerStates.Any())
             {
@@ -265,7 +294,7 @@ namespace DA_Models.ComponentModels
 
                 foreach (var state in AttackerStates)
                 {
-                    AttackValue = 0;
+                    AttackCurrValue = 0;
                     attackString = "";
                     switch (state.Name)
                     {
@@ -282,24 +311,24 @@ namespace DA_Models.ComponentModels
                             //does nothing
                             break;
                         case SD.TempStates.Stumbled:
-                            AttackValue += -state.Level;
+                            AttackCurrValue += -state.Level;
                             break;
                         case SD.TempStates.Snatched:
-                            AttackValue += -state.Level;
+                            AttackCurrValue += -state.Level;
                             break;
                         case SD.TempStates.Blinded:
-                            AttackValue += -state.Level;
+                            AttackCurrValue += -state.Level;
                             break;
                         case SD.TempStates.Invisible:
-                            AttackValue += state.Level;
+                            AttackCurrValue += state.Level;
                             break;
                         case SD.TempStates.Flanking:
-                            AttackValue += state.Level;
+                            AttackCurrValue += state.Level;
                             IsShieldDefenceAllowed = false;
                             break;
                     }
-                    AllAttackValue += AttackValue;
-                    attackString = state.Name + SD.BonusText(AttackValue);
+                    AttackValue += AttackCurrValue;
+                    attackString = state.Name + SD.BonusText(AttackCurrValue);
                     ResultStringMG += $"{attackString}, ";
                 }
             }
@@ -312,21 +341,21 @@ namespace DA_Models.ComponentModels
                 foreach (var state in DefenderStates)
                 {
 
-                    DefenceValue = 0;
+                    DefenceCurrValue = 0;
                     defenceString = "";
                     switch (state.Name)
                     {
                         case SD.TempStates.Stunned:
-                            DefenceValue += -state.Level;
+                            DefenceCurrValue += -state.Level;
                             break;
                         case SD.TempStates.Unaware:
-                            DefenceValue += -state.Level;
+                            DefenceCurrValue += -state.Level;
                             break;
                         case SD.TempStates.FullDefence:
-                            DefenceValue += state.Level;
+                            DefenceCurrValue += state.Level;
                             break;
                         case SD.TempStates.Surrounded:
-                            DefenceValue += 2 * state.TraitValue;
+                            DefenceCurrValue += 2 * state.TraitValue;
                             break;
                         case SD.TempStates.Disarmed:
                             IsParryDefenceAllowed = false;
@@ -334,146 +363,152 @@ namespace DA_Models.ComponentModels
                         case SD.TempStates.Bleeding:
                             break;
                         case SD.TempStates.Unbalanced:
-                            DefenceValue += -state.Level;
+                            DefenceCurrValue += -state.Level;
                             break;
                         case SD.TempStates.Cautious:
-                            DefenceValue += state.Level;
+                            DefenceCurrValue += state.Level;
                             break;
                         case SD.TempStates.Stumbled:
-                            DefenceValue += -state.Level;
+                            DefenceCurrValue += -state.Level;
                             break;
                         case SD.TempStates.Snatched:
-                            DefenceValue += -state.Level;
+                            DefenceCurrValue += -state.Level;
                             break;
                         case SD.TempStates.Blinded:
-                            DefenceValue += -state.Level;
+                            DefenceCurrValue += -state.Level;
                             break;
                         case SD.TempStates.Invisible:
-                            DefenceValue += state.Level;
+                            DefenceCurrValue += state.Level;
                             break;
                         case SD.TempStates.Flanking:
                             break;
                     }
-                    AllDefenceValue += DefenceValue;
-                    defenceString = state.Name + SD.BonusText(DefenceValue);
+                    DefenceValue += DefenceCurrValue;
+                    defenceString = state.Name + SD.BonusText(DefenceCurrValue);
                     ResultStringMG += $"{defenceString}, ";
                 }
             }
-
-            /// Add dice rolls 
+        }
+        public void WriteDiceRollsAndAttackSummary()
+        {
+            string attackString = string.Empty;
             AttackerRoll = SD.RollDice();
             DefenderRoll = SD.RollDice();
             ResultStringMG += $" \r{AttackerName} roll: {AttackerRoll.Item2}, {DefenderName} roll: {DefenderRoll.Item2}";
-            AllAttackValue += AttackerRoll.Item1;
-            AllDefenceValue += DefenderRoll.Item1;
-            HitValue = AllAttackValue - DefenceValue;
+            AttackValue += AttackerRoll.Item1;
+            DefenceValue += DefenderRoll.Item1;
+            HitValue = AttackValue - DefenceValue;
             if (HitValue >= 0) IsHit = true;
             attackString = IsHit ? "Hit!" : "Miss!";
-            ResultStringMG += $" \r{AttackerName} sum: {AllAttackValue}, {DefenderName} sum: {AllDefenceValue}. {attackString}";
+            ResultStringMG += $" \r{AttackerName} sum: {AttackValue}, {DefenderName} sum: {DefenceValue}. {attackString}";
+        }
+        public void WriteDamageSummary()
+        {
+            if (IsHit == false) return; 
 
-            /// Calculate damage
-            if (IsHit)
+            string attackString = string.Empty;
+            // damage from attack
+            ResultStringMG += $" \rDamage dealt from attack: {HitValue}";
+            int dmgDeflected = DefenderProps.Get(SD.BattleProperty.ArmorClass).SumBonus - AttackerProps.Get(SD.WeaponQuality.ArmorPiercing).SumBonus;
+            if (dmgDeflected > 0)
             {
-                // damage from attack
-                ResultStringMG += $" \rDamage dealt from attack: {HitValue}";
-                int dmgDeflected = DefenderProps.Get(SD.BattleProperty.ArmorClass).SumBonus - AttackerProps.Get(SD.WeaponQuality.ArmorPiercing).SumBonus;
-                if (dmgDeflected > 0)
-                {
-                    attackString = $", deflected by armor: {dmgDeflected} ";
-                }
-                else
-                {
-                    attackString = "";
-                    dmgDeflected = 0;
-                }
-                ResultStringMG += $"{attackString}";
-                // damage from weapon qualities
-                int dmgfromWeaponQuality = AttackerProps.Get(SD.WeaponQuality.Devastating).SumBonus;
+                attackString = $", deflected by armor: {dmgDeflected} ";
+            }
+            else
+            {
+                attackString = "";
+                dmgDeflected = 0;
+            }
+            ResultStringMG += $"{attackString}";
+            // damage from weapon qualities
+            int dmgfromWeaponQuality = AttackerProps.Get(SD.WeaponQuality.Devastating).SumBonus;
+            if (dmgfromWeaponQuality > 0)
+            {
+                attackString = $", from devastating weapon: {dmgfromWeaponQuality}";
+            }
+            else
+            {
+                dmgfromWeaponQuality = AttackerProps.Get(SD.WeaponQuality.Weak).SumBonus;
                 if (dmgfromWeaponQuality > 0)
                 {
-                    attackString = $", from devastating weapon: {dmgfromWeaponQuality}";
+                    dmgfromWeaponQuality = -dmgfromWeaponQuality;
+                    attackString = $", from weak weapon: {dmgfromWeaponQuality}";
                 }
-                else
+            }
+            ResultStringMG += $"{attackString}";
+            // damage from actions (rage, charge)
+            if (AdditionalDamage != 0)
+            {
+                attackString = $", from action: {AdditionalDamage}";
+            }
+            ResultStringMG += $"{attackString}";
+            DamageDelt = (AttackValue - DefenceValue) - dmgDeflected + AdditionalDamage + dmgfromWeaponQuality;
+            WoundSeverity = SD.WoundSeverityFromDmg(DamageDelt);
+            ResultStringMG += $"\rSummary damage: {DamageDelt} - {WoundSeverity} wound to {AttackLocation}";
+        }
+        public void CalculateAndAddWound()
+        {
+            // Prain resistance roll
+            int DC = SD.DCFromWoundSeverity(WoundSeverity);
+            var painResRoll = SD.MakeRollTest(DC, DefenderPainResistance);
+            ResultStringMG += $"\rPain resistance test: {painResRoll.Item2}";
+
+            //create wound
+            WoundDTO newWound = new();
+            newWound.DateStart = Date;
+            newWound.IsIgnored = painResRoll.Item1;
+            newWound.Description = ResultStringMG;
+            if (AttackAction.IsNullOrEmpty())
+            {
+                Random rnd = new Random();
+                int location = rnd.Next(0, SD.WoundLocation.All.Length - 1);
+                AttackAction = SD.WoundLocation.All[location];
+            }
+            newWound.Location = AttackAction;
+            newWound.Value = SD.GetValueFromSeverity(WoundSeverity);
+
+            DefenderHealth.AddWound(newWound);
+        }
+        public void WriteAndCalculatePossibleStates()
+        {
+            int DC = 0;
+            foreach (var stateTest in TestConditionIfHit.Split(", "))
+            {
+                Tuple<bool, string> result = new Tuple<bool, string>(false, string.Empty);
+                int duration = 0;
+                switch (stateTest)
                 {
-                    dmgfromWeaponQuality = AttackerProps.Get(SD.WeaponQuality.Weak).SumBonus;
-                    if (dmgfromWeaponQuality > 0)
-                    {
-                        dmgfromWeaponQuality = -dmgfromWeaponQuality;
-                        attackString = $", from weak weapon: {dmgfromWeaponQuality}";
-                    }
+                    case SD.TempStates.Stumbled:
+                        DC = AttackerProps.Get(SD.WeaponQuality.Stumbling).SumBonus + HitValue;
+                        result = SD.MakeRollTest(DC, Math.Max(DefenderBalance, DefenderLifting));
+                        duration = 99;
+                        break;
+                    case SD.TempStates.Stunned:
+                        DC = AttackerProps.Get(SD.WeaponQuality.Stunning).SumBonus + HitValue;
+                        result = SD.MakeRollTest(DC, DefenderPainResistance);
+                        duration = Math.Max(1, DC / 10);
+                        break;
+                    case SD.TempStates.Snatched:
+                        DC = AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus + HitValue;
+                        result = SD.MakeRollTest(DC, Math.Max(DefenderBalance, DefenderLifting));
+                        duration = 99;
+                        break;
+                    case SD.TempStates.Bleeding:
+                        DC = HitValue;
+                        result = SD.MakeRollTest(DC, DefenderPainResistance);
+                        duration = 99;
+                        break;
+                    case SD.TempStates.Blinded:
+                        DC = HitValue;
+                        result = SD.MakeRollTest(DC, DefenderPainResistance);
+                        duration = Math.Max(1, DC / 10);
+                        break;
+                    default: continue;
                 }
-                ResultStringMG += $"{attackString}";
-                // damage from actions (rage, charge)
-                if (AdditionalDamage != 0)
+                ResultStringMG += $"\rTest against {stateTest}: {result.Item2}";
+                if (result.Item1)
                 {
-                    attackString = $", from action: {AdditionalDamage}";
-                }
-                ResultStringMG += $"{attackString}";
-                DamageDelt = (AllAttackValue - AllDefenceValue) - dmgDeflected + AdditionalDamage + dmgfromWeaponQuality;
-                string woundSeverity = SD.WoundSeverityFromDmg(DamageDelt);
-                ResultStringMG += $"\rSummary damage: {DamageDelt} - {woundSeverity} wound to {AttackLocation}";
-                /// Prain resistance roll
-                int DC = SD.DCFromWoundSeverity(woundSeverity);
-                var painResRoll =  SD.MakeRollTest(DC, DefenderPainResistance);
-                ResultStringMG += $"\rPain resistance test: {painResRoll.Item2}";
-
-                /// Add wound
-
-                WoundDTO newWound = new();
-                newWound.DateStart = Date;
-                newWound.IsIgnored = painResRoll.Item1;
-                newWound.Description = ResultStringMG;
-                if (AttackAction.IsNullOrEmpty())
-                {
-                    Random rnd = new Random();
-                    int location = rnd.Next(0, SD.WoundLocation.All.Length-1);
-                    AttackAction = SD.WoundLocation.All[location];
-                }
-                newWound.Location = AttackAction;
-                newWound.Value = SD.GetValueFromSeverity(woundSeverity);
-
-                DefenderHealth.AddWound(newWound);
-
-                /// test possible states
-
-                foreach (var stateTest in TestConditionIfHit.Split(", "))
-                {
-                    Tuple<bool, string> result = new Tuple<bool, string>(false,string.Empty);
-                    int duration = 0;
-                    switch (stateTest)
-                    {
-                        case SD.TempStates.Stumbled:
-                            DC = AttackerProps.Get(SD.WeaponQuality.Stumbling).SumBonus + HitValue;
-                            result = SD.MakeRollTest(DC, Math.Max(DefenderBalance,DefenderLifting));
-                            duration = 99;                           
-                            break;
-                        case SD.TempStates.Stunned:
-                            DC = AttackerProps.Get(SD.WeaponQuality.Stunning).SumBonus + HitValue;
-                            result = SD.MakeRollTest(DC, DefenderPainResistance);
-                            duration =Math.Max(1, DC /10);
-                            break;
-                        case SD.TempStates.Snatched:
-                            DC = AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus + HitValue;
-                            result = SD.MakeRollTest(DC, Math.Max(DefenderBalance, DefenderLifting));
-                            duration = 99;
-                            break;
-                        case SD.TempStates.Bleeding:
-                            DC = HitValue;
-                            result = SD.MakeRollTest(DC, DefenderPainResistance);
-                            duration = 99;
-                            break;
-                        case SD.TempStates.Blinded:
-                            DC = HitValue;
-                            result = SD.MakeRollTest(DC, DefenderPainResistance);
-                            duration = Math.Max(1, DC / 10);
-                            break;
-                        default: continue;
-                    }
-                    ResultStringMG += $"\rTest against {stateTest}: {result.Item2}";
-                    if (result.Item1)
-                    {
-                        DefenderNewStates += $"{stateTest}:{duration}";
-                    }
+                    DefenderNewStates += $"{stateTest}:{duration}";
                 }
             }
         }

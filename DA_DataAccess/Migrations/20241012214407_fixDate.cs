@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class mobs : Migration
+    public partial class fixDate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -369,7 +369,8 @@ namespace DA_DataAccess.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
-                    Day = table.Column<string>(type: "text", nullable: false),
+                    DayTime = table.Column<string>(type: "text", nullable: false),
+                    DateNumber = table.Column<int>(type: "integer", nullable: false),
                     Place = table.Column<string>(type: "text", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     IsFinished = table.Column<bool>(type: "boolean", nullable: false),
@@ -786,7 +787,6 @@ namespace DA_DataAccess.Migrations
                     DateMonth = table.Column<int>(type: "integer", nullable: false),
                     DateDay = table.Column<int>(type: "integer", nullable: false),
                     DateYear = table.Column<int>(type: "integer", nullable: false),
-                    DayOfInjury = table.Column<int>(type: "integer", nullable: false),
                     HealTime = table.Column<int>(type: "integer", nullable: false),
                     IsCondition = table.Column<bool>(type: "boolean", nullable: false),
                     CharacterId = table.Column<int>(type: "integer", nullable: false)

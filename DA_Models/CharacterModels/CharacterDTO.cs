@@ -43,12 +43,13 @@ namespace DA_Models.CharacterModels
         public int ProfessionId { get; set; } = 0;
         public bool IsApproved { get; set; } = false;
         public int WeaponSet { get; set; } = 0;
-        public int CurrentDay { get; set; } = 1;
-        public int CurrentMonth { get; set; } = 1;
-        public int CurrentYear { get; set; } = SD.Calendar.StartYear;
-
+        public int DateNumber { get; set; } = 1;
         public DateModel CurrentDate { 
-            get =>  new DateModel(CurrentDay,CurrentMonth,CurrentYear);
+            set
+            {
+                DateNumber = value.AllDays;
+            }
+            get =>  new DateModel(DateNumber);
         }
         public override string ToString() => NPCName;
 

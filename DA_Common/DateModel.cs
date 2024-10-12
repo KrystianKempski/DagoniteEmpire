@@ -1,20 +1,33 @@
-﻿using DA_Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static DA_Common.SD;
-
-namespace DA_Models.ComponentModels
+﻿
+namespace DA_Common
 {
     public class DateModel
     {
         public int Day { get; set; } = 1;
         public int Month { get; set; } = 1;
         public int Year { get; set; } = SD.Calendar.StartYear;
-        private int AllDays  { get=> GetDaysFromDate(this);   }
-        
+        public int AllDays  { get => GetDaysFromDate(this);  }
+
+        public DateModel(int Date)
+        {
+            if (Date < 1)
+                return;
+
+            Year = Date / 365;
+            Month = 1;
+            Day = 0;
+            Date = Date % 365;
+
+            foreach (var m in SD.Calendar.Months)
+            {
+                if (Date <= m.Days)
+                    break;
+                Date -= m.Days;
+                Month++;
+            }
+            Day = Date;
+        }
+
         public DateModel(int day, int month, int year = SD.Calendar.StartYear)
         {
             Day = day;

@@ -8,163 +8,154 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@MyIcon.Helm" Color="Color.Primary" />
-            @Title mob character
+            Fight sequence
         </MudText>
     </TitleContent>
     <DialogContent>
 
-        <MudPaper Width="320px" Height="320px" Class="pa-2">
-            <div class="portrait-relative">
-                <div class="portrait-imageframe">
-                    <img src="@NewMob.ImageUrl" class="portrait-image" />
-                    <label class="input-label" for="input">@ChooseFile</label>
-                    <InputFile id="input" OnChange="HandleImageUpload" class="sr-only" accept=".jpg,.png,.jpeg"></InputFile>
-                </div>
-            </div>
-        </MudPaper>
 
-        <MudStack Row="true">
-            <MudTextField Required="true" @bind-Value="@NewMob.Name" Label="Name" />
-            <MudTextField Required="true" @bind-Value="@NewMob.RaceName" Label="Race" />
-            <MudTextField Required="true" @bind-Value="@NewMob.ProfessionName" Label="Class" />
-            <MudSelect Required="true" @bind-Value="@NewMob.Relation" Label="Relation">
-                <MudSelectItem Value="Relation.Ally">@Relation.Ally.ToString()</MudSelectItem>
-                <MudSelectItem Value="Relation.Neutral">@Relation.Neutral.ToString()</MudSelectItem>
-                <MudSelectItem Value="Relation.Enemy">@Relation.Enemy.ToString()</MudSelectItem>
-
-            </MudSelect>
-        </MudStack>
-
-        <MudTextField Required="true" @bind-Value="@NewMob.Description" Label="Description" Lines="3" />
-        <MudTextField @bind-Value="@NewMob.Notes" Label="Notes" Lines="3" />
-        <MudGrid>
-            <MudItem xs="3">
-                <MudNumericField Required="true" @bind-Value="@NewMob.AttackSkillValue" Label="Attack skill" />
-            </MudItem>
-            <MudItem xs="3">
-                <MudNumericField Required="true" @bind-Value="@NewMob.ShieldSkillValue" Label="Shield skill" />
-            </MudItem>
-            <MudItem xs="3">
-                <MudNumericField Required="true" @bind-Value="@NewMob.DodgeSkillValue" Label="Dodge skill" />
-            </MudItem>
-            <MudItem xs="3">
-                <MudNumericField Required="true" @bind-Value="@NewMob.ArmorSkillValue" Label="Armor skill" />
-            </MudItem>
-            <MudItem xs="3">
-                <MudNumericField Required="true" @bind-Value="@NewMob.ParrySkillValue" Label="Parry skill" />
-            </MudItem>
-            <MudItem xs="3">
-                <MudNumericField Required="true" @bind-Value="@NewMob.LiftingSkillValue" Label="Lifting skill" />
-            </MudItem>
-            <MudItem xs="3">
-                <MudNumericField Required="true" @bind-Value="@NewMob.PainResSkillValue" Label="Pain resistance" />
-            </MudItem>
-            <MudItem xs="3">
-                <MudNumericField Required="true" @bind-Value="@NewMob.WrestlingSkillValue" Label="Wrestling" />
-            </MudItem>
-
-        </MudGrid>
+        @if (FightSequence is not null){
 
         <MudGrid>
             <MudItem xs="6">
-                <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.MainWeaponName" Label="Main weapon">
-                    <MudSelectItem Value="string.Empty">None</MudSelectItem>
-                    @foreach (string weapon in SD.BasicWeaponsMelee.All)
+
+                @* ATTACKER *@
+                <MudPaper Elevation="1" Class="pa-2">
+
+                        @* Select Attacker *@
+                    <MudSelect Value="SelectedAttacker" T="string" Required="true" ValueChanged="SelectAttacker" Label="Select Attacker">
+                        @foreach(var attacker in CharacterAllParams) {
+                            @if (attacker is not null && attacker.Character.NPCName != SelectedDefender)
+                            {                            
+                                <MudSelectItem Value="attacker.Character.NPCName">@attacker.Character.NPCName</MudSelectItem>
+                            }
+                        }
+                        @foreach (var attacker in Mobs)
+                        {
+                            @if (attacker is not null && attacker.Name != SelectedDefender)
+                            {
+                                <MudSelectItem Value="attacker.Name">@attacker.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>                
+                    @* Select action type *@
+                    <MudSelect T="string" Required="true" @bind-Value="@FightSequence.AttackAction" Label="Select action type">
+                        @foreach (var defType in SD.DefenceType.All)
+                        {
+                            <MudSelectItem Value="defType">@defType</MudSelectItem>
+                        }
+                    </MudSelect>
+                    @* Attacker states *@
+                    @if ( string.IsNullOrEmpty(SelectedAttacker) == false)
                     {
-                        <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                        <MudText Typo="Typo.button">States</MudText>
+                        @if (FightSequence.AttackerStates is not null && FightSequence.AttackerStates.Any())
+                        {                        
+                            <MudGrid>
+                                @foreach(var state in FightSequence.AttackerStates)
+                                {
+                                    <MudItem>
+                                        <MudText>@state.Name, </MudText>                        
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
                     }
-                    @foreach (string weapon in SD.BasicWeaponsShooting.All)
-                    {
-                        <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
-                    }
-                </MudSelect>
+                    @* Other bonuses. penalties states *@
+                </MudPaper>
             </MudItem>
+            @* DEFENDER *@
             <MudItem xs="6">
-                <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.OffWeaponName" Label="Second weapon">
-                    <MudSelectItem Value="string.Empty">None</MudSelectItem>
-                    @foreach (string weapon in SD.BasicWeaponsMelee.All)
-                    {
-                        <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
-                    }
-                    @foreach (string weapon in SD.BasicWeaponsShooting.All)
-                    {
-                        <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
-                    }
-                </MudSelect>
+                <MudPaper Elevation="1" Class="pa-2">
+                    @* Select Defender *@
+                    <MudSelect Value="SelectedDefender" T="string" Required="true" ValueChanged="SelectDefender" Label="Select Defender">
+                        @foreach (var defender in CharacterAllParams)
+                        {
+                            @if (defender.Character.NPCName != SelectedAttacker)
+                            {
+                                <MudSelectItem Value="defender.Character.NPCName">@defender.Character.NPCName</MudSelectItem>
+                            }
+                        }
+                        @foreach (var defender in Mobs)
+                        {
+                            @if (defender.Name != SelectedAttacker)
+                            {
+                                <MudSelectItem Value="defender.Name">@defender.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                    @* Select defence type *@
+                    <MudButton OnClick="SelectBestDefence">Select best</MudButton>
+                    <MudSelect T="string" Required="true" @bind-Value="@FightSequence.DefenceType" Label="Select defence type">
+                        @foreach (var defType in SD.DefenceType.All)
+                        {
+                            <MudSelectItem Value="defType">@defType</MudSelectItem>
+                        }
+                    </MudSelect>
+                    @* Other bonuses. penalties states *@
+            
+                </MudPaper>
             </MudItem>
-            <MudItem xs="6">
-                <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.ShieldWeaponName" Label="Shield">
-                    <MudSelectItem Value="string.Empty">None</MudSelectItem>
-                    @foreach (string shield in SD.BasicShields.All)
-                    {
-                        <MudSelectItem Value="@shield">@shield</MudSelectItem>
-                    }
-                </MudSelect>
+            
+            <MudItem xs="12">
+                <MudButton Class="p-2 m-2" Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeAttackRoll">Roll!</MudButton>
             </MudItem>
-            <MudItem xs="6">
-                <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.ArmorName" Label="Armor">
-                    <MudSelectItem Value="string.Empty">None</MudSelectItem>
-                    @foreach (string armor in SD.BasicArmors.All)
-                    {
-                        <MudSelectItem Value="@armor">@armor</MudSelectItem>
-                    }
-                </MudSelect>
+
+            <MudItem xs="12">
+                <SfRichTextEditor Width="100%" Height="400px" @bind-Value="@FightSequence.ResultStringMG" ShowTooltip="true">
+                    <RichTextEditorToolbarSettings Items="@Tools" />
+                </SfRichTextEditor>
             </MudItem>
         </MudGrid>
-        <MudPaper Class="py-2" Elevation="0">
-            <MudStack Row="true" Justify="Justify.SpaceBetween">
-                <MudNumericField Required="true" @bind-Value="@NewMob.MaxWounds" Label="Maximum wounds" />
-                <MudNumericField @bind-Value="@NewMob.CurrentWounds" Label="Current wounds" />
-            </MudStack>
+        }
 
-            <MudText>Current status: @NewMob.States</MudText>
-            <MudStack Row="true" Justify="Justify.SpaceBetween">
-                <MudButton OnClick="ClearStates">Clear states</MudButton>
-                <MudSelect Value="SelectedState" T="string" ValueChanged="AddState" Label="AddState" AnchorOrigin="Origin.BottomCenter">
-                    @foreach (string state in SD.TempStates.All)
-                    {
-                        <MudSelectItem Value="@state">@state</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudStack>
-
-        </MudPaper>
-        <MudStack Row="true" Justify="Justify.SpaceBetween">
-            <MudSelect Value="@NewMob.Campaign" T="CampaignDTO" ValueChanged="SelectCampaign" Label="Select Campaign" Placeholder="Select campagin" AnchorOrigin="Origin.BottomCenter">
-                @foreach (var campaign in Campaigns)
-                {
-                    <MudSelectItem Value="@campaign">@campaign.Name</MudSelectItem>
-                }
-            </MudSelect>
-            <MudSelect ReadOnly="IsCampaignSelected" Value="NewMob.Chapter" T="ChapterDTO" ValueChanged="SelectCharacter" Label="Select character" AnchorOrigin="Origin.BottomCenter">
-                @foreach (var chapter in Chapters)
-                {
-                    <MudSelectItem Value="@chapter">@chapter.Name</MudSelectItem>
-                }
-            </MudSelect>
-        </MudStack>
+             
 
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="SaveMobBtn">@Title</MudButton>
+        <MudButton Color="Color.Error" OnClick="SaveSequenceBtn">Save</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    [Parameter] public MobDTO NewMob { get; set; } = new();
-    [Parameter] public bool IsEdit { get; set; } = false;
+
+    [Parameter] public ICollection<AllParamsModel?> CharacterAllParams { get; set; } = new List<AllParamsModel?>();
+    [Parameter] public IEnumerable<MobDTO> Mobs { get; set; } = new List<MobDTO>();
     [Parameter] public int CampaignId { get; set; } = 0;
     [Parameter] public int ChapterId { get; set; } = 0;
-    private string Title = "Create";
-    private string SelectedState = string.Empty;
-    private IEnumerable<CampaignDTO> Campaigns { get; set; } = new List<CampaignDTO>();
-    private IEnumerable<ChapterDTO> Chapters { get; set; } = new List<ChapterDTO>();
-    private bool IsCampaignSelected = true;
-    private string ChooseFile = "Choose file";
-    private IList<IBrowserFile> files = new List<IBrowserFile>();
+    [Parameter] public DateModel Date { get; set; } = new(1,1);
+    private string SelectedAttacker = string.Empty;
+    private string SelectedDefender= string.Empty;
+
+    FightSequenceModel? FightSequence { get; set; } = null;
+    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
+    {
+        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
+        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
+        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
+        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontColor },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
+        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
+        new ToolbarItemModel() { Command = ToolbarCommand.OrderedList },
+        new ToolbarItemModel() { Command = ToolbarCommand.UnorderedList },
+        new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
+        new ToolbarItemModel() { Command = ToolbarCommand.Indent },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
+        new ToolbarItemModel() { Command = ToolbarCommand.Image },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Undo },
+        new ToolbarItemModel() { Command = ToolbarCommand.Redo },
+        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
+    };
+
     private void Cancel()
     {
         MudDialog.Cancel();
@@ -172,114 +163,69 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (IsEdit)
-        {
-            Title = "Edit";
-        }
-        else
-        {
-            Title = "Add";
-        }
+
+        FightSequence = new FightSequenceModel(Date);
 
 
-        Campaigns = await _campaignRepository.GetAll();
-        if (CampaignId > 0)
-        {
-            NewMob.Campaign = Campaigns.FirstOrDefault(c => c.Id == CampaignId);
-            if (NewMob.Campaign is not null)
-                NewMob.CampaignId = CampaignId;
-        }
-        if (ChapterId > 0)
-        {
-            NewMob.Chapter = await _chapterRepository.GetById(ChapterId);
-            if (NewMob.Chapter is not null)
-                NewMob.ChapterId = ChapterId;
-        }
     }
 
-    private void SaveMobBtn()
+    private void SelectAttacker(string attackerName)
     {
-        if (IsEdit)
+        var characterParams = CharacterAllParams.FirstOrDefault(p => p.Character.NPCName == attackerName);
+        if (characterParams is not null)
         {
-            _mobRepository.Update(NewMob);
+            FightSequence.AddAttacker(characterParams);
+            return;
         }
-        else
+        var mob = Mobs.FirstOrDefault(m=>m.Name == attackerName);
+        if(mob is not null)
         {
-            _mobRepository.Create(NewMob);
-        }
-
-        MudDialog.Close(DialogResult.Ok(NewMob));
-        if (IsEdit)
-            Snackbar.Add("Mob edited", Severity.Success);
-        else
-            Snackbar.Add("Mob created", Severity.Success);
-    }
-
-    private void UploadFiles(IBrowserFile file)
-    {
-        files.Add(file);
-        //TODO upload the files to the server
-    }
-
-    private void AddState(string newStatus)
-    {
-        if (NewMob.States == string.Empty)
-            NewMob.States += newStatus;
-        else
-            NewMob.States += ", " + newStatus;
-    }
-    private void ClearStates()
-    {
-        NewMob.States = string.Empty;
-    }
-
-    private async Task SelectCampaign(CampaignDTO campaign)
-    {
-        Chapters = await _chapterRepository.GetAll(campaign.Id);
-        if (campaign.Id > 0)
-        {
-            IsCampaignSelected = false;
-            NewMob.Campaign = campaign;
-            NewMob.CampaignId = campaign.Id;
+            FightSequence.AddAttacker(mob);
         }
     }
-    private void SelectCharacter(ChapterDTO chapter)
+    private void SelectDefender(string defenderName)
     {
-        if (chapter.Id > 0)
+        var characterParams = CharacterAllParams.FirstOrDefault(p => p.Character.NPCName == defenderName);
+        if (characterParams is not null)
         {
-            NewMob.Chapter = chapter;
-            NewMob.ChapterId = chapter.Id;
+            FightSequence.AddDefender(characterParams);
+            return;
+        }
+        var mob = Mobs.FirstOrDefault(m => m.Name == defenderName);
+        if (mob is not null)
+        {
+            FightSequence.AddDefender(mob);
         }
     }
 
-    private async Task HandleImageUpload(InputFileChangeEventArgs e)
+    private void SelectBestDefence()
     {
-        try
-        {
-            if (e.GetMultipleFiles().Count > 0)
-            {
-                ChooseFile = string.Empty;
-                foreach (var file in e.GetMultipleFiles())
-                {
-                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);
-                    if (fileInfo.Extension.ToLower() == ".jpg" ||
-                        fileInfo.Extension.ToLower() == ".png" ||
-                        fileInfo.Extension.ToLower() == ".jpeg")
-                    {
-                        NewMob.ImageUrl = await _fileUpload.UploadFile(file);
-                    }
-                    else
-                    {
-                        Snackbar.Add("Please select .jpg / .jpeg / .png file only", Severity.Warning);
-                    }
-                }
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add("Error while image upload: " + ex.ToString(), Severity.Error);
-        }
+
     }
+
+    private void MakeAttackRoll()
+    {
+        FightSequence.CalculateAndWriteAttack();
+    }
+
+
+    private void SaveSequenceBtn()
+    {
+        // if (IsEdit)
+        // {
+        //     _mobRepository.Update(NewMob);
+        // }
+        // else
+        // {
+        //     _mobRepository.Create(NewMob);
+        // }
+
+        // MudDialog.Close(DialogResult.Ok(NewMob));
+        // if (IsEdit)
+        //     Snackbar.Add("Mob edited", Severity.Success);
+        // else
+        //     Snackbar.Add("Mob created", Severity.Success);
+    }
+
 
 }
