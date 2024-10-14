@@ -1,4 +1,5 @@
-﻿using MudBlazor;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using MudBlazor;
 using Syncfusion.Blazor.RichTextEditor;
 using System;
 using System.Collections;
@@ -376,6 +377,28 @@ namespace DA_Common
             public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence };
         }
 
+        
+        //public readonly struct TempStatesLevel
+        //{
+        //    public const int Stunned = 10;
+        //    public const int Stumbled = 5;
+        //    public const int Snatched = 5;
+        //    public const int Disarmed = 0;
+        //    public const int Blinded = 8;
+        //    public const int Unaware = 10;
+        //    public const int Invisible = 5;
+        //    public const int Flanking = 3;
+        //    public const int Surrounded = 2;
+        //    public const int Unbalanced = 7;
+        //    public const int Cautious = 2;
+        //    public const int FullDefence = 5;
+        //    public const int Bleeding = 0;
+
+        //    public static readonly int[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence };
+        //}
+
+
+
         public readonly struct ProfessionSkills
         {
             public const string DoubleWeaponFighting = "Double weapon fighting";
@@ -544,7 +567,7 @@ namespace DA_Common
                 dice[2] = rnd.Next(1, 6);
 
                 result = dice.Sum();
-                text = $"(3d6: {dice[0].ToString()}+{dice[1].ToString()}+{dice[0].ToString()}= {result})";
+                text = $"(3d6: {dice[0].ToString()}+{dice[1].ToString()}+{dice[0].ToString()}={RichText.BoldText(result)})";
             }
             return Tuple.Create(result, text);
         }
@@ -555,7 +578,7 @@ namespace DA_Common
             var roll = RollDice();
             result = skill+roll.Item1 >= DC;
             var sucess = result ? "Sucess!" : "Fail!";
-            text = $"{skill} + {roll.Item2} is {skill + roll.Item1} vs {DC}. {sucess}";
+            text = $"{skill} + {roll.Item2} is {skill + roll.Item1} vs DC: {DC}. {RichText.BoldText(sucess)}";
 
             return Tuple.Create(result, text);
         }
@@ -605,6 +628,26 @@ namespace DA_Common
                 default: return 0;
             }
         }
+        public static int GetTempStatesLevel(string name)
+        {
+            switch (name)
+            {
+                case SD.TempStates.Stunned: return (int)TempStatesLevel.Stunned;
+                case SD.TempStates.Stumbled: return (int)TempStatesLevel.Stumbled;
+                case SD.TempStates.Snatched: return (int)TempStatesLevel.Snatched;
+                case SD.TempStates.Disarmed: return (int)TempStatesLevel.Disarmed;
+                case SD.TempStates.Blinded: return (int)TempStatesLevel.Blinded;
+                case SD.TempStates.Unaware: return (int)TempStatesLevel.Unaware;
+                case SD.TempStates.Invisible: return (int)TempStatesLevel.Invisible;
+                case SD.TempStates.Flanking: return (int)TempStatesLevel.Flanking;
+                case SD.TempStates.Surrounded: return (int)TempStatesLevel.Surrounded;
+                case SD.TempStates.Unbalanced: return (int)TempStatesLevel.Unbalanced;
+                case SD.TempStates.Cautious: return (int)TempStatesLevel.Cautious;
+                case SD.TempStates.FullDefence: return (int)TempStatesLevel.FullDefence;
+                case SD.TempStates.Bleeding: return (int)TempStatesLevel.Bleeding;
+            }
+            return 0;
+        }
     }
     public static class MyIcon
     {
@@ -618,6 +661,7 @@ namespace DA_Common
         public const string Helm = "icons/barbute.svg";
         public const string Chest = "icons/chest.svg";
         public const string Goblin = "icons\\goblin.svg";
+        public const string Attack = "icons/sword-clash.svg";
     }
 
     public enum Relation
@@ -696,6 +740,65 @@ namespace DA_Common
         Unwell = -2,
         Sick = -4,
         Dying = -8,
+    }
+    public enum TempStatesLevel
+    {
+        Stunned = 10,
+        Stumbled = 5,
+        Snatched = 5,
+        Disarmed = 0,
+        Blinded = 8,
+        Unaware = 10,
+        Invisible = 5,
+        Flanking = 3,
+        Surrounded = 2,
+        Unbalanced = 7,
+        Cautious = 2,
+        FullDefence = 5,
+        Bleeding = 0,
+    }
+
+    public class RichText
+    {
+        public string AllText { get => _allText; set => _allText = value; }
+        private string _allText;
+        public RichText()
+        {
+            _allText = "<p><em>(";
+        }
+
+        public void EndText()
+        {
+            _allText += ")</em></em>";
+        }
+        public void NewLine()
+        {
+            _allText += "</em></em>";
+            _allText += "<p><em>";
+        }
+        public static string BoldText(string text)
+        {
+            return "<strong>" + text + "</strong>";
+        }
+        public static string BoldText(int num)
+        {
+            return "<strong>" + num.ToString() + "</strong>";
+        }
+
+        public static RichText operator+(RichText left, RichText right)
+        {
+            left._allText += right._allText;
+            return left;
+        }
+        public static RichText operator +(RichText left, string right)
+        {
+            left._allText += right;
+            return left;
+        }
+        public override string ToString()
+        {
+            return _allText;
+        }
     }
 
 }

@@ -7,7 +7,7 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@MyIcon.Helm" Color="Color.Primary" />
+            <img src="@MyIcon.Attack" width="40x" height="40px" />
             Fight sequence
         </MudText>
     </TitleContent>
@@ -20,7 +20,7 @@
             <MudItem xs="6">
 
                 @* ATTACKER *@
-                <MudPaper Elevation="1" Class="pa-2">
+                <MudPaper Elevation="1" Class="pa-2 h-100">
 
                         @* Select Attacker *@
                     <MudSelect Value="SelectedAttacker" T="string" Required="true" ValueChanged="SelectAttacker" Label="Select Attacker">
@@ -40,7 +40,7 @@
                     </MudSelect>                
                     @* Select action type *@
                     <MudSelect T="string" Required="true" @bind-Value="@FightSequence.AttackAction" Label="Select action type">
-                        @foreach (var defType in SD.DefenceType.All)
+                        @foreach (var defType in SD.AttackAction.All)
                         {
                             <MudSelectItem Value="defType">@defType</MudSelectItem>
                         }
@@ -66,7 +66,7 @@
             </MudItem>
             @* DEFENDER *@
             <MudItem xs="6">
-                <MudPaper Elevation="1" Class="pa-2">
+                    <MudPaper Elevation="1" Class="pa-2 h-100">
                     @* Select Defender *@
                     <MudSelect Value="SelectedDefender" T="string" Required="true" ValueChanged="SelectDefender" Label="Select Defender">
                         @foreach (var defender in CharacterAllParams)
@@ -85,6 +85,8 @@
                         }
                     </MudSelect>
                     @* Select defence type *@
+                    <MudStack Class="p-0 m-0" Spacing="1" Row>
+
                     <MudButton OnClick="SelectBestDefence">Select best</MudButton>
                     <MudSelect T="string" Required="true" @bind-Value="@FightSequence.DefenceType" Label="Select defence type">
                         @foreach (var defType in SD.DefenceType.All)
@@ -92,17 +94,18 @@
                             <MudSelectItem Value="defType">@defType</MudSelectItem>
                         }
                     </MudSelect>
+                    </MudStack>
                     @* Other bonuses. penalties states *@
             
                 </MudPaper>
             </MudItem>
             
             <MudItem xs="12">
-                <MudButton Class="p-2 m-2" Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeAttackRoll">Roll!</MudButton>
+                <MudButton Class="p-2 m-2 w-100 justify-content-center" Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeAttackRoll">Roll!</MudButton>
             </MudItem>
 
             <MudItem xs="12">
-                <SfRichTextEditor Width="100%" Height="400px" @bind-Value="@FightSequence.ResultStringMG" ShowTooltip="true">
+                <SfRichTextEditor Width="100%" Height="400px" @bind-Value="@FightSequence.ResultStringMG.AllText" ShowTooltip="true">
                     <RichTextEditorToolbarSettings Items="@Tools" />
                 </SfRichTextEditor>
             </MudItem>
@@ -171,6 +174,7 @@
 
     private void SelectAttacker(string attackerName)
     {
+        SelectedAttacker = attackerName;
         var characterParams = CharacterAllParams.FirstOrDefault(p => p.Character.NPCName == attackerName);
         if (characterParams is not null)
         {
@@ -185,6 +189,7 @@
     }
     private void SelectDefender(string defenderName)
     {
+        SelectedDefender = defenderName;
         var characterParams = CharacterAllParams.FirstOrDefault(p => p.Character.NPCName == defenderName);
         if (characterParams is not null)
         {

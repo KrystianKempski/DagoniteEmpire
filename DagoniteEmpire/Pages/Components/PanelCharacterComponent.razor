@@ -265,7 +265,7 @@
             UserInfo = await _userService.GetUserInfo();
             IsLoading = true;
             StateHasChanged();
-            if(AllParams is null && IsMob==false)
+            if(IsMob==false)
             {
                 await LoadCharacter();
             }
@@ -307,18 +307,21 @@
 
     private async Task LoadCharacter()
     {
-        AllParams = new();
-        AllParams.Character = await _characterRepository.GetById(Id);
-        AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
-        AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
-        AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
-        AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
-        AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
-        AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
-        AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
-        AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.Id)).ToList();
-        AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
-        AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
+        if (AllParams is null){
+
+            AllParams = new();
+            AllParams.Character = await _characterRepository.GetById(Id);
+            AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
+            AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
+            AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
+            AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
+            AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
+            AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
+            AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
+            AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.Id)).ToList();
+            AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
+            AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
+        }
 
         AllParams.SpecialSkills.AddRelatedParametes();
         AllParams.AllTraitsChange();

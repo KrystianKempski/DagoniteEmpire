@@ -9,6 +9,17 @@
 @inject ICharacterRepository _characterRepository
 @inject IMobRepository _mobRepository
 @inject IChapterRepository _chapterRepository
+@inject IAttributeRepository _attributeRepository
+@inject IBaseSkillRepository _baseSkillRepository
+@inject ISpecialSkillRepository _specialSkillRepository
+@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
+@inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
+@inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
+@inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
+@inject IEquipmentRepository _equipmentRepository
+@inject IRaceRepository _raceRepository
+@inject IProfessionRepository _professionRepository
+@inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IPostRepository _postRepository
 @inject IUserService _userService
 @inject IChatManager _chatManager
@@ -261,11 +272,11 @@ else
         // load characters 
         foreach(var charac in Chapter.Characters)
         {
-            CharacterAllParams[charac.Id] = null;
+            CharacterAllParams[charac.Id] = await LoadCharacter(charac.Id);
         }
 
         // load mobs
-        Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
+        await LoadMobs();
 
         if (UserInfo?.IsAdminOrMG == true)
         {
@@ -357,6 +368,7 @@ else
                                                                             { x => x.Mobs, Mobs },
                                                                             { x => x.Date, Chapter.Date },
                                                                             { x => x.ChapterId, Id }};
+
         var dialog = await DialogService.ShowAsync<CreateFightSequenceDialog>("Fight sequence", parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
@@ -391,7 +403,7 @@ else
     }
     private async Task AddExistingMob()
     {
-        
+
         var parameters = new DialogParameters<ExistingMobsDialog> { { x => x.Mobs, Mobs },
                                                                     { x => x.ChapterId, Id },
                                                                     { x => x.CampaignId, Chapter.CampaignId }};
@@ -415,5 +427,54 @@ else
         if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
             options.FullScreen = true;
         return options;
+    }
+    private async Task<AllParamsModel> LoadCharacter(int id)
+    {
+        AllParamsModel allParams = new();
+        allParams.Character = await _characterRepository.GetById(id);
+        allParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(id));
+        allParams.BaseSkills = await _baseSkillRepository.GetAll(id);
+        allParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(id));
+        allParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
+        allParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
+        allParams.CurrentRace = await _raceRepository.GetById(allParams.Character.RaceId);
+        allParams.Profession = await _professionRepository.GetById(allParams.Character.ProfessionId);
+        allParams.Profession.Traits = (await _traitProfessionRepository.GetAll(allParams.Character.Id)).ToList();
+        allParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(id)).ToList();
+        allParams.Races = (await _raceRepository.GetAllApproved()).ToList();
+
+        allParams.SpecialSkills.AddRelatedParametes();
+        allParams.AllTraitsChange();
+        //await ChangeProfRelatedAttribute();
+        allParams.Profession.CalculateClassParams(allParams.Attributes.GetAll());
+
+        return allParams;
+    }
+
+    private async Task LoadMobs()
+    {
+        Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
+        foreach (var mob in Mobs){
+
+            mob.BattleProperties = new(mob);
+            if (string.IsNullOrEmpty(mob.MainWeaponName) == false)
+            {
+                mob.MainWeapon = await _equipmentRepository.GetByName(mob.MainWeaponName);
+            }
+            if (string.IsNullOrEmpty(mob.OffWeaponName) == false)
+            {
+                mob.OffWeapon = await _equipmentRepository.GetByName(mob.OffWeaponName);
+            }
+            if (string.IsNullOrEmpty(mob.ShieldWeaponName) == false)
+            {
+                mob.ShieldWeapon = await _equipmentRepository.GetByName(mob.ShieldWeaponName);
+            }
+            if (string.IsNullOrEmpty(mob.ArmorName) == false)
+            {
+                mob.Armor = await _equipmentRepository.GetByName(mob.ArmorName);
+            }
+            mob.BattleProperties.CalculateBattleStats();
+        }
+
     }
 }
