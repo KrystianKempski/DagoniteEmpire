@@ -85,6 +85,7 @@ namespace DA_Models.ComponentModels
                 AttackerStates = new List<TraitCharacterDTO>();
                 foreach (var state in states)
                 {
+                    if (state.IsNullOrEmpty()) continue;
                     var trait = new TraitCharacterDTO(true);
                     var statesParams = mob.States.Split(":");
                     trait.Name = statesParams[0];
@@ -121,6 +122,7 @@ namespace DA_Models.ComponentModels
                 DefenderStates = new List<TraitCharacterDTO>();
                 foreach (var state in states)
                 {
+                    if (state.IsNullOrEmpty()) continue;
                     var trait = new TraitCharacterDTO(true);
                     var statesParams = state.Split(":");
                     trait.Name = statesParams[0];
@@ -142,10 +144,14 @@ namespace DA_Models.ComponentModels
 
         public void CalculateAndWriteAttack()
         {
+
+            ClearRoll();
             /// Get bonus from states
             WriteBonusesFromStates();
             /// Get bonus from attack type
-            WriteWhoAttacksWhoAndHow();            
+            WriteWhoAttacksWhoAndHow();
+            if (AttackLocation.IsNullOrEmpty() == false)
+                WriteLocationOfAttack();
             /// Add dice rolls  and sum up attack
             WriteDiceRollsAndAttackSummary();
             /// Calculate damage
@@ -158,6 +164,77 @@ namespace DA_Models.ComponentModels
                 /// Test possible states
                 WriteAndCalculatePossibleStates();
             }
+        }
+
+        public void ClearRoll()
+        {
+            ResultStringMG = new();
+            //AttackLocation = string.Empty;
+            AttackValue = 0;
+            DefenceValue = 0;
+            AdditionalDamage = 0;
+            DamageDelt = 0;
+            TestConditionIfHit = string.Empty;
+            HitValue = 0;
+            IsHit = false;
+            AttackerNewStates  = string.Empty;
+            DefenderNewStates  = string.Empty;
+            WoundSeverity = string.Empty;
+            AttackerRoll = new Tuple<int, string>(0, string.Empty);
+            DefenderRoll  = new Tuple<int, string>(0, string.Empty);
+            UpdateAttackerNeeded  = false;
+            UpdateDefenderNeeded  = false;
+        }
+
+        public void WriteLocationOfAttack()
+        {
+            int AttackCurrValue = 0;
+            string attackString = string.Empty;
+            switch (AttackLocation)
+            {
+                default:
+                case SD.WoundLocation.Head:
+                    AttackCurrValue += -5;
+                    AdditionalDamage += 8;
+                    TestConditionIfHit += SD.TempStates.Stunned + ", ";
+                    break;
+                case SD.WoundLocation.Neck:
+                    AttackCurrValue += -6;
+                    AdditionalDamage += 9;
+                    if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
+                        TestConditionIfHit += SD.TempStates.Snatched + ", ";
+                    else
+                        TestConditionIfHit += SD.TempStates.Bleeding + ", ";
+                    break;
+                case SD.WoundLocation.Face:
+                    AttackCurrValue += -6;
+                    AdditionalDamage += 10;
+                    TestConditionIfHit += SD.TempStates.Blinded + ", ";
+                    break;
+                case SD.WoundLocation.MainHand:
+                case SD.WoundLocation.MainArm:
+                case SD.WoundLocation.OffArm:
+                case SD.WoundLocation.OffHand:
+                    AttackCurrValue += -2;
+                    if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
+                        TestConditionIfHit += SD.TempStates.Snatched + ", ";
+                    break;
+                case SD.WoundLocation.Body:
+                    break;
+                case SD.WoundLocation.Back:
+                    break;
+                case SD.WoundLocation.LeftLeg:
+                case SD.WoundLocation.RightLeg:
+                    AttackCurrValue += -2;
+                    if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
+                        TestConditionIfHit += SD.TempStates.Snatched + ", ";
+                    else
+                        TestConditionIfHit += SD.TempStates.Stumbled + ", ";
+                    break;                   
+            }
+            ResultStringMG.NewLine();
+            ResultStringMG += $"Attack is aimed at the {RichText.BoldText(AttackLocation.ToLower())} {SD.BonusText(AttackCurrValue)}";
+            AttackValue += AttackCurrValue;
         }
 
         public void WriteWhoAttacksWhoAndHow()
@@ -205,51 +282,7 @@ namespace DA_Models.ComponentModels
                     AttackerNewStates += SD.TempStates.Cautious + ":1" + ", ";
                     attackString += "cautiously";
                     break;
-                case SD.AttackAction.Targeted:
-                    switch (AttackLocation)
-                    {
-                        default:
-                        case SD.WoundLocation.Head:
-                            AttackCurrValue += -5;
-                            AdditionalDamage += 8;
-                            TestConditionIfHit += SD.TempStates.Stumbled + ", ";
-                            break;
-                        case SD.WoundLocation.Neck:
-                            AttackCurrValue += -6;
-                            AdditionalDamage += 9;
-                            if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
-                                TestConditionIfHit += SD.TempStates.Snatched + ", ";
-                            else
-                                TestConditionIfHit += SD.TempStates.Bleeding + ", ";
-                            break;
-                        case SD.WoundLocation.Face:
-                            AttackCurrValue += -6;
-                            AdditionalDamage += 10;
-                            TestConditionIfHit += SD.TempStates.Blinded + ", ";
-                            break;
-                        case SD.WoundLocation.MainHand:
-                        case SD.WoundLocation.MainArm:
-                        case SD.WoundLocation.OffArm:
-                        case SD.WoundLocation.OffHand:
-                            AttackCurrValue += -2;
-                            if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
-                                TestConditionIfHit += SD.TempStates.Snatched + ", ";
-                            break;
-                        case SD.WoundLocation.Body:
-                            break;
-                        case SD.WoundLocation.Back:
-                            break;
-                        case SD.WoundLocation.LeftLeg:
-                        case SD.WoundLocation.RightLeg:
-                            AttackCurrValue += -2;
-                            if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
-                                TestConditionIfHit += SD.TempStates.Snatched + ", ";
-                            else
-                                TestConditionIfHit += SD.TempStates.Stumbled + ", ";
-                            break;
-                    }
-                    attackString += $"aiming at the {AttackLocation.ToLower()}";
-                    break;
+                
                 case SD.AttackAction.Charge:
                     AttackCurrValue += 5;
                     AdditionalDamage += 3;
@@ -286,7 +319,7 @@ namespace DA_Models.ComponentModels
             }
 
 
-            ResultStringMG += $"{AttackerName} {AttackerOldStates} attacks {attackString}, {DefenderName} {DefenderOldStates} tries to {defenceString}.";
+            ResultStringMG += $"{RichText.BoldText(AttackerName)} {AttackerOldStates} attacks {RichText.BoldText(attackString)}, {DefenderName} {DefenderOldStates} tries to {defenceString}.";
         }
 
         public void WriteBonusesFromStates()
@@ -432,7 +465,7 @@ namespace DA_Models.ComponentModels
             int dmgDeflected = DefenderProps.Get(SD.BattleProperty.ArmorClass).SumBonus - AttackerProps.Get(SD.WeaponQuality.ArmorPiercing).SumBonus;
             if (dmgDeflected > 0)
             {
-                attackString = $", deflected by armor: {dmgDeflected} ";
+                attackString = $", deflected by armor: -{dmgDeflected} ";
             }
             else
             {
@@ -440,6 +473,7 @@ namespace DA_Models.ComponentModels
                 dmgDeflected = 0;
             }
             ResultStringMG += $"{attackString}";
+            attackString = string.Empty;
             // damage from weapon qualities
             int dmgfromWeaponQuality = AttackerProps.Get(SD.WeaponQuality.Devastating).SumBonus;
             if (dmgfromWeaponQuality > 0)
@@ -465,9 +499,9 @@ namespace DA_Models.ComponentModels
             DamageDelt = (AttackValue - DefenceValue) - dmgDeflected + AdditionalDamage + dmgfromWeaponQuality;
             WoundSeverity = SD.WoundSeverityFromDmg(DamageDelt);
             ResultStringMG.NewLine();
-            ResultStringMG += $"Summary damage: {DamageDelt} - {RichText.BoldText(WoundSeverity)} wound";
+            ResultStringMG += $"Summary damage: {DamageDelt} - {RichText.BoldText(WoundSeverity + " wound")}";
             if(AttackLocation.IsNullOrEmpty() == false ){
-                ResultStringMG += $" to{AttackLocation}";
+                ResultStringMG += $" to {AttackLocation.ToLower()}";
             }
         }
         public void CalculateAndAddWound()
@@ -538,6 +572,38 @@ namespace DA_Models.ComponentModels
                 }
             }
             ResultStringMG.EndText();
+        }
+
+        public string SelectBestDefence()
+        {
+            int difference = 0, differenceMin = 100;
+            string BestType = string.Empty;
+            foreach(var defenceType in SD.DefenceType.All)
+            {
+                switch (defenceType)
+                {
+                    default:
+                    case SD.DefenceType.Dodge:                        
+                        difference =  AttackerProps.Get(SD.BattleProperty.AttackDodge).SumBonus - DefenderProps.Get(SD.BattleProperty.DefenceDodge).SumBonus;
+                        break;
+                    case SD.DefenceType.Parry:
+                        difference = AttackerProps.Get(SD.BattleProperty.AttackParry).SumBonus - DefenderProps.Get(SD.BattleProperty.DefenceParry).SumBonus;
+                        break;
+                    case SD.DefenceType.Shield:
+                        difference = AttackerProps.Get(SD.BattleProperty.AttackShield).SumBonus - DefenderProps.Get(SD.BattleProperty.DefenceShield).SumBonus;
+                        break;
+                    case SD.DefenceType.Armor:
+                        difference= AttackerProps.Get(SD.BattleProperty.AttackArmor).SumBonus - DefenderProps.Get(SD.BattleProperty.DefenceArmor).SumBonus;
+                        break;
+                }
+                if (difference < differenceMin)
+                {
+                    differenceMin = difference;
+                    BestType = defenceType;
+                }
+            }          
+
+            return BestType;
         }
     }
 }

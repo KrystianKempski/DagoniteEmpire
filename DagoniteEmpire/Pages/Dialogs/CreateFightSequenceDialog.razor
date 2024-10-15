@@ -24,6 +24,7 @@
 
                         @* Select Attacker *@
                     <MudSelect Value="SelectedAttacker" T="string" Required="true" ValueChanged="SelectAttacker" Label="Select Attacker">
+                            <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
                         @foreach(var attacker in CharacterAllParams) {
                             @if (attacker is not null && attacker.Character.NPCName != SelectedDefender)
                             {                            
@@ -42,9 +43,20 @@
                     <MudSelect T="string" Required="true" @bind-Value="@FightSequence.AttackAction" Label="Select action type">
                         @foreach (var defType in SD.AttackAction.All)
                         {
+                            if (defType == SD.AttackAction.Targeted) continue;
                             <MudSelectItem Value="defType">@defType</MudSelectItem>
                         }
                     </MudSelect>
+                    @* Select if targeted and  location *@
+                    <MudStack Spacing="1" Row>
+                        <MudCheckBox @bind-Value="@IsTargeted" Label="Aimed?" ></MudCheckBox>
+                        <MudSelect T="string" Disabled="@(IsTargeted == false)" Required="true" @bind-Value="@FightSequence.AttackLocation" Label="Select location">
+                            @foreach (var location in SD.WoundLocation.All)
+                            {
+                                <MudSelectItem Value="location">@location</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudStack>
                     @* Attacker states *@
                     @if ( string.IsNullOrEmpty(SelectedAttacker) == false)
                     {
@@ -69,13 +81,14 @@
                     <MudPaper Elevation="1" Class="pa-2 h-100">
                     @* Select Defender *@
                     <MudSelect Value="SelectedDefender" T="string" Required="true" ValueChanged="SelectDefender" Label="Select Defender">
+                            <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
                         @foreach (var defender in CharacterAllParams)
                         {
                             @if (defender.Character.NPCName != SelectedAttacker)
                             {
                                 <MudSelectItem Value="defender.Character.NPCName">@defender.Character.NPCName</MudSelectItem>
                             }
-                        }
+                        }                            
                         @foreach (var defender in Mobs)
                         {
                             @if (defender.Name != SelectedAttacker)
@@ -95,6 +108,22 @@
                         }
                     </MudSelect>
                     </MudStack>
+                    @* Defender states *@
+                    @if (string.IsNullOrEmpty(SelectedDefender) == false)
+                    {
+                        <MudText Typo="Typo.button">States</MudText>
+                        @if (FightSequence.DefenderStates is not null && FightSequence.DefenderStates.Any())
+                        {
+                            <MudGrid>
+                                @foreach (var state in FightSequence.DefenderStates)
+                                {
+                                    <MudItem>
+                                        <MudText>@state.Name, </MudText>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                    }
                     @* Other bonuses. penalties states *@
             
                 </MudPaper>
@@ -111,8 +140,6 @@
             </MudItem>
         </MudGrid>
         }
-
-             
 
     </DialogContent>
     <DialogActions>
@@ -132,6 +159,16 @@
     [Parameter] public DateModel Date { get; set; } = new(1,1);
     private string SelectedAttacker = string.Empty;
     private string SelectedDefender= string.Empty;
+    private bool _isTargeted = false;
+    private bool IsTargeted {
+        get => _isTargeted;
+        set
+        {
+            _isTargeted = value;
+            if (_isTargeted == false && FightSequence is not null)
+                FightSequence.AttackLocation = string.Empty;
+        }
+    } 
 
     FightSequenceModel? FightSequence { get; set; } = null;
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
@@ -205,7 +242,7 @@
 
     private void SelectBestDefence()
     {
-
+         FightSequence.DefenceType = FightSequence.SelectBestDefence();
     }
 
     private void MakeAttackRoll()
