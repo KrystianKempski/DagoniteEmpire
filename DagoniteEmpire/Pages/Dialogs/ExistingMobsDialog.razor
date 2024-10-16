@@ -45,8 +45,7 @@
 </MudDialog>
 
 @code {
-
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = new();
     [Parameter] public ICollection<MobDTO> Mobs { get; set; } = new List<MobDTO>();
     [Parameter] public int CampaignId { get; set; } = 0;
     [Parameter] public int ChapterId { get; set; } = 0;
@@ -104,9 +103,12 @@
         _snackBar.Add("Selected mobs added to chapter", Severity.Success);
     }
 
-    private void Close()
+    private async Task Close()
     {
-        MudDialog.Close();
+        Mobs = (await _mobRepository.GetAll()).ToList();
+        await _mobRepository.Update(Mobs.First());
+        MudDialog.Close(DialogResult.Ok(Mobs));
+        _snackBar.Add("Mobs modyfied", Severity.Success);
     }
 
     private void SelectedItemsChanged(HashSet<MobDTO> mobs)
@@ -116,7 +118,7 @@
 
     public async Task AddMob()
     {
-        MobDTO NewMob = new();
+        MobDTO? NewMob = new();
         var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, NewMob },
                                                                   { x => x.IsEdit, false },
                                                                   { x => x.CampaignId, CampaignId },
@@ -125,12 +127,16 @@
         var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add mob", parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
-            NewMob = (MobDTO)result.Data;
-            Mobs.Add(NewMob);
+            NewMob = (MobDTO?)result.Data;
+            if (NewMob is not null)
+            {
+                Mobs.Add(NewMob);
+            }
         }
     }
+
     public async Task EditMob(MobDTO newMob)
     {
         var parameters = new DialogParameters<CreateMobDialog> {  { x => x.NewMob, newMob },
@@ -139,9 +145,13 @@
         var dialog = await DialogService.ShowAsync<CreateMobDialog>("Edit mob", parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is not null && !result.Canceled)
         {
-            newMob = (MobDTO)result.Data;
+            var res = (MobDTO?)result.Data;
+            if (res is not null)
+            {
+                newMob = res;
+            }
         }
     }
 

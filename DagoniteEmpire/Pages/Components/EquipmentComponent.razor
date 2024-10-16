@@ -19,6 +19,7 @@
             <tbody>
                 @foreach (var obj in AllParams.EquipmentSlots)
                 {
+                    if (obj.Equipment.Name == SD.BasicWeaponsMelee.Fists) continue;
                     <tr>
                         <td class="nobottomborder">
                             <label class="name-label">@obj.Equipment.Name</label>

@@ -1,5 +1,6 @@
 ﻿using Abp.Collections.Extensions;
 using DA_Common;
+using DA_DataAccess.CharacterClasses;
 using DA_Models.CharacterModels;
 using System;
 using System.Collections;
@@ -242,34 +243,36 @@ namespace DA_Models.ComponentModels
             int AttackCurrValue = 0;
             int DefenceCurrValue = 0;
             string defenceString = string.Empty;
+            string weaponString = string.Empty;
+            int weaponCurrValue = 0;
             string attackString = string.Empty;
             switch (DefenceType)
             {
                 default:
                 case SD.DefenceType.Dodge:
-                    AttackCurrValue += AttackerProps.Get(SD.BattleProperty.AttackDodge).SumBonus;
+                    weaponCurrValue += AttackerProps.Get(SD.BattleProperty.AttackDodge).SumBonus;
                     DefenceCurrValue += DefenderProps.Get(SD.BattleProperty.DefenceDodge).SumBonus;
                     defenceString = SD.DefenceType.Dodge.ToLower();
                     break;
                 case SD.DefenceType.Parry:
-                    AttackCurrValue = AttackerProps.Get(SD.BattleProperty.AttackParry).SumBonus;
+                    weaponCurrValue = AttackerProps.Get(SD.BattleProperty.AttackParry).SumBonus;
                     DefenceCurrValue += DefenderProps.Get(SD.BattleProperty.DefenceParry).SumBonus;
                     defenceString = SD.DefenceType.Parry.ToLower();
                     break;
                 case SD.DefenceType.Shield:
-                    AttackCurrValue += AttackerProps.Get(SD.BattleProperty.AttackShield).SumBonus;
+                    weaponCurrValue += AttackerProps.Get(SD.BattleProperty.AttackShield).SumBonus;
                     DefenceCurrValue += DefenderProps.Get(SD.BattleProperty.DefenceShield).SumBonus;
                     defenceString = "deflect with shield";
                     break;
                 case SD.DefenceType.Armor:
-                    AttackValue += AttackerProps.Get(SD.BattleProperty.AttackArmor).SumBonus;
+                    weaponCurrValue += AttackerProps.Get(SD.BattleProperty.AttackArmor).SumBonus;
                     DefenceCurrValue += DefenderProps.Get(SD.BattleProperty.DefenceArmor).SumBonus;
                     defenceString = "deflect with armor";
                     break;
             }
 
-            attackString += $"{SD.BonusText(AttackCurrValue)} ";
-            AttackValue += AttackCurrValue;
+            weaponString += $"using {AttackerProps.MainWeaponUsed.Name} {SD.BonusText(weaponCurrValue)} ";
+            AttackValue += weaponCurrValue;
             AttackCurrValue = 0;
 
             /// Get bonus from attack action
@@ -319,7 +322,7 @@ namespace DA_Models.ComponentModels
             }
 
 
-            ResultStringMG += $"{RichText.BoldText(AttackerName)} {AttackerOldStates} attacks {RichText.BoldText(attackString)}, {DefenderName} {DefenderOldStates} tries to {defenceString}.";
+            ResultStringMG += $"{RichText.BoldText(AttackerName)} {AttackerOldStates} attacks {attackString} {weaponString}, {DefenderName} {DefenderOldStates} tries to {defenceString}.";
         }
 
         public void WriteBonusesFromStates()
@@ -343,8 +346,7 @@ namespace DA_Models.ComponentModels
                         case SD.TempStates.FullDefence:
                             //cannot attack! error!
                             break;
-                        case SD.TempStates.Surrounded:
-                        case SD.TempStates.Disarmed:
+                        case SD.TempStates.Surrounded:    
                         case SD.TempStates.Bleeding:
                         case SD.TempStates.Unbalanced:
                         case SD.TempStates.Cautious:
@@ -365,6 +367,10 @@ namespace DA_Models.ComponentModels
                         case SD.TempStates.Flanking:
                             AttackCurrValue += state.Level;
                             IsShieldDefenceAllowed = false;
+                            break;
+                        case SD.TempStates.Disarmed:
+                            AttackerProps.MainWeaponUsed = Fists();
+                            AttackerProps.CalculateBattleStats();
                             break;
                     }
                     AttackValue += AttackCurrValue;
@@ -490,6 +496,7 @@ namespace DA_Models.ComponentModels
                 }
             }
             ResultStringMG += $"{attackString}";
+            attackString = string.Empty;
             // damage from actions (rage, charge)
             if (AdditionalDamage != 0)
             {
@@ -506,6 +513,7 @@ namespace DA_Models.ComponentModels
         }
         public void CalculateAndAddWound()
         {
+            if (DamageDelt <= 0) return;
             // Prain resistance roll
             int DC = SD.DCFromWoundSeverity(WoundSeverity);
             var painResRoll = SD.MakeRollTest(DC, DefenderPainResistance);
@@ -576,6 +584,7 @@ namespace DA_Models.ComponentModels
 
         public string SelectBestDefence()
         {
+            if (AttackerProps is null || DefenderProps is null) return "";
             int difference = 0, differenceMin = 100;
             string BestType = string.Empty;
             foreach(var defenceType in SD.DefenceType.All)
@@ -604,6 +613,39 @@ namespace DA_Models.ComponentModels
             }          
 
             return BestType;
+        }
+
+        public static EquipmentDTO? Fists()
+        {
+            var item = new EquipmentDTO()
+            {
+                Name = SD.BasicWeaponsMelee.Fists,
+                EquipmentType = SD.EquipmentType.WeaponMelee,
+                Description = "Just your fists and feets",
+                ShortDescr = "Just your fists and feets",
+                RelatedSkill = SD.SpecialSkills.Melee.Unarmed,
+                IsTwoHanded = true,
+                Weight = 0.0m,
+                Price = 0.0m,
+                Traits = new List<TraitEquipmentDTO>()
+                        {
+                            new TraitEquipmentDTO(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<BonusDTO>()
+                                {
+                                    new BonusDTO{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        FeatureName = SD.WeaponQuality.Weak,
+                                    },
+                                }
+                            }
+                        },
+                IsApproved = true,
+            };
+            return item;
         }
     }
 }

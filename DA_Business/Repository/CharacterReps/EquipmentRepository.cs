@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DagoniteEmpire.Exceptions;
+using DA_Common;
 
 namespace DA_Business.Repository.CharacterReps
 {
@@ -91,7 +92,7 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<EquipmentDTO>> GetAllApproved()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses).Where(t=>t.IsApproved == true));
+            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses).Where(t=>t.IsApproved == true && t.Name != SD.BasicWeaponsMelee.Fists));
         }
 
         public async Task<EquipmentDTO> GetById(int id)

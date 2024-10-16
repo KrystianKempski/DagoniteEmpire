@@ -1,4 +1,5 @@
-﻿<div>
+﻿
+<div>
     <InputSelect disabled="@Disabled" class="form-select p-1" ValueExpression="@(()=>SelectedGearName)"
                  Value="@SelectedGearName"
             ValueChanged="@((string value) => ChangeGear(value))">
@@ -30,6 +31,7 @@
 
 
     public ICollection<EquipmentSlotDTO> AllGearsOfType { get; set; } = new List<EquipmentSlotDTO>(); 
+    public EquipmentDTO Fists { get; set; } = new EquipmentDTO();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

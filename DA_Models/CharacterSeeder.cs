@@ -215,9 +215,17 @@ namespace DA_Models
                 },
                 new SpecialSkillDTO()
                 {
-                    Name="Exotic weapons",
+                    Name="Unarmed",
+                    RelatedAttribute1="Strength",
+                    RelatedAttribute2 = "Dexterity",
                     RelatedBaseSkillName = "Melee",
                     Index= 6,
+                },
+                new SpecialSkillDTO()
+                {
+                    Name="Exotic weapons",
+                    RelatedBaseSkillName = "Melee",
+                    Index= 7,
                     Editable = true,
                 },
 

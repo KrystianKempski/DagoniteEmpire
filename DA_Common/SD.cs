@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MudBlazor;
+using MudBlazor.Charts;
 using Syncfusion.Blazor.RichTextEditor;
 using System;
 using System.Collections;
@@ -160,7 +161,8 @@ namespace DA_Common
                 public const string Light = "Light weapons";
                 public const string Shields = "Shields";
                 public const string Polearms = "Polearms";
-                public static readonly string[] All = { Heavy, Swords, Fencing, Light, Shields, Polearms};
+                public const string Unarmed = "Unarmed";                
+                public static readonly string[] All = { Heavy, Swords, Fencing, Light, Shields, Polearms, Unarmed };
             };
             public readonly struct Shooting
             {
@@ -256,6 +258,7 @@ namespace DA_Common
 
         public readonly struct BasicWeaponsMelee
         {
+            public const string Fists = "Fists";
             public const string Dagger = "Dagger";
             public const string LongSword = "Long sword";
             public const string BattleAxe = "Battle axe";
@@ -269,7 +272,7 @@ namespace DA_Common
             public const string Greataxe = "Greataxe";
             public const string Poleaxe = "Poleaxe";
             public const string Sarissa = "Sarissa";
-            public static readonly string[] All = { Dagger, LongSword, BattleAxe, Pickaxe, Mace, Morningstar, ShorSpear, Rapier, TwoHandedFlail, Warhammer, Greataxe, Poleaxe, Sarissa };
+            public static readonly string[] All = { Fists,Dagger, LongSword, BattleAxe, Pickaxe, Mace, Morningstar, ShorSpear, Rapier, TwoHandedFlail, Warhammer, Greataxe, Poleaxe, Sarissa };
         }
         public readonly struct BasicWeaponsShooting
         {
@@ -374,7 +377,7 @@ namespace DA_Common
             public const string FullDefence = "Full defence";
             public const string Bleeding = "Bleeding";
 
-            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence };
+            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence, Bleeding };
         }
 
         
@@ -562,12 +565,12 @@ namespace DA_Common
             int[] dice = { 1, 1, 1 };
             if (true)
             {
-                dice[0] = rnd.Next(1, 6);  // creates a number between 1 and 12
+                dice[0] = rnd.Next(1, 6);  // creates a number between 1 and 6
                 dice[1] = rnd.Next(1, 6);
                 dice[2] = rnd.Next(1, 6);
 
                 result = dice.Sum();
-                text = $"(3d6: {dice[0].ToString()}+{dice[1].ToString()}+{dice[0].ToString()}={RichText.BoldText(result)})";
+                text = $"(3d6: {dice[0].ToString()}+{dice[1].ToString()}+{dice[2].ToString()}={RichText.BoldText(result)})";
             }
             return Tuple.Create(result, text);
         }
@@ -592,13 +595,15 @@ namespace DA_Common
         }
         public static string WoundSeverityFromDmg(int value)
         {
-            if (value > 0 && value < 5)
+            if (value <= 0)
+                return "no";
+            else if (value > 0 && value < 5)
                 return SD.WoundSeverity.Light;
             else if (value < 9)
                 return SD.WoundSeverity.Moderate;
-            else if (value  < 15)
+            else if (value < 15)
                 return SD.WoundSeverity.Heavy;
-            else if (value  < 25)
+            else if (value < 25)
                 return SD.WoundSeverity.Critical;
             else if (value >= 25)
                 return SD.WoundSeverity.Deadly;
@@ -648,6 +653,7 @@ namespace DA_Common
             }
             return 0;
         }
+        
     }
     public static class MyIcon
     {

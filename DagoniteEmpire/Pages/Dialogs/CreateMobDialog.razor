@@ -67,7 +67,7 @@
 
          <MudGrid>
             <MudItem xs="6">
-                <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.MainWeaponName" Label="Main weapon">
+                <MudSelect Required="true" ShrinkLabel="true" @bind-Value="@NewMob.MainWeaponName" Label="Main weapon">
                     <MudSelectItem Value="string.Empty">None</MudSelectItem>
                     @foreach (string weapon in SD.BasicWeaponsMelee.All)
                     {
@@ -199,13 +199,13 @@
         }
     }
 
-    private void SaveMobBtn()
+    private async Task SaveMobBtn()
     {
         if (IsEdit)
         {
-            _mobRepository.Update(NewMob);
+            NewMob = await _mobRepository.Update(NewMob);
         }else{
-            _mobRepository.Create(NewMob);
+            NewMob = await _mobRepository.Create(NewMob);
         }
 
         MudDialog.Close(DialogResult.Ok(NewMob));

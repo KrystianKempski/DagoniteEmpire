@@ -748,7 +748,7 @@ namespace DagoniteEmpire.Service
                 {
                     trait = new TraitCharacter(true)
                     {
-                        Name = SD.TempStates.FullDefence,
+                        Name = SD.TempStates.Bleeding,
                         Descr = "This character is seriously bleeding. It gets one wound every turn, untill 10 round or the wound is taken care of",
                         TraitApproved = true,
                         IsUnique = false,
@@ -1714,6 +1714,39 @@ namespace DagoniteEmpire.Service
                                         BonusValue = 3,
                                         FeatureType = SD.FeatureWeaponQuality,
                                         FeatureName = SD.WeaponQuality.ArmorPiercing,
+                                    },
+                                }
+                            }
+                        },
+                        IsApproved = true,
+                    };
+                    _db.Equipment.Add(item);
+                    _db.SaveChanges();
+                }
+                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Fists) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.Fists,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Just your fists and feets",
+                        ShortDescr = "Just your fists and feets",
+                        RelatedSkill = SD.SpecialSkills.Melee.Unarmed,
+                        IsTwoHanded = true,
+                        Weight = 0.0m,
+                        Price = 0.0m,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 2,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        FeatureName = SD.WeaponQuality.Weak,
                                     },
                                 }
                             }

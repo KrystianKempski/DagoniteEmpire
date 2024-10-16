@@ -34,35 +34,39 @@
     <LoadingPage></LoadingPage>
 }
 else
-{
+{  
+    <div class="character-panel">
+        @if(UserInfo?.IsAdminOrMG == true)
+        {
+            <MudStack Row="true">
+                <MudButton OnClick="GenerateFightSequence">Generate fight </MudButton>
+                <MudButton OnClick="AddNewMob">Add new mob</MudButton>
+                <MudButton OnClick="AddExistingMob">Existing mobs</MudButton>
+            </MudStack>
+        }
     @if (IsLoadingCharacters == false)
     {
-        <div class="character-panel">
-            @if(UserInfo?.IsAdminOrMG == true)
-            {
-                <MudStack Row="true">
-                    <MudButton OnClick="GenerateFightSequence">Generate fight </MudButton>
-                    <MudButton OnClick="AddNewMob">Add new mob</MudButton>
-                    <MudButton OnClick="AddExistingMob">Existing mobs</MudButton>
-                </MudStack>
-            }
-            <MudPaper Elevation="1">
-                <MudStack Spacing="2">
-                    @foreach (var charac in Chapter.Characters)
-                    {
-                        <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
-                    }
-                    @foreach (var mob in Mobs)
-                    {
-                        <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
-                    }
-                </MudStack>
-            </MudPaper>
-        </div>
-    }    
+        <MudPaper Elevation="1">
+            <MudStack Spacing="2">
+                @foreach (var charac in Chapter.Characters)
+                {
+                    <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+                }
+                @foreach (var mob in Mobs)
+                {
+                    <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+    else
+    {
+        <LoadingPage></LoadingPage>
+    }
+
+    </div>        
 
     <div id="mam" class="margin-side container-lg" >
-
         <MudBreadcrumbs Class="px-0 py-2" Items="_items"></MudBreadcrumbs>
         @if (Chapter is not null)
         {
@@ -377,7 +381,7 @@ else
             IsLoadingCharacters = true;
             StateHasChanged();
             // Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
-            // IsLoadingCharacters = false;
+            IsLoadingCharacters = false;
             StateHasChanged();
         }
     }
@@ -392,11 +396,11 @@ else
         var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add mob", parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result?.Data is not null && !result.Canceled)
         {
             IsLoadingCharacters = true;
             StateHasChanged();
-            Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
+            Mobs.Add((MobDTO)result.Data);
             IsLoadingCharacters = false;
             StateHasChanged();
         }
@@ -411,11 +415,11 @@ else
         var dialog = await DialogService.ShowAsync<ExistingMobsDialog>("Existing mobs", parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result?.Data is not null && !result.Canceled)
         {
             IsLoadingCharacters = true;
             StateHasChanged();
-            Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
+            Mobs = (List<MobDTO>) result.Data;
             IsLoadingCharacters = false;
             StateHasChanged();
         }

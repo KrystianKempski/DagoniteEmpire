@@ -12,6 +12,7 @@
 @inject IRaceRepository _raceRepository
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
+@inject IEquipmentRepository _equipmentRepository
 @inject IUserService _userService
 @inject IJSRuntime _jsRuntime
 @inject IMapper _mapper
@@ -279,6 +280,7 @@
                     AllParams.CurrentRace = new();
                     AllParams.Profession = new();
                     AllParams.EquipmentSlots = new List<EquipmentSlotDTO>();
+
                     AllParams.Character.UserName = UserInfo?.UserName;
                     IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer);
 
@@ -371,6 +373,10 @@
                 AllParams.TraitsCharacter.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character)));
                 AllParams.TraitsTemporary.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character,true)));
                 // create equipment (in character)
+                //add fist seacretly
+                var fists = await _equipmentRepository.GetByName(SD.BasicWeaponsMelee.Fists);
+                var slot = new EquipmentSlotDTO(fists);
+                AllParams.EquipmentSlots.Add(slot);
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
                 // create profession

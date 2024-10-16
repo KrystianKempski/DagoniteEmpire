@@ -33,14 +33,14 @@ namespace DA_Models.CharacterModels
         public bool IsApproved { get; set; }
         public string ProfessionName { get; set; } = string.Empty;
         //skills
-        public int AttackSkillValue { get; set; } = 5;
-        public int DodgeSkillValue { get; set; } = 5;
-        public int ShieldSkillValue { get; set; } = 5;
-        public int ArmorSkillValue { get; set; } = 5;
-        public int ParrySkillValue { get; set; } = 5;
-        public int PainResSkillValue { get; set; } = 5;
-        public int LiftingSkillValue { get; set; } = 5;
-        public int WrestlingSkillValue { get; set; } = 5;
+        public int AttackSkillValue { get; set; } = 10;
+        public int DodgeSkillValue { get; set; } = 10;
+        public int ShieldSkillValue { get; set; } = 10;
+        public int ArmorSkillValue { get; set; } = 10;
+        public int ParrySkillValue { get; set; } = 10;
+        public int PainResSkillValue { get; set; } = 10;
+        public int LiftingSkillValue { get; set; } = 10;
+        public int WrestlingSkillValue { get; set; } = 10;
 
         // wounds
         public int MaxWounds { get; set; } = 12;

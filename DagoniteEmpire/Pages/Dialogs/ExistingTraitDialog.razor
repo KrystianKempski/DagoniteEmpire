@@ -15,16 +15,16 @@
         </TitleContent>
         <DialogContent>
         <div class="main-table">
-            <MudDataGrid @ref="Grid" ReadOnly="false" T="TraitDTO" MultiSelection="false" Items="Traits" Filterable="true" Class="px-2 py-2" EditMode="DataGridEditMode.Cell" Bordered="true" Dense="true"
+            <MudDataGrid @ref="Grid" ReadOnly="false" T="TraitDTO" MultiSelection="MultiRowSelection" Items="Traits" Filterable="true" Class="px-2 py-2" EditMode="DataGridEditMode.Cell" Bordered="true" Dense="true"
                          FooterClass="d-none" EditTrigger="DataGridEditTrigger.Manual"
                          Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectedItemsChanged="@SelectedItemsChanged">
                 <Columns>
                     <SelectColumn  T="TraitDTO" />
-                    <PropertyColumn IsEditable="false" Property="x => x.Name" Title="Name" />
-                    <PropertyColumn IsEditable="false" Property="x => x.SummaryDescr" Title="Description" />
+                    <PropertyColumn CellStyle="max-width:80px;" Editable="false" Property="x => x.Name" Title="Name" />
+                    <PropertyColumn Editable="false" Property="x => x.SummaryDescr" Title="Description" />
                     @if (TraitType == SD.TraitType_Temporary)
                     {
-                        <PropertyColumn IsEditable="true" Property="x => x.TraitValue" Title="Duration" />
+                        <PropertyColumn CellStyle="max-width:40px;" Editable="true" Property="x => x.TraitValue" Title="Duration" />
                     }
                 </Columns>
             </MudDataGrid>
