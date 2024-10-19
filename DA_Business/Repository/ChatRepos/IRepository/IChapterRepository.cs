@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DA_Models.ChatModels;
 
 namespace DA_Business.Repository.CharacterReps.IRepository
 {

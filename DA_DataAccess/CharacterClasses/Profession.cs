@@ -25,15 +25,7 @@ namespace DA_DataAccess.CharacterClasses
         public SpellcasterType CasterType { get; set; } = SpellcasterType.None;
 
         public ICollection<Character>? Characters { get; set; }
-
-        //[InverseProperty("ActiveProfession")]
-        //public virtual ICollection<ProfessionSkill>? ActiveSkills { get; set; }
-
-        //[InverseProperty("PassiveProfession")]
-        //public virtual ICollection<ProfessionSkill>? PassiveSkills { get; set; }
         public virtual ICollection<SpellCircle>? SpellCircles { get; set; }
-
-        //public ICollection<TraitProfession>? Traits { get; set; } = null;
 
     }
 }

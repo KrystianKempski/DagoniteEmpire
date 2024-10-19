@@ -581,7 +581,8 @@
             // update Character traits
             foreach (var trait in ProfessionDTO.TraitsToAdd)
             {
-                await _traitCharacterRepository.Add(trait,AllParams.Character.Id);
+                trait.CharacterId = AllParams.Character.Id;
+                await _traitCharacterRepository.Update(trait);
             }
             foreach (var trait in ProfessionDTO.TraitsToDelete)
             {

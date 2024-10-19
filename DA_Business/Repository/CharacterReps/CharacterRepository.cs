@@ -38,16 +38,16 @@ namespace DA_Business.Repository.CharacterReps
                 obj.Profession = null;
 
                 //handle traits Adv
-                var traits = await contex.TraitsCharacter.ToListAsync();
-                traits.ForEach(t =>
-                {
-                    if (obj.TraitsCharacter.Any(nt => nt.Id == t.Id))
-                    {
-                        var untracked = obj.TraitsCharacter.FirstOrDefault(nt => nt.Id == t.Id);
-                        obj.TraitsCharacter.Remove(untracked);
-                        obj.TraitsCharacter.Add(t);
-                    }
-                });
+                //var traits = await contex.TraitsCharacter.ToListAsync();
+                //traits.ForEach(t =>
+                //{
+                //    if (obj.TraitsCharacter.Any(nt => nt.Id == t.Id))
+                //    {
+                //        var untracked = obj.TraitsCharacter.FirstOrDefault(nt => nt.Id == t.Id);
+                //        obj.TraitsCharacter.Remove(untracked);
+                //        obj.TraitsCharacter.Add(t);
+                //    }
+                //});
 
                 // Update and Insert equimpment
                 if (obj.EquipmentSlots is not null)
@@ -79,11 +79,13 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 //delete traits adv
-                var obj = await contex.Characters.Include(c=>c.TraitsCharacter).Include(c=>c.EquipmentSlots).ThenInclude(e=>e.Equipment).ThenInclude(t=>t.Traits).FirstOrDefaultAsync(u => u.Id == id);
-                if (!obj.TraitsCharacter.IsNullOrEmpty())
+                var obj = await contex.Characters.Include(c=>c.EquipmentSlots).ThenInclude(e=>e.Equipment).ThenInclude(t=>t.Traits).FirstOrDefaultAsync(u => u.Id == id);
+                var traits = contex.TraitsCharacter.Where(c=>c.CharacterId ==  id);
+                foreach(var trait in traits)
                 {
-                    obj.TraitsCharacter.Where(t=>t.TraitApproved == false).ToList().ForEach(t => contex.TraitsCharacter.Remove(t));
+                    contex.TraitsCharacter.Remove(trait);
                 }
+
                 //delete race
                 var race = await contex.Races.Include(c => c.Traits).FirstOrDefaultAsync(u => u.Id == obj.RaceId && u.RaceApproved == false);
                 if (race is not null)
@@ -145,13 +147,11 @@ namespace DA_Business.Repository.CharacterReps
             using var contex = await _db.CreateDbContextAsync();
             if (id == null || id < 1)
                 return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
-                    .Include(r => r.TraitsCharacter)
                     .Include(r => r.Race)
                     .Include(r => r.Profession)
                     .Include(r=>r.EquipmentSlots)
                     .Where(u=>u.NPCName != SD.NPCName_GameMaster));
             return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
-                .Include(r => r.TraitsCharacter)
                 .Include(r => r.Race)
                 .Include(r => r.Profession)
                 .Include(r => r.EquipmentSlots)
@@ -162,7 +162,6 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             var obj = await contex.Characters
-                .Include(t => t.TraitsCharacter).ThenInclude(b=>b.Bonuses)
                 .Include(r=>r.Race)
                 .Include(r => r.Profession)
                 .Include(r => r.EquipmentSlots)?.ThenInclude(u => u.Equipment)?.ThenInclude(b => b.Traits)?.ThenInclude(b => b.Bonuses)
@@ -178,7 +177,6 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             var obj = await contex.Characters
-                .Include(t => t.TraitsCharacter).ThenInclude(b => b.Bonuses)
                 .Include(r => r.Race)
                 .Include(r => r.Profession)
                 .Include(r => r.EquipmentSlots).ThenInclude(u => u.Equipment).ThenInclude(b => b.Traits)?.ThenInclude(b => b.Bonuses)
@@ -224,7 +222,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = await contex.Characters
-                    .Include(u => u.TraitsCharacter).ThenInclude(t => t.Bonuses)
                     .Include(u=>u.EquipmentSlots).ThenInclude(e => e.Equipment).ThenInclude(e=>e.Traits).ThenInclude(t=>t.Bonuses)
                     .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
 
@@ -241,109 +238,109 @@ namespace DA_Business.Repository.CharacterReps
 
                     /// UPDATE TRAITS
                     /// 
-                    // Delete adv traits
-                    if (obj.TraitsCharacter is not null)
-                    {
-                        foreach (var existingChild in obj.TraitsCharacter.ToList())
-                        {
-                            if (!updatedChar.TraitsCharacter.Any(c => c.Id == existingChild.Id))
-                            {
-                                if (existingChild.TraitApproved == true)
-                                {
-                                    var detachedTrait = contex.TraitsCharacter.Include(t => t.Bonuses).Include(c => c.Characters).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
-                                    if(detachedTrait != null && !detachedTrait.Characters.IsNullOrEmpty() && detachedTrait.Characters.Contains(obj))
-                                    {
-                                        detachedTrait.Characters.Remove(obj);
-                                        contex.Traits.Update(detachedTrait);
-                                    }
-                                }
-                                else
-                                    contex.TraitsCharacter.Remove(existingChild);
-                            }
-                        }
-                    }
+                    //// Delete adv traits
+                    //if (obj.TraitsCharacter is not null)
+                    //{
+                    //    foreach (var existingChild in obj.TraitsCharacter.ToList())
+                    //    {
+                    //        if (!updatedChar.TraitsCharacter.Any(c => c.Id == existingChild.Id))
+                    //        {
+                    //            if (existingChild.TraitApproved == true)
+                    //            {
+                    //                var detachedTrait = contex.TraitsCharacter.Include(t => t.Bonuses).Include(c => c.Characters).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
+                    //                if(detachedTrait != null && !detachedTrait.Characters.IsNullOrEmpty() && detachedTrait.Characters.Contains(obj))
+                    //                {
+                    //                    detachedTrait.Characters.Remove(obj);
+                    //                    contex.Traits.Update(detachedTrait);
+                    //                }
+                    //            }
+                    //            else
+                    //                contex.TraitsCharacter.Remove(existingChild);
+                    //        }
+                    //    }
+                    //}
 
-                    // Update and Insert traits
-                    if (updatedChar.TraitsCharacter is not null)
-                    {
-                        foreach (var trait in updatedChar.TraitsCharacter)
-                        {
-                            TraitCharacter? existingTrait = null;
-                            if (obj.TraitsCharacter is not null)
-                            {
-                                existingTrait = obj.TraitsCharacter
-                                    .FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
-                            }
-                            else 
-                            {   
-                                obj.TraitsCharacter = new List<TraitCharacter>();
-                            }
+                    //// Update and Insert traits
+                    //if (updatedChar.TraitsCharacter is not null)
+                    //{
+                    //    foreach (var trait in updatedChar.TraitsCharacter)
+                    //    {
+                    //        TraitCharacter? existingTrait = null;
+                    //        if (obj.TraitsCharacter is not null)
+                    //        {
+                    //            existingTrait = obj.TraitsCharacter
+                    //                .FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
+                    //        }
+                    //        else 
+                    //        {   
+                    //            obj.TraitsCharacter = new List<TraitCharacter>();
+                    //        }
 
-                            if (existingTrait == null)
-                            {
-                                existingTrait = contex.TraitsCharacter.Include(t => t.Bonuses).Include(c=>c.Characters).FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
-                            }
+                    //        if (existingTrait == null)
+                    //        {
+                    //            existingTrait = contex.TraitsCharacter.Include(t => t.Bonuses).Include(c=>c.Characters).FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
+                    //        }
 
-                            if (existingTrait is not null)
-                            {
-                                if (existingTrait.TraitApproved && obj.TraitsCharacter.Contains(existingTrait) == false)
-                                {
-                                    // adding already existing, approved trait to character
-                                    if (existingTrait.Characters is null)
-                                        existingTrait.Characters = new List<Character>();
-                                    existingTrait.Characters.Add(obj);
-                                    contex.Traits.Update(existingTrait);
-                                }
-                                else
-                                {
-                                    // Update trait
-                                    contex.Entry(existingTrait).CurrentValues.SetValues(trait);
-                                    // update bonuses
+                    //        if (existingTrait is not null)
+                    //        {
+                    //            if (existingTrait.TraitApproved && obj.TraitsCharacter.Contains(existingTrait) == false)
+                    //            {
+                    //                // adding already existing, approved trait to character
+                    //                if (existingTrait.Characters is null)
+                    //                    existingTrait.Characters = new List<Character>();
+                    //                existingTrait.Characters.Add(obj);
+                    //                contex.Traits.Update(existingTrait);
+                    //            }
+                    //            else
+                    //            {
+                    //                // Update trait
+                    //                contex.Entry(existingTrait).CurrentValues.SetValues(trait);
+                    //                // update bonuses
 
-                                    // Delete trait bonuses
-                                    if (!existingTrait.Bonuses.IsNullOrEmpty())
-                                    {
-                                        foreach (var existingChildBonus in existingTrait.Bonuses.ToList())
-                                        {
-                                            if (!trait.Bonuses.Any(c => c.Id == existingChildBonus.Id))
-                                            {
-                                                contex.Bonuses.Remove(existingChildBonus);
-                                            }
-                                        }
-                                    }
+                    //                // Delete trait bonuses
+                    //                if (!existingTrait.Bonuses.IsNullOrEmpty())
+                    //                {
+                    //                    foreach (var existingChildBonus in existingTrait.Bonuses.ToList())
+                    //                    {
+                    //                        if (!trait.Bonuses.Any(c => c.Id == existingChildBonus.Id))
+                    //                        {
+                    //                            contex.Bonuses.Remove(existingChildBonus);
+                    //                        }
+                    //                    }
+                    //                }
 
-                                    // Update and Insert bonuses
-                                    if (trait.Bonuses is not null)
-                                    {
-                                        foreach (var childBonus in trait.Bonuses)
-                                        {
-                                            Bonus? existingChildBonus;
-                                            if (!existingTrait.Bonuses.IsNullOrEmpty())
-                                            {
-                                                existingChildBonus = existingTrait.Bonuses
-                                               .FirstOrDefault(c => c.Id == childBonus.Id && c.Id != default(int));
-                                            }
-                                            else
-                                            {
-                                                existingTrait.Bonuses = new List<Bonus>();
-                                                existingChildBonus = null;
-                                            }
+                    //                // Update and Insert bonuses
+                    //                if (trait.Bonuses is not null)
+                    //                {
+                    //                    foreach (var childBonus in trait.Bonuses)
+                    //                    {
+                    //                        Bonus? existingChildBonus;
+                    //                        if (!existingTrait.Bonuses.IsNullOrEmpty())
+                    //                        {
+                    //                            existingChildBonus = existingTrait.Bonuses
+                    //                           .FirstOrDefault(c => c.Id == childBonus.Id && c.Id != default(int));
+                    //                        }
+                    //                        else
+                    //                        {
+                    //                            existingTrait.Bonuses = new List<Bonus>();
+                    //                            existingChildBonus = null;
+                    //                        }
 
-                                            if (existingChildBonus != null)
-                                                // Update bonus
-                                                contex.Entry(existingChildBonus).CurrentValues.SetValues(childBonus);
-                                            else
-                                                // Insert bonus
-                                                existingTrait.Bonuses.Add(childBonus);
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                                // Insert trait
-                                obj.TraitsCharacter.Add(trait);
-                        }
-                    }
+                    //                        if (existingChildBonus != null)
+                    //                            // Update bonus
+                    //                            contex.Entry(existingChildBonus).CurrentValues.SetValues(childBonus);
+                    //                        else
+                    //                            // Insert bonus
+                    //                            existingTrait.Bonuses.Add(childBonus);
+                    //                    }
+                    //                }
+                    //            }
+                    //        }
+                    //        else
+                    //            // Insert trait
+                    //            obj.TraitsCharacter.Add(trait);
+                    //    }
+                    //}
                    
 
                     /// UPDATE EQUIPMENT

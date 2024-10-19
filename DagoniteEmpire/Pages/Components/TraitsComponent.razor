@@ -233,7 +233,8 @@
 
     private async Task DeleteTrait(TraitDTO trait)
     {
-        Traits = Traits.Where(u => u.Name != trait.Name).ToList();
+        Traits = Traits.Where(u => u.Id != trait.Id).ToList();
+        AllParams.TraitsToDelete.Add(trait);
         await UpdateTraits();
     }
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)

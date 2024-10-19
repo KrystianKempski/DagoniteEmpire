@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241012214407_fixDate")]
-    partial class fixDate
+    [Migration("20241018204550_traitcharchange56")]
+    partial class traitcharchange56
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -53,21 +53,6 @@ namespace DA_DataAccess.Migrations
                     b.HasIndex("CharactersId");
 
                     b.ToTable("ChapterCharacter");
-                });
-
-            modelBuilder.Entity("CharacterTraitCharacter", b =>
-                {
-                    b.Property<int>("CharactersId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TraitsCharacterId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("CharactersId", "TraitsCharacterId");
-
-                    b.HasIndex("TraitsCharacterId");
-
-                    b.ToTable("CharacterTraitCharacter");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>
@@ -782,6 +767,34 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("Wounds");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.Chat.BattlePhase", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("BattleOngoing")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("CampaignId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ChapterId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentTurn")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Name")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BattlePhases");
+                });
+
             modelBuilder.Entity("DA_DataAccess.Chat.Campaign", b =>
                 {
                     b.Property<int>("Id")
@@ -1180,6 +1193,9 @@ namespace DA_DataAccess.Migrations
                 {
                     b.HasBaseType("DA_DataAccess.CharacterClasses.Trait");
 
+                    b.Property<int>("CharacterId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsTemporary")
                         .HasColumnType("boolean");
 
@@ -1271,21 +1287,6 @@ namespace DA_DataAccess.Migrations
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
                         .WithMany()
                         .HasForeignKey("CharactersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("CharacterTraitCharacter", b =>
-                {
-                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
-                        .WithMany()
-                        .HasForeignKey("CharactersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DA_DataAccess.CharacterClasses.TraitCharacter", null)
-                        .WithMany()
-                        .HasForeignKey("TraitsCharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

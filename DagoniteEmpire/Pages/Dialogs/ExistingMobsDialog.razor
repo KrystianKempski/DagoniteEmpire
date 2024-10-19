@@ -6,7 +6,7 @@
 @inject IDialogService DialogService
 @inject IBrowserViewportService _vieportService
 
-<MudDialog>
+<MudDialog ContentClass="m-0">
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Goblin" width="40px" height="40px" class="pr-2" />
@@ -15,7 +15,7 @@
     </TitleContent>
     <DialogContent>
 
-        <MudDataGrid T="MobDTO" MultiSelection="true" Items="Mobs" ReadOnly="true" Filterable="true" Class="px-2 py-2"
+        <MudDataGrid T="MobDTO" MultiSelection="true" Items="Mobs" ReadOnly="true" Filterable="true" Class="px-2 py-2 my-1"
                  Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectedItemsChanged="@SelectedItemsChanged">
         <ToolBarContent>
             <MudButton Class="pa-2 justify-content-start w-auto" OnClick="@(() => AddMob())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add mob</MudButton>
@@ -105,7 +105,7 @@
 
     private async Task Close()
     {
-        Mobs = (await _mobRepository.GetAll()).ToList();
+       //Mobs = (await _mobRepository.GetAll()).ToList();
         await _mobRepository.Update(Mobs.First());
         MudDialog.Close(DialogResult.Ok(Mobs));
         _snackBar.Add("Mobs modyfied", Severity.Success);

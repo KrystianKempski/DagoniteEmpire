@@ -12,12 +12,13 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         public Task<T> Create(T objDTO);
 
         public Task<T> Update(T objDTO);
-        public Task<T> Add(T objDTO,int id);
+        //public Task<T> Add(T objDTO,int id);
         public Task<int> Delete(int id);
 
         public Task<T> GetById(int id);
         public Task<IEnumerable<T>> GetAll(int? charId = null);
 
         public Task<IEnumerable<T>> GetAllApproved(bool addUnique = false);
+
     }
 }

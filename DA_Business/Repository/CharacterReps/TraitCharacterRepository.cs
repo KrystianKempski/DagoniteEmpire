@@ -43,29 +43,29 @@ namespace DA_Business.Repository.CharacterReps
             }
                 
         }
-        public async Task<TraitCharacterDTO> Add(TraitCharacterDTO objDTO,int Id)
-        {
-            try
-            {
-                using var contex = await _db.CreateDbContextAsync();
-                var character = await contex.Characters.Include(u=>u.TraitsCharacter).FirstOrDefaultAsync(c => c.Id == Id);
-                if (character == null)
-                    return null;
-                var obj = _mapper.Map<TraitCharacterDTO, TraitCharacter>(objDTO);
-                if(character.TraitsCharacter is null)
-                    character.TraitsCharacter = new List<TraitCharacter>();
-                character.TraitsCharacter.Add(obj);
+        //public async Task<TraitCharacterDTO> Add(TraitCharacterDTO objDTO,int Id)
+        //{
+        //    try
+        //    {
+        //        using var contex = await _db.CreateDbContextAsync();
+        //        var character = await contex.Characters.Include(u=>u.TraitsCharacter).FirstOrDefaultAsync(c => c.Id == Id);
+        //        if (character == null)
+        //            return null;
+        //        var obj = _mapper.Map<TraitCharacterDTO, TraitCharacter>(objDTO);
+        //        if(character.TraitsCharacter is null)
+        //            character.TraitsCharacter = new List<TraitCharacter>();
+        //        character.TraitsCharacter.Add(obj);
 
-                await contex.SaveChangesAsync();
+        //        await contex.SaveChangesAsync();
 
-                return _mapper.Map<TraitCharacter, TraitCharacterDTO>(obj);
-            }
-            catch (Exception ex)
-            {
-                throw new RepositoryErrorException("Error in Trait-Adv Repository Create");
-            }
+        //        return _mapper.Map<TraitCharacter, TraitCharacterDTO>(obj);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new RepositoryErrorException("Error in Trait-Adv Repository Create");
+        //    }
 
-        }
+        //}
 
         public async Task<int> Delete(int id)
         {
@@ -92,7 +92,7 @@ namespace DA_Business.Repository.CharacterReps
             using var contex = await _db.CreateDbContextAsync();
             if (charId == null || charId < 1)
                 return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(contex.TraitsCharacter.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(contex.TraitsCharacter.Include(u => u.Bonuses).Where(u => u.Characters.FirstOrDefault(c=>c.Id == charId)!=null));
+           return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(contex.TraitsCharacter.Include(u => u.Bonuses).Where(u => u.CharacterId == charId));
         }
 
         public async Task<IEnumerable<TraitCharacterDTO>> GetAllApproved(bool addUnique = false)
@@ -104,6 +104,7 @@ namespace DA_Business.Repository.CharacterReps
                     
             return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(contex.TraitsCharacter.Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.IsUnique == false));
         }
+
 
         public async Task<TraitCharacterDTO> GetById(int id)
         {

@@ -7,11 +7,13 @@
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
+@inject IWoundRepository _woundRepository
 @inject IEquipmentRepository _equipmentRepository
 @inject IRaceRepository _raceRepository
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IUserService _userService
+@inject ISnackbar Snackbar
 
 <MudPaper>
     @if (IsLoading)
@@ -23,10 +25,22 @@
         <MudStack Class="pa-1" Spacing="2" >
             <MudButton Style="@BackgroundColor" Class="pa-1" OnClick="OnExpandCollapseClick">
                 <div class="w-100 d-flex px-2 justify-content-between">
-                    <MudImage Width="80" ObjectFit="ObjectFit.ScaleDown" Src="@ImageUrl" Alt="Character image" Elevation="25" Class="rounded-lg" />
+                    <div class="image-frame">
+                        <MudImage Width="80" ObjectFit="ObjectFit.ScaleDown" Src="@ImageUrl" Alt="Character image" Elevation="25" Class="rounded-lg" />
+                        <div class="image-cover">
+                            <MudPaper Style="opacity:0.4; background-color:red;" Height="@WoundLevel" Width="100%" Outlined="false" Elevation="0" ></MudPaper>
+                        </div>
+                    </div>
                     <div class="flex-grow-1 d-flex flex-column py-2 justify-content-around">
                         <MudText Typo="Typo.h5">@Name</MudText>
-                        <MudText Typo="Typo.subtitle1">@ProfessionName | @RaceName</MudText>                    
+                        <MudText Typo="Typo.subtitle1">@ProfessionName | @RaceName</MudText>
+                        <MudText>
+                            @foreach(var icon in Icons)
+                            {
+                                <img src="@icon.Item2" width="25px" height="25px" class="pr-1" />
+                            }
+                        </MudText>
+                         
                     </div>
                 </div>
             </MudButton>
@@ -217,6 +231,57 @@
                             </MudPaper>
                         </MudItem>
                     }
+                    @if (Icons is not null && Icons.Any())
+                    {
+                        <MudItem xs="12">
+                            <MudPaper Class="p-1 w-100 h-100" Elevation="1">
+                            <div class="d-flex">
+                                <div class="flex-grow-1 weapon-prop-label">
+                                        <MudText Typo="Typo.button">Temporary states</MudText>
+                                </div>
+                            </div>
+                            @foreach (var icon in Icons)
+                            {
+                                @if (icon is not null && string.IsNullOrEmpty(icon.Item1) == false)
+                                {
+                                    <div class="d-inline-block">
+                                        <img src="@icon.Item2" width="25px" height="25px" class="pr-1 d-inline-block" />
+                                        <div class="weapon-prop-label ">
+                                        <label>@icon.Item1: @icon.Item3,</label>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            
+                            </MudPaper>
+                        </MudItem>
+                    }
+                    @if (AllParams?.Health.GetAll() is not null && AllParams?.Health.CurrentWounds > 0)
+                    {
+                        <MudItem xs="12">
+                            <MudPaper Class="p-1 w-100 h-100" Elevation="1">
+                                <div class="d-flex">
+                                    <div class="flex-grow-1 weapon-prop-label">
+                                        <MudText Typo="Typo.button">Wounds</MudText>
+                                    </div>
+                                </div>
+                                @foreach (var wound in AllParams?.Health.GetAll())
+                                {
+                                    @if (wound is not null && string.IsNullOrEmpty(wound.Severity) == false)
+                                    {
+                                        <div class="d-inline-block">
+                                            <img src="@Wounds.GetIcon(wound.IsTended)" width="25px" height="25px" class="pr-1 d-inline-block" />
+                                            <div class="weapon-prop-label ">
+                                                <label>@wound.Severity,</label>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+
+                            </MudPaper>
+                        </MudItem>
+                    }
+                      
                 </MudGrid>
                 </MudPaper>
             </MudCollapse>
@@ -249,8 +314,12 @@
     private string RaceName = "";
     private string Name = "";
     private string BackgroundColor = "";
+    private string StatesString = "";
+    private string WoundLevel = "0%";
+    private List<Tuple<string, string, int>> Icons = new List<Tuple<string, string, int>>();
     private Relation Relation = Relation.Teammate;
     public UserInfo? UserInfo { get; set; }
+    private List<string> MobWounds { get; set; } = new List<string>();
 
 
     private void OnExpandCollapseClick()
@@ -307,89 +376,157 @@
 
     private async Task LoadCharacter()
     {
-        if (AllParams is null){
+        try
+        {
+            if (AllParams is null){
 
-            AllParams = new();
-            AllParams.Character = await _characterRepository.GetById(Id);
-            AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
-            AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
-            AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
-            AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
-            AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
-            AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
-            AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
-            AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.Id)).ToList();
-            AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
-            AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
+                AllParams = new();
+                AllParams.Character = await _characterRepository.GetById(Id);
+                AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
+                AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
+                AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
+                AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
+                AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
+                AllParams.CurrentRace = await _raceRepository.GetById(AllParams.Character.RaceId);
+                AllParams.Profession = await _professionRepository.GetById(AllParams.Character.ProfessionId);
+                AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.Id)).ToList();
+                AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
+                AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
+                ICollection<WoundDTO> wounds = (await _woundRepository.GetAll(Id)).ToList();
+                ICollection<WoundDTO> conds = (await _woundRepository.GetAllCond(Id)).Cast<WoundDTO>().ToList();
+                wounds = wounds.Concat(conds).ToList();
+                AllParams.Health.FillPropertiesContainer(wounds);
+            }
+
+            AllParams.SpecialSkills.AddRelatedParametes();
+            AllParams.AllTraitsChange();
+            //await ChangeProfRelatedAttribute();
+            AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());
+            AllParams.Health.UpdateHealthBonusesInAttributes();
+            MainWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.MainWeaponUsed);
+            OffWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.OffWeaponUsed);
+            ArmorProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ArmorUsed);
+            ShieldProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ShieldUsed);
+            BattleProperties = AllParams.BattleProperties.GetAll();
+
+            BattlePropertyModel = AllParams.BattleProperties;
+            ProfessionName = AllParams.Profession.Name;
+            RaceName = AllParams.CurrentRace.Name;
+            ImageUrl = AllParams.Character.ImageUrl;
+            Name = AllParams.Character.NPCName;
+            Relation = AllParams.Character.Relation;
+            StatesString = AllParams.States;
+            LoadHealthBar();
+            LoadIcons();
+            BackgroundColor = $"background:{Colors.Blue.Lighten5};";
+
+            if (BattleProperties is null)
+                throw new Exception();
+
         }
-
-        AllParams.SpecialSkills.AddRelatedParametes();
-        AllParams.AllTraitsChange();
-        //await ChangeProfRelatedAttribute();
-        AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());
-        MainWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.MainWeaponUsed);
-        OffWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.OffWeaponUsed);
-        ArmorProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ArmorUsed);
-        ShieldProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ShieldUsed);
-        BattleProperties = AllParams.BattleProperties.GetAll();
-        BattlePropertyModel = AllParams.BattleProperties;
-        ProfessionName = AllParams.Profession.Name;
-        RaceName = AllParams.CurrentRace.Name;
-        ImageUrl = AllParams.Character.ImageUrl;
-        Name = AllParams.Character.NPCName;
-        Relation = AllParams.Character.Relation;
-
-        BackgroundColor = $"background:{Colors.Blue.Lighten5};";
-
-        if (BattleProperties is null)
-            throw new Exception();
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error loading Character", Severity.Warning);
+        }
     }
 
     private async Task LoadMob()
     {
-        Mob = await _mobRepository.GetById(Id);
-        Mob.BattleProperties = new(Mob);
-        BattlePropertyModel = Mob.BattleProperties;
-        ImageUrl = Mob.ImageUrl;
-        ProfessionName = Mob.ProfessionName;
-        RaceName = Mob.RaceName;
-        Name = Mob.Name;
-        Relation = Mob.Relation;
-        if (string.IsNullOrEmpty(Mob.MainWeaponName) == false)
+        try
         {
-            Mob.MainWeapon = await _equipmentRepository.GetByName(Mob.MainWeaponName);            
-            MainWeaponProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.MainWeapon);
-        }
-        if (string.IsNullOrEmpty(Mob.OffWeaponName) == false)
-        {
-            Mob.OffWeapon = await _equipmentRepository.GetByName(Mob.OffWeaponName);
-            OffWeaponProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.OffWeapon);
-        }
-        if (string.IsNullOrEmpty(Mob.ShieldWeaponName) == false)
-        {
-            Mob.ShieldWeapon = await _equipmentRepository.GetByName(Mob.ShieldWeaponName);
-            ShieldProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.ShieldWeapon);
-        }
-        if (string.IsNullOrEmpty(Mob.ArmorName) == false)
-        {
-            Mob.Armor = await _equipmentRepository.GetByName(Mob.ArmorName);
-            ArmorProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.Armor);
-        }
-        if (Mob.Relation == Relation.Ally)
-        {
-            BackgroundColor = $"background:{Colors.Green.Lighten5};";
-        }else if (Mob.Relation == Relation.Neutral)
-        {
-            BackgroundColor = $"background:{Colors.Yellow.Lighten5};";
-        }
-        else if (Mob.Relation == Relation.Enemy)
-        {
-            BackgroundColor = $"background:{Colors.Red.Lighten5};";
-        }
+            Mob = await _mobRepository.GetById(Id);
+            Mob.BattleProperties = new(Mob);
+            BattlePropertyModel = Mob.BattleProperties;
+            ImageUrl = Mob.ImageUrl;
+            ProfessionName = Mob.ProfessionName;
+            RaceName = Mob.RaceName;
+            Name = Mob.Name;
+            Relation = Mob.Relation;
+            if (string.IsNullOrEmpty(Mob.MainWeaponName) == false)
+            {
+                Mob.MainWeapon = await _equipmentRepository.GetByName(Mob.MainWeaponName);            
+                MainWeaponProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.MainWeapon);
+            }
+            if (string.IsNullOrEmpty(Mob.OffWeaponName) == false)
+            {
+                Mob.OffWeapon = await _equipmentRepository.GetByName(Mob.OffWeaponName);
+                OffWeaponProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.OffWeapon);
+            }
+            if (string.IsNullOrEmpty(Mob.ShieldWeaponName) == false)
+            {
+                Mob.ShieldWeapon = await _equipmentRepository.GetByName(Mob.ShieldWeaponName);
+                ShieldProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.ShieldWeapon);
+            }
+            if (string.IsNullOrEmpty(Mob.ArmorName) == false)
+            {
+                Mob.Armor = await _equipmentRepository.GetByName(Mob.ArmorName);
+                ArmorProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.Armor);
+            }
+            if (Mob.Relation == Relation.Ally)
+            {
+                BackgroundColor = $"background:{Colors.Green.Lighten5};";
+            }else if (Mob.Relation == Relation.Neutral)
+            {
+                BackgroundColor = $"background:{Colors.Yellow.Lighten5};";
+            }
+            else if (Mob.Relation == Relation.Enemy)
+            {
+                BackgroundColor = $"background:{Colors.Red.Lighten5};";
+            }
+            StatesString = Mob.States;
+            LoadHealthBar();
+            LoadIcons();
+            BattleProperties = Mob.BattleProperties.GetAll();
+            BattlePropertyModel.CalculateBattleStats();
+            if (BattleProperties is null)
+                throw new Exception();
 
-        BattleProperties = Mob.BattleProperties.GetAll();
-        BattlePropertyModel.CalculateBattleStats();
-        if (BattleProperties is null)
-            throw new Exception();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error loading Character", Severity.Warning);
+        }
+    }
+
+    public void LoadIcons()
+    {
+        try{
+            Icons = new List<Tuple<string, string, int>>();
+            if (StatesString == string.Empty) return;
+            var states = StatesString.Split(", ");
+            foreach (var state in states)
+            {
+                if (state == string.Empty) continue;
+                var type = state.Split(":");
+                if (string.IsNullOrEmpty(type[0]) == false)
+                    Icons.Add(new( type[0], States.GetIcon(type[0]), Int32.Parse(type[1])));
+                else
+                    throw new Exception(); // eerror
+            }
+        }
+        catch(Exception ex)
+        {
+            Snackbar.Add("Error loading states", Severity.Warning);
+        }
+    }
+
+    public void LoadHealthBar()
+    {
+        int cover = 0;
+        //for characters 
+        if(AllParams is not null){
+
+            if (AllParams?.Health is null) return;
+            cover = (int)(100.0 * (double)AllParams.Health.CurrentWounds / (double)AllParams.Health.MaxWounds);
+
+        }else if (Mob is not null)
+        {
+            cover = (int)(100.0 * (double)Mob.CurrentWounds / (double)Mob.MaxWounds);
+        }
+        if (cover > 0 && cover <= 100)
+            WoundLevel = $"{cover}%";
+        else if (cover > 100)
+            WoundLevel = "100%";
+
     }
 }

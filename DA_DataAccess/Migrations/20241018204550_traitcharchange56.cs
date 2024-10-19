@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class fixDate : Migration
+    public partial class traitcharchange56 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -54,6 +54,23 @@ namespace DA_DataAccess.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BattlePhases",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<int>(type: "integer", nullable: false),
+                    ChapterId = table.Column<int>(type: "integer", nullable: false),
+                    CampaignId = table.Column<int>(type: "integer", nullable: false),
+                    CurrentTurn = table.Column<int>(type: "integer", nullable: false),
+                    BattleOngoing = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BattlePhases", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -215,6 +232,7 @@ namespace DA_DataAccess.Migrations
                     IsRemovable = table.Column<bool>(type: "boolean", nullable: false),
                     IsUnique = table.Column<bool>(type: "boolean", nullable: false),
                     Discriminator = table.Column<string>(type: "text", nullable: false),
+                    CharacterId = table.Column<int>(type: "integer", nullable: true),
                     IsTemporary = table.Column<bool>(type: "boolean", nullable: true),
                     ProfessionId = table.Column<int>(type: "integer", nullable: true),
                     DC = table.Column<int>(type: "integer", nullable: true),
@@ -658,30 +676,6 @@ namespace DA_DataAccess.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "CharacterTraitCharacter",
-                columns: table => new
-                {
-                    CharactersId = table.Column<int>(type: "integer", nullable: false),
-                    TraitsCharacterId = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CharacterTraitCharacter", x => new { x.CharactersId, x.TraitsCharacterId });
-                    table.ForeignKey(
-                        name: "FK_CharacterTraitCharacter_Characters_CharactersId",
-                        column: x => x.CharactersId,
-                        principalTable: "Characters",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CharacterTraitCharacter_Traits_TraitsCharacterId",
-                        column: x => x.TraitsCharacterId,
-                        principalTable: "Traits",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "EquipmentSlots",
                 columns: table => new
                 {
@@ -880,11 +874,6 @@ namespace DA_DataAccess.Migrations
                 column: "RaceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CharacterTraitCharacter_TraitsCharacterId",
-                table: "CharacterTraitCharacter",
-                column: "TraitsCharacterId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ChatMessages_FromUserId",
                 table: "ChatMessages",
                 column: "FromUserId");
@@ -975,6 +964,9 @@ namespace DA_DataAccess.Migrations
                 name: "BaseSkills");
 
             migrationBuilder.DropTable(
+                name: "BattlePhases");
+
+            migrationBuilder.DropTable(
                 name: "Bonuses");
 
             migrationBuilder.DropTable(
@@ -982,9 +974,6 @@ namespace DA_DataAccess.Migrations
 
             migrationBuilder.DropTable(
                 name: "ChapterCharacter");
-
-            migrationBuilder.DropTable(
-                name: "CharacterTraitCharacter");
 
             migrationBuilder.DropTable(
                 name: "ChatMessages");

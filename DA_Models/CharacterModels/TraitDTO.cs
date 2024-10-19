@@ -27,7 +27,7 @@ namespace DA_Models.CharacterModels
                 {
                     res = Descr + ". ";
                 }
-
+                if (Bonuses is null || Bonuses.Any() == false) return res;
                 foreach (var bonus in Bonuses)
                 {
                     if (bonus.Description != null && bonus.Description.Length > 0)

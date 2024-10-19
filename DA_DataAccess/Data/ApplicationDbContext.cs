@@ -41,6 +41,7 @@ namespace DA_DataAccess.Data
         public DbSet<Post> Posts { get; set; }
         public DbSet<Chapter> Chapters { get; set; }
         public DbSet<Campaign> Campaigns { get; set; }
+        public DbSet<BattlePhase> BattlePhases { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

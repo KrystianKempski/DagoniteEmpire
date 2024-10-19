@@ -5,6 +5,7 @@ using Syncfusion.Blazor.RichTextEditor;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
@@ -161,7 +162,7 @@ namespace DA_Common
                 public const string Light = "Light weapons";
                 public const string Shields = "Shields";
                 public const string Polearms = "Polearms";
-                public const string Unarmed = "Unarmed";                
+                public const string Unarmed = "Unarmed";
                 public static readonly string[] All = { Heavy, Swords, Fencing, Light, Shields, Polearms, Unarmed };
             };
             public readonly struct Shooting
@@ -173,7 +174,7 @@ namespace DA_Common
                 public const string Javelins = "Javelins";
                 public const string Firearms = "Firearms";
                 public const string Grenades = "Grenades";
-                public static readonly string[] All = { Bows, Crossbows, Throwing, Slingshots, Javelins, Grenades,  };
+                public static readonly string[] All = { Bows, Crossbows, Throwing, Slingshots, Javelins, Grenades, };
             }
             public readonly struct Acrobatics
             {
@@ -191,7 +192,7 @@ namespace DA_Common
                 public const string DisarmingTraps = "Disarming traps";
                 public const string Tricks = "Tricks";
                 public const string Handcraft = "Handcraft";
-                public static readonly string[] All = { Pickpocketing, Lockpicking, DisarmingTraps, Tricks, Handcraft,  };
+                public static readonly string[] All = { Pickpocketing, Lockpicking, DisarmingTraps, Tricks, Handcraft, };
             }
             public readonly struct Athletics
             {
@@ -253,7 +254,7 @@ namespace DA_Common
             public const string Arms = "Arms";
             public const string Ring1 = "Ring1";
             public const string Ring2 = "Ring2";
-            public static readonly string[] All = { Other, WeaponMain1, WeaponOff1, WeaponMain2, WeaponOff2, Shield, Face, Throat, Body, Hands, Waist, Feet, Head, Shoulders, Torso, Arms, Ring1,Ring2 };
+            public static readonly string[] All = { Other, WeaponMain1, WeaponOff1, WeaponMain2, WeaponOff2, Shield, Face, Throat, Body, Hands, Waist, Feet, Head, Shoulders, Torso, Arms, Ring1, Ring2 };
         }
 
         public readonly struct BasicWeaponsMelee
@@ -272,7 +273,7 @@ namespace DA_Common
             public const string Greataxe = "Greataxe";
             public const string Poleaxe = "Poleaxe";
             public const string Sarissa = "Sarissa";
-            public static readonly string[] All = { Fists,Dagger, LongSword, BattleAxe, Pickaxe, Mace, Morningstar, ShorSpear, Rapier, TwoHandedFlail, Warhammer, Greataxe, Poleaxe, Sarissa };
+            public static readonly string[] All = { Fists, Dagger, LongSword, BattleAxe, Pickaxe, Mace, Morningstar, ShorSpear, Rapier, TwoHandedFlail, Warhammer, Greataxe, Poleaxe, Sarissa };
         }
         public readonly struct BasicWeaponsShooting
         {
@@ -308,48 +309,7 @@ namespace DA_Common
             public static readonly string[] All = { LightLeatherArmor, LeatherScaleArmor, StealScaleArmor, HalfPlate, FullPlate };
         }
 
-        public readonly struct WoundSeverity
-        {
-            public const string Scars = "Scars";
-            public const string Light = "Light";
-            public const string Moderate = "Moderate";
-            public const string Heavy = "Heavy";
-            public const string Critical = "Critical";
-            public const string Deadly = "Deadly";
-            public static readonly string[] All = { Scars, Light, Moderate, Heavy, Critical, Deadly };
-        }
-        public readonly struct WoundLocation
-        {
-            public const string Head = "Head";
-            public const string Neck = "Neck";
-            public const string MainArm = "Main arm";
-            public const string OffArm = "Off arm";
-            public const string MainHand = "Main hand";
-            public const string OffHand = "Off hand";
-            public const string Back = "Back";
-            public const string LeftLeg = "Left Leg";
-            public const string RightLeg = "Right Leg";
-            public const string Face = "Face";
-            public const string Body = "Body";
-            public static readonly string[] All = { Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, Body, RightLeg, Face, Body };
-        }
-        public enum WoundLocationEnum
-        {
-            Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, RightLeg, Face, Body
-        }
-        public static readonly string[,] WoundAttributes = { 
-            { SD.Attributes.Instinct, SD.Attributes.Intelligence, }, //Head
-            { SD.Attributes.Endurance, SD.Attributes.Dexterity, }, //Neck
-            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //Main arm
-            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //OffArm
-            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //MainHand
-            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //OffHand
-            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //Back
-            { SD.Attributes.Dexterity, SD.Attributes.Endurance, }, //LeftLeg
-            { SD.Attributes.Dexterity, SD.Attributes.Endurance, }, //RightLeg
-            { SD.Attributes.Charisma, SD.Attributes.Instinct, }, //Face
-            { SD.Attributes.Strength, SD.Attributes.Endurance, }, //Body
-        };
+        
 
         public readonly struct Condition
         {
@@ -360,47 +320,6 @@ namespace DA_Common
             public const string GeneralHealth = "General health";
             public static readonly string[] All = { Nutrition, Cleanliness, Wellbeing, Rest, GeneralHealth };
         }
-
-        public readonly struct TempStates
-        {
-            public const string Stunned = "Stunned";
-            public const string Stumbled = "Stumbled";
-            public const string Snatched = "Snatched";
-            public const string Disarmed = "Disarmed";
-            public const string Blinded = "Blinded";
-            public const string Unaware = "Unaware";
-            public const string Invisible = "Invisible";
-            public const string Flanking = "Flanking";
-            public const string Surrounded = "Surrounded";
-            public const string Unbalanced = "Unbalanced";
-            public const string Cautious = "Cautious";
-            public const string FullDefence = "Full defence";
-            public const string Bleeding = "Bleeding";
-
-            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence, Bleeding };
-        }
-
-        
-        //public readonly struct TempStatesLevel
-        //{
-        //    public const int Stunned = 10;
-        //    public const int Stumbled = 5;
-        //    public const int Snatched = 5;
-        //    public const int Disarmed = 0;
-        //    public const int Blinded = 8;
-        //    public const int Unaware = 10;
-        //    public const int Invisible = 5;
-        //    public const int Flanking = 3;
-        //    public const int Surrounded = 2;
-        //    public const int Unbalanced = 7;
-        //    public const int Cautious = 2;
-        //    public const int FullDefence = 5;
-        //    public const int Bleeding = 0;
-
-        //    public static readonly int[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence };
-        //}
-
-
 
         public readonly struct ProfessionSkills
         {
@@ -436,8 +355,8 @@ namespace DA_Common
             { 99, 6, 6, 6, 6, 6, 6, 6, 5, 3 },               // lvl 6
             { 99, 6, 6, 6, 6, 6, 6, 6, 6, 6,},               // lvl 7
           }
-        } ;
-      //circle 0  1  2  3  4  5  6  7  8  9
+        };
+        //circle 0  1  2  3  4  5  6  7  8  9
         public static readonly int[,,] SpellsKnown = {
           {
             //WIZARD
@@ -487,7 +406,7 @@ namespace DA_Common
         {
             public const int StartYear = 625;
 
-            public static readonly Month[] Months = { 
+            public static readonly Month[] Months = {
                 new() {Name = "Abadius",Number = 1,Season = "Winter",Days = 31 },
                 new() { Name = "Calistril", Number = 2, Season = "Winter", Days = 28},
                 new() { Name = "Pharast", Number = 3, Season = "Spring", Days = 31},
@@ -512,10 +431,10 @@ namespace DA_Common
 
             public static readonly string[] AllWeek = { Moonday, Toilday, Wealday, Oathday, Fireday, Starday, Sunday };
 
-            public static string GetDayOfWeek( int day, int month)
+            public static string GetDayOfWeek(int day, int month)
             {
                 int days = day;
-                for (int i = 0; i < month-1; i++)
+                for (int i = 0; i < month - 1; i++)
                 {
                     days += Months[i].Days;
                 }
@@ -524,21 +443,21 @@ namespace DA_Common
                 return AllWeek[dayOfWeek];
             }
 
-            public static string GetDate( int day, int month,int year = 0)
+            public static string GetDate(int day, int month, int year = 0)
             {
                 if (day == 0 || month == 0)
                     return "";
-                while(day > Months[month - 1].Days)
+                while (day > Months[month - 1].Days)
                 {
                     day = day - Months[month - 1].Days;
                     month++;
                 }
 
-                string dayOfWeek =  GetDayOfWeek(day, month);
+                string dayOfWeek = GetDayOfWeek(day, month);
                 string dayNum;
                 if (day == 1)
                     dayNum = "1st";
-                else if(day == 2)
+                else if (day == 2)
                 {
                     dayNum = "2nd";
                 }
@@ -546,10 +465,10 @@ namespace DA_Common
                 {
                     dayNum = day.ToString() + "th";
                 }
-                if(year > 0)
+                if (year > 0)
                     return dayOfWeek + ", " + dayNum + " of " + Months[month - 1].Name + ", year " + year.ToString();
 
-                return dayOfWeek + ", " + dayNum + " of " + Months[month- 1];
+                return dayOfWeek + ", " + dayNum + " of " + Months[month - 1].Name;
             }
 
             public Calendar()
@@ -574,12 +493,12 @@ namespace DA_Common
             }
             return Tuple.Create(result, text);
         }
-        public static Tuple<bool, string> MakeRollTest(int DC,int skill)
+        public static Tuple<bool, string> MakeRollTest(int DC, int skill)
         {
             bool result = false;
             string text = string.Empty;
             var roll = RollDice();
-            result = skill+roll.Item1 >= DC;
+            result = skill + roll.Item1 >= DC;
             var sucess = result ? "Sucess!" : "Fail!";
             text = $"{skill} + {roll.Item2} is {skill + roll.Item1} vs DC: {DC}. {RichText.BoldText(sucess)}";
 
@@ -593,67 +512,10 @@ namespace DA_Common
             res += ")";
             return res;
         }
-        public static string WoundSeverityFromDmg(int value)
-        {
-            if (value <= 0)
-                return "no";
-            else if (value > 0 && value < 5)
-                return SD.WoundSeverity.Light;
-            else if (value < 9)
-                return SD.WoundSeverity.Moderate;
-            else if (value < 15)
-                return SD.WoundSeverity.Heavy;
-            else if (value < 25)
-                return SD.WoundSeverity.Critical;
-            else if (value >= 25)
-                return SD.WoundSeverity.Deadly;
-            else
-                return "";
-        }
-        public static int DCFromWoundSeverity(string value)
-        {
-            switch (value)
-            {
-                case SD.WoundSeverity.Light: return 7;
-                case SD.WoundSeverity.Moderate: return 14;
-                case SD.WoundSeverity.Heavy: return 21;
-                case SD.WoundSeverity.Critical: return 28;
-            }    
-            return 0;
-        }
-        public static int GetValueFromSeverity(string severity)
-        {
-            switch (severity)
-            {
-                case SD.WoundSeverity.Light: return 1;
-                case SD.WoundSeverity.Moderate: return 3;
-                case SD.WoundSeverity.Heavy: return 9;
-                case SD.WoundSeverity.Critical: return 18;
-                case SD.WoundSeverity.Deadly: return 25;
-                default: return 0;
-            }
-        }
-        public static int GetTempStatesLevel(string name)
-        {
-            switch (name)
-            {
-                case SD.TempStates.Stunned: return (int)TempStatesLevel.Stunned;
-                case SD.TempStates.Stumbled: return (int)TempStatesLevel.Stumbled;
-                case SD.TempStates.Snatched: return (int)TempStatesLevel.Snatched;
-                case SD.TempStates.Disarmed: return (int)TempStatesLevel.Disarmed;
-                case SD.TempStates.Blinded: return (int)TempStatesLevel.Blinded;
-                case SD.TempStates.Unaware: return (int)TempStatesLevel.Unaware;
-                case SD.TempStates.Invisible: return (int)TempStatesLevel.Invisible;
-                case SD.TempStates.Flanking: return (int)TempStatesLevel.Flanking;
-                case SD.TempStates.Surrounded: return (int)TempStatesLevel.Surrounded;
-                case SD.TempStates.Unbalanced: return (int)TempStatesLevel.Unbalanced;
-                case SD.TempStates.Cautious: return (int)TempStatesLevel.Cautious;
-                case SD.TempStates.FullDefence: return (int)TempStatesLevel.FullDefence;
-                case SD.TempStates.Bleeding: return (int)TempStatesLevel.Bleeding;
-            }
-            return 0;
-        }
+
         
+
+
     }
     public static class MyIcon
     {
@@ -668,6 +530,22 @@ namespace DA_Common
         public const string Chest = "icons/chest.svg";
         public const string Goblin = "icons\\goblin.svg";
         public const string Attack = "icons/sword-clash.svg";
+        public const string Unaware = "icons/unaware.svg";
+        public const string Stunned = "icons/stunned.svg";
+        public const string Snatched = "icons/snatched.svg";
+        public const string Disarmed = "icons/disarmed.svg";
+        public const string Stumbled = "icons/stumbled.svg";
+        public const string Blinded = "icons/blinded.svg";
+        public const string Invisible = "icons/invisible.svg";
+        public const string Flanking = "icons/flanking.svg";
+        public const string Surrounded = "icons/surrounded.svg";
+        public const string Unbalanced = "icons/unbalanced.svg";
+        public const string Cautious = "icons/cautious.svg";
+        public const string FullDefence = "icons/full-defence.svg";
+        public const string Bleeding = "icons/bleeding.svg";
+        public const string Unconscious = "icons/unconscious.svg";
+        public const string TendedWound = "icons/tended-wound.svg";
+        public const string FreshWound = "icons/fresh-wound.svg";
     }
 
     public enum Relation
@@ -747,21 +625,178 @@ namespace DA_Common
         Sick = -4,
         Dying = -8,
     }
-    public enum TempStatesLevel
+
+    public class Wounds
     {
-        Stunned = 10,
-        Stumbled = 5,
-        Snatched = 5,
-        Disarmed = 0,
-        Blinded = 8,
-        Unaware = 10,
-        Invisible = 5,
-        Flanking = 3,
-        Surrounded = 2,
-        Unbalanced = 7,
-        Cautious = 2,
-        FullDefence = 5,
-        Bleeding = 0,
+        public readonly struct Severity
+        {
+            public const string Scars = "Scars";
+            public const string Light = "Light";
+            public const string Moderate = "Moderate";
+            public const string Heavy = "Heavy";
+            public const string Critical = "Critical";
+            public const string Deadly = "Deadly";
+            public static readonly string[] All = { Scars, Light, Moderate, Heavy, Critical, Deadly };
+        }
+        public readonly struct Location
+        {
+            public const string Head = "Head";
+            public const string Neck = "Neck";
+            public const string MainArm = "Main arm";
+            public const string OffArm = "Off arm";
+            public const string MainHand = "Main hand";
+            public const string OffHand = "Off hand";
+            public const string Back = "Back";
+            public const string LeftLeg = "Left Leg";
+            public const string RightLeg = "Right Leg";
+            public const string Face = "Face";
+            public const string Body = "Body";
+            public static readonly string[] All = { Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, Body, RightLeg, Face, Body };
+        }
+        public enum LocationEnum
+        {
+            Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, RightLeg, Face, Body
+        }
+        public static readonly string[,] Attributes = {
+            { SD.Attributes.Instinct, SD.Attributes.Intelligence, }, //Head
+            { SD.Attributes.Endurance, SD.Attributes.Dexterity, }, //Neck
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //Main arm
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //OffArm
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //MainHand
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //OffHand
+            { SD.Attributes.Dexterity, SD.Attributes.Strength, }, //Back
+            { SD.Attributes.Dexterity, SD.Attributes.Endurance, }, //LeftLeg
+            { SD.Attributes.Dexterity, SD.Attributes.Endurance, }, //RightLeg
+            { SD.Attributes.Charisma, SD.Attributes.Instinct, }, //Face
+            { SD.Attributes.Strength, SD.Attributes.Endurance, }, //Body
+        };
+        public static string SeverityFromDmg(int value)
+        {
+            if (value <= 0)
+                return "no";
+            else if (value > 0 && value < 5)
+                return Severity.Light;
+            else if (value < 9)
+                return Severity.Moderate;
+            else if (value < 15)
+                return Severity.Heavy;
+            else if (value < 25)
+                return Severity.Critical;
+            else if (value >= 25)
+                return Severity.Deadly;
+            else
+                return "";
+        }
+        public static int DCFromSeverity(string value)
+        {
+            switch (value)
+            {
+                case Wounds.Severity.Light: return 7;
+                case Wounds.Severity.Moderate: return 14;
+                case Wounds.Severity.Heavy: return 21;
+                case Wounds.Severity.Critical: return 28;
+            }
+            return 0;
+        }
+        public static int GetValueFromSeverity(string severity)
+        {
+            switch (severity)
+            {
+                case Wounds.Severity.Light: return 1;
+                case Wounds.Severity.Moderate: return 3;
+                case Wounds.Severity.Heavy: return 9;
+                case Wounds.Severity.Critical: return 18;
+                case Wounds.Severity.Deadly: return 25;
+                default: return 0;
+            }
+        }
+        public static string GetIcon(bool isTended)
+        {
+            return isTended ? MyIcon.TendedWound : MyIcon.FreshWound;
+        }
+
+    }
+
+    public class States
+    {
+        public enum Level
+        {
+            Stunned = 10,
+            Stumbled = 5,
+            Snatched = 5,
+            Disarmed = 0,
+            Blinded = 8,
+            Unaware = 10,
+            Invisible = 5,
+            Flanking = 3,
+            Surrounded = 2,
+            Unbalanced = 7,
+            Cautious = 2,
+            FullDefence = 5,
+            Bleeding = 0,
+            Unconscious = 20,
+        }
+        public readonly struct Names
+        {
+            public const string Stunned = "Stunned";
+            public const string Stumbled = "Stumbled";
+            public const string Snatched = "Snatched";
+            public const string Disarmed = "Disarmed";
+            public const string Blinded = "Blinded";
+            public const string Unaware = "Unaware";
+            public const string Invisible = "Invisible";
+            public const string Flanking = "Flanking";
+            public const string Surrounded = "Surrounded";
+            public const string Unbalanced = "Unbalanced";
+            public const string Cautious = "Cautious";
+            public const string FullDefence = "Full defence";
+            public const string Bleeding = "Bleeding";
+            public const string Unconscious = "Unconscious";
+
+            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence, Bleeding, Unconscious };
+        }
+        public static int GetLevel(string name)
+        {
+            switch (name)
+            {
+                case Names.Stunned: return (int)Level.Stunned;
+                case Names.Stumbled: return (int)Level.Stumbled;
+                case Names.Snatched: return (int)Level.Snatched;
+                case Names.Disarmed: return (int)Level.Disarmed;
+                case States.Names.Blinded: return (int)Level.Blinded;
+                case Names.Unaware: return (int)Level.Unaware;
+                case Names.Invisible: return (int)Level.Invisible;
+                case Names.Flanking: return (int)Level.Flanking;
+                case Names.Surrounded: return (int)Level.Surrounded;
+                case Names.Unbalanced: return (int)Level.Unbalanced;
+                case Names.Cautious: return (int)Level.Cautious;
+                case Names.FullDefence: return (int)Level.FullDefence;
+                case Names.Bleeding: return (int)Level.Bleeding;
+                case Names.Unconscious: return (int)Level.Unconscious;
+            }
+            return 0;
+        }
+        public static string GetIcon(string name)
+        {
+            switch (name)
+            {
+                case Names.Stunned: return MyIcon.Stunned;
+                case Names.Stumbled: return MyIcon.Stumbled;
+                case Names.Snatched: return MyIcon.Snatched;
+                case Names.Disarmed: return MyIcon.Disarmed;
+                case Names.Blinded: return MyIcon.Blinded;
+                case Names.Unaware: return MyIcon.Unaware;
+                case Names.Invisible: return MyIcon.Invisible;
+                case Names.Flanking: return MyIcon.Flanking;
+                case Names.Surrounded: return MyIcon.Surrounded;
+                case Names.Unbalanced: return MyIcon.Unbalanced;
+                case Names.Cautious: return MyIcon.Cautious;
+                case Names.FullDefence: return MyIcon.FullDefence;
+                case Names.Bleeding: return MyIcon.Bleeding;
+                case Names.Unconscious: return MyIcon.Unconscious;
+            }
+            return "";
+        }
     }
 
     public class RichText
@@ -770,7 +805,7 @@ namespace DA_Common
         private string _allText;
         public RichText()
         {
-            _allText = "<p><em>(";
+            _allText = "<p><em>";
         }
 
         public void EndText()
@@ -806,5 +841,4 @@ namespace DA_Common
             return _allText;
         }
     }
-
 }

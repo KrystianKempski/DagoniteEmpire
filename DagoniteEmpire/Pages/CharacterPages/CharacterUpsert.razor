@@ -9,6 +9,7 @@
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
+@inject IWoundRepository _woundRepository
 @inject IRaceRepository _raceRepository
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
@@ -304,9 +305,8 @@
                 //await TraitsChange();
 
                 await ChangeProfRelatedAttribute();
-                AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());
-
-
+                AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());                
+                AllParams.Health.UpdateHealthBonusesInAttributes();
                 IsLeaveAllowed = true;
                 IsLoading = false;
                 StateHasChanged();
@@ -335,6 +335,10 @@
         AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).ToList();
         AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
         AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
+        ICollection<WoundDTO> wounds = (await _woundRepository.GetAll(Id)).ToList();
+        ICollection<WoundDTO> conds = (await _woundRepository.GetAllCond(Id)).Cast<WoundDTO>().ToList();
+        wounds = wounds.Concat(conds).ToList();
+        AllParams.Health.FillPropertiesContainer(wounds);
     }
 
     private async Task UpsertCharacter()
@@ -368,10 +372,7 @@
                 {
                     AllParams.Character.RaceId = 0;
                 }
-                // create traits (in character)
-                AllParams.Character.TraitsCharacter = new List<TraitCharacterDTO>();
-                AllParams.TraitsCharacter.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character)));
-                AllParams.TraitsTemporary.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character,true)));
+
                 // create equipment (in character)
                 //add fist seacretly
                 var fists = await _equipmentRepository.GetByName(SD.BasicWeaponsMelee.Fists);
@@ -394,6 +395,20 @@
                 }
 
                 var charac = await _characterRepository.Create(AllParams.Character);
+
+                // create character traits 
+                foreach (var obj in AllParams.TraitsCharacter)
+                {
+                    TraitCharacterDTO traitChar = new(obj, charac.Id);
+                    await _traitCharacterRepository.Create(traitChar);
+                }
+                // create temporary traits (states)
+                foreach (var obj in AllParams.TraitsTemporary)
+                {
+                    TraitCharacterDTO traitChar = new(obj, charac.Id, true);
+                    await _traitCharacterRepository.Create(traitChar);
+                }
+
                 foreach (var obj in AllParams.Attributes.GetAllArray())
                 {
                     obj.CharacterId = charac.Id;
@@ -449,11 +464,18 @@
                 }
 
                 // update Character traits
-                if ( AllParams.Character.TraitsCharacter is  null)
-                    AllParams.Character.TraitsCharacter = new List<TraitCharacterDTO>();
-                AllParams.Character.TraitsCharacter.Clear();
-                AllParams.TraitsCharacter.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character)));
-                AllParams.TraitsTemporary.ToList().ForEach(t => AllParams.Character.TraitsCharacter.Add(new(t, AllParams.Character, true)));
+                foreach (TraitCharacterDTO obj in AllParams.TraitsCharacter)
+                {
+                    obj.CharacterId = Id;
+                    await _traitCharacterRepository.Update(obj);
+                }
+                // update temporary triaits (states)
+                foreach (TraitCharacterDTO obj in AllParams.TraitsTemporary)
+                {
+                    obj.CharacterId = Id;
+                    await _traitCharacterRepository.Update(obj);
+                }                
+
                 // update equipment (in character)
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
@@ -481,6 +503,13 @@
                 await _specialSkillRepository.Delete(obj);
             }
             AllParams.SpecialSkills.SkillsToDelete.Clear();
+
+            // delete traits that are no longer needed
+            foreach (var obj in AllParams.TraitsToDelete)
+            {
+                if (obj.TraitType == SD.TraitType_Character || obj.TraitType == SD.TraitType_Temporary)
+                    await _traitCharacterRepository.Delete(obj.Id);
+            }
 
             // if main character is no approved anymore - delete its id from user info
             if (UserInfo?.SelectedCharacterId == AllParams.Character.Id && AllParams.Character.IsApproved == false)

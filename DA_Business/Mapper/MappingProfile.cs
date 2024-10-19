@@ -2,6 +2,7 @@
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_Models.CharacterModels;
+using DA_Models.ChatModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +34,7 @@ namespace DA_Business.Mapper
             CreateMap<Chapter,ChapterDTO>().ReverseMap();
             CreateMap<Post, PostDTO>().ReverseMap();
             CreateMap<Campaign, CampaignDTO>().ReverseMap();
+            CreateMap<BattlePhase, BattlePhaseDTO>().ReverseMap();
             CreateMap<SpellCircle, SpellCircleDTO>().ReverseMap();
             CreateMap<Wound, WoundDTO>().ReverseMap();
             CreateMap<Wound, ConditionDTO>().ReverseMap();

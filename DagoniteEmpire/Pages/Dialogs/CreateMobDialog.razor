@@ -121,7 +121,7 @@
             <MudStack Row="true" Justify="Justify.SpaceBetween">
                 <MudButton OnClick="ClearStates">Clear states</MudButton>
                 <MudSelect Value="SelectedState" T="string" ValueChanged="AddState" Label="AddState" AnchorOrigin="Origin.BottomCenter">
-                    @foreach (string state in SD.TempStates.All)
+                    @foreach (string state in States.Names.All)
                     {
                         <MudSelectItem Value="@state">@state</MudSelectItem>
                     }
@@ -165,7 +165,7 @@
     private IEnumerable<ChapterDTO> Chapters { get; set; } = new List<ChapterDTO>();
     private bool IsCampaignSelected = true;
     private string ChooseFile = "Choose file";
-    private int StateDuration = 0;
+    private int StateDuration = 1;
     private IList<IBrowserFile> files = new List<IBrowserFile>();
     private void Cancel()
     {
@@ -201,11 +201,13 @@
 
     private async Task SaveMobBtn()
     {
+
+
         if (IsEdit)
         {
-            NewMob = await _mobRepository.Update(NewMob);
+            await _mobRepository.Update(NewMob);
         }else{
-            NewMob = await _mobRepository.Create(NewMob);
+            await _mobRepository.Create(NewMob);
         }
 
         MudDialog.Close(DialogResult.Ok(NewMob));

@@ -1,4 +1,5 @@
 ﻿using DA_Common;
+using DA_DataAccess.CharacterClasses;
 using DA_Models.ComponentModels;
 using System;
 using System.Collections.Generic;
@@ -44,15 +45,15 @@ namespace DA_Models.CharacterModels
             get
             {
                 if (Value > 0 && Value < 3)
-                    return SD.WoundSeverity.Light;
+                    return Wounds.Severity.Light;
                 else if (Value >= 3 && Value < 9)
-                    return SD.WoundSeverity.Moderate;
+                    return Wounds.Severity.Moderate;
                 else if (Value >= 9 && Value < 18)
-                    return SD.WoundSeverity.Heavy;
+                    return Wounds.Severity.Heavy;
                 else if (Value >= 18 && Value < 25)
-                    return SD.WoundSeverity.Critical;
+                    return Wounds.Severity.Critical;
                 else if (Value >= 25)
-                    return SD.WoundSeverity.Deadly;
+                    return Wounds.Severity.Deadly;
                 else
                     return "";
             }
@@ -93,21 +94,22 @@ namespace DA_Models.CharacterModels
             int i = 0;
             switch (location)
             {
-                case SD.WoundLocation.Head: i = (int)SD.WoundLocationEnum.Head; break;
-                case SD.WoundLocation.Neck: i = (int)SD.WoundLocationEnum.Neck; break;
-                case SD.WoundLocation.MainHand: i = (int)SD.WoundLocationEnum.MainHand; break;
-                case SD.WoundLocation.OffHand: i = (int)SD.WoundLocationEnum.OffHand; break;
-                case SD.WoundLocation.MainArm: i = (int)SD.WoundLocationEnum.MainArm; break;
-                case SD.WoundLocation.OffArm: i = (int)SD.WoundLocationEnum.OffArm; break;
-                case SD.WoundLocation.Body: i = (int)SD.WoundLocationEnum.Body; break;
-                case SD.WoundLocation.Back: i = (int)SD.WoundLocationEnum.Back; break;
-                case SD.WoundLocation.LeftLeg: i = (int)SD.WoundLocationEnum.LeftLeg; break;
-                case SD.WoundLocation.RightLeg: i = (int)SD.WoundLocationEnum.RightLeg; break;
-                case SD.WoundLocation.Face: i = (int)SD.WoundLocationEnum.Face; break;
+                case Wounds.Location.Head: i = (int)Wounds.LocationEnum.Head; break;
+                case Wounds.Location.Neck: i = (int)Wounds.LocationEnum.Neck; break;
+                case Wounds.Location.MainHand: i = (int)Wounds.LocationEnum.MainHand; break;
+                case Wounds.Location.OffHand: i = (int)Wounds.LocationEnum.OffHand; break;
+                case Wounds.Location.MainArm: i = (int)Wounds.LocationEnum.MainArm; break;
+                case Wounds.Location.OffArm: i = (int)Wounds.LocationEnum.OffArm; break;
+                default:
+                case Wounds.Location.Body: i = (int)Wounds.LocationEnum.Body; break;
+                case Wounds.Location.Back: i = (int)Wounds.LocationEnum.Back; break;
+                case Wounds.Location.LeftLeg: i = (int)Wounds.LocationEnum.LeftLeg; break;
+                case Wounds.Location.RightLeg: i = (int)Wounds.LocationEnum.RightLeg; break;
+                case Wounds.Location.Face: i = (int)Wounds.LocationEnum.Face; break;
             }
 
-            res.Add(SD.WoundAttributes[i, 0]);
-            res.Add(SD.WoundAttributes[i, 1]);
+            res.Add(Wounds.Attributes[i, 0]);
+            res.Add(Wounds.Attributes[i, 1]);
             return res;
         }
     }

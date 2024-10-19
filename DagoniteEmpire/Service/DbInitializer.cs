@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using DA_DataAccess;
 using System;
+using DA_Models;
 
 namespace DagoniteEmpire.Service
 {
@@ -15,12 +16,12 @@ namespace DagoniteEmpire.Service
     {
         private readonly UserManager<ApplicationUser>_userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly ApplicationDbContext _db;
+        private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
 
         public DbInitializer(UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ApplicationDbContext db,
+            IDbContextFactory<ApplicationDbContext> db,
             IMapper mapper)
         {
             _db = db;
@@ -28,13 +29,14 @@ namespace DagoniteEmpire.Service
             _userManager = userManager;
             _mapper = mapper;
         }
-        public void Initialize()
+        public async Task Initialize()
         {
             try
             {
-                if (_db.Database.GetPendingMigrations().Count() > 0)
+                using var contex = await _db.CreateDbContextAsync();
+                if (contex.Database.GetPendingMigrations().Count() > 0)
                 {
-                    _db.Database.Migrate();
+                    contex.Database.Migrate();
                 }
 
                 if (!_roleManager.RoleExistsAsync(SD.Role_Admin).GetAwaiter().GetResult())
@@ -75,35 +77,35 @@ namespace DagoniteEmpire.Service
                     _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
                     _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
                 }
-                if (_db.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
+                if (contex.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
                 {
                     var prof = new Profession() { Name = SD.NPCName_GameMaster, Description="", RelatedAttributeName = "" };
 
-                    _db.Professions.Add(prof);
-                    _db.SaveChanges();
+                    contex.Professions.Add(prof);
+                    contex.SaveChanges();
                 }
-                if (_db.Races.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
+                if (contex.Races.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
                 {
                     var race = new Race() { Name = SD.NPCName_GameMaster };
 
-                    _db.Races.Add(race);
-                    _db.SaveChanges();
+                    contex.Races.Add(race);
+                    contex.SaveChanges();
                 }
-                if (_db.Characters.FirstOrDefault(c=>c.NPCName == SD.NPCName_GameMaster) == null)
+                if (contex.Characters.FirstOrDefault(c=>c.NPCName == SD.NPCName_GameMaster) == null)
                 {
                     var charac = new Character() { UserName = "GM", NPCName = SD.NPCName_GameMaster };
 
-                    var profession = _db.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster);
-                    var race = _db.Races.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster);
+                    var profession = contex.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster);
+                    var race = contex.Races.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster);
                     charac.ProfessionId = profession.Id;
                     charac.RaceId = race.Id;
                     charac.ImageUrl = "../images/gm_avatar.webp";
 
-                    _db.Characters.Add(charac);
-                    _db.SaveChanges();
+                    contex.Characters.Add(charac);
+                    contex.SaveChanges();
                 }
 
-                if (_db.Races.FirstOrDefault(u => u.Name == "Human") == null)
+                if (contex.Races.FirstOrDefault(u => u.Name == "Human") == null)
                 {
                     Race raceHuman = new Race()
                     {
@@ -132,10 +134,10 @@ namespace DagoniteEmpire.Service
                             }
                         }
                     };
-                    _db.Races.Add(raceHuman);
-                    _db.SaveChanges();
+                    contex.Races.Add(raceHuman);
+                    contex.SaveChanges();
                 }
-                if (_db.Races.FirstOrDefault(u => u.Name == "Dwarf") == null)
+                if (contex.Races.FirstOrDefault(u => u.Name == "Dwarf") == null)
                 {
 
                     Race raceDwarf = new Race()
@@ -269,11 +271,11 @@ namespace DagoniteEmpire.Service
 
                     };
 
-                    _db.Races.Add(raceDwarf);
-                    _db.SaveChanges();
+                    contex.Races.Add(raceDwarf);
+                    contex.SaveChanges();
                 }
 
-                if (_db.Races.FirstOrDefault(u => u.Name == "Elf") == null)
+                if (contex.Races.FirstOrDefault(u => u.Name == "Elf") == null)
                 {
 
                     Race raceElf = new Race()
@@ -388,13 +390,13 @@ namespace DagoniteEmpire.Service
                         }
                     };
 
-                    _db.Races.Add(raceElf);
-                    _db.SaveChanges();
+                    contex.Races.Add(raceElf);
+                    contex.SaveChanges();
                 }
 
                 /// TRAITS CHARACTER
                 TraitCharacter trait = null;
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Lame") == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == "Lame") == null)
                 {
                     trait = new TraitCharacter()
                     {
@@ -420,10 +422,10 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Beautiful") == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == "Beautiful") == null)
                 {
                     trait = new TraitCharacter()
                     {
@@ -449,10 +451,10 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Genius") == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == "Genius") == null)
                 {
                     trait = new TraitCharacter()
                     {
@@ -478,10 +480,10 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Ugly") == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == "Ugly") == null)
                 {
                     trait = new TraitCharacter()
                     {
@@ -507,10 +509,10 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Wrathful") == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == "Wrathful") == null)
                 {
                     trait = new TraitCharacter()
                     {
@@ -542,11 +544,11 @@ namespace DagoniteEmpire.Service
                             },
                         },
                     };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
 
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == "Ambidextrous") == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == "Ambidextrous") == null)
                 {
                     trait = new TraitCharacter()
                     {
@@ -557,212 +559,101 @@ namespace DagoniteEmpire.Service
                         TraitType = SD.TraitType_Character,
                         TraitValue = 4,
                     };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
                 /// TRAITS TEMPORARY STATES
                 
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Stunned) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Stunned) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Stunned,
-                        Descr = "This character is dazed, it cannot perform any actions and its defence is impaired",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        Level = (int)TempStatesLevel.Stunned,
-                        TraitType = SD.TraitType_Temporary,
-                        TraitValue = 99,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Stunned, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Stumbled) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Stumbled) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Stumbled,
-                        Descr = "This character lost its balance, and lies on the ground. To get up it needs to use action (or two if in heavy armor)",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.Stumbled,
-                        TraitValue = 99,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Stumbled, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Snatched) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Snatched) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Snatched,
-                        Descr = "This character was captured. It cannot move or use captured limb until it gets free",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        Level = (int)TempStatesLevel.Snatched,
-                        TraitType = SD.TraitType_Temporary,
-                        TraitValue = 99,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Snatched, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Disarmed) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Disarmed) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Disarmed,
-                        Descr = "This character lost it primary weapon",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.Disarmed,
-                        TraitValue = 99,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Disarmed, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
 
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Blinded) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Blinded) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Blinded,
-                        Descr = "This character lost its sight. This causes penalty to defence equal 8, unless there is other way to see incoming attacks. This character can attack with penalty equal to 5",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        Level = (int)TempStatesLevel.Blinded,
-                        TraitType = SD.TraitType_Temporary,
-                        TraitValue = 99,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Blinded, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Unaware) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Unaware) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Unaware,
-                        Descr = "This character is unaware of it's enemies. This causes penalty to defence equal to 10. Unaware characters become aware after first attack",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.Unaware,
-                        TraitValue = 1,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Unaware, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Invisible) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Invisible) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Invisible,
-                        Descr = "This character cannot be seen, but enemies are aware of its presence. This causes bonus to attack equal to 5, and bonus defence equal to 5",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.Invisible,
-                        TraitValue = 99,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Invisible, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Flanking) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Flanking) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Flanking,
-                        Descr = "This character attack someone from the back, when they are busy fighting with someone else. This gives bonus to attack equal to 3, and opponent cannot use shield",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.Flanking,
-                        TraitValue = 99,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Flanking, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Surrounded) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Surrounded) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Surrounded,
-                        Descr = "This character is surrounded by enemies. For every other enemy attacking this character there is added penalty to defence equal to 2",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.Surrounded,
-                        TraitValue = 1,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Surrounded, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
 
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Unbalanced) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Unbalanced) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Unbalanced,
-                        Descr = "This character lost its balance. For remainging turn he have penalty of 7 to defence",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.Unbalanced,
-                        TraitValue = 1,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Unbalanced, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Cautious) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Cautious) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Cautious,
-                        Descr = "This character went in semi-defencive state. It gets bonus to all kinds of defence equal to 2",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.Cautious,
-                        TraitValue = 1,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Cautious, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.FullDefence) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.FullDefence) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.FullDefence,
-                        Descr = "This character went in full defence. It gets bonus to all kinds of defence equal to 5, but it cannot attack or make any actions",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.FullDefence,
-                        TraitValue = 1,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.FullDefence, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsCharacter.FirstOrDefault(u => u.Name == SD.TempStates.Bleeding) == null)
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Bleeding) == null)
                 {
-                    trait = new TraitCharacter(true)
-                    {
-                        Name = SD.TempStates.Bleeding,
-                        Descr = "This character is seriously bleeding. It gets one wound every turn, untill 10 round or the wound is taken care of",
-                        TraitApproved = true,
-                        IsUnique = false,
-                        TraitType = SD.TraitType_Temporary,
-                        Level = (int)TempStatesLevel.Bleeding,
-                        TraitValue = 10,
-                    };
-                    _db.TraitsCharacter.Add(trait);
-                    _db.SaveChanges();
+                    trait = StateSeeder.GetState(States.Names.Bleeding, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
+                }
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Unconscious) == null)
+                {
+                    trait = StateSeeder.GetState(States.Names.Unconscious, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
                 }
 
                 /// TRAITS PROFESSION (PASSIVE)
                 TraitProfession traitProf = null;
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic+ " 1") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic+ " 1") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -773,10 +664,10 @@ namespace DagoniteEmpire.Service
                         Level = 1,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 2") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 2") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -787,10 +678,10 @@ namespace DagoniteEmpire.Service
                         Level = 2,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 3") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 3") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -801,10 +692,10 @@ namespace DagoniteEmpire.Service
                         Level = 3,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 4") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 4") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -815,10 +706,10 @@ namespace DagoniteEmpire.Service
                         Level = 4,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 5") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 5") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -829,10 +720,10 @@ namespace DagoniteEmpire.Service
                         Level = 5,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 6") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 6") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -843,10 +734,10 @@ namespace DagoniteEmpire.Service
                         Level = 6,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 7") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.WizardMagic + " 7") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -857,11 +748,11 @@ namespace DagoniteEmpire.Service
                         Level = 7,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
 
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic  + " 1") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic  + " 1") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -872,10 +763,10 @@ namespace DagoniteEmpire.Service
                         Level = 1,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 2") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 2") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -886,10 +777,10 @@ namespace DagoniteEmpire.Service
                         Level = 2,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 3") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 3") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -900,10 +791,10 @@ namespace DagoniteEmpire.Service
                         Level = 3,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 4") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 4") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -914,10 +805,10 @@ namespace DagoniteEmpire.Service
                         Level = 4,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 5") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 5") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -928,10 +819,10 @@ namespace DagoniteEmpire.Service
                         Level = 5,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 6") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 6") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -942,10 +833,10 @@ namespace DagoniteEmpire.Service
                         Level = 6,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 7") == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.SorcererMagic + " 7") == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -956,11 +847,11 @@ namespace DagoniteEmpire.Service
                         Level = 7,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
 
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.DoubleWeaponFighting) == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.DoubleWeaponFighting) == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -971,10 +862,10 @@ namespace DagoniteEmpire.Service
                         Level = 1,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.GreaterDoubleWeaponFighting) == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.GreaterDoubleWeaponFighting) == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -985,10 +876,10 @@ namespace DagoniteEmpire.Service
                         Level = 3,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
-                if (_db.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.MightyGrip) == null)
+                if (contex.TraitsProfession.FirstOrDefault(u => u.Name == SD.ProfessionSkills.MightyGrip) == null)
                 {
                     traitProf = new TraitProfession()
                     {
@@ -999,15 +890,15 @@ namespace DagoniteEmpire.Service
                         Level = 2,
                         TraitType = SD.TraitType_Profession,
                     };
-                    _db.TraitsProfession.Add(traitProf);
-                    _db.SaveChanges();
+                    contex.TraitsProfession.Add(traitProf);
+                    contex.SaveChanges();
                 }
 
                 /// EQUIPMENT
 
                 Equipment item;
 
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Bandage") == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == "Bandage") == null)
                 {
                     item = new Equipment()
                     {
@@ -1020,10 +911,10 @@ namespace DagoniteEmpire.Service
                         IsApproved = true,
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Wound balm") == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == "Wound balm") == null)
                 {
                     item = new Equipment()
                     {
@@ -1036,10 +927,10 @@ namespace DagoniteEmpire.Service
                         IsApproved = true,
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == "Rope") == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == "Rope") == null)
                 {
                     item = new Equipment()
                     {
@@ -1053,13 +944,13 @@ namespace DagoniteEmpire.Service
                         IsApproved = true,
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
                 
 
                 // ARMORS
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.LightLeatherArmor) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.LightLeatherArmor) == null)
                 {
                     item = new Equipment()
                     {
@@ -1098,10 +989,10 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.LeatherScaleArmor) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.LeatherScaleArmor) == null)
                 {
                     item = new Equipment()
                     {
@@ -1140,10 +1031,10 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.StealScaleArmor) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.StealScaleArmor) == null)
                 {
                     item = new Equipment()
                     {
@@ -1182,10 +1073,10 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.HalfPlate) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.HalfPlate) == null)
                 {
                     item = new Equipment()
                     {
@@ -1224,10 +1115,10 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.FullPlate) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.FullPlate) == null)
                 {
                     item = new Equipment()
                     {
@@ -1266,11 +1157,11 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
                 //SHIELDS
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.WoodenBuckler) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.WoodenBuckler) == null)
                 {
                     item = new Equipment()
                     {
@@ -1305,11 +1196,11 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
 
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.MetalBuckler) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.MetalBuckler) == null)
                 {
                     item = new Equipment()
                     {
@@ -1339,10 +1230,10 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.WoodenShield) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.WoodenShield) == null)
                 {
                     item = new Equipment()
                     {
@@ -1377,11 +1268,11 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
                
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.MetalShield) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.MetalShield) == null)
                 {
                     item = new Equipment()
                     {
@@ -1416,11 +1307,11 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
 
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.BigWoodenShield) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.BigWoodenShield) == null)
                 {
                     item = new Equipment()
                     {
@@ -1455,10 +1346,10 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.BigMetalShield) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.BigMetalShield) == null)
                 {
                     item = new Equipment()
                     {
@@ -1493,11 +1384,11 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
                 // WEAPONS MELEE
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Dagger) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Dagger) == null)
                 {
                     item = new Equipment()
                     {
@@ -1536,10 +1427,10 @@ namespace DagoniteEmpire.Service
                         },
 
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.LongSword) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.LongSword) == null)
                 {
                     item = new Equipment()
                     {
@@ -1573,10 +1464,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.BattleAxe) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.BattleAxe) == null)
                 {
                     item = new Equipment()
                     {
@@ -1609,10 +1500,10 @@ namespace DagoniteEmpire.Service
                             }
                         },
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Pickaxe) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Pickaxe) == null)
                 {
                     item = new Equipment()
                     {
@@ -1646,10 +1537,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Mace) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Mace) == null)
                 {
                     item = new Equipment()
                     {
@@ -1683,10 +1574,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Morningstar) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Morningstar) == null)
                 {
                     item = new Equipment()
                     {
@@ -1720,10 +1611,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Fists) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Fists) == null)
                 {
                     item = new Equipment()
                     {
@@ -1753,10 +1644,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.ShorSpear) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.ShorSpear) == null)
                 {
                     item = new Equipment()
                     {
@@ -1790,10 +1681,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Rapier) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Rapier) == null)
                 {
                     item = new Equipment()
                     {
@@ -1832,11 +1723,11 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
 
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.TwoHandedFlail) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.TwoHandedFlail) == null)
                 {
                     item = new Equipment()
                     {
@@ -1876,10 +1767,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Warhammer) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Warhammer) == null)
                 {
                     item = new Equipment()
                     {
@@ -1924,10 +1815,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Greataxe) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Greataxe) == null)
                 {
                     item = new Equipment()
                     {
@@ -1972,10 +1863,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Poleaxe) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Poleaxe) == null)
                 {
                     item = new Equipment()
                     {
@@ -2020,10 +1911,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Sarissa) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Sarissa) == null)
                 {
                     item = new Equipment()
                     {
@@ -2063,11 +1954,11 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
                 // WEAPONS RANGED
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.CrossbowLight) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.CrossbowLight) == null)
                 { 
                     item = new Equipment()
                     {
@@ -2112,10 +2003,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.CrossbowHeavy) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.CrossbowHeavy) == null)
                 {
                     item = new Equipment()
                     {
@@ -2165,10 +2056,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.BowSimple) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.BowSimple) == null)
                 {
                     item = new Equipment()
                     {
@@ -2209,10 +2100,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.Longbow) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.Longbow) == null)
                 {
                     item = new Equipment()
                     {
@@ -2248,10 +2139,10 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
-                if (_db.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.Slingshot) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.Slingshot) == null)
                 {
                     item = new Equipment()
                     {
@@ -2287,8 +2178,8 @@ namespace DagoniteEmpire.Service
                         },
                         IsApproved = true,
                     };
-                    _db.Equipment.Add(item);
-                    _db.SaveChanges();
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
                 }
 
                 //// add proffesion

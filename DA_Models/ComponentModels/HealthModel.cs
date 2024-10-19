@@ -16,7 +16,7 @@ namespace DA_Models.ComponentModels
     public class HealthModel 
     {
         private readonly AllParamsModel? _allParams;
-        private ICollection<WoundDTO> Wounds { get; set; } = new List<WoundDTO>();
+        private ICollection<WoundDTO> WoundsList { get; set; } = new List<WoundDTO>();
 
         public HealthModel(AllParamsModel? allParams)
         {
@@ -30,8 +30,8 @@ namespace DA_Models.ComponentModels
 
                 if(res is not null)
                 {
-                    int res2 = ((int)res + 1) / 2 + 2;
-                    foreach (var w in Wounds)
+                    int res2 = ((int)res + 1) / 2 + 5;
+                    foreach (var w in WoundsList)
                     {
                         if(w.Penalty < 0 && w.Location != SD.Condition.Cleanliness && w.Location != SD.Condition.Wellbeing)
                             res2 -= w.Penalty;
@@ -47,7 +47,7 @@ namespace DA_Models.ComponentModels
             get
             {
                 int res = 0;
-                foreach (var w in Wounds)
+                foreach (var w in WoundsList)
                 {
                     if(w.Location != SD.Condition.Cleanliness && w.Location != SD.Condition.Wellbeing && w.Penalty>0)
                         res += w.Penalty;
@@ -71,24 +71,24 @@ namespace DA_Models.ComponentModels
         public virtual void FillPropertiesContainer(IEnumerable<WoundDTO>? properties)
         {
             if (properties is null) return;
-            Wounds = (ICollection<WoundDTO>)properties;
+            WoundsList = (ICollection<WoundDTO>)properties;
         }
         public virtual void AddWound(WoundDTO wound)
         {
-            Wounds.Add(wound);
+            WoundsList.Add(wound);
         }
 
         public ICollection<WoundDTO> GetAll()
         {
-            return Wounds;
+            return WoundsList;
         }
         public WoundDTO? Get(int id)
         {
-            return Wounds.FirstOrDefault(w=>w.Id == id);
+            return WoundsList.FirstOrDefault(w=>w.Id == id);
         }
         public ICollection<WoundDTO>? GetAllForLocation(string location)
         {
-            return (ICollection<WoundDTO>)Wounds.Where(w => w.Location == location);
+            return (ICollection<WoundDTO>)WoundsList.Where(w => w.Location == location);
         }
 
         public DateModel CalculateHealTime(WoundDTO wound)
@@ -102,10 +102,10 @@ namespace DA_Models.ComponentModels
                {
                     switch (wound.Severity)
                     {
-                        case WoundSeverity.Critical: wound.Value = SD.GetValueFromSeverity(WoundSeverity.Heavy); break;
-                        case WoundSeverity.Heavy: wound.Value = SD.GetValueFromSeverity(WoundSeverity.Moderate); break;
-                        case WoundSeverity.Moderate: wound.Value = SD.GetValueFromSeverity(WoundSeverity.Light); break;
-                        case WoundSeverity.Light: wound.Value = SD.GetValueFromSeverity(WoundSeverity.Scars); break;
+                        case Wounds.Severity.Critical: wound.Value = Wounds.GetValueFromSeverity(Wounds.Severity.Heavy); break;
+                        case Wounds.Severity.Heavy: wound.Value = Wounds.GetValueFromSeverity(Wounds.Severity.Moderate); break;
+                        case Wounds.Severity.Moderate: wound.Value = Wounds.GetValueFromSeverity(Wounds.Severity.Light); break;
+                        case Wounds.Severity.Light: wound.Value = Wounds.GetValueFromSeverity(Wounds.Severity.Scars); break;
                         default: return wound.DateStart;
                     }
                     

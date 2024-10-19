@@ -10,13 +10,13 @@
     </TitleContent>
     <DialogContent>
         <MudSelect Required="true" @bind-Value="@NewWound.Location" Label="Location" Placeholder="Select location">
-            @foreach(var loc in SD.WoundLocation.All)
+            @foreach(var loc in Wounds.Location.All)
             {
                 <MudSelectItem Value="@loc">@loc</MudSelectItem>
             }
         </MudSelect>
         <MudSelect Required="true" @bind-Value="@SeverityName" Label="Severity" Placeholder="Select Severity">
-            @foreach (var loc in SD.WoundSeverity.All)
+            @foreach (var loc in Wounds.Location.All)
             {
                 <MudSelectItem Value="@loc">@loc</MudSelectItem>
             }
@@ -73,7 +73,7 @@
 
     private void CreateWound()
     {
-        NewWound.Value = SD.GetValueFromSeverity(SeverityName);
+        NewWound.Value = Wounds.GetValueFromSeverity(SeverityName);
         //NewWound.DayOfInjury = DateModel.GetDaysFromDate(NewWound.DateStart);
         MudDialog.Close(DialogResult.Ok(NewWound));
         if (IsEdit)

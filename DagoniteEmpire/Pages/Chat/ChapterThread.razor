@@ -3,7 +3,7 @@
 @using DA_Business.Services.Interfaces
 @using Syncfusion.Blazor.Navigations;
 @inject NavigationManager _navigationManager
-@inject ISnackbar _snackBar
+@inject ISnackbar SnackBar
 @inject IDialogService DialogService
 @inject IJSRuntime _jsRuntime
 @inject ICharacterRepository _characterRepository
@@ -16,6 +16,8 @@
 @inject ITraitRepository<TraitRaceDTO> _traitRaceRepository
 @inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
 @inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
+@inject IWoundRepository _woundRepository
+@inject IBattlePhaseRepository _battlePhaseRepository
 @inject IEquipmentRepository _equipmentRepository
 @inject IRaceRepository _raceRepository
 @inject IProfessionRepository _professionRepository
@@ -34,15 +36,18 @@
     <LoadingPage></LoadingPage>
 }
 else
-{  
+{
+    
     <div class="character-panel">
         @if(UserInfo?.IsAdminOrMG == true)
         {
-            <MudStack Row="true">
-                <MudButton OnClick="GenerateFightSequence">Generate fight </MudButton>
-                <MudButton OnClick="AddNewMob">Add new mob</MudButton>
-                <MudButton OnClick="AddExistingMob">Existing mobs</MudButton>
-            </MudStack>
+            <MudGrid Justify="Justify.Center" Spacing="1">
+                <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>               
+                <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
+                <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
+                <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
+            </MudGrid>
         }
     @if (IsLoadingCharacters == false)
     {
@@ -67,6 +72,11 @@ else
     </div>        
 
     <div id="mam" class="margin-side container-lg" >
+        @if (OngoingBattle)
+        {
+            <MudAlert Elevation="12" Severity="Severity.Error" Variant="Variant.Filled">Battle in progress!</MudAlert>
+        }
+
         <MudBreadcrumbs Class="px-0 py-2" Items="_items"></MudBreadcrumbs>
         @if (Chapter is not null)
         {
@@ -192,13 +202,16 @@ else
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IDictionary<int, AllParamsModel?> CharacterAllParams { get; set; } = new Dictionary<int, AllParamsModel?>();
     private ICollection<MobDTO> Mobs = new List<MobDTO>();
+    private BattlePhaseDTO? BattlePhase = null;
     public PostDTO NewPost { get; set; } = new();
     public bool IsLoading { get; set; } = true;
     public bool IsLoadingCharacters { get; set; } = true;    
     private string Title { get; set; } = "Campaign name";
     private CharacterDTO SelectedCharacter  = null;
     private bool IsEditMode = false;
+    private bool OngoingBattle = false;
     private string SendButtonText { get; set; } = "Send Post";
+    private string BattleButton { get; set; } = "Start Battle";
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
@@ -297,7 +310,13 @@ else
             new BreadcrumbItem("Posts", href: $"/chapter/{Id}/{CharId}"),
         };
         Title = Chapter.Name;
+        BattlePhase = await _battlePhaseRepository.GetCurrentForChapter(CharId);
+        if (BattlePhase is not null)
+        {
 
+            OngoingBattle = BattlePhase.BattleOngoing;
+            BattleButton = OngoingBattle ? "End Battle" : "Start Battle";
+        }
         IsLoading = false;
         IsLoadingCharacters = false;
         StateHasChanged();
@@ -326,7 +345,6 @@ else
         }
         else
         {
-
             NewPost.ChapterId = Id;
             NewPost.CharacterId = SelectedCharacter.Id;
             NewPost.Character = SelectedCharacter;
@@ -335,7 +353,6 @@ else
             var result = await _postRepository.Create(NewPost);
             if(result is not null)
                 Posts.Add(NewPost);
-
         }
         NewPost = new();
 
@@ -379,32 +396,14 @@ else
         if (!result.Canceled)
         {
             IsLoadingCharacters = true;
-            StateHasChanged();
-            // Mobs = (await _mobRepository.GetAllForChapter(Id)).ToList();
+            StateHasChanged();            
+            await LoadMobs();
+            await LoadChapter();
             IsLoadingCharacters = false;
             StateHasChanged();
         }
     }
-    private async Task AddNewMob()
-    {
-        MobDTO NewMob = new();
-        var parameters = new DialogParameters<CreateMobDialog> {    { x => x.NewMob, NewMob },
-                                                                    { x => x.IsEdit, false },
-                                                                    { x => x.CampaignId, Chapter.CampaignId },
-                                                                    { x => x.ChapterId, Id }};
 
-        var dialog = await DialogService.ShowAsync<CreateMobDialog>("Add mob", parameters, await SetDialogOptions());
-        var result = await dialog.Result;
-
-        if (result?.Data is not null && !result.Canceled)
-        {
-            IsLoadingCharacters = true;
-            StateHasChanged();
-            Mobs.Add((MobDTO)result.Data);
-            IsLoadingCharacters = false;
-            StateHasChanged();
-        }
-    }
     private async Task AddExistingMob()
     {
 
@@ -419,9 +418,139 @@ else
         {
             IsLoadingCharacters = true;
             StateHasChanged();
-            Mobs = (List<MobDTO>) result.Data;
+            // Mobs = (List<MobDTO>) result.Data;
+            await LoadMobs();
             IsLoadingCharacters = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task SwichBattlePhase()
+    {
+        if (OngoingBattle)
+            await EndBattlePhase();
+        else
+            await StartBattlePhase();
+    }
+
+    private async Task StartBattlePhase()
+    {
+        BattlePhase = new(CharacterAllParams, Mobs, Chapter.CampaignId, Id);
+        OngoingBattle = true;
+        BattleButton = "End Battle";
+        if (BattlePhase is not null)
+            BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
+        else
+            return;
+        SnackBar.Add("Battle started!", Severity.Error);
+    }
+    private async Task NextTurn()
+    {
+        try{
+
+            // Change temporary states
+            // for characters
+            ICollection<TraitDTO> newCharStates = new List<TraitDTO>();
+            foreach (var characterParams in CharacterAllParams.Values)
+            {
+                if (characterParams?.TraitsTemporary is null || characterParams.TraitsTemporary.Any() == false) continue;
+                newCharStates = new List<TraitDTO>();
+                foreach (var state in characterParams.TraitsTemporary)
+                {
+                    if (--state.TraitValue > 0)
+                    {
+                        newCharStates.Add(state);
+                    }
+                }
+
+                //update new stats
+                characterParams.TraitsTemporary = newCharStates;
+                foreach(var trait in characterParams.TraitsTemporary)
+                {
+                    TraitCharacterDTO characterTrait = new(trait, characterParams.Character.Id, true);
+                    await _traitCharacterRepository.Update(characterTrait);
+                }
+
+            }
+            // for mobs
+            List<string> newStates = new List<string>();
+            foreach (var mob in Mobs)
+            {
+                newStates = new List<string>();
+                var states = mob.States.Split(", ");
+                foreach (var state in states)
+                {
+                    if (state == string.Empty) continue;
+                    var statesParams = state.Split(":");
+                    var name = statesParams[0];
+                    var duration = Int32.Parse(statesParams[1]);
+                    if(--duration > 0)
+                    {
+                        newStates.Add($"{name}:{duration}");
+                    }
+                }
+                mob.States = string.Empty;
+                foreach (var newState in newStates)
+                {
+                    mob.States += $"{newState}, ";
+                }
+                await _mobRepository.Update(mob);
+            }
+
+            if(BattlePhase is not null){
+                BattlePhase.CurrentTurn++;
+                BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
+                await LoadMobs();
+                await LoadChapter();
+                SnackBar.Add($"Turn {BattlePhase.CurrentTurn} started", Severity.Warning);
+            }
+        }
+        catch(Exception ex)
+        {
+            SnackBar.Add($"Error in Next turn action", Severity.Error);
+        }
+    }
+
+    private async Task EndBattlePhase()
+    {
+        // End temporary states
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Are you sure you want to end battle?",
+            yesText: "Yes", cancelText: "No");
+        if (result is null || result == false)
+        {
+            return;
+        }
+
+        // for characters - delete all temp traits
+        foreach (var characterParams in CharacterAllParams.Values)
+        {
+            if (characterParams?.TraitsTemporary is null || characterParams.TraitsTemporary.Any() == false) continue;
+            characterParams.TraitsTemporary = new List<TraitDTO>();
+            characterParams.TraitsCharacter = new List<TraitDTO>();
+            await _characterRepository.Update(characterParams.Character);
+
+            foreach (var trait in characterParams.TraitsCharacter.Where(t => t.TraitType == SD.TraitType_Temporary))
+            {
+                await _traitCharacterRepository.Delete(trait.Id);
+            }
+        }
+        // for mobs
+        List<string> newStates = new List<string>();
+        foreach (var mob in Mobs)
+        {
+            mob.States = string.Empty;
+        }
+        BattleButton = "Start Battle";
+        if (BattlePhase is not null)
+        {
+            BattlePhase.BattleOngoing =  OngoingBattle = false;
+            BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
+            BattlePhase = null;
+            await LoadMobs();
+            await LoadChapter();
+            SnackBar.Add($"Battle Ended", Severity.Normal);
         }
     }
 
@@ -449,9 +578,12 @@ else
 
         allParams.SpecialSkills.AddRelatedParametes();
         allParams.AllTraitsChange();
-        //await ChangeProfRelatedAttribute();
         allParams.Profession.CalculateClassParams(allParams.Attributes.GetAll());
-
+        ICollection<WoundDTO> wounds = (await _woundRepository.GetAll(allParams.Character.Id)).ToList();
+        ICollection<WoundDTO> conds = (await _woundRepository.GetAllCond(allParams.Character.Id)).Cast<WoundDTO>().ToList();
+        wounds = wounds.Concat(conds).ToList();
+        allParams.Health.FillPropertiesContainer(wounds);
+        allParams.Health.UpdateHealthBonusesInAttributes();
         return allParams;
     }
 

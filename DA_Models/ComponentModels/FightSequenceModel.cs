@@ -5,6 +5,7 @@ using DA_Models.CharacterModels;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,21 @@ using static DA_Common.SD;
 
 namespace DA_Models.ComponentModels
 {
+    public class FighterModel {
+        public string Name { get; set; } = string.Empty;
+        public BattlePropertyModel Props { get; set; } = null;
+        public ICollection<TraitDTO>? States { get; set; } = new List<TraitDTO>();
+        public HealthModel Health { get; set; } = null;
+        public int PainResistance { get; set; } = 0;
+        public int Balance { get; set; } = 0;
+        public int Lifting { get; set; } = 0;
+
+        public Tuple<int, string> Roll { get; set; } = new Tuple<int, string>(0, string.Empty);
+
+        public string OldStates { get; set; } = string.Empty;
+        public string NewStates { get; set; } = string.Empty;
+    }
+
     public class FightSequenceModel
     {
         public FightSequenceModel(DateModel date)
@@ -20,20 +36,9 @@ namespace DA_Models.ComponentModels
         }
         public DateModel Date { get; set; } = new(1, 1);
         // input variables
-        public string AttackerName { get; set; } = string.Empty;
-        public string DefenderName { get; set; } = string.Empty;
-        public BattlePropertyModel AttackerProps { get; set; } = null;
-        public BattlePropertyModel DefenderProps { get; set; } = null;
-        public ICollection<TraitCharacterDTO>? AttackerStates { get; set; } = new List<TraitCharacterDTO>();
-        public ICollection<TraitCharacterDTO>? DefenderStates { get; set; } = new List<TraitCharacterDTO>();
-        public HealthModel AttackerHealth { get; set; } = null;
-        public HealthModel DefenderHealth { get; set; } = null;
-        public int AttackerPainResistance { get; set; } = 0;
-        public int DefenderPainResistance { get; set; } = 0;
-        public int AttackerBalance { get; set; } = 0;
-        public int DefenderBalance { get; set; } = 0;
-        public int AttackerLifting { get; set; } = 0;
-        public int DefenderLifting { get; set; } = 0;
+
+        public FighterModel Attacker { get; set; } = new();
+        public FighterModel Defender { get; set; } = new();
 
         // select variables
         public string AttackAction { get; set; } = string.Empty;
@@ -48,42 +53,49 @@ namespace DA_Models.ComponentModels
         private int HitValue { get; set; } = 0;
         private int AdditionalDamage { get; set; } = 0;
         private int DamageDelt { get; set; } = 0;
-        private string WoundSeverity { get; set; } = string.Empty;
-        private bool IsShieldDefenceAllowed { get; set; } = true;
-        private bool IsParryDefenceAllowed { get; set; } = true;
         private string TestConditionIfHit { get; set; } = string.Empty;
-        private Tuple<int, string> AttackerRoll { get; set; } = new Tuple<int, string>(0, string.Empty);
-        private Tuple<int, string> DefenderRoll { get; set; } = new Tuple<int, string>(0, string.Empty);
-        private bool UpdateAttackerNeeded { get; set; } = false;
-        private bool UpdateDefenderNeeded { get; set; } = false;
+
+        // public variables
+
+        public bool IsShieldDefenceAllowed { get; set; } = true;
+        public bool IsParryDefenceAllowed { get; set; } = true;
 
         // return variables
-        public RichText ResultStringMG { get; set; } = new();
 
-        public string AttackerOldStates { get; set; } = string.Empty;
-        public string DefenderOldStates { get; set; } = string.Empty;
-        public string AttackerNewStates { get; set; } = string.Empty;
-        public string DefenderNewStates { get; set; } = string.Empty;
+        public string WoundSeverity { get; set; } = string.Empty;
+        public RichText ResultStringMG { get; set; } = new();
+        public List<WoundDTO> NewWounds { get; set; } = new List<WoundDTO>();   
 
         // functions
 
-        public void AddAttacker(AllParamsModel allParams)
-        {
-            AttackerProps = allParams.BattleProperties;
-            AttackerStates = allParams.Character?.TraitsCharacter?.Where(t => t.TraitType == SD.TraitType_Temporary).ToList();
-            AttackerHealth = allParams.Health;
-            AttackerName =  allParams.Character.NPCName;
-            AttackerPainResistance = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.PainResistance).SumBonus;
-            AttackerLifting = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Lifting).SumBonus;
-            AttackerBalance = allParams.SpecialSkills.Get(SD.SpecialSkills.Acrobatics.Balance).SumBonus;
-        }
-        public void AddAttacker(MobDTO mob)
+        public static FighterModel? AddFighter( AllParamsModel allParams)
         {
             try
             {
-                AttackerProps = mob.BattleProperties;
+                FighterModel fighter = new();
+                fighter.Props = allParams.BattleProperties;
+                fighter.States = allParams.TraitsTemporary;
+                fighter.Health = allParams.Health;
+                fighter.Name =  allParams.Character.NPCName;
+                fighter.PainResistance = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.PainResistance).SumBonus;
+                fighter.Lifting = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Lifting).SumBonus;
+                fighter.Balance = allParams.SpecialSkills.Get(SD.SpecialSkills.Acrobatics.Balance).SumBonus;
+                return fighter;
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
+            return null;
+        }
+        public static FighterModel? AddFighter(MobDTO mob)
+        {
+            try
+            {
+                FighterModel fighter = new();
+                fighter.Props = mob.BattleProperties;
                 var states = mob.States.Split(", ");
-                AttackerStates = new List<TraitCharacterDTO>();
+                fighter.States = new List<TraitDTO>();
                 foreach (var state in states)
                 {
                     if (state.IsNullOrEmpty()) continue;
@@ -91,62 +103,26 @@ namespace DA_Models.ComponentModels
                     var statesParams = mob.States.Split(":");
                     trait.Name = statesParams[0];
                     trait.TraitValue = Int32.Parse(statesParams[1]);
-                    AttackerStates.Add(trait);
+                    fighter.States.Add(trait);
                 }
-                AttackerHealth = new MobHealthModel(mob);
-                AttackerName = mob.Name;
-                AttackerPainResistance = mob.PainResSkillValue;
-                AttackerLifting = mob.AttackSkillValue;
-                AttackerBalance = mob.DodgeSkillValue;
+                fighter.Health = new MobHealthModel(mob);
+                fighter.Name = mob.Name;
+                fighter.PainResistance = mob.PainResSkillValue;
+                fighter.Lifting = mob.AttackSkillValue;
+                fighter.Balance = mob.DodgeSkillValue;
+                return fighter;
             }
             catch (Exception ex)
             {
                 ;
             }
-        }
-        public void AddDefender(AllParamsModel allParams)
-        {
-            DefenderProps = allParams.BattleProperties;
-            DefenderStates = allParams.Character?.TraitsCharacter?.Where(t => t.TraitType == SD.TraitType_Temporary).ToList();
-            DefenderHealth = allParams.Health;
-            DefenderName = allParams.Character.NPCName;
-            DefenderPainResistance = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.PainResistance).SumBonus;
-            DefenderLifting = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Lifting).SumBonus;
-            DefenderBalance = allParams.SpecialSkills.Get(SD.SpecialSkills.Acrobatics.Balance).SumBonus;
-        }
-        public void AddDefender(MobDTO mob)
-        {
-            try
-            {
-                DefenderProps = mob.BattleProperties;
-                var states = mob.States.Split(", ");
-                DefenderStates = new List<TraitCharacterDTO>();
-                foreach (var state in states)
-                {
-                    if (state.IsNullOrEmpty()) continue;
-                    var trait = new TraitCharacterDTO(true);
-                    var statesParams = state.Split(":");
-                    trait.Name = statesParams[0];
-                    trait.Level = SD.GetTempStatesLevel(trait.Name);
-                    trait.TraitValue = Int32.Parse(statesParams[1]);
-                    DefenderStates.Add(trait);
-                }
-                DefenderHealth = new MobHealthModel(mob);
-                DefenderName = mob.Name;
-                DefenderPainResistance = mob.PainResSkillValue;
-                DefenderLifting = mob.AttackSkillValue;
-                DefenderBalance = mob.DodgeSkillValue;
-            }
-            catch (Exception ex)
-            {
-                ;
-            }
+            return null;
         }
 
+       
         public void CalculateAndWriteAttack()
         {
-
-            ClearRoll();
+            ClearRoll();           
             /// Get bonus from states
             WriteBonusesFromStates();
             /// Get bonus from attack type
@@ -170,7 +146,6 @@ namespace DA_Models.ComponentModels
         public void ClearRoll()
         {
             ResultStringMG = new();
-            //AttackLocation = string.Empty;
             AttackValue = 0;
             DefenceValue = 0;
             AdditionalDamage = 0;
@@ -178,13 +153,17 @@ namespace DA_Models.ComponentModels
             TestConditionIfHit = string.Empty;
             HitValue = 0;
             IsHit = false;
-            AttackerNewStates  = string.Empty;
-            DefenderNewStates  = string.Empty;
+            Attacker.NewStates  = string.Empty;
+            Defender.NewStates  = string.Empty;
             WoundSeverity = string.Empty;
-            AttackerRoll = new Tuple<int, string>(0, string.Empty);
-            DefenderRoll  = new Tuple<int, string>(0, string.Empty);
-            UpdateAttackerNeeded  = false;
-            UpdateDefenderNeeded  = false;
+            Attacker.Roll = new Tuple<int, string>(0, string.Empty);
+            Defender.Roll  = new Tuple<int, string>(0, string.Empty);
+            NewWounds = new List<WoundDTO>();
+            if (Attacker.Props is null || Defender.Props is null)
+            {
+                ResultStringMG += $"Error! No Attacker or Defender properties are loaded";
+                return;
+            }
         }
 
         public void WriteLocationOfAttack()
@@ -194,43 +173,43 @@ namespace DA_Models.ComponentModels
             switch (AttackLocation)
             {
                 default:
-                case SD.WoundLocation.Head:
+                case Wounds.Location.Head:
                     AttackCurrValue += -5;
                     AdditionalDamage += 8;
-                    TestConditionIfHit += SD.TempStates.Stunned + ", ";
+                    TestConditionIfHit += States.Names.Stunned + ", ";
                     break;
-                case SD.WoundLocation.Neck:
+                case Wounds.Location.Neck:
                     AttackCurrValue += -6;
                     AdditionalDamage += 9;
-                    if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
-                        TestConditionIfHit += SD.TempStates.Snatched + ", ";
+                    if (Attacker.Props.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
+                        TestConditionIfHit += States.Names.Snatched + ", ";
                     else
-                        TestConditionIfHit += SD.TempStates.Bleeding + ", ";
+                        TestConditionIfHit += States.Names.Bleeding + ", ";
                     break;
-                case SD.WoundLocation.Face:
+                case Wounds.Location.Face:
                     AttackCurrValue += -6;
                     AdditionalDamage += 10;
-                    TestConditionIfHit += SD.TempStates.Blinded + ", ";
+                    TestConditionIfHit += States.Names.Blinded + ", ";
                     break;
-                case SD.WoundLocation.MainHand:
-                case SD.WoundLocation.MainArm:
-                case SD.WoundLocation.OffArm:
-                case SD.WoundLocation.OffHand:
+                case Wounds.Location.MainHand:
+                case Wounds.Location.MainArm:
+                case Wounds.Location.OffArm:
+                case Wounds.Location.OffHand:
                     AttackCurrValue += -2;
-                    if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
-                        TestConditionIfHit += SD.TempStates.Snatched + ", ";
+                    if (Attacker.Props.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
+                        TestConditionIfHit += States.Names.Snatched + ", ";
                     break;
-                case SD.WoundLocation.Body:
+                case Wounds.Location.Body:
                     break;
-                case SD.WoundLocation.Back:
+                case Wounds.Location.Back:
                     break;
-                case SD.WoundLocation.LeftLeg:
-                case SD.WoundLocation.RightLeg:
+                case Wounds.Location.LeftLeg:
+                case Wounds.Location.RightLeg:
                     AttackCurrValue += -2;
-                    if (AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
-                        TestConditionIfHit += SD.TempStates.Snatched + ", ";
+                    if (Attacker.Props.Get(SD.WeaponQuality.Snatching).SumBonus > 0)
+                        TestConditionIfHit += States.Names.Snatched + ", ";
                     else
-                        TestConditionIfHit += SD.TempStates.Stumbled + ", ";
+                        TestConditionIfHit += States.Names.Stumbled + ", ";
                     break;                   
             }
             ResultStringMG.NewLine();
@@ -250,28 +229,28 @@ namespace DA_Models.ComponentModels
             {
                 default:
                 case SD.DefenceType.Dodge:
-                    weaponCurrValue += AttackerProps.Get(SD.BattleProperty.AttackDodge).SumBonus;
-                    DefenceCurrValue += DefenderProps.Get(SD.BattleProperty.DefenceDodge).SumBonus;
+                    weaponCurrValue += Attacker.Props.Get(SD.BattleProperty.AttackDodge).SumBonus;
+                    DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceDodge).SumBonus;
                     defenceString = SD.DefenceType.Dodge.ToLower();
                     break;
                 case SD.DefenceType.Parry:
-                    weaponCurrValue = AttackerProps.Get(SD.BattleProperty.AttackParry).SumBonus;
-                    DefenceCurrValue += DefenderProps.Get(SD.BattleProperty.DefenceParry).SumBonus;
+                    weaponCurrValue = Attacker.Props.Get(SD.BattleProperty.AttackParry).SumBonus;
+                    DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceParry).SumBonus;
                     defenceString = SD.DefenceType.Parry.ToLower();
                     break;
                 case SD.DefenceType.Shield:
-                    weaponCurrValue += AttackerProps.Get(SD.BattleProperty.AttackShield).SumBonus;
-                    DefenceCurrValue += DefenderProps.Get(SD.BattleProperty.DefenceShield).SumBonus;
+                    weaponCurrValue += Attacker.Props.Get(SD.BattleProperty.AttackShield).SumBonus;
+                    DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceShield).SumBonus;
                     defenceString = "deflect with shield";
                     break;
                 case SD.DefenceType.Armor:
-                    weaponCurrValue += AttackerProps.Get(SD.BattleProperty.AttackArmor).SumBonus;
-                    DefenceCurrValue += DefenderProps.Get(SD.BattleProperty.DefenceArmor).SumBonus;
+                    weaponCurrValue += Attacker.Props.Get(SD.BattleProperty.AttackArmor).SumBonus;
+                    DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceArmor).SumBonus;
                     defenceString = "deflect with armor";
                     break;
             }
 
-            weaponString += $"using {AttackerProps.MainWeaponUsed.Name} {SD.BonusText(weaponCurrValue)} ";
+            weaponString += $"using {Attacker.Props.MainWeaponUsed.Name} {SD.BonusText(weaponCurrValue)} ";
             AttackValue += weaponCurrValue;
             AttackCurrValue = 0;
 
@@ -279,26 +258,32 @@ namespace DA_Models.ComponentModels
             switch (AttackAction)
             {
                 default:
-                case SD.AttackAction.Cautious:
-                    AttackCurrValue += -3;
-                    TraitCharacterDTO cautious = new TraitCharacterDTO(true);
-                    AttackerNewStates += SD.TempStates.Cautious + ":1" + ", ";
-                    attackString += "cautiously";
+                case SD.AttackAction.Normal:
+                    AttackCurrValue = 0;
                     break;
-                
+                case SD.AttackAction.Cautious:
+                    AttackCurrValue = -3;
+                    TraitCharacterDTO cautious = new TraitCharacterDTO(true);
+                    if(Attacker.NewStates.Contains(States.Names.Cautious) == false ||
+                       Attacker.OldStates.Contains(States.Names.Cautious) == false)  // dont add it twice
+                        Attacker.NewStates += States.Names.Cautious + ":1" + ", ";
+                    attackString += "cautiously";
+                    break;                
                 case SD.AttackAction.Charge:
-                    AttackCurrValue += 5;
+                    AttackCurrValue = 5;
                     AdditionalDamage += 3;
                     attackString += "charging";
                     break;
                 case SD.AttackAction.Raging:
-                    AttackCurrValue += 7;
+                    AttackCurrValue = 7;
                     AdditionalDamage += 3;
-                    AttackerNewStates += SD.TempStates.Unbalanced + ":1" + ", ";
+                    if (Attacker.NewStates.Contains(States.Names.Unbalanced) == false ||
+                        Attacker.OldStates.Contains(States.Names.Unbalanced) == false)
+                        Attacker.NewStates += States.Names.Unbalanced + ":1" + ", ";
                     attackString += "furiously!";
                     break;
                 case SD.AttackAction.Strong:
-                    AttackCurrValue += 5;
+                    AttackCurrValue = 5;
                     attackString += "with all strength";
                     break;
             }
@@ -308,21 +293,19 @@ namespace DA_Models.ComponentModels
             defenceString += SD.BonusText(DefenceCurrValue);
 
             // add weapon bonus if exists
-            AttackCurrValue = AttackerProps.Get(SD.WeaponQuality.Precise).SumBonus;
+            AttackCurrValue = Attacker.Props.Get(SD.WeaponQuality.Precise).SumBonus;
             if (AttackCurrValue > 0)
             {
                 AttackValue += AttackCurrValue;
                 attackString += ", with precise weapon" + SD.BonusText(AttackCurrValue);
             }
-            AttackCurrValue = AttackerProps.Get(SD.WeaponQuality.Bulky).SumBonus;
+            AttackCurrValue = Attacker.Props.Get(SD.WeaponQuality.Bulky).SumBonus;
             if (AttackCurrValue > 0)
             {
                 AttackValue -= AttackCurrValue;
                 attackString += ", with crude weapon" + SD.BonusText(-AttackCurrValue);
             }
-
-
-            ResultStringMG += $"{RichText.BoldText(AttackerName)} {AttackerOldStates} attacks {attackString} {weaponString}, {DefenderName} {DefenderOldStates} tries to {defenceString}.";
+            ResultStringMG += $"({RichText.BoldText(Attacker.Name)} {Attacker.OldStates} attacks {attackString} {weaponString}, {RichText.BoldText(Defender.Name)} {Defender.OldStates} tries to {defenceString}.";
         }
 
         public void WriteBonusesFromStates()
@@ -332,45 +315,46 @@ namespace DA_Models.ComponentModels
             string defenceString = string.Empty;
             string attackString = string.Empty;
             // attacker
-            if (AttackerStates is not null && AttackerStates.Any())
+            if (Attacker.States is not null && Attacker.States.Any())
             {
-                AttackerOldStates = "(";
-                foreach (var state in AttackerStates)
+                Attacker.OldStates = "(";
+                foreach (var state in Attacker.States)
                 {
                     AttackCurrValue = 0;
                     attackString = "";
                     switch (state.Name)
                     {
-                        case SD.TempStates.Stunned:
-                        case SD.TempStates.Unaware:
-                        case SD.TempStates.FullDefence:
+                        case States.Names.Stunned:
+                        case States.Names.Unaware:
+                        case States.Names.FullDefence:
+                        case States.Names.Unconscious:
                             //cannot attack! error!
                             break;
-                        case SD.TempStates.Surrounded:    
-                        case SD.TempStates.Bleeding:
-                        case SD.TempStates.Unbalanced:
-                        case SD.TempStates.Cautious:
+                        case States.Names.Surrounded:    
+                        case States.Names.Bleeding:
+                        case States.Names.Unbalanced:
+                        case States.Names.Cautious:
                             //does nothing
                             break;
-                        case SD.TempStates.Stumbled:
-                            AttackCurrValue += -state.Level;
+                        case States.Names.Stumbled:
+                            AttackCurrValue += -(int)States.Level.Stumbled;
                             break;
-                        case SD.TempStates.Snatched:
-                            AttackCurrValue += -state.Level;
+                        case States.Names.Snatched:
+                            AttackCurrValue += -(int)States.Level.Snatched;
                             break;
-                        case SD.TempStates.Blinded:
-                            AttackCurrValue += -state.Level;
+                        case States.Names.Blinded:
+                            AttackCurrValue += -(int)States.Level.Blinded;
                             break;
-                        case SD.TempStates.Invisible:
-                            AttackCurrValue += state.Level;
+                        case States.Names.Invisible:
+                            AttackCurrValue += (int)States.Level.Invisible;
                             break;
-                        case SD.TempStates.Flanking:
-                            AttackCurrValue += state.Level;
+                        case States.Names.Flanking:
+                            AttackCurrValue += (int)States.Level.Flanking;
                             IsShieldDefenceAllowed = false;
                             break;
-                        case SD.TempStates.Disarmed:
-                            AttackerProps.MainWeaponUsed = Fists();
-                            AttackerProps.CalculateBattleStats();
+                        case States.Names.Disarmed:
+                            Attacker.Props.MainWeaponUsed = Fists();
+                            Attacker.Props.CalculateBattleStats();
                             break;
                     }
                     AttackValue += AttackCurrValue;
@@ -378,83 +362,85 @@ namespace DA_Models.ComponentModels
 
                     AttackValue += AttackCurrValue;
                     attackString = state.Name + SD.BonusText(AttackCurrValue);
-                    AttackerOldStates += $"{attackString}, ";
+                    Attacker.OldStates += $"{attackString}, ";
                 }
-                AttackerOldStates = AttackerOldStates.Remove(AttackerOldStates.Length - 2);  // remove last chars
-                AttackerOldStates +=")";
+                Attacker.OldStates = Attacker.OldStates.Remove(Attacker.OldStates.Length - 2);  // remove last chars
+                Attacker.OldStates +=")";
             }
 
-            if (DefenderStates is not null && DefenderStates.Any())
+            if (Defender.States is not null && Defender.States.Any())
             {
-                DefenderOldStates = "(";
+                Defender.OldStates = "(";
                 // defender
-                foreach (var state in DefenderStates)
+                foreach (var state in Defender.States)
                 {
-
                     DefenceCurrValue = 0;
                     defenceString = "";
                     switch (state.Name)
                     {
-                        case SD.TempStates.Stunned:
-                            DefenceCurrValue += -state.Level;
+                        case States.Names.Unconscious:
+                            DefenceCurrValue += -20;
                             break;
-                        case SD.TempStates.Unaware:
-                            DefenceCurrValue += -state.Level;
+                        case States.Names.Stunned:
+                            DefenceCurrValue += -(int)States.Level.Stunned;
                             break;
-                        case SD.TempStates.FullDefence:
-                            DefenceCurrValue += state.Level;
+                        case States.Names.Unaware:
+                            DefenceCurrValue += -(int)States.Level.Unaware;
                             break;
-                        case SD.TempStates.Surrounded:
-                            DefenceCurrValue += 2 * state.TraitValue;
+                        case States.Names.FullDefence:
+                            DefenceCurrValue += (int)States.Level.FullDefence;
                             break;
-                        case SD.TempStates.Disarmed:
+                        case States.Names.Surrounded:
+                            DefenceCurrValue -= (int)States.Level.Surrounded * (state.TraitValue-1);
+                            break;
+                        case States.Names.Disarmed:
                             IsParryDefenceAllowed = false;
                             break;
-                        case SD.TempStates.Bleeding:
+                        case States.Names.Bleeding:
                             break;
-                        case SD.TempStates.Unbalanced:
-                            DefenceCurrValue += -state.Level;
+                        case States.Names.Unbalanced:
+                            DefenceCurrValue += -(int)States.Level.Unbalanced;
                             break;
-                        case SD.TempStates.Cautious:
-                            DefenceCurrValue += state.Level;
+                        case States.Names.Cautious:
+                            DefenceCurrValue += (int)States.Level.Cautious;
                             break;
-                        case SD.TempStates.Stumbled:
-                            DefenceCurrValue += -state.Level;
+                        case States.Names.Stumbled:
+                            DefenceCurrValue += -(int)States.Level.Stumbled;
                             break;
-                        case SD.TempStates.Snatched:
-                            DefenceCurrValue += -state.Level;
+                        case States.Names.Snatched:
+                            DefenceCurrValue += -(int)States.Level.Snatched;
                             break;
-                        case SD.TempStates.Blinded:
-                            DefenceCurrValue += -state.Level;
+                        case States.Names.Blinded:
+                            DefenceCurrValue += -(int)States.Level.Blinded;
                             break;
-                        case SD.TempStates.Invisible:
-                            DefenceCurrValue += state.Level;
+                        case States.Names.Invisible:
+                            DefenceCurrValue += (int)States.Level.Invisible;
                             break;
-                        case SD.TempStates.Flanking:
+                        case States.Names.Flanking:
                             break;
                     }
                     DefenceValue += DefenceCurrValue;
                     defenceString = state.Name + SD.BonusText(DefenceCurrValue);
-                    DefenderOldStates += $"{defenceString}, ";
+                    Defender.OldStates += $"{defenceString}, ";
                 }
-                DefenderOldStates = DefenderOldStates.Remove(DefenderOldStates.Length - 2);  // remove last chars
-                DefenderOldStates += ")";
+                Defender.OldStates = Defender.OldStates.Remove(Defender.OldStates.Length - 2);  // remove last chars
+                Defender.OldStates += ")";
             }
         }
         public void WriteDiceRollsAndAttackSummary()
         {
             string attackString = string.Empty;
-            AttackerRoll = SD.RollDice();
-            DefenderRoll = SD.RollDice();
+            Attacker.Roll = SD.RollDice();
+            Defender.Roll = SD.RollDice();
             ResultStringMG.NewLine();
-            ResultStringMG += $"{AttackerName} roll: {AttackerRoll.Item2}, {DefenderName} roll: {DefenderRoll.Item2}";
-            AttackValue += AttackerRoll.Item1;
-            DefenceValue += DefenderRoll.Item1;
+            ResultStringMG += $"{Attacker.Name} roll: {Attacker.Roll.Item2}, {Defender.Name} roll: {Defender.Roll.Item2}";
+            AttackValue += Attacker.Roll.Item1;
+            DefenceValue += Defender.Roll.Item1;
             HitValue = AttackValue - DefenceValue;
             if (HitValue >= 0) IsHit = true;
             attackString = IsHit ? "Hit!" : "Miss!";
             ResultStringMG.NewLine();
-            ResultStringMG += $" {AttackerName} summary: {RichText.BoldText(AttackValue)}, {DefenderName} summary: {RichText.BoldText(DefenceValue)}. {attackString}";
+            ResultStringMG += $" {Attacker.Name} summary: {RichText.BoldText(AttackValue)}, {Defender.Name} summary: {RichText.BoldText(DefenceValue)}. {attackString}";
             if(IsHit == false)
             {
                 ResultStringMG.EndText();
@@ -468,7 +454,7 @@ namespace DA_Models.ComponentModels
             // damage from attack
             ResultStringMG.NewLine();
             ResultStringMG += $"Damage dealt from attack: {HitValue}";
-            int dmgDeflected = DefenderProps.Get(SD.BattleProperty.ArmorClass).SumBonus - AttackerProps.Get(SD.WeaponQuality.ArmorPiercing).SumBonus;
+            int dmgDeflected = Defender.Props.Get(SD.BattleProperty.ArmorClass).SumBonus - Attacker.Props.Get(SD.WeaponQuality.ArmorPiercing).SumBonus;
             if (dmgDeflected > 0)
             {
                 attackString = $", deflected by armor: -{dmgDeflected} ";
@@ -481,14 +467,14 @@ namespace DA_Models.ComponentModels
             ResultStringMG += $"{attackString}";
             attackString = string.Empty;
             // damage from weapon qualities
-            int dmgfromWeaponQuality = AttackerProps.Get(SD.WeaponQuality.Devastating).SumBonus;
+            int dmgfromWeaponQuality = Attacker.Props.Get(SD.WeaponQuality.Devastating).SumBonus;
             if (dmgfromWeaponQuality > 0)
             {
                 attackString = $", from devastating weapon: {dmgfromWeaponQuality}";
             }
             else
             {
-                dmgfromWeaponQuality = AttackerProps.Get(SD.WeaponQuality.Weak).SumBonus;
+                dmgfromWeaponQuality = Attacker.Props.Get(SD.WeaponQuality.Weak).SumBonus;
                 if (dmgfromWeaponQuality > 0)
                 {
                     dmgfromWeaponQuality = -dmgfromWeaponQuality;
@@ -504,7 +490,8 @@ namespace DA_Models.ComponentModels
             }
             ResultStringMG += $"{attackString}";
             DamageDelt = (AttackValue - DefenceValue) - dmgDeflected + AdditionalDamage + dmgfromWeaponQuality;
-            WoundSeverity = SD.WoundSeverityFromDmg(DamageDelt);
+            if (DamageDelt < 0) DamageDelt = 0;
+            WoundSeverity = Wounds.SeverityFromDmg(DamageDelt);
             ResultStringMG.NewLine();
             ResultStringMG += $"Summary damage: {DamageDelt} - {RichText.BoldText(WoundSeverity + " wound")}";
             if(AttackLocation.IsNullOrEmpty() == false ){
@@ -515,68 +502,85 @@ namespace DA_Models.ComponentModels
         {
             if (DamageDelt <= 0) return;
             // Prain resistance roll
-            int DC = SD.DCFromWoundSeverity(WoundSeverity);
-            var painResRoll = SD.MakeRollTest(DC, DefenderPainResistance);
-            ResultStringMG.NewLine();
-            ResultStringMG += $"Pain resistance test: {painResRoll.Item2}";
+            int DC = Wounds.DCFromSeverity(WoundSeverity);
+            var painResRoll = SD.MakeRollTest(DC, Defender.PainResistance);
+            if(DC != 0) 
+            { 
+                ResultStringMG.NewLine();
+                ResultStringMG += $"Pain resistance test: {painResRoll.Item2}";
+            }
 
             //create wound
             WoundDTO newWound = new();
             newWound.DateStart = Date;
             newWound.IsIgnored = painResRoll.Item1;
-            newWound.Description = ResultStringMG.ToString();
-            if (AttackAction.IsNullOrEmpty())
+            newWound.Description = $"Wound inflicted by {Attacker.Name} after {AttackAction} attack.";
+            if (AttackLocation.IsNullOrEmpty())
             {
                 Random rnd = new Random();
-                int location = rnd.Next(0, SD.WoundLocation.All.Length - 1);
-                AttackAction = SD.WoundLocation.All[location];
+                int location = rnd.Next(0, Wounds.Location.All.Length - 1);
+                AttackLocation = Wounds.Location.All[location];
             }
-            newWound.Location = AttackAction;
-            newWound.Value = SD.GetValueFromSeverity(WoundSeverity);
+            newWound.Location = AttackLocation;
+            newWound.Value = Wounds.GetValueFromSeverity(WoundSeverity);
+            NewWounds.Add(newWound);
 
-            DefenderHealth.AddWound(newWound);
+            if ((painResRoll.Item1 == false && WoundSeverity == Wounds.Severity.Critical) || WoundSeverity == Wounds.Severity.Deadly ||
+                Defender.Health.CurrentWounds >= Defender.Health.MaxWounds)
+            {
+                Defender.NewStates += $"{States.Names.Unconscious}:{99}";
+            }
         }
         public void WriteAndCalculatePossibleStates()
         {
-            int DC = 0;
-            foreach (var stateTest in TestConditionIfHit.Split(", "))
+
+            if(Defender.NewStates.Contains(States.Names.Unconscious) == false)
             {
-                Tuple<bool, string> result = new Tuple<bool, string>(false, string.Empty);
-                int duration = 0;
-                switch (stateTest)
+                int DC = 0;
+                foreach (var stateTest in TestConditionIfHit.Split(", "))
                 {
-                    case SD.TempStates.Stumbled:
-                        DC = AttackerProps.Get(SD.WeaponQuality.Stumbling).SumBonus + HitValue;
-                        result = SD.MakeRollTest(DC, Math.Max(DefenderBalance, DefenderLifting));
-                        duration = 99;
-                        break;
-                    case SD.TempStates.Stunned:
-                        DC = AttackerProps.Get(SD.WeaponQuality.Stunning).SumBonus + HitValue;
-                        result = SD.MakeRollTest(DC, DefenderPainResistance);
-                        duration = Math.Max(1, DC / 10);
-                        break;
-                    case SD.TempStates.Snatched:
-                        DC = AttackerProps.Get(SD.WeaponQuality.Snatching).SumBonus + HitValue;
-                        result = SD.MakeRollTest(DC, Math.Max(DefenderBalance, DefenderLifting));
-                        duration = 99;
-                        break;
-                    case SD.TempStates.Bleeding:
-                        DC = HitValue;
-                        result = SD.MakeRollTest(DC, DefenderPainResistance);
-                        duration = 99;
-                        break;
-                    case SD.TempStates.Blinded:
-                        DC = HitValue;
-                        result = SD.MakeRollTest(DC, DefenderPainResistance);
-                        duration = Math.Max(1, DC / 10);
-                        break;
-                    default: continue;
-                }
-                ResultStringMG.NewLine();
-                ResultStringMG += $"Test against {stateTest}: {result.Item2}";
-                if (result.Item1)
-                {
-                    DefenderNewStates += $"{stateTest}:{duration}";
+                    Tuple<bool, string> result = new Tuple<bool, string>(false, string.Empty);
+                    int duration = 0;
+                    switch (stateTest)
+                    {
+                        case States.Names.Stumbled:
+                            DC = Attacker.Props.Get(SD.WeaponQuality.Stumbling).SumBonus + DamageDelt;
+                            result = SD.MakeRollTest(DC, Math.Max(Defender.Balance, Defender.Lifting));
+                            duration = 99;
+                            break;
+                        case States.Names.Stunned:
+                            DC = Attacker.Props.Get(SD.WeaponQuality.Stunning).SumBonus + DamageDelt;
+                            result = SD.MakeRollTest(DC, Defender.PainResistance);
+                            duration = Math.Max(1, DC / 10);
+                            break;
+                        case States.Names.Snatched:
+                            DC = Attacker.Props.Get(SD.WeaponQuality.Snatching).SumBonus + DamageDelt;
+                            result = SD.MakeRollTest(DC, Math.Max(Defender.Balance, Defender.Lifting));
+                            duration = 99;
+                            break;
+                        case States.Names.Bleeding:
+                            DC = HitValue;
+                            result = SD.MakeRollTest(DC, Defender.PainResistance);
+                            duration = 99;
+                            break;
+                        case States.Names.Blinded:
+                            DC = HitValue;
+                            result = SD.MakeRollTest(DC, Defender.PainResistance);
+                            duration = Math.Max(1, DC / 10);
+                            break;
+                        case States.Names.Unconscious:
+                            DC = 30;
+                            result = SD.MakeRollTest(DC, Defender.PainResistance);
+                            duration = Math.Max(1, DC / 10);
+                            break;
+                        default: continue;
+                    }
+                    ResultStringMG.NewLine();
+                    ResultStringMG += $"Test against {stateTest}: {result.Item2}";
+                    if (result.Item1 == false)
+                    {
+                        Defender.NewStates += $"{stateTest}:{duration}";
+                    }
                 }
             }
             ResultStringMG.EndText();
@@ -584,25 +588,28 @@ namespace DA_Models.ComponentModels
 
         public string SelectBestDefence()
         {
-            if (AttackerProps is null || DefenderProps is null) return "";
+            if (Attacker.Props is null || Defender.Props is null) return "";
             int difference = 0, differenceMin = 100;
             string BestType = string.Empty;
             foreach(var defenceType in SD.DefenceType.All)
             {
+                if (defenceType == SD.DefenceType.Shield && (Defender.Props.ShieldUsed is null || IsShieldDefenceAllowed == false)) continue;
+                if (defenceType == SD.DefenceType.Armor && Defender.Props.ArmorUsed is null) continue;
+                if (defenceType == SD.DefenceType.Parry && IsParryDefenceAllowed == false) continue;
                 switch (defenceType)
                 {
                     default:
                     case SD.DefenceType.Dodge:                        
-                        difference =  AttackerProps.Get(SD.BattleProperty.AttackDodge).SumBonus - DefenderProps.Get(SD.BattleProperty.DefenceDodge).SumBonus;
+                        difference =  Attacker.Props.Get(SD.BattleProperty.AttackDodge).SumBonus - Defender.Props.Get(SD.BattleProperty.DefenceDodge).SumBonus;
                         break;
                     case SD.DefenceType.Parry:
-                        difference = AttackerProps.Get(SD.BattleProperty.AttackParry).SumBonus - DefenderProps.Get(SD.BattleProperty.DefenceParry).SumBonus;
+                        difference = Attacker.Props.Get(SD.BattleProperty.AttackParry).SumBonus - Defender.Props.Get(SD.BattleProperty.DefenceParry).SumBonus;
                         break;
                     case SD.DefenceType.Shield:
-                        difference = AttackerProps.Get(SD.BattleProperty.AttackShield).SumBonus - DefenderProps.Get(SD.BattleProperty.DefenceShield).SumBonus;
+                        difference = Attacker.Props.Get(SD.BattleProperty.AttackShield).SumBonus - Defender.Props.Get(SD.BattleProperty.DefenceShield).SumBonus;
                         break;
                     case SD.DefenceType.Armor:
-                        difference= AttackerProps.Get(SD.BattleProperty.AttackArmor).SumBonus - DefenderProps.Get(SD.BattleProperty.DefenceArmor).SumBonus;
+                        difference= Attacker.Props.Get(SD.BattleProperty.AttackArmor).SumBonus - Defender.Props.Get(SD.BattleProperty.DefenceArmor).SumBonus;
                         break;
                 }
                 if (difference < differenceMin)
@@ -610,8 +617,7 @@ namespace DA_Models.ComponentModels
                     differenceMin = difference;
                     BestType = defenceType;
                 }
-            }          
-
+            } 
             return BestType;
         }
 

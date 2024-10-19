@@ -64,13 +64,12 @@
             </MudGrid>
             <div class="p-1">
                 <MudText Align="Align.Center" Class="w-100" Typo="Typo.h4" Style="font-family: 'Eagle Lake', serif; padding-bottom: 8px;">Current wounds</MudText>
-                <MudDataGrid HeaderClass="header-grid" @ref="WoundsGrid" MultiSelection="true" Items="@Wounds.Where(w=>w.IsCondition == false)" ReadOnly="true" Filterable="false" Class="px-0 py-1"
+                <MudDataGrid HeaderClass="header-grid" @ref="WoundsGrid" MultiSelection="true" Items="@WoundsList.Where(w=>w.IsCondition == false)" ReadOnly="true" Filterable="false" Class="px-0 py-1"
                                  Hideable="false" SortMode="@SortMode.None" Groupable="true" GroupExpanded="true" Elevation="2" ColumnResizeMode="ResizeMode.None">
                     <ToolBarContent >
                         <MudButton Class="pa-0 justify-content-start w-auto" OnClick="@(() => AddWound())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add wound</MudButton>
                     </ToolBarContent>
                     <Columns>
-                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;" Property="x => x.Value" Title="Wound level" Groupable="false" />
                             <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Severity" Groupable="false" />
                         <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.Penalty" Groupable="false" />
                         <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsIgnored" Groupable="false" Title="Ignored" />
@@ -233,12 +232,12 @@
     private string TargetLocation { get; set; } = "";
 
     UserInfo? UserInfo { get; set; }
-    private ICollection<WoundDTO> Wounds { get; set; } = new List<WoundDTO>();
+    private ICollection<WoundDTO> WoundsList { get; set; } = new List<WoundDTO>();
     private ICollection<WoundDTO> DeletedWounds { get; set; } = new List<WoundDTO>();
     private IDictionary<string, WoundDTO> Conditions { get; set; } = new Dictionary<string, WoundDTO>();
     private WoundDTO NewWound { get; set; } = new();
 
-    public string[] Initial = SD.WoundLocation.All;
+    public string[] Initial = Wounds.Location.All;
     public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp = new Dictionary<EquippedItems, EquipItemComponent>();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -251,17 +250,17 @@
 
                 registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
                 await LoadCharacter();
-                Wounds = AllParams.Health.GetAll();
+                WoundsList = AllParams.Health.GetAll();
 
                 // add status if not in database
                 foreach(var conName in SD.Condition.All)
                 {
-                    WoundDTO? con = Wounds.FirstOrDefault(w => w.Location == conName);
+                    WoundDTO? con = WoundsList.FirstOrDefault(w => w.Location == conName);
 
                     if (con is null)
                     {
                         Conditions[conName] = new ConditionDTO(conName);
-                        Wounds.Add(Conditions[conName]);
+                        WoundsList.Add(Conditions[conName]);
                     }
                     else
                     {
@@ -369,7 +368,7 @@
         {
             NewWound = (WoundDTO)result.Data;
             NewWound.CharacterId = AllParams.Character.Id;
-            Wounds.Add(NewWound);
+            WoundsList.Add(NewWound);
             AllParams.Health.CalculateHealTime(NewWound);
             IsLeaveAllowed = false;
             StateHasChanged();
@@ -394,7 +393,7 @@
     }
     private void DeleteWound(WoundDTO wound)
     {
-        Wounds.Remove(wound);
+        WoundsList.Remove(wound);
         if(wound.Id>0)
             DeletedWounds.Add(wound);
             

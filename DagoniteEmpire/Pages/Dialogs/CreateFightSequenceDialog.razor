@@ -1,8 +1,12 @@
-﻿@inject IFileUpload _fileUpload;
+﻿@using DA_DataAccess.CharacterClasses
+@using DA_Models
+@inject IFileUpload _fileUpload;
 @inject ISnackbar Snackbar
 @inject IMobRepository _mobRepository
 @inject ICampaignRepository _campaignRepository
 @inject IChapterRepository _chapterRepository
+@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
+@inject IWoundRepository _woundsRepository
 
 <MudDialog>
     <TitleContent>
@@ -12,13 +16,10 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-
-
-        @if (FightSequence is not null){
-
+    @if (FightSequence is not null)
+    {
         <MudGrid>
             <MudItem xs="6">
-
                 @* ATTACKER *@
                 <MudPaper Elevation="1" Class="pa-2 h-100">
 
@@ -51,27 +52,25 @@
                     <MudStack Spacing="1" Row>
                         <MudCheckBox @bind-Value="@IsTargeted" Label="Aimed?" ></MudCheckBox>
                         <MudSelect T="string" Disabled="@(IsTargeted == false)" Required="true" @bind-Value="@FightSequence.AttackLocation" Label="Select location">
-                            @foreach (var location in SD.WoundLocation.All)
+                                @foreach (var location in Wounds.Location.All)
                             {
                                 <MudSelectItem Value="location">@location</MudSelectItem>
                             }
                         </MudSelect>
-                    </MudStack>
+                    </MudStack>                    
+                    <MudCheckBox @bind-Value="@IsFlanking" Label="Flanking?"></MudCheckBox>                    
                     @* Attacker states *@
-                    @if ( string.IsNullOrEmpty(SelectedAttacker) == false)
-                    {
-                        <MudText Typo="Typo.button">States</MudText>
-                        @if (FightSequence.AttackerStates is not null && FightSequence.AttackerStates.Any())
-                        {                        
-                            <MudGrid>
-                                @foreach(var state in FightSequence.AttackerStates)
-                                {
-                                    <MudItem>
-                                        <MudText>@state.Name, </MudText>                        
-                                    </MudItem>
-                                }
-                            </MudGrid>
-                        }
+                        @if (FightSequence.Attacker.States is not null && FightSequence.Attacker.States.Any())
+                        {
+                        <MudText Typo="Typo.button">States</MudText>                       
+                        <MudGrid>
+                            @foreach(var state in FightSequence.Attacker.States)
+                            {
+                                <MudItem>
+                                    <MudText>@state.Name, </MudText>                        
+                                </MudItem>
+                            }
+                        </MudGrid>                        
                     }
                     @* Other bonuses. penalties states *@
                 </MudPaper>
@@ -102,27 +101,34 @@
 
                     <MudButton OnClick="SelectBestDefence">Select best</MudButton>
                     <MudSelect T="string" Required="true" @bind-Value="@FightSequence.DefenceType" Label="Select defence type">
-                        @foreach (var defType in SD.DefenceType.All)
+                        @if(string.IsNullOrEmpty(SelectedDefender) == false)
                         {
-                            <MudSelectItem Value="defType">@defType</MudSelectItem>
+                            @foreach (var defType in SD.DefenceType.All)
+                            {
+                                if (defType == SD.DefenceType.Shield && (FightSequence?.Defender.Props?.ShieldUsed is null || FightSequence.IsShieldDefenceAllowed == false)) continue;
+                                if (defType == SD.DefenceType.Armor && FightSequence?.Defender.Props?.ArmorUsed is null) continue;
+                                if (defType == SD.DefenceType.Parry && FightSequence?.IsParryDefenceAllowed == false) continue;
+                                <MudSelectItem Value="defType">@defType</MudSelectItem>
+                            }
                         }
                     </MudSelect>
                     </MudStack>
+                        <MudStack Spacing="1" Row>
+                            <MudCheckBox @bind-Value="@IsSurrounded" Label="Surrounded?"></MudCheckBox>
+                            <MudNumericField Disabled="@(IsSurrounded == false)" @bind-Value="@SurroundedValue" Label="How many?"> </MudNumericField>
+                        </MudStack>
                     @* Defender states *@
-                    @if (string.IsNullOrEmpty(SelectedDefender) == false)
+                    @if (FightSequence.Defender.States is not null && FightSequence.Defender.States.Any())
                     {
                         <MudText Typo="Typo.button">States</MudText>
-                        @if (FightSequence.DefenderStates is not null && FightSequence.DefenderStates.Any())
-                        {
-                            <MudGrid>
-                                @foreach (var state in FightSequence.DefenderStates)
-                                {
-                                    <MudItem>
-                                        <MudText>@state.Name, </MudText>
-                                    </MudItem>
-                                }
-                            </MudGrid>
-                        }
+                        <MudGrid>
+                            @foreach (var state in FightSequence.Defender.States)
+                            {
+                                <MudItem>
+                                    <MudText>@state.Name, </MudText>
+                                </MudItem>
+                            }
+                        </MudGrid>
                     }
                     @* Other bonuses. penalties states *@
             
@@ -130,7 +136,7 @@
             </MudItem>
             
             <MudItem xs="12">
-                <MudButton Class="p-2 m-2 w-100 justify-content-center" Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeAttackRoll">Roll!</MudButton>
+                <MudButton Class="p-2 m-2 w-100 justify-content-center"  Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeAttackRoll">Roll!</MudButton>
             </MudItem>
 
             <MudItem xs="12">
@@ -139,8 +145,7 @@
                 </SfRichTextEditor>
             </MudItem>
         </MudGrid>
-        }
-
+    }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -150,15 +155,15 @@
 
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
-
     [Parameter] public ICollection<AllParamsModel?> CharacterAllParams { get; set; } = new List<AllParamsModel?>();
     [Parameter] public IEnumerable<MobDTO> Mobs { get; set; } = new List<MobDTO>();
     [Parameter] public int CampaignId { get; set; } = 0;
     [Parameter] public int ChapterId { get; set; } = 0;
     [Parameter] public DateModel Date { get; set; } = new(1,1);
+
     private string SelectedAttacker = string.Empty;
     private string SelectedDefender= string.Empty;
+    private bool IsReadyToRoll = false;
     private bool _isTargeted = false;
     private bool IsTargeted {
         get => _isTargeted;
@@ -166,11 +171,64 @@
         {
             _isTargeted = value;
             if (_isTargeted == false && FightSequence is not null)
-                FightSequence.AttackLocation = string.Empty;
+                FightSequence.AttackLocation = string.Empty;            
+
         }
     } 
+    private bool _isFlanking = false;
+    private bool IsFlanking 
+    {
+        get => _isFlanking;
+        set
+        {
+            _isFlanking = value;
+            if (FightSequence is null) return;
+            if (_isFlanking == true)
+            {
+                var trait = StateSeeder.GetStateDTO(States.Names.Flanking, false, 1);
+                FightSequence?.Attacker.States?.Add(trait);
+                StateHasChanged();
+            }
+            else
+            {
+                var trait = FightSequence?.Attacker.States?.FirstOrDefault(u => u.Name == States.Names.Flanking);
+                if (trait is not null)
+                {
+                    FightSequence?.Attacker.States?.Remove(trait);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+    private bool _isSurrounded = false;
+    private bool IsSurrounded
+    {
+        get => _isSurrounded;
+        set
+        {
+            _isSurrounded = value;
+            if (FightSequence is null) return;
+            if (_isSurrounded == true )
+            {
+                var trait = StateSeeder.GetStateDTO(States.Names.Surrounded, false, SurroundedValue);
+                FightSequence?.Defender.States?.Add(trait);
+                StateHasChanged();
+            }
+            else
+            {
+                var trait = FightSequence?.Defender.States?.FirstOrDefault(u => u.Name == States.Names.Surrounded);
+                if(trait is not null)
+                {
+                    FightSequence?.Defender.States?.Remove(trait);
+                    StateHasChanged();
+                }
+            }
 
-    FightSequenceModel? FightSequence { get; set; } = null;
+        }
+    }
+    private int SurroundedValue = 2;
+
+    private FightSequenceModel? FightSequence { get; set; } = null;
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
         new ToolbarItemModel() { Command = ToolbarCommand.Bold },
@@ -203,10 +261,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         FightSequence = new FightSequenceModel(Date);
-
-
     }
 
     private void SelectAttacker(string attackerName)
@@ -215,13 +270,13 @@
         var characterParams = CharacterAllParams.FirstOrDefault(p => p.Character.NPCName == attackerName);
         if (characterParams is not null)
         {
-            FightSequence.AddAttacker(characterParams);
+            FightSequence.Attacker =  FightSequenceModel.AddFighter(characterParams);
             return;
         }
         var mob = Mobs.FirstOrDefault(m=>m.Name == attackerName);
         if(mob is not null)
         {
-            FightSequence.AddAttacker(mob);
+            FightSequence.Defender =  FightSequenceModel.AddFighter(mob);
         }
     }
     private void SelectDefender(string defenderName)
@@ -230,44 +285,137 @@
         var characterParams = CharacterAllParams.FirstOrDefault(p => p.Character.NPCName == defenderName);
         if (characterParams is not null)
         {
-            FightSequence.AddDefender(characterParams);
+            FightSequence.Defender = FightSequenceModel.AddFighter(characterParams);
+            FightSequence.DefenceType = FightSequence.SelectBestDefence();
             return;
         }
         var mob = Mobs.FirstOrDefault(m => m.Name == defenderName);
         if (mob is not null)
         {
-            FightSequence.AddDefender(mob);
+            FightSequence.Defender =  FightSequenceModel.AddFighter(mob);
+            FightSequence.DefenceType = FightSequence.SelectBestDefence();
         }
     }
 
     private void SelectBestDefence()
     {
-         FightSequence.DefenceType = FightSequence.SelectBestDefence();
+        if(FightSequence is not null)
+            FightSequence.DefenceType = FightSequence.SelectBestDefence();
     }
 
     private void MakeAttackRoll()
     {
+        if (SelectedAttacker == string.Empty || SelectedDefender == string.Empty || FightSequence is null || FightSequence.AttackAction == string.Empty ||
+           (_isTargeted == true && FightSequence.AttackLocation == string.Empty) || FightSequence.DefenceType == string.Empty)
+        {
+            Snackbar.Add("Some component is missing", Severity.Warning);
+            return;
+        }
+
+        if (IsSurrounded)
+        {
+            var trait = FightSequence?.Defender.States?.FirstOrDefault(u => u.Name == States.Names.Surrounded);
+            if(trait is not null)
+                trait.TraitValue = SurroundedValue;
+        }
         FightSequence.CalculateAndWriteAttack();
     }
 
-
-    private void SaveSequenceBtn()
+    private async void SaveSequenceBtn()
     {
-        // if (IsEdit)
-        // {
-        //     _mobRepository.Update(NewMob);
-        // }
-        // else
-        // {
-        //     _mobRepository.Create(NewMob);
-        // }
+        try
+        {
+            AllParamsModel? attackerChar = null;
+            AllParamsModel? defenderChar = null;
+            MobDTO? attackerMob = null;
+            MobDTO? defenderMob = null;
+            // find character or mob to modyfy
+            foreach (var charParams in CharacterAllParams)
+            {
+                if (charParams is null) continue;
+                if (charParams.Character.NPCName == SelectedAttacker)
+                {
+                    attackerChar = charParams;
+                }
+                if (charParams.Character.NPCName == SelectedDefender)
+                {
+                    defenderChar = charParams;
+                }  
+            }
+            foreach(var mobs in Mobs)
+            {
+                if (mobs is null) continue;
+                if (mobs.Name == SelectedAttacker)
+                {
+                    attackerMob = mobs;
+                }
+                if (mobs.Name == SelectedDefender)
+                {
+                    defenderMob = mobs;
+                }
+            }
+            if (attackerChar is not null && string.IsNullOrEmpty(FightSequence?.Attacker.NewStates) == false)
+            {
+                await AddNewStates(FightSequence.Attacker.NewStates,attackerChar.Character.Id);
+            }
+            if (defenderChar is not null && FightSequence is not null)
+            {
+                foreach (var wound in FightSequence.NewWounds)
+                {
+                    wound.CharacterId = defenderChar.Character.Id;
+                    await _woundsRepository.Create(wound);
+                }
+                if ( string.IsNullOrEmpty(FightSequence?.Defender.NewStates) == false)
+                    await AddNewStates(FightSequence.Defender.NewStates,defenderChar.Character.Id);                
+            }
+            if (attackerMob is not null)
+            {
+                await _mobRepository.Update(attackerMob);
+            }
+            if (defenderMob is not null && FightSequence is not null)
+            {
+                defenderMob.CurrentWounds += Wounds.GetValueFromSeverity(FightSequence.WoundSeverity);
+                defenderMob.States += FightSequence.Defender.NewStates;
+                await _mobRepository.Update(defenderMob);
+            }
 
-        // MudDialog.Close(DialogResult.Ok(NewMob));
-        // if (IsEdit)
-        //     Snackbar.Add("Mob edited", Severity.Success);
-        // else
-        //     Snackbar.Add("Mob created", Severity.Success);
+            MudDialog.Close();
+            Snackbar.Add("Fight resolved", Severity.Success);
+        }
+        catch(Exception ex)
+        {
+            Snackbar.Add("Error while saving", Severity.Error);
+        }
     }
 
-
+    private async Task AddNewStates(string stateString,int charId)
+    {
+        try
+        {
+            if (stateString == string.Empty) return;
+            var statesArray = stateString.Split(", ");
+            foreach (var state in statesArray)
+            {
+                if (state == string.Empty) continue;
+                var stateArray = state.Split(":");
+                string name = stateArray[0];
+                int duration = Int32.Parse(stateArray[1]);
+                if (name == string.Empty) continue;
+                TraitCharacterDTO newState = StateSeeder.GetStateDTO(name, false, duration, charId);
+                // delete same traits that already exist
+                var allTraits = await _traitCharacterRepository.GetAll(charId);
+                var existingTrait = allTraits.FirstOrDefault(t=>t.Name == name);
+                if (existingTrait is not null)
+                {
+                    await _traitCharacterRepository.Delete(existingTrait.Id);
+                }
+                // add new one
+                await _traitCharacterRepository.Create(newState);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error while adding state", Severity.Error);
+        }
+    }
 }
