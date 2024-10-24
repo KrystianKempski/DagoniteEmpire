@@ -201,14 +201,17 @@
 
     private async Task SaveMobBtn()
     {
-
+        MobDTO updatedMob;
 
         if (IsEdit)
         {
-            await _mobRepository.Update(NewMob);
+             updatedMob = await _mobRepository.Update(NewMob);
+            
         }else{
-            await _mobRepository.Create(NewMob);
+            updatedMob = await _mobRepository.Create(NewMob);
         }
+
+        NewMob.Id = updatedMob.Id;
 
         MudDialog.Close(DialogResult.Ok(NewMob));
         if (IsEdit)
@@ -225,10 +228,7 @@
 
     private void AddState(string newStatus)
     {
-        if (NewMob.States == string.Empty)
-            NewMob.States += newStatus +":" + StateDuration.ToString();
-        else
-            NewMob.States += ", " + newStatus + ":" + StateDuration.ToString();
+        NewMob.States += $"{newStatus}:{StateDuration}, ";
     }
     private void ClearStates()
     {

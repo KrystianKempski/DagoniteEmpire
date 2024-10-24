@@ -54,6 +54,22 @@ namespace DA_Models.ComponentModels
                 if (parrySkill is not null)
                     isParrying = parrySkill.GearBonus > 0;
 
+                // add wounds penalty
+                int woundPenalty = -Mob.CurrentWounds / 2;
+                //Mob.AttackSkillValue -= Mob.CurrentWounds / 2;
+                //Mob.DodgeSkillValue -= Mob.CurrentWounds / 2;
+                //Mob.ShieldSkillValue -= Mob.CurrentWounds / 2;
+                //Mob.ArmorSkillValue -= Mob.CurrentWounds / 2;
+                //Mob.ParrySkillValue -= Mob.CurrentWounds / 2;
+                //Mob.LiftingSkillValue -= Mob.CurrentWounds / 2;
+                //Mob.WrestlingSkillValue -= Mob.CurrentWounds / 2;
+                Get(SD.BattleProperty.AttackBase).HealthBonus = woundPenalty;
+                Get(SD.BattleProperty.DefenceDodge).HealthBonus = woundPenalty;
+                Get(SD.BattleProperty.DefenceShield).HealthBonus = woundPenalty;
+                Get(SD.BattleProperty.DefenceParry).HealthBonus = woundPenalty;
+                Get(SD.BattleProperty.DefenceArmor).HealthBonus = woundPenalty;
+
+
                 // calculate base propertiers 
                 foreach (var prop in GetAll())
                 {
@@ -109,16 +125,15 @@ namespace DA_Models.ComponentModels
                             Get(SD.BattleProperty.AttackBase).BaseBonus = Mob.AttackSkillValue;                            
                             break;
                         case SD.BattleProperty.AttackDodge:
-                            Get(SD.BattleProperty.AttackDodge).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
-                            break;
                         case SD.BattleProperty.AttackArmor:
-                            Get(SD.BattleProperty.AttackArmor).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
-                            break;
                         case SD.BattleProperty.AttackShield:
-                            Get(SD.BattleProperty.AttackShield).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
-                            break;
                         case SD.BattleProperty.AttackParry:
-                            Get(SD.BattleProperty.AttackParry).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
+                            Get(prop.Key).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
+                            Get(prop.Key).HealthBonus = Get(SD.BattleProperty.AttackBase).HealthBonus;
+                            Get(prop.Key).TempBonuses = Get(SD.BattleProperty.AttackBase).TempBonuses;
+                            Get(prop.Key).GearBonus = Get(SD.BattleProperty.AttackBase).GearBonus;
+                            Get(prop.Key).RaceBonus = Get(SD.BattleProperty.AttackBase).RaceBonus;
+                            Get(prop.Key).OtherBonuses = Get(SD.BattleProperty.AttackBase).OtherBonuses;
                             break;
                         case SD.BattleProperty.ArmorClass:
                             if (ArmorUsed is not null)

@@ -11,8 +11,10 @@
     <DialogContent>
         <MudTextField @bind-Value="@NewChapter.Name" Label="Campaign name" />
         <MudTextField @bind-Value="@NewChapter.Description" Label="Description" Lines="3" />
-        @* <MudTextField @bind-Value="@NewChapter.Day" Label="Date and Time" /> *@
-        <DateComponent Date="@NewChapter.Date" Editable="true"></DateComponent>
+        <MudStack Spacing="1" Row>
+            <MudTextField @bind-Value="@NewChapter.DayTime" Label="Daytime" /> 
+            <DateComponent Date="@NewChapter.Date" Editable="true"></DateComponent>
+        </MudStack>
         <MudTextField @bind-Value="@NewChapter.Place" Label="Location" />
         <MudText Typo="Typo.caption">Choose player characters for chapter</MudText>
         <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">

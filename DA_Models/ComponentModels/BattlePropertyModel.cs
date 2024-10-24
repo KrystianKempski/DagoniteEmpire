@@ -141,16 +141,15 @@ namespace DA_Models.ComponentModels
                             }
                             break;
                         case SD.BattleProperty.AttackDodge:
-                            Get(SD.BattleProperty.AttackDodge).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
-                            break;
                         case SD.BattleProperty.AttackArmor:
-                            Get(SD.BattleProperty.AttackArmor).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
-                            break;
                         case SD.BattleProperty.AttackShield:
-                            Get(SD.BattleProperty.AttackShield).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
-                            break;
                         case SD.BattleProperty.AttackParry:
-                                Get(SD.BattleProperty.AttackParry).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
+                            Get(prop.Key).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
+                            Get(prop.Key).HealthBonus = Get(SD.BattleProperty.AttackBase).HealthBonus;
+                            Get(prop.Key).TempBonuses = Get(SD.BattleProperty.AttackBase).TempBonuses;
+                            Get(prop.Key).GearBonus = Get(SD.BattleProperty.AttackBase).GearBonus;
+                            Get(prop.Key).RaceBonus = Get(SD.BattleProperty.AttackBase).RaceBonus;
+                            Get(prop.Key).OtherBonuses = Get(SD.BattleProperty.AttackBase).OtherBonuses;
                             break;
                         case SD.BattleProperty.ArmorClass:
                             if (ArmorUsed is not null)

@@ -22,6 +22,46 @@ namespace DA_Models
             switch (name)
             {
                 default:
+                    throw new Exception("need name for character");
+                case States.Names.NoTurn:
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = States.Names.NoTurn,
+                        Descr = "This character can't do anything this turn",
+                        TraitApproved = false,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        Level = (int)States.Level.NoTurn,
+                        TraitValue = 1,
+                        CharacterId = characterId,
+                    };
+                    break;
+                case States.Names.HalfTurn:
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = States.Names.HalfTurn,
+                        Descr = "This character still have one action this turn",
+                        TraitApproved = false,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        Level = (int)States.Level.HalfTurn,
+                        TraitValue = 1,
+                        CharacterId = characterId,
+                    };
+                    break;
+                case States.Names.Dead:
+                    trait = new TraitCharacter(true)
+                    {
+                        Name = States.Names.Dead,
+                        Descr = "This character is dead...",
+                        TraitApproved = approved,
+                        IsUnique = false,
+                        TraitType = SD.TraitType_Temporary,
+                        Level = (int)States.Level.Dead,
+                        TraitValue = duration > 0 ? duration : 999,
+                        CharacterId = characterId,
+                    };
+                    break;
                 case States.Names.Unconscious:
                     trait = new TraitCharacter(true)
                     {
@@ -131,7 +171,7 @@ namespace DA_Models
                 {
                     Name = States.Names.Flanking,
                     Descr = "This character attack someone from the back, when they are busy fighting with someone else. This gives bonus to attack equal to 3, and opponent cannot use shield",
-                    TraitApproved = false,
+                    TraitApproved = approved,
                     IsUnique = false,
                     TraitType = SD.TraitType_Temporary,
                     Level = (int)States.Level.Flanking,
@@ -144,7 +184,7 @@ namespace DA_Models
                 {
                     Name = States.Names.Surrounded,
                     Descr = "This character is surrounded by enemies. For every other enemy attacking this character there is added penalty to defence equal to 2",
-                    TraitApproved = false,
+                    TraitApproved = approved,
                     IsUnique = false,
                     TraitType = SD.TraitType_Temporary,
                     Level = (int)States.Level.Surrounded,

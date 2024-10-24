@@ -650,6 +650,12 @@ namespace DagoniteEmpire.Service
                     contex.TraitsCharacter.Add(trait);
                     contex.SaveChanges();
                 }
+                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Dead) == null)
+                {
+                    trait = StateSeeder.GetState(States.Names.Dead, true);
+                    contex.TraitsCharacter.Add(trait);
+                    contex.SaveChanges();
+                }
 
                 /// TRAITS PROFESSION (PASSIVE)
                 TraitProfession traitProf = null;

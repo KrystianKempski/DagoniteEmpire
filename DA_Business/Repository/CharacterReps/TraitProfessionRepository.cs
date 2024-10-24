@@ -116,14 +116,6 @@ namespace DA_Business.Repository.CharacterReps
                 var obj = await contex.TraitsProfession.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
-                    //obj.Name = newTrait.Name;    
-                    //obj.Descr = newTrait.Descr;
-                    //obj.Index = newTrait.Index;
-                    //obj.TraitType = newTrait.TraitType;
-                    //obj.TraitValue = newTrait.TraitValue;
-                    //obj.TraitApproved = newTrait.TraitApproved;
-                    //obj.IsUnique = newTrait.IsUnique;
-
                     // Delete trait bonuses
                     if (!obj.Bonuses.IsNullOrEmpty())
                     {

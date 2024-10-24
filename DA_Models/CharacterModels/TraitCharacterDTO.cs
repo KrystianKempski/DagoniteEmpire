@@ -33,8 +33,10 @@ namespace DA_Models.CharacterModels
                 bonus.Id = 0;
                 bonus.TraitId = Id;
             }
+            TraitApproved = false;
             CharacterId = characterId;
             IsTemporary = isTemporary;
+            
             TraitType = isTemporary ? SD.TraitType_Temporary : SD.TraitType_Character;
         }
         public TraitCharacterDTO(TraitDTO traitDTO, bool isTemporary = false)
@@ -50,7 +52,8 @@ namespace DA_Models.CharacterModels
             {
                 bonus.Id = 0;
                 bonus.TraitId = Id;
-            }            
+            }
+            TraitApproved = false;
             IsTemporary = isTemporary;
             TraitType = isTemporary ? SD.TraitType_Temporary : SD.TraitType_Character;
         }

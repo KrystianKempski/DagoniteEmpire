@@ -470,10 +470,19 @@
                     await _traitCharacterRepository.Update(obj);
                 }
                 // update temporary triaits (states)
-                foreach (TraitCharacterDTO obj in AllParams.TraitsTemporary)
+                foreach (var obj in AllParams.TraitsTemporary)
                 {
-                    obj.CharacterId = Id;
-                    await _traitCharacterRepository.Update(obj);
+                    TraitCharacterDTO trait;
+                    if (obj.TraitApproved)
+                    {
+                        trait = new(obj, Id, true);
+
+                    }
+                    else
+                    {
+                        trait = (TraitCharacterDTO)obj;
+                    }
+                    await _traitCharacterRepository.Update(trait);
                 }                
 
                 // update equipment (in character)

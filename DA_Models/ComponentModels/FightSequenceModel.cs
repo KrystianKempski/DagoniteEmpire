@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static DA_Common.SD;
+using static MudBlazor.Colors;
 
 namespace DA_Models.ComponentModels
 {
@@ -26,6 +27,7 @@ namespace DA_Models.ComponentModels
 
         public string OldStates { get; set; } = string.Empty;
         public string NewStates { get; set; } = string.Empty;
+        public int ActionLeft { get; set; } = 2;
     }
 
     public class FightSequenceModel
@@ -44,6 +46,7 @@ namespace DA_Models.ComponentModels
         public string AttackAction { get; set; } = string.Empty;
         public string AttackLocation { get; set; } = string.Empty;
         public string DefenceType { get; set; } = string.Empty;
+
 
 
         // private variables
@@ -99,17 +102,15 @@ namespace DA_Models.ComponentModels
                 foreach (var state in states)
                 {
                     if (state.IsNullOrEmpty()) continue;
-                    var trait = new TraitCharacterDTO(true);
-                    var statesParams = mob.States.Split(":");
-                    trait.Name = statesParams[0];
-                    trait.TraitValue = Int32.Parse(statesParams[1]);
+                    var statesParams = state.Split(":");
+                    var trait = StateSeeder.GetStateDTO(statesParams[0], false, Int32.Parse(statesParams[1]));
                     fighter.States.Add(trait);
                 }
                 fighter.Health = new MobHealthModel(mob);
                 fighter.Name = mob.Name;
                 fighter.PainResistance = mob.PainResSkillValue;
-                fighter.Lifting = mob.AttackSkillValue;
-                fighter.Balance = mob.DodgeSkillValue;
+                fighter.Lifting = mob.AttackSkillValue - mob.CurrentWounds/2;
+                fighter.Balance = mob.DodgeSkillValue - mob.CurrentWounds / 2;
                 return fighter;
             }
             catch (Exception ex)
@@ -223,6 +224,7 @@ namespace DA_Models.ComponentModels
             int DefenceCurrValue = 0;
             string defenceString = string.Empty;
             string weaponString = string.Empty;
+            string woundString = string.Empty;
             int weaponCurrValue = 0;
             string attackString = string.Empty;
             switch (DefenceType)
@@ -230,7 +232,7 @@ namespace DA_Models.ComponentModels
                 default:
                 case SD.DefenceType.Dodge:
                     weaponCurrValue += Attacker.Props.Get(SD.BattleProperty.AttackDodge).SumBonus;
-                    DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceDodge).SumBonus;
+                    DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceDodge).SumBonus;                   
                     defenceString = SD.DefenceType.Dodge.ToLower();
                     break;
                 case SD.DefenceType.Parry:
@@ -260,36 +262,50 @@ namespace DA_Models.ComponentModels
                 default:
                 case SD.AttackAction.Normal:
                     AttackCurrValue = 0;
+                    Attacker.ActionLeft -= 1;
                     break;
                 case SD.AttackAction.Cautious:
                     AttackCurrValue = -3;
                     TraitCharacterDTO cautious = new TraitCharacterDTO(true);
                     if(Attacker.NewStates.Contains(States.Names.Cautious) == false ||
                        Attacker.OldStates.Contains(States.Names.Cautious) == false)  // dont add it twice
-                        Attacker.NewStates += States.Names.Cautious + ":1" + ", ";
+                        Attacker.NewStates += States.Names.Cautious + ":1, ";  // add new state
                     attackString += "cautiously";
+                    Attacker.ActionLeft -= 1;
                     break;                
                 case SD.AttackAction.Charge:
                     AttackCurrValue = 5;
                     AdditionalDamage += 3;
                     attackString += "charging";
+                    Attacker.ActionLeft -= 2;
                     break;
                 case SD.AttackAction.Raging:
                     AttackCurrValue = 7;
                     AdditionalDamage += 3;
                     if (Attacker.NewStates.Contains(States.Names.Unbalanced) == false ||
                         Attacker.OldStates.Contains(States.Names.Unbalanced) == false)
-                        Attacker.NewStates += States.Names.Unbalanced + ":1" + ", ";
+                        Attacker.NewStates += States.Names.Unbalanced + ":1, ";
                     attackString += "furiously!";
+                    Attacker.ActionLeft -= 2;
                     break;
                 case SD.AttackAction.Strong:
                     AttackCurrValue = 5;
                     attackString += "with all strength";
+                    Attacker.ActionLeft -= 2;
                     break;
             }
+            if(Attacker.ActionLeft == 1)
+            {
+                Attacker.NewStates += $"{States.Names.HalfTurn}:1, ";
+            }else if(Attacker.ActionLeft < 1)
+            {
+                Attacker.NewStates = Attacker.NewStates.Replace($"{States.Names.HalfTurn}:1, ", string.Empty);
+                Attacker.NewStates += $"{States.Names.NoTurn}:1, ";
+            }
+
             AttackValue += AttackCurrValue;
             DefenceValue += DefenceCurrValue;
-            attackString += SD.BonusText(AttackCurrValue);
+            attackString += AttackCurrValue == 0 ? "" : SD.BonusText(AttackCurrValue);
             defenceString += SD.BonusText(DefenceCurrValue);
 
             // add weapon bonus if exists
@@ -305,7 +321,10 @@ namespace DA_Models.ComponentModels
                 AttackValue -= AttackCurrValue;
                 attackString += ", with crude weapon" + SD.BonusText(-AttackCurrValue);
             }
-            ResultStringMG += $"({RichText.BoldText(Attacker.Name)} {Attacker.OldStates} attacks {attackString} {weaponString}, {RichText.BoldText(Defender.Name)} {Defender.OldStates} tries to {defenceString}.";
+            string attackerStatesString = GetStatesString(Attacker.OldStates);
+            string defenderStatesString = GetStatesString(Defender.OldStates);
+
+            ResultStringMG += $"({RichText.BoldText(Attacker.Name)}{attackerStatesString} attacks {attackString} {weaponString}, {RichText.BoldText(Defender.Name)}{defenderStatesString} tries to {defenceString}.";
         }
 
         public void WriteBonusesFromStates()
@@ -317,17 +336,17 @@ namespace DA_Models.ComponentModels
             // attacker
             if (Attacker.States is not null && Attacker.States.Any())
             {
-                Attacker.OldStates = "(";
+                Attacker.OldStates = string.Empty;
                 foreach (var state in Attacker.States)
                 {
                     AttackCurrValue = 0;
-                    attackString = "";
                     switch (state.Name)
                     {
                         case States.Names.Stunned:
                         case States.Names.Unaware:
                         case States.Names.FullDefence:
                         case States.Names.Unconscious:
+                        case States.Names.Dead:
                             //cannot attack! error!
                             break;
                         case States.Names.Surrounded:    
@@ -358,26 +377,35 @@ namespace DA_Models.ComponentModels
                             break;
                     }
                     AttackValue += AttackCurrValue;
-                    attackString = state.Name + SD.BonusText(AttackCurrValue);
-
-                    AttackValue += AttackCurrValue;
-                    attackString = state.Name + SD.BonusText(AttackCurrValue);
-                    Attacker.OldStates += $"{attackString}, ";
+                    Attacker.OldStates += AttackCurrValue == 0 ? string.Empty : $"{state.Name} {SD.BonusText(AttackCurrValue)}, ";
                 }
-                Attacker.OldStates = Attacker.OldStates.Remove(Attacker.OldStates.Length - 2);  // remove last chars
-                Attacker.OldStates +=")";
+                if(Attacker.OldStates.Length < 5)                
+                {
+                    Attacker.OldStates = string.Empty;
+                }
+                Attacker.ActionLeft = 2;
+                if (Attacker.OldStates.Contains(States.Names.HalfTurn))
+                {
+                    Attacker.ActionLeft = (int)TurnLeft.Half;
+                }
+                if (Attacker.OldStates.Contains(States.Names.NoTurn))
+                {
+                    Attacker.ActionLeft = (int)TurnLeft.No;
+                }
             }
 
             if (Defender.States is not null && Defender.States.Any())
             {
-                Defender.OldStates = "(";
+                Defender.OldStates = string.Empty;
                 // defender
                 foreach (var state in Defender.States)
                 {
                     DefenceCurrValue = 0;
-                    defenceString = "";
                     switch (state.Name)
                     {
+                        case States.Names.Dead:
+                            DefenceCurrValue += -20;
+                            break;
                         case States.Names.Unconscious:
                             DefenceCurrValue += -20;
                             break;
@@ -420,11 +448,21 @@ namespace DA_Models.ComponentModels
                             break;
                     }
                     DefenceValue += DefenceCurrValue;
-                    defenceString = state.Name + SD.BonusText(DefenceCurrValue);
-                    Defender.OldStates += $"{defenceString}, ";
+                    Defender.OldStates += DefenceCurrValue == 0 ? "" : $"{state.Name} {SD.BonusText(DefenceCurrValue)}, ";
                 }
-                Defender.OldStates = Defender.OldStates.Remove(Defender.OldStates.Length - 2);  // remove last chars
-                Defender.OldStates += ")";
+                if(Defender.OldStates.Length <5)
+                {
+                    Defender.OldStates = string.Empty;
+                }
+                Defender.ActionLeft = 0;
+                if (Defender.OldStates.Contains(States.Names.HalfTurn))
+                {
+                    Defender.ActionLeft = (int)TurnLeft.Half;
+                }
+                if (Defender.OldStates.Contains(States.Names.NoTurn))
+                {
+                    Defender.ActionLeft = (int)TurnLeft.No;
+                }
             }
         }
         public void WriteDiceRollsAndAttackSummary()
@@ -519,17 +557,24 @@ namespace DA_Models.ComponentModels
             {
                 Random rnd = new Random();
                 int location = rnd.Next(0, Wounds.Location.All.Length - 1);
-                AttackLocation = Wounds.Location.All[location];
+                newWound.Location = Wounds.RandomLocation(); //Wounds.Location.Body;  
             }
-            newWound.Location = AttackLocation;
+            else
+            {
+                newWound.Location = AttackLocation;
+            }
             newWound.Value = Wounds.GetValueFromSeverity(WoundSeverity);
             NewWounds.Add(newWound);
 
-            if ((painResRoll.Item1 == false && WoundSeverity == Wounds.Severity.Critical) || WoundSeverity == Wounds.Severity.Deadly ||
-                Defender.Health.CurrentWounds >= Defender.Health.MaxWounds)
+            if ((painResRoll.Item1 == false && WoundSeverity == Wounds.Severity.Critical)  ||
+                Defender.Health.CurrentWounds >= Defender.Health.MaxWounds && WoundSeverity != Wounds.Severity.Deadly)
             {
-                Defender.NewStates += $"{States.Names.Unconscious}:{99}";
+                TestConditionIfHit += States.Names.Unconscious + ", ";
+            }else if(WoundSeverity == Wounds.Severity.Deadly)
+            {
+                TestConditionIfHit += States.Names.Dead + ", ";
             }
+
         }
         public void WriteAndCalculatePossibleStates()
         {
@@ -569,7 +614,12 @@ namespace DA_Models.ComponentModels
                             duration = Math.Max(1, DC / 10);
                             break;
                         case States.Names.Unconscious:
-                            DC = 30;
+                            DC = 20 + Defender.Health.CurrentWounds - Defender.Health.MaxWounds;
+                            result = SD.MakeRollTest(DC, Defender.PainResistance);
+                            duration = Math.Max(1, DC / 10);
+                            break;
+                        case States.Names.Dead:
+                            DC = 30 + Defender.Health.CurrentWounds - Defender.Health.MaxWounds;
                             result = SD.MakeRollTest(DC, Defender.PainResistance);
                             duration = Math.Max(1, DC / 10);
                             break;
@@ -579,7 +629,28 @@ namespace DA_Models.ComponentModels
                     ResultStringMG += $"Test against {stateTest}: {result.Item2}";
                     if (result.Item1 == false)
                     {
-                        Defender.NewStates += $"{stateTest}:{duration}";
+                        if(stateTest == States.Names.Dead)
+                        {
+                            Defender.NewStates = "Dead:999, ";
+                            Defender.States = new List<TraitDTO>();
+                            break; 
+                        }
+                        if (Defender.OldStates.Contains(stateTest))
+                        {
+                            var stateDTO = Defender?.States?.FirstOrDefault(s => s.Name == stateTest);
+                            if (stateDTO is not null)
+                            {
+                                if(stateDTO.TraitValue < duration)
+                                {
+                                    stateDTO.TraitValue = duration;
+                                }
+                            }
+                            else
+                                throw new Exception();
+
+                        }
+                        else
+                            Defender.NewStates += $"{stateTest}:{duration}, ";
                     }
                 }
             }
@@ -652,6 +723,17 @@ namespace DA_Models.ComponentModels
                 IsApproved = true,
             };
             return item;
+        }
+
+        private string GetStatesString(string oldStates)
+        {
+            string res = string.Empty;
+            if (oldStates.Length > 4)
+            {
+                res = oldStates;
+                res = $" ({res.Remove(res.Length - 2)})";
+            }
+            return res;
         }
     }
 }

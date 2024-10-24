@@ -17,7 +17,7 @@
         <div class="main-table">
             <MudDataGrid @ref="Grid" ReadOnly="false" T="TraitDTO" MultiSelection="MultiRowSelection" Items="Traits" Filterable="true" Class="px-2 py-2" EditMode="DataGridEditMode.Cell" Bordered="true" Dense="true"
                          FooterClass="d-none" EditTrigger="DataGridEditTrigger.Manual"
-                         Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectedItemsChanged="@SelectedItemsChanged">
+                         Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectOnRowClick="false" SelectedItemsChanged="@SelectedItemsChanged">
                 <Columns>
                     <SelectColumn  T="TraitDTO" />
                     <PropertyColumn CellStyle="max-width:80px;" Editable="false" Property="x => x.Name" Title="Name" />

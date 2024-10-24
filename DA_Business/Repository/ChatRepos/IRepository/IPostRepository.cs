@@ -19,5 +19,8 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<PostDTO> GetById(int id);
 
         Task<PostDTO> Update(PostDTO objDTO);
+
+        Task<IEnumerable<PostDTO>> GetPage(int chapterId, int postPerPage, int pageNum);
+        Task<int> GetPostCount(int chapterId);
     }
 }

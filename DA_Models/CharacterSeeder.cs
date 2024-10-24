@@ -376,7 +376,7 @@ namespace DA_Models
                 {
                     Name="Wrestling",
                     RelatedAttribute1 = "Dexterity",
-                    RelatedAttribute2 = "Instinct",
+                    RelatedAttribute2 = "Strength",
                     RelatedBaseSkillName = "Athletics",
                     Index= 0,
                 },

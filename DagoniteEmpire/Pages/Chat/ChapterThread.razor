@@ -42,10 +42,14 @@ else
         @if(UserInfo?.IsAdminOrMG == true)
         {
             <MudGrid Justify="Justify.Center" Spacing="1">
-                <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>               
-                <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
-                <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
-                <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
+                <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
+                @if (OngoingBattle)
+                {
+                    <MudItem xs="12"><MudText  Align="Align.Center">Turn: @BattlePhase.CurrentTurn</MudText></MudItem>
+                    <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
+                    <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                    <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
+                }
                 <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
             </MudGrid>
         }
@@ -84,46 +88,47 @@ else
             <MudText Class="py-2 flex-grow-1" Typo="Typo.h6"> @Chapter.Date, @Chapter.DayTime, @Chapter.Place </MudText>
             <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate</MudText>
 
-            <div class="big-screen" id="send-message-cont">
-                <MudStack>
-                @if(Chapter.Posts is not null){
-                    @foreach (var post in Posts)
-                    {
-                        if (post.Character is not null)
+            <MudHidden Breakpoint="Breakpoint.SmAndUp" Invert="true">
+                    <MudStack>
+                    @if(Chapter.Posts is not null){
+                            @foreach (var post in Posts)
                         {
-                            string postId = "post_big_number_" + post.Id.ToString();
+                            if (post.Character is not null)
+                            {
+                                string postId = "post_big_number_" + post.Id.ToString();
 
-                            <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="300px">
-                                <MudPaper Class="d-flex flex-column pa-2" Width="200px">
-                                        <MudText Align="Align.Center" Typo="Typo.h5">@post.Character.NPCName</MudText>
-                                        <MudImage Src="@post.Character.ImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg" />
-                                        @if (@post.Character.NPCName != SD.NPCName_GameMaster)
-                                        {
-                                            <MudText Align="Align.Center" Typo="Typo.body1">Race: @post.Character.RaceName</MudText>
-                                            <MudText Align="Align.Center" Typo="Typo.body1">Class: @post.Character.ProfessionName</MudText>
-                                        }
+                                <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="300px">
+                                    <MudPaper Class="d-flex flex-column pa-2" Width="200px">
+                                            <MudText Align="Align.Center" Typo="Typo.h5">@post.Character.NPCName</MudText>
+                                            <MudImage Src="@post.Character.ImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg" />
+                                            @if (@post.Character.NPCName != SD.NPCName_GameMaster)
+                                            {
+                                                <MudText Align="Align.Center" Typo="Typo.body1">Race: @post.Character.RaceName</MudText>
+                                                <MudText Align="Align.Center" Typo="Typo.body1">Class: @post.Character.ProfessionName</MudText>
+                                            }
+                                    </MudPaper>
+                                    <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
+                                        <MudStack Spacing="0" Row="true">
+                                            <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
+                                            @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.NPCName_GameMaster)
+                                            {
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                            }
+                                        </MudStack>                                
+                                        <SfRichTextEditor ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
+                                            <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
+                                            <RichTextEditorToolbarSettings Items="@NoTools" />
+                                        </SfRichTextEditor>
+                                    </MudPaper>
                                 </MudPaper>
-                                <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
-                                    <MudStack Spacing="0" Row="true">
-                                        <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
-                                        @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.NPCName_GameMaster)
-                                        {
-                                            <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
-                                        }
-                                    </MudStack>                                
-                                    <SfRichTextEditor ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
-                                        <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
-                                        <RichTextEditorToolbarSettings Items="@NoTools" />
-                                    </SfRichTextEditor>
-                                </MudPaper>
-                            </MudPaper>
+                            }
                         }
                     }
-                }
-            </MudStack>
-
-            </div>
-            <div class="small-screen w-100" id="send-message-cont">
+                    <MudPagination Count="PageCount" Selected="@PageNum" SelectedChanged="SelectPage"></MudPagination>
+                </MudStack>
+            </MudHidden>
+            <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
+                <div class="w-100">
                 <MudStack>
                     @if (Chapter.Posts is not null)
                     {
@@ -143,7 +148,7 @@ else
                                         }
                                     </MudStack>
 
-                                    <SfRichTextEditor ID="@postId" @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
+                                        <SfRichTextEditor ID="@postId" @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
                                         <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
                                         <RichTextEditorToolbarSettings Items="@NoTools" />
                                     </SfRichTextEditor>
@@ -152,9 +157,11 @@ else
                             }
                         }
                     }
+                    <MudPagination Count="PageCount" SelectedChanged="SelectPage"></MudPagination>
                 </MudStack>
 
-            </div>
+                </div>
+            </MudHidden>
         }
         <div id="bottom-container" class="ma-0">
         <MudPaper Width="100%" Height="300px" Square="true" Class="d-flex  flex-column flex-grow-1 my-2 pa-2">
@@ -196,7 +203,6 @@ else
 @code{
     [Parameter] public int Id { get; set; }
     [Parameter] public int CharId { get; set; }
-
     private ChapterDTO Chapter { get; set; } 
     private List<PostDTO> Posts { get; set; } = new List<PostDTO>();
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
@@ -212,6 +218,10 @@ else
     private bool OngoingBattle = false;
     private string SendButtonText { get; set; } = "Send Post";
     private string BattleButton { get; set; } = "Start Battle";
+    private int PostsPerPage { get; set; } = 10;
+    private int PageNum { get; set; } = 1;
+    private int PageCount { get; set; } = 1;
+
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
@@ -272,6 +282,8 @@ else
     {
         if (firstRender)
         {
+            PageCount = await GetPageCount();
+            PageNum = PageCount;
             await LoadChapter();
         }
         await _jsRuntime.ScrollToElement("bottom-container");
@@ -282,10 +294,11 @@ else
     {
         IsLoading = true;
         StateHasChanged();
-
-
         Chapter = await _chapterRepository.GetById(Id);
-        Posts = (await _postRepository.GetAll(Id)).ToList();
+      
+        PageCount = await GetPageCount();
+        Posts = (await _postRepository.GetPage(Id,PostsPerPage,PageNum)).ToList();
+
         // load characters 
         foreach(var charac in Chapter.Characters)
         {
@@ -379,6 +392,7 @@ else
     public void ResizePostContent(string args)
     {
         //pass ID(column name) of multiline textbox
+
         _jsRuntime.InvokeVoidAsync("ResizeRichTextArea", $"{args}");
     }
 
@@ -401,6 +415,8 @@ else
             await LoadChapter();
             IsLoadingCharacters = false;
             StateHasChanged();
+            if(result.Data is not null)
+                NewPost.Content += result.Data as string ?? string.Empty;
         }
     }
 
@@ -454,21 +470,24 @@ else
             foreach (var characterParams in CharacterAllParams.Values)
             {
                 if (characterParams?.TraitsTemporary is null || characterParams.TraitsTemporary.Any() == false) continue;
-                newCharStates = new List<TraitDTO>();
+                var traitsToDelete = new List<TraitDTO>();
                 foreach (var state in characterParams.TraitsTemporary)
                 {
-                    if (--state.TraitValue > 0)
+                    if (--state.TraitValue <= 0)
                     {
-                        newCharStates.Add(state);
+                        traitsToDelete.Add(state);
+                    }
+                    else
+                    {
+                        await _traitCharacterRepository.Update((TraitCharacterDTO)state);
                     }
                 }
 
-                //update new stats
-                characterParams.TraitsTemporary = newCharStates;
-                foreach(var trait in characterParams.TraitsTemporary)
+                //delete stats
+                foreach (var trait in traitsToDelete)
                 {
-                    TraitCharacterDTO characterTrait = new(trait, characterParams.Character.Id, true);
-                    await _traitCharacterRepository.Update(characterTrait);
+                    await _traitCharacterRepository.Delete(trait.Id);
+                    characterParams.TraitsTemporary.Remove(trait);
                 }
 
             }
@@ -527,20 +546,27 @@ else
         foreach (var characterParams in CharacterAllParams.Values)
         {
             if (characterParams?.TraitsTemporary is null || characterParams.TraitsTemporary.Any() == false) continue;
-            characterParams.TraitsTemporary = new List<TraitDTO>();
-            characterParams.TraitsCharacter = new List<TraitDTO>();
-            await _characterRepository.Update(characterParams.Character);
 
-            foreach (var trait in characterParams.TraitsCharacter.Where(t => t.TraitType == SD.TraitType_Temporary))
+            foreach (var trait in characterParams.TraitsTemporary)
             {
+                if (trait.Name == States.Names.Dead || trait.Name == States.Names.Unconscious) continue;
                 await _traitCharacterRepository.Delete(trait.Id);
             }
+            characterParams.TraitsTemporary = new List<TraitDTO>();
         }
         // for mobs
         List<string> newStates = new List<string>();
         foreach (var mob in Mobs)
         {
-            mob.States = string.Empty;
+            if (mob.States.Contains(States.Names.Dead))
+                mob.States = $"{States.Names.Dead}:99";
+            else if (mob.States.Contains(States.Names.Unconscious))
+                mob.States = $"{States.Names.Unconscious}:99";
+            else
+                mob.States = string.Empty;
+
+
+            await _mobRepository.Update(mob);
         }
         BattleButton = "Start Battle";
         if (BattlePhase is not null)
@@ -612,5 +638,32 @@ else
             mob.BattleProperties.CalculateBattleStats();
         }
 
+    }
+
+    private async Task<int> GetPageCount()
+    {
+        int postCount = await _postRepository.GetPostCount(Id);
+        return postCount % PostsPerPage == 0 ? (postCount / PostsPerPage) : (postCount / PostsPerPage) + 1;
+    }
+
+    //Pagination 
+    private async Task SelectPage(int page=1)
+    {
+        PageNum = page;
+        IsLoading = true;
+        StateHasChanged();
+        //  Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+        //await LoadChapter();
+
+        IsLoading = true;
+        StateHasChanged();
+        Chapter = await _chapterRepository.GetById(Id);
+
+
+        PageCount = await GetPageCount();
+        Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+
+        IsLoading = false;
+        StateHasChanged();
     }
 }

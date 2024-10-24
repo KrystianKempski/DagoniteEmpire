@@ -541,9 +541,11 @@ namespace DA_Common
         public const string Surrounded = "icons/surrounded.svg";
         public const string Unbalanced = "icons/unbalanced.svg";
         public const string Cautious = "icons/cautious.svg";
+        public const string NoTurn = "icons/hourglass.svg";
         public const string FullDefence = "icons/full-defence.svg";
         public const string Bleeding = "icons/bleeding.svg";
         public const string Unconscious = "icons/unconscious.svg";
+        public const string Dead = "icons/death-skull.svg";
         public const string TendedWound = "icons/tended-wound.svg";
         public const string FreshWound = "icons/fresh-wound.svg";
     }
@@ -625,6 +627,12 @@ namespace DA_Common
         Sick = -4,
         Dying = -8,
     }
+    public enum TurnLeft
+    {
+        No = 0,
+        Half =1,
+        Whole =2
+    }
 
     public class Wounds
     {
@@ -656,6 +664,22 @@ namespace DA_Common
         public enum LocationEnum
         {
             Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, RightLeg, Face, Body
+        }
+
+        public static string RandomLocation()
+        {
+            Random rnd = new Random();
+            int roll = rnd.Next(1, 100);
+            if      (roll < 2) return Location.Face;
+            else if (roll < 3) return Location.Neck;
+            else if (roll < 6) return Location.Head;
+            else if (roll < 16) return Location.MainArm;
+            else if (roll < 26) return Location.OffArm;
+            else if (roll < 31) return Location.MainHand;
+            else if (roll < 36) return Location.OffHand;
+            else if (roll < 46) return Location.LeftLeg;
+            else if (roll < 56) return Location.RightLeg;
+            else return Location.Body;
         }
         public static readonly string[,] Attributes = {
             { SD.Attributes.Instinct, SD.Attributes.Intelligence, }, //Head
@@ -735,6 +759,9 @@ namespace DA_Common
             FullDefence = 5,
             Bleeding = 0,
             Unconscious = 20,
+            Dead = 99,
+            NoTurn = 0,
+            HalfTurn = 0,
         }
         public readonly struct Names
         {
@@ -752,8 +779,10 @@ namespace DA_Common
             public const string FullDefence = "Full defence";
             public const string Bleeding = "Bleeding";
             public const string Unconscious = "Unconscious";
-
-            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence, Bleeding, Unconscious };
+            public const string Dead = "Dead";
+            public const string NoTurn = "No turn";
+            public const string HalfTurn = "Half turn";
+            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence, Bleeding, Unconscious, NoTurn ,HalfTurn};
         }
         public static int GetLevel(string name)
         {
@@ -773,6 +802,10 @@ namespace DA_Common
                 case Names.FullDefence: return (int)Level.FullDefence;
                 case Names.Bleeding: return (int)Level.Bleeding;
                 case Names.Unconscious: return (int)Level.Unconscious;
+                case Names.Dead: return (int)Level.Dead;
+                case Names.NoTurn: return (int)Level.NoTurn;
+                case Names.HalfTurn: return (int)Level.HalfTurn;
+
             }
             return 0;
         }
@@ -794,9 +827,12 @@ namespace DA_Common
                 case Names.FullDefence: return MyIcon.FullDefence;
                 case Names.Bleeding: return MyIcon.Bleeding;
                 case Names.Unconscious: return MyIcon.Unconscious;
+                case Names.Dead: return MyIcon.Dead;
+                case Names.NoTurn: return MyIcon.NoTurn;
             }
             return "";
         }
+
     }
 
     public class RichText

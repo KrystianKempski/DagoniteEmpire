@@ -77,6 +77,42 @@ namespace DA_Business.Repository.ChatRepos
             return new List<PostDTO>();
         }
 
+        public async Task<IEnumerable<PostDTO>> GetPage(int chapterId, int postPerPage, int pageNum )
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+                if(chapterId == 0 || postPerPage <1) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                int skip = postPerPage * (pageNum-1);
+                var obj = contex.Posts.Include(u => u.Character).Where(u => u.ChapterId == chapterId).OrderBy(u => u.CreatedDate).Skip(skip).Take(postPerPage);
+                if (obj != null && obj.Any())
+                    return _mapper.Map<IEnumerable<Post>, IEnumerable<PostDTO>>(obj);
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            }
+
+            return new List<PostDTO>();
+        }
+        public async Task<int> GetPostCount(int chapterId)
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+                if (chapterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                int count = contex.Posts.Where(u => u.ChapterId == chapterId).Count();
+
+                return count;
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+            }
+        }
+
         public async Task<PostDTO> GetById(int id)
         {
             try

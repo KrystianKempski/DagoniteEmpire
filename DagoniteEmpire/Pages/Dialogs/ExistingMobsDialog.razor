@@ -105,8 +105,8 @@
 
     private async Task Close()
     {
-       //Mobs = (await _mobRepository.GetAll()).ToList();
-        await _mobRepository.Update(Mobs.First());
+        //if (Mobs.Any())
+        //    await _mobRepository.Update(Mobs.First());
         MudDialog.Close(DialogResult.Ok(Mobs));
         _snackBar.Add("Mobs modyfied", Severity.Success);
     }

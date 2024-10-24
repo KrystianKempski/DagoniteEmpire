@@ -49,7 +49,7 @@ namespace DA_Models.CharacterModels
         }
         public int Index { get; set; }
         public int TraitValue { get; set; }
-        public bool TraitApproved { get; set; }
+        public bool TraitApproved { get; set; } = false;
         public bool IsRemovable { get; set; } = true;
         public bool IsUnique { get; set; } = false;
         public int Level { get; set; }

@@ -29,7 +29,12 @@
                         <MudImage Width="80" ObjectFit="ObjectFit.ScaleDown" Src="@ImageUrl" Alt="Character image" Elevation="25" Class="rounded-lg" />
                         <div class="image-cover">
                             <MudPaper Style="opacity:0.4; background-color:red;" Height="@WoundLevel" Width="100%" Outlined="false" Elevation="0" ></MudPaper>
+                            
                         </div>
+                        @if (NoTurnLeftIcon != string.Empty)
+                        {
+                            <div class="image-Icon"> <img src="@NoTurnLeftIcon" width="30px" height="30px"  /> </div>
+                        }
                     </div>
                     <div class="flex-grow-1 d-flex flex-column py-2 justify-content-around">
                         <MudText Typo="Typo.h5">@Name</MudText>
@@ -317,6 +322,7 @@
     private string StatesString = "";
     private string WoundLevel = "0%";
     private List<Tuple<string, string, int>> Icons = new List<Tuple<string, string, int>>();
+    private string NoTurnLeftIcon = string.Empty;
     private Relation Relation = Relation.Teammate;
     public UserInfo? UserInfo { get; set; }
     private List<string> MobWounds { get; set; } = new List<string>();
@@ -494,10 +500,18 @@
             Icons = new List<Tuple<string, string, int>>();
             if (StatesString == string.Empty) return;
             var states = StatesString.Split(", ");
+            NoTurnLeftIcon = string.Empty;
             foreach (var state in states)
             {
-                if (state == string.Empty) continue;
+                if (state == string.Empty ) continue;
+               
                 var type = state.Split(":");
+                if (type[0] == States.Names.HalfTurn) continue;
+                if (type[0] == States.Names.NoTurn)
+                {
+                    NoTurnLeftIcon = MyIcon.NoTurn;
+                    continue;
+                }
                 if (string.IsNullOrEmpty(type[0]) == false)
                     Icons.Add(new( type[0], States.GetIcon(type[0]), Int32.Parse(type[1])));
                 else
