@@ -37,45 +37,94 @@
 }
 else
 {
-    
-    <div class="character-panel">
-        @if(UserInfo?.IsAdminOrMG == true)
-        {
-            <MudGrid Justify="Justify.Center" Spacing="1">
-                <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
-                @if (OngoingBattle)
-                {
-                    <MudItem xs="12"><MudText  Align="Align.Center">Turn: @BattlePhase.CurrentTurn</MudText></MudItem>
-                    <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
-                    <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
-                    <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
-                }
-                <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
-            </MudGrid>
-        }
-    @if (IsLoadingCharacters == false)
-    {
-        <MudPaper Elevation="1">
-            <MudStack Spacing="2">
-                @foreach (var charac in Chapter.Characters)
-                {
-                    <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
-                }
-                @foreach (var mob in Mobs)
-                {
-                    <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
-                }
-            </MudStack>
-        </MudPaper>
-    }
-    else
-    {
-        <LoadingPage></LoadingPage>
-    }
+    <MudHidden Breakpoint="Breakpoint.LgAndDown" Invert="true">
+        <MudHidden Hidden="@(_open == true)">
+            <MudButton Style="p-2" OnClick="ToggleDrawer" Variant="Variant.Text" DropShadow="true">
+                <img src="@MyIcon.Helm" width="30px" height="30px" class="helm-icon" />
+            </MudButton>            
+        </MudHidden>
 
-    </div>        
+        <MudDrawer Width="400px" @bind-Open="@_open" Elevation="1" Variant="DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always">
+             <div class="px-1 py-2">
+            @if (UserInfo?.IsAdminOrMG == true)
+            {
+                <MudGrid Justify="Justify.Center" Spacing="1">
+                    <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
+                    @if (OngoingBattle)
+                    {
+                        <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase.CurrentTurn</MudText></MudItem>
+                        <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
+                    }
+                    <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
+                </MudGrid>
+            }
+            @if (IsLoadingCharacters == false)
+            {
+                <MudPaper Elevation="1">
+                    <MudStack Spacing="2">
+                        @foreach (var charac in Chapter.Characters)
+                        {
+                            <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+                        }
+                        @foreach (var mob in Mobs)
+                        {
+                            <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
+                        }
+                    </MudStack>
+                </MudPaper>
+            }
+            else
+            {
+                <LoadingPage></LoadingPage>
+            }
+            </div>
+        </MudDrawer>
+    
+    </MudHidden>
+ 
 
     <div id="mam" class="margin-side container-lg" >
+
+        <MudHidden Breakpoint="Breakpoint.XlAndUp" Invert="true">
+            <div class="character-panel">
+                @if (UserInfo?.IsAdminOrMG == true)
+                {
+                    <MudGrid Justify="Justify.Center" Spacing="1">
+                        <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
+                        @if (OngoingBattle)
+                        {
+                            <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase.CurrentTurn</MudText></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
+                        }
+                        <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
+                    </MudGrid>
+                }
+                @if (IsLoadingCharacters == false)
+                {
+                    <MudPaper Elevation="1">
+                        <MudStack Spacing="2">
+                            @foreach (var charac in Chapter.Characters)
+                            {
+                                <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+                            }
+                            @foreach (var mob in Mobs)
+                            {
+                                <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                }
+                else
+                {
+                    <LoadingPage></LoadingPage>
+                }
+
+            </div>
+        </MudHidden>
         @if (OngoingBattle)
         {
             <MudAlert Elevation="12" Severity="Severity.Error" Variant="Variant.Filled">Battle in progress!</MudAlert>
@@ -88,7 +137,7 @@ else
             <MudText Class="py-2 flex-grow-1" Typo="Typo.h6"> @Chapter.Date, @Chapter.DayTime, @Chapter.Place </MudText>
             <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate</MudText>
 
-            <MudHidden Breakpoint="Breakpoint.SmAndUp" Invert="true">
+            <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
                     <MudStack>
                     @if(Chapter.Posts is not null){
                             @foreach (var post in Posts)
@@ -127,7 +176,7 @@ else
                     <MudPagination Count="PageCount" Selected="@PageNum" SelectedChanged="SelectPage"></MudPagination>
                 </MudStack>
             </MudHidden>
-            <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
+            <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
                 <div class="w-100">
                 <MudStack>
                     @if (Chapter.Posts is not null)
@@ -251,6 +300,13 @@ else
     public UserInfo? UserInfo { get; set; }
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
 
+    private bool _open = false;
+
+    private void ToggleDrawer()
+    {
+        _open = !_open;
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -285,8 +341,8 @@ else
             PageCount = await GetPageCount();
             PageNum = PageCount;
             await LoadChapter();
+            await _jsRuntime.ScrollToElement("bottom-container");
         }
-        await _jsRuntime.ScrollToElement("bottom-container");
     }
 
 

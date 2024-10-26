@@ -6,49 +6,90 @@
 
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 
-<MudDrawer  @bind-Open="@openEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Mini" ClipMode="DrawerClipMode.Always"  Style="overflow:hidden; text-wrap: nowrap" >
-    <MudDrawerHeader Style="overflow:hidden; text-wrap: nowrap" Class="p-1">
-        <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 24px; "><MudIconButton OnClick="@ToggleEndDrawer" Icon="@Icons.Material.Filled.Group"></MudIconButton> Chat </MudText>
-    </MudDrawerHeader> 
+<MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
 
-    <div class="d-flex flex-column " style="max-height:calc(100vh - 128px);min-height:calc(100vh - 128px); overflow:hidden; padding: 0">
-        <MudList T="ApplicationUser" Class="pa-0" >
-            @foreach (var user in ChatUsers)
-            {
-                <MudListItem Class="pa-0 px-0" OnClick="@(() => AddUserChat(user.Id))">
-                    <div class="d-flex flex-row mt-n1 mb-n1">
-                        <div class="mr-4 py-3 pl-2 pr-2" style="padding: 8px 8px 8px 10px;">
-                            <MudBadge Visible="@user.ShowBadge" Content="@user.BadgeContent" Color="Color.Primary" Origin="Origin.TopLeft" Overlap="true" Class="">
-                                @if (ChosenUser != null && user.Id == ChosenUser.ContactId)
-                                {
-                                    <MudAvatar Color="Color.Secondary" Style="height:37px; width:37px;">@user.UserName.ToUpper().FirstOrDefault()</MudAvatar>
-                                }
-                                else
-                                {
-                                    <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;">@user.UserName.ToUpper().FirstOrDefault()</MudAvatar>
-                                }
-                            </MudBadge>
+    <MudDrawer  @bind-Open="@openEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Mini" ClipMode="DrawerClipMode.Always"  Style="overflow:hidden; text-wrap: nowrap" >
+        <MudDrawerHeader Style="overflow:hidden; text-wrap: nowrap" Class="p-1">
+            <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 24px; "><MudIconButton OnClick="@ToggleEndDrawer" Color="Color.Dark" Icon="@Icons.Material.Filled.Chat"></MudIconButton> Chat </MudText>
+        </MudDrawerHeader> 
+
+        <div class="d-flex flex-column " style="max-height:calc(100vh - 128px);min-height:calc(100vh - 128px); overflow:hidden; padding: 0">
+            <MudList T="ApplicationUser" Class="pa-0" >
+                @foreach (var user in ChatUsers)
+                {
+                    <MudListItem Class="pa-0 px-0" OnClick="@(() => AddUserChat(user.Id))">
+                        <div class="d-flex flex-row mt-n1 mb-n1">
+                            <div class="mr-4 py-3 pl-2 pr-2" style="padding: 8px 8px 8px 10px;">
+                                <MudBadge Visible="@user.ShowBadge" Content="@user.BadgeContent" Color="Color.Primary" Origin="Origin.TopLeft" Overlap="true" Class="">
+                                    @if (ChosenUser != null && user.Id == ChosenUser.ContactId)
+                                    {
+                                        <MudAvatar Color="@(user.Id == ChosenUser.ContactId ?  Color.Secondary : Color.Dark)" Style="height:37px; width:37px;">@user.UserName.ToUpper().FirstOrDefault()</MudAvatar>
+                                    }
+                                    else
+                                    {
+                                        <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;">@user.UserName.ToUpper().FirstOrDefault()</MudAvatar>
+                                    }
+                                </MudBadge>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center">
+                                <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 16px; font-weight:bold;">@user.UserName</MudText>
+                            </div>
                         </div>
-                        <div class="d-flex align-items-center justify-content-center">
-                            <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 16px; font-weight:bold;">@user.UserName</MudText>
-                        </div>
-                    </div>
-                </MudListItem>
-            }
-        </MudList>
-        <div class="d-flex align-items-end flex-grow-1 p-2">
-            @if (openEnd)
-            {
-                <MudIconButton Class="my-2 py-1 px-1" Icon="@Icons.Material.Filled.ArrowForwardIos" Color="Color.Inherit"  OnClick="@ToggleEndDrawer" />
-            }
-            else
-            {
-                <MudIconButton Class="my-2 py-1 px-1" Icon="@Icons.Material.Filled.ArrowBackIosNew" Color="Color.Inherit"  OnClick="@ToggleEndDrawer" />
-            }
+                    </MudListItem>
+                }
+            </MudList>
+            <div class="d-flex align-items-end flex-grow-1 p-2">
+
+               <MudIconButton Class="my-2 py-1 px-1" Icon="@(openEnd == true ? Icons.Material.Filled.ArrowForwardIos : Icons.Material.Filled.ArrowBackIosNew )" Color="Color.Inherit" OnClick="@ToggleEndDrawer" />
+
+            </div>
         </div>
-    </div>
-</MudDrawer>
+    </MudDrawer>
                    
+</MudHidden>
+
+
+<MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
+    <MudHidden Hidden="@(openEnd == true)">
+        <div class="chat-show">
+             <MudIconButton Class="m-1 p-2" Icon="@Icons.Material.Filled.Chat" Color="Color.Dark" Style="background-color:white;" OnClick="@ToggleEndDrawer" />
+        </div>
+    </MudHidden>
+
+    <MudDrawer @bind-Open="@openEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Persistent" ClipMode="DrawerClipMode.Always" Style="overflow:hidden; text-wrap: nowrap">
+        <MudDrawerHeader Style="overflow:hidden; text-wrap: nowrap" Class="p-1">
+            <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 24px; "><MudIconButton OnClick="@ToggleEndDrawer" Color="Color.Dark" Icon="@Icons.Material.Filled.Chat"></MudIconButton> Chat </MudText>
+        </MudDrawerHeader>
+
+        <div class="d-flex flex-column " style="max-height:calc(100vh - 128px);min-height:calc(100vh - 128px); overflow:hidden; padding: 0">
+            <MudList T="ApplicationUser" Class="pa-0">
+                @foreach (var user in ChatUsers)
+                {
+                    <MudListItem Class="pa-0 px-0" OnClick="@(() => AddUserChat(user.Id))">
+                        <div class="d-flex flex-row mt-n1 mb-n1">
+                            <div class="mr-4 py-3 pl-2 pr-2" style="padding: 8px 8px 8px 10px;">
+                                <MudBadge Visible="@user.ShowBadge" Content="@user.BadgeContent" Color="Color.Primary" Origin="Origin.TopLeft" Overlap="true" Class="">
+                                    @if (ChosenUser != null && user.Id == ChosenUser.ContactId)
+                                    {
+                                        <MudAvatar Color="@(user.Id == ChosenUser.ContactId ?  Color.Secondary : Color.Dark)" Style="height:37px; width:37px;">@user.UserName.ToUpper().FirstOrDefault()</MudAvatar>
+                                    }
+                                    else
+                                    {
+                                        <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;">@user.UserName.ToUpper().FirstOrDefault()</MudAvatar>
+                                    }
+                                </MudBadge>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center">
+                                <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 16px; font-weight:bold;">@user.UserName</MudText>
+                            </div>
+                        </div>
+                    </MudListItem>
+                }
+            </MudList>
+        </div>
+    </MudDrawer>
+
+</MudHidden>
 
 <div class="chatboxes">
     @foreach (var userbox in UserBoxes)

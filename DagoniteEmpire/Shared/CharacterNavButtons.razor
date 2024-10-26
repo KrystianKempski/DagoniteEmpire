@@ -6,32 +6,39 @@
 @inject IUserService _userService
 
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
-
-
-<MudButton OnClick="GoToClass" Style="@($"color:{Colors.Gray.Lighten5}; background:transparent;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary">
-    <img src="@MyIcon.Anvil_white" width="25px" height="24px" class="anvil-icon" />
-    Class
-</MudButton>
-<MudButton OnClick="GoToCharacter" Style="@($"color:{Colors.Gray.Lighten5}; background:transparent;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary">
-    <img src="@MyIcon.Helm_white" width="25px" height="24px" class="helm-icon"  />
-    Character
-</MudButton>
-<MudButton OnClick="GoToEquipment" Style="@($"color:{Colors.Gray.Lighten5}; background:transparent;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary">
-    <img src="@MyIcon.Chest" width="26px" height="25px" class="helm-icon" style="padding-bottom: 4px;" />
-    Equipment
-</MudButton>
-<MudButton OnClick="GoToHealth" Style="@($"color:{Colors.Gray.Lighten5}; background:transparent;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary">
-    <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.Favorite" aria-label="Health"></MudIcon>
-    Health
-</MudButton>
-
-
+<MudStack Wrap="Wrap.NoWrap" Spacing="@Spaceing" Row="@IsRow" AlignItems="AlignItems.Start">
+    <MudButton Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true" Href="/character">
+        <MudIcon Class="px-1" Icon="@Icons.Material.Filled.PeopleAlt"></MudIcon>
+        Character list
+    </MudButton>
+    <MudButton OnClick="GoToClass" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+        <img src="@MyIcon.Anvil_white" width="25px" height="24px" class="anvil-icon" />
+        Class
+    </MudButton>
+    <MudButton OnClick="GoToCharacter" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+        <img src="@MyIcon.Helm_white" width="25px" height="24px" class="helm-icon"  />
+        Character
+    </MudButton>
+    <MudButton OnClick="GoToEquipment" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+        <img src="@MyIcon.Chest" width="26px" height="25px" class="helm-icon" style="padding-bottom: 4px;" />
+        Equipment
+    </MudButton>
+    <MudButton OnClick="GoToHealth" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true" >
+        <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.Favorite" aria-label="Health"></MudIcon>
+        Health
+    </MudButton>
+    <MudButton Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true" Href="/campaignlist">
+        <img src="@MyIcon.BookmarkWhite" width="24px" height="24px" class="helm-icon" style="padding-right: 3px;" />
+        Campaign
+    </MudButton>
+</MudStack>
 
 
 @code {
-
+    [Parameter] public bool IsRow { get; set; } = true;
+    [Parameter] public int Spaceing { get; set; } = 1;
     public UserInfo? UserInfo { get; set; }
-
+    private string Color = Colors.Gray.Lighten5;
 
     private async Task GoToClass()
     {

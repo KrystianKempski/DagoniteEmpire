@@ -44,45 +44,51 @@
 
                 </div>
             }
+            @if (UserInfo?.IsAdminOrMG == true)
+            {
+                <div class="approved-checkbox">
+                    <MudCheckBox Label="Approved" @bind-Value="@IsApproved" Size="Size.Medium"></MudCheckBox>
+                </div>
+            }
             <section class="section-create-character">
                 <div class="container-fluid">
                     <h3 class="char-title card-title mb-3 ml-3 mt-2">@Title character</h3>
                     <div class="row">
-                        <div class="form-group col-4 col-md-4 px-1">
+                        <div class="form-group col-8 col-md-3 px-1">
                             <label>Character name</label>
                             @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
-                                <input type="text" @bind-value="AllParams.Character.NPCName" class="form-control"></input>
+                                 <input type="text" @bind-value="NPCName" class="form-control"></input>
                             }
                             else
                             {
-                                <input readonly type="text" @bind-value="AllParams.Character.NPCName" class="form-control"></input>
+                                 <input readonly type="text" @bind-value="NPCName" class="form-control"></input>
                             }
                             </div>
-                        <div class="form-group col-1 col-md-1 px-1">
+                                <div class="form-group col-2 col-md-1 px-1">
                             <label>Age</label>
                             @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
-                                <InputNumber  @bind-Value="AllParams.Character.Age" class="form-control col-2"></InputNumber>
+                                <InputNumber  @bind-Value="NPCAge" class="form-control col-2"></InputNumber>
                             }
                             else
                             {
-                                <InputNumber readonly @bind-Value="AllParams.Character.Age" class="form-control col-2"></InputNumber>
+                                <InputNumber readonly @bind-Value="NPCAge" class="form-control col-2"></InputNumber>
                             }
                         </div>
-                       
-                        <div class="form-group col-3 col-md-3 px-1">
+
+                        <div class="form-group col-4 col-md-3 px-1">
                             <label>Character Type</label>
                             @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                             {
                                 <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
-                                            <option selected="selected" value="@SD.NPCType.Hero">
-                                                @SD.NPCType.Hero
+                                    <option selected="selected" value="@SD.NPCType.Hero">
+                                        @SD.NPCType.Hero
                                     </option>
                                     @if (IsDukeAllowed)
                                     {
-                                                <option value="@SD.NPCType.Duke">
-                                                    @SD.NPCType.Duke
+                                        <option value="@SD.NPCType.Duke">
+                                            @SD.NPCType.Duke
                                         </option>
                                     }
                                 </InputSelect>
@@ -92,17 +98,12 @@
                                 <input readonly type="text" @bind-value="AllParams.Character.NPCType" class="form-control"></input>
                             }
                         </div>
-                        <div class="col-5 col-md-2 date">
-                            <DateComponent Date="CurrentDate" Editable="UserInfo?.IsAdminOrMG == true"></DateComponent>
-                        </div>
-                        @if (UserInfo?.IsAdminOrMG == true)
-                        {
-                            <div class="form-group col-2 col-md-1 px-1">
-                                <label>Is Approved?</label>
-                                <MudCheckBox @bind-Value="@IsApproved" Size="Size.Medium"></MudCheckBox>
-                            </div>
-                        }
-                            
+                        <div class="col-8 col-md-5 px-1">
+                            <MudStack Spacing="0">
+                                <label>Current date</label>
+                                <DateComponent Date="CurrentDate" Editable="UserInfo?.IsAdminOrMG == true"></DateComponent>
+                            </MudStack>
+                        </div>       
                     </div>
                 </div>
             </section>
@@ -223,6 +224,8 @@
     private bool IsLeaveAllowed { get; set; } = true;
     private bool IsDukeAllowed { get; set; } = false;
     private string TargetLocation { get; set; } = "";
+    
+
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private DateModel CurrentDate = new DateModel(1,1);
 
@@ -232,6 +235,24 @@
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
     private SpecialSkillsComponent SpecialSkilsComp = new();
+    private string NPCName
+    {
+        get => AllParams?.Character is null ? "" : AllParams.Character.NPCName;
+        set
+        {
+            AllParams.Character.NPCName = value;
+            IsLeaveAllowed = false;
+        }
+    }
+    private int NPCAge
+    {
+        get => AllParams?.Character is null ? 0 : AllParams.Character.Age;
+        set
+        {
+            AllParams.Character.Age = value;
+             IsLeaveAllowed = false;
+        }
+    }
     private bool IsApproved
     {
         get => AllParams.Character.IsApproved;

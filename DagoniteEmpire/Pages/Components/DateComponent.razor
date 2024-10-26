@@ -1,20 +1,22 @@
 ﻿<div class="d-flex flex-grow-1">
     @if (Editable)
     {
-        <MudPaper Class="flex-1" Elevation="0">
-            <MudNumericField @bind-Value="Date.Day" Label="Day" Variant="Variant.Text" Min="1" Max="31"/>
-        </MudPaper>
-        <MudPaper Class="flex-3" Elevation="0" Width="40%">
-            <MudSelect @bind-Value="Date.Month" Variant="Variant.Text" Label="Month">
-                @foreach (var month in SD.Calendar.Months)
-                {
-                    <MudSelectItem Value="@month.Number">@month.Name</MudSelectItem>
-                }
-            </MudSelect>
-        </MudPaper>
-        <MudPaper Class="flex-1"  Elevation="0">
-            <MudNumericField @bind-Value="Date.Year" Label="Year" Variant="Variant.Text" Min="625" Max="1000" />
-        </MudPaper>  
+        <div class="row">
+            <div class="col-3">
+                <MudNumericField @bind-Value="Date.Day" Label="Day" Variant="Variant.Text" Min="1" Max="31"/>
+            </div>
+            <div class="col-6">
+                <MudSelect @bind-Value="Date.Month" Variant="Variant.Text" Label="Month">
+                    @foreach (var month in SD.Calendar.Months)
+                    {
+                        <MudSelectItem Value="@month.Number">@month.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                </div>
+            <div class="col-3">
+                <MudNumericField @bind-Value="Date.Year" Label="Year" Variant="Variant.Text" Min="625" Max="1000" />
+            </div>
+        </div>
     }
     else
     {
