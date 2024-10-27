@@ -50,13 +50,11 @@
 
 
 <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
-    <MudHidden Hidden="@(openEnd == true)">
-        <div class="chat-show">
-             <MudIconButton Class="m-1 p-2" Icon="@Icons.Material.Filled.Chat" Color="Color.Dark" Style="background-color:white;" OnClick="@ToggleEndDrawer" />
-        </div>
-    </MudHidden>
+    <div class="chat-show">
+            <MudIconButton Class="m-1 p-2" Icon="@Icons.Material.Filled.Chat" Color="Color.Dark" Style="background-color:white;" OnClick="@ToggleEndDrawer" />
+    </div>
 
-    <MudDrawer @bind-Open="@openEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Persistent" ClipMode="DrawerClipMode.Always" Style="overflow:hidden; text-wrap: nowrap">
+    <MudDrawer @bind-Open="@openEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always" Style="overflow:hidden; text-wrap: nowrap">
         <MudDrawerHeader Style="overflow:hidden; text-wrap: nowrap" Class="p-1">
             <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 24px; "><MudIconButton OnClick="@ToggleEndDrawer" Color="Color.Dark" Icon="@Icons.Material.Filled.Chat"></MudIconButton> Chat </MudText>
         </MudDrawerHeader>
@@ -180,7 +178,12 @@
 }
 
 @code{
-    bool openEnd = false;
+    private bool _openEnd = false;
+    private bool openEnd
+    {
+        get => _openEnd;
+        set => _openEnd = value;
+    }
 
     void ToggleEndDrawer()
     {
