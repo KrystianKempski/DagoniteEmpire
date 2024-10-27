@@ -51,7 +51,7 @@ namespace DA_Models.CharacterModels
         public int TraitValue { get; set; }
         public bool TraitApproved { get; set; } = false;
         public bool IsRemovable { get; set; } = true;
-        public bool IsUnique { get; set; } = false;
+        public bool IsUnique { get; set; } = true;
         public int Level { get; set; }
         public virtual string TraitType { get; set; } = string.Empty;
         public virtual string TraitLabel { get =>"trait";} 

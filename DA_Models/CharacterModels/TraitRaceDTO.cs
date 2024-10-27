@@ -16,17 +16,18 @@ namespace DA_Models.CharacterModels
         {
             foreach (var prop in traitDTO.GetType().GetProperties())
             {
-                this.GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(traitDTO, null), null);
+                if (GetType().GetProperty(prop.Name).CanWrite)
+                    GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(traitDTO, null), null);
             }
-            if(this.Races != null)
+            if(Races != null)
             {
-                var race = this.Races.FirstOrDefault(r => r.Id == raceDTO.Id);
+                var race = Races.FirstOrDefault(r => r.Id == raceDTO.Id);
                 if (race is null)
-                    this.Races.Add(raceDTO);
+                    Races.Add(raceDTO);
                 else
                     race = raceDTO;
             }
         }
-        public ICollection<RaceDTO> Races { get; set; }
+        public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
     }
 }

@@ -13,7 +13,7 @@ namespace DA_Common
             if (Date < 1)
                 return;
 
-            Year = Date / 365;
+            Year = SD.Calendar.StartYear + (Date / 365);
             Month = 1;
             Day = 0;
             Date = Date % 365;

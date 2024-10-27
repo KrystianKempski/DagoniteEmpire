@@ -3,6 +3,7 @@
 @inject IBrowserViewportService _vieportService
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
+@inject ISnackbar Snackbar
 <div class="equipment">
     <h3 class="my-3 ml-3 text-center">EQUIPMENT</h3>
     <div class="table-container" >
@@ -195,6 +196,14 @@
 
     private async Task DeleteEquipment(EquipmentSlotDTO slot)
     {
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            $"Are you sure you want to delete {slot.Equipment.Name}?",
+            yesText: "Yes", cancelText: "No");
+        if (result is null || result == false)
+        {
+            return;
+        }
         AllParams.EquipmentSlots = AllParams.EquipmentSlots.Where(u => u.Equipment.Name != slot.Equipment.Name).ToList();
         await UpdateEquipment();
     }

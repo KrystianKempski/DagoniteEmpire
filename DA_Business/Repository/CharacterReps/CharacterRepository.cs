@@ -37,17 +37,6 @@ namespace DA_Business.Repository.CharacterReps
                 obj.Race = null;
                 obj.Profession = null;
 
-                //handle traits Adv
-                //var traits = await contex.TraitsCharacter.ToListAsync();
-                //traits.ForEach(t =>
-                //{
-                //    if (obj.TraitsCharacter.Any(nt => nt.Id == t.Id))
-                //    {
-                //        var untracked = obj.TraitsCharacter.FirstOrDefault(nt => nt.Id == t.Id);
-                //        obj.TraitsCharacter.Remove(untracked);
-                //        obj.TraitsCharacter.Add(t);
-                //    }
-                //});
 
                 // Update and Insert equimpment
                 if (obj.EquipmentSlots is not null)

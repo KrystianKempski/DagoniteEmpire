@@ -12,18 +12,14 @@ namespace DA_Models.CharacterModels
     public class WoundDTO
     {
         public int Id { get; set; }
-        public string Description { get; set; }
-        public string Location { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string Location { get; set; } = string.Empty;
         public int Value { get; set; }
         public bool IsIgnored { get; set; } = false;
         public bool IsTended { get; set; } = false;
         public bool IsMagicHealed { get; set; } = false;
 
         public int DateNumber { get; set; } = 0;
-        ////public int DayOfInjury { get; set; } = 1;
-        //private int DateMonth { get; set; } = 1;
-        //private int DateDay { get; set; } = 1;
-        //private int DateYear { get; set; } = 1;
         public int CharacterId { get; set; }
         public bool IsCondition { get; set; } = false;
 

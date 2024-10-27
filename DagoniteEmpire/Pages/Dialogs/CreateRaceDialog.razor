@@ -1,0 +1,145 @@
+﻿@using DA_DataAccess.CharacterClasses
+@inject ISnackbar Snackbar
+
+@inject IUserService _userService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+             <MudIcon Icon="@MyIcon.Goblin" Color="Color.Primary" /> 
+             Create new Race
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <div class="main-table">
+
+            <div class="d-flex ">
+                <div class="d-flex flex-column flex-grow-1">
+                    <label class="fw-bold py-1">Race name</label>
+                    <SfTextBox Placeholder="Insert race name" @bind-Value="@NewRace.Name"></SfTextBox>
+                </div>
+                @if (UserInfo?.IsAdminOrMG == true)
+                {
+                    <div class="d-flex flex-column px-1">
+                        <label class="fw-bold py-1">Approve</label>
+                        <div class="justify-content-center mx-auto my-auto">
+                            <SfCheckBox @bind-Checked="NewRace.RaceApproved"></SfCheckBox>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="d-flex flex-column flex-grow-1">
+                <label class="fw-bold  p-1">Race description</label>
+                <SfRichTextEditor Height="350px" @ref="DescrEdit" @bind-Value="@NewRace.Description" ShowTooltip="true">
+                    <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
+                </SfRichTextEditor>
+            </div>
+
+
+            <label class="fw-bold pt-4">Bonuses and penalties</label>
+            @if (NewRace.Traits != null)
+            {
+                <div class="traits">
+                    <TraitsComponent @bind-Traits="@Traits" TraitType="@TraitType"></TraitsComponent>
+                </div>
+            }
+            <label class="warnign-message">@ErrorMessage</label>
+
+
+        </div>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveRaceBtnClick">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public RaceDTO NewRace { get; set; } = new();
+    [Parameter] public bool IsEdit { get; set; } = false;
+
+    private string ErrorMessage { get; set; } = string.Empty;
+    private ICollection<TraitDTO> Traits { get; set; } = new List<TraitDTO>();
+    public UserInfo? UserInfo { get; set; }
+
+    private SfRichTextEditor DescrEdit = new SfRichTextEditor();
+    private string TraitType { get; set; } = @SD.TraitType_Race;
+    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
+    {
+        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
+        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
+        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
+        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
+        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
+        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
+        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
+    };
+
+    private async Task OnSaveRaceBtnClick()
+    {
+        if (Traits == null || Traits.Count() == 0)
+        {
+            ErrorMessage = $"There must be at least one trait in race";
+            return;
+        }
+        if (string.IsNullOrEmpty(NewRace.Name) || string.IsNullOrEmpty(NewRace.Description))
+        {
+            ErrorMessage = $"Create name and description of race";
+            return;
+        }
+        if (NewRace != null)
+        {
+            NewRace.Traits = new List<TraitRaceDTO>();
+            foreach (var trait in Traits)
+            {
+                TraitRaceDTO raceTrait;
+                if (trait.TraitType == SD.TraitType_Race)
+                    raceTrait = (TraitRaceDTO)trait;
+                else
+                    raceTrait = new TraitRaceDTO(trait, NewRace);
+                NewRace.Traits.Add(raceTrait);
+            }
+        }
+
+        ErrorMessage = string.Empty;
+
+        MudDialog.Close(DialogResult.Ok(NewRace));
+        if (IsEdit)
+            Snackbar.Add("Wound edited", Severity.Success);
+        else
+            Snackbar.Add("Wound created", Severity.Success);
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task DialogOpen()
+    {
+        UserInfo = await _userService.GetUserInfo();
+        await DescrEdit.RefreshUIAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        
+        if (NewRace.Traits is not null)
+        {
+            Traits = NewRace.Traits.OfType<TraitDTO>().ToList();            
+        }
+        ErrorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+
+}

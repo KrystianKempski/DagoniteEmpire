@@ -1,4 +1,5 @@
 ﻿@inject IDialogService DialogService
+@inject IBrowserViewportService _vieportService
 <div class="race">
     <MudPaper Class="pa-2 m-0  w-100 h-100 overflow-auto">
 
@@ -56,15 +57,11 @@
                 }
             </tbody>
         </table>
+        @if (ShowNameLabel && AllParams.Character.IsApproved == false)
+        {
+          <div class="d-flex justify-content-center"> <button @onclick="@(()=>EditCustomRace())" class="add-trait">Edit race</button></div>
+        }
     </div>
-    @if (ShowNameLabel && AllParams.Character.IsApproved == false)
-    {
-            <button @onclick="@(()=>EditCustomRace())" class="add-trait">Edit race</button>
-    }
-    @if (CustomRaceComponent != null)
-    {
-        <CustomRaceDialog @bind-CustomRaceComponent="@CustomRaceComponent"></CustomRaceDialog>
-    }
     </MudPaper>
 </div> 
 
@@ -73,42 +70,42 @@
 
 
     [CascadingParameter]
-    public AllParamsModel AllParams { get; set; }
-
+    public AllParamsModel AllParams { get; set; } = null;
     [Parameter]
     public EventCallback OnTraitsChange { get; set; }
 
-
-    public RaceDTO CustomRace { get; set; }
-    private SfRichTextEditor RaceDescrShow;
+    public RaceDTO CustomRace { get; set; } = new();
+    private SfRichTextEditor RaceDescrShow = new();
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
-
-    private string SelectedRace { get; set; }
+    private string SelectedRace { get; set; } = string.Empty;
     private bool ShowNameLabel { get; set; } = false;
 
-    private CustomRaceModel _customRaceComponent = new();
-    private CustomRaceModel CustomRaceComponent
-    {
-        get => _customRaceComponent;
-        set
-        {
-            if (value.RaceDTO != null)
-            {
-                var obj = AllParams.Races.FirstOrDefault(u => u.Name == value.RaceDTO.Name);
-                if (obj == null)
-                {
-                    AllParams.Races.Add(value.RaceDTO);
 
-                }
-                else
-                {
-                    obj = value.RaceDTO;
-                }
-                AllParams.RaceTraitsChange();
-                OnTraitsChange.InvokeAsync();
+    private async Task EditCustomRace()
+    {
+        RaceDTO newRace = AllParams.CurrentRace;
+
+        var parameters = new DialogParameters<CreateRaceDialog> {  { x => x.NewRace, newRace }};
+
+        var dialog = await DialogService.ShowAsync<CreateRaceDialog>("Create custom race", parameters, await SetOptions());
+        var result = await dialog.Result;
+
+        if (result?.Data is not null && !result.Canceled)
+        {
+            var createdRace = (RaceDTO)result.Data;
+            var obj = AllParams.Races.FirstOrDefault(u => u.Id == newRace.Id);
+            if (obj == null)
+            {
+                AllParams.Races.Add(newRace);
+
             }
-            if (_customRaceComponent == value) return;
-            _customRaceComponent = value;
+            else
+            {
+                obj = newRace;
+            }
+
+            AllParams.RaceTraitsChange();
+            await OnTraitsChange.InvokeAsync();
         }
     }
 
@@ -162,7 +159,7 @@
                 //trait.SummaryDescr = $"{bonus.Description}, {bonus2.Description}, {bonus3.Description}";
                 trait.Name = "Human race bonuses";
                 trait.TraitType = SD.TraitType_Race;
-                trait.Descr = trait.SummaryDescr;
+                trait.Descr = "Bonuses to atributes and abilities";
                 humanRaceNew.Traits.Add(trait);
                 AllParams.CurrentRace = humanRaceNew;
             }
@@ -176,14 +173,6 @@
         AllParams.RaceTraitsChange();
         await OnTraitsChange.InvokeAsync();
         SelectedRace = raceName;
-        StateHasChanged();
-    }
-
-    private void EditCustomRace()
-    {
-        CustomRaceComponent.RaceDTO = AllParams.CurrentRace;
-        CustomRaceComponent.Traits = CustomRaceComponent.RaceDTO.Traits.OfType<TraitDTO>().ToList();
-        CustomRaceComponent.IsVisible = true;
         StateHasChanged();
     }
 
@@ -217,5 +206,12 @@
                 CustomRace = new();
             }
         }
+    }
+    private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Large)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
     }
 }

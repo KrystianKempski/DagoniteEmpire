@@ -150,7 +150,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
-                                Descr = "Dwarves are both tough and wise, but also a bit gruff +2 Endurance, +2 Willpower, -2 Charisma.",
+                                Descr = "Dwarves are both tough and wise, but also a bit gruff",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -288,7 +288,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
-                                Descr = "",
+                                Descr = "Elves are nimble, both in body and mind, but their form is frail",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -369,15 +369,21 @@ namespace DagoniteEmpire.Service
                                     },
                                 }
                             },
-                            new TraitRace()
-                            {
-                                Name="Unpopular amongst people",
-                                Descr = "",
-                                TraitApproved = true,
-                                IsUnique=true,
-                                TraitType=SD.TraitType_Race,
-                                TraitValue = 0,
-                                Bonuses = new List<Bonus>()
+                        }
+                    };
+                    var unpopularTrait = contex.TraitsRace.FirstOrDefault(u => u.Name == "Unpopular amongst people");
+                    if (unpopularTrait is null)
+                    {
+
+                        unpopularTrait = new TraitRace()
+                        {
+                            Name = "Unpopular amongst people",
+                            Descr = "",
+                            TraitApproved = true,
+                            IsUnique = false,
+                            TraitType = SD.TraitType_Race,
+                            TraitValue = 0,
+                            Bonuses = new List<Bonus>()
                                 {
                                     new Bonus()
                                     {
@@ -386,10 +392,9 @@ namespace DagoniteEmpire.Service
                                         Description = "Non-human races receive a penalty for ruling and diplomacy as nobles in the Empire."
                                     },
                                 }
-                            },
-                        }
-                    };
-
+                        };
+                    }
+                    raceElf.Traits.Add(unpopularTrait);
                     contex.Races.Add(raceElf);
                     contex.SaveChanges();
                 }

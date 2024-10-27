@@ -224,7 +224,7 @@
     private bool IsLeaveAllowed { get; set; } = true;
     private bool IsDukeAllowed { get; set; } = false;
     private string TargetLocation { get; set; } = "";
-    
+
 
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private DateModel CurrentDate = new DateModel(1,1);
@@ -250,7 +250,7 @@
         set
         {
             AllParams.Character.Age = value;
-             IsLeaveAllowed = false;
+            IsLeaveAllowed = false;
         }
     }
     private bool IsApproved
@@ -258,6 +258,22 @@
         get => AllParams.Character.IsApproved;
         set
         {
+
+            if (AllParams.Profession.Name == string.Empty || AllParams.Profession.Description == string.Empty || AllParams.Profession.RelatedAttributeName == string.Empty)
+            {
+                _jsRuntime.ToastrWarning("You must add class name, description and related class attribute to approve character");                
+                return;
+            }
+            if (AllParams.CurrentRace.Name == string.Empty || AllParams.CurrentRace.Description == string.Empty )
+            {
+                _jsRuntime.ToastrWarning("You must choose race to approve character");
+                return;
+            }
+            if (AllParams.Character.NPCName == string.Empty || AllParams.Character.Description == string.Empty)
+            {
+                _jsRuntime.ToastrWarning("You must finish name and description to approve character");
+                return;
+            }
             AllParams.Character.IsApproved = value;
             IsLeaveAllowed = false;
         }
