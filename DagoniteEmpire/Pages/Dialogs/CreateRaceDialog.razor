@@ -31,9 +31,12 @@
             </div>
             <div class="d-flex flex-column flex-grow-1">
                 <label class="fw-bold  p-1">Race description</label>
-                <SfRichTextEditor Height="350px" @ref="DescrEdit" @bind-Value="@NewRace.Description" ShowTooltip="true">
+                <MudTextField @bind-Value="@NewRace.Description" Lines="8">
+
+                </MudTextField>
+@*                 <SfRichTextEditor Height="350px" @ref="DescrEdit" @bind-Value="@NewRace.Description" ShowTooltip="true">
                     <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
-                </SfRichTextEditor>
+                </SfRichTextEditor> *@
             </div>
 
 
@@ -57,8 +60,7 @@
 </MudDialog>
 
 @code {
-
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = new();
 
     [Parameter] public RaceDTO NewRace { get; set; } = new();
     [Parameter] public bool IsEdit { get; set; } = false;
@@ -69,22 +71,22 @@
 
     private SfRichTextEditor DescrEdit = new SfRichTextEditor();
     private string TraitType { get; set; } = @SD.TraitType_Race;
-    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
-    {
-        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
-        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
-        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
-        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
-        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
-        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
-        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-    };
+    // private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
+    // {
+    //     new ToolbarItemModel() { Command = ToolbarCommand.Bold },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.Italic },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.Underline },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.FontName },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.Formats },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
+    //     new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
+    // };
 
-    private async Task OnSaveRaceBtnClick()
+    private void OnSaveRaceBtnClick()
     {
         if (Traits == null || Traits.Count() == 0)
         {
