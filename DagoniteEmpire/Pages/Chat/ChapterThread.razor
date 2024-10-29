@@ -633,7 +633,7 @@ else
                 BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
                 await LoadMobs();
                 await LoadChapter();
-                SnackBar.Add($"Turn {BattlePhase.CurrentTurn} started", Severity.Warning);
+                SnackBar.Add($"Turn {BattlePhase.CurrentTurn} started", Severity.Info);
             }
         }
         catch(Exception ex)
