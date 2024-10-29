@@ -126,15 +126,16 @@
         }
     }
 
-    private void EquipmentChange()
+    private async Task EquipmentChange()
     {
         IsLeaveAllowed = false;
-        BattleStatComp.GearChange();
+        await BattleStatComp.GearChange();
         StateHasChanged();
     }
 
     private async Task LoadCharacter()
     {
+        if (AllParams is null) return;
         AllParams.Character = await _characterRepository.GetById(Id);
         AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
         AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
@@ -149,6 +150,7 @@
         try
         {
             // update equipment (in character)
+            if (AllParams is null) return;
             AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
             // update character with TraitAdv collection properly filled
@@ -177,16 +179,17 @@
     {
         // update equipment (in character)
         LoadPossibleGears();
+        if (AllParams is null) return;
         AllParams.GearTraitChange();
         IsLeaveAllowed = false;
         StateHasChanged();
     }
 
-    protected void ArmorChange()
+    protected async Task ArmorChange()
     {
         // update armor 
         LoadPossibleGears();
-        BattleStatComp.GearChange();
+        await BattleStatComp.GearChange();
         IsLeaveAllowed = false;
         StateHasChanged();
     }

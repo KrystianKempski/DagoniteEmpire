@@ -118,7 +118,7 @@
             EquipmentWeight += slot.Weight;
             EquipmentPrice += slot.Price;
         }
-
+       
     }
 
     private async Task AddCustomEquipment()
@@ -129,8 +129,8 @@
 
         var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Create new item", parameters, await SetOptions());
         var result = await dialog.Result;
-
-        if (!result.Canceled)
+        if (result?.Data is null) return;
+        if (result.Canceled)
         {
             NewSlot =  (EquipmentSlotDTO)result.Data;
             var obj = AllParams.EquipmentSlots.FirstOrDefault(u => u.Equipment.Name == NewSlot.Equipment.Name);
@@ -155,6 +155,7 @@
         var dialog = await DialogService.ShowAsync<ExistingEquipmentSelectDialog>("Create new item", parameters, await SetOptions());
         var result = await dialog.Result;
 
+        if (result?.Data is null) return;
         if (!result.Canceled)
         {
             SelectedEquipment = (List<EquipmentSlotDTO>)result.Data;
@@ -186,7 +187,7 @@
 
         var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Edit item", parameters, await SetOptions());
         var result = await dialog.Result;
-
+        if (result?.Data is null) return;
         if (!result.Canceled)
         {
             slot = (EquipmentSlotDTO)result.Data;
@@ -215,18 +216,20 @@
         CalculateEquipWeightAndPrice();
         StateHasChanged();
     }
-    private void IncrCount(EquipmentSlotDTO obj)
+    private async Task IncrCount(EquipmentSlotDTO obj)
     {
         obj.Count++;
         CalculateEquipWeightAndPrice();
+        await OnItemChange.InvokeAsync();
     }
 
-    private void DecrCount(EquipmentSlotDTO obj)
+    private async Task DecrCount(EquipmentSlotDTO obj)
     {
         if (obj.Count>1)
         {
             obj.Count--;
             CalculateEquipWeightAndPrice();
+            await OnItemChange.InvokeAsync();
         }
     }
 
