@@ -843,19 +843,22 @@ namespace DA_Common
     {
         public string AllText { get => _allText; set => _allText = value; }
         private string _allText;
+        private string backgroundColor = "#eaeaea";
+        private string textColor = "black";
         public RichText()
         {
-            _allText = "<p><em>";
+            _allText = $"<div style=\"background-color: {backgroundColor};color: {textColor};\"><blockquote><p>";
+
         }
 
         public void EndText()
         {
-            _allText += ")</em></em>";
+            _allText += "</p></blockquote></div><br>";
         }
         public void NewLine()
         {
-            _allText += "</em></em>";
-            _allText += "<p><em>";
+            _allText += "</p>";
+            _allText += "<p>";
         }
         public static string BoldText(string text)
         {
