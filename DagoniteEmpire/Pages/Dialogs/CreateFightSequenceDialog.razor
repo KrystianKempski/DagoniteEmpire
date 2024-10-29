@@ -339,7 +339,11 @@
             if(trait is not null)
                 trait.TraitValue = SurroundedValue;
         }
-        FightSequence.CalculateAndWriteAttack();
+        var result = FightSequence?.CalculateAndWriteAttack();
+        if (string.IsNullOrEmpty(result) == false)
+        {
+            Snackbar.Add("Error :" + result, Severity.Warning);
+        }
     }
 
     private async Task SaveSequenceBtn()

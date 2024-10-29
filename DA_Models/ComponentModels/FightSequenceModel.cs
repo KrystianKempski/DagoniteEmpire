@@ -121,26 +121,35 @@ namespace DA_Models.ComponentModels
         }
 
        
-        public void CalculateAndWriteAttack()
+        public string CalculateAndWriteAttack()
         {
-            ClearRoll();           
-            /// Get bonus from states
-            WriteBonusesFromStates();
-            /// Get bonus from attack type
-            WriteWhoAttacksWhoAndHow();
-            if (AttackLocation.IsNullOrEmpty() == false)
-                WriteLocationOfAttack();
-            /// Add dice rolls  and sum up attack
-            WriteDiceRollsAndAttackSummary();
-            /// Calculate damage
-            if (IsHit)
+            try
             {
-                /// Damage calculation
-                WriteDamageSummary();
-                /// Calculate wound
-                CalculateAndAddWound();
-                /// Test possible states
-                WriteAndCalculatePossibleStates();
+
+                ClearRoll();           
+                /// Get bonus from states
+                WriteBonusesFromStates();
+                /// Get bonus from attack type
+                WriteWhoAttacksWhoAndHow();
+                if (AttackLocation.IsNullOrEmpty() == false)
+                    WriteLocationOfAttack();
+                /// Add dice rolls  and sum up attack
+                WriteDiceRollsAndAttackSummary();
+                /// Calculate damage
+                if (IsHit)
+                {
+                    /// Damage calculation
+                    WriteDamageSummary();
+                    /// Calculate wound
+                    CalculateAndAddWound();
+                    /// Test possible states
+                    WriteAndCalculatePossibleStates();
+                }
+                return string.Empty;
+            }
+            catch(Exception ex)
+            {
+                return ex.Message;
             }
         }
 
