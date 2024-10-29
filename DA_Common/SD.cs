@@ -45,6 +45,10 @@ namespace DA_Common
         public const string TraitType_Unique = "Unique";
 
         public const string NPCName_GameMaster = "Game Master";
+
+
+        public static string Portrait = "portraits";
+        public static string PostImage = "postImages";
         public readonly struct NPCType
         {
             public const string Hero = "Hero";

@@ -46,6 +46,7 @@ namespace DagoniteEmpire.Helper
         }
         public static async ValueTask ScrollToElement(this IJSRuntime jsRuntime, string container)
         {
+
             await jsRuntime.InvokeVoidAsync("ScrollToElement", container);
         }
 

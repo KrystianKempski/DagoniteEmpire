@@ -73,7 +73,7 @@
                         fileInfo.Extension.ToLower() == ".png" ||
                         fileInfo.Extension.ToLower() == ".jpeg")
                     {
-                        AllParams.Character.ImageUrl = await _fileUpload.UploadFile(file);
+                        AllParams.Character.ImageUrl = await _fileUpload.UploadFile(file, SD.Portrait);
                         await OnPortraitChange.InvokeAsync();
                     }
                     else

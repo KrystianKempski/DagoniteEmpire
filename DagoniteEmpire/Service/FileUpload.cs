@@ -31,13 +31,14 @@ namespace DagoniteEmpire.Service
             return false;
         }
 
-        public async Task<string> UploadFile(IBrowserFile file)
+        public async Task<string> UploadFile(IBrowserFile file, string root)
         {
             try
             {
+                if (root == string.Empty) throw new Exception("need folder name");
                 FileInfo fileInfo = new(file.Name);
                 var fileName = Guid.NewGuid().ToString() + ".webp";
-                var folderDirectory = $"{_environment.WebRootPath}/upload/portraits";
+                var folderDirectory = $"{_environment.WebRootPath}/upload/{root}";
 
                 if (!Directory.Exists(folderDirectory))
                 {

@@ -24,6 +24,7 @@ using DA_Business.Repository.ChatRepos;
 using DA_Business.Services.Interfaces;
 using DA_Business.Services;
 using System.Net.NetworkInformation;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,6 +83,7 @@ builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddTransient<IChatManager, ChatManager>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddMvc(option => option.EnableEndpointRouting = false);
 builder.Services.Configure<EmailConfiguration>(options =>
 {
     builder.Configuration.GetSection("Email").Bind(options);
@@ -90,7 +92,7 @@ builder.Services.Configure<EmailConfiguration>(options =>
 var app = builder.Build();
 
 
-Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NAaF5cWWJCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWXdecnVTQmFZUUJ3Xko=");
+Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NDaF5cWWtCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH9ceHVRRWdYVUd3WUI=");
 //Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(builder.Configuration["SyncfusionKey"]);
 
 
@@ -113,6 +115,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseMvcWithDefaultRoute();
 
 SeedDatabase();
 app.UseAuthentication();

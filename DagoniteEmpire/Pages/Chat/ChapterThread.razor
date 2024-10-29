@@ -27,6 +27,8 @@
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
 @inject IBrowserViewportService _vieportService
+@inject IFileUpload _fileUpload;
+@inject IScrollManager  _scrollManager
 
 @using Microsoft.AspNetCore.SignalR.Client;
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
@@ -164,8 +166,8 @@ else
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                             }
                                         </MudStack>                                
-                                        <SfRichTextEditor ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
-                                            <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
+                                        <SfRichTextEditor Height="100%" ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
+                                            <RichTextEditorImageSettings Path="./upload/postImages/" />
                                             <RichTextEditorToolbarSettings Items="@NoTools" />
                                         </SfRichTextEditor>
                                     </MudPaper>
@@ -173,7 +175,7 @@ else
                             }
                         }
                     }
-                    <MudPagination Count="PageCount" Selected="@PageNum" SelectedChanged="SelectPage"></MudPagination>
+                    <MudPagination @ref="@Pagination" Count="PageCount" Selected="@PageNum" SelectedChanged="SelectPage"></MudPagination>
                 </MudStack>
             </MudHidden>
             <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
@@ -197,8 +199,8 @@ else
                                         }
                                     </MudStack>
 
-                                        <SfRichTextEditor ID="@postId" @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
-                                        <RichTextEditorEvents Created="@(()=>ResizePostContent(postId))"></RichTextEditorEvents>
+                                        <SfRichTextEditor Height="100%" ID="@postId" @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
+                                            <RichTextEditorImageSettings  Path="./upload/postImages/" />                                      
                                         <RichTextEditorToolbarSettings Items="@NoTools" />
                                     </SfRichTextEditor>
                                     <MudText Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
@@ -206,15 +208,17 @@ else
                             }
                         }
                     }
-                    <MudPagination Count="PageCount" SelectedChanged="SelectPage"></MudPagination>
+                    <MudPagination @ref="Pagination" Count="PageCount" SelectedChanged="SelectPage"></MudPagination>
                 </MudStack>
 
                 </div>
             </MudHidden>
         }
-        <div id="bottom-container" class="ma-0">
-        <MudPaper Width="100%" Height="300px" Square="true" Class="d-flex  flex-column flex-grow-1 my-2 pa-2">
-            <SfRichTextEditor Height="100%" @bind-Value="@NewPost.Content"  ShowTooltip="true">
+        <div id="bottom-container">
+            <MudPaper Width="100%" Height="300px" Square="true" Class="d-flex flex-column my-2 pa-2">
+            <SfRichTextEditor Height="90%" @bind-Value="@NewPost.Content"  ShowTooltip="true">
+                    <RichTextEditorImageSettings SaveFormat="SaveFormat.Blob" SaveUrl="api/FileUpload/Save" Path="./upload/postImages/" />
+                    <RichTextEditorEvents BeforeUploadImage="@BeforeUploadImage" OnImageUploadSuccess="@ImageUploadSuccess" />
                     <RichTextEditorToolbarSettings Items="@Tools" />
                 </SfRichTextEditor>
                 <div class="d-flex flex-row">
@@ -245,6 +249,16 @@ else
     {
         padding: 4px;
     }
+
+    .e-richtexteditor .e-lib .e-control .e-rte-toolbar-enabled .e-rte-tb-expand .e-rte-full-screen{
+/*         top:64px;
+        right:56px; */
+    }
+    .e-richtexteditor.e-rte-full-screen{
+        top:64px;
+        right:56px;
+        width:100%;
+    }
 </style>
 
 
@@ -252,7 +266,7 @@ else
 @code{
     [Parameter] public int Id { get; set; }
     [Parameter] public int CharId { get; set; }
-    private ChapterDTO Chapter { get; set; } 
+    private ChapterDTO? Chapter { get; set; } = null;
     private List<PostDTO> Posts { get; set; } = new List<PostDTO>();
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IDictionary<int, AllParamsModel?> CharacterAllParams { get; set; } = new Dictionary<int, AllParamsModel?>();
@@ -270,7 +284,7 @@ else
     private int PostsPerPage { get; set; } = 10;
     private int PageNum { get; set; } = 1;
     private int PageCount { get; set; } = 1;
-
+    private MudPagination Pagination;
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
@@ -284,8 +298,6 @@ else
         new ToolbarItemModel() { Command = ToolbarCommand.Separator },
         new ToolbarItemModel() { Command = ToolbarCommand.Formats },
         new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
-        new ToolbarItemModel() { Command = ToolbarCommand.OrderedList },
-        new ToolbarItemModel() { Command = ToolbarCommand.UnorderedList },
         new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
         new ToolbarItemModel() { Command = ToolbarCommand.Indent },
         new ToolbarItemModel() { Command = ToolbarCommand.Separator },
@@ -297,10 +309,12 @@ else
         new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
     };
 
+
     public UserInfo? UserInfo { get; set; }
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
 
     private bool _open = false;
+    private bool _scrollDown = true;
 
     private void ToggleDrawer()
     {
@@ -331,7 +345,6 @@ else
                 };
         }
 
-        // _panelActivation.LeftPanelActive = true;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -341,7 +354,12 @@ else
             PageCount = await GetPageCount();
             PageNum = PageCount;
             await LoadChapter();
+        }
+        if (_scrollDown == true)
+        {           
+            await Task.Delay(500);
             await _jsRuntime.ScrollToElement("bottom-container");
+            _scrollDown = false;
         }
     }
 
@@ -386,8 +404,9 @@ else
             OngoingBattle = BattlePhase.BattleOngoing;
             BattleButton = OngoingBattle ? "End Battle" : "Start Battle";
         }
-        IsLoading = false;
+        _scrollDown = true;
         IsLoadingCharacters = false;
+        IsLoading = false;
         StateHasChanged();
 
     }
@@ -425,8 +444,19 @@ else
         }
         NewPost = new();
 
-        IsLoading = false;
+
+        var newPageCount = await GetPageCount();
+        if (newPageCount != PageCount || PageNum != newPageCount)
+        {
+            PageNum = PageCount = newPageCount;
+            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+          //  Pagination.
+        }
+
+        IsLoading = false;       
+       
         StateHasChanged();
+         _scrollDown = true;
     }
 
     private async Task EditPost(PostDTO post)
@@ -445,16 +475,42 @@ else
 
     }
 
-    public void ResizePostContent(string args)
+    private void BeforeUploadImage(ImageUploadingEventArgs args)
     {
-        //pass ID(column name) of multiline textbox
+        var sizeInBytes = args.FilesData[0].Size;
+        var imgSize = 500000;
+        if (imgSize < sizeInBytes)
+        {
+            args.Cancel = true;
+        }
 
-        _jsRuntime.InvokeVoidAsync("ResizeRichTextArea", $"{args}");
     }
+    private void OnImageUpload(ImageUploadChangeEventArgs args)
+    {
+        var file = args.Files[0].File;
+
+
+        var ImageUrl = _fileUpload.UploadFile(file, SD.PostImage);
+
+
+    }
+
+    private void ImageUploadSuccess(ImageSuccessEventArgs args)
+    {
+        var headersString = args.Response.Headers.ToString();
+        var headers = headersString.Split("name: ");
+        headers = headers[1].Split("\r");
+
+        // Update the modified image name to display a image in the editor.
+        args.File.Name = headers[0];
+    }
+
+
 
 
     private async Task GenerateFightSequence()
     {
+        if (Chapter is null) return;
         var parameters = new DialogParameters<CreateFightSequenceDialog> {  { x => x.CharacterAllParams, CharacterAllParams.Values },
                                                                             { x => x.Mobs, Mobs },
                                                                             { x => x.Date, Chapter.Date },
@@ -478,7 +534,7 @@ else
 
     private async Task AddExistingMob()
     {
-
+        if (Chapter is null) return;
         var parameters = new DialogParameters<ExistingMobsDialog> { { x => x.Mobs, Mobs },
                                                                     { x => x.ChapterId, Id },
                                                                     { x => x.CampaignId, Chapter.CampaignId }};
@@ -492,8 +548,8 @@ else
             StateHasChanged();
             // Mobs = (List<MobDTO>) result.Data;
             await LoadMobs();
-            IsLoadingCharacters = false;
             StateHasChanged();
+            IsLoadingCharacters = false;
         }
     }
 
@@ -507,6 +563,7 @@ else
 
     private async Task StartBattlePhase()
     {
+        if (Chapter is null) return;
         BattlePhase = new(CharacterAllParams, Mobs, Chapter.CampaignId, Id);
         OngoingBattle = true;
         BattleButton = "End Battle";
@@ -519,7 +576,6 @@ else
     private async Task NextTurn()
     {
         try{
-
             // Change temporary states
             // for characters
             ICollection<TraitDTO> newCharStates = new List<TraitDTO>();
@@ -703,18 +759,18 @@ else
         return postCount % PostsPerPage == 0 ? (postCount / PostsPerPage) : (postCount / PostsPerPage) + 1;
     }
 
+   
+
     //Pagination 
     private async Task SelectPage(int page=1)
-    {
+    {        
+        IsLoading = true;
+        StateHasChanged();
         PageNum = page;
-        IsLoading = true;
-        StateHasChanged();
-        //  Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-        //await LoadChapter();
 
-        IsLoading = true;
-        StateHasChanged();
-        Chapter = await _chapterRepository.GetById(Id);
+
+        if(Chapter is null )
+            Chapter = await _chapterRepository.GetById(Id);
 
 
         PageCount = await GetPageCount();
