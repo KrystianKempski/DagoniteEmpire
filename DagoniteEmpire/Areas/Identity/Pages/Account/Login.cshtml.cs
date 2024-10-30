@@ -135,6 +135,8 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
                     _logger.LogInformation("User logged in.");
 
                    // await _userService.InitUserInfoAtStart();
+                   if(returnUrl.ToUpper().Contains("LOGOUT"))
+                        return LocalRedirect("~/");
 
                     return LocalRedirect(returnUrl);
                 }

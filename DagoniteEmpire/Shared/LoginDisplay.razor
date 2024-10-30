@@ -4,13 +4,13 @@
     <Authorized>
         <div class=big-screen "pa-4 justify-center my-4 mud-text-align-center">
             <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary">Hi, @context.User.Identity.Name!</MudButton>
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" Href="Identity/Account/Logout">Log Out</MudButton>
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GoTo("Logout"))">Log Out</MudButton>
         </div>
         <div class="small-screen">
             <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle">
                 <MudMenuItem>Hi, @context.User.Identity.Name!</MudMenuItem>
 
-                <MudMenuItem OnClick="@(() => GoTo("Logout"))">Log in</MudMenuItem>
+                <MudMenuItem OnClick="@(() => GoTo("Logout"))">Log Out</MudMenuItem>
             </MudMenu>
         </div>
     </Authorized>

@@ -83,7 +83,9 @@ builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddTransient<IChatManager, ChatManager>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
-builder.Services.AddMvc(option => option.EnableEndpointRouting = false);
+
+builder.Services.AddControllersWithViews();
+//builder.Services.AddMvc(option => option.EnableEndpointRouting = false);
 builder.Services.Configure<EmailConfiguration>(options =>
 {
     builder.Configuration.GetSection("Email").Bind(options);
@@ -112,16 +114,20 @@ app.UseHttpsRedirection();
 
 //chat endpoints
 
+
+
+
 app.UseStaticFiles();
 
 app.UseRouting();
-app.UseMvcWithDefaultRoute();
+//app.UseMvcWithDefaultRoute();
 
 SeedDatabase();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<ChatHub>(ChatHub.HubUrl);
+app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

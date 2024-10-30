@@ -193,7 +193,7 @@
 
     private HubConnection hubConnection;
     public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
-    
+
     private string CurrentUserId { get; set; }
     private string CurrentUserName { get; set; }
     private bool ScrollToBottom = false;
@@ -249,7 +249,7 @@
             await InvokeAsync(StateHasChanged);
         }
 
-        ClearBadgeContent();
+        await ClearBadgeContent();
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -407,7 +407,7 @@
 
     public async Task ClearBadgeContent()
     {
-
+        if (ChosenUser is null) return;
         ChosenUser.messages.ForEach(u => u.IsRead = true);
 
         var user = ChatUsers.FirstOrDefault(u => u.Id == ChosenUser.ContactId);
