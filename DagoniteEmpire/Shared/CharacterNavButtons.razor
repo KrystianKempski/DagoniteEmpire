@@ -7,7 +7,7 @@
 
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 <MudStack Wrap="Wrap.NoWrap" Spacing="@Spaceing" Row="@IsRow" AlignItems="AlignItems.Start">
-    <MudButton Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true" Href="/character">
+    <MudButton OnClick="GoToCharacterList" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
         <MudIcon Class="px-1" Icon="@Icons.Material.Filled.PeopleAlt"></MudIcon>
         Character list
     </MudButton>
@@ -35,8 +35,12 @@
 
 
 @code {
+
     [Parameter] public bool IsRow { get; set; } = true;
     [Parameter] public int Spaceing { get; set; } = 1;
+    [Parameter]
+    public EventCallback OnDrawerChanged { get; set; }
+
     public UserInfo? UserInfo { get; set; }
     private string Color = Colors.Gray.Lighten5;
 
@@ -50,12 +54,29 @@
             if (UserInfo is not null && UserInfo.SelectedCharacterId > 0)
             {
                 string classLink = "/profession/" + UserInfo.SelectedCharacterId;
+                await OnDrawerChanged.InvokeAsync();
                 _navigationManager.NavigateTo(classLink);
             }
             else
             {
                 _snackBar.Add("No character have yet been approved and selected as main", Severity.Info);
             }
+        }
+        catch (Exception e)
+        {
+            _snackBar.Add("Uknnown error", Severity.Error);
+        }
+
+    }
+    private async Task GoToCharacterList()
+    {
+        try
+        {
+            string characterLink = "/character"; 
+            await OnDrawerChanged.InvokeAsync();
+
+            _navigationManager.NavigateTo(characterLink);
+
         }
         catch (Exception e)
         {
@@ -73,6 +94,7 @@
             if (UserInfo is not null && UserInfo.SelectedCharacterId > 0)
             {
                 string characterLink = "/character/edit/" + UserInfo.SelectedCharacterId;
+                await OnDrawerChanged.InvokeAsync();
 
                 _navigationManager.NavigateTo(characterLink);
             }
@@ -96,6 +118,7 @@
             if (UserInfo is not null && UserInfo.SelectedCharacterId > 0)
             {
                 string characterLink = "/equipment/" + UserInfo.SelectedCharacterId;
+                await OnDrawerChanged.InvokeAsync();
 
                 _navigationManager.NavigateTo(characterLink);
             }
@@ -110,7 +133,7 @@
         }
 
     }
-    
+
     private async Task GoToHealth()
     {
         try
@@ -120,6 +143,7 @@
             if (UserInfo is not null && UserInfo.SelectedCharacterId > 0)
             {
                 string characterLink = "/health/" + UserInfo.SelectedCharacterId;
+                await OnDrawerChanged.InvokeAsync();
 
                 _navigationManager.NavigateTo(characterLink);
             }

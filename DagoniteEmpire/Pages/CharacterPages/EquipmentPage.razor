@@ -14,16 +14,23 @@
 @inject IJSRuntime _jsRuntime
 
 <_LeavePage ComponentDescription="equipment" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+
 @if (IsLeaveAllowed == false)
 {
-    <div class="save-btn">
-        <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
+    <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
 
-    </div>
+        <div class="save-btn">
+            <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
+        </div>
+    </MudHidden>
+    <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
+
+        <div class="save-btn down">
+            <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
+        </div>
+    </MudHidden>
 }
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-1">
-
-@* <div class="container-fluid justify-content-center"> *@
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="px-1">
     <div class="row justify-content-center">
 
         @if (IsLoading == true)
@@ -80,7 +87,6 @@
         </CascadingValue>
         }
     </div>
-@* </div> *@
 </MudContainer>
 
 

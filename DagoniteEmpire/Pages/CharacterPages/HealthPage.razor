@@ -13,10 +13,21 @@
 
 <_LeavePage ComponentDescription="health" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
 <div class="container">
-    <div class="save-btn">
-        <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
+    @if (IsLeaveAllowed == false)
+    {
+        <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
 
-    </div>
+            <div class="save-btn">
+                <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
+            </div>
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
+
+            <div class="save-btn down">
+                <button @onclick="SaveChanges" class="btn btn-primary">Save</button>
+            </div>
+        </MudHidden>
+    }
     <div class="row">
         @if (IsLoading == true)
         {
@@ -290,7 +301,7 @@
         {
             AllParams.Health.CalculateHealTime(wound);
         }
-        
+
     }
 
     private async Task SaveChanges()
@@ -335,6 +346,7 @@
 
     string CalculateHealTime(WoundDTO wound)
     {
+        IsLeaveAllowed = false;
         var res = AllParams.Health.CalculateHealTime(wound);
         return res.ToString();
     }
@@ -373,6 +385,7 @@
             IsLeaveAllowed = false;
             StateHasChanged();
         }
+         IsLeaveAllowed = false;
     }
 
     private async Task EditWound(WoundDTO wound)
@@ -390,6 +403,7 @@
             IsLeaveAllowed = false;
             StateHasChanged();
         }
+        IsLeaveAllowed = false;
     }
     private void DeleteWound(WoundDTO wound)
     {

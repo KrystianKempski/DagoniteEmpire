@@ -26,14 +26,25 @@
 
     @if (IsLoading)
     {
-        <LoadingPage></LoadingPage>
+            <LoadingPage></LoadingPage>
     }
     else
     {
-        <div class="save-btn">
-            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
+        @if (IsLeaveAllowed == false)
+        {
+            <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
 
-        </div>
+                <div class="save-btn">
+                    <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
+                </div>
+            </MudHidden>
+            <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
+
+            <div class="save-btn down">
+                 <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
+            </div>
+            </MudHidden>
+        }
 
         <label class="warnign-message">@ErrorMessage</label>
         <div class="wide-screen-table">
@@ -80,7 +91,7 @@
                         <label class="class-section py-1">Class name</label>
                         <SfTextBox Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></SfTextBox>
                     </div>
-                    @if (UserInfo?.IsAdminOrMG == true)
+                   @*  @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <div class="d-flex flex-column px-1">
                             <label class="class-section py-1">Approve</label>
@@ -88,7 +99,7 @@
                                 <SfCheckBox @bind-Checked="ProfessionDTO.IsApproved"></SfCheckBox>
                             </div>
                         </div>
-                    }
+                    } *@
                 </div>
                 <div class="d-flex flex-column px-1">
                     <label class="class-section py-1">Related attribute</label>

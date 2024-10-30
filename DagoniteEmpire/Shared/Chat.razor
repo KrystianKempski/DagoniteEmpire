@@ -8,7 +8,7 @@
 
 <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
 
-    <MudDrawer  @bind-Open="@openEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Mini" ClipMode="DrawerClipMode.Always"  Style="overflow:hidden; text-wrap: nowrap" >
+    <MudDrawer  @bind-Open="@OpenEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Mini" ClipMode="DrawerClipMode.Always"  Style="overflow:hidden; text-wrap: nowrap" >
         <MudDrawerHeader Style="overflow:hidden; text-wrap: nowrap" Class="p-1">
             <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 24px; "><MudIconButton OnClick="@ToggleEndDrawer" Color="Color.Dark" Icon="@Icons.Material.Filled.Chat"></MudIconButton> Chat </MudText>
         </MudDrawerHeader> 
@@ -40,7 +40,7 @@
             </MudList>
             <div class="d-flex align-items-end flex-grow-1 p-2">
 
-               <MudIconButton Class="my-2 py-1 px-1" Icon="@(openEnd == true ? Icons.Material.Filled.ArrowForwardIos : Icons.Material.Filled.ArrowBackIosNew )" Color="Color.Inherit" OnClick="@ToggleEndDrawer" />
+               <MudIconButton Class="my-2 py-1 px-1" Icon="@(OpenEnd == true ? Icons.Material.Filled.ArrowForwardIos : Icons.Material.Filled.ArrowBackIosNew )" Color="Color.Inherit" OnClick="@ToggleEndDrawer" />
 
             </div>
         </div>
@@ -50,11 +50,11 @@
 
 
 <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
-    <div class="chat-show">
+   @*  <div class="chat-show">
             <MudIconButton Class="m-1 p-2" Icon="@Icons.Material.Filled.Chat" Color="Color.Dark" Style="background-color:white;" OnClick="@ToggleEndDrawer" />
-    </div>
+    </div> *@
 
-    <MudDrawer @bind-Open="@openEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always" Style="overflow:hidden; text-wrap: nowrap">
+    <MudDrawer @bind-Open="@OpenEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always" Style="overflow:hidden; text-wrap: nowrap">
         <MudDrawerHeader Style="overflow:hidden; text-wrap: nowrap" Class="p-1">
             <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 24px; "><MudIconButton OnClick="@ToggleEndDrawer" Color="Color.Dark" Icon="@Icons.Material.Filled.Chat"></MudIconButton> Chat </MudText>
         </MudDrawerHeader>
@@ -178,16 +178,28 @@
 }
 
 @code{
+
+
+
     private bool _openEnd = false;
-    private bool openEnd
+
+    public bool OpenEnd
     {
         get => _openEnd;
         set => _openEnd = value;
     }
+    [Parameter]
+    public bool ToggleChat
+    {
+        get => _openEnd;
+        set { 
+            ToggleEndDrawer();
+        }
+    }
 
     void ToggleEndDrawer()
     {
-        openEnd = !openEnd;
+        OpenEnd = !OpenEnd;
     }
 
 

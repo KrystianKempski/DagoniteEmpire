@@ -19,7 +19,7 @@
     <MudAppBar Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Elevation="1">
         <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
             <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; font-family: 'Eagle Lake', serif; font-size: 20px;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton>
-            <div class="pa-4 justify-center my-4 mud-text-align-center">
+            <div class="justify-center mud-text-align-center">
                 <AuthorizeView>
                     <Authorized>
                         <CharacterNavButtons></CharacterNavButtons>
@@ -32,18 +32,23 @@
             <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:transparent; font-family: 'Eagle Lake', serif; font-size: 12px; padding: 6px;")" Variant="Variant.Text" DropShadow="true" Href="#">Dagonite Empire</MudButton>
         </MudHidden>
         <MudSpacer />
+        <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
+            <MudIconButton Class="m-0 p-0" Icon="@Icons.Material.Filled.Chat" Color="Color.Inherit" OnClick="@ChatToggle" />
+        </MudHidden>
         <LoginDisplay />
     </MudAppBar>
     <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
-        <MudDrawer Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" @bind-Open="_drawerOpen" Elevation="1">
-            <NavMenu />
-        </MudDrawer>
+        <CascadingValue Value="@_drawerOpen">
+            <MudDrawer Style="@($"color:{Colors.Gray.Lighten5}; z-index:2000; background:{Colors.Gray.Darken4};")" @bind-Open="_drawerOpen" Elevation="1">
+                <NavMenu OnDrawerChanged="DrawerChange" />
+            </MudDrawer>
+        </CascadingValue>
     </MudHidden>
     
     <MudContainer MaxWidth="MaxWidth.False" Class="m-0 p-0" Style="overflow:hidden; position:relative;">
         <AuthorizeView>
             <Authorized>
-               <Chat></Chat>                
+                <Chat ToggleChat="@OpenEnd"></Chat>
             </Authorized>
         </AuthorizeView>
     </MudContainer>    
@@ -67,10 +72,14 @@
 
     private MudTheme Theme = new MudTheme();
     public UserInfo UserInfo = new UserInfo();
-
+    private bool OpenEnd { get; set; } = false;
     void DrawerStartToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+    void ChatToggle()
+    {
+        OpenEnd = !OpenEnd;
     }
 
     bool _drawerOpen = false;
@@ -80,6 +89,13 @@
         await _userService.InitUserInfoAtStart();
 
     }   
+
+
+    private async Task DrawerChange()
+    {
+        StateHasChanged();
+        DrawerStartToggle();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

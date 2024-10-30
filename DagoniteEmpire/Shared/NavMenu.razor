@@ -3,8 +3,18 @@
     <MudButton Class="p-2 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; font-family: 'Eagle Lake', serif; font-size: 18px;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton>
     <AuthorizeView>
         <Authorized>
-            <CharacterNavButtons IsRow="false" Spaceing="3"></CharacterNavButtons>
+            <CharacterNavButtons OnDrawerChanged="DrawerChange" IsRow="false" Spaceing="3"></CharacterNavButtons>
         </Authorized>
     </AuthorizeView>
 
 </MudNavMenu>
+@code{
+
+    [Parameter]
+    public EventCallback OnDrawerChanged { get; set; }
+
+    private async Task DrawerChange()
+    {
+        await OnDrawerChanged.InvokeAsync();
+    }
+}
