@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using DA_DataAccess.Data;
@@ -8,26 +6,20 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DagoniteEmpire.Service.IService;
 using DagoniteEmpire.Service;
 using Syncfusion.Blazor;
-using Syncfusion.Blazor.RichTextEditor;
 using MudBlazor.Services;
-using DA_Common;
 using NLog.Web;
 using DagoniteEmpire.Middleware;
 using DA_DataAccess;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using DagoniteEmpire.Helper;
-using Microsoft.Extensions.Options;
 using DA_Models.CharacterModels;
 using DA_Models.ChatModels;
 using MudBlazor;
 using DA_Business.Repository.ChatRepos;
 using DA_Business.Services.Interfaces;
 using DA_Business.Services;
-using System.Net.NetworkInformation;
-using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Services.AddAuthentication();
 
 builder.Services.AddRazorPages();
@@ -42,11 +34,11 @@ builder.Host.UseNLog();
 /// DB context 
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+                            options => options.EnableRetryOnFailure());
     options.EnableDetailedErrors();
-    //options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-    //options.EnableSensitiveDataLogging();
 });
+builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(config =>
     {
@@ -130,6 +122,7 @@ app.MapHub<ChatHub>(ChatHub.HubUrl);
 app.MapControllers();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+app.MapHealthChecks("/healthz");
 
 app.Run();
 

@@ -756,7 +756,6 @@ else
             }
             mob.BattleProperties.CalculateBattleStats();
         }
-
     }
 
     private async Task<int> GetPageCount()
@@ -764,9 +763,7 @@ else
         int postCount = await _postRepository.GetPostCount(Id);
         if (postCount == 0) return 1;
         return postCount % PostsPerPage == 0 ? (postCount / PostsPerPage) : (postCount / PostsPerPage) + 1;
-    }
-
-   
+    }      
 
     //Pagination 
     private async Task SelectPage(int page=1)
@@ -775,10 +772,8 @@ else
         StateHasChanged();
         PageNum = page;
 
-
         if(Chapter is null )
             Chapter = await _chapterRepository.GetById(Id);
-
 
         PageCount = await GetPageCount();
         Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
