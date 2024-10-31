@@ -222,8 +222,8 @@ namespace DA_Common
         public readonly struct EquipmentType
         {
             public const string Other = "Other";
-            public const string WeaponMelee = "WeaponMelee";
-            public const string WeaponRanged = "WeaponRanged";
+            public const string WeaponMelee = "Weapon melee";
+            public const string WeaponRanged = "Weapon ranged";
             public const string Shield = "Shield";
             public const string Face = "Face";
             public const string Throat = "Throat";

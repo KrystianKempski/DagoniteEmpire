@@ -54,10 +54,10 @@ namespace DA_Business.Repository.CharacterReps
                 if (obj is not null)
                 {
 
-                        if (obj.Equipment is not null && obj.Equipment.IsApproved == false)
-                        {
-                            contex.Equipment.Remove(obj.Equipment);
-                        }
+                    if (obj.Equipment is not null && obj.Equipment.IsApproved == false)
+                    {
+                        contex.Equipment.Remove(obj.Equipment);
+                    }
                     contex.EquipmentSlots.Remove(obj);
                     await contex.SaveChangesAsync();
                 }

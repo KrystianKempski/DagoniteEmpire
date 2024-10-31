@@ -118,7 +118,7 @@
             EquipmentWeight += slot.Weight;
             EquipmentPrice += slot.Price;
         }
-       
+
     }
 
     private async Task AddCustomEquipment()
@@ -205,6 +205,8 @@
         {
             return;
         }
+        if (AllParams.EquipmentSlotsToDelete is null) AllParams.EquipmentSlotsToDelete = new List<EquipmentSlotDTO>();
+        AllParams.EquipmentSlotsToDelete.Add(slot);
         AllParams.EquipmentSlots = AllParams.EquipmentSlots.Where(u => u.Equipment.Name != slot.Equipment.Name).ToList();
         await UpdateEquipment();
     }

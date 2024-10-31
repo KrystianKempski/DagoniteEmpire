@@ -7,20 +7,85 @@
             <img src="@MyIcon.Anvil" width="40px" height="40px" class="pr-2" />
             @HeaderName
         </MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </TitleContent>
     <DialogContent>
         <div class="main-table">
-            <SfGrid DataSource="@Equipment" @ref="Grid" AllowSelection="true" AllowFiltering="true" AllowPaging="true" Width="100%" Height="100%">
-                <GridPageSettings PageSize="10"></GridPageSettings>
-                <GridFilterSettings ImmediateModeDelay=500 Mode="FilterBarMode.Immediate" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
-                <GridSelectionSettings CheckboxOnly="true" PersistSelection="true"></GridSelectionSettings>
-                <GridColumns>
-                    <GridColumn Type="ColumnType.CheckBox" Width="20"></GridColumn>
-                    <GridColumn Field=@nameof(EquipmentDTO.Name) HeaderText="Name" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="80"></GridColumn>
-                    <GridColumn Field=@nameof(EquipmentDTO.EquipmentType) HeaderText="Type" FilterSettings="FilterSettings" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left" Width="60"></GridColumn>
-                    <GridColumn Field=@nameof(EquipmentDTO.Description) HeaderText="Description" FilterSettings="FilterSettings" Width="300"></GridColumn>
-                </GridColumns>
-            </SfGrid>
+
+            <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="true">
+                <MudDataGrid Breakpoint="Breakpoint.None" T="EquipmentDTO" @ref="Grid" MultiSelection="true" Items="@Equipment" ReadOnly="true" Filterable="true" QuickFilter="@_quickFilter"
+                             Fil    FilterMode="@DataGridFilterMode.ColumnFilterRow" Class="px-0 py-1"  FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                             SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" SelectOnRowClick="false" SelectedItemsChanged="@SelectedItemsChanged">
+                    <Columns>
+                        <SelectColumn T="EquipmentDTO" />
+                        <PropertyColumn Filterable="false" Property="x => x.Name" />
+                        <PropertyColumn Property="x => x.EquipmentType" Title="Type">
+                            <FilterTemplate>
+                                <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
+                                <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
+                                <MudPopover Open="@_filterOpen" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter"
+                                    Style="width:150px">
+                                   <MudStack Spacing="0">
+                                       <MudCheckBox T="bool" Label="Select All" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
+                                       <MudStack Spacing="0" Style="overflow-y:auto;max-height:250px">
+                                            @foreach (var item in SD.EquipmentType.All)
+                                           {
+                                                <MudCheckBox T="bool" Label="@item" Size="@Size.Small" Value="@(_selectedItems.FirstOrDefault(u=>u.EquipmentType == item) is not null)"
+                                                             ValueChanged="@((value) => SelectedChanged(value, item))" />
+                                           }
+                                       </MudStack>
+                                       <MudStack Row="true">
+                                            <MudButton OnClick="@(() => ClearFilterAsync(context))">Clear</MudButton>
+                                            <MudButton Color="@Color.Primary" OnClick="@(() => ApplyFilterAsync(context))">Filter</MudButton>
+                                       </MudStack>
+                                   </MudStack>
+                                </MudPopover>
+                            </FilterTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Filterable="false" Property="x => x.Description" Title="Type" />
+                    </Columns>
+                </MudDataGrid>
+            </MudHidden>
+            <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
+                <MudDataGrid Breakpoint="Breakpoint.None" T="EquipmentDTO" @ref="Grid" MultiSelection="true" Items="@Equipment" Filterable="true" Class="px-0 py-1" QuickFilter="@_quickFilter"
+                            FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"  FilterMode="@DataGridFilterMode.ColumnFilterRow"
+                             SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" SelectOnRowClick="false" SelectedItemsChanged="@SelectedItemsChanged">
+                    <Columns>
+                        <SelectColumn T="EquipmentDTO" />
+                        <HierarchyColumn T="EquipmentDTO" />
+                        <PropertyColumn Filterable="false" Property="x => x.Name"  />
+                        <PropertyColumn Property="x => x.EquipmentType" Title="Type">
+
+                            <FilterTemplate>
+                                <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
+                                <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
+                                <MudPopover Open="@_filterOpen" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter"
+                                    Style="width:150px">
+                                   <MudStack Spacing="0">
+                                       <MudCheckBox T="bool" Label="Select All" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
+                                       <MudStack Spacing="0" Style="overflow-y:auto;max-height:250px">
+                                            @foreach (var item in SD.EquipmentType.All)
+                                            {
+                                                    <MudCheckBox T="bool" Label="@item" Size="@Size.Small" Value="@(_selectedItems.FirstOrDefault(u=>u.EquipmentType == item) is not null)"
+                                                                 ValueChanged="@((value) => SelectedChanged(value, item))" />
+                                            }
+                                       </MudStack>
+                                       <MudStack Row="true">
+                                            <MudButton OnClick="@(() => ClearFilterAsync(context))">Clear</MudButton>
+                                            <MudButton Color="@Color.Primary" OnClick="@(() => ApplyFilterAsync(context))">Filter</MudButton>
+                                       </MudStack>
+                                   </MudStack>
+                                </MudPopover>
+                            </FilterTemplate>
+                        </PropertyColumn>
+                    </Columns>
+                    <ChildRowContent>
+                        <MudText Typo="Typo.body1">@context.Item.Description</MudText>
+                    </ChildRowContent>
+                </MudDataGrid>
+            </MudHidden>
         </div>
 
     </DialogContent>
@@ -31,19 +96,28 @@
 </MudDialog>
 
 @code {
-
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    [Parameter] public AllParamsModel AllParams { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = new();
+    [Parameter] public AllParamsModel AllParams { get; set; } = new();
     [Parameter] public ICollection<EquipmentSlotDTO> SelectedEquipment { get; set; } = new List<EquipmentSlotDTO>();
-
-    private IEnumerable<EquipmentDTO> Equipment { get; set; }
-    private SfGrid<EquipmentDTO> Grid = new SfGrid<EquipmentDTO>();
+    private ICollection<EquipmentDTO> SelectedItems = new List<EquipmentDTO>();
+    private IEnumerable<EquipmentDTO> Equipment { get; set; } = new List<EquipmentDTO>();
+    private MudDataGrid<EquipmentDTO> Grid { get; set; } = new(); 
     private FilterSettings FilterSettings = new FilterSettings { Operator = Syncfusion.Blazor.Operator.Contains, Type = Syncfusion.Blazor.Grids.FilterType.FilterBar };
     public string HeaderName { get; set; } = "Select equipment";
 
+    HashSet<EquipmentDTO> _selectedItems = new();
+    HashSet<EquipmentDTO> _filterItems = new();
+    FilterDefinition<EquipmentDTO> _filterDefinition;
+    bool _selectAll = true;
+    string _icon = Icons.Material.Outlined.FilterAlt;
+
+    bool _filterOpen = false;
     private void OnSaveTraitBtnClick()
     {
-        Grid.SelectedRecords.ForEach(e => SelectedEquipment.Add(new(e)));
+        foreach (var e in SelectedItems)
+        {
+            SelectedEquipment.Add(new(e));
+        }
 
         MudDialog.Close(DialogResult.Ok(SelectedEquipment));
         if (SelectedEquipment.Any())
@@ -58,6 +132,85 @@
     protected override async Task OnInitializedAsync()
     {
         Equipment = await _equipmentRepository.GetAllApproved();
+        _selectedItems = Equipment.ToHashSet();
+        _filterItems = Equipment.ToHashSet();
+        _filterDefinition = new FilterDefinition<EquipmentDTO>
+            {
+                FilterFunction = x => _filterItems.Contains(x)
+            };
+    }
+    private string _searchString;
+    // quick filter - filter globally across multiple columns with the same input
+    private Func<EquipmentDTO, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.EquipmentType.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+    private void SelectedItemsChanged(HashSet<EquipmentDTO> traits)
+    {
+
+        SelectedItems = traits.ToList();
+        StateHasChanged();
     }
 
+    void OpenFilter()
+    {
+        _filterOpen = true;
+    }
+
+    private void SelectedChanged(bool value, string itemType)
+    {
+        foreach (var item in Equipment.Where(u => u.EquipmentType == itemType))
+        {
+            if (value)           
+                _selectedItems.Add(item);
+            else
+                _selectedItems.Remove(item);            
+        }
+        
+
+        if(_selectedItems.Count == Equipment.Count())
+            _selectAll = true;
+        else
+            _selectAll = false;
+    }
+
+    private async Task ClearFilterAsync(FilterContext<EquipmentDTO> context)
+    {
+        _selectedItems = Equipment.ToHashSet();
+        _filterItems = Equipment.ToHashSet();
+        _icon = Icons.Material.Outlined.FilterAlt;
+        await context.Actions.ClearFilterAsync(_filterDefinition);
+        _filterOpen = false;
+    }
+
+    private async Task ApplyFilterAsync(FilterContext<EquipmentDTO> context)
+    {
+        _filterItems = _selectedItems.ToHashSet();
+        _icon = _filterItems.Count == Equipment.Count() ? Icons.Material.Outlined.FilterAlt : Icons.Material.Filled.FilterAlt;
+        await context.Actions.ApplyFilterAsync(_filterDefinition);
+        _filterOpen = false;
+    }
+
+    private void SelectAll(bool value)
+    {
+        _selectAll = value;
+
+        if (value)
+        {
+            _selectedItems = Equipment.ToHashSet();
+        }
+        else
+        {
+            _selectedItems.Clear();
+        }
+    }
 }

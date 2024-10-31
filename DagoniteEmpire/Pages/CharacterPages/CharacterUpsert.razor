@@ -568,6 +568,12 @@
                     await _traitCharacterRepository.Delete(obj.Id);
             }
 
+            // delete items that are no longer in gear
+            foreach (var item in AllParams.EquipmentSlotsToDelete)
+            {
+                await _equipmentSlotRepository.Delete(item.Id);
+            }
+
             // if main character is no approved anymore - delete its id from user info
             if (UserInfo?.SelectedCharacterId == AllParams.Character.Id && AllParams.Character.IsApproved == false)
             {

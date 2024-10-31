@@ -38,7 +38,7 @@ namespace DA_Models.ComponentModels
         public BattlePropertyModel BattleProperties { get; set; }
         public HealthModel Health { get; set; }
         public ICollection<TraitDTO> TraitsToDelete { get; set; } = new List<TraitDTO>();
-
+        public ICollection<EquipmentSlotDTO> EquipmentSlotsToDelete { get; set; } = new List<EquipmentSlotDTO>();
         public string States { get
             {
                 string res = string.Empty;
