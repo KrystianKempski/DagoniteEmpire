@@ -78,32 +78,35 @@
                     </MudItem>
             </MudGrid>
             <div class="p-1">
-                <MudText Align="Align.Center" Class="w-100" Typo="Typo.h4" Style="font-family: 'Eagle Lake', serif; padding-bottom: 8px;">Current wounds</MudText>
-                <MudDataGrid HeaderClass="header-grid" @ref="WoundsGrid" MultiSelection="true" Items="@WoundsList.Where(w=>w.IsCondition == false)" ReadOnly="true" Filterable="false" Class="px-0 py-1"
+                <MudText  Align="Align.Center" Class="w-100" Typo="Typo.h4" Style="font-family: 'Eagle Lake', serif; padding-bottom: 8px;">Current wounds</MudText>
+                <MudDataGrid  Breakpoint="Breakpoint.None" HeaderClass="header-grid" @ref="WoundsGrid" MultiSelection="true" Items="@WoundsList.Where(w=>w.IsCondition == false)" ReadOnly="true" Filterable="false" Class="px-0 py-1"
                                  Hideable="false" SortMode="@SortMode.None" Groupable="true" GroupExpanded="true" Elevation="2" ColumnResizeMode="ResizeMode.None">
                     <ToolBarContent >
                         <MudButton Class="pa-0 justify-content-start w-auto" OnClick="@(() => AddWound())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add wound</MudButton>
                     </ToolBarContent>
-                    <Columns>
-                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Severity" Groupable="false" />
+                    
+                    <Columns >
+                        
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Severity" Groupable="false" />
                         <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.Penalty" Groupable="false" />
                         <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsIgnored" Groupable="false" Title="Ignored" />
-                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsTended" Groupable="false" Title="Tended" />
-                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsMagicHealed" Groupable="false" Title="Magic healed" />
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsTended" Groupable="false" Title="Tended" />
+                       <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsMagicHealed" Groupable="false" Title="Magic healed" />
                         <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:140px; padding:4px 4px 4px 12px;" Property="x => x.DateStart.ToString()" Groupable="false" Title="Injury date" />
-                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:140px; padding:4px 4px 4px 12px;" Property="x =>  x.DateReduce.ToString()" Groupable="false" Title="Reduce date" />
-                            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" Property="x => x.Description" Groupable="false" />
-                        <PropertyColumn HeaderStyle="font-weight:bold" Property="x => x.Location" Groupable="true" Grouping GroupBy="@_groupBy" Hidden="true">
-                            <GroupTemplate>
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:140px; padding:4px 4px 4px 12px;" Property="x =>  x.DateReduce.ToString()" Groupable="false" Title="Reduce date" />
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" Property="x => x.Description" Groupable="false" />
+                        <PropertyColumn HeaderStyle="font-weight:bold" Property="x => x.Location" Groupable="true" Grouping  GroupBy="@_groupBy"  Hidden="true">
+                            <GroupTemplate  >
                                     <span style="font-weight:bold">@context.Grouping.Key (@GetAttributesLabel(context.Grouping.Key)) </span>
                             </GroupTemplate>
-                        </PropertyColumn>
-                            <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;"  Title="Actions" Groupable="false">
+                        </PropertyColumn >
+                            <TemplateColumn  HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;"  Title="Actions" Groupable="false">
                             <CellTemplate>
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditWound(@context.Item))" />
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteWound(@context.Item))" />
                             </CellTemplate>
                         </TemplateColumn>
+                       
                     </Columns>
                 </MudDataGrid>
             </div>

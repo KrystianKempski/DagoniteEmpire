@@ -5,7 +5,7 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@MyIcon.Scroll" Color="Color.Primary" />
+            <img src="@MyIcon.Anvil" width="40px" height="40px" class="pr-2" />
             @HeaderName
         </MudText>
     </TitleContent>
@@ -288,6 +288,8 @@
         UserInfo = await _userService.GetUserInfo();
         HeaderName = IsEditMode ? "Edit" : "Add";
         HeaderName += " item";
+        if (NewSlot.Equipment is not null && NewSlot.Equipment.IsApproved)
+            HeaderName = "Item info";
     }
 
 }
