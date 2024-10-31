@@ -20,7 +20,11 @@
 @inject IUserService _userService
 @inject IBrowserViewportService _vieportService
 
-<_LeavePage ComponentDescription="profession" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+<div class="on-top-dialog">
+
+    <_LeavePage ComponentDescription="class" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+</div>
+
 <div class="container justify-content-around">
 <div class="main-table">
 
@@ -51,7 +55,7 @@
             <div class="d-flex ">
                 <div class="d-flex flex-column px-1 flex-grow-1">
                     <label class="class-section py-1">Class name</label>
-                    <SfTextBox Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></SfTextBox>
+                    <SfTextBox OnChange="SomeChange" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></SfTextBox>
                 </div>
                 <div class="d-flex flex-column px-1">
                     <label class="class-section py-1">Related attribute</label>
@@ -89,7 +93,7 @@
                 <div class="d-flex">
                     <div class="d-flex flex-column px-1 flex-grow-1">
                         <label class="class-section py-1">Class name</label>
-                        <SfTextBox Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></SfTextBox>
+                        <SfTextBox OnChange="SomeChange" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></SfTextBox>
                     </div>
                    @*  @if (UserInfo?.IsAdminOrMG == true)
                     {
@@ -136,8 +140,8 @@
         </div>
         <div class="d-flex flex-column flex-grow-1 mx-1">
             <label class="class-section">Class description</label>
-            <SfRichTextEditor Height="300px" @ref="DescrEdit" @bind-Value="@ProfessionDTO.Description">
-                <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
+            <SfRichTextEditor @oninput="SomeChange" Height="300px" @ref="DescrEdit" @bind-Value="@ProfessionDTO.Description">
+                    <RichTextEditorToolbarSettings  Items="@Tools" Type="ToolbarType.MultiRow" />
             </SfRichTextEditor>
         </div>
 
@@ -617,6 +621,11 @@
         }
     }
 
+    private void SomeChange()
+    {
+        IsLeaveAllowed = false;
+    }
+
     private async Task EditSkill(TraitProfessionDTO skill)
     {
         var idToDelete = skill.Id;
@@ -807,6 +816,7 @@
         IsLeaveAllowed = false;
     }
 
+
     public async Task ConfirmLeave_Click(bool isConfirmed)
     {
         IsLoading = true;
@@ -830,6 +840,10 @@
 
             context.PreventNavigation();
             HandleLeavePage();
+          
+
+            IsLeaveAllowed = true;
+            _navigationManager.NavigateTo(TargetLocation);
         }
 
         return ValueTask.CompletedTask;

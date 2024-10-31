@@ -11,7 +11,11 @@
 
 @inject IJSRuntime _jsRuntime
 
-<_LeavePage ComponentDescription="health" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+<div class="on-top-dialog">
+
+    <_LeavePage ComponentDescription="health" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+</div>
+
 <div class="container">
     @if (IsLeaveAllowed == false)
     {
@@ -114,7 +118,7 @@
                                     <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.body1">Characters hunger level. Give bonus to <strong>strength</strong>, <strong>endurance</strong> and <strong>dexterity</strong></MudText>
 
                                 <MudPaper Elevation="0" Class="w-100">
-                                        <MudRadioGroup @bind-Value="Conditions[SD.Condition.Nutrition].Value">
+                                        <MudRadioGroup @bind-Value:after="ChangeRadio" @bind-Value="Conditions[SD.Condition.Nutrition].Value">
                                             <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Nutrition.BalancedDiet">Balanced diet</MudRadio>
                                             <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Nutrition.Fueled">Fueled</MudRadio>
                                             <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Nutrition.Hungry">Hungry</MudRadio>
@@ -137,10 +141,11 @@
                                 <MudDivider />
                                 <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.body1" Style="min-height:40px;">Character's cloaths and body tidiness. Modifies <strong>charisma</strong></MudText>
                                 <MudPaper Elevation="0" Class="w-100">
-                                    <MudRadioGroup @bind-Value="Conditions[SD.Condition.Cleanliness].Value">
+                                        <MudRadioGroup  @bind-Value:after="ChangeRadio" @bind-Value="Conditions[SD.Condition.Cleanliness].Value">
+                                        
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Groomed">Groomed</MudRadio>
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Clean">Clean</MudRadio>
-                                        <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Dirty">Dirty</MudRadio>
+                                        <MudRadio  Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Dirty">Dirty</MudRadio>
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Filthy">Filthy</MudRadio>
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Cleanliness.Defiled">Defiled</MudRadio>
                                     </MudRadioGroup>
@@ -161,7 +166,7 @@
                                     <MudText Align="Align.Center" Class="w-100 text-center p-2" Style="min-height:40px;" Typo="Typo.body1">State of mind. Modifies <strong>inteligence</strong>, <strong>instinct</strong> and <strong>willpower</strong></MudText>
 
                                 <MudPaper Elevation="0" Class="w-100">
-                                    <MudRadioGroup @bind-Value="Conditions[SD.Condition.Wellbeing].Value">
+                                        <MudRadioGroup @bind-Value:after="ChangeRadio" @bind-Value="Conditions[SD.Condition.Wellbeing].Value">
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Wellbeing.Joyous">Joyous</MudRadio>
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Wellbeing.Content">Content</MudRadio>
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Wellbeing.Worried">Worried</MudRadio>
@@ -183,7 +188,7 @@
                                 <MudDivider />
                                     <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.body1" Style="min-height:40px;">How rested is character. Modifies <strong>all attributes</strong></MudText>
                                 <MudPaper Elevation="0" Class="w-100">
-                                    <MudRadioGroup @bind-Value="Conditions[SD.Condition.Rest].Value">
+                                    <MudRadioGroup  @bind-Value:after="ChangeRadio" @bind-Value="Conditions[SD.Condition.Rest].Value">
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Rest.WellRested">Well rested</MudRadio>
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Rest.Rested">Rested</MudRadio>
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)Rest.Tired">Tired</MudRadio>
@@ -206,7 +211,7 @@
                                     <MudText Align="Align.Center" Class="w-100 text-center p-2" Typo="Typo.body1" Style="min-height:40px;">Related to sickness or poisoning. Modifies <strong>all attributes</strong></MudText>
 
                                 <MudPaper Elevation="0" Class="w-100">
-                                    <MudRadioGroup @bind-Value="Conditions[SD.Condition.GeneralHealth].Value">
+                                        <MudRadioGroup @bind-Value:after="ChangeRadio" @bind-Value="Conditions[SD.Condition.GeneralHealth].Value">
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)GeneralHealth.GreatHealth">Great health</MudRadio>
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)GeneralHealth.Stable">Stable</MudRadio>
                                         <MudRadio Class="w-100 ps-2 ma-0" Value="(int)GeneralHealth.Unwell">Unwell</MudRadio>
@@ -344,13 +349,16 @@
         return x.Location;
     };
 
-    string CalculateHealTime(WoundDTO wound)
+    private string CalculateHealTime(WoundDTO wound)
     {
         IsLeaveAllowed = false;
         var res = AllParams.Health.CalculateHealTime(wound);
         return res.ToString();
     }
-
+    private void ChangeRadio()
+    {
+        IsLeaveAllowed = false;
+    }
 
     private string GetAttributesLabel(object location)
     {
@@ -385,7 +393,6 @@
             IsLeaveAllowed = false;
             StateHasChanged();
         }
-         IsLeaveAllowed = false;
     }
 
     private async Task EditWound(WoundDTO wound)
@@ -403,7 +410,6 @@
             IsLeaveAllowed = false;
             StateHasChanged();
         }
-        IsLeaveAllowed = false;
     }
     private void DeleteWound(WoundDTO wound)
     {
@@ -414,6 +420,7 @@
         IsLeaveAllowed = false;
         StateHasChanged();
     }
+
 
     public async Task ConfirmLeave_Click(bool isConfirmed)
     {

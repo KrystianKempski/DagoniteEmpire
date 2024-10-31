@@ -13,7 +13,10 @@
 @inject IUserService _userService
 @inject IJSRuntime _jsRuntime
 
-<_LeavePage ComponentDescription="equipment" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+<div class="on-top-dialog">
+
+    <_LeavePage ComponentDescription="equipment" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+</div>
 
 @if (IsLeaveAllowed == false)
 {
@@ -204,6 +207,7 @@
         IsLeaveAllowed = false;
         StateHasChanged();
     }
+
 
     public async Task ConfirmLeave_Click(bool isConfirmed)
     {

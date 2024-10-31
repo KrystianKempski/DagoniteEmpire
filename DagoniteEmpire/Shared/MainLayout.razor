@@ -61,12 +61,6 @@
     
 </MudLayout>
 
-@* <style>
-
-    .mud-main-content {
-        margin-left: var(--mud-drawer-width-left);
-    }
-</style> *@
 
 @code {
 
@@ -93,8 +87,8 @@
 
     private async Task DrawerChange()
     {
-        StateHasChanged();
         DrawerStartToggle();
+        StateHasChanged();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
