@@ -19,7 +19,7 @@ namespace DA_Models.CharacterModels
 
         [Range(16, 300, ErrorMessage = "Age must be between 16 and 300 years")]
         public int Age { get; set; }
-        public string? ImageUrl { get; set; } = "/upload/portraits/def-char-img.webp";
+        public string? ImageUrl { get; set; } = "/images/def-char-img.webp";
         public string? NPCType { get; set; } = SD.NPCType.Hero;
         public int AttributePoints { get; set; }
         public int CurrentExpPoints { get; set; }

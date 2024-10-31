@@ -15,7 +15,7 @@ namespace DA_Models.CharacterModels
         public Relation Relation { get; set; } = Relation.Enemy;
         public string Description { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
-        public string ImageUrl { get; set; } = "/upload/portraits/def-char-img.webp";
+        public string ImageUrl { get; set; } = "/images/def-char-img.webp";
         //equipment
         public string MainWeaponName { get; set; } = string.Empty;
         public string OffWeaponName { get; set; } = string.Empty;
