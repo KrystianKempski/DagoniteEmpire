@@ -12,8 +12,9 @@ A comprehensive tool for starting an online, text-based RPG campaign, enabling m
 Application database is made on PostGreSQL.
 
 ## 🎲 Try it yourself
-You can access development version of deployed application here:
-[dagonite-empire.drik.it](https://dagonite-empire.drik.it)
+You can access release and development version of the application here:
+  - Release: [dagonite-empire.drik.it](https://dagonite-empire.drik.it)
+  - Dev: [dagonite-empire-dev.drik.it](https://dagonite-empire-dev.drik.it)
 
 You can use default test users or create your own account.
 
