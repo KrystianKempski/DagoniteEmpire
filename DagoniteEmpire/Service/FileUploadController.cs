@@ -39,7 +39,7 @@ namespace RichTextEditor.Data
                         Response.StatusCode = 204;
                         FileInfo fileInfo = new(file.Name);
                         var fileName = Guid.NewGuid().ToString() + ".webp";
-                        var folderDirectory = hostingEnv.ContentRootPath + "/wwwroot/upload/postImages";
+                        var folderDirectory = hostingEnv.WebRootPath + "/upload/postImages";
 
                         if (!Directory.Exists(folderDirectory))
                         {
