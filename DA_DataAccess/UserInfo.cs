@@ -8,6 +8,9 @@ namespace DA_DataAccess
 {
     public class UserInfo
     {
+        public UserInfo() { }
+        public bool InitUser { get; set; } = false;
+        public bool ResetUser { get; set; } = false;
         public int SelectedCharacterId { get; set; } = 0;
         public string? UserName { get; set; }
 

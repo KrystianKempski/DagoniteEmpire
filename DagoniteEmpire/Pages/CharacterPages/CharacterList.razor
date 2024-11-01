@@ -77,6 +77,8 @@ else
     {
         try
         {
+            IsLoading = true;
+            StateHasChanged();
             UserInfo = await _userService.GetUserInfo();
             if (UserInfo?.IsAuthenticated == false)
             {
@@ -85,6 +87,11 @@ else
             }
             if(UserInfo?.SelectedCharacterId is not null)
                 CurrentlyUsedCharacterId = (int)UserInfo?.SelectedCharacterId;
+            
+            await LoadCharacters();
+
+            IsLoading = false;
+            StateHasChanged();
 
         }catch(Exception ex)
         {
@@ -99,12 +106,12 @@ else
         {
             if (firstRender)
             {
-                IsLoading = true;
-                StateHasChanged();
-                await LoadCharacters();
+                // IsLoading = true;
+                // StateHasChanged();
+                // await LoadCharacters();
 
-                IsLoading = false;
-                StateHasChanged();
+                // IsLoading = false;
+                // StateHasChanged();
             }
         }
         catch (Exception ex)

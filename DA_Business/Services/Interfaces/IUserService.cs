@@ -13,5 +13,10 @@ namespace DA_Business.Services.Interfaces
         public Task InitUserInfoAtStart();
         public Task<UserInfo?> GetUserInfo();
         public Task SetSelectedCharId(int charId);
+
+        public void OrderToClearUserInfo();
+        public void OrderToInitUserInfo();
+        public Task ClearUserInfo();
+
     }
 }

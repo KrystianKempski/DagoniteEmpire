@@ -9,16 +9,10 @@
     {
         if (_signInManager.IsSignedIn(User))
         {
+            
             await _signInManager.SignOutAsync();
-            var userInfo = await _userService.GetUserInfo();
-            if(userInfo is not null)
-            {
-                userInfo.IsAdminOrMG = null;
-                userInfo.UserName = null;
-                userInfo.IsAuthenticated = false;
-                userInfo.UserId = null;
-                userInfo.IsUserUpdated = false;
-            }
+            _userService.OrderToClearUserInfo();
+
         }
         return Redirect("~/");
     }

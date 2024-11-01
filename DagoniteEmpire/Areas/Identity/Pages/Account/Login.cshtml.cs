@@ -18,6 +18,8 @@ using Microsoft.Extensions.Logging;
 
 using DA_DataAccess;
 using DA_Business.Services.Interfaces;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 namespace DagoniteEmpire.Areas.Identity.Pages.Account
 {
     public class LoginModel : PageModel
@@ -26,13 +28,15 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
         private readonly ILogger<LoginModel> _logger;
         private readonly UserManager<ApplicationUser>_userManager;
         private readonly IUserService _userService;
+        private readonly ProtectedSessionStorage _protectedSessionStorage;
 
-        public LoginModel(SignInManager<ApplicationUser>signInManager, ILogger<LoginModel> logger, UserManager<ApplicationUser>userManager, IUserService userService)
+        public LoginModel(SignInManager<ApplicationUser>signInManager, ILogger<LoginModel> logger, UserManager<ApplicationUser>userManager, IUserService userService, ProtectedSessionStorage protectedSessionStorage)
         {
             _signInManager = signInManager;
             _logger = logger;
             _userManager = userManager;
             _userService = userService;
+            _protectedSessionStorage = protectedSessionStorage;
         }
 
         /// <summary>
@@ -103,16 +107,17 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
-            var userInfo = await _userService.GetUserInfo();
-            if (userInfo is not null)
-            {
-                userInfo.IsAdminOrMG = null;
-                userInfo.UserName = null;
-                userInfo.IsAuthenticated = false;
-                userInfo.UserId = null;
-                userInfo.IsUserUpdated = false;
-            }
-            
+
+            //var userInfo = await _userService.GetUserInfo();
+            //if (userInfo is not null)
+            //{
+            //    userInfo.IsAdminOrMG = null;
+            //    userInfo.UserName = null;
+            //    userInfo.IsAuthenticated = false;
+            //    userInfo.UserId = null;
+            //    userInfo.IsUserUpdated = false;
+            //}
+
 
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
@@ -145,9 +150,10 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User logged in.");
 
-                   // await _userService.InitUserInfoAtStart();
-                   if(returnUrl.ToUpper().Contains("LOGOUT"))
-                        return LocalRedirect("~/");
+                    // await _userService.InitUserInfoAtStart();
+                    //if(returnUrl.ToUpper().Contains("LOGOUT"))
+                    //     return LocalRedirect("~/");
+                    _userService.OrderToInitUserInfo();
 
                     return LocalRedirect(returnUrl);
                 }

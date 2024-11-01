@@ -59,7 +59,7 @@
             </MudButton>
             <MudCollapse Expanded="IsExpanded">
                 <MudPaper Elevation="0" Class="ma-1">
-                    @if(UserInfo?.IsAdminOrMG == true || Relation == Relation.Teammate || Relation == Relation.Ally){
+                    @if(BattleProperties is not null && ( UserInfo?.IsAdminOrMG == true || Relation == Relation.Teammate || Relation == Relation.Ally)){
 
                     <MudPaper Elevation="1" Class="my-1">
                         <MudText Class="p-1" Typo="Typo.button">ATTACK  ( base: @BattleProperties[SD.BattleProperty.AttackBase].SumBonus )</MudText>
