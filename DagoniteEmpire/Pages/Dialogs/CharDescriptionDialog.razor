@@ -22,7 +22,8 @@
         <DialogTemplates>
             <Header>Write character description</Header>
             <Content >
-                <SfRichTextEditor OnActionBegin="ActionHandler" @bind-Value="@UnsavedDescription" Height="100%">
+                <SfRichTextEditor   @bind-Value="@UnsavedDescription" Height="100%">
+                    <RichTextEditorEvents OnActionBegin="ActionHandler"/>
                     <RichTextEditorToolbarSettings  Items="@Tools" Type="ToolbarType.MultiRow" />
                
                 </SfRichTextEditor> 
@@ -72,8 +73,6 @@
         new ToolbarItemModel() { Command = ToolbarCommand.Separator },
         new ToolbarItemModel() { Command = ToolbarCommand.Formats },
         new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
-        new ToolbarItemModel() { Command = ToolbarCommand.OrderedList },
-        new ToolbarItemModel() { Command = ToolbarCommand.UnorderedList },
         new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
         new ToolbarItemModel() { Command = ToolbarCommand.Indent },
         new ToolbarItemModel() { Command = ToolbarCommand.Separator },
