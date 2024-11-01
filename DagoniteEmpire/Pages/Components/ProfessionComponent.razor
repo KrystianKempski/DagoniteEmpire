@@ -48,8 +48,8 @@
     <label class="prof-descr-label">Class description</label>
     <div class="richtext-conteiner">
 
-        <SfRichTextEditor Height="100%" @ref="ProfessionDescrShow" @bind-Value="@Profession.Description" Readonly="true" ShowTooltip="false">
-            <RichTextEditorToolbarSettings Items="@NoTools" />
+        <SfRichTextEditor Height="100%" @bind-Value="@Profession.Description" Readonly="true" ShowTooltip="false">
+            <RichTextEditorToolbarSettings Enable="false" />
         </SfRichTextEditor>
 
     </div>
@@ -77,9 +77,6 @@
     public ProfessionDTO Profession { get; set; } = null;
     [Parameter]
     public EventCallback<ProfessionDTO> ProfessionChanged { get; set; }
-
-    private SfRichTextEditor ProfessionDescrShow;
-    private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private string ProfessionName { get; set; }
 
 

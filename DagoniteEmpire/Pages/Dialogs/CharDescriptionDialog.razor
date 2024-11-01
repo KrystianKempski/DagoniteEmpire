@@ -7,8 +7,8 @@
     <h3 class="my-3 ml-3 text-center">DESCRIPTION</h3>
     <div class="descr-container">
         <div class="description-richtext">
-            <SfRichTextEditor Height="100%" @ref="DescrShow" @bind-Value="@SavedDescription" Readonly="true" ShowTooltip="false">
-                <RichTextEditorToolbarSettings Items="@NoTools" />
+            <SfRichTextEditor Height="100%"  @bind-Value="@SavedDescription" Readonly="true" ShowTooltip="false">
+                <RichTextEditorToolbarSettings Enable="false"/>
                 <p>Here write a description of your character</p>
             </SfRichTextEditor>
         </div>
@@ -22,7 +22,7 @@
         <DialogTemplates>
             <Header>Write character description</Header>
             <Content >
-                <SfRichTextEditor @ref="DescrEdit" @bind-Value="@UnsavedDescription" Height="100%">
+                <SfRichTextEditor  @bind-Value="@UnsavedDescription" Height="100%">
                     <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
                
                 </SfRichTextEditor> 
@@ -60,9 +60,6 @@
 
     private string UnsavedDescription { get; set; } = "";
     private bool IsDescrDialVisible = false;
-    SfRichTextEditor DescrEdit = new SfRichTextEditor();
-    SfRichTextEditor DescrShow = new SfRichTextEditor();
-    private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
     {
         new ToolbarItemModel() { Command = ToolbarCommand.Bold },
@@ -105,7 +102,7 @@
     }
     private async Task DialogOpen()
     {
-        this.DescrEdit.RefreshUIAsync();
+        //this.DescrEdit.RefreshUIAsync();
     }
 
     protected override async Task OnInitializedAsync()

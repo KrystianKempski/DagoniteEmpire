@@ -30,8 +30,8 @@
     
     <label class="race-descr-label">Description</label>
     <div class="richtext-conteiner">
-        <SfRichTextEditor Height="100%" @ref="RaceDescrShow" @bind-Value="@AllParams.CurrentRace.Description" Readonly="true" ShowTooltip="false">
-            <RichTextEditorToolbarSettings Items="@NoTools" />
+        <SfRichTextEditor Height="100%" @bind-Value="@AllParams.CurrentRace.Description" Readonly="true" ShowTooltip="false">
+            <RichTextEditorToolbarSettings Enable="false"/>
         </SfRichTextEditor>
     </div>
     <label class="race-traits-label">Traits</label>
@@ -75,8 +75,6 @@
     public EventCallback OnTraitsChange { get; set; }
 
     public RaceDTO CustomRace { get; set; } = new();
-    private SfRichTextEditor RaceDescrShow = new();
-    private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private string SelectedRace { get; set; } = string.Empty;
     private bool ShowNameLabel { get; set; } = false;
 

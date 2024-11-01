@@ -1,7 +1,7 @@
 ﻿@inject IEquipmentRepository _equipmentRepository
 @inject ISnackbar Snackbar
 
-<MudDialog>
+<MudDialog ContentClass="p-1 m-0" Class="h-100 w-100 p-0 m-0">
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Anvil" width="40px" height="40px" class="pr-2" />
@@ -12,12 +12,11 @@
                       AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </TitleContent>
     <DialogContent>
-        <div class="main-table">
 
             <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="true">
-                <MudDataGrid Breakpoint="Breakpoint.None" T="EquipmentDTO" @ref="Grid" MultiSelection="true" Items="@Equipment" ReadOnly="true" Filterable="true" QuickFilter="@_quickFilter"
-                             Fil    FilterMode="@DataGridFilterMode.ColumnFilterRow" Class="px-0 py-1"  FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
-                             SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" SelectOnRowClick="false" SelectedItemsChanged="@SelectedItemsChanged">
+            <MudDataGrid  Breakpoint="Breakpoint.None" T="EquipmentDTO" MultiSelection="true" Items="@Equipment" ReadOnly="true" Filterable="true" QuickFilter="@_quickFilter"
+                         FilterMode="@DataGridFilterMode.ColumnFilterRow" Style="overscroll-behavior-y: contain;" Class="p-1 m-0 h-100" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                         SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" SelectOnRowClick="false" SelectedItemsChanged="@SelectedItemsChanged">
                     <Columns>
                         <SelectColumn T="EquipmentDTO" />
                         <PropertyColumn Filterable="false" Property="x => x.Name" />
@@ -49,15 +48,14 @@
                 </MudDataGrid>
             </MudHidden>
             <MudHidden Breakpoint="Breakpoint.SmAndDown" Invert="true">
-                <MudDataGrid Breakpoint="Breakpoint.None" T="EquipmentDTO" @ref="Grid" MultiSelection="true" Items="@Equipment" Filterable="true" Class="px-0 py-1" QuickFilter="@_quickFilter"
-                            FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"  FilterMode="@DataGridFilterMode.ColumnFilterRow"
+            <MudDataGrid Breakpoint="Breakpoint.None" T="EquipmentDTO" MultiSelection="true" Items="@Equipment" Filterable="true" Class="h-100 p-1 m-0" QuickFilter="@_quickFilter"
+                         FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" FilterMode="@DataGridFilterMode.ColumnFilterRow" Style="overscroll-behavior-y: contain;"
                              SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" SelectOnRowClick="false" SelectedItemsChanged="@SelectedItemsChanged">
                     <Columns>
                         <SelectColumn T="EquipmentDTO" />
                         <HierarchyColumn T="EquipmentDTO" />
                         <PropertyColumn Filterable="false" Property="x => x.Name"  />
                         <PropertyColumn Property="x => x.EquipmentType" Title="Type">
-
                             <FilterTemplate>
                                 <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
                                 <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
@@ -86,8 +84,6 @@
                     </ChildRowContent>
                 </MudDataGrid>
             </MudHidden>
-        </div>
-
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
@@ -101,7 +97,6 @@
     [Parameter] public ICollection<EquipmentSlotDTO> SelectedEquipment { get; set; } = new List<EquipmentSlotDTO>();
     private ICollection<EquipmentDTO> SelectedItems = new List<EquipmentDTO>();
     private IEnumerable<EquipmentDTO> Equipment { get; set; } = new List<EquipmentDTO>();
-    private MudDataGrid<EquipmentDTO> Grid { get; set; } = new(); 
     private FilterSettings FilterSettings = new FilterSettings { Operator = Syncfusion.Blazor.Operator.Contains, Type = Syncfusion.Blazor.Grids.FilterType.FilterBar };
     public string HeaderName { get; set; } = "Select equipment";
 
