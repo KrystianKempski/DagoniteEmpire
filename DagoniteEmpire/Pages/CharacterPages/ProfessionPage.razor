@@ -140,7 +140,7 @@
         </div>
         <div class="d-flex flex-column flex-grow-1 mx-1">
             <label class="class-section">Class description</label>
-            <SfRichTextEditor @oninput="SomeChange" Height="300px" @ref="DescrEdit" @bind-Value="@ProfessionDTO.Description">
+            <SfRichTextEditor @bind-Value:after="SomeChange" Height="300px" @ref="DescrEdit" @bind-Value="@ProfessionDTO.Description">
                     <RichTextEditorToolbarSettings  Items="@Tools" Type="ToolbarType.MultiRow" />
             </SfRichTextEditor>
         </div>
@@ -441,6 +441,11 @@
     .mud-input-control {
         margin-top: 0px !important;
     }
+    .mud-main-content {
+        position: relative;
+    }
+
+
 
     .e-numeric.e-style .e-control.e-numerictextbox {
       
