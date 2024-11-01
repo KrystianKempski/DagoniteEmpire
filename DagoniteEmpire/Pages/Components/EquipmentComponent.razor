@@ -128,8 +128,7 @@
 
         var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Create new item", parameters, await SetOptions());
         var result = await dialog.Result;
-        if (result?.Data is null) return;
-        if (result.Canceled)
+        if (result?.Data is not null && !result.Canceled)
         {
             NewSlot =  (EquipmentSlotDTO)result.Data;
             var obj = AllParams.EquipmentSlots.FirstOrDefault(u => u.Equipment.Name == NewSlot.Equipment.Name);
