@@ -552,6 +552,8 @@ namespace DA_Common
         public const string Dead = "icons/death-skull.svg";
         public const string TendedWound = "icons/tended-wound.svg";
         public const string FreshWound = "icons/fresh-wound.svg";
+        public const string CustomIcon = "icons/uncertainty.svg";
+        public const string Ability = "icons/bolt-spell-cast.svg";
     }
 
     public enum Relation
@@ -833,8 +835,8 @@ namespace DA_Common
                 case Names.Unconscious: return MyIcon.Unconscious;
                 case Names.Dead: return MyIcon.Dead;
                 case Names.NoTurn: return MyIcon.NoTurn;
+                default: return MyIcon.CustomIcon;
             }
-            return "";
         }
 
     }

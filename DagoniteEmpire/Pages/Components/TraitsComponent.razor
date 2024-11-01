@@ -65,22 +65,22 @@
     </div>
     <div class="row">
 
-        @if (TraitType == SD.TraitType_Character && (UserInfo?.IsAdminOrMG == true  || AllParams?.Character.IsApproved == false))
-        {
-            <label class="balance">Traits balance: @AllParams?.Character.TraitBalance </label>
-        }
+            @if (TraitType == SD.TraitType_Character && (UserInfo?.IsAdminOrMG == true  || AllParams?.Character.IsApproved == false))
+            {
+                <label class="balance">Traits balance: @AllParams?.Character.TraitBalance </label>
+            }
 
-        @if (IsInfoMode == false && (  UserInfo?.IsAdminOrMG == true || AllParams?.Character.IsApproved == false || TraitType != SD.TraitType_Character))
-        {
-            <div class="buttons-row">
-                <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add @TraitName</button>
-                @if (TraitType == SD.TraitType_Gear && WeaponQualityAvalible)
-                {
-                    <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Add weapon qualities</button>
-                }
-                <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing @TraitName </button>
-            </div>
-        }
+            @if (IsInfoMode == false && (  UserInfo?.IsAdminOrMG == true || AllParams?.Character.IsApproved == false || TraitType != SD.TraitType_Character))
+            {
+                <div class="buttons-row">
+                    <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add @TraitName</button>
+                    @if (TraitType == SD.TraitType_Gear && WeaponQualityAvalible)
+                    {
+                        <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Add weapon qualities</button>
+                    }
+                    <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing @TraitName </button>
+                </div>
+            }
 
     </div>
 </div>

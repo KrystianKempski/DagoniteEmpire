@@ -9,7 +9,7 @@
     <MudDialog >
         <TitleContent>
             <MudText Typo="Typo.h6">
-                <img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />
+            <img src="@IconSource" width="40px" height="40px" class="pr-2" />
                     @HeaderName
             </MudText>
         </TitleContent>
@@ -51,6 +51,7 @@
     private MudDataGrid<TraitDTO> Grid = null;
     private IEnumerable<TraitDTO> Traits { get; set; }
     public string HeaderName { get; set; } = "Add existing traits";
+    private string IconSource = MyIcon.Ability;
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,7 +89,17 @@
         }
         HeaderName = "Add " + TraitName + "s " + "from existing";
 
-        StateHasChanged();
+        switch (TraitType)
+        {
+            case SD.TraitType_Gear: IconSource = MyIcon.Anvil; break;
+            case SD.TraitType_Profession:
+            case SD.TraitType_Race:
+            case SD.TraitType_Character: IconSource = MyIcon.Ability; break;
+            case SD.TraitType_Temporary: IconSource = MyIcon.Stunned; break;
+
+        }
+
+        MudDialog.StateHasChanged();
     }
 
 

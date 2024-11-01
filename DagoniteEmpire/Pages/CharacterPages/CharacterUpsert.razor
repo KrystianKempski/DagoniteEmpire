@@ -519,16 +519,20 @@
                 // update temporary triaits (states)
                 foreach (var obj in AllParams.TraitsTemporary)
                 {
-                    TraitCharacterDTO trait;
-                    if (obj.TraitApproved)
-                    {
-                        trait = new(obj, Id, true);
 
-                    }
-                    else
-                    {
-                        trait = (TraitCharacterDTO)obj;
-                    }
+
+                    TraitCharacterDTO trait;
+                    trait = (TraitCharacterDTO)obj;
+                    trait.CharacterId = Id;
+                    // if (obj.TraitApproved)
+                    // {
+                    //     trait = new(obj, Id, true);
+
+                    // }
+                    // else
+                    // {
+                    //     trait = (TraitCharacterDTO)obj;
+                    // }
                     await _traitCharacterRepository.Update(trait);
                 }                
 

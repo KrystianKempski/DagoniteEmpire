@@ -2,11 +2,11 @@
 @inject ISnackbar Snackbar
 @inject IUserService _userService
 
-<MudDialog >
+<MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-                <MudIcon Icon="@MyIcon.Scroll" Color="Color.Primary" />
-                @HeaderName
+            <img src="@IconSource" width="40px" height="40px" class="pr-2" />
+            @HeaderName
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -30,22 +30,22 @@
                             }
                             <SfNumericTextBox Readonly="IsInfoMode" Width="100px" TValue="int" @bind-Value="@NewTrait.TraitValue"></SfNumericTextBox>
                         </div>
-                        <div class="d-flex flex-column px-1">
+                      @*   <div class="d-flex flex-column px-1">
                             <label class="fw-bold py-1">Unique</label>
                             <div class="justify-content-center mx-auto my-auto">
                                 <SfCheckBox Disabled="IsInfoMode" @bind-Checked="NewTrait.IsUnique "></SfCheckBox>
                             </div>
+                </div>*@
+                    } 
+                   @*      @if (UserInfo?.IsAdminOrMG == true)
+                        {
+                        <div class="d-flex flex-column px-1">
+                            <label class="fw-bold py-1">Approve</label>
+                            <div class="justify-content-center mx-auto my-auto">
+                                    <SfCheckBox @bind-Checked="NewTrait.TraitApproved"></SfCheckBox>
+                            </div>
                         </div>
-                    }
-                    @if (UserInfo?.IsAdminOrMG == true)
-                    {
-                    <div class="d-flex flex-column px-1">
-                        <label class="fw-bold py-1">Approve</label>
-                        <div class="justify-content-center mx-auto my-auto">
-                                <SfCheckBox @bind-Checked="NewTrait.TraitApproved"></SfCheckBox>
-                        </div>
-                    </div>
-                    }
+                        } *@
                 </div>
                 <div class="align-items-start bonus-name py-0">
                     <label class="fw-bold  py-1">@NewTrait.TraitLabel description</label>
@@ -151,7 +151,7 @@
     [Parameter] public AllParamsModel AllParams { get; set; }
 
     public string HeaderName { get; set; } = "";
-
+    private string IconSource = "";
     public UserInfo? UserInfo { get; set; }
 
 
@@ -278,6 +278,7 @@
             {
                 SD.FeatureWeaponQuality
             };
+            IconSource = MyIcon.Attack;
         }
         else
         {
@@ -289,8 +290,19 @@
                 SD.FeatureWeaponQuality,
                 SD.FeatureOther
             };
-            
+
             HeaderName = IsEditMode ? "Edit " : "Add " + NewTrait.TraitLabel;
-        } 
+
+            switch (NewTrait.TraitType)
+            {
+                case SD.TraitType_Gear: IconSource = MyIcon.Anvil; break;
+                case SD.TraitType_Profession:
+                case SD.TraitType_Race:
+                case SD.TraitType_Character: IconSource = MyIcon.Ability; break;
+                case SD.TraitType_Temporary: IconSource = MyIcon.Stunned; break;
+
+            }
+        }
+        MudDialog.StateHasChanged();
     }
 }
