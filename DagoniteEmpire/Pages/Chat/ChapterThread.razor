@@ -216,10 +216,10 @@ else
         }
         <div id="bottom-container">
             <MudPaper Width="100%" Height="300px" Square="true" Class="d-flex flex-column my-2 pa-2">
-            <SfRichTextEditor Height="90%" @bind-Value="@NewPost.Content"  ShowTooltip="true">
+                <SfRichTextEditor KeyConfigure="@KeyConfig" Height="90%" @bind-Value="@NewPost.Content" ShowTooltip="true">
                     <RichTextEditorImageSettings SaveFormat="SaveFormat.Blob" SaveUrl="api/FileUpload/Save" Path="./upload/postImages/" />
-                    <RichTextEditorEvents BeforeUploadImage="@BeforeUploadImage" OnImageUploadSuccess="@ImageUploadSuccess" />
-                    <RichTextEditorToolbarSettings Items="@Tools" />
+                    <RichTextEditorEvents OnActionBegin="ActionHandler" BeforeUploadImage="@BeforeUploadImage" OnImageUploadSuccess="@ImageUploadSuccess" />
+                    <RichTextEditorToolbarSettings  Items="@Tools" />
                 </SfRichTextEditor>
                 <div class="d-flex flex-row">
                     <MudButton Class="mt-2 py-0" OnClick="CreatePost">@SendButtonText</MudButton>
@@ -315,6 +315,11 @@ else
         // new ToolbarItemModel() { Command = ToolbarCommand.SourceCode },
         new ToolbarItemModel() { Command = ToolbarCommand.Blockquote },
     };
+    private ShortcutKeys KeyConfig = new ShortcutKeys()
+        {
+            Bold = "-+space",
+            Italic = "ctrl+2",
+        };
 
 
     public UserInfo? UserInfo { get; set; }
@@ -457,13 +462,13 @@ else
         {
             PageNum = PageCount = newPageCount;
             Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-          //  Pagination.
+            //  Pagination.
         }
 
         IsLoading = false;       
-       
+
         StateHasChanged();
-         _scrollDown = true;
+        _scrollDown = true;
     }
 
     private async Task EditPost(PostDTO post)
@@ -491,6 +496,12 @@ else
             args.Cancel = true;
         }
 
+    }
+
+    private void ActionHandler(Syncfusion.Blazor.RichTextEditor.ActionBeginEventArgs arg)
+    {
+        if(arg.RequestType=="UL")
+            arg.Cancel = true;
     }
 
 

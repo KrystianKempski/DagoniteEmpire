@@ -22,8 +22,8 @@
         <DialogTemplates>
             <Header>Write character description</Header>
             <Content >
-                <SfRichTextEditor  @bind-Value="@UnsavedDescription" Height="100%">
-                    <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
+                <SfRichTextEditor OnActionBegin="ActionHandler" @bind-Value="@UnsavedDescription" Height="100%">
+                    <RichTextEditorToolbarSettings  Items="@Tools" Type="ToolbarType.MultiRow" />
                
                 </SfRichTextEditor> 
             </Content>
@@ -103,6 +103,11 @@
     private async Task DialogOpen()
     {
         //this.DescrEdit.RefreshUIAsync();
+    }
+    private void ActionHandler(Syncfusion.Blazor.RichTextEditor.ActionBeginEventArgs arg)
+    {
+        if (arg.RequestType == "UL")
+            arg.Cancel = true;
     }
 
     protected override async Task OnInitializedAsync()
