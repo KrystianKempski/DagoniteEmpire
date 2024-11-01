@@ -53,10 +53,8 @@
         </AuthorizeView>
     </MudContainer>    
 
-    <MudMainContent >
-            <CascadingValue Value="@UserInfo">     
+    <MudMainContent >   
                     @Body
-            </CascadingValue>
     </MudMainContent>
     
 </MudLayout>
@@ -65,8 +63,7 @@
 @code {
 
     private MudTheme Theme = new MudTheme();
-    public UserInfo UserInfo = new UserInfo();
-    private bool OpenEnd { get; set; } = false;
+    private bool OpenEnd { get; set; }
     void DrawerStartToggle()
     {
         _drawerOpen = !_drawerOpen;
@@ -76,26 +73,17 @@
         OpenEnd = !OpenEnd;
     }
 
-    bool _drawerOpen = false;
-
+    bool _drawerOpen;
     protected override async Task OnInitializedAsync()
     {
-        //await _userService.InitUserInfoAtStart();
-
     }   
 
 
-    private async Task DrawerChange()
+    private void DrawerChange()
     {
         DrawerStartToggle();
         StateHasChanged();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        //await _userService.InitUserInfoAtStart();
-        if (firstRender)
-        {
-        }
-    }
+
 }

@@ -22,7 +22,5 @@ namespace DA_DataAccess
 
         public string? Role { get; set; }
 
-        public bool IsUserUpdated { get; set; }
-
     }
 }
