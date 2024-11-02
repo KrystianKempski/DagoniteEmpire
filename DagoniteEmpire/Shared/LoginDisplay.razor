@@ -5,12 +5,12 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="me-2 py-1 d-flex align-content-center">
+        <div class="p-2 d-flex align-content-center">
 
-        <MudMenu  Dense="true" Color="Color.Dark">
+        <MudMenu @onclick="RefreshCharacters"  Dense="true" Color="Color.Dark">
             <ActivatorContent>
-                <MudAvatar>
-                    <MudImage Src="@PortraitUrl" />
+                <MudAvatar Size="Size.Small">
+                        <MudImage Src="@PortraitUrl" />
                 </MudAvatar>
             </ActivatorContent>
             <ChildContent >
@@ -109,6 +109,23 @@
         catch(Exception ex)
         {
             _snackbar.Add("Error: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task RefreshCharacters()
+    {
+        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo is null || UserInfo?.UserName is null)
+            return;
+        Characters = await _characterRepository.GetAllInfoForUser(UserInfo.UserName);
+        SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
+        if (SelectedCharacter is not null && SelectedCharacter.ImageUrl is not null)
+        {
+            PortraitUrl = SelectedCharacter.ImageUrl;
+        }
+        else
+        {
+            PortraitUrl = "/images/def-char-img.webp";
         }
     }
 }
