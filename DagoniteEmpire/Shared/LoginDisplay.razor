@@ -1,7 +1,37 @@
 ﻿ @inject NavigationManager _navigationManager;
+ @inject IUserService _userService
+ @inject ICharacterRepository _characterRepository
+ @inject ISnackbar _snackbar
 
 <AuthorizeView>
     <Authorized>
+        <div class="me-2 py-1 d-flex align-content-center">
+
+        <MudMenu  Dense="true" Color="Color.Dark">
+            <ActivatorContent>
+                <MudAvatar>
+                    <MudImage Src="@PortraitUrl" />
+                </MudAvatar>
+            </ActivatorContent>
+            <ChildContent >
+                <MudMenuItem  Disabled>Select character</MudMenuItem>
+                @foreach (CharacterDTO character in Characters)
+                {
+                    <MudMenuItem OnClick="@(e => SelectCharacter(character))">
+                    <div class="d-flex flex-row">
+                        <MudAvatar>
+                            <MudImage Src="@character.ImageUrl"></MudImage>
+                        </MudAvatar>
+                        <MudText Class="align-content-center ps-1">
+                            @character.NPCName
+                        </MudText>
+                    </div>
+                </MudMenuItem>
+                }
+            </ChildContent>
+        </MudMenu>
+        </div>
+
         <div class=big-screen "pa-4 justify-center my-4 mud-text-align-center">
             <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary">Hi, @context.User.Identity.Name!</MudButton>
             <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GoTo("Logout"))">Log Out</MudButton>
@@ -29,6 +59,10 @@
 </AuthorizeView>
 
 @code {
+    public string PortraitUrl { get; set; } = "/images/def-char-img.webp";
+    public IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
+    public CharacterDTO? SelectedCharacter { get; set; } = null;
+    public UserInfo? UserInfo {get;set;} = null; 
 
     void GoTo(string panel)
     {
@@ -40,4 +74,41 @@
             _navigationManager.NavigateTo($"/Identity/Account/Logout", true);
     }
 
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo is null || UserInfo?.UserName is null)
+            return;
+        Characters = await _characterRepository.GetAllInfoForUser(UserInfo.UserName);
+        SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
+        if(SelectedCharacter is not null && SelectedCharacter.ImageUrl is not null ){
+            PortraitUrl = SelectedCharacter.ImageUrl;
+        }else{
+            PortraitUrl = "/images/def-char-img.webp";
+        }
+    }
+
+    private async Task SelectCharacter(CharacterDTO character)
+    {
+        try{
+
+            if (UserInfo is null || character is null)
+                return;
+            await _userService.SetSelectedCharId(character.Id);
+            UserInfo.SelectedCharacterId = character.Id;
+            SelectedCharacter = character;
+
+            if (SelectedCharacter.ImageUrl is not null)
+            {
+                PortraitUrl = SelectedCharacter.ImageUrl;
+            }else
+            {
+                PortraitUrl = "/images/def-char-img.webp";
+            }
+        }
+        catch(Exception ex)
+        {
+            _snackbar.Add("Error: " + ex.Message, Severity.Error);
+        }
+    }
 }

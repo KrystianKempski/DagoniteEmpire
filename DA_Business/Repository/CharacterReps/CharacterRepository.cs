@@ -222,115 +222,6 @@ namespace DA_Business.Repository.CharacterReps
                     // Update character built-in types
                     contex.Entry(obj).CurrentValues.SetValues(objDTO);
 
-                    //obj.HeadId = objDTO.Head.Id;
-
-
-                    /// UPDATE TRAITS
-                    /// 
-                    //// Delete adv traits
-                    //if (obj.TraitsCharacter is not null)
-                    //{
-                    //    foreach (var existingChild in obj.TraitsCharacter.ToList())
-                    //    {
-                    //        if (!updatedChar.TraitsCharacter.Any(c => c.Id == existingChild.Id))
-                    //        {
-                    //            if (existingChild.TraitApproved == true)
-                    //            {
-                    //                var detachedTrait = contex.TraitsCharacter.Include(t => t.Bonuses).Include(c => c.Characters).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
-                    //                if(detachedTrait != null && !detachedTrait.Characters.IsNullOrEmpty() && detachedTrait.Characters.Contains(obj))
-                    //                {
-                    //                    detachedTrait.Characters.Remove(obj);
-                    //                    contex.Traits.Update(detachedTrait);
-                    //                }
-                    //            }
-                    //            else
-                    //                contex.TraitsCharacter.Remove(existingChild);
-                    //        }
-                    //    }
-                    //}
-
-                    //// Update and Insert traits
-                    //if (updatedChar.TraitsCharacter is not null)
-                    //{
-                    //    foreach (var trait in updatedChar.TraitsCharacter)
-                    //    {
-                    //        TraitCharacter? existingTrait = null;
-                    //        if (obj.TraitsCharacter is not null)
-                    //        {
-                    //            existingTrait = obj.TraitsCharacter
-                    //                .FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
-                    //        }
-                    //        else 
-                    //        {   
-                    //            obj.TraitsCharacter = new List<TraitCharacter>();
-                    //        }
-
-                    //        if (existingTrait == null)
-                    //        {
-                    //            existingTrait = contex.TraitsCharacter.Include(t => t.Bonuses).Include(c=>c.Characters).FirstOrDefault(c => c.Id == trait.Id && c.Id != default(int));
-                    //        }
-
-                    //        if (existingTrait is not null)
-                    //        {
-                    //            if (existingTrait.TraitApproved && obj.TraitsCharacter.Contains(existingTrait) == false)
-                    //            {
-                    //                // adding already existing, approved trait to character
-                    //                if (existingTrait.Characters is null)
-                    //                    existingTrait.Characters = new List<Character>();
-                    //                existingTrait.Characters.Add(obj);
-                    //                contex.Traits.Update(existingTrait);
-                    //            }
-                    //            else
-                    //            {
-                    //                // Update trait
-                    //                contex.Entry(existingTrait).CurrentValues.SetValues(trait);
-                    //                // update bonuses
-
-                    //                // Delete trait bonuses
-                    //                if (!existingTrait.Bonuses.IsNullOrEmpty())
-                    //                {
-                    //                    foreach (var existingChildBonus in existingTrait.Bonuses.ToList())
-                    //                    {
-                    //                        if (!trait.Bonuses.Any(c => c.Id == existingChildBonus.Id))
-                    //                        {
-                    //                            contex.Bonuses.Remove(existingChildBonus);
-                    //                        }
-                    //                    }
-                    //                }
-
-                    //                // Update and Insert bonuses
-                    //                if (trait.Bonuses is not null)
-                    //                {
-                    //                    foreach (var childBonus in trait.Bonuses)
-                    //                    {
-                    //                        Bonus? existingChildBonus;
-                    //                        if (!existingTrait.Bonuses.IsNullOrEmpty())
-                    //                        {
-                    //                            existingChildBonus = existingTrait.Bonuses
-                    //                           .FirstOrDefault(c => c.Id == childBonus.Id && c.Id != default(int));
-                    //                        }
-                    //                        else
-                    //                        {
-                    //                            existingTrait.Bonuses = new List<Bonus>();
-                    //                            existingChildBonus = null;
-                    //                        }
-
-                    //                        if (existingChildBonus != null)
-                    //                            // Update bonus
-                    //                            contex.Entry(existingChildBonus).CurrentValues.SetValues(childBonus);
-                    //                        else
-                    //                            // Insert bonus
-                    //                            existingTrait.Bonuses.Add(childBonus);
-                    //                    }
-                    //                }
-                    //            }
-                    //        }
-                    //        else
-                    //            // Insert trait
-                    //            obj.TraitsCharacter.Add(trait);
-                    //    }
-                    //}
-                   
 
                     /// UPDATE EQUIPMENT
 
@@ -557,6 +448,24 @@ namespace DA_Business.Repository.CharacterReps
             return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.EquipmentSlots).Where(u => u.UserName == userName && u.IsApproved == true));
 
         }
+        public async Task<string> GetPortraitUrl(int id)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == id);
+            if (obj != null)
+            {
+                return obj.ImageUrl;
+            }
+            return string.Empty;
+        }
 
+        public async Task<IEnumerable<CharacterDTO>> GetAllInfoForUser(string userName)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            if (userName == null || userName.Length < 3)
+                return new List<CharacterDTO>();
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
+                .Where(u => u.UserName == userName));
+        }
     }
 }

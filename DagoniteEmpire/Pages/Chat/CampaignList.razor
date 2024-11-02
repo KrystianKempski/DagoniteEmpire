@@ -22,29 +22,33 @@
         <LoadingPage></LoadingPage>
     }else{
         <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
-        <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns</MudText>
+              
+        @if (Characters.Count() > 0)
+        {
+            <div class="d-flex flex-row">      
+                <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for:</MudText>
+                <MudSelect Class="ps-2" Typo="Typo.h5" Value="SelectedCharacter" T="CharacterDTO" Margin="Margin.Dense" Variant="Variant.Outlined" ValueChanged="SelectCharacter" AnchorOrigin="Origin.BottomCenter">
+                    @foreach (var character in Characters)
+                    {
+                        <MudSelectItem Value="@character" />
+                    }
+                </MudSelect>
+            </div>
+        }
+        else if(Characters.Count() == 1)
+        {
+            <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for: @Characters.First().NPCName</MudText>
+        }
+       
         @if (UserInfo?.IsAdminOrMG == true)
         {
             <div class="camp">
-
                 <MudPaper Height="100px" Width="100%" Class="pa-3 mb-3 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateCampaign">
                     <MudText Typo="Typo.h5" Align="Align.Center"> Add new Campaign...</MudText>
-            </MudPaper>
+                </MudPaper>
             </div>
         }
-        else
-        {
-            @if (Characters.Count() > 0)
-            {
-                <MudSelect Value="SelectedCharacter" T="CharacterDTO" ValueChanged="SelectCharacter" Label=@Title AnchorOrigin="Origin.BottomCenter">
-
-                    @foreach (var character in Characters)
-                    {
-                        <MudSelectItem Value="@character"/>
-                    }
-                </MudSelect>
-                }
-        }
+        
 
         <MudStack>
             @if(Campaigns is not null && Campaigns.Any())
@@ -56,12 +60,12 @@
 
 
                             <MudStack Spacing="0" Row="true">
-                                <MudText Class="flex-grow-1" Typo="Typo.h6">@camp.Name</MudText>
-                                @if (UserInfo?.IsAdminOrMG == true)
-                                {
-                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))"></MudIconButton>
-                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))"></MudIconButton>
-                                }
+                            <MudText Class="flex-grow-1" Typo="Typo.h6">@camp.Name</MudText>
+                            @if (UserInfo?.IsAdminOrMG == true)
+                            {
+                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))"></MudIconButton>
+                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))"></MudIconButton>
+                            }
                             </MudStack>
                             <MudText Typo="Typo.caption">Started by: @camp.GameMaster at: @camp.CreatedDate</MudText>
                             <MudText Class="py-1 flex-grow-1" Typo="Typo.body2"> @camp.Description </MudText>
@@ -86,11 +90,8 @@
                                 }
                             </div>
                         </MudPaper>
-
                     </div>
-
                 }
-
             }
             else
             {
