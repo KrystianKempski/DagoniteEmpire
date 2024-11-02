@@ -13,11 +13,16 @@
         <MudTextField @bind-Value="@NewCampaign.Description" Label="Description" Lines="5" />
         <MudText Typo="Typo.caption">Choose player characters for campaign</MudText>
         <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
-            @foreach (var adv in AllCharacters)
+            @if(true)
             {
-                <MudChip Text="@adv.NPCName" Value="@adv"></MudChip>
-            }
-            
+                int index =0;
+                @foreach (var adv in AllCharacters.OrderBy(c=>c.Id))
+                {
+                    IncludedList.Add(false);
+                    <MudChip @bind-Selected="IncludedList[index]" Text="@adv.NPCName" Value="@adv"></MudChip>
+                    index++;
+                }
+            }            
         </MudChipSet>
     </DialogContent>
     <DialogActions>
@@ -35,16 +40,31 @@
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IEnumerable<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
     private string Title { get; set; } = "Create";
-
+    private List<bool> IncludedList = new List<bool>();
     protected override async Task OnInitializedAsync()
     {
         AllCharacters = await _characterRepository.GetAll();
+
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return; 
+
         if (IsEdit)
         {
-
             Title = "Edit";
-            SelectedCharacters = NewCampaign.Characters.ToList();
+            int index = 0;
+            foreach (var character in AllCharacters.OrderBy(c => c.Id))
+            {
+                if (NewCampaign.Characters.FirstOrDefault(c => c.Id == character.Id) is not null)
+                {
+                    IncludedList[index] = true;
+                }
+                index++;
+            }
         }
+        StateHasChanged();
     }
 
     private void Cancel()
@@ -58,15 +78,12 @@
         {            
             foreach (var charac in SelectedCharacters)
             {
-                // var adventurer = AllCharacters.FirstOrDefault(c => c.NPCName == charac.NPCName);
-                // if (adventurer is not null && !Characters.Any(c => c.NPCName == charac.NPCName))
                 Characters.Add(charac);
             }
         }
         NewCampaign.Characters = Characters;
         NewCampaign.CreatedDate = DateTime.Now;
         MudDialog.Close(DialogResult.Ok(NewCampaign));
-        //In a real world scenario this bool would probably be a service to delete the item from api/database
         if (IsEdit)
           Snackbar.Add("Campaign Edited", Severity.Success);
         else

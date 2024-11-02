@@ -18,16 +18,22 @@
         <MudTextField @bind-Value="@NewChapter.Place" Label="Location" />
         <MudText Typo="Typo.caption">Choose player characters for chapter</MudText>
         <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
-            @foreach (var adv in AllCharacters)
+            @if (true)
             {
-                <MudChip Text="@adv.NPCName" Value="@adv"></MudChip>
+                int index = 0;
+                @foreach (var adv in AllCharacters.OrderBy(c => c.Id))
+                {
+                    IncludedList.Add(false);
+                    <MudChip @bind-Selected="IncludedList[index]" Text="@adv.NPCName" Value="@adv"></MudChip>
+                    index++;
+                }
             }
             
         </MudChipSet>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="CreateCampaign">SAVE</MudButton>
+        <MudButton Color="Color.Error" OnClick="CreateChapter">SAVE</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -40,7 +46,7 @@
     private string Title = "Create";
     private IReadOnlyCollection<CharacterDTO> SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
-
+    private List<bool> IncludedList = new List<bool>();
     private void Cancel()
     {
         MudDialog.Cancel();
@@ -51,25 +57,38 @@
         if (IsEdit)
         {
             Title = "Edit";
-            SelectedCharacters = NewChapter.Characters.ToList();
         }
     }
-
-    private void CreateCampaign()
+    protected override void OnAfterRender(bool firstRender)
     {
+        if (!firstRender) return;
 
+        if (IsEdit)
+        {
+            Title = "Edit";
+            int index = 0;
+            foreach (var character in AllCharacters.OrderBy(c => c.Id))
+            {
+                if (NewChapter.Characters.FirstOrDefault(c => c.Id == character.Id) is not null)
+                {
+                    IncludedList[index] = true;
+                }
+                index++;
+            }
+        }
+        StateHasChanged();
+    }
 
+    private void CreateChapter()
+    {
         if (SelectedCharacters is not null)
         {            
 
             foreach (var charac in SelectedCharacters)
             {
-                // var adventurer = AllCharacters.FirstOrDefault(c => c.NPCName == charac.NPCName);
-                // if (adventurer is not null && !SelectedCharacters.Any(c => c.NPCName == charac.NPCName))
-                    Characters.Add(charac);
+                Characters.Add(charac);               
             }
         }
-
       
         NewChapter.Characters = Characters;
         NewChapter.CreatedDate = DateTime.Now;
