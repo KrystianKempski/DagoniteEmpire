@@ -399,6 +399,8 @@
         //update date
         AllParams.Character.CurrentDate = CurrentDate;
         StateHasChanged();
+        if (AllParams.CurrentRace.Description is null) AllParams.CurrentRace.Description = string.Empty;
+        if (AllParams.Profession.Description is null) AllParams.Profession.Description = string.Empty;
         try
         {
             if (AllParams.Character.Id == 0)
@@ -411,6 +413,7 @@
                 }
                 else
                 {
+                    
                     raceDTO = await _raceRepository.Create(AllParams.CurrentRace);
                 }
                 if (raceDTO is not null)
@@ -424,13 +427,14 @@
                 }
 
                 // create equipment (in character)
-                //add fist seacretly
+                //add fist secretly
                 var fists = await _equipmentRepository.GetByName(SD.BasicWeaponsMelee.Fists);
                 var slot = new EquipmentSlotDTO(fists);
                 AllParams.EquipmentSlots.Add(slot);
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 
                 // create profession
+                
                 professionDTO = await _professionRepository.Create(AllParams.Profession);
                 if (professionDTO is not null)
                     AllParams.Character.ProfessionId = professionDTO.Id;
@@ -443,6 +447,7 @@
                         await _traitProfessionRepository.Create(skill);
                     }
                 }
+
 
                 var charac = await _characterRepository.Create(AllParams.Character);
 
@@ -485,7 +490,10 @@
                 }
                 else
                 {
-                    raceDTO = await _raceRepository.Create(AllParams.CurrentRace);
+                    if (AllParams.CurrentRace.Name != string.Empty && AllParams.CurrentRace.Description != string.Empty)
+                        raceDTO = await _raceRepository.Create(AllParams.CurrentRace);
+                    else
+                        raceDTO = null;
                 }
                 if (raceDTO is not null)
                 {
@@ -496,21 +504,28 @@
                     AllParams.Character.RaceId = 0;
                 }
                 // update profession
-                if (AllParams.Profession.Id > 0)
-                    professionDTO = await _professionRepository.Update(AllParams.Profession);
-                else
-                    professionDTO = await _professionRepository.Create(AllParams.Profession);
-                if (professionDTO is not null)
-                    AllParams.Character.ProfessionId = professionDTO.Id;
-
-                // update profession traits
-                if (AllParams.Profession.Traits is not null)
+                if (AllParams.Profession.Name != string.Empty && AllParams.Profession.Description != string.Empty)
                 {
-                    foreach (var skill in AllParams.Profession.Traits)
+                    if (AllParams.Profession.Id > 0)
+                        professionDTO = await _professionRepository.Update(AllParams.Profession);
+                    else
+                        professionDTO = await _professionRepository.Create(AllParams.Profession);
+                    if (professionDTO is not null)
+                        AllParams.Character.ProfessionId = professionDTO.Id;
+
+                    // update profession traits
+                    if (AllParams.Profession.Traits is not null)
                     {
-                        skill.ProfessionId = AllParams.Character.ProfessionId;
-                        await _traitProfessionRepository.Update(skill);
+                        foreach (var skill in AllParams.Profession.Traits)
+                        {
+                            skill.ProfessionId = AllParams.Character.ProfessionId;
+                            await _traitProfessionRepository.Update(skill);
+                        }
                     }
+                }
+                else
+                {
+                    AllParams.Profession.Id = 0;
                 }
 
                 // update Character traits
@@ -522,20 +537,10 @@
                 // update temporary triaits (states)
                 foreach (var obj in AllParams.TraitsTemporary)
                 {
-
-
                     TraitCharacterDTO trait;
                     trait = (TraitCharacterDTO)obj;
                     trait.CharacterId = Id;
-                    // if (obj.TraitApproved)
-                    // {
-                    //     trait = new(obj, Id, true);
 
-                    // }
-                    // else
-                    // {
-                    //     trait = (TraitCharacterDTO)obj;
-                    // }
                     await _traitCharacterRepository.Update(trait);
                 }                
 

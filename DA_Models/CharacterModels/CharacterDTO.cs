@@ -14,11 +14,11 @@ namespace DA_Models.CharacterModels
         [Required(ErrorMessage = "Please enter name of character")]
         public string? UserName { get; set; }
         public Relation Relation { get; set; } = Relation.Teammate;
-        public string? NPCName { get; set; } 
-        public string? Description { get; set; }
+        public string? NPCName { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         [Range(16, 300, ErrorMessage = "Age must be between 16 and 300 years")]
-        public int Age { get; set; }
+        public int Age { get; set; } = 16;
         public string? ImageUrl { get; set; } = "/images/def-char-img.webp";
         public string? NPCType { get; set; } = SD.NPCType.Hero;
         public int AttributePoints { get; set; }
