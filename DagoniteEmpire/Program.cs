@@ -84,7 +84,7 @@ builder.Services.Configure<EmailConfiguration>(options =>
 });
 
 var app = builder.Build();
-
+app.UseStatusCodePages();
 
 Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NDaF5cWWtCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH9ceHVRRWdYVUd3WUI=");
 //Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(builder.Configuration["SyncfusionKey"]);

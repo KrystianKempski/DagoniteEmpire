@@ -60,7 +60,7 @@ namespace DagoniteEmpire.Service
                 }
                 catch (Exception ex)
                 {
-                    throw;
+                    throw ex;
                 }
             }
         }

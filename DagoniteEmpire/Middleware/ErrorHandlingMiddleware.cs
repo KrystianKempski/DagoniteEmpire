@@ -1,5 +1,7 @@
 ﻿using DagoniteEmpire.Exceptions;
 using DagoniteEmpire.Helper;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -9,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DagoniteEmpire.Middleware
 {
@@ -16,8 +19,9 @@ namespace DagoniteEmpire.Middleware
     {
         private readonly ILogger<ErrorHandlingMiddleware> _logger;
         private readonly IJSRuntime _jsRuntime;
+        private readonly NavigationManager _navigationManagerl;
 
-        public ErrorHandlingMiddleware(ILogger<ErrorHandlingMiddleware> logger, IJSRuntime jsRuntime)
+        public ErrorHandlingMiddleware(ILogger<ErrorHandlingMiddleware> logger, IJSRuntime jsRuntime, NavigationManager navigationManagerl)
         {
             _logger = logger;
             _jsRuntime = jsRuntime;
@@ -42,8 +46,10 @@ namespace DagoniteEmpire.Middleware
             {
                 _logger.LogError(ex, ex.Message);
                 context.Response.StatusCode = 500;
-                await context.Response.WriteAsync("Uknown error");
-                await _jsRuntime.ToastrError("Uknown error");
+                context.Response.ContentType = Text.Plain;
+                //await context.Response.WriteAsync($"Error: {ex.Message}");
+                await context.Response.WriteAsync("Error:" + ex.Message);
+                await _jsRuntime.ToastrError("Error" + ex.Message);
             }
         }
     }

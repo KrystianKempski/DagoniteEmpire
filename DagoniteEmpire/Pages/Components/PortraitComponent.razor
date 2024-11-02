@@ -8,13 +8,15 @@
     <h3 class="my-3 ml-3 text-center">PORTRAIT</h3>
     <div class="portrait-imageframe">
         <img src="@AllParams.Character.ImageUrl" class="portrait-image" />
-        @* <div class="portrait-input"> *@
-        @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
-        {
-            <label class="input-label" for="input">@ChooseFile</label>
-            <InputFile id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
-        }
-        @* </div> *@
+            @if (AllParams.Character.ImageUrl == "/images/def-char-img.webp")
+            {                    
+                <label class="input-label" for="input">@ChooseFile</label>
+            }
+            else
+            {
+                <label class="input-label" for="input"> </label>
+            }
+                <InputFile accept=".jpeg,.jpg,.png" id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
     </div>
 
     <div class="points-control">

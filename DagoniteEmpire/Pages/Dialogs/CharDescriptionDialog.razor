@@ -12,10 +12,7 @@
                 <p>Here write a description of your character</p>
             </SfRichTextEditor>
         </div>
-        @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
-        {
-            <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>
-        }
+        <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>       
     </div>
     <SfDialog Width="80%" Height="80%" @bind-Visible="@IsDescrDialVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
         <DialogEvents Opened="@DialogOpen"></DialogEvents>
