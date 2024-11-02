@@ -443,7 +443,7 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null)
         {
             using var contex = await _db.CreateDbContextAsync();
-            if (userName == null || userName.Length < 3)
+            if (userName == null || userName.Length < 2)
                 return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.EquipmentSlots).Where(u =>u.IsApproved == true));
             return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.EquipmentSlots).Where(u => u.UserName == userName && u.IsApproved == true));
 
@@ -462,7 +462,7 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<CharacterDTO>> GetAllInfoForUser(string userName)
         {
             using var contex = await _db.CreateDbContextAsync();
-            if (userName == null || userName.Length < 3)
+            if (userName == null || userName.Length < 2)
                 return new List<CharacterDTO>();
             return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
                 .Where(u => u.UserName == userName));
