@@ -149,10 +149,10 @@
         StateHasChanged();
         if (UserInfo?.IsAdminOrMG == true)
         {
-            Characters = await _characterRepository.GetAllInfoApproved();
+            Characters = await _characterRepository.GetAllApproved();
             if(Characters is not null)
                 SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
-            if (SelectedCharacter is not null && SelectedCharacter.NPCName.Equals(SD.GameMaster_NPCName))
+            if (UserInfo.CharacterMG == true)
             {
 
                 Title = "All avalible campaingns";
@@ -162,7 +162,7 @@
             else
             {
                 Title = "Characters of " + UserInfo?.UserName;
-                Characters = await _characterRepository.GetAllInfoApproved(UserInfo.UserName);
+                Characters = await _characterRepository.GetAllApproved(UserInfo.UserName);
                 if (Characters.Any())
                 {
                     SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
@@ -174,7 +174,7 @@
         else
         {
             Title = "Characters of " + UserInfo?.UserName;
-            Characters = await _characterRepository.GetAllInfoApproved(UserInfo.UserName);
+            Characters = await _characterRepository.GetAllApproved(UserInfo.UserName);
             if (Characters.Any())
             {
                 SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);

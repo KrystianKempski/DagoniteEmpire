@@ -130,7 +130,9 @@
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
+
         await LoadCampaign();
+        await CheckSelectedCharacter();
         handler = async () => await CheckSelectedCharacter();
         _callbackService.OnChange += handler;
     }
@@ -146,7 +148,7 @@
         {
             SelectedCharacter = await _characterRepository.GetById((int)UserInfo?.SelectedCharacterId);
             if (Campaign.Characters.FirstOrDefault(c => c.Id == UserInfo?.SelectedCharacterId) is not null ||
-                (SelectedCharacter is not null && SelectedCharacter.NPCName == SD.GameMaster_NPCName))
+                UserInfo.CharacterMG == true)
             {
                 _navigationManager.NavigateTo($"/campaign/{Id}/{UserInfo?.SelectedCharacterId}");
             }
@@ -242,7 +244,7 @@
     private async Task ChooseChapter(ChapterDTO chapter)
     {
         if (chapter.Characters.FirstOrDefault(c => c.Id == CharId) is not null ||
-                (SelectedCharacter?.NPCName == SD.GameMaster_NPCName))
+                UserInfo?.CharacterMG == true)
             _navigationManager.NavigateTo($"/chapter/{chapter.Id}/{SelectedCharacter.Id}");
         else
         {

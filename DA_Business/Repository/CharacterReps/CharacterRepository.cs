@@ -131,30 +131,51 @@ namespace DA_Business.Repository.CharacterReps
             }
         }
 
-        public async Task<IEnumerable<CharacterDTO>> GetAll(int? id=null)
+        public async Task<IEnumerable<CharacterDTO>> GetAll(int? id=null, bool fullIncludes = false)
         {
             using var contex = await _db.CreateDbContextAsync();
-            if (id == null || id < 1)
+            if (fullIncludes)
+            {
+
+                if (id == null || id < 1)
+                    return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
+                        .Include(r => r.Race)
+                        .Include(r => r.Profession)
+                        .Include(r=>r.EquipmentSlots)
+                        .Where(u=>u.NPCName != SD.GameMaster_NPCName));
                 return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
                     .Include(r => r.Race)
                     .Include(r => r.Profession)
-                    .Include(r=>r.EquipmentSlots)
-                    .Where(u=>u.NPCName != SD.GameMaster_NPCName));
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
-                .Include(r => r.Race)
-                .Include(r => r.Profession)
-                .Include(r => r.EquipmentSlots)
-                .Where(u=>u.Id == id && u.NPCName != SD.GameMaster_NPCName));
+                    .Include(r => r.EquipmentSlots)
+                    .Where(u=>u.Id == id && u.NPCName != SD.GameMaster_NPCName));
+            }
+            else
+            {
+                if (id == null || id < 1)
+                    return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
+                        .Where(u => u.NPCName != SD.GameMaster_NPCName));
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
+                    .Where(u => u.Id == id && u.NPCName != SD.GameMaster_NPCName));
+            }
         }
 
-        public async Task<CharacterDTO> GetById(int id)
+        public async Task<CharacterDTO> GetById(int id, bool fullIncludes = false)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Characters
-                .Include(r=>r.Race)
+            Character? obj = null;
+            if (fullIncludes)
+            {
+                obj = await contex.Characters
+                .Include(r => r.Race)
                 .Include(r => r.Profession)
                 .Include(r => r.EquipmentSlots)?.ThenInclude(u => u.Equipment)?.ThenInclude(b => b.Traits)?.ThenInclude(b => b.Bonuses)
                 .FirstOrDefaultAsync(u => u.Id == id);
+            }
+            else
+            {
+                obj = await contex.Characters
+                .FirstOrDefaultAsync(u => u.Id == id);
+            }
             if (obj != null)
             {
                 var res = _mapper.Map<Character, CharacterDTO>(obj);
@@ -162,14 +183,23 @@ namespace DA_Business.Repository.CharacterReps
             }
             return new CharacterDTO();
         }
-        public async Task<CharacterDTO> GetByName(string npcName)
+        public async Task<CharacterDTO> GetByName(string npcName, bool fullIncludes = false)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Characters
+            Character? obj = null;
+            if (fullIncludes)
+            {
+                obj = await contex.Characters
                 .Include(r => r.Race)
                 .Include(r => r.Profession)
                 .Include(r => r.EquipmentSlots).ThenInclude(u => u.Equipment).ThenInclude(b => b.Traits)?.ThenInclude(b => b.Bonuses)
                 .FirstOrDefaultAsync(u => u.NPCName == npcName);
+            }
+            else
+            {
+                obj = await contex.Characters
+               .FirstOrDefaultAsync(u => u.NPCName == npcName);
+            }
             if (obj != null)
             {
                 return _mapper.Map<Character, CharacterDTO>(obj);
@@ -177,18 +207,26 @@ namespace DA_Business.Repository.CharacterReps
             return new CharacterDTO();
         }
         
-        public async Task<IEnumerable<CharacterDTO>> GetAllForUser(string userName)
+        public async Task<IEnumerable<CharacterDTO>> GetAllForUser(string userName, bool fullIncludes = false)
         {
             using var contex = await _db.CreateDbContextAsync();
             if (userName == null || userName.Length<3)
                 return new List<CharacterDTO>();
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
+            if (fullIncludes)
+            {
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
                 .Include(r => r.Race)
                 .Include(r => r.Profession)
-                .Include(r=>r.EquipmentSlots)
+                .Include(r => r.EquipmentSlots)
                 .Where(u => u.UserName == userName));
+            }
+            else
+            {
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
+                .Where(u => u.UserName == userName));
+            }
         }
-        public async Task<IEnumerable<CharacterDTO>> GetAllForCampaign(int campaignId)
+        public async Task<IEnumerable<CharacterDTO>> GetAllForCampaign(int campaignId, bool fullIncludes = false)
         {
             //try
             //{
@@ -440,21 +478,22 @@ namespace DA_Business.Repository.CharacterReps
             }
         }
 
-        public async Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null)
+        public async Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null, bool fullIncludes = false)
         {
             using var contex = await _db.CreateDbContextAsync();
+            if (fullIncludes)
+            {
+
             if (userName == null || userName.Length < 2)
                 return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.EquipmentSlots).Where(u =>u.IsApproved == true));
             return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.EquipmentSlots).Where(u => u.UserName == userName && u.IsApproved == true));
-
-        }
-
-        public async Task<IEnumerable<CharacterDTO>> GetAllInfoApproved(string? userName = null)
-        {
-            using var contex = await _db.CreateDbContextAsync();
-            if (userName == null || userName.Length < 2)
-                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Where(u => u.IsApproved == true));
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Where(u => u.UserName == userName && u.IsApproved == true));
+            }
+            else
+            {
+                if (userName == null || userName.Length < 2)
+                    return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Where(u => u.IsApproved == true));
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Where(u => u.UserName == userName && u.IsApproved == true));
+            }
 
         }
         public async Task<string> GetPortraitUrl(int id)
@@ -468,12 +507,5 @@ namespace DA_Business.Repository.CharacterReps
             return string.Empty;
         }
 
-        public async Task<IEnumerable<CharacterDTO>> GetAllInfoForUser(string userName)
-        {
-            using var contex = await _db.CreateDbContextAsync();
-            if (userName == null || userName.Length < 2)
-                return new List<CharacterDTO>();
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Where(u => u.UserName == userName));
-        }
     }
 }

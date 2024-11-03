@@ -77,7 +77,7 @@
     public IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     public CharacterDTO? SelectedCharacter { get; set; } = null;
     public UserInfo? UserInfo {get;set;} = null; 
-   
+
 
     void GoTo(string panel)
     {
@@ -94,8 +94,17 @@
         UserInfo = await _userService.GetUserInfo();
         if (UserInfo is null || UserInfo?.UserName is null)
             return;
-        Characters = await _characterRepository.GetAllInfoForUser(UserInfo.UserName);
+        Characters = await _characterRepository.GetAllForUser(UserInfo.UserName);
         SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
+        if(SelectedCharacter is null && UserInfo.IsAdminOrMG == true)
+        {
+            SelectedCharacter = await _characterRepository.GetByName(SD.GameMaster_NPCName);
+            UserInfo.CharacterMG = true;
+        }
+        else
+        {
+            UserInfo.CharacterMG = false;
+        }
         if(SelectedCharacter is not null && SelectedCharacter.ImageUrl is not null ){
             PortraitUrl = SelectedCharacter.ImageUrl;
         }else{
@@ -117,6 +126,11 @@
                 if (UserInfo.IsAdminOrMG == false)
                     return;
                 character = await _characterRepository.GetByName(SD.GameMaster_NPCName);
+                UserInfo.CharacterMG = true;
+            }
+            else
+            {
+                UserInfo.CharacterMG = false;
             }
 
             await _userService.SetSelectedCharId(character.Id);
@@ -145,6 +159,6 @@
             UserInfo = await _userService.GetUserInfo();
         if (UserInfo is null|| UserInfo?.UserName is null)
             return;
-        Characters = await _characterRepository.GetAllInfoForUser(UserInfo.UserName);        
+        Characters = await _characterRepository.GetAllForUser(UserInfo.UserName);        
     }
 }

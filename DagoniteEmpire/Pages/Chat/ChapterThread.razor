@@ -163,7 +163,7 @@ else
                                     <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
                                         <MudStack Spacing="0" Row="true">
                                             <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
-                                            @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.GameMaster_NPCName)
+                                            @if (post.CharacterId == SelectedCharacter.Id || UserInfo.CharacterMG == true)
                                             {
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                             }
@@ -195,7 +195,7 @@ else
                                     <MudStack Class="pb-1" Spacing="0" Row="true">
                                         <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage Src="@post.Character.ImageUrl"></MudImage></MudAvatar>
                                         <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.Character.NPCName</MudText>
-                                        @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.GameMaster_NPCName)
+                                        @if (post.CharacterId == SelectedCharacter.Id || UserInfo.CharacterMG == true)
                                         {
                                             <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                         }
@@ -363,8 +363,9 @@ else
             SelectedCharacter = await _characterRepository.GetById((int)UserInfo?.SelectedCharacterId);
 
         if (Chapter?.Characters.FirstOrDefault(c => c.Id == UserInfo?.SelectedCharacterId) is null            
-            && (SelectedCharacter is not null && SelectedCharacter.NPCName != SD.GameMaster_NPCName))
+            && UserInfo?.CharacterMG == false)
         {
+
             NewPost.Content = "Character not present in this chapter!";
             SendPostEnabled = false;
         }

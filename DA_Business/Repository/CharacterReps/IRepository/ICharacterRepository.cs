@@ -14,16 +14,14 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         public Task<CharacterDTO> Update(CharacterDTO objDTO);
         public Task<int> Delete(int id);
 
-        public Task<CharacterDTO> GetById(int id);
-        public Task<CharacterDTO> GetByName(string npcName);
-        public Task<IEnumerable<CharacterDTO>> GetAll(int? id = null);
-        public Task<IEnumerable<CharacterDTO>> GetAllForUser(string userName);
-        public Task<IEnumerable<CharacterDTO>> GetAllInfoForUser(string userName);
+        public Task<CharacterDTO> GetById(int id,bool fullIncludes = false);
+        public Task<CharacterDTO> GetByName(string npcName, bool fullIncludes = false);
+        public Task<IEnumerable<CharacterDTO>> GetAll(int? id = null, bool fullIncludes = false);
+        public Task<IEnumerable<CharacterDTO>> GetAllForUser(string userName, bool fullIncludes = false);
 
-        public Task<IEnumerable<CharacterDTO>> GetAllForCampaign(int campaignId);
+        public Task<IEnumerable<CharacterDTO>> GetAllForCampaign(int campaignId, bool fullIncludes = false);
 
-        public Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null);
-        public Task<IEnumerable<CharacterDTO>> GetAllInfoApproved(string? userName = null);
+        public Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null, bool fullIncludes = false);
         public Task<string> GetPortraitUrl(int id);
     }
 }
