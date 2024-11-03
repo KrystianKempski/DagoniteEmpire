@@ -248,20 +248,17 @@
     [Parameter]
     public int Id { get; set; }
     public AllParamsModel AllParams { get; set; } = new();
-    MudDataGrid<WoundDTO> WoundsGrid { get; set; }
-
+    private MudDataGrid<WoundDTO> WoundsGrid { get; set; }
     private Nutrition NutritionSelect {get;set;}
     private IDisposable? registration;
     private bool IsLoading { get; set; } = true;
     private bool IsLeaveAllowed { get; set; } = true;
     private string TargetLocation { get; set; } = "";
-
-    UserInfo? UserInfo { get; set; }
+    private UserInfo? UserInfo { get; set; }
     private ICollection<WoundDTO> WoundsList { get; set; } = new List<WoundDTO>();
     private ICollection<WoundDTO> DeletedWounds { get; set; } = new List<WoundDTO>();
     private IDictionary<string, WoundDTO> Conditions { get; set; } = new Dictionary<string, WoundDTO>();
     private WoundDTO NewWound { get; set; } = new();
-
     public string[] Initial = Wounds.Location.All;
     public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp = new Dictionary<EquippedItems, EquipItemComponent>();
 
@@ -272,7 +269,6 @@
             try
             {
                 IsLoading = true;
-
                 registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
                 await LoadCharacter();
                 WoundsList = AllParams.Health.GetAll();
@@ -315,7 +311,6 @@
         {
             AllParams.Health.CalculateHealTime(wound);
         }
-
     }
 
     private async Task SaveChanges()
@@ -429,7 +424,6 @@
         IsLeaveAllowed = false;
         StateHasChanged();
     }
-
 
     public async Task ConfirmLeave_Click(bool isConfirmed)
     {

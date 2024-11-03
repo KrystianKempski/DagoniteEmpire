@@ -2,6 +2,7 @@
  @inject IUserService _userService
  @inject ICharacterRepository _characterRepository
  @inject ISnackbar _snackbar
+ @inject CallbackService callbackService
 
 <AuthorizeView>
     <Authorized>
@@ -15,6 +16,19 @@
             </ActivatorContent>
             <ChildContent >
                 <MudMenuItem  Disabled>Select character</MudMenuItem>
+                @if (UserInfo?.IsAdminOrMG == true)
+                {
+                    <MudMenuItem OnClick="@(e => SelectCharacter())">
+                        <div class="d-flex flex-row">
+                            <MudAvatar>
+                                <MudImage Src="@SD.GameMaster_Portrait"></MudImage>
+                            </MudAvatar>
+                            <MudText Class="align-content-center ps-1">
+                                @SD.GameMaster_NPCName
+                            </MudText>
+                        </div>
+                    </MudMenuItem>
+                }
                 @foreach (CharacterDTO character in Characters)
                 {
                     <MudMenuItem OnClick="@(e => SelectCharacter(character))">
@@ -63,6 +77,7 @@
     public IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     public CharacterDTO? SelectedCharacter { get; set; } = null;
     public UserInfo? UserInfo {get;set;} = null; 
+   
 
     void GoTo(string panel)
     {
@@ -86,14 +101,24 @@
         }else{
             PortraitUrl = "/images/def-char-img.webp";
         }
+
+        callbackService.SetSelectedChar(UserInfo.SelectedCharacterId);
     }
 
-    private async Task SelectCharacter(CharacterDTO character)
+    private async Task SelectCharacter(CharacterDTO? character = null)
     {
         try{
 
-            if (UserInfo is null || character is null)
+            if (UserInfo is null)
                 return;
+
+            if (character is null)
+            {
+                if (UserInfo.IsAdminOrMG == false)
+                    return;
+                character = await _characterRepository.GetByName(SD.GameMaster_NPCName);
+            }
+
             await _userService.SetSelectedCharId(character.Id);
             UserInfo.SelectedCharacterId = character.Id;
             SelectedCharacter = character;
@@ -105,6 +130,7 @@
             {
                 PortraitUrl = "/images/def-char-img.webp";
             }
+            callbackService.SetSelectedChar(character.Id);
         }
         catch(Exception ex)
         {
@@ -116,16 +142,9 @@
     {
         UserInfo = await _userService.GetUserInfo();
         if (UserInfo is null || UserInfo?.UserName is null)
+            UserInfo = await _userService.GetUserInfo();
+        if (UserInfo is null|| UserInfo?.UserName is null)
             return;
-        Characters = await _characterRepository.GetAllInfoForUser(UserInfo.UserName);
-        SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
-        if (SelectedCharacter is not null && SelectedCharacter.ImageUrl is not null)
-        {
-            PortraitUrl = SelectedCharacter.ImageUrl;
-        }
-        else
-        {
-            PortraitUrl = "/images/def-char-img.webp";
-        }
+        Characters = await _characterRepository.GetAllInfoForUser(UserInfo.UserName);        
     }
 }

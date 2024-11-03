@@ -152,7 +152,7 @@ namespace DA_Business.Repository.ChatRepos
                             if (!updatedCampaign.Characters.Any(c => c.Id == existingChild.Id))
                             {
                                 //remove from campaign
-                                var detachedCharacter = contex.Characters.Include(c => c.Campaigns).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
+                                var detachedCharacter = contex.Characters.Include(c => c.Campaigns).Include(c => c.Chapters).FirstOrDefault(c => c.Id == existingChild.Id && c.Id != default(int));
                                 if (detachedCharacter == null || detachedCharacter.Campaigns == null || !detachedCharacter.Campaigns.Contains(obj))
                                     continue;
                                 detachedCharacter.Campaigns.Remove(obj);

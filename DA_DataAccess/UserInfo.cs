@@ -13,14 +13,9 @@ namespace DA_DataAccess
         public bool ResetUser { get; set; } = false;
         public int SelectedCharacterId { get; set; } = 0;
         public string? UserName { get; set; }
-
         public string? UserId { get; set; }
-
         public bool? IsAdminOrMG { get; set; }
-
         public bool? IsAuthenticated { get; set; }
-
         public string? Role { get; set; }
-
     }
 }

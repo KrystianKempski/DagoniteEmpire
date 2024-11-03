@@ -23,6 +23,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         public Task<IEnumerable<CharacterDTO>> GetAllForCampaign(int campaignId);
 
         public Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null);
+        public Task<IEnumerable<CharacterDTO>> GetAllInfoApproved(string? userName = null);
         public Task<string> GetPortraitUrl(int id);
     }
 }

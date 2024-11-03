@@ -15,6 +15,7 @@ namespace DA_Business.Services
         private readonly AuthenticationStateProvider _authState;
         private readonly UserInfo _userInfo;
         private readonly IDbContextFactory<ApplicationDbContext> _db;
+        
 
         public UserService(AuthenticationStateProvider authState, IOptions<UserInfo> userInfo, IDbContextFactory<ApplicationDbContext> db)
         {
@@ -90,7 +91,6 @@ namespace DA_Business.Services
                     _userInfo.SelectedCharacterId = charId;
                 }
             }
-
         }
     }
 }

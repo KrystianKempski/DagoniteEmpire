@@ -139,12 +139,12 @@ namespace DA_Business.Repository.CharacterReps
                     .Include(r => r.Race)
                     .Include(r => r.Profession)
                     .Include(r=>r.EquipmentSlots)
-                    .Where(u=>u.NPCName != SD.NPCName_GameMaster));
+                    .Where(u=>u.NPCName != SD.GameMaster_NPCName));
             return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
                 .Include(r => r.Race)
                 .Include(r => r.Profession)
                 .Include(r => r.EquipmentSlots)
-                .Where(u=>u.Id == id && u.NPCName != SD.NPCName_GameMaster));
+                .Where(u=>u.Id == id && u.NPCName != SD.GameMaster_NPCName));
         }
 
         public async Task<CharacterDTO> GetById(int id)
@@ -448,6 +448,15 @@ namespace DA_Business.Repository.CharacterReps
             return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Include(r => r.Race).Include(r => r.Race).Include(r => r.Profession).Include(r => r.EquipmentSlots).Where(u => u.UserName == userName && u.IsApproved == true));
 
         }
+
+        public async Task<IEnumerable<CharacterDTO>> GetAllInfoApproved(string? userName = null)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            if (userName == null || userName.Length < 2)
+                return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Where(u => u.IsApproved == true));
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Where(u => u.UserName == userName && u.IsApproved == true));
+
+        }
         public async Task<string> GetPortraitUrl(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
@@ -464,8 +473,7 @@ namespace DA_Business.Repository.CharacterReps
             using var contex = await _db.CreateDbContextAsync();
             if (userName == null || userName.Length < 2)
                 return new List<CharacterDTO>();
-            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters
-                .Where(u => u.UserName == userName));
+            return _mapper.Map<IEnumerable<Character>, IEnumerable<CharacterDTO>>(contex.Characters.Where(u => u.UserName == userName));
         }
     }
 }

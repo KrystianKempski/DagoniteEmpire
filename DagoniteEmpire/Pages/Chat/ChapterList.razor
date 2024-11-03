@@ -12,6 +12,8 @@
 @inject IUserService _userService
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
+@inject CallbackService _callbackService
+@implements IDisposable
 
 @using Microsoft.AspNetCore.SignalR.Client;
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
@@ -96,9 +98,6 @@
     </MudPaper>
 </MudContainer>
 
-
-
-
 @code{
     [Parameter]
     public int Id { get; set; }
@@ -116,7 +115,12 @@
 
     public UserInfo? UserInfo { get; set; }
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
+    private System.Action handler;
 
+    public void ShowWoho(object sender, System.EventArgs e)
+    {
+        CheckSelectedCharacter();
+    }
     protected override async Task OnInitializedAsync()
     {
 
@@ -126,17 +130,32 @@
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
-
+        await LoadCampaign();
+        handler = async () => await CheckSelectedCharacter();
+        _callbackService.OnChange += handler;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    public void Dispose()
     {
-        if (firstRender)
+        _callbackService.OnChange -= handler;
+    }
+
+    private async Task CheckSelectedCharacter()
+    {
+        if (UserInfo?.SelectedCharacterId != CharId && UserInfo?.SelectedCharacterId != 0)
         {
-            await LoadCampaign();
+            SelectedCharacter = await _characterRepository.GetById((int)UserInfo?.SelectedCharacterId);
+            if (Campaign.Characters.FirstOrDefault(c => c.Id == UserInfo?.SelectedCharacterId) is not null ||
+                (SelectedCharacter is not null && SelectedCharacter.NPCName == SD.GameMaster_NPCName))
+            {
+                _navigationManager.NavigateTo($"/campaign/{Id}/{UserInfo?.SelectedCharacterId}");
+            }
+            else
+            {
+                _navigationManager.NavigateTo($"/campaignlist");                
+            }
         }
     }
-
 
     private async Task LoadCampaign()
     {
@@ -222,6 +241,12 @@
 
     private async Task ChooseChapter(ChapterDTO chapter)
     {
-        _navigationManager.NavigateTo($"/chapter/{chapter.Id}/{SelectedCharacter.Id}");
+        if (chapter.Characters.FirstOrDefault(c => c.Id == CharId) is not null ||
+                (SelectedCharacter?.NPCName == SD.GameMaster_NPCName))
+            _navigationManager.NavigateTo($"/chapter/{chapter.Id}/{SelectedCharacter.Id}");
+        else
+        {
+            _snackBar.Add("This character don't have access to that chapter", Severity.Warning);
+        }
     }
 }

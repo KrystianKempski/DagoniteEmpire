@@ -29,6 +29,8 @@
 @inject IBrowserViewportService _vieportService
 @inject IFileUpload _fileUpload;
 @inject IScrollManager  _scrollManager
+@inject CallbackService _callbackService
+@implements IDisposable
 
 @using Microsoft.AspNetCore.SignalR.Client;
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
@@ -152,7 +154,7 @@ else
                                     <MudPaper Class="d-flex flex-column pa-2" Width="200px">
                                             <MudText Align="Align.Center" Typo="Typo.h5">@post.Character.NPCName</MudText>
                                             <MudImage Src="@post.Character.ImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg" />
-                                            @if (@post.Character.NPCName != SD.NPCName_GameMaster)
+                                            @if (@post.Character.NPCName != SD.GameMaster_NPCName)
                                             {
                                                 <MudText Align="Align.Center" Typo="Typo.body1">Race: @post.Character.RaceName</MudText>
                                                 <MudText Align="Align.Center" Typo="Typo.body1">Class: @post.Character.ProfessionName</MudText>
@@ -161,7 +163,7 @@ else
                                     <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
                                         <MudStack Spacing="0" Row="true">
                                             <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
-                                            @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.NPCName_GameMaster)
+                                            @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.GameMaster_NPCName)
                                             {
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                             }
@@ -193,7 +195,7 @@ else
                                     <MudStack Class="pb-1" Spacing="0" Row="true">
                                         <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage Src="@post.Character.ImageUrl"></MudImage></MudAvatar>
                                         <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.Character.NPCName</MudText>
-                                        @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.NPCName_GameMaster)
+                                        @if (post.CharacterId == SelectedCharacter.Id || SelectedCharacter.NPCName == SD.GameMaster_NPCName)
                                         {
                                             <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                         }
@@ -216,7 +218,7 @@ else
         }
         <div id="bottom-container">
             <MudPaper Width="100%" Height="300px" Square="true" Class="d-flex flex-column my-2 pa-2">
-                <SfRichTextEditor KeyConfigure="@KeyConfig" Height="90%" @bind-Value="@NewPost.Content" ShowTooltip="true">
+                <SfRichTextEditor Enabled="SendPostEnabled" Height="90%" @bind-Value="@NewPost.Content" ShowTooltip="true">
                     <RichTextEditorImageSettings SaveFormat="SaveFormat.Blob" SaveUrl="api/FileUpload/Save" Path="./upload/postImages/" />
                     <RichTextEditorEvents OnActionBegin="ActionHandler" BeforeUploadImage="@BeforeUploadImage" OnImageUploadSuccess="@ImageUploadSuccess" />
                     <RichTextEditorToolbarSettings  Items="@Tools" />
@@ -229,8 +231,7 @@ else
                     }
                 </div>
         </MudPaper>
-         </div>   
-    
+         </div>       
 </div>
 }
 
@@ -254,18 +255,12 @@ else
         padding: 4px;
     }
 
-    .e-richtexteditor .e-lib .e-control .e-rte-toolbar-enabled .e-rte-tb-expand .e-rte-full-screen{
-/*         top:64px;
-        right:56px; */
-    }
     .e-richtexteditor.e-rte-full-screen{
         top:64px;
         right:56px;
         width:100%;
     }
 </style>
-
-
 
 @code{
     [Parameter] public int Id { get; set; }
@@ -280,7 +275,7 @@ else
     public bool IsLoading { get; set; } = true;
     public bool IsLoadingCharacters { get; set; } = true;    
     private string Title { get; set; } = "Campaign name";
-    private CharacterDTO SelectedCharacter  = null;
+    private CharacterDTO? SelectedCharacter  = null;
     private bool IsEditMode = false;
     private bool OngoingBattle = false;
     private string SendButtonText { get; set; } = "Send Post";
@@ -288,6 +283,8 @@ else
     private int PostsPerPage { get; set; } = 10;
     private int PageNum { get; set; } = 1;
     private int PageCount { get; set; } = 1;
+    private bool SendPostEnabled = true;
+
     private MudPagination Pagination;
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
@@ -312,19 +309,13 @@ else
         new ToolbarItemModel() { Command = ToolbarCommand.Undo },
         new ToolbarItemModel() { Command = ToolbarCommand.Redo },
         new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-        // new ToolbarItemModel() { Command = ToolbarCommand.SourceCode },
         new ToolbarItemModel() { Command = ToolbarCommand.Blockquote },
     };
-    private ShortcutKeys KeyConfig = new ShortcutKeys()
-        {
-            Bold = "-+space",
-            Italic = "ctrl+2",
-        };
 
 
     public UserInfo? UserInfo { get; set; }
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
-
+    private System.Action handler;
     private bool _open = false;
     private bool _scrollDown = true;
 
@@ -332,7 +323,6 @@ else
     {
         _open = !_open;
     }
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -348,31 +338,45 @@ else
         {
             StateHasChanged();
         }
-        if (UserInfo?.IsAdminOrMG == true)
-        {
-            SelectedCharacter = new()
-                {
-                    NPCName = "Game Master",
-                    UserName = UserInfo.UserName,
-                };
-        }
 
+        PageCount = await GetPageCount();
+        PageNum = PageCount;
+        await LoadChapter();
+        handler = async () => await LoadSelectedCharacter();
+        _callbackService.OnChange += handler;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            PageCount = await GetPageCount();
-            PageNum = PageCount;
-            await LoadChapter();
-        }
         if (_scrollDown == true)
         {           
             await Task.Delay(500);
             await _jsRuntime.ScrollToElement("bottom-container");
             _scrollDown = false;
+        }  
+    }
+
+    private async Task LoadSelectedCharacter()
+    {
+
+        if(UserInfo?.SelectedCharacterId is not null)
+            SelectedCharacter = await _characterRepository.GetById((int)UserInfo?.SelectedCharacterId);
+
+        if (Chapter?.Characters.FirstOrDefault(c => c.Id == UserInfo?.SelectedCharacterId) is null            
+            && (SelectedCharacter is not null && SelectedCharacter.NPCName != SD.GameMaster_NPCName))
+        {
+            NewPost.Content = "Character not present in this chapter!";
+            SendPostEnabled = false;
         }
+        else
+        {
+            SendPostEnabled = true;
+            NewPost.Content = string.Empty;
+            SelectedCharacter = await _characterRepository.GetById((int)UserInfo?.SelectedCharacterId);
+            _navigationManager.NavigateTo($"/chapter/{Id}/{SelectedCharacter.Id}");
+        }
+        _scrollDown = true;
+        StateHasChanged();
     }
 
 
@@ -393,15 +397,8 @@ else
 
         // load mobs
         await LoadMobs();
+        await LoadSelectedCharacter();
 
-        if (UserInfo?.IsAdminOrMG == true)
-        {
-            SelectedCharacter = await _characterRepository.GetByName(SD.NPCName_GameMaster);
-        }
-        else
-        {
-            SelectedCharacter = await _characterRepository.GetById(CharId);
-        }
         _items = new List<BreadcrumbItem>
         {
             new BreadcrumbItem("Campaigns", href: $"/campaignlist/" ),
@@ -420,7 +417,6 @@ else
         IsLoadingCharacters = false;
         IsLoading = false;
         StateHasChanged();
-
     }
 
     private async Task CreatePost()
@@ -495,7 +491,6 @@ else
         {
             args.Cancel = true;
         }
-
     }
 
     private void ActionHandler(Syncfusion.Blazor.RichTextEditor.ActionBeginEventArgs arg)
@@ -514,9 +509,6 @@ else
         // Update the modified image name to display a image in the editor.
         args.File.Name = headers[0];
     }
-
-
-
 
     private async Task GenerateFightSequence()
     {
@@ -784,4 +776,9 @@ else
         IsLoading = false;
         StateHasChanged();
     }
+    public void Dispose()
+    {
+        _callbackService.OnChange -= handler;
+    }
+
 }

@@ -13,7 +13,8 @@
 @inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
 @inject IUserService _userService
-
+@inject CallbackService callbackService
+@implements IDisposable
 
 @using Microsoft.AspNetCore.SignalR.Client;
 
@@ -23,7 +24,7 @@
     }else{
         <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
               
-        @if (Characters.Count() > 0)
+      @*   @if (Characters.Count() > 0)
         {
             <div class="d-flex flex-row">      
                 <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for:</MudText>
@@ -36,9 +37,9 @@
             </div>
         }
         else if(Characters.Count() == 1)
-        {
-            <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for: @Characters.First().NPCName</MudText>
-        }
+        { *@
+        <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for: @SelectedCharacter.NPCName</MudText>
+        
        
         @if (UserInfo?.IsAdminOrMG == true)
         {
@@ -100,8 +101,6 @@
         </MudStack>
     }
     <MudPaper Width="100%" Square="true" Class="ma-2">
-
-
     </MudPaper>
 </MudContainer>
 
@@ -119,6 +118,8 @@
 
     public UserInfo? UserInfo { get; set; }
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
+    private System.Action handler;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -128,23 +129,60 @@
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
+
+        handler = async () => await LoadSelectedCharacter();
+        callbackService.OnChange += handler;
         await LoadCharactersAndCampaigns();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    public void Dispose()
     {
-        if (firstRender)
-        {
-          //  await LoadCharactersAndCampaigns();
-        }
+        callbackService.OnChange -= handler;
     }
 
-    private async Task SelectCharacter(CharacterDTO character)
+
+    private async Task LoadSelectedCharacter()
     {
+        if (UserInfo is null)
+            return;
         IsLoading = true;
         StateHasChanged();
-        SelectedCharacter = character;
-        Campaigns = (await _campaignRepository.GetAll(character.Id)).ToList();
+        if (UserInfo?.IsAdminOrMG == true)
+        {
+            Characters = await _characterRepository.GetAllInfoApproved();
+            if(Characters is not null)
+                SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
+            if (SelectedCharacter is not null && SelectedCharacter.NPCName.Equals(SD.GameMaster_NPCName))
+            {
+
+                Title = "All avalible campaingns";
+                SelectedCharacter = await _characterRepository.GetByName(SD.GameMaster_NPCName);
+                Campaigns = (await _campaignRepository.GetAll()).ToList();
+            }
+            else
+            {
+                Title = "Characters of " + UserInfo?.UserName;
+                Characters = await _characterRepository.GetAllInfoApproved(UserInfo.UserName);
+                if (Characters.Any())
+                {
+                    SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
+                    if (SelectedCharacter is not null)
+                        Campaigns = (await _campaignRepository.GetAll(SelectedCharacter.Id)).ToList();
+                }
+            }
+        }
+        else
+        {
+            Title = "Characters of " + UserInfo?.UserName;
+            Characters = await _characterRepository.GetAllInfoApproved(UserInfo.UserName);
+            if (Characters.Any())
+            {
+                SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
+                Campaigns = (await _campaignRepository.GetAll(SelectedCharacter.Id)).ToList();
+            }
+
+
+        }
         IsLoading = false;
         StateHasChanged();
     }
@@ -158,26 +196,7 @@
             new BreadcrumbItem("Campaign", href: $"/campaignlist/"),
         };
 
-
-        if (UserInfo?.IsAdminOrMG == true)
-        {
-            Title = "All avalible campaingns";
-            Characters = await _characterRepository.GetAll();
-            Campaigns = (await _campaignRepository.GetAll()).ToList();
-            SelectedCharacter = await _characterRepository.GetByName(SD.NPCName_GameMaster);
-        }
-        else
-        {
-            Title = "Characters of " + UserInfo?.UserName;
-            Characters = await _characterRepository.GetAllForUser(UserInfo?.UserName);
-            if (Characters.Any())
-            {
-                SelectedCharacter = Characters.First();
-                Campaigns = (await _campaignRepository.GetAll(SelectedCharacter.Id)).ToList();
-            }
-
-
-        }
+        await LoadSelectedCharacter();
         IsLoading = false;
         StateHasChanged();
     }
@@ -258,15 +277,9 @@
 
     private async Task ChooseCampaign(CampaignDTO campaign)
     {
-        _navigationManager.NavigateTo($"/campaign/{campaign.Id}/{SelectedCharacter.Id}");
+        if (UserInfo is null) return;
+        _navigationManager.NavigateTo($"/campaign/{campaign.Id}/{UserInfo.SelectedCharacterId}");
     }
-
-
-
-
-
-
-
 
 
 }

@@ -77,30 +77,30 @@ namespace DagoniteEmpire.Service
                     _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
                     _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
                 }
-                if (contex.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
+                if (contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName) == null)
                 {
-                    var prof = new Profession() { Name = SD.NPCName_GameMaster, Description="", RelatedAttributeName = "" };
+                    var prof = new Profession() { Name = SD.GameMaster_NPCName, Description="", RelatedAttributeName = "" };
 
                     contex.Professions.Add(prof);
                     contex.SaveChanges();
                 }
-                if (contex.Races.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster) == null)
+                if (contex.Races.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName) == null)
                 {
-                    var race = new Race() { Name = SD.NPCName_GameMaster };
+                    var race = new Race() { Name = SD.GameMaster_NPCName };
 
                     contex.Races.Add(race);
                     contex.SaveChanges();
                 }
-                if (contex.Characters.FirstOrDefault(c=>c.NPCName == SD.NPCName_GameMaster) == null)
+                if (contex.Characters.FirstOrDefault(c=>c.NPCName == SD.GameMaster_NPCName) == null)
                 {
-                    var charac = new Character() { UserName = "GM", NPCName = SD.NPCName_GameMaster };
+                    var charac = new Character() { UserName = "GM", NPCName = SD.GameMaster_NPCName };
 
-                    var profession = contex.Professions.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster);
-                    var race = contex.Races.FirstOrDefault(c => c.Name == SD.NPCName_GameMaster);
+                    var profession = contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName);
+                    var race = contex.Races.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName);
                     charac.ProfessionId = profession.Id;
                     charac.RaceId = race.Id;
-                    charac.ImageUrl = "../images/gm_avatar.webp";
-
+                    charac.ImageUrl = SD.GameMaster_Portrait;
+                    charac.IsApproved = true;
                     contex.Characters.Add(charac);
                     contex.SaveChanges();
                 }
