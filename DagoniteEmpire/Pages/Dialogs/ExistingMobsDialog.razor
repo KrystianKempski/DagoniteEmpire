@@ -55,19 +55,17 @@
 
     private string Title = "Add";
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            if (firstRender)
-            {
-                IsLoading = true;
-                StateHasChanged();
-                await LoadMobs();
+            IsLoading = true;
+            // StateHasChanged();
+            await LoadMobs();
 
-                IsLoading = false;
-                StateHasChanged();
-            }
+            IsLoading = false;
+            // StateHasChanged();
+            
         }
         catch (Exception ex)
         {

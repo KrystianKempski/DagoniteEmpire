@@ -33,28 +33,34 @@
     public ICollection<EquipmentSlotDTO> AllGearsOfType { get; set; } = new List<EquipmentSlotDTO>(); 
     public EquipmentDTO Fists { get; set; } = new EquipmentDTO();
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
+
+        ItemType = SlotType;
+        if (ItemType == SD.SlotType.Ring1 || ItemType == SD.SlotType.Ring2)
+            ItemType = SD.EquipmentType.Rings;
+
+
+        SelectedItem = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SlotType);
+
+        if (SelectedItem is not null)
         {
-            ItemType = SlotType;
-            if (ItemType == SD.SlotType.Ring1 || ItemType == SD.SlotType.Ring2)
-                ItemType = SD.EquipmentType.Rings;
-
-
-            SelectedItem = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SlotType);
-
-            if (SelectedItem is not null)
-            {
-                SelectedGearName = SelectedItem.Equipment.Name;
-            }
-            else
-            {
-                SelectedGearName = "Empty";
-            }
-            ReloadGears();
+            SelectedGearName = SelectedItem.Equipment.Name;
         }
+        else
+        {
+            SelectedGearName = "Empty";
+        }
+        ReloadGears();
     }
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+            
+    //     }
+    // }
 
     public void ReloadGears()
     {

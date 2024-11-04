@@ -106,6 +106,19 @@
     UserInfo? UserInfo { get; set; }
     private decimal EquipmentWeight;
     private decimal EquipmentPrice;
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
+        CalculateEquipWeightAndPrice();
+    }
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+
+    //     }
+    // }
 
 
     private void CalculateEquipWeightAndPrice()
@@ -233,14 +246,7 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            UserInfo = await _userService.GetUserInfo();
-            CalculateEquipWeightAndPrice();
-        }
-    }
+   
 
     private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Large)
     {

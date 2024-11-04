@@ -128,18 +128,14 @@
 
         }
     }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await _jsRuntime.ScrollToBottom("chatContainer");
-    }
+
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationState;
         if (!authState.User.Identity.IsAuthenticated)
         {
-            var uri = new Uri(_navigationManager.Uri);
-            _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+            return;
         }
 
         try
@@ -164,16 +160,23 @@
             {
                 await LoadUserChat(ContactId);
             }
-
-            // await SendAsync($"[Notice] {_username} joined chat room.");
         }
         catch (Exception e)
         {
             ;
-            // _message = $"ERROR: Failed to start chat client: {e.Message}";
-            // _isChatting = false;
         }
 
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var authState = await AuthenticationState;
+        if (!authState.User.Identity.IsAuthenticated)
+        {
+            var uri = new Uri(_navigationManager.Uri);
+            _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+        }
+        await _jsRuntime.ScrollToBottom("chatContainer");
     }
 
     private async Task ReceiveMessage(string name, ChatMessage message)
@@ -184,7 +187,6 @@
             if ((ContactId == message.ToUserId && CurrentUserId == message.FromUserId))
             {
                 messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { Email = CurrentUserEmail } });
-                //await hubConnection.SendAsync("ChatNotificationAsync", $"New Message From {name}", ContactId, CurrentUserId);
             }
             else if ((ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
             {

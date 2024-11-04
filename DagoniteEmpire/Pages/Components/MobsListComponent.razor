@@ -39,29 +39,46 @@
         new ItemModel(){ Text = "Delete Mod", PrefixIcon= "e-delete", Id="GridMob_delete"},
     };
 
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            if (firstRender)
-            {
-                IsLoading = true;
-                StateHasChanged();
-                await LoadMobs();
 
-                IsLoading = false;
-                StateHasChanged();
-            }
+            IsLoading = true;
+            // StateHasChanged();
+            await LoadMobs();
+
+            IsLoading = false;
+            //StateHasChanged();
+            
         }
         catch (Exception ex)
         {
             IsLoading = false;
             _snackBar.Add("Error while initialize: " + ex.ToString(), Severity.Error);
-           // await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
         }
-    }  
+    }
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     try
+    //     {
+    //         if (firstRender)
+    //         {
+    //             IsLoading = true;
+    //             StateHasChanged();
+    //             await LoadMobs();
 
+    //             IsLoading = false;
+    //             StateHasChanged();
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         IsLoading = false;
+    //         _snackBar.Add("Error while initialize: " + ex.ToString(), Severity.Error);
+    //        // await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+    //     }
+    // }  
 
     private async Task LoadMobs()
     {

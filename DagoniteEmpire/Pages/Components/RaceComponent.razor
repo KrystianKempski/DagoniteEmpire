@@ -79,6 +79,38 @@
     private bool ShowNameLabel { get; set; } = false;
 
 
+    protected override async Task OnInitializedAsync()
+    {
+
+        CustomRace = AllParams.CurrentRace;
+        if (!string.IsNullOrEmpty(AllParams.CurrentRace.Name))
+        {
+            var race = AllParams.Races.FirstOrDefault(r => r.Name == AllParams.CurrentRace.Name);
+            if (race is not null && race.RaceApproved)
+            {
+                SelectedRace = race.Name;
+                ShowNameLabel = false;
+            }
+            else
+            {
+                SelectedRace = "Custom race";
+                ShowNameLabel = true;
+            }
+            if (AllParams.CurrentRace.RaceApproved == false)
+                CustomRace = AllParams.CurrentRace;
+            else
+                CustomRace = new();
+
+            StateHasChanged();
+        }
+        else
+        {
+            CustomRace = new();
+        }
+        
+    }
+
+
     private async Task EditCustomRace()
     {
         RaceDTO newRace = AllParams.CurrentRace;
@@ -174,37 +206,6 @@
         StateHasChanged();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            CustomRace = AllParams.CurrentRace;
-            if (!string.IsNullOrEmpty(AllParams.CurrentRace.Name))
-            {
-                var race = AllParams.Races.FirstOrDefault(r => r.Name == AllParams.CurrentRace.Name);
-                if (race is not null && race.RaceApproved)
-                {
-                    SelectedRace = race.Name;
-                    ShowNameLabel = false;
-                }
-                else
-                {
-                    SelectedRace = "Custom race";
-                    ShowNameLabel = true;
-                }
-                if (AllParams.CurrentRace.RaceApproved == false)
-                    CustomRace = AllParams.CurrentRace;
-                else
-                    CustomRace = new();
-
-                StateHasChanged();
-            }
-            else
-            {
-                CustomRace = new();
-            }
-        }
-    }
     private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Large)
     {
         DialogOptions options = new() { MaxWidth = maxWidth };

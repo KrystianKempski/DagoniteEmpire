@@ -52,13 +52,10 @@
     private string ChooseFile = "Choose file";
     UserInfo? UserInfo { get; set; }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
-        {
-            UserInfo = await _userService.GetUserInfo();
-            StateHasChanged();
-        }
+        UserInfo = await _userService.GetUserInfo();
+        StateHasChanged();        
     }
 
     private async Task HandleImageUpload(InputFileChangeEventArgs e)

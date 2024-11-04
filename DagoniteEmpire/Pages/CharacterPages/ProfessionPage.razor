@@ -500,14 +500,30 @@
     };
 
     protected override async Task OnInitializedAsync()
-    {
-        UserInfo = await _userService.GetUserInfo();
-
-        registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
-        if (UserInfo?.IsAuthenticated == false)
+    {        
+        try
         {
-            var uri = new Uri(_navigationManager.Uri);
-            _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+            IsLoading = true;
+            UserInfo = await _userService.GetUserInfo();
+            if (UserInfo?.IsAuthenticated == false)
+                return;
+
+            registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+            if (UserInfo?.IsAuthenticated == false)
+            {
+                var uri = new Uri(_navigationManager.Uri);
+                _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+            }
+            await LoadCharacter();
+            ProfessionDTO.StartProfessionPage();
+
+            IsLoading = false;
+            IsLeaveAllowed = true;
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
         }
     }
 
@@ -515,21 +531,10 @@
     {
         if (firstRender)
         {
-            try
+            if (UserInfo?.IsAuthenticated == false)
             {
-                IsLoading = true;
-                StateHasChanged();
-                await LoadCharacter();
-                ProfessionDTO.StartProfessionPage();
-
-                IsLoading = false;
-                IsLeaveAllowed = true;
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                IsLoading = false;
-                await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+                var uri = new Uri(_navigationManager.Uri);
+                _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
             }
         }
     }

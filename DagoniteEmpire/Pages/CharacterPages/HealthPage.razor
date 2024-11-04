@@ -262,39 +262,50 @@
     public string[] Initial = Wounds.Location.All;
     public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp = new Dictionary<EquippedItems, EquipItemComponent>();
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            UserInfo = await _userService.GetUserInfo();
+            if (UserInfo?.IsAuthenticated == false)
+                return;
+            IsLoading = true;
+            registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+            await LoadCharacter();
+            WoundsList = AllParams.Health.GetAll();
+
+            // add status if not in database
+            foreach (var conName in SD.Condition.All)
+            {
+                WoundDTO? con = WoundsList.FirstOrDefault(w => w.Location == conName);
+
+                if (con is null)
+                {
+                    Conditions[conName] = new ConditionDTO(conName);
+                    WoundsList.Add(Conditions[conName]);
+                }
+                else
+                {
+                    Conditions[conName] = con;
+                }
+            }
+            IsLoading = false;
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try
+            if (UserInfo?.IsAuthenticated == false)
             {
-                IsLoading = true;
-                registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
-                await LoadCharacter();
-                WoundsList = AllParams.Health.GetAll();
-
-                // add status if not in database
-                foreach(var conName in SD.Condition.All)
-                {
-                    WoundDTO? con = WoundsList.FirstOrDefault(w => w.Location == conName);
-
-                    if (con is null)
-                    {
-                        Conditions[conName] = new ConditionDTO(conName);
-                        WoundsList.Add(Conditions[conName]);
-                    }
-                    else
-                    {
-                        Conditions[conName] = con;
-                    }
-                }
-                IsLoading = false;
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                IsLoading = false;
-                await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+                var uri = new Uri(_navigationManager.Uri);
+                _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
             }
         }
     }

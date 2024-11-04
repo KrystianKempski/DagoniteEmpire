@@ -98,16 +98,8 @@ namespace DA_Models.CharacterModels
         {
             if (attr == null) return;
             RelatedAttribute = attr;
-            //RelatedAttribute.ModifierChanged += A_PropertyChanged;
         }
 
-        private void A_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName != nameof(RelatedAttribute.Modifier)) return;
-            if (RelatedAttribute == null) return;
-
-            ProfessionSkillRoll = RelatedAttribute.ModifierAbsolute + ClassLevel;
-        }
 
         public string AddSpellCircle(int newLevel)
         {
