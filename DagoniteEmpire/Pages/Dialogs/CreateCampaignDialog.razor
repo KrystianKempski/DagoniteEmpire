@@ -17,8 +17,7 @@
             {
                 int index =0;
                 @foreach (var adv in AllCharacters.OrderBy(c=>c.Id))
-                {
-                    IncludedList.Add(false);
+                {                    
                     <MudChip @bind-Selected="IncludedList[index]" Text="@adv.NPCName" Value="@adv"></MudChip>
                     index++;
                 }
@@ -45,7 +44,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        AllCharacters = await _characterRepository.GetAll();
+        AllCharacters = await _characterRepository.GetAllApproved();
+        for(int i = 0; i <= AllCharacters.Count(); i++)
+        {
+            IncludedList.Add(false);
+        }
         if (IsEdit)
         {
             Title = "Edit";

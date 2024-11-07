@@ -63,7 +63,6 @@ else
     public bool IsLoading { get; set; } = true;
     private int DeleteCharacterId { get; set; } = 0;
     private string Title { get; set; } = "Your characters";
-    private int CurrentlyUsedCharacterId = 0;
 
 
     public UserInfo? UserInfo { get; set; }
@@ -78,8 +77,6 @@ else
             {
                 return;
             }
-            if(UserInfo?.SelectedCharacterId is not null)
-                CurrentlyUsedCharacterId = (int)UserInfo?.SelectedCharacterId;
 
             await LoadCharacters();
 
@@ -170,8 +167,11 @@ else
             var prod = await _characterRepository.GetById(DeleteCharacterId);
 
             await _characterRepository.Delete(DeleteCharacterId);
-            if (CurrentlyUsedCharacterId == DeleteCharacterId)
-                _userService.SetSelectedCharId(0);
+            if (UserInfo?.SelectedCharacter?.Id == DeleteCharacterId)
+            {
+                _userService?.SetSelectedCharId(0);
+                UserInfo = await _userService.GetUserInfo();
+            }
             await LoadCharacters();
             await _jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
         }

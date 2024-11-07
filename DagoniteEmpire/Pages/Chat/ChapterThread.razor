@@ -1,5 +1,4 @@
-﻿@page "/chapter/{id:int}/{charId:int}"
-
+﻿@page "/chapter/{id:int}"
 @using DA_Business.Services.Interfaces
 @using Syncfusion.Blazor.Navigations;
 @inject NavigationManager _navigationManager
@@ -159,7 +158,7 @@ else
                                     <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
                                         <MudStack Spacing="0" Row="true">
                                             <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
-                                            @if (post.CharacterId == SelectedCharacter.Id || UserInfo.CharacterMG == true)
+                                            @if (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true)
                                             {
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                             }
@@ -191,7 +190,7 @@ else
                                     <MudStack Class="pb-1" Spacing="0" Row="true">
                                         <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage Src="@post.Character.ImageUrl"></MudImage></MudAvatar>
                                         <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.Character.NPCName</MudText>
-                                        @if (post.CharacterId == SelectedCharacter.Id || UserInfo.CharacterMG == true)
+                                        @if (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true)
                                         {
                                             <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                         }
@@ -260,7 +259,6 @@ else
 
 @code{
     [Parameter] public int Id { get; set; }
-    [Parameter] public int CharId { get; set; }
     private ChapterDTO? Chapter { get; set; } = null;
     private List<PostDTO> Posts { get; set; } = new List<PostDTO>();
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
@@ -271,7 +269,6 @@ else
     public bool IsLoading { get; set; } = true;
     public bool IsLoadingCharacters { get; set; } = true;    
     private string Title { get; set; } = "Campaign name";
-    private CharacterDTO? SelectedCharacter  = null;
     private bool IsEditMode = false;
     private bool OngoingBattle = false;
     private string SendButtonText { get; set; } = "Send Post";
@@ -328,11 +325,11 @@ else
         {
             return;
         }
-      
+
         PageCount = await GetPageCount();
         PageNum = PageCount;
         await LoadChapter();
-        handler = async () => await LoadSelectedCharacter();
+        handler = async () => await LoadForSelectedCharacter();
         _callbackService.OnChange += handler;
     }
 
@@ -351,14 +348,19 @@ else
         }  
     }
 
-    private async Task LoadSelectedCharacter()
+
+    private async Task LoadForSelectedCharacter()
     {
+        if (UserInfo is null)
+            return;
+        IsLoading = true;
+        StateHasChanged();
 
-        if(UserInfo?.SelectedCharacterId is not null)
-            SelectedCharacter = await _characterRepository.GetById((int)UserInfo?.SelectedCharacterId);
-
-        if (Chapter?.Characters.FirstOrDefault(c => c.Id == UserInfo?.SelectedCharacterId) is null            
-            && UserInfo?.CharacterMG == false)
+        int charId = (int)UserInfo.SelectedCharacter.Id;
+        if (charId == 0) 
+            return;
+        if (Chapter?.Characters.FirstOrDefault(c => c.Id == charId) is null
+           && UserInfo?.CharacterMG == false)
         {
 
             NewPost.Content = "Character not present in this chapter!";
@@ -368,10 +370,10 @@ else
         {
             SendPostEnabled = true;
             NewPost.Content = string.Empty;
-            SelectedCharacter = await _characterRepository.GetById((int)UserInfo?.SelectedCharacterId);
-            _navigationManager.NavigateTo($"/chapter/{Id}/{SelectedCharacter.Id}");
+            _navigationManager.NavigateTo($"/chapter/{Id}");
         }
         _scrollDown = true;
+        IsLoading = false;
         StateHasChanged();
     }
 
@@ -393,16 +395,16 @@ else
 
         // load mobs
         await LoadMobs();
-        await LoadSelectedCharacter();
+        await LoadForSelectedCharacter();
 
         _items = new List<BreadcrumbItem>
         {
             new BreadcrumbItem("Campaigns", href: $"/campaignlist/" ),
-            new BreadcrumbItem("Chapters", href: $"/campaign/{Chapter.CampaignId}/{CharId}"),
-            new BreadcrumbItem("Posts", href: $"/chapter/{Id}/{CharId}"),
+            new BreadcrumbItem("Chapters", href: $"/campaign/{Chapter.CampaignId}"),
+            new BreadcrumbItem("Posts", href: $"/chapter/{Id}"),
         };
         Title = Chapter.Name;
-        BattlePhase = await _battlePhaseRepository.GetCurrentForChapter(CharId);
+        BattlePhase = await _battlePhaseRepository.GetCurrentForChapter(Id);
         if (BattlePhase is not null)
         {
 
@@ -438,9 +440,20 @@ else
         else
         {
             NewPost.ChapterId = Id;
-            NewPost.CharacterId = SelectedCharacter.Id;
-            NewPost.Character = SelectedCharacter;
-            NewPost.CreatedDate = DateTime.Now;
+             NewPost.CreatedDate = DateTime.Now;
+            if(UserInfo?.IsAdminOrMG == true &&
+              (UserInfo?.SelectedCharacter?.UserName != "gm" && UserInfo?.SelectedCharacter?.UserName != "AdminKrystian"))
+            {
+                    var character = await _characterRepository.GetByName(SD.GameMaster_NPCName);                    
+                    NewPost.CharacterId = character.Id;
+                    NewPost.Character = character;
+            }else{
+
+                NewPost.ChapterId = Id;
+                NewPost.CharacterId = (int)UserInfo?.SelectedCharacter?.Id;
+                NewPost.Character = UserInfo?.SelectedCharacter;
+               
+            }
 
             var result = await _postRepository.Create(NewPost);
             if(result is not null)

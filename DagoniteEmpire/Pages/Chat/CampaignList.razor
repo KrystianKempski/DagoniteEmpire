@@ -24,21 +24,7 @@
     }else{
         <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
               
-      @*   @if (Characters.Count() > 0)
-        {
-            <div class="d-flex flex-row">      
-                <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for:</MudText>
-                <MudSelect Class="ps-2" Typo="Typo.h5" Value="SelectedCharacter" T="CharacterDTO" Margin="Margin.Dense" Variant="Variant.Outlined" ValueChanged="SelectCharacter" AnchorOrigin="Origin.BottomCenter">
-                    @foreach (var character in Characters)
-                    {
-                        <MudSelectItem Value="@character" />
-                    }
-                </MudSelect>
-            </div>
-        }
-        else if(Characters.Count() == 1)
-        { *@
-        <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for: @SelectedCharacter.NPCName</MudText>
+        <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for: @UserInfo?.SelectedCharacter?.NPCName</MudText>
         
        
         @if (UserInfo?.IsAdminOrMG == true)
@@ -113,7 +99,6 @@
     private List<CampaignDTO> Campaigns { get; set; } = new List<CampaignDTO>();
     public bool IsLoading { get; set; } = true;
     private string Title { get; set; } = "Your characters";
-    private CharacterDTO SelectedCharacter  = new();
     public CampaignDTO NewCampaign { get; set; } = new();
 
     public UserInfo? UserInfo { get; set; }
@@ -128,10 +113,9 @@
         {
             return;
         }
-
-        handler = async () => await LoadSelectedCharacter();
-        callbackService.OnChange += handler;
         await LoadCharactersAndCampaigns();
+        handler = async () => await LoadForSelectedCharacter();
+        callbackService.OnChange += handler;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -143,6 +127,7 @@
                 var uri = new Uri(_navigationManager.Uri);
                 _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
             }
+
         }
     }
 
@@ -152,7 +137,7 @@
     }
 
 
-    private async Task LoadSelectedCharacter()
+    private async Task LoadForSelectedCharacter()
     {
         if (UserInfo is null)
             return;
@@ -161,35 +146,31 @@
         if (UserInfo?.IsAdminOrMG == true)
         {
             Characters = await _characterRepository.GetAllApproved();
-            if(Characters is not null)
-                SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
+            
             if (UserInfo.CharacterMG == true)
             {
 
                 Title = "All avalible campaingns";
-                SelectedCharacter = await _characterRepository.GetByName(SD.GameMaster_NPCName);
                 Campaigns = (await _campaignRepository.GetAll()).ToList();
             }
             else
             {
                 Title = "Characters of " + UserInfo?.UserName;
-                Characters = await _characterRepository.GetAllApproved(UserInfo.UserName);
+                Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
                 if (Characters.Any())
                 {
-                    SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
-                    if (SelectedCharacter is not null)
-                        Campaigns = (await _campaignRepository.GetAll(SelectedCharacter.Id)).ToList();
+                    if (UserInfo?.SelectedCharacter is not null)
+                        Campaigns = (await _campaignRepository.GetAll(UserInfo.SelectedCharacter.Id)).ToList();
                 }
             }
         }
         else
         {
             Title = "Characters of " + UserInfo?.UserName;
-            Characters = await _characterRepository.GetAllApproved(UserInfo.UserName);
+            Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
             if (Characters.Any())
             {
-                SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
-                Campaigns = (await _campaignRepository.GetAll(SelectedCharacter.Id)).ToList();
+                Campaigns = (await _campaignRepository.GetAll(UserInfo?.SelectedCharacter?.Id)).ToList();
             }
 
 
@@ -204,10 +185,10 @@
         StateHasChanged();
         _items = new List<BreadcrumbItem>
         {
-            new BreadcrumbItem("Campaign", href: $"/campaignlist/"),
+            new BreadcrumbItem("Campaigns", href: $"/campaignlist/"),
         };
 
-        await LoadSelectedCharacter();
+        await LoadForSelectedCharacter();
         IsLoading = false;
         StateHasChanged();
     }
@@ -289,7 +270,7 @@
     private async Task ChooseCampaign(CampaignDTO campaign)
     {
         if (UserInfo is null) return;
-        _navigationManager.NavigateTo($"/campaign/{campaign.Id}/{UserInfo.SelectedCharacterId}");
+        _navigationManager.NavigateTo($"/campaign/{campaign.Id}");
     }
 
 

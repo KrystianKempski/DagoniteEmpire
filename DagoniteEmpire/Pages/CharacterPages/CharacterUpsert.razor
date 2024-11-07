@@ -14,6 +14,7 @@
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IEquipmentRepository _equipmentRepository
+@inject CallbackService _callbackService
 @inject IUserService _userService
 @inject IJSRuntime _jsRuntime
 @inject IMapper _mapper
@@ -234,6 +235,7 @@
     private string TargetLocation { get; set; } = "";
     public UserInfo? UserInfo { get; set; }
     private DateModel CurrentDate = new DateModel(1,1);
+    private System.Action handler;
 
     private List<object> ToolbarItems = new List<object>() {
         new ItemModel() { Text = "Add", PrefixIcon = "e-add", Id = "Grid_add"},//Here Grid is SfGrid ID
@@ -303,7 +305,6 @@
 
             //StateHasChanged();
             registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
-            //CustomTraitComponent = new();
             if (Id == 0)
             {
                 //create
@@ -317,7 +318,6 @@
                 AllParams.CurrentRace = new();
                 AllParams.Profession = new();
                 AllParams.EquipmentSlots = new List<EquipmentSlotDTO>();
-
                 AllParams.Character.UserName = UserInfo?.UserName;
                 IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer);
 
@@ -336,16 +336,17 @@
 
             AllParams.SpecialSkills.AddRelatedParametes();
             CurrentDate = new DateModel(AllParams.Character.CurrentDate);
-
             AllParams.AllTraitsChange();
-            //await TraitsChange();
 
             await ChangeProfRelatedAttribute();
             AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());
             AllParams.Health.UpdateHealthBonusesInAttributes();
             IsLeaveAllowed = true;
             IsLoading = false;
-           // StateHasChanged();
+            // StateHasChanged();
+
+            handler = async () => await ReloadPage();
+            _callbackService.OnChange += handler;
         }
         catch (WarningException ex)
         {
@@ -369,6 +370,23 @@
             }
         }
     }
+
+    public async Task ReloadPage()
+    {
+        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo?.SelectedCharacter?.Id is not null && Id != UserInfo.SelectedCharacter.Id && UserInfo.CharacterMG == false)
+        {
+            _callbackService.OnChange -= handler;
+            _navigationManager.NavigateTo($"/character/edit/{UserInfo.SelectedCharacter.Id}",true);
+        }
+    }
+    public void Dispose()
+    {
+        _callbackService.OnChange -= handler;
+        registration?.Dispose();
+    }
+
+
     private async Task LoadCharacter()
     {
         AllParams.Character = await _characterRepository.GetById(Id,true);
@@ -583,9 +601,10 @@
             }
 
             // if main character is no approved anymore - delete its id from user info
-            if (UserInfo?.SelectedCharacterId == AllParams.Character.Id && AllParams.Character.IsApproved == false)
+            if (UserInfo?.SelectedCharacter?.Id == AllParams.Character.Id && AllParams.Character.IsApproved == false)
             {
                 await _userService.SetSelectedCharId(0);
+                UserInfo = await _userService.GetUserInfo();
             }
 
             AllParams.Character = await _characterRepository.GetById(Id,true);
@@ -732,12 +751,7 @@
         IsLeaveAllowed = false;
         StateHasChanged();
     }
-    public void Dispose()
-    {
-        registration?.Dispose();
-        
-    }
-        
+
 }
 
 

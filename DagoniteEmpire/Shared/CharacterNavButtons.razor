@@ -48,9 +48,20 @@
     {
         try
         {
-            string classLink = "/campaignlist";
-            await OnDrawerChanged.InvokeAsync();
-            _navigationManager.NavigateTo(classLink);
+            UserInfo = await _userService.GetUserInfo();
+
+            if (UserInfo?.SelectedCharacter is not null && UserInfo.SelectedCharacter.Id > 0)
+            {
+                string characterLink = "/campaignlist";
+                await OnDrawerChanged.InvokeAsync();
+
+                _navigationManager.NavigateTo(characterLink);
+            }
+            else
+            {
+                 _snackBar.Add("No character have yet been approved and selected", Severity.Info);
+            }
+
 
         }
         catch (Exception e)
@@ -66,9 +77,9 @@
 
             UserInfo = await _userService.GetUserInfo();
 
-            if (UserInfo is not null && UserInfo.SelectedCharacterId > 0 && UserInfo.CharacterMG == false)
+            if (UserInfo?.SelectedCharacter is not null && UserInfo.SelectedCharacter.Id > 0 && UserInfo.CharacterMG == false)
             {
-                string classLink = "/profession/" + UserInfo.SelectedCharacterId;
+                string classLink = "/profession/" + UserInfo.SelectedCharacter.Id;
                 await OnDrawerChanged.InvokeAsync();
                 _navigationManager.NavigateTo(classLink);
             }
@@ -77,7 +88,7 @@
                 if (UserInfo?.CharacterMG == true)
                     _snackBar.Add("Game Master don't need class", Severity.Info);
                 else
-                    _snackBar.Add("No character have yet been approved and selected as main", Severity.Info);
+                    _snackBar.Add("No character have yet been approved and selected", Severity.Info);
                     
             }
         }
@@ -110,9 +121,9 @@
         {
             UserInfo = await _userService.GetUserInfo();
 
-            if (UserInfo is not null && UserInfo.SelectedCharacterId > 0 && UserInfo.CharacterMG == false)
+            if (UserInfo?.SelectedCharacter is not null && UserInfo.SelectedCharacter.Id > 0 && UserInfo.CharacterMG == false)
             {
-                string characterLink = "/character/edit/" + UserInfo.SelectedCharacterId;
+                string characterLink = "/character/edit/" + UserInfo.SelectedCharacter.Id;
                 await OnDrawerChanged.InvokeAsync();
 
                 _navigationManager.NavigateTo(characterLink);
@@ -122,7 +133,7 @@
                 if (UserInfo?.CharacterMG == true)
                     _snackBar.Add("Game Master don't need character sheet", Severity.Info);
                 else
-                    _snackBar.Add("No character have yet been approved and selected as main", Severity.Info);
+                    _snackBar.Add("No character have yet been approved and selected", Severity.Info);
             }
         }
         catch (Exception e)
@@ -137,9 +148,9 @@
         {
             UserInfo = await _userService.GetUserInfo();
 
-            if (UserInfo is not null && UserInfo.SelectedCharacterId > 0 && UserInfo.CharacterMG == false)
+            if (UserInfo?.SelectedCharacter is not null && UserInfo.SelectedCharacter.Id > 0 && UserInfo.CharacterMG == false)
             {
-                string characterLink = "/equipment/" + UserInfo.SelectedCharacterId;
+                string characterLink = "/equipment/" + UserInfo.SelectedCharacter.Id;
                 await OnDrawerChanged.InvokeAsync();
 
                 _navigationManager.NavigateTo(characterLink);
@@ -149,7 +160,7 @@
                 if (UserInfo?.CharacterMG == true)
                     _snackBar.Add("Game Master don't need equipment", Severity.Info);
                 else
-                    _snackBar.Add("No character have yet been approved and selected as main", Severity.Info);
+                    _snackBar.Add("No character have yet been approved and selected", Severity.Info);
             }
         }
         catch (Exception e)
@@ -165,9 +176,9 @@
         {
             UserInfo = await _userService.GetUserInfo();
 
-            if (UserInfo is not null && UserInfo.SelectedCharacterId > 0 && UserInfo.CharacterMG == false)
+            if (UserInfo?.SelectedCharacter is not null && UserInfo.SelectedCharacter.Id > 0 && UserInfo.CharacterMG == false)
             {
-                string characterLink = "/health/" + UserInfo.SelectedCharacterId;
+                string characterLink = "/health/" + UserInfo.SelectedCharacter.Id;
                 await OnDrawerChanged.InvokeAsync();
 
                 _navigationManager.NavigateTo(characterLink);
@@ -177,7 +188,7 @@
                 if (UserInfo?.CharacterMG == true)
                     _snackBar.Add("Game Master don't need health", Severity.Info);
                 else
-                    _snackBar.Add("No character have yet been approved and selected as main", Severity.Info);
+                    _snackBar.Add("No character have yet been approved and selected", Severity.Info);
             }
         }
         catch (Exception e)

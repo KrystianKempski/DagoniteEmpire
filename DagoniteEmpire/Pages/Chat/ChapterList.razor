@@ -1,4 +1,4 @@
-﻿@page "/campaign/{id:int}/{charId:int}"
+﻿@page "/campaign/{id:int}"
 
 @using DA_Business.Services.Interfaces
 @using Syncfusion.Blazor.Navigations;
@@ -101,15 +101,11 @@
 @code{
     [Parameter]
     public int Id { get; set; }
-    [Parameter]
-    public int CharId { get; set; }
     private CampaignDTO Campaign { get; set; }
     private List<ChapterDTO> Chapters { get; set; } = new List<ChapterDTO>();
     public ChapterDTO NewChapter { get; set; } = new();
     public bool IsLoading { get; set; } = true;
-    //public bool IsAdminOrMG { get; set; } = true;
     private string Title { get; set; } = "Campaign name";
-    private CharacterDTO SelectedCharacter  = null;
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
 
@@ -117,10 +113,7 @@
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
     private System.Action handler;
 
-    public void ShowWoho(object sender, System.EventArgs e)
-    {
-        CheckSelectedCharacter();
-    }
+
     protected override async Task OnInitializedAsync()
     {
 
@@ -131,8 +124,7 @@
         }
 
         await LoadCampaign();
-        await CheckSelectedCharacter();
-        handler = async () => await CheckSelectedCharacter();
+        handler = async () => await LoadForSelectedCharacter();
         _callbackService.OnChange += handler;
     }
 
@@ -153,38 +145,40 @@
         _callbackService.OnChange -= handler;
     }
 
-    private async Task CheckSelectedCharacter()
+    private async Task LoadForSelectedCharacter()
     {
-        if (UserInfo?.SelectedCharacterId != CharId && UserInfo?.SelectedCharacterId != 0)
+        if (UserInfo is null)
+            return;
+        IsLoading = true;
+        StateHasChanged();
+
+        if (UserInfo.CharacterMG == true)
         {
-            SelectedCharacter = await _characterRepository.GetById((int)UserInfo?.SelectedCharacterId);
-            if (Campaign.Characters.FirstOrDefault(c => c.Id == UserInfo?.SelectedCharacterId) is not null ||
-                UserInfo.CharacterMG == true)
-            {
-                _navigationManager.NavigateTo($"/campaign/{Id}/{UserInfo?.SelectedCharacterId}");
-            }
-            else
-            {
-                _navigationManager.NavigateTo($"/campaignlist");                
-            }
+            Chapters = (await _chapterRepository.GetAll(Id)).ToList();
         }
+        else
+        {
+            if (UserInfo?.SelectedCharacter?.Id != null)
+                Chapters = (await _chapterRepository.GetAllForUser(UserInfo.SelectedCharacter.Id,Id)).ToList();
+        }  
+
+        IsLoading = false;
+        StateHasChanged();
     }
 
     private async Task LoadCampaign()
     {
         IsLoading = true;
         StateHasChanged();
-
         Campaign = await _campaignRepository.GetById(Id);
-        Chapters = (await _chapterRepository.GetAll(Id)).ToList();
-        SelectedCharacter = await _characterRepository.GetById(CharId);
+        await LoadForSelectedCharacter();
         Title = Campaign.Name;
         _items = new List<BreadcrumbItem>
         {
             new BreadcrumbItem("Campaigns", href: $"/campaignlist/"),
-            new BreadcrumbItem("Chapters", href: $"/campaign/{Id}/{CharId}"),
+            new BreadcrumbItem("Chapters", href: $"/campaign/{Id}"),
         };
-
+        
         IsLoading = false;
         StateHasChanged();
     }
@@ -192,6 +186,7 @@
     private async Task CreateChapter()
     {
         var AllCharacters = Campaign.Characters.ToList();
+        NewChapter = new();
 
         var parameters = new DialogParameters<CreateChapterDialog> { { x => x.NewChapter, NewChapter }, { x => x.AllCharacters, AllCharacters } };
 
@@ -254,9 +249,9 @@
 
     private async Task ChooseChapter(ChapterDTO chapter)
     {
-        if (chapter.Characters.FirstOrDefault(c => c.Id == CharId) is not null ||
+        if (chapter.Characters.FirstOrDefault(c => c.Id == UserInfo?.SelectedCharacter?.Id) is not null ||
                 UserInfo?.CharacterMG == true)
-            _navigationManager.NavigateTo($"/chapter/{chapter.Id}/{SelectedCharacter.Id}");
+            _navigationManager.NavigateTo($"/chapter/{chapter.Id}");
         else
         {
             _snackBar.Add("This character don't have access to that chapter", Severity.Warning);

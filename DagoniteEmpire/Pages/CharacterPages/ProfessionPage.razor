@@ -2,6 +2,7 @@
 @page "/profession/{id:int}"
 @using DA_Business.Services.Interfaces
 @using DA_DataAccess.CharacterClasses
+@implements IDisposable
 @inject IJSRuntime _jsruntime
 @inject ICharacterRepository _characterRepository
 @inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
@@ -15,6 +16,7 @@
 @inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject ISpellCircleRepository _spellCircleRepository
+@inject CallbackService _callbackService
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
 @inject IUserService _userService
@@ -487,6 +489,7 @@
     private IDisposable? registration;
     private bool IsLeaveAllowed { get; set; } = true;
     private string TargetLocation { get; set; } = "";
+    private System.Action handler;
 
 
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
@@ -517,6 +520,8 @@
             await LoadCharacter();
             ProfessionDTO.StartProfessionPage();
 
+            handler = async () => await ReloadPage();
+            _callbackService.OnChange += handler;
             IsLoading = false;
             IsLeaveAllowed = true;
         }
@@ -537,6 +542,16 @@
                 _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
             }
         }
+    }
+    public async Task ReloadPage()
+    {
+        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo?.SelectedCharacter?.Id is not null && Id != UserInfo.SelectedCharacter.Id)
+            _navigationManager.NavigateTo($"/profession/{UserInfo.SelectedCharacter.Id}", true);
+    }
+    public void Dispose()
+    {
+        _callbackService.OnChange -= handler;
     }
 
     private async Task LoadCharacter()

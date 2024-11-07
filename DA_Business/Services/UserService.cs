@@ -1,8 +1,11 @@
 ﻿using System.Security.Claims;
+using AutoMapper;
 using DA_Business.Services.Interfaces;
 using DA_Common;
 using DA_DataAccess;
+using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
+using DA_Models.CharacterModels;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -15,13 +18,15 @@ namespace DA_Business.Services
         private readonly AuthenticationStateProvider _authState;
         private readonly UserInfo _userInfo;
         private readonly IDbContextFactory<ApplicationDbContext> _db;
-        
+        private readonly IMapper _mapper;
 
-        public UserService(AuthenticationStateProvider authState, IOptions<UserInfo> userInfo, IDbContextFactory<ApplicationDbContext> db)
+
+        public UserService(AuthenticationStateProvider authState, IOptions<UserInfo> userInfo, IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
         {
             _authState = authState;
             _userInfo = userInfo.Value;
             _db = db;
+            _mapper = mapper;
         }
 
         
@@ -58,12 +63,19 @@ namespace DA_Business.Services
                 if (user.Identity?.IsAuthenticated is null)
                     throw new Exception();
 
-                _userInfo.InitUser = false;
                 using var contex = await _db.CreateDbContextAsync();
                 var userdb = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName == _userInfo.UserName);
                 if (userdb is not null)
                 {
-                    _userInfo.SelectedCharacterId = userdb.SelectedCharacterId;
+                    var obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == userdb.SelectedCharacterId);
+                    if (obj is not null)
+                        _userInfo.SelectedCharacter = _mapper.Map<Character,CharacterDTO>(obj);
+                    else
+                    {
+                        _userInfo.SelectedCharacter = null;
+                    }
+                    _userInfo.CharacterMG = _userInfo?.SelectedCharacter?.NPCName == SD.GameMaster_NPCName;
+
                 }
                 return _userInfo;
                 
@@ -77,19 +89,34 @@ namespace DA_Business.Services
 
         public async Task SetSelectedCharId(int charId)
         {
-
-            if (_userInfo is not null)
+            try
             {
-                using var contex = await _db.CreateDbContextAsync();
-                var user = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName == _userInfo.UserName);
-                if (user != null)
+                if (_userInfo is not null)
                 {
+                    using var contex = await _db.CreateDbContextAsync();
+                    var user = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName == _userInfo.UserName);
+                    if (user != null)
+                    {
 
-                    user.SelectedCharacterId = charId;
-                    var addedObj = contex.ApplicationUsers.Update(user);
-                    await contex.SaveChangesAsync();
-                    _userInfo.SelectedCharacterId = charId;
+                    
+                        Character? obj = null;
+                        if (charId>=0)
+                            obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == charId);
+                        else
+                        {
+                            obj = await contex.Characters.FirstOrDefaultAsync(u => u.NPCName == SD.GameMaster_NPCName);
+                            charId = obj.Id;
+                        }
+                        if (obj == null) charId = 0;
+                        user.SelectedCharacterId = charId;
+                        var addedObj = contex.ApplicationUsers.Update(user);
+                        await contex.SaveChangesAsync();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                ;
             }
         }
     }

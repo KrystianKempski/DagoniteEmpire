@@ -109,6 +109,23 @@ namespace DA_Business.Repository.ChatRepos
             return new List<ChapterDTO>();
         }
 
+        public async Task<IEnumerable<ChapterDTO>> GetAllForUser(int characterId, int? campaignId = null)
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+                if (campaignId == null || campaignId < 1)
+                    return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(contex.Chapters.Include(a => a.Characters.Where(c=>c.Id==characterId)).Include(a => a.Posts));
+
+                var obj = contex.Chapters.Include(a => a.Characters).Include(a => a.Posts).Where(u => u.CampaignId == campaignId && u.Characters.Any(c=>c.Id == characterId)).OrderBy(u => u.CreatedDate);
+                if (obj != null && obj.Any())
+                    return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(obj);
+            }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+
+            return new List<ChapterDTO>();
+        }
+
         public async Task<ChapterDTO> GetById(int id)
         {
             try

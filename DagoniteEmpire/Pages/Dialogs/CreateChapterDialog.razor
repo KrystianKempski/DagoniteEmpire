@@ -23,7 +23,6 @@
                 int index = 0;
                 @foreach (var adv in AllCharacters.OrderBy(c => c.Id))
                 {
-                    IncludedList.Add(false);
                     <MudChip @bind-Selected="IncludedList[index]" Text="@adv.NPCName" Value="@adv"></MudChip>
                     index++;
                 }
@@ -54,14 +53,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (IsEdit)
+        for (int i = 0; i <= AllCharacters.Count(); i++)
         {
-            Title = "Edit";
+            IncludedList.Add(false);
         }
-    }
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (!firstRender) return;
 
         if (IsEdit)
         {
@@ -69,6 +64,7 @@
             int index = 0;
             foreach (var character in AllCharacters.OrderBy(c => c.Id))
             {
+
                 if (NewChapter.Characters.FirstOrDefault(c => c.Id == character.Id) is not null)
                 {
                     IncludedList[index] = true;
@@ -76,7 +72,13 @@
                 index++;
             }
         }
-        StateHasChanged();
+        
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        
     }
 
     private void CreateChapter()

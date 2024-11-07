@@ -16,6 +16,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
 
         Task<int> Delete(int id);
         Task<IEnumerable<ChapterDTO>> GetAll(int? campaignId = null);
+        Task<IEnumerable<ChapterDTO>> GetAllForUser(int characterId,int? campaignId = null);
 
         Task<ChapterDTO> GetById(int id);
 

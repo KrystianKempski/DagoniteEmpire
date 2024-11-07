@@ -75,7 +75,6 @@
 @code {
     public string PortraitUrl { get; set; } = "/images/def-char-img.webp";
     public IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
-    public CharacterDTO? SelectedCharacter { get; set; } = null;
     public UserInfo? UserInfo {get;set;} = null; 
 
 
@@ -92,59 +91,57 @@
     protected override async Task OnInitializedAsync()
     {
         UserInfo = await _userService.GetUserInfo();
+        PortraitUrl = "/images/def-char-img.webp";
         if (UserInfo is null || UserInfo?.UserName is null)
             return;
-        Characters = await _characterRepository.GetAllForUser(UserInfo.UserName);
-        SelectedCharacter = Characters.FirstOrDefault(c => c.Id == UserInfo.SelectedCharacterId);
-        if(SelectedCharacter is null && UserInfo.IsAdminOrMG == true)
+
+        if (UserInfo?.IsAdminOrMG == true)
         {
-            SelectedCharacter = await _characterRepository.GetByName(SD.GameMaster_NPCName);
-            UserInfo.CharacterMG = true;
+            Characters = await _characterRepository.GetAllApproved();
         }
         else
         {
-            UserInfo.CharacterMG = false;
-        }
-        if(SelectedCharacter is not null && SelectedCharacter.ImageUrl is not null ){
-            PortraitUrl = SelectedCharacter.ImageUrl;
-        }else{
-            PortraitUrl = "/images/def-char-img.webp";
+            Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
         }
 
-        callbackService.SetSelectedChar(UserInfo.SelectedCharacterId);
+        if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
+        {
+            PortraitUrl = UserInfo.SelectedCharacter.ImageUrl;
+        }
+        
+        if (UserInfo?.SelectedCharacter is not null)
+            callbackService.SetSelectedChar((int)UserInfo?.SelectedCharacter?.Id);
     }
 
     private async Task SelectCharacter(CharacterDTO? character = null)
     {
         try{
-
-            if (UserInfo is null)
+            if (UserInfo is null || UserInfo?.UserName is null)
                 return;
+            if(character == null)
+                await _userService.SetSelectedCharId(-1); // set a GM
+            else
+                await _userService.SetSelectedCharId(character.Id);
+            UserInfo = await _userService.GetUserInfo();
 
-            if (character is null)
+            // if (UserInfo?.CharacterMG == true)
+            // {
+            //     Characters = await _characterRepository.GetAll();
+            // }
+            // else
+            // {
+            //     Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
+            // }
+
+            if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
             {
-                if (UserInfo.IsAdminOrMG == false)
-                    return;
-                character = await _characterRepository.GetByName(SD.GameMaster_NPCName);
-                UserInfo.CharacterMG = true;
+                PortraitUrl = UserInfo.SelectedCharacter.ImageUrl;
             }
             else
             {
-                UserInfo.CharacterMG = false;
-            }
-
-            await _userService.SetSelectedCharId(character.Id);
-            UserInfo.SelectedCharacterId = character.Id;
-            SelectedCharacter = character;
-
-            if (SelectedCharacter.ImageUrl is not null)
-            {
-                PortraitUrl = SelectedCharacter.ImageUrl;
-            }else
-            {
                 PortraitUrl = "/images/def-char-img.webp";
             }
-            callbackService.SetSelectedChar(character.Id);
+            callbackService.SetSelectedChar((int)UserInfo?.SelectedCharacter?.Id);
         }
         catch(Exception ex)
         {
@@ -159,6 +156,14 @@
             UserInfo = await _userService.GetUserInfo();
         if (UserInfo is null|| UserInfo?.UserName is null)
             return;
-        Characters = await _characterRepository.GetAllForUser(UserInfo.UserName);        
+
+        if (UserInfo?.IsAdminOrMG == true)
+        {
+            Characters = await _characterRepository.GetAllApproved();
+        }
+        else
+        {
+            Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
+        }     
     }
 }

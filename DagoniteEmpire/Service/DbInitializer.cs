@@ -100,7 +100,7 @@ namespace DagoniteEmpire.Service
                     charac.ProfessionId = profession.Id;
                     charac.RaceId = race.Id;
                     charac.ImageUrl = SD.GameMaster_Portrait;
-                    charac.IsApproved = true;
+                    charac.IsApproved = false;
                     contex.Characters.Add(charac);
                     contex.SaveChanges();
                 }
