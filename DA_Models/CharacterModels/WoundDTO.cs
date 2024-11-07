@@ -70,8 +70,6 @@ namespace DA_Models.CharacterModels
                     return 0;
             }
         }
-
-
        
         public virtual ICollection<string> GetAttributeNamesFromLocation()
         {

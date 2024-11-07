@@ -16,10 +16,7 @@ namespace DA_DataAccess.CharacterClasses
         public bool IsIgnored { get; set; }
         public bool IsTended { get; set; }
         public bool IsMagicHealed { get; set; }
-        public int DateMonth { get; set; }
-        public int DateDay { get; set; }
-        public int DateYear { get; set; }
-        //public int DayOfInjury { get; set; }
+        public int DateNumber { get; set; } = 0;
         public int HealTime { get; set; }
         public bool IsCondition { get; set; } = false;
 
