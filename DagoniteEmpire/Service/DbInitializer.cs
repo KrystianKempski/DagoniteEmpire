@@ -9,6 +9,10 @@ using Microsoft.EntityFrameworkCore;
 using DA_DataAccess;
 using System;
 using DA_Models;
+using MudBlazor;
+using Abp.Collections.Extensions;
+using Microsoft.JSInterop;
+using DagoniteEmpire.Helper;
 
 namespace DagoniteEmpire.Service
 {
@@ -19,18 +23,22 @@ namespace DagoniteEmpire.Service
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
+        private readonly IJSRuntime _jsRuntime;
 
         public DbInitializer(UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IDbContextFactory<ApplicationDbContext> db,
             IMapper mapper,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IJSRuntime jsRuntime
+            )
         {
             _db = db;
             _roleManager = roleManager;
             _userManager = userManager;
             _mapper = mapper;
             _configuration = configuration;
+            _jsRuntime = jsRuntime;
         }
         public async Task Initialize()
         {
@@ -48,17 +56,43 @@ namespace DagoniteEmpire.Service
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_HeroPlayer)).GetAwaiter().GetResult();
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_DukePlayer)).GetAwaiter().GetResult();
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_GameMaster)).GetAwaiter().GetResult();
-                    
+
+                    var email = _configuration.GetConnectionString("GameMasterEmail");
+                    if (email.IsNullOrEmpty())
+                    {
+                        await _jsRuntime.ToastrError("Could not get email from appisetting.json" );
+                    }
 
                     ApplicationUser user = new()
                     {
                         UserName = "GameMaster",
-                        Email = _configuration.GetConnectionString("GameMasterEmail"),
+                        Email = email,
                         EmailConfirmed = true,
                     };
 
-                    var res1 = _userManager.CreateAsync(user, _configuration.GetConnectionString("GameMasterPassword")).GetAwaiter().GetResult();
-                    var res2 = _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
+                    var pass = _configuration.GetConnectionString("GameMasterPassword");
+                    if (pass.IsNullOrEmpty())
+                    {
+                        await _jsRuntime.ToastrError("Could not get password from appisetting.json");
+                    }
+                    var res1 = _userManager.CreateAsync(user, pass).GetAwaiter().GetResult();
+                    if (res1.Errors.Any())
+                    {
+                        foreach (var err in res1.Errors)
+                        {
+                            await _jsRuntime.ToastrError("Error while creating user: " + err.Code);
+                        }
+
+                    }
+                   var res2 = _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
+                    if (res2.Errors.Any())
+                    {
+                        foreach (var err in res1.Errors)
+                        {
+                            await _jsRuntime.ToastrError("Error while creating role: " + err.Code);
+                        }
+
+                    }
 
                     if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
                     {
