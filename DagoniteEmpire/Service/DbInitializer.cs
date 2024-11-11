@@ -56,17 +56,17 @@ namespace DagoniteEmpire.Service
 
 
                 }
-                //if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
-                //{
-                //    throw new Exception("Could not get email or passwword from appisetting.json");
-                //}
-                if (/*_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")).Result is null*/ true)
+                if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
                 {
-                    //var email = _configuration.GetConnectionString("GameMasterEmail");
-                    //if (email.IsNullOrEmpty())
-                    //{
-                    //    throw new Exception("Could not get email from appisetting.json");
-                    //}
+                    throw new Exception("Could not get email or passwword from appisetting.json");
+                }
+                if (_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")).Result is null)
+                {
+                    var email = _configuration.GetConnectionString("GameMasterEmail");
+                    if (email.IsNullOrEmpty())
+                    {
+                        throw new Exception("Could not get email from appisetting.json");
+                    }
 
                     ApplicationUser user = new()
                     {
@@ -75,11 +75,11 @@ namespace DagoniteEmpire.Service
                         EmailConfirmed = true,
                     };
 
-                    //var pass = _configuration.GetConnectionString("GameMasterPassword");
-                    //if (pass.IsNullOrEmpty())
-                    //{
-                    //    throw new Exception("Could not get password from appisetting.json");
-                    //}
+                    var pass = _configuration.GetConnectionString("GameMasterPassword");
+                    if (pass.IsNullOrEmpty())
+                    {
+                        throw new Exception("Could not get password from appisetting.json");
+                    }
                     var res1 = _userManager.CreateAsync(user, "MacierzKara5^&").GetAwaiter().GetResult();
                     if (res1.Errors.Any())
                     {
@@ -87,8 +87,8 @@ namespace DagoniteEmpire.Service
                         {
                             throw new Exception("Error while creating user: " + err.Code);
                         }
-                    }
 
+                    }
                    var res2 = _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
                     if (res2.Errors.Any())
                     {

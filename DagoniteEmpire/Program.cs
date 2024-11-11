@@ -19,6 +19,7 @@ using DA_Business.Repository.ChatRepos;
 using DA_Business.Services.Interfaces;
 using DA_Business.Services;
 using Cropper.Blazor.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -118,7 +119,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 //app.UseMvcWithDefaultRoute();
-
 SeedDatabase();
 app.UseAuthentication();
 app.UseAuthorization();

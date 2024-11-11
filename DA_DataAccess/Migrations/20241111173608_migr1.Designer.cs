@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241018204550_traitcharchange56")]
-    partial class traitcharchange56
+    [Migration("20241111173608_migr1")]
+    partial class migr1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -725,13 +725,7 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("CharacterId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("DateDay")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DateMonth")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DateYear")
+                    b.Property<int>("DateNumber")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")

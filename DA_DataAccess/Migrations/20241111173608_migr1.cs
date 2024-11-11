@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DA_DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class traitcharchange56 : Migration
+    public partial class migr1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -778,9 +778,7 @@ namespace DA_DataAccess.Migrations
                     IsIgnored = table.Column<bool>(type: "boolean", nullable: false),
                     IsTended = table.Column<bool>(type: "boolean", nullable: false),
                     IsMagicHealed = table.Column<bool>(type: "boolean", nullable: false),
-                    DateMonth = table.Column<int>(type: "integer", nullable: false),
-                    DateDay = table.Column<int>(type: "integer", nullable: false),
-                    DateYear = table.Column<int>(type: "integer", nullable: false),
+                    DateNumber = table.Column<int>(type: "integer", nullable: false),
                     HealTime = table.Column<int>(type: "integer", nullable: false),
                     IsCondition = table.Column<bool>(type: "boolean", nullable: false),
                     CharacterId = table.Column<int>(type: "integer", nullable: false)
