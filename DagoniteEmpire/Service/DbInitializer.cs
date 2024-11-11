@@ -57,10 +57,20 @@ namespace DagoniteEmpire.Service
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_DukePlayer)).GetAwaiter().GetResult();
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_GameMaster)).GetAwaiter().GetResult();
 
+
+                }
+                if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
+                {
+                    await _jsRuntime.ToastrError("Could not get email or password from appisetting.json");
+                    throw new Exception("Could not get email or passwword from appisetting.json");
+                }
+                if (_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")) is null )
+                {
                     var email = _configuration.GetConnectionString("GameMasterEmail");
                     if (email.IsNullOrEmpty())
                     {
                         await _jsRuntime.ToastrError("Could not get email from appisetting.json" );
+                        throw new Exception("Could not get email from appisetting.json");
                     }
 
                     ApplicationUser user = new()
@@ -74,6 +84,7 @@ namespace DagoniteEmpire.Service
                     if (pass.IsNullOrEmpty())
                     {
                         await _jsRuntime.ToastrError("Could not get password from appisetting.json");
+                        throw new Exception("Could not get password from appisetting.json");
                     }
                     var res1 = _userManager.CreateAsync(user, pass).GetAwaiter().GetResult();
                     if (res1.Errors.Any())
@@ -81,6 +92,7 @@ namespace DagoniteEmpire.Service
                         foreach (var err in res1.Errors)
                         {
                             await _jsRuntime.ToastrError("Error while creating user: " + err.Code);
+                            throw new Exception("Error while creating user: " + err.Code);
                         }
 
                     }
@@ -90,13 +102,17 @@ namespace DagoniteEmpire.Service
                         foreach (var err in res1.Errors)
                         {
                             await _jsRuntime.ToastrError("Error while creating role: " + err.Code);
+                            throw new Exception("Error while creating role: " + err.Code);
                         }
 
                     }
 
-                    if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
+                }
+                if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
+                {
+                    if (_userManager.FindByEmailAsync("player@example.com") is null)
                     {
-                        user = new()
+                        ApplicationUser user = new()
                         {
                             UserName = "player",
                             Email = "player@example.com",
@@ -106,18 +122,21 @@ namespace DagoniteEmpire.Service
                         _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
                         _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
 
-                        user = new()
+                    }
+
+                    if(_userManager.FindByEmailAsync("gm@example.com") is null)
+                    {
+                        ApplicationUser user = new()
                         {
                             UserName = "gm",
                             Email = "gm@example.com",
                             EmailConfirmed = true,
                         };
-
                         _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
                         _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
-                    }
-                    
-                }
+                    }                    
+                }                    
+                
                 if (contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName) == null)
                 {
                     var prof = new Profession() { Name = SD.GameMaster_NPCName, Description="", RelatedAttributeName = "" };
