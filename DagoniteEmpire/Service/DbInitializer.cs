@@ -56,10 +56,10 @@ namespace DagoniteEmpire.Service
 
 
                 }
-                if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
-                {
-                    throw new Exception("Could not get email or passwword from appisetting.json");
-                }
+                //if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
+                //{
+                //    throw new Exception("Could not get email or passwword from appisetting.json");
+                //}
                 if (/*_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")).Result is null*/ true)
                 {
                     //var email = _configuration.GetConnectionString("GameMasterEmail");
