@@ -56,78 +56,7 @@ namespace DagoniteEmpire.Service
 
 
                 }
-                if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
-                {
-                    throw new Exception("Could not get email or passwword from appisetting.json");
-                }
-                if (_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")).Result is null)
-                {
-                    var email = _configuration.GetConnectionString("GameMasterEmail");
-                    if (email.IsNullOrEmpty())
-                    {
-                        throw new Exception("Could not get email from appisetting.json");
-                    }
-
-                    ApplicationUser user = new()
-                    {
-                        UserName = "GameMaster",
-                        Email = email,
-                        EmailConfirmed = true,
-                    };
-
-                    var pass = _configuration.GetConnectionString("GameMasterPassword");
-                    if (pass.IsNullOrEmpty())
-                    {
-                        throw new Exception("Could not get password from appisetting.json");
-                    }
-                    var res1 = _userManager.CreateAsync(user, pass).GetAwaiter().GetResult();
-                    if (res1.Errors.Any())
-                    {
-                        foreach (var err in res1.Errors)
-                        {
-                            throw new Exception("Error while creating user: " + err.Code);
-                        }
-
-                    }
-                   var res2 = _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
-                    if (res2.Errors.Any())
-                    {
-                        foreach (var err in res1.Errors)
-                        {
-                            throw new Exception("Error while creating role: " + err.Code);
-                        }
-
-                    }
-
-                }
-                if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
-                {
-                    if (_userManager.FindByEmailAsync("player@example.com").Result is null)
-                    {
-                        ApplicationUser user = new()
-                        {
-                            UserName = "player",
-                            Email = "player@example.com",
-                            EmailConfirmed = true,
-                        };
-
-                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
-                        _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
-
-                    }
-
-                    if(_userManager.FindByEmailAsync("gm@example.com") is null)
-                    {
-                        ApplicationUser user = new()
-                        {
-                            UserName = "gm",
-                            Email = "gm@example.com",
-                            EmailConfirmed = true,
-                        };
-                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
-                        _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
-                    }                    
-                }                    
+              
                 
                 if (contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName) == null)
                 {
@@ -2243,6 +2172,80 @@ namespace DagoniteEmpire.Service
                     };
                     contex.Equipment.Add(item);
                     contex.SaveChanges();
+                }
+
+                // characters
+                if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
+                {
+                    throw new Exception("Could not get email or passwword from appisetting.json");
+                }
+                if (_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")).Result is null)
+                {
+                    var email = _configuration.GetConnectionString("GameMasterEmail");
+                    if (email.IsNullOrEmpty())
+                    {
+                        throw new Exception("Could not get email from appisetting.json");
+                    }
+
+                    ApplicationUser user = new()
+                    {
+                        UserName = "GameMaster",
+                        Email = email,
+                        EmailConfirmed = true,
+                    };
+
+                    var pass = _configuration.GetConnectionString("GameMasterPassword");
+                    if (pass.IsNullOrEmpty())
+                    {
+                        throw new Exception("Could not get password from appisetting.json");
+                    }
+                    var res1 = _userManager.CreateAsync(user, pass).GetAwaiter().GetResult();
+                    if (res1.Errors.Any())
+                    {
+                        foreach (var err in res1.Errors)
+                        {
+                            throw new Exception("Error while creating user: " + err.Code);
+                        }
+
+                    }
+                    var res2 = _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
+                    if (res2.Errors.Any())
+                    {
+                        foreach (var err in res1.Errors)
+                        {
+                            throw new Exception("Error while creating role: " + err.Code);
+                        }
+
+                    }
+
+                }
+                if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
+                {
+                    if (_userManager.FindByEmailAsync("player@example.com").Result is null)
+                    {
+                        ApplicationUser user = new()
+                        {
+                            UserName = "player",
+                            Email = "player@example.com",
+                            EmailConfirmed = true,
+                        };
+
+                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
+                        _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
+
+                    }
+
+                    if (_userManager.FindByEmailAsync("gm@example.com") is null)
+                    {
+                        ApplicationUser user = new()
+                        {
+                            UserName = "gm",
+                            Email = "gm@example.com",
+                            EmailConfirmed = true,
+                        };
+                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
+                        _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
+                    }
                 }
 
                 //// add proffesion
