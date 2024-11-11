@@ -35,7 +35,7 @@ namespace DagoniteEmpire.Service
             _roleManager = roleManager;
             _userManager = userManager;
             _mapper = mapper;
-            c = configuration;
+            _configuration = configuration;
         }
         public async Task Initialize()
         {
