@@ -23,14 +23,12 @@ namespace DagoniteEmpire.Service
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
-        private readonly IJSRuntime _jsRuntime;
 
         public DbInitializer(UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IDbContextFactory<ApplicationDbContext> db,
             IMapper mapper,
-            IConfiguration configuration,
-            IJSRuntime jsRuntime
+            IConfiguration configuration
             )
         {
             _db = db;
@@ -38,7 +36,6 @@ namespace DagoniteEmpire.Service
             _userManager = userManager;
             _mapper = mapper;
             _configuration = configuration;
-            _jsRuntime = jsRuntime;
         }
         public async Task Initialize()
         {
@@ -61,7 +58,6 @@ namespace DagoniteEmpire.Service
                 }
                 if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
                 {
-                    await _jsRuntime.ToastrError("Could not get email or password from appisetting.json");
                     throw new Exception("Could not get email or passwword from appisetting.json");
                 }
                 if (_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")).Result is null)
@@ -69,7 +65,6 @@ namespace DagoniteEmpire.Service
                     var email = _configuration.GetConnectionString("GameMasterEmail");
                     if (email.IsNullOrEmpty())
                     {
-                        await _jsRuntime.ToastrError("Could not get email from appisetting.json" );
                         throw new Exception("Could not get email from appisetting.json");
                     }
 
@@ -83,7 +78,6 @@ namespace DagoniteEmpire.Service
                     var pass = _configuration.GetConnectionString("GameMasterPassword");
                     if (pass.IsNullOrEmpty())
                     {
-                        await _jsRuntime.ToastrError("Could not get password from appisetting.json");
                         throw new Exception("Could not get password from appisetting.json");
                     }
                     var res1 = _userManager.CreateAsync(user, pass).GetAwaiter().GetResult();
@@ -91,7 +85,6 @@ namespace DagoniteEmpire.Service
                     {
                         foreach (var err in res1.Errors)
                         {
-                            await _jsRuntime.ToastrError("Error while creating user: " + err.Code);
                             throw new Exception("Error while creating user: " + err.Code);
                         }
 
@@ -101,7 +94,6 @@ namespace DagoniteEmpire.Service
                     {
                         foreach (var err in res1.Errors)
                         {
-                            await _jsRuntime.ToastrError("Error while creating role: " + err.Code);
                             throw new Exception("Error while creating role: " + err.Code);
                         }
 
@@ -2282,7 +2274,7 @@ namespace DagoniteEmpire.Service
             }
             catch (Exception ex)
             {
-                ;
+                throw new Exception(ex.Message);
             }
         }
     }
