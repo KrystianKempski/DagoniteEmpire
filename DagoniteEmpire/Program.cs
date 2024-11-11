@@ -18,6 +18,8 @@ using MudBlazor;
 using DA_Business.Repository.ChatRepos;
 using DA_Business.Services.Interfaces;
 using DA_Business.Services;
+using Cropper.Blazor.Extensions;
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthentication();
@@ -76,6 +78,12 @@ builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddTransient<IChatManager, ChatManager>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddCropper();
+builder.Services.AddServerSideBlazor()
+    .AddHubOptions(options =>
+    {
+        options.MaximumReceiveMessageSize = 32 * 1024 * 100;
+    });
 
 builder.Services.AddControllersWithViews();
 //builder.Services.AddMvc(option => option.EnableEndpointRouting = false);

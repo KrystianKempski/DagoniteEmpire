@@ -31,6 +31,45 @@ namespace DagoniteEmpire.Service
             return false;
         }
 
+        public async Task<string> UploadFile(string fileUrl, string root)
+        {
+            try
+            {
+                if (root == string.Empty) throw new Exception("need folder name");
+
+                var fileName = Guid.NewGuid().ToString() + ".webp";
+                var folderDirectory = $"{_environment.WebRootPath}/upload/{root}";
+
+                if (!Directory.Exists(folderDirectory))
+                {
+                    Directory.CreateDirectory(folderDirectory);
+                }
+                var filePath = Path.Combine(folderDirectory, fileName);
+
+
+                {
+                    using (var output = new MemoryStream())
+                    {
+                        byte[] newBytes = Convert.FromBase64String(fileUrl);
+
+                        using (var image = new MagickImage(newBytes))
+                        {
+                            image.Format = MagickFormat.WebP;
+                            await image.WriteAsync(filePath);
+                        }
+                    }
+                }
+
+                var fullPath = $"/upload/portraits/{fileName}";
+                return fullPath;
+            }
+            catch (Exception ex)
+            {
+                await _jsRuntime.ToastrError(ex.Message);
+            }
+            return "";
+        }
+    
         public async Task<string> UploadFile(IBrowserFile file, string root)
         {
             try

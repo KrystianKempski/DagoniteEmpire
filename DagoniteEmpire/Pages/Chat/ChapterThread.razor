@@ -442,7 +442,7 @@ else
             NewPost.ChapterId = Id;
              NewPost.CreatedDate = DateTime.Now;
             if(UserInfo?.IsAdminOrMG == true &&
-              (UserInfo?.SelectedCharacter?.UserName != "gm" && UserInfo?.SelectedCharacter?.UserName != "AdminKrystian"))
+              (UserInfo?.SelectedCharacter?.UserName != "gm" && UserInfo?.SelectedCharacter?.UserName != "GameMaster"))
             {
                     var character = await _characterRepository.GetByName(SD.GameMaster_NPCName);                    
                     NewPost.CharacterId = character.Id;

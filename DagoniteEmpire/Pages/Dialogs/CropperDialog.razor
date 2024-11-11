@@ -1,0 +1,152 @@
+﻿@using Cropper.Blazor.Models
+@using Cropper.Blazor.Components
+@using Cropper.Blazor.Extensions;
+@inject ISnackbar Snackbar
+
+<MudDialog >
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Cropp your image
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+    <div class="img-container">
+            <CropperComponent Class="big-img"
+                              @ref="cropperComponent" 
+                              Src="@ImageUrl"
+                              ErrorLoadImageSrc="@_errorLoadImageSrc"
+                              ErrorLoadImageClass="cropper-error-load center"
+                              IsAvailableInitCropper="@IsAvailableInitCropper"
+                              IsErrorLoadImage="@IsErrorLoadImage"
+                              OnErrorLoadImageEvent="OnErrorLoadImageEvent"
+                              Options="@options" />
+    </div>
+        <InputFile id="imageRebuildInput" OnChange="RebuildImageAsync" accept="image/*" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="SaveBtn">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .img-container {
+        max-height: 60vh;
+        overflow:hidden;
+        max-width: 100%;
+    }
+     .cropper-error-load {
+        max-height: inherit;
+        max-width: 100%;
+    }
+
+    .big-img {
+        max-height: 100%;
+        /* This rule is very important, please don't ignore this */
+        max-width: 100%;
+    }
+</style>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public IBrowserFile File { get; set; }
+    private string ImageUrl = "/images/def-char-img.webp";
+    private CropperComponent? cropperComponent = null!;
+    private readonly string _errorLoadImageSrc = "images/buttonFrame1.png";
+    private bool IsErrorLoadImage { get; set; } = false;
+    private bool IsAvailableInitCropper { get; set; } = true;
+    private (string base64ImageData, string mediaType) decodedImageData;
+
+    private Cropper.Blazor.Models.Options options;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public async Task RebuildImageAsync(InputFileChangeEventArgs inputFileChangeEventArgs)
+    {
+        IBrowserFile imageFile = inputFileChangeEventArgs.File;
+
+        if (imageFile != null)
+        {
+            string oldSrc = ImageUrl;
+
+            ImageUrl = await cropperComponent!.GetImageUsingStreamingAsync(imageFile, imageFile.Size);
+
+            IsAvailableInitCropper = true;
+            IsErrorLoadImage = false;
+
+            cropperComponent?.Destroy();
+            cropperComponent?.RevokeObjectUrlAsync(oldSrc);
+        }
+    }
+    public async Task GetDecodedImageDataAsync()
+    {
+        GetCroppedCanvasOptions getCroppedCanvasOptions = new GetCroppedCanvasOptions
+        {
+            // Height = 1800,
+            // Width = 1300,
+            //ImageSmoothingQuality = ImageSmoothingQuality.High.ToString()
+        };
+
+
+        ImageUrl = await cropperComponent!.GetCroppedCanvasDataURLAsync(getCroppedCanvasOptions);
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        options = new Options
+            {
+                AspectRatio = 0.72m,
+                ViewMode = ViewMode.Vm2 ,
+            };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            cropperComponent?.Destroy();
+            cropperComponent?.RevokeObjectUrlAsync(ImageUrl);
+
+            IBrowserFile imageFile = File;
+
+            if (imageFile != null)
+            {
+                string oldSrc = ImageUrl;
+
+                ImageUrl = await cropperComponent!.GetImageUsingStreamingAsync(imageFile, imageFile.Size);
+
+                IsAvailableInitCropper = true;
+                IsErrorLoadImage = false;
+
+                cropperComponent?.Destroy();
+                cropperComponent?.RevokeObjectUrlAsync(oldSrc);
+                StateHasChanged();
+            }
+        }
+    }
+
+    public void OnErrorLoadImageEvent(ErrorEventArgs errorEventArgs)
+    {
+        IsErrorLoadImage = true;
+        Destroy();
+        StateHasChanged();
+    }
+
+    private void Destroy()
+    {
+        cropperComponent?.Destroy();
+        cropperComponent?.RevokeObjectUrlAsync(ImageUrl);
+    }
+
+    private async Task SaveBtn()
+    {
+        await GetDecodedImageDataAsync();
+        decodedImageData = ImageUrl.Decode();
+        MudDialog.Close(DialogResult.Ok(decodedImageData.base64ImageData));
+        Snackbar.Add("Image added", Severity.Success);
+    }
+}

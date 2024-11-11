@@ -1,6 +1,9 @@
-﻿@inject IFileUpload _fileUpload;
+﻿@using Cropper.Blazor.Components
+@inject IFileUpload _fileUpload;
 @inject IUserService _userService
 @inject IJSRuntime _jsRuntime
+@inject IDialogService DialogService
+@inject IBrowserViewportService _vieportService
 
 <div class="portrait">
     <MudPaper Class="w-100 h-100 pa-2">
@@ -16,7 +19,7 @@
             {
                 <label class="input-label" for="input"> </label>
             }
-                <InputFile accept=".jpeg,.jpg,.png" id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
+            <InputFile accept=".jpeg,.jpg,.png" id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
     </div>
 
     <div class="points-control">
@@ -40,7 +43,12 @@
         </div>
     </MudPaper>
 </div>
-
+<style>
+    .cropper-example {
+        max-height: 300px;
+        width: 100%;
+    }
+</style>
 
 @code {
 
@@ -48,6 +56,7 @@
     public AllParamsModel AllParams { get; set; }
     [Parameter]
     public EventCallback OnPortraitChange { get; set; }
+    public string ImageUrl { get; set; } = "";
 
     private string ChooseFile = "Choose file";
     UserInfo? UserInfo { get; set; }
@@ -62,22 +71,20 @@
     {
         try
         {
-            if (e.GetMultipleFiles().Count > 0)
+            if (e.GetMultipleFiles(1).Count > 0)
             {
                 ChooseFile = string.Empty;
-                foreach (var file in e.GetMultipleFiles())
+                foreach (var file in e.GetMultipleFiles(1))
                 {
-                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);
-                    if (fileInfo.Extension.ToLower() == ".jpg" ||
-                        fileInfo.Extension.ToLower() == ".png" ||
-                        fileInfo.Extension.ToLower() == ".jpeg")
+                    var parameters = new DialogParameters<CropperDialog> { { x => x.File, e.File } };
+                    var dialog = await DialogService.ShowAsync<CropperDialog>("Cropp portrait", parameters, await SetOptions());
+                    var result = await dialog.Result;
+
+                    if (result?.Data is not null && !result.Canceled)
                     {
-                        AllParams.Character.ImageUrl = await _fileUpload.UploadFile(file, SD.Portrait);
+                        var url = (string)result.Data;
+                        AllParams.Character.ImageUrl = await _fileUpload.UploadFile(url, SD.Portrait);
                         await OnPortraitChange.InvokeAsync();
-                    }
-                    else
-                    {
-                        await _jsRuntime.ToastrError("Please select .jpg / .jpeg / .png file only");
                     }
                 }
                 StateHasChanged();
@@ -88,6 +95,12 @@
             await _jsRuntime.ToastrError("Error while image upload: " + ex.ToString());
         }
     }
-
+    private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Medium)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
+    }
 
 }

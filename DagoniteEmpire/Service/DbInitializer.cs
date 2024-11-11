@@ -18,16 +18,19 @@ namespace DagoniteEmpire.Service
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
+        private readonly IConfiguration _configuration;
 
         public DbInitializer(UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IDbContextFactory<ApplicationDbContext> db,
-            IMapper mapper)
+            IMapper mapper,
+            IConfiguration configuration)
         {
             _db = db;
             _roleManager = roleManager;
             _userManager = userManager;
             _mapper = mapper;
+            _configuration = configuration;
         }
         public async Task Initialize()
         {
@@ -45,37 +48,41 @@ namespace DagoniteEmpire.Service
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_HeroPlayer)).GetAwaiter().GetResult();
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_DukePlayer)).GetAwaiter().GetResult();
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_GameMaster)).GetAwaiter().GetResult();
-
+                    
 
                     ApplicationUser user = new()
                     {
-                        UserName = "AdminKrystian",
-                        Email = "krystian.kempski@gmail.com",
+                        UserName = "GameMaster",
+                        Email = _configuration.GetConnectionString("GameMasterEmail"),
                         EmailConfirmed = true,
                     };
 
-                    _userManager.CreateAsync(user, "Admin123*").GetAwaiter().GetResult();
-                    _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
+                    var res1 = _userManager.CreateAsync(user, _configuration.GetConnectionString("GameMasterPassword")).GetAwaiter().GetResult();
+                    var res2 = _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
 
-                    user = new()
+                    if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
                     {
-                        UserName = "player",
-                        Email = "player@example.com",
-                        EmailConfirmed = true,
-                    };
+                        user = new()
+                        {
+                            UserName = "player",
+                            Email = "player@example.com",
+                            EmailConfirmed = true,
+                        };
 
-                    _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
-                    _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
+                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
+                        _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
 
-                    user = new()
-                    {
-                        UserName = "gm",
-                        Email = "gm@example.com",
-                        EmailConfirmed = true,
-                    };
+                        user = new()
+                        {
+                            UserName = "gm",
+                            Email = "gm@example.com",
+                            EmailConfirmed = true,
+                        };
 
-                    _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
-                    _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
+                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
+                        _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
+                    }
+                    
                 }
                 if (contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName) == null)
                 {

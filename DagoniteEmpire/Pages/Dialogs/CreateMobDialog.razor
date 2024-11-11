@@ -3,6 +3,8 @@
 @inject IMobRepository _mobRepository
 @inject ICampaignRepository _campaignRepository
 @inject IChapterRepository _chapterRepository
+@inject IDialogService DialogService
+@inject IBrowserViewportService _vieportService
 
 <MudDialog>
     <TitleContent>
@@ -268,16 +270,14 @@
                 ChooseFile = string.Empty;
                 foreach (var file in e.GetMultipleFiles())
                 {
-                    System.IO.FileInfo fileInfo = new System.IO.FileInfo(file.Name);
-                    if (fileInfo.Extension.ToLower() == ".jpg" ||
-                        fileInfo.Extension.ToLower() == ".png" ||
-                        fileInfo.Extension.ToLower() == ".jpeg")
+                    var parameters = new DialogParameters<CropperDialog> { { x => x.File, e.File } };
+                    var dialog = await DialogService.ShowAsync<CropperDialog>("Cropp portrait", parameters, await SetOptions());
+                    var result = await dialog.Result;
+
+                    if (result?.Data is not null && !result.Canceled)
                     {
-                        NewMob.ImageUrl = await _fileUpload.UploadFile(file,SD.Portrait);
-                    }
-                    else
-                    {
-                        Snackbar.Add("Please select .jpg / .jpeg / .png file only",Severity.Warning);
+                        var url = (string)result.Data;
+                        NewMob.ImageUrl = await _fileUpload.UploadFile(url, SD.Portrait);
                     }
                 }
                 StateHasChanged();
@@ -287,6 +287,13 @@
         {
             Snackbar.Add("Error while image upload: " + ex.ToString(), Severity.Error);
         }
+    }
+    private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Medium)
+    {
+        DialogOptions options = new() { MaxWidth = maxWidth };
+        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
+            options.FullScreen = true;
+        return options;
     }
     
 }
