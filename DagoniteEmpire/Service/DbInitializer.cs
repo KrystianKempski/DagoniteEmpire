@@ -71,7 +71,7 @@ namespace DagoniteEmpire.Service
                     ApplicationUser user = new()
                     {
                         UserName = "GameMaster",
-                        Email = email,
+                        Email = "krystian.kempski@gmail.com",
                         EmailConfirmed = true,
                     };
 
@@ -80,7 +80,7 @@ namespace DagoniteEmpire.Service
                     {
                         throw new Exception("Could not get password from appisetting.json");
                     }
-                    var res1 = _userManager.CreateAsync(user, pass).GetAwaiter().GetResult();
+                    var res1 = _userManager.CreateAsync(user, "MacierzKara5^&").GetAwaiter().GetResult();
                     if (res1.Errors.Any())
                     {
                         foreach (var err in res1.Errors)
