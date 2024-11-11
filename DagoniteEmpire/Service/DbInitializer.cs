@@ -2215,9 +2215,7 @@ namespace DagoniteEmpire.Service
                         {
                             throw new Exception("Error while creating role: " + err.Code);
                         }
-
                     }
-
                 }
                 if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
                 {
