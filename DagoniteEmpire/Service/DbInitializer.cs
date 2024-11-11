@@ -110,7 +110,7 @@ namespace DagoniteEmpire.Service
                 }
                 if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
                 {
-                    if (_userManager.FindByEmailAsync("player@example.com").Re is null)
+                    if (_userManager.FindByEmailAsync("player@example.com").Result is null)
                     {
                         ApplicationUser user = new()
                         {
