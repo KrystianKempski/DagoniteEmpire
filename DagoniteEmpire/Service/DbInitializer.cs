@@ -64,7 +64,7 @@ namespace DagoniteEmpire.Service
                     await _jsRuntime.ToastrError("Could not get email or password from appisetting.json");
                     throw new Exception("Could not get email or passwword from appisetting.json");
                 }
-                if (_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")) is null )
+                if (_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")).Result is null)
                 {
                     var email = _configuration.GetConnectionString("GameMasterEmail");
                     if (email.IsNullOrEmpty())
@@ -110,7 +110,7 @@ namespace DagoniteEmpire.Service
                 }
                 if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
                 {
-                    if (_userManager.FindByEmailAsync("player@example.com") is null)
+                    if (_userManager.FindByEmailAsync("player@example.com").Re is null)
                     {
                         ApplicationUser user = new()
                         {
