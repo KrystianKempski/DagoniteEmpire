@@ -39,6 +39,7 @@ namespace DA_Models.ComponentModels
         public HealthModel Health { get; set; }
         public ICollection<TraitDTO> TraitsToDelete { get; set; } = new List<TraitDTO>();
         public ICollection<EquipmentSlotDTO> EquipmentSlotsToDelete { get; set; } = new List<EquipmentSlotDTO>();
+        public ICollection<SpecialSkillDTO> SpecialSkillsToDelete { get; set; } = new List<SpecialSkillDTO>();
         public string States { get
             {
                 string res = string.Empty;

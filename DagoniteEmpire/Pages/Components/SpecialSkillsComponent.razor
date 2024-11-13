@@ -1,7 +1,7 @@
 ﻿
 @inject IJSRuntime _jsRuntime
+@inject IDialogService DialogService
 
-<_DeleteConfirmation IsParentComponentProcessing="false" DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="@DeletedSpecialSkill"></_DeleteConfirmation>
 <div class="specialskills-table">
     <MudPaper Class="p-2 m-0  w-100 h-100">
     <div class="specialskills-control">
@@ -167,8 +167,6 @@
     [Parameter]
     public EventCallback OnSpecialSkillChange { get; set; }
 
-    private string DeletedSpecialSkill = "";
-
     private async Task IncrSSBonus(SpecialSkillDTO obj)
     {
         try
@@ -302,30 +300,26 @@
     {
         var newSkill = new SpecialSkillDTO();
         newSkill = AllParams.SpecialSkills.GetAllSection(BaseSkill.Name).Last();
-        DeletedSpecialSkill = newSkill.Name;
-        if (newSkill.Editable)
-        {
-            await DeleteSpecialSkill();
-        }
-    }
 
-    private async Task DeleteSpecialSkill()
-    {
-        await _jsRuntime.InvokeVoidAsync("ShowDeleteConfirmationModal");
-    }
-
-    public async Task ConfirmDelete_Click(bool isConfirmed)
-    {
-        StateHasChanged();
-        if (isConfirmed == true && string.IsNullOrEmpty(DeletedSpecialSkill) == false)
+        if (newSkill.Editable == false)
         {
-            AllParams.SpecialSkills.Remove(DeletedSpecialSkill);
-            await OnSpecialSkillChange.InvokeAsync();
+            return;
         }
 
-        DeletedSpecialSkill = "";
-        StateHasChanged();
-        await _jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
+        bool? result = await DialogService.ShowMessageBox(
+          "Warning",
+          $"Are you sure you want to delete {newSkill.Name}?",
+          yesText: "Yes", cancelText: "No");
+
+
+        if (result is null || result == false || newSkill.Name == string.Empty)
+        {
+            return;
+        }
+        AllParams.SpecialSkillsToDelete.Add(newSkill);
+        AllParams.SpecialSkills.Remove(newSkill.Name);
+
+        await OnSpecialSkillChange.InvokeAsync();        
     }
 
     public async Task ChangeSSRelatedAttribute(string attrName, string specialSkillName)
@@ -333,4 +327,5 @@
         AllParams.SpecialSkills.ChangeSSRelatedAttribute(attrName, specialSkillName);
         await OnSpecialSkillChange.InvokeAsync();
     }
+
 }

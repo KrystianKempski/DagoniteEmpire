@@ -607,6 +607,12 @@
                 UserInfo = await _userService.GetUserInfo();
             }
 
+            // delete special skills that are no longer needed
+            foreach(var skill in AllParams.SpecialSkillsToDelete)
+            {
+                await _specialSkillRepository.Delete(skill.Id);
+            }
+
             AllParams.Character = await _characterRepository.GetById(Id,true);
         }
         catch (Exception ex)
