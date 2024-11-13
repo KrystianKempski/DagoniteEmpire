@@ -26,7 +26,7 @@
         <label class="points-label">Avalible experience points:</label>
         @if (UserInfo?.IsAdminOrMG == true)
         {
-            <span class="points-indicator ml-auto"><MudNumericField Margin="0" Class="dense-numeric-field" Min="0" @bind-Value="AllParams.Character.CurrentExpPoints"></MudNumericField></span>
+            <span class="points-indicator ml-auto"><MudNumericField Margin="0" Class="dense-numeric-field" Min="0" @bind-Value="AllParams.Character.CurrentExpPoints" @bind-Value:after="ChangeParams"></MudNumericField></span>
         }
         else
         {
@@ -65,6 +65,11 @@
     {
         UserInfo = await _userService.GetUserInfo();
         StateHasChanged();        
+    }
+
+    private async Task ChangeParams()
+    {
+        await OnPortraitChange.InvokeAsync();
     }
 
     private async Task HandleImageUpload(InputFileChangeEventArgs e)
