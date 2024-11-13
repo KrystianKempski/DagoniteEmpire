@@ -29,14 +29,17 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
         private readonly UserManager<ApplicationUser>_userManager;
         private readonly IUserService _userService;
         private readonly ProtectedSessionStorage _protectedSessionStorage;
+        private readonly IConfiguration _configuration;
 
-        public LoginModel(SignInManager<ApplicationUser>signInManager, ILogger<LoginModel> logger, UserManager<ApplicationUser>userManager, IUserService userService, ProtectedSessionStorage protectedSessionStorage)
+        public LoginModel(SignInManager<ApplicationUser>signInManager, ILogger<LoginModel> logger, UserManager<ApplicationUser>userManager, IUserService userService, ProtectedSessionStorage protectedSessionStorage
+                , IConfiguration configuration)
         {
             _signInManager = signInManager;
             _logger = logger;
             _userManager = userManager;
             _userService = userService;
             _protectedSessionStorage = protectedSessionStorage;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -141,6 +144,12 @@ namespace DagoniteEmpire.Areas.Identity.Pages.Account
                 }
                 else
                 {
+                    if(_configuration.GetConnectionString("TestAccountsEnable") != "true" && Input.Email.Contains("@example"))
+                    {
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return Page();
+                    }
+
                     userName = user.UserName;
                 }
                 // This doesn't count login failures towards account lockout
