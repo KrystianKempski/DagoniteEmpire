@@ -11,11 +11,13 @@
     <h3 class="my-3 ml-3 text-center">CLASS</h3>
     @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
     {
-        <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;" @bind-Value="@Profession.Name" class=""></InputText>
+        <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;"
+                        @bind-Value="@Profession.Name"  @bind-Value:after="NotifyChange" ></InputText>
     }
     else
     {
-        <InputText readonly style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;" @bind-Value="@Profession.Name" class=""></InputText>
+        <InputText readonly style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;"
+                           @bind-Value="@Profession.Name" @bind-Value:after="NotifyChange"></InputText>
     }
     <table class="table align-middle">
         <thead>
@@ -48,7 +50,7 @@
     <label class="prof-descr-label">Class description</label>
     <div class="richtext-conteiner">
 
-        <SfRichTextEditor Height="100%" @bind-Value="@Profession.Description" Readonly="true" ShowTooltip="false">
+        <SfRichTextEditor Height="100%" @bind-Value="@Profession.Description" @bind-Value:after="NotifyChange" Readonly="true" ShowTooltip="false">
             <RichTextEditorToolbarSettings Enable="false" />
         </SfRichTextEditor>
 
@@ -77,6 +79,8 @@
     public ProfessionDTO Profession { get; set; } = null;
     [Parameter]
     public EventCallback<ProfessionDTO> ProfessionChanged { get; set; }
+    [Parameter]
+    public EventCallback OnProfessionChanged { get; set; }
     private string ProfessionName { get; set; }
 
 
@@ -97,19 +101,25 @@
         }
     }
 
+    private async Task NotifyChange()
+    {
+        await OnProfessionChanged.InvokeAsync();
+        StateHasChanged();
+    }
+
     private async Task EditProfession()
     {
         if(AllParams.Character.IsApproved == false)
         {
 
-           CreateProfession.ProfessionDTO = Profession;
-           CreateProfession.IsVisible = true;
-       }
+            CreateProfession.ProfessionDTO = Profession;
+            CreateProfession.IsVisible = true;
+        }
         else 
         {
             _navigationManager.NavigateTo($"/profession/{AllParams.Character.Id}");
         }
-        StateHasChanged();
+        await NotifyChange();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
