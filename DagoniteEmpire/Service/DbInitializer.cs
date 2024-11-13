@@ -2233,7 +2233,7 @@ namespace DagoniteEmpire.Service
 
                     }
 
-                    if (_userManager.FindByEmailAsync("gm@example.com") is null)
+                    if (_userManager.FindByEmailAsync("gm@example.com").Result is null)
                     {
                         ApplicationUser user = new()
                         {
@@ -2245,33 +2245,6 @@ namespace DagoniteEmpire.Service
                         _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
                     }
                 }
-
-                //// add proffesion
-                //if(_db.Professions.FirstOrDefault(c => c.Name == "Warrior") is null)
-                //{
-                //    var profession = new Profession() { Name = "Warrior", Description = "Mighty warrior, proficent in melee and ranged weapons." };
-                //    _db.Professions.Add(profession);
-                //    _db.SaveChanges();
-                //}
-
-                // add character
-
-                //if (_db.Characters.FirstOrDefault(c => c.NPCName == "Mściwój") == null)
-                // {
-                //     string contents = File.ReadAllText(@"../seederFiles/AttributesMsciwoj");
-                //     object value = _db.Database.ExecuteSqlRaw(contents);
-                //     //    var charac = new Character() { UserName = "player", NPCName = "Mściwój" };
-                //     //    var attributes = new Feature() { Name = SD.Attributes.Strength, BaseBonus = 18  }
-
-                //     //    var profession = _db.Professions.FirstOrDefault(c => c.Name == "Warrior");
-                //     //    var race = _db.Races.FirstOrDefault(c => c.Name == "Dwarf");
-                //     //    charac.ProfessionId = profession.Id;
-                //     //    charac.RaceId = race.Id;
-                //     //    charac.ImageUrl = "../images/Msciwoj.webp";
-
-                //     //    _db.Characters.Add(charac);
-                //     //    _db.SaveChanges();
-                // }
             }
             catch (Exception ex)
             {
