@@ -53,10 +53,7 @@ namespace DagoniteEmpire.Service
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_HeroPlayer)).GetAwaiter().GetResult();
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_DukePlayer)).GetAwaiter().GetResult();
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_GameMaster)).GetAwaiter().GetResult();
-
-
-                }
-              
+                }              
                 
                 if (contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName) == null)
                 {
@@ -74,7 +71,7 @@ namespace DagoniteEmpire.Service
                 }
                 if (contex.Characters.FirstOrDefault(c=>c.NPCName == SD.GameMaster_NPCName) == null)
                 {
-                    var charac = new Character() { UserName = "GM", NPCName = SD.GameMaster_NPCName };
+                    var charac = new Character() { UserName = "GM", NPCName = SD.GameMaster_NPCName, Description="" };
 
                     var profession = contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName);
                     var race = contex.Races.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName);
