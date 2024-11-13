@@ -265,6 +265,7 @@
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender) _openEnd = false;
         if (ScrollToBottom || firstRender)
         {
             if (ChosenUser is not null)
@@ -273,6 +274,7 @@
                 ScrollToBottom = false;
             }
         }
+       
     }
 
     protected override async Task OnInitializedAsync()
@@ -295,6 +297,7 @@
             CurrentUserId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
             CurrentUserName = user.FindFirst(u => u.Type.Contains("name") && !u.Type.Contains("nameidentifier"))?.Value;
             await GetUsersAsync();
+            _openEnd = false;
         }
         catch (Exception e)
         {
