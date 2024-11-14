@@ -314,7 +314,7 @@ namespace DA_Common
             public static readonly string[] All = { LightLeatherArmor, LeatherScaleArmor, StealScaleArmor, HalfPlate, FullPlate };
         }
 
-        
+
 
         public readonly struct Condition
         {
@@ -481,6 +481,20 @@ namespace DA_Common
             }
 
         }
+
+        public static readonly Dictionary<string, int> DifficultyLevel
+             = new Dictionary<string, int>
+         {
+            { "Effortless", 5 },
+            { "Simple", 8 },
+            { "Straightforward", 12 },
+            { "Demanding", 16 },
+            { "Hard", 20 },
+            { "Challanging", 25 },
+            { "Very hard", 30 },
+            { "Nearly impossible", 35 },
+         };
+
         public static Tuple<int, string> RollDice()
         {
             int result = 0;

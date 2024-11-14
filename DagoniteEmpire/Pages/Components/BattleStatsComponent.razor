@@ -352,30 +352,10 @@
             EquipItemComp[i] = new EquipItemComponent();
         }
         IsLoading = true;
-       // StateHasChanged();
         ReloadBattleGear();
         IsLoading = false;
-       // StateHasChanged();
     }
 
-    // protected override async Task OnAfterRenderAsync(bool firstRender)
-    // {
-    //     if (firstRender)
-    //     {
-    //         try
-    //         {
-    //             IsLoading = true;
-    //             StateHasChanged();
-    //             ReloadBattleGear();
-    //             IsLoading = false;
-    //             StateHasChanged();
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //             ;                
-    //         }
-    //     }
-    // }
     public void ReloadBattleGear()
     {
         WeaponSet1 = AllParams.Character.WeaponSet == 0 ? true : false;

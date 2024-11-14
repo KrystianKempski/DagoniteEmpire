@@ -104,6 +104,7 @@ else
                             <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
                         }
                         <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton FullWidth OnClick="MakeSkillRoll">Make a roll</MudButton></MudItem>
                     </MudGrid>
                 }
                 @if (IsLoadingCharacters == false)
@@ -700,6 +701,28 @@ else
             await LoadMobs();
             await LoadChapter();
             SnackBar.Add($"Battle Ended", Severity.Normal);
+        }
+    }
+
+    private async Task MakeSkillRoll()
+    {
+        if (Chapter is null) return;
+        var parameters = new DialogParameters<MakeSkillRollDialog>  {   { x => x.CharacterAllParams, CharacterAllParams.Values },
+                                                                        { x => x.Mobs, Mobs },};
+
+        var dialog = await DialogService.ShowAsync<MakeSkillRollDialog>("Skill roll", parameters, await SetDialogOptions());
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // IsLoadingCharacters = true;
+            // StateHasChanged();
+            // await LoadMobs();
+            // await LoadChapter();
+            // IsLoadingCharacters = false;
+            // StateHasChanged();
+            // if (result.Data is not null)
+            //     NewPost.Content += result.Data as string ?? string.Empty;
         }
     }
 

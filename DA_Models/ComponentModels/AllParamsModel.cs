@@ -203,7 +203,6 @@ namespace DA_Models.ComponentModels
                     {
                         Profession.AddSpellCircle(c);
                     }
-
                 }
             }
         }

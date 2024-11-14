@@ -1823,6 +1823,11 @@ namespace DagoniteEmpire.Service
                                         FeatureType = SD.FeatureWeaponQuality,
                                         FeatureName = SD.WeaponQuality.Stumbling,
                                     },
+                                    new Bonus{
+                                        BonusValue = 5,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        FeatureName = SD.WeaponQuality.Devastating,
+                                    },
                                 }
                             }
                         },

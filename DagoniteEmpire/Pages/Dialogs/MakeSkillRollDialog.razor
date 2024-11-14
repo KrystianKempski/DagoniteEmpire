@@ -1,0 +1,359 @@
+﻿@using DA_DataAccess.CharacterClasses
+@using DA_Models
+@inject IFileUpload _fileUpload;
+@inject ISnackbar Snackbar
+@inject IMobRepository _mobRepository
+@inject ICampaignRepository _campaignRepository
+@inject IChapterRepository _chapterRepository
+@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
+@inject IWoundRepository _woundsRepository
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <img src="@MyIcon.Attack" width="40" height="40" />
+            Fight sequence
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <MudGrid>
+            <MudItem xs="12">
+                <MudSwitch @bind-Value="IsOppositeRoll" Color="Color.Primary">Is opposite roll</MudSwitch>
+            </MudItem>
+            <MudItem xs="6">
+                @* ATTACKER *@
+                <MudPaper Elevation="1" Class="pa-2 h-100">
+
+                    @* Select Rolling character *@
+                    <MudSelect Value="@Roller" T="string" Required="true" ValueChanged="SelectCharacterRolling" Label="Select Rolling character">
+                        <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
+                        @foreach(var attacker in CharacterAllParams) {
+                            @if (attacker is not null )
+                            {                            
+                                <MudSelectItem Value="attacker.Character.NPCName">@attacker.Character.NPCName</MudSelectItem>
+                            }
+                        }
+                        @foreach (var attacker in Mobs)
+                        {
+                            @if (attacker is not null)
+                            {
+                                <MudSelectItem Value="attacker.Name">@attacker.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>                
+                    @* Select base skill  *@
+                    <MudSelect ReadOnly="SelectedCharacterRolling is null" T="string" Required="true" @bind-Value="@BaseSkillRollName" Label="Select base skill">
+                        @foreach (var baseSkill in SD.BaseSkills.All)
+                        {
+                            <MudSelectItem Value="baseSkill">@baseSkill</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    @* Select special skill *@
+                    <MudSelect ReadOnly="BaseSkillRollName == string.Empty" T="SpecialSkillDTO" Required="true" @bind-Value="@SpecialSkillRoll" Label="Select special skill">
+                        @if(BaseSkillRollName != string.Empty)
+                        {
+                            @foreach (var baseSkill in SelectedCharacterRolling.SpecialSkills.GetAllSection(BaseSkillRollName))
+                            {
+                                <MudSelectItem Value="baseSkill">@baseSkill.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>  
+                    <MudStack Row>
+                        <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAttackerBonus"/>
+                        <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Remove" OnClick="RemoveAttackerBonus" />
+                    </MudStack>
+                    @foreach(var item in AdditionalAttackerBonuses)
+                    {
+                        <MudStack Row>
+                            <MudTextField Value="item.Item1">@item.Item1</MudTextField>
+                            <div style="width:40px;">
+                                <MudNumericField Value="item.Item2"> @item.Item2</MudNumericField>
+                            </div>
+                        </MudStack>
+                    }
+                   
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6">
+                @if (IsOppositeRoll == false)
+                {
+                    <MudPaper Elevation="1" Class="pa-2 h-100">
+                        <MudSelect T="int" Required="true" @bind-Value="DifficultyValue" Label="Select dificulty">
+                            @foreach (var defender in SD.DifficultyLevel.ToList())
+                            {
+                                <MudSelectItem Value="defender.Value">@defender.Key</MudSelectItem>                            
+                            }                       
+                        </MudSelect>
+                        <MudNumericField Margin="0" Class="dense-numeric-field" Min="5" @bind-Value="DifficultyValue" ></MudNumericField>
+                    </MudPaper>
+                }
+                else
+                {                
+                    @* DEFENDER *@                
+                    <MudPaper Elevation="1" Class="pa-2 h-100">
+                        @* Select Defender *@
+                         <MudSelect Value="Defender" T="string" Required="true" ValueChanged="SelectDefender" Label="Select Defender">
+                                <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
+                            @foreach (var defender in CharacterAllParams)
+                            {
+                                @if (defender.Character.NPCName != Defender)
+                                {
+                                    <MudSelectItem Value="defender.Character.NPCName">@defender.Character.NPCName</MudSelectItem>
+                                }
+                            }                            
+                            @foreach (var defender in Mobs)
+                            {
+                                @if (defender.Name != Roller)
+                                {
+                                    <MudSelectItem Value="defender.Name">@defender.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect> 
+                        @* Select base skill  *@
+                         <MudSelect ReadOnly="SelectedCharacterDefending is null" T="string" Required="true" @bind-Value="@BaseSkillDefenceName" Label="Select base skill">
+                            @foreach (var baseSkill in SD.BaseSkills.All)
+                            {
+                                <MudSelectItem Value="baseSkill">@baseSkill</MudSelectItem>
+                            }
+                        </MudSelect> 
+
+                        @* Select special skill *@
+                         <MudSelect ReadOnly="BaseSkillDefenceName == string.Empty" T="SpecialSkillDTO" Required="true" @bind-Value="@SpecialSkillDefence" Label="Select special skill">
+                            @if (BaseSkillDefenceName != string.Empty)
+                            {
+                                @foreach (var baseSkill in SelectedCharacterDefending.SpecialSkills.GetAllSection(BaseSkillDefenceName))
+                                {
+                                    <MudSelectItem Value="baseSkill">@baseSkill.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                        <MudStack Row>
+                            <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddDefenderBonus" />
+                            <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Remove" OnClick="RemoveDefenderBonus" />
+                        </MudStack>
+                        @foreach (var item in AdditionalDefenderBonuses)
+                        {
+                            <MudStack Row>
+                                <MudTextField Value="item.Item1">@item.Item1</MudTextField>
+                                <MudNumericField Value="item.Item2"> @item.Item2</MudNumericField>
+                            </MudStack>
+                        }
+                    </MudPaper>                
+                }
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Class="p-2 m-2 w-100 justify-content-center"  Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeRoll">Roll!</MudButton>
+            </MudItem>
+
+            <MudItem xs="12">
+                <SfRichTextEditor Width="100%" Height="400px" @bind-Value="@RollResultString" ShowTooltip="true">
+                    <RichTextEditorToolbarSettings Items="@Tools" />
+                </SfRichTextEditor>
+            </MudItem>
+        </MudGrid>
+    }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Exit</MudButton>
+        <MudButton Color="Color.Error" OnClick="SaveSequenceBtn">Save</MudButton>
+        <MudButton Color="Color.Error" OnClick="SaveAndClearBtn">Save and clear</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public ICollection<AllParamsModel?> CharacterAllParams { get; set; } = new List<AllParamsModel?>();
+    [Parameter] public IEnumerable<MobDTO> Mobs { get; set; } = new List<MobDTO>();
+
+
+    private string RollResultString = string.Empty;
+    private AllParamsModel? SelectedCharacterRolling = null;
+    private AllParamsModel? SelectedCharacterDefending = null;
+    private MobDTO? SelectedMobRolling = null;
+    private MobDTO? SelectedMobDefending = null;
+    private string Roller = string.Empty;
+    private string Defender = string.Empty;
+    private string BaseSkillRollName = string.Empty;
+    private string BaseSkillDefenceName = string.Empty;
+    private SpecialSkillDTO? SpecialSkillRoll = null;
+    private SpecialSkillDTO? SpecialSkillDefence = null;
+
+    private Stack<Tuple<string, int>> AdditionalAttackerBonuses = new Stack<Tuple<string, int>>();
+    private Stack<Tuple<string, int>> AdditionalDefenderBonuses = new Stack<Tuple<string, int>>();
+    
+    private bool _isOppositeRoll = false;
+    public bool IsOppositeRoll 
+    {
+        get => _isOppositeRoll;
+        set
+        {
+            _isOppositeRoll = value;
+            //StateHasChanged();
+        }
+    }
+    private int DifficultyValue = 0;
+
+    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
+    {
+        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
+        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
+        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
+        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
+        new ToolbarItemModel() { Command = ToolbarCommand.FontColor },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
+        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
+        new ToolbarItemModel() { Command = ToolbarCommand.OrderedList },
+        new ToolbarItemModel() { Command = ToolbarCommand.UnorderedList },
+        new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
+        new ToolbarItemModel() { Command = ToolbarCommand.Indent },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
+        new ToolbarItemModel() { Command = ToolbarCommand.Image },
+        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
+        new ToolbarItemModel() { Command = ToolbarCommand.Undo },
+        new ToolbarItemModel() { Command = ToolbarCommand.Redo },
+        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
+    };
+
+    private void Cancel()
+    {
+        if(RollResultString == string.Empty)
+            MudDialog.Cancel();
+        else
+        {
+            MudDialog.Close(DialogResult.Ok(RollResultString));
+            Snackbar.Add("Fight sequence added", Severity.Success);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    private async Task AddAttackerBonus()
+    {
+        AdditionalAttackerBonuses.Push( new Tuple<string,int>("", 0));
+    }
+
+    private async Task RemoveAttackerBonus()
+    {
+        AdditionalAttackerBonuses.Pop(); ;
+    }
+    private async Task AddDefenderBonus()
+    {
+        AdditionalDefenderBonuses.Push(new Tuple<string, int>("", 0));
+    }
+
+    private async Task RemoveDefenderBonus()
+    {
+        AdditionalDefenderBonuses.Pop(); ;
+    }
+
+    private void SelectCharacterRolling(string attackerName)
+    {
+        try
+        {
+
+            var characterParams = CharacterAllParams.FirstOrDefault(p => p.Character.NPCName == attackerName);
+            if (characterParams is not null)
+            {
+                SelectedCharacterRolling = characterParams;
+                Roller = SelectedCharacterRolling.Character.NPCName;
+                return;
+            }
+            var mob = Mobs.FirstOrDefault(m=>m.Name == attackerName);
+            if(mob is not null)
+            {
+                SelectedMobRolling = mob;
+                Roller = mob.Name;
+            }
+        }catch(Exception ex)
+        {
+            Snackbar.Add("Error while selecting Attacker: " + ex.Message);
+        }
+    }
+    private void SelectDefender(string defenderName)
+    {
+        try{
+
+            var characterParams = CharacterAllParams.FirstOrDefault(p => p.Character.NPCName == defenderName);
+            if (characterParams is not null)
+            {
+                SelectedCharacterDefending = characterParams;
+                return;
+            }
+            var mob = Mobs.FirstOrDefault(m => m.Name == defenderName);
+            if (mob is not null)
+            {
+                SelectedMobDefending = mob;
+            }
+        }catch(Exception ex)
+        {
+            Snackbar.Add("Error while selecting Defender: " + ex.Message);
+        }
+    }
+
+
+
+    private void MakeRoll()
+    {
+        // if (SelectedCharacterDefending is null || FightSequence is null || FightSequence.AttackAction == string.Empty ||
+        //    (_isTargeted == true && FightSequence.AttackLocation == string.Empty) || FightSequence.DefenceType == string.Empty)
+        // {
+        //     Snackbar.Add("Some component is missing", Severity.Warning);
+        //     return;
+        // }
+
+        
+       // var result CalculateAndWriteAttack();
+            // if (string.IsNullOrEmpty(result) == false)
+            // {
+            //     Snackbar.Add("Error :" + result, Severity.Warning);
+            // }
+    }
+
+    private async Task SaveSequenceBtn()
+    {
+        try
+        {
+
+            MudDialog.Close(DialogResult.Ok(RollResultString));
+            Snackbar.Add("Fight resolved", Severity.Success);
+        }
+        catch(Exception ex)
+        {
+            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
+        }
+    }
+
+
+    private async Task SaveAndClearBtn()
+    {
+        try
+        {
+            // await CalculateFight();
+
+            // Snackbar.Add("Fight resolved", Severity.Success);
+            // SelectedAttacker = string.Empty;
+            // SelectedDefender = string.Empty;
+            // FightSequence = new FightSequenceModel(Date);
+            // IsTargeted = false;
+            // IsFlanking = false;    
+            // IsSurrounded = false;    
+            // SurroundedValue = 2;
+
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
+        }
+    }
+
+    
+}

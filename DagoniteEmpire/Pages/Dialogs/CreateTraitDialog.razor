@@ -160,29 +160,7 @@
         return !IsWeaponQualityMode;
     }
 
-    List<string> WeaponQualityList = new List<string> {
-        SD.WeaponQuality.Fast,
-        SD.WeaponQuality.Slow,
-        SD.WeaponQuality.Parrying ,
-        SD.WeaponQuality.ShieldDestructive ,
-        SD.WeaponQuality.ArmorPiercing,
-        SD.WeaponQuality.Long,
-        SD.WeaponQuality.Heavy,
-        SD.WeaponQuality.Devastating,
-        SD.WeaponQuality.Weak ,
-        SD.WeaponQuality.Stunning,
-        SD.WeaponQuality.Snatching,
-        SD.WeaponQuality.Disarming,
-        SD.WeaponQuality.Armor,
-        SD.WeaponQuality.ArmorDefenceBonus,
-        SD.WeaponQuality.ArmorPenalty,
-        SD.WeaponQuality.Durability,
-        SD.WeaponQuality.ShieldDefenceBonus,
-        SD.WeaponQuality.Bulky,
-        SD.WeaponQuality.Precise,
-        SD.WeaponQuality.Range,
-        SD.WeaponQuality.Light,
-      };
+    private List<string> WeaponQualityList = new List<string>();
 
     private string ErrorMessage { get; set; } = string.Empty;
 
@@ -270,6 +248,10 @@
     {
         UserInfo = await _userService.GetUserInfo();
         ErrorMessage = string.Empty;
+        foreach(var quality in SD.WeaponQuality.All)
+        {
+            WeaponQualityList.Add(quality);
+        }
         if (IsWeaponQualityMode)
         {
             HeaderName = IsEditMode ? "Edit weapon properties" : "Add weapon properties";
