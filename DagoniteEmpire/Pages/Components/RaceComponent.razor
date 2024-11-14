@@ -115,7 +115,8 @@
     {
         RaceDTO newRace = AllParams.CurrentRace;
 
-        var parameters = new DialogParameters<CreateRaceDialog> {  { x => x.NewRace, newRace }};
+        var parameters = new DialogParameters<CreateRaceDialog> {  { x => x.NewRace, newRace },
+                                                                   { x => x.AllParams, AllParams }};
 
         var dialog = await DialogService.ShowAsync<CreateRaceDialog>("Create custom race", parameters, await SetOptions());
         var result = await dialog.Result;

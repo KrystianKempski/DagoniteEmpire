@@ -42,7 +42,9 @@
             @if (NewRace.Traits != null)
             {
                 <div class="traits">
-                    <TraitsComponent @bind-Traits="@Traits" TraitType="@TraitType"></TraitsComponent>
+                     <CascadingValue Value="@AllParams">
+                        <TraitsComponent  @bind-Traits="@Traits" TraitType="@TraitType"></TraitsComponent>
+                    </CascadingValue>
                 </div>
             }
             <label class="warnign-message">@ErrorMessage</label>
@@ -60,6 +62,7 @@
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = new();
 
+    [Parameter] public AllParamsModel AllParams { get; set; }
     [Parameter] public RaceDTO NewRace { get; set; } = new();
     [Parameter] public bool IsEdit { get; set; } = false;
 
