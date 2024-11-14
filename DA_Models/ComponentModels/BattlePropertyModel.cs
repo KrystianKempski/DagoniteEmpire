@@ -89,7 +89,6 @@ namespace DA_Models.ComponentModels
                         break;
                     case SD.WeaponQuality.Fast:
                         Get(SD.BattleProperty.AttackDodge).GearBonus += prop.Value.SumBonus;
-                        Get(SD.BattleProperty.AttackParry).GearBonus += prop.Value.SumBonus;
                         break;
                     case SD.WeaponQuality.Slow:
                         Get(SD.BattleProperty.AttackDodge).GearBonus -= prop.Value.SumBonus;
