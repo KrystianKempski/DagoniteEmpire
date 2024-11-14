@@ -78,7 +78,10 @@
                     {
                         <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Add weapon qualities</button>
                     }
-                    <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing @TraitName </button>
+                    @if (TraitType != SD.TraitType_Gear)
+                    {                    
+                        <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing @TraitName </button>
+                    }
                 </div>
             }
 
