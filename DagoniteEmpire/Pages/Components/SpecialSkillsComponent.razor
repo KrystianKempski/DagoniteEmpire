@@ -196,7 +196,7 @@
         }
         catch (Exception ex)
         {
-            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one: " + ex.Message);
         }
     }
 
@@ -242,7 +242,7 @@
         }
         catch (Exception ex)
         {
-            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one: " + ex.Message);
         }
     }
 
@@ -261,7 +261,7 @@
         }
         catch (Exception ex)
         {
-            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one: " +ex.Message);
         }
     }
 
@@ -284,7 +284,7 @@
             newSkill.Index = AllParams.SpecialSkills.GetAllSection(baseSkill.Name).Count();
             if (AllParams.SpecialSkills.Add(newSkill) is null)
             {
-                await _jsRuntime.ToastrError("Error while adding new skill");
+                await _jsRuntime.ToastrError("Error while adding new skill: no skill found");
             }
             else
             {
@@ -292,12 +292,15 @@
             }
         }catch(Exception ex)
         {
-            ;
+            await _jsRuntime.ToastrError("Error while adding special skill: " + ex.Message);
         }
     }
 
     private async Task RemoveSpecialSkill()
     {
+
+            try
+            {
         var newSkill = new SpecialSkillDTO();
         newSkill = AllParams.SpecialSkills.GetAllSection(BaseSkill.Name).Last();
 
@@ -319,13 +322,25 @@
         AllParams.SpecialSkillsToDelete.Add(newSkill);
         AllParams.SpecialSkills.Remove(newSkill.Name);
 
-        await OnSpecialSkillChange.InvokeAsync();        
+        await OnSpecialSkillChange.InvokeAsync(); 
+        }
+        catch (Exception ex)
+        {
+            await _jsRuntime.ToastrError("Error while removing special skill: " + ex.Message);
+        }
     }
 
     public async Task ChangeSSRelatedAttribute(string attrName, string specialSkillName)
     {
-        AllParams.SpecialSkills.ChangeSSRelatedAttribute(attrName, specialSkillName);
-        await OnSpecialSkillChange.InvokeAsync();
+        try
+        {
+            AllParams.SpecialSkills.ChangeSSRelatedAttribute(attrName, specialSkillName);
+            await OnSpecialSkillChange.InvokeAsync();
+        }
+        catch(Exception ex)
+        {
+            await _jsRuntime.ToastrError("Error while changing special skill related attribute: " + ex.Message);
+        }
     }
 
 }

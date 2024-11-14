@@ -36,7 +36,7 @@ namespace DA_Business.Repository.ChatRepos
                 return _mapper.Map<Post, PostDTO>(addedObj.Entity);
             }
             catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
             
         }
@@ -53,7 +53,7 @@ namespace DA_Business.Repository.ChatRepos
                     return contex.SaveChanges();
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);}
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name +": " + ex.Message);}
             return 0;
         }
 
@@ -71,7 +71,7 @@ namespace DA_Business.Repository.ChatRepos
                     return _mapper.Map<IEnumerable<Post>, IEnumerable<PostDTO>>(obj);
             }
             catch (Exception ex) {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
 
             return new List<PostDTO>();
@@ -91,7 +91,7 @@ namespace DA_Business.Repository.ChatRepos
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
 
             return new List<PostDTO>();
@@ -109,7 +109,7 @@ namespace DA_Business.Repository.ChatRepos
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
         }
 
@@ -124,7 +124,7 @@ namespace DA_Business.Repository.ChatRepos
                     return _mapper.Map<Post, PostDTO>(obj);
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
             return new PostDTO();
         }
 
@@ -144,7 +144,7 @@ namespace DA_Business.Repository.ChatRepos
                     return _mapper.Map<Post, PostDTO>(obj);
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
             return objDTO;
         }
     }

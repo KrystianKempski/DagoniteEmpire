@@ -37,7 +37,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Trait-Equipment Repository Create");
+                throw new RepositoryErrorException("Error in Trait-Equipment Repository Create: " + ex.Message);
             }
                 
         }
@@ -71,7 +71,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Trait-Equipment Repository Delete"); ;
+                throw new RepositoryErrorException("Error in Trait-Equipment Repository Delete: " + ex.Message); ;
             }
         }
 
@@ -167,7 +167,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Trait-Equipment Repository Update");
+                throw new RepositoryErrorException("Error in Trait-Equipment Repository Update: " + ex.Message);
             }
         }
     }

@@ -74,7 +74,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name +": " + ex.Message);
             }
 
             return new Dictionary<string, SpecialSkillDTO>();

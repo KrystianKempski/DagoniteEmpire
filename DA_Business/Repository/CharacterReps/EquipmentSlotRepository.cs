@@ -41,7 +41,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in EquipmentSlot Repository Create");
+                throw new RepositoryErrorException("Error in EquipmentSlot Repository Create: " + ex.Message);
             }                
         }
 
@@ -65,7 +65,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in EquipmentSlot Repository Delete");
+                throw new RepositoryErrorException("Error in EquipmentSlot Repository Delete: " + ex.Message);
             }
         }
 
@@ -275,7 +275,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in EquipmentSlot Repository Update");
+                throw new RepositoryErrorException("Error in EquipmentSlot Repository Update: " + ex.Message);
             }
         }
     }

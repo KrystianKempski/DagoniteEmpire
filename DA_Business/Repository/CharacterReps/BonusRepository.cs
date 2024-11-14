@@ -24,20 +24,14 @@ namespace DA_Business.Repository.CharacterReps
         }
         public async Task<BonusDTO> Create(BonusDTO objDTO)
         {
-            try
-            {
-                using var contex = await _db.CreateDbContextAsync();
-                var obj = _mapper.Map<BonusDTO, Bonus>(objDTO);
-                var addedObj = contex.Bonuses.Add(obj);
-                await contex.SaveChangesAsync();
+            
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = _mapper.Map<BonusDTO, Bonus>(objDTO);
+            var addedObj = contex.Bonuses.Add(obj);
+            await contex.SaveChangesAsync();
 
-                return _mapper.Map<Bonus, BonusDTO>(addedObj.Entity);
-            }
-            catch (Exception ex)
-            {
-                ;
-            }
-            return null;
+            return _mapper.Map<Bonus, BonusDTO>(addedObj.Entity);
+
         }
 
         public async Task<int> Delete(int id)

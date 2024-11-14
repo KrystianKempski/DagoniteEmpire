@@ -39,7 +39,7 @@ namespace DA_Business.Repository.CharacterReps
                 return _mapper.Map<Mob, MobDTO>(addedObj.Entity);
             }
             catch (Exception ex) {
-                throw new RepositoryErrorException("Error in"+ System.Reflection.MethodBase.GetCurrentMethod().Name); 
+                throw new RepositoryErrorException("Error in"+ System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); 
             }
         }
 
@@ -56,7 +56,7 @@ namespace DA_Business.Repository.CharacterReps
                 return await contex.SaveChangesAsync();
             }
             catch (Exception ex) {
-                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
         }
 
@@ -114,7 +114,7 @@ namespace DA_Business.Repository.CharacterReps
                 }
             }
             catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); 
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); 
             }
         }
     }

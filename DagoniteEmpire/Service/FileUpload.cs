@@ -13,7 +13,6 @@ namespace DagoniteEmpire.Service
     {
         private readonly IWebHostEnvironment _environment;
         private readonly IJSRuntime _jsRuntime;
-        private readonly IMagickNET _magickNet;
 
 
         public FileUpload(IWebHostEnvironment environment, IJSRuntime jsRuntime)

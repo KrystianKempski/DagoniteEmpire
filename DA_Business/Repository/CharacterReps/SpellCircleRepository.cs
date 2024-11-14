@@ -38,7 +38,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in SpellCircle Repository Create");
+                throw new RepositoryErrorException("Error in SpellCircle Repository Create: " + ex.Message);
             }
         }       
 
@@ -58,7 +58,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in SpellCircles Repository Delete");
+                throw new RepositoryErrorException("Error in SpellCircles Repository Delete: " + ex.Message); ;
             }
         }
 
@@ -105,7 +105,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in SpellCircle Repository Update");
+                throw new RepositoryErrorException("Error in SpellCircle Repository Update: " + ex.Message);
             }
         }
 

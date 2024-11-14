@@ -183,7 +183,7 @@
                         
                             @foreach (var baseSkill in AllParams.BaseSkills)
                             {
-                                <SpecialSkillsComponent @ref="SpecialSkilsComp" BaseSkill="baseSkill" OnSpecialSkillChange="SpecialSkillChange"></SpecialSkillsComponent>
+                                <SpecialSkillsComponent BaseSkill="baseSkill" OnSpecialSkillChange="SpecialSkillChange"></SpecialSkillsComponent>
                             }
 
                         </div>
@@ -242,7 +242,6 @@
         new ItemModel(){ Text = "Edit", PrefixIcon= "e-edit", Id="Grid_edit"},
         new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
     };
-    private SpecialSkillsComponent SpecialSkilsComp = new();
     private string NPCName
     {
         get => AllParams?.Character is null ? "" : AllParams.Character.NPCName;
@@ -618,7 +617,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while adding character");
+            await _jsRuntime.ToastrError("Error while adding character: " + ex.Message);
             IsLeaveAllowed = true;
             _navigationManager.NavigateTo("/character");
         }
@@ -696,7 +695,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one");
+            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one: " + ex.Message);
         }
     }
 

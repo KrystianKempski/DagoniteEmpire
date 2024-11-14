@@ -37,7 +37,7 @@ namespace DA_Business.Repository.ChatRepos
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
 
         }
@@ -55,7 +55,7 @@ namespace DA_Business.Repository.ChatRepos
                     return contex.SaveChanges();
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
             return 0;
         }
 
@@ -73,7 +73,7 @@ namespace DA_Business.Repository.ChatRepos
                 else
                     return null;
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
         }
 
         public async Task<IEnumerable<BattlePhaseDTO>> GetAllForChapter(int? chapterId = null)
@@ -88,7 +88,7 @@ namespace DA_Business.Repository.ChatRepos
                 if (obj != null && obj.Any())
                     return _mapper.Map<IEnumerable<BattlePhase>, IEnumerable<BattlePhaseDTO>>(obj);
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
 
             return new List<BattlePhaseDTO>();
         }
@@ -104,7 +104,7 @@ namespace DA_Business.Repository.ChatRepos
                     return _mapper.Map<BattlePhase, BattlePhaseDTO>(obj);
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
             return new BattlePhaseDTO();
         }
 
@@ -134,7 +134,7 @@ namespace DA_Business.Repository.ChatRepos
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name +": "+ ex.Message);
             }
         }
     }

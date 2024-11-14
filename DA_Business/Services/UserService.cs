@@ -9,6 +9,8 @@ using DA_Models.CharacterModels;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.JSInterop;
+using MudBlazor;
 
 namespace DA_Business.Services
 {
@@ -19,14 +21,16 @@ namespace DA_Business.Services
         private readonly UserInfo _userInfo;
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
+        private readonly IJSRuntime _jsRuntime;
 
 
-        public UserService(AuthenticationStateProvider authState, IOptions<UserInfo> userInfo, IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
+        public UserService(AuthenticationStateProvider authState, IOptions<UserInfo> userInfo, IDbContextFactory<ApplicationDbContext> db, IMapper mapper, IJSRuntime jsRuntime)
         {
             _authState = authState;
             _userInfo = userInfo.Value;
             _db = db;
             _mapper = mapper;
+            _jsRuntime = jsRuntime;
         }
 
         
@@ -82,6 +86,7 @@ namespace DA_Business.Services
             }
             catch (Exception ex)
             {
+               // await _jsRuntime.ToastrError("Error whike getting user info: " + ex.Message);
                 return _userInfo;
             }
         }
@@ -116,7 +121,7 @@ namespace DA_Business.Services
             }
             catch (Exception ex)
             {
-                ;
+            //    await _jsRuntime.ToastrError("Error whike getting user info: " + ex.Message);
             }
         }
     }

@@ -34,7 +34,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in SpellSlot Repository Create");
+                throw new RepositoryErrorException("Error in SpellSlot Repository Create: " + ex.Message);
             }                
         }
 
@@ -53,7 +53,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in SpellSlot Repository Delete"); ;
+                throw new RepositoryErrorException("Error in SpellSlot Repository Delete: " + ex.Message); ;
             }
         }
 
@@ -161,7 +161,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in SpellSlot Repository Update");
+                throw new RepositoryErrorException("Error in SpellSlot Repository Update: " + ex.Message); ;
             }
         }
     }

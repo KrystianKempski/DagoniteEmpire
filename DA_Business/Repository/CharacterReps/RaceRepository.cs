@@ -54,7 +54,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Race Repository Create");
+                throw new RepositoryErrorException("Error in Race Repository Create: " + ex.Message); ;
             }                
         }
 
@@ -82,7 +82,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Race Repository Delete");
+                throw new RepositoryErrorException("Error in Race Repository Delete: " + ex.Message); ;
             }
         }
 
@@ -247,7 +247,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Race Repository Update");
+                throw new RepositoryErrorException("Error in Race Repository Update: " + ex.Message);
             }
         }
     }

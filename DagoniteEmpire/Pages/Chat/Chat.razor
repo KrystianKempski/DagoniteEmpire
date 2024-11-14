@@ -103,7 +103,6 @@
     [CascadingParameter]
     public Task<AuthenticationState> AuthenticationState { get; set; }
     MudTextField<string> ChatTextField = new();
-    private string HubUrl;
     private List<ChatMessage> messages = new List<ChatMessage>();
     private async Task SubmitAsync()
     {
@@ -163,7 +162,7 @@
         }
         catch (Exception e)
         {
-            ;
+            await _jsRuntime.ToastrError("Error while init chat: " + e.Message);
         }
 
     }
@@ -181,20 +180,27 @@
 
     private async Task ReceiveMessage(string name, ChatMessage message)
     {
-        if ((ContactId == message.ToUserId && CurrentUserId == message.FromUserId) || (ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
+        try
         {
+            if ((ContactId == message.ToUserId && CurrentUserId == message.FromUserId) || (ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
+            {
 
-            if ((ContactId == message.ToUserId && CurrentUserId == message.FromUserId))
-            {
-                messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { Email = CurrentUserEmail } });
+                if ((ContactId == message.ToUserId && CurrentUserId == message.FromUserId))
+                {
+                    messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { Email = CurrentUserEmail } });
+                }
+                else if ((ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
+                {
+                    messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { Email = ContactEmail } });
+                }
+                await _jsRuntime.ScrollToBottom("chatContainer");
+                // Inform blazor the UI needs updating
+                await InvokeAsync(StateHasChanged);
             }
-            else if ((ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
-            {
-                messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { Email = ContactEmail } });
-            }
-            await _jsRuntime.ScrollToBottom("chatContainer");
-            // Inform blazor the UI needs updating
-            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception e)
+        {
+            await _jsRuntime.ToastrError("Error while Receive Message: " + e.Message);
         }
     }
 
@@ -220,13 +226,20 @@
     private bool IsUserChosen { get; set; } = false;
     async Task LoadUserChat(string userId)
     {
-        var contact = await _chatManager.GetUserDetailsAsync(userId);
-        ContactId = contact.Id;
-        ContactEmail = contact.Email;
-        _navigationManager.NavigateTo($"chat/{ContactId}");
-        messages = new List<ChatMessage>();
-        messages = await _chatManager.GetConversationAsync(ContactId);
-        IsUserChosen = true;
+        try
+        {
+            var contact = await _chatManager.GetUserDetailsAsync(userId);
+            ContactId = contact.Id;
+            ContactEmail = contact.Email;
+            _navigationManager.NavigateTo($"chat/{ContactId}");
+            messages = new List<ChatMessage>();
+            messages = await _chatManager.GetConversationAsync(ContactId);
+            IsUserChosen = true;
+        }
+        catch (Exception e)
+        {
+            await _jsRuntime.ToastrError("Error while loading user chat: " + e.Message);
+        }
     }
     private async Task GetUsersAsync()
     {

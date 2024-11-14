@@ -23,7 +23,7 @@ namespace DA_Models.ComponentModels
         public string RuntimeMessage { get; set; }
         public bool IsLeaveAllowed { get; set; } = true;
 
-        public async Task<string> IncrAttr(AttributeDTO obj)
+        public string IncrAttr(AttributeDTO obj)
         {
             var ok = false;
             if (_allParams.Character.IsApproved == false)
@@ -75,7 +75,7 @@ namespace DA_Models.ComponentModels
         }
 
 
-        public async Task<string> DecrAttr(AttributeDTO obj)
+        public string DecrAttr(AttributeDTO obj)
         {
 
             if (_allParams.Character.IsApproved == false)

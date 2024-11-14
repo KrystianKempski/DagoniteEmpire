@@ -73,51 +73,38 @@ namespace DA_Models.ComponentModels
 
         public static FighterModel? AddFighter( AllParamsModel allParams)
         {
-            try
-            {
-                FighterModel fighter = new();
-                fighter.Props = allParams.BattleProperties;
-                fighter.States = allParams.TraitsTemporary;
-                fighter.Health = allParams.Health;
-                fighter.Name =  allParams.Character.NPCName;
-                fighter.PainResistance = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.PainResistance).SumBonus;
-                fighter.Lifting = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Lifting).SumBonus;
-                fighter.Balance = allParams.SpecialSkills.Get(SD.SpecialSkills.Acrobatics.Balance).SumBonus;
-                return fighter;
-            }
-            catch (Exception ex)
-            {
-                ;
-            }
-            return null;
+
+            FighterModel fighter = new();
+            fighter.Props = allParams.BattleProperties;
+            fighter.States = allParams.TraitsTemporary;
+            fighter.Health = allParams.Health;
+            fighter.Name =  allParams.Character.NPCName;
+            fighter.PainResistance = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.PainResistance).SumBonus;
+            fighter.Lifting = allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Lifting).SumBonus;
+            fighter.Balance = allParams.SpecialSkills.Get(SD.SpecialSkills.Acrobatics.Balance).SumBonus;
+            return fighter;
+            
         }
         public static FighterModel? AddFighter(MobDTO mob)
         {
-            try
+
+            FighterModel fighter = new();
+            fighter.Props = mob.BattleProperties;
+            var states = mob.States.Split(", ");
+            fighter.States = new List<TraitDTO>();
+            foreach (var state in states)
             {
-                FighterModel fighter = new();
-                fighter.Props = mob.BattleProperties;
-                var states = mob.States.Split(", ");
-                fighter.States = new List<TraitDTO>();
-                foreach (var state in states)
-                {
-                    if (state.IsNullOrEmpty()) continue;
-                    var statesParams = state.Split(":");
-                    var trait = StateSeeder.GetStateDTO(statesParams[0], false, Int32.Parse(statesParams[1]));
-                    fighter.States.Add(trait);
-                }
-                fighter.Health = new MobHealthModel(mob);
-                fighter.Name = mob.Name;
-                fighter.PainResistance = mob.PainResSkillValue;
-                fighter.Lifting = mob.AttackSkillValue - mob.CurrentWounds/2;
-                fighter.Balance = mob.DodgeSkillValue - mob.CurrentWounds / 2;
-                return fighter;
+                if (state.IsNullOrEmpty()) continue;
+                var statesParams = state.Split(":");
+                var trait = StateSeeder.GetStateDTO(statesParams[0], false, Int32.Parse(statesParams[1]));
+                fighter.States.Add(trait);
             }
-            catch (Exception ex)
-            {
-                ;
-            }
-            return null;
+            fighter.Health = new MobHealthModel(mob);
+            fighter.Name = mob.Name;
+            fighter.PainResistance = mob.PainResSkillValue;
+            fighter.Lifting = mob.AttackSkillValue - mob.CurrentWounds/2;
+            fighter.Balance = mob.DodgeSkillValue - mob.CurrentWounds / 2;
+            return fighter;
         }
 
        

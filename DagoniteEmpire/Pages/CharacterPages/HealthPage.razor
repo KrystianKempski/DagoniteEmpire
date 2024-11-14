@@ -250,7 +250,7 @@
     [Parameter]
     public int Id { get; set; }
     public AllParamsModel AllParams { get; set; } = new();
-    private MudDataGrid<WoundDTO> WoundsGrid { get; set; }
+    private MudDataGrid<WoundDTO> WoundsGrid { get; set; } 
     private Nutrition NutritionSelect {get;set;}
     private IDisposable? registration;
     private bool IsLoading { get; set; } = true;
@@ -373,7 +373,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while saving wounds");
+            await _jsRuntime.ToastrError("Error while saving wounds: " + ex.Message); ;
         }
         IsLoading = false;
         IsLeaveAllowed = true;

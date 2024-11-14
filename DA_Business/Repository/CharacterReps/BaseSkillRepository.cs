@@ -3,6 +3,7 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
+using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -35,7 +36,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
             return null;
         }

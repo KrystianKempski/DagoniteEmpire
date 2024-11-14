@@ -34,7 +34,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Spell Repository Create");
+                throw new RepositoryErrorException("Error in Spell Repository Create: " + ex.Message); ;
             }                
         }
 
@@ -53,7 +53,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Spell Repository Delete"); ;
+                throw new RepositoryErrorException("Error in Spell Repository Delete: " + ex.Message); ;
             }
         }
 
@@ -106,7 +106,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Spell Repository Update");
+                throw new RepositoryErrorException("Error in Spell Repository Update: " + ex.Message); ;
             }
         }
     }

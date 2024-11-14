@@ -11,7 +11,7 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <img src="@MyIcon.Attack" width="40x" height="40px" />
+            <img src="@MyIcon.Attack" width="40" height="40" />
             Fight sequence
         </MudText>
     </TitleContent>
@@ -166,7 +166,6 @@
     private string FightResult = string.Empty;
     private string SelectedAttacker = string.Empty;
     private string SelectedDefender= string.Empty;
-    private bool IsReadyToRoll = false;
     private int SurroundedValue = 2;
     private bool _isTargeted = false;
     private bool IsTargeted {
@@ -290,7 +289,7 @@
             }
         }catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Attacker");
+            Snackbar.Add("Error while selecting Attacker: " + ex.Message);
         }
     }
     private void SelectDefender(string defenderName)
@@ -314,7 +313,7 @@
             FightSequence.IsParryDefenceAllowed = FightSequence.Defender.Props.Get(SD.BattleProperty.DefenceParry).GearBonus > 0;
         }catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Defender");
+            Snackbar.Add("Error while selecting Defender: " + ex.Message);
         }
     }
 
@@ -357,7 +356,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while saving", Severity.Error);
+            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
         }
     }
 
@@ -372,7 +371,6 @@
             SelectedAttacker = string.Empty;
             SelectedDefender = string.Empty;
             FightSequence = new FightSequenceModel(Date);
-            IsReadyToRoll = false;
             IsTargeted = false;
             IsFlanking = false;    
             IsSurrounded = false;    
@@ -381,68 +379,75 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error while saving", Severity.Error);
+            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
         }
     }
 
     private async Task CalculateFight()
     {
-        if (FightSequence is null || FightSequence?.Attacker is null || FightSequence?.Defender is null) throw new Exception("Null pointers in figter or defence");
-        AllParamsModel? attackerChar = null;
-        AllParamsModel? defenderChar = null;
-        MobDTO? attackerMob = null;
-        MobDTO? defenderMob = null;
-        // find character or mob to modyfy
-        foreach (var charParams in CharacterAllParams)
+        try
         {
-            if (charParams is null) continue;
-            if (charParams.Character.NPCName == SelectedAttacker)
+            if (FightSequence is null || FightSequence?.Attacker is null || FightSequence?.Defender is null) throw new Exception("Null pointers in figter or defence");
+            AllParamsModel? attackerChar = null;
+            AllParamsModel? defenderChar = null;
+            MobDTO? attackerMob = null;
+            MobDTO? defenderMob = null;
+            // find character or mob to modyfy
+            foreach (var charParams in CharacterAllParams)
             {
-                attackerChar = charParams;
+                if (charParams is null) continue;
+                if (charParams.Character.NPCName == SelectedAttacker)
+                {
+                    attackerChar = charParams;
+                }
+                if (charParams.Character.NPCName == SelectedDefender)
+                {
+                    defenderChar = charParams;
+                }
             }
-            if (charParams.Character.NPCName == SelectedDefender)
+            foreach (var mobs in Mobs)
             {
-                defenderChar = charParams;
+                if (mobs is null) continue;
+                if (mobs.Name == SelectedAttacker)
+                {
+                    attackerMob = mobs;
+                }
+                if (mobs.Name == SelectedDefender)
+                {
+                    defenderMob = mobs;
+                }
             }
-        }
-        foreach (var mobs in Mobs)
-        {
-            if (mobs is null) continue;
-            if (mobs.Name == SelectedAttacker)
+            if (attackerChar is not null && string.IsNullOrEmpty(FightSequence?.Attacker.NewStates) == false)
             {
-                attackerMob = mobs;
+                await AddNewStates(FightSequence.Attacker.NewStates, attackerChar.Character.Id);
             }
-            if (mobs.Name == SelectedDefender)
+            if (defenderChar is not null && FightSequence is not null)
             {
-                defenderMob = mobs;
+                foreach (var wound in FightSequence.NewWounds)
+                {
+                    wound.CharacterId = defenderChar.Character.Id;
+                    await _woundsRepository.Create(wound);
+                }
+                if (string.IsNullOrEmpty(FightSequence?.Defender.NewStates) == false)
+                    await AddNewStates(FightSequence.Defender.NewStates, defenderChar.Character.Id);
             }
-        }
-        if (attackerChar is not null && string.IsNullOrEmpty(FightSequence?.Attacker.NewStates) == false)
-        {
-            await AddNewStates(FightSequence.Attacker.NewStates, attackerChar.Character.Id);
-        }
-        if (defenderChar is not null && FightSequence is not null)
-        {
-            foreach (var wound in FightSequence.NewWounds)
+            if (attackerMob is not null && FightSequence is not null)
             {
-                wound.CharacterId = defenderChar.Character.Id;
-                await _woundsRepository.Create(wound);
+                attackerMob.States += FightSequence.Attacker.NewStates;
+                await _mobRepository.Update(attackerMob);
             }
-            if (string.IsNullOrEmpty(FightSequence?.Defender.NewStates) == false)
-                await AddNewStates(FightSequence.Defender.NewStates, defenderChar.Character.Id);
+            if (defenderMob is not null && FightSequence is not null)
+            {
+                defenderMob.CurrentWounds += Wounds.GetValueFromSeverity(FightSequence.WoundSeverity);
+                defenderMob.States += FightSequence.Defender.NewStates;
+                await _mobRepository.Update(defenderMob);
+            }
+            FightResult += FightSequence?.ResultStringMG.ToString();
         }
-        if (attackerMob is not null && FightSequence is not null)
+        catch (Exception ex)
         {
-            attackerMob.States += FightSequence.Attacker.NewStates;
-            await _mobRepository.Update(attackerMob);
+            Snackbar.Add("Error while calculating fight: " + ex.Message, Severity.Error);
         }
-        if (defenderMob is not null && FightSequence is not null)
-        {
-            defenderMob.CurrentWounds += Wounds.GetValueFromSeverity(FightSequence.WoundSeverity);
-            defenderMob.States += FightSequence.Defender.NewStates;
-            await _mobRepository.Update(defenderMob);
-        }
-        FightResult += FightSequence?.ResultStringMG.ToString();
     }
 
     private async Task AddNewStates(string stateString,int charId)
@@ -473,7 +478,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error while adding state", Severity.Error);
+            Snackbar.Add("Error while adding state: " + ex.Message, Severity.Error);
         }
     }
 }

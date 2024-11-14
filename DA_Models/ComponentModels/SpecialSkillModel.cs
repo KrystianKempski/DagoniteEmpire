@@ -100,42 +100,27 @@ namespace DA_Models.ComponentModels
         }
         public void ChangeSSRelatedAttribute(string attrName, string specSkillName)
         {
-
-            try
+            if (attrName != null && attrName != "0" && specSkillName != null)
             {
-                if (attrName != null && attrName != "0" && specSkillName != null)
+                var obj = _allParams.SpecialSkills.Get(specSkillName);
+                if (obj != null)
                 {
-                    var obj = _allParams.SpecialSkills.Get(specSkillName);
-                    if (obj != null)
-                    {
-                        obj.ChosenAttribute = attrName;
-                        obj.AddPropertyListener(_allParams.Attributes.Get(attrName));
-                    }
-                    return;
+                    obj.ChosenAttribute = attrName;
+                    obj.AddPropertyListener(_allParams.Attributes.Get(attrName));
                 }
-            }
-            catch (Exception ex)
-            {
-                ;
+                return;
             }
         }
 
 
         public void AddSSRelatedBaseSkill(SpecialSkillDTO obj)
         {
-            try
+            if (obj != null && obj.RelatedBaseSkillName != null && obj.Name != null)
             {
-                if (obj != null && obj.RelatedBaseSkillName != null && obj.Name != null)
-                {
-                    var baseSkill = _allParams.BaseSkills.FirstOrDefault(p => p.Name == obj.RelatedBaseSkillName);
-                    if (baseSkill == null) return;
-                    obj.AddPropertyListener(baseSkill);
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                ;
+                var baseSkill = _allParams.BaseSkills.FirstOrDefault(p => p.Name == obj.RelatedBaseSkillName);
+                if (baseSkill == null) return;
+                obj.AddPropertyListener(baseSkill);
+                return;
             }
         }
 

@@ -19,7 +19,6 @@ namespace DagoniteEmpire.Middleware
     {
         private readonly ILogger<ErrorHandlingMiddleware> _logger;
         private readonly IJSRuntime _jsRuntime;
-        private readonly NavigationManager _navigationManagerl;
 
         public ErrorHandlingMiddleware(ILogger<ErrorHandlingMiddleware> logger, IJSRuntime jsRuntime, NavigationManager navigationManagerl)
         {
@@ -47,7 +46,6 @@ namespace DagoniteEmpire.Middleware
                 _logger.LogError(ex, ex.Message);
                 context.Response.StatusCode = 500;
                 context.Response.ContentType = Text.Plain;
-                //await context.Response.WriteAsync($"Error: {ex.Message}");
                 await context.Response.WriteAsync("Error:" + ex.Message);
                 await _jsRuntime.ToastrError("Error" + ex.Message);
             }

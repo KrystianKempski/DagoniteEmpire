@@ -301,37 +301,42 @@
         }
         catch (Exception e)
         {
-            ;
-            // _message = $"ERROR: Failed to start chat client: {e.Message}";
-            // _isChatting = false;
+            await _jsRuntime.ToastrError("Error while init chat: " + e.Message);
         }
 
     }
 
     private async Task ReceiveMessage(string name, ChatMessage message)
     {
-        if(ChosenUser is not null)
+        try
         {
-            if (ChosenUser.ContactId == message.ToUserId && CurrentUserId == message.FromUserId)
+            if(ChosenUser is not null)
             {
-                ChosenUser.messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { UserName = CurrentUserName } });
+                if (ChosenUser.ContactId == message.ToUserId && CurrentUserId == message.FromUserId)
+                {
+                    ChosenUser.messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { UserName = CurrentUserName } });
+                }
+                else if ((ChosenUser.ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
+                {
+                    ChosenUser.messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { UserName = ChosenUser.UserName } });
+                    ClearBadgeContent();
+                }
             }
-            else if ((ChosenUser.ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
+            else
             {
-                ChosenUser.messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { UserName = ChosenUser.UserName } });
-                ClearBadgeContent();
+                if (CurrentUserId == message.ToUserId)
+                {
+                    GetBadgeValue(message.FromUserId);
+                }
             }
+            // Inform blazor the UI needs updating
+            await InvokeAsync(StateHasChanged);
+            ScrollToBottom = true;
         }
-        else
+        catch (Exception e)
         {
-            if (CurrentUserId == message.ToUserId)
-            {
-                GetBadgeValue(message.FromUserId);
-            }
+            await _jsRuntime.ToastrError("Error while recive message: " + e.Message);
         }
-        // Inform blazor the UI needs updating
-        await InvokeAsync(StateHasChanged);
-        ScrollToBottom = true;
     }
 
     public async Task Enter(KeyboardEventArgs e)
@@ -350,7 +355,7 @@
         }
     }
 
-    async Task AddUserChat(string userId)
+    private async Task AddUserChat(string userId)
     {
         var width = await _jsRuntime.GetWindowWidth();
         var contact = await _chatManager.GetUserDetailsAsync(userId);
@@ -376,7 +381,7 @@
             CloseChatbox(ChosenUser);
             return;
         }
-        ClearBadgeContent();
+        await ClearBadgeContent();
         StateHasChanged();
         await _jsRuntime.ScrollToBottom($"{ChosenUser.ContactId}");
 

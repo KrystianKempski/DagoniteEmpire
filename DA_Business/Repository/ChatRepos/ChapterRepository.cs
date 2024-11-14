@@ -64,7 +64,7 @@ namespace DA_Business.Repository.ChatRepos
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
 
         }
@@ -88,7 +88,7 @@ namespace DA_Business.Repository.ChatRepos
                     return contex.SaveChanges();
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);}
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);}
             return 0;
         }
 
@@ -104,7 +104,7 @@ namespace DA_Business.Repository.ChatRepos
                 if (obj != null && obj.Any())
                     return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(obj);
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
 
             return new List<ChapterDTO>();
         }
@@ -121,7 +121,7 @@ namespace DA_Business.Repository.ChatRepos
                 if (obj != null && obj.Any())
                     return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(obj);
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
 
             return new List<ChapterDTO>();
         }
@@ -137,7 +137,7 @@ namespace DA_Business.Repository.ChatRepos
                     return _mapper.Map<Chapter, ChapterDTO>(obj);
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
             return new ChapterDTO();
         }
 
@@ -182,28 +182,6 @@ namespace DA_Business.Repository.ChatRepos
                             }
                         }
                     }
-
-                    //// Delete posts
-                    //if (obj.Posts is not null)
-                    //{
-                    //    foreach (var existingChild in obj.Posts)
-                    //    {
-                    //        if (!updatedChapter.Posts.Any(c => c.Id == existingChild.Id))
-                    //        {
-                    //            contex.Posts.Remove(existingChild);
-                    //        }
-                    //    }
-                    //}
-
-                    //// Update and Insert Chapters
-                    //if (updatedChapter.Posts is not null)
-                    //{
-                    //    foreach (var childChap in updatedChapter.Posts)
-                    //    {
-                    //        if (!obj.Posts.Any(c => c.Id == childChap.Id && c.Id != default(int)) != null)
-                    //            obj.Posts.Add(childChap);
-                    //    }
-                    //}
                     await contex.SaveChangesAsync();
                     return _mapper.Map<Chapter, ChapterDTO>(obj);
                 }
@@ -236,9 +214,8 @@ namespace DA_Business.Repository.ChatRepos
                 }
             }
             catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
-            return objDTO;
         }
     }
 }

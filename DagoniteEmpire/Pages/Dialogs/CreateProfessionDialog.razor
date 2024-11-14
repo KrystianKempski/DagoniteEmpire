@@ -379,7 +379,7 @@
         StateHasChanged();
     }
 
-    private void ChangeRelatedAttribute(string attrName)
+    private async Task ChangeRelatedAttribute(string attrName)
     {
         try
         {
@@ -397,6 +397,7 @@
         }
         catch (Exception ex)
         {
+            await _jsruntime.ToastrError("Error whlie changing profession related attribute: " + ex.Message);
             IsLoading = false;
         }
     }

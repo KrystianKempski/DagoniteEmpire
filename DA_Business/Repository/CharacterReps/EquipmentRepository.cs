@@ -51,7 +51,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Equipment Repository Create");
+                throw new RepositoryErrorException("Error in Equipment Repository Create: " + ex.Message); ;
             }                
         }
 
@@ -78,7 +78,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Equipment Repository Delete");
+                throw new RepositoryErrorException("Error in Equipment Repository Delete: " + ex.Message);
             }
         }
 
@@ -249,7 +249,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Equipment Repository Update");
+                throw new RepositoryErrorException("Error in Equipment Repository Update: " + ex.Message);
             }
         }
     }

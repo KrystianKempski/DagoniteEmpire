@@ -15,7 +15,7 @@
         <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>       
     </div>
     <SfDialog Width="80%" Height="80%" @bind-Visible="@IsDescrDialVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
-        <DialogEvents Opened="@DialogOpen"></DialogEvents>
+        <DialogEvents></DialogEvents>
         <DialogTemplates>
             <Header>Write character description</Header>
             <Content >
@@ -96,10 +96,7 @@
     {
         IsDescrDialVisible = false;
     }
-    private async Task DialogOpen()
-    {
-        //this.DescrEdit.RefreshUIAsync();
-    }
+
     private void ActionHandler(Syncfusion.Blazor.RichTextEditor.ActionBeginEventArgs arg)
     {
         if (arg.RequestType == "UL")

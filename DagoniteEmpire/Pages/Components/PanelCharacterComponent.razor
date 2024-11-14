@@ -35,7 +35,7 @@
                         {
                             <div class="image-Icon"> 
                                 <MudTooltip Placement="MudBlazor.Placement.Top" Text="No actions left"> 
-                                    <img src="@NoTurnLeftIcon" width="30px" height="30px" />
+                                    <img src="@NoTurnLeftIcon" width="30" height="30" />
                                 </MudTooltip> 
                             </div>
                         }
@@ -48,7 +48,7 @@
                             {
                                 string textTooltip = $"{icon.Item1} for {icon.Item3} turn(s)";
                                 <MudTooltip Placement="MudBlazor.Placement.Top" Text="@textTooltip">
-                                    <img src="@icon.Item2" width="25px" height="25px" class="pr-1" />
+                                    <img src="@icon.Item2" width="25" height="25" class="pr-1" />
                                 </MudTooltip>
 
                             }
@@ -258,7 +258,7 @@
                                 @if (icon is not null && string.IsNullOrEmpty(icon.Item1) == false)
                                 {
                                     <div class="d-inline-block">
-                                        <img src="@icon.Item2" width="25px" height="25px" class="pr-1 d-inline-block" />
+                                        <img src="@icon.Item2" width="25" height="25" class="pr-1 d-inline-block" />
                                         <div class="weapon-prop-label ">
                                         <label>@icon.Item1: @icon.Item3,</label>
                                         </div>
@@ -283,7 +283,7 @@
                                     @if (wound is not null && string.IsNullOrEmpty(wound.Severity) == false)
                                     {
                                         <div class="d-inline-block">
-                                            <img src="@Wounds.GetIcon(wound.IsTended)" width="25px" height="25px" class="pr-1 d-inline-block" />
+                                            <img src="@Wounds.GetIcon(wound.IsTended)" width="25" height="25" class="pr-1 d-inline-block" />
                                             <div class="weapon-prop-label ">
                                                 <label>@wound.Severity,</label>
                                             </div>
@@ -361,8 +361,8 @@
            // StateHasChanged();
         }
         catch (Exception ex)
-        {
-            ;
+        {            
+            Snackbar.Add("Error initializing panel Character: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -440,7 +440,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error loading Character", Severity.Warning);
+            Snackbar.Add("Error loading Character: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -498,7 +498,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error loading Character", Severity.Warning);
+            Snackbar.Add("Error loading Character: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -528,7 +528,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error loading states", Severity.Warning);
+            Snackbar.Add("Error loading icons: " + ex.Message, Severity.Warning);
         }
     }
 

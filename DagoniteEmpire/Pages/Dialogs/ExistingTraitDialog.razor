@@ -46,8 +46,6 @@
     [Parameter] public bool MultiRowSelection { get; set; } = true;
     [Parameter] public int MinLevel { get; set; } = 0;
     private string TraitName = "";
-    private bool IsCellEditMode = false;
-    private CheckboxSelectionType checkboxMode = CheckboxSelectionType.Default;
     private MudDataGrid<TraitDTO> Grid = null;
     private IEnumerable<TraitDTO> Traits { get; set; }
     public string HeaderName { get; set; } = "Add existing traits";
@@ -72,12 +70,6 @@
                 Traits = Traits.Where(u => u.Name.StartsWith(SD.ProfessionSkills.WizardMagic) == false);
         }
 
-        if (MultiRowSelection)
-        {
-            IsCellEditMode = false;
-        }else{
-            IsCellEditMode = false;
-        }
 
         switch (TraitType)
         {

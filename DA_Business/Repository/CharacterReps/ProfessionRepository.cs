@@ -43,7 +43,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Profession Repository Create");
+                throw new RepositoryErrorException("Error in Profession Repository Create: " + ex.Message);
             }
                 
         }
@@ -63,7 +63,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Profession Repository Delete");
+                throw new RepositoryErrorException("Error in Profession Repository Delete: " + ex.Message);
             }
         }
 
@@ -103,7 +103,7 @@ namespace DA_Business.Repository.CharacterReps
                 {
                     var updateProfession = _mapper.Map<ProfessionDTO, Profession>(objDTO);
                     // Update parent
-                    contex.Entry(obj).CurrentValues.SetValues(updateProfession);                   
+                    contex.Entry(obj).CurrentValues.SetValues(updateProfession);
 
                     // Delete spell circles
                     if (obj.SpellCircles is not null)
@@ -113,7 +113,7 @@ namespace DA_Business.Repository.CharacterReps
                             //delete those who is not in updated profession
                             if (!updateProfession.SpellCircles.Any(c => c.Id == existingChild.Id))
                             {
-                                if(existingChild.SpellSlots is not null)
+                                if (existingChild.SpellSlots is not null)
                                 {
                                     foreach (var existingSlot in existingChild.SpellSlots)
                                     {
@@ -135,7 +135,7 @@ namespace DA_Business.Repository.CharacterReps
                             SpellCircle? existingCircle;
                             if (!obj.SpellCircles.IsNullOrEmpty())
                             {
-                                existingCircle = obj.SpellCircles. FirstOrDefault(c => c.Id == newCircle.Id && c.Id != default(int));
+                                existingCircle = obj.SpellCircles.FirstOrDefault(c => c.Id == newCircle.Id && c.Id != default(int));
                             }
                             else
                             {
@@ -145,7 +145,7 @@ namespace DA_Business.Repository.CharacterReps
 
                             if (existingCircle != null)
                             {
-                               
+
                                 // Delete spell Slot
                                 if (obj.SpellCircles is not null)
                                 {
@@ -201,7 +201,7 @@ namespace DA_Business.Repository.CharacterReps
                                         if (existingSlot != null)
                                         {
                                             // Update slot
-                                            contex.Entry(existingSlot).CurrentValues.SetValues(spellSlot);                                            
+                                            contex.Entry(existingSlot).CurrentValues.SetValues(spellSlot);
                                             // update spell
 
                                             Spell? existingSpell = contex.Spells.Include(t => t.SpellSlots).FirstOrDefault(c => c.Id == spellSlot.SpellId && c.Id != default(int));
@@ -210,7 +210,7 @@ namespace DA_Business.Repository.CharacterReps
                                                 contex.Entry(existingSpell).CurrentValues.SetValues(spellSlot.Spell);
                                             else
                                             {
-                                                if(spellSlot.Spell is not null)
+                                                if (spellSlot.Spell is not null)
                                                 {
                                                     spellSlot.Spell.SpellSlots = new HashSet<SpellSlot>();
                                                     spellSlot.Spell.SpellSlots.Add(existingSlot);
@@ -226,7 +226,7 @@ namespace DA_Business.Repository.CharacterReps
                             }
                             else
                             {
-                                if(newCircle.SpellSlots is not null)
+                                if (newCircle.SpellSlots is not null)
                                 {
                                     // Remove unnessesary existing spells
                                     foreach (var slot in newCircle.SpellSlots)
@@ -255,7 +255,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Profession Repository Update");
+                throw new RepositoryErrorException("Error in Profession Repository Update: " + ex.Message);
             }
         }
     }

@@ -5,6 +5,7 @@ using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
+using DagoniteEmpire.Exceptions;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -104,7 +105,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch(Exception ex) 
             {
-                ;
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
 
         }
@@ -130,7 +131,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
 
         }

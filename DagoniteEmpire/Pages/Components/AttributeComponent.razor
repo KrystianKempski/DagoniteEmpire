@@ -104,7 +104,7 @@
 
     private async Task IncrAttr(AttributeDTO obj)
     {
-        var result = await AllParams.Attributes.IncrAttr(obj);
+        var result = AllParams.Attributes.IncrAttr(obj);
 
         if (string.IsNullOrEmpty(result) == false)
         {
@@ -122,7 +122,7 @@
             await _jsRuntime.AttrLimit("To revert changes refresh page without saving");
             return;
         }
-        var result = await AllParams.Attributes.DecrAttr(obj);
+        var result = AllParams.Attributes.DecrAttr(obj);
 
         if (string.IsNullOrEmpty(result) == false)
         {

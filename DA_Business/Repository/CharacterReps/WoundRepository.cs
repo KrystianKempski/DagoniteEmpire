@@ -3,6 +3,7 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
+using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -35,9 +36,8 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Wound Repository Create: " + ex.Message);
             }
-            return null;
         }
 
         public async Task<int> Delete(int id)
@@ -66,9 +66,8 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+                throw new RepositoryErrorException("Error in Wound Repository Get All: " + ex.Message);
             }
-            return new List<WoundDTO>();
         }
         public async Task<IEnumerable<ConditionDTO>> GetAllCond(int? charId = null)
         {
@@ -84,9 +83,9 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                ;
+
+                throw new RepositoryErrorException("Error in Wound Repository Ger All Cond: " + ex.Message);
             }
-            return new List<ConditionDTO>();
         }
 
         public async Task<WoundDTO> GetById(int id)
@@ -102,23 +101,31 @@ namespace DA_Business.Repository.CharacterReps
 
         public async Task<WoundDTO> Update(WoundDTO objDTO)
         {
-            using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Wounds.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
-            if (obj != null)
+            try
             {
-                // Update parent
-                contex.Entry(obj).CurrentValues.SetValues(objDTO);
-                contex.Wounds.Update(obj);
-                await contex.SaveChangesAsync();
-                return _mapper.Map<Wound, WoundDTO>(obj);
+                using var contex = await _db.CreateDbContextAsync();
+                var obj = await contex.Wounds.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                if (obj != null)
+                {
+                    // Update parent
+                    contex.Entry(obj).CurrentValues.SetValues(objDTO);
+                    contex.Wounds.Update(obj);
+                    await contex.SaveChangesAsync();
+                    return _mapper.Map<Wound, WoundDTO>(obj);
+                }
+                else
+                {
+                    obj = _mapper.Map<WoundDTO, Wound>(objDTO);
+                    var addedObj = await contex.Wounds.AddAsync(obj);
+                    await contex.SaveChangesAsync();
+                }
+                return objDTO;
             }
-            else
+            catch (Exception ex)
             {
-                obj = _mapper.Map<WoundDTO, Wound>(objDTO);
-                var addedObj = await contex.Wounds.AddAsync(obj);
-                await contex.SaveChangesAsync();
+
+                throw new RepositoryErrorException("Error in Wound Repository Update: " + ex.Message);
             }
-            return objDTO;
         }
     }
 }

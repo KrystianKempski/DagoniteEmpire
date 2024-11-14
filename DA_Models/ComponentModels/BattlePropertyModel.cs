@@ -38,156 +38,150 @@ namespace DA_Models.ComponentModels
 
         public virtual void CalculateBattleStats()
         {
-            try
+
+            if (_allParams is null) return;
+            string slotTypeMain = _allParams.Character.WeaponSet == 1 ? SD.SlotType.WeaponMain2 : SD.SlotType.WeaponMain1;
+            string slotTypeOff = _allParams.Character.WeaponSet == 1 ? SD.SlotType.WeaponOff2 : SD.SlotType.WeaponOff1;
+            bool isParrying = false;
+            //clear BattleProperies values;
+            foreach (var prop in GetAllArray())
             {
-                if (_allParams is null) return;
-                string slotTypeMain = _allParams.Character.WeaponSet == 1 ? SD.SlotType.WeaponMain2 : SD.SlotType.WeaponMain1;
-                string slotTypeOff = _allParams.Character.WeaponSet == 1 ? SD.SlotType.WeaponOff2 : SD.SlotType.WeaponOff1;
-                bool isParrying = false;
-                //clear BattleProperies values;
-                foreach (var prop in GetAllArray())
+                prop.BaseBonus = 0;
+                prop.GearBonus = 0;
+            }
+
+            foreach (var slot in _allParams.EquipmentSlots)
+            {
+                if (slot.SlotType == SD.SlotType.WeaponMain1 || slot.SlotType == SD.SlotType.WeaponMain2)
                 {
-                    prop.BaseBonus = 0;
-                    prop.GearBonus = 0;
+                    if (slot.SlotType != slotTypeMain)
+                        continue;
+                    MainWeaponUsed = slot.Equipment;
+                }
+                if (slot.SlotType == SD.SlotType.WeaponOff1 || slot.SlotType == SD.SlotType.WeaponOff2){
+                    if(slot.SlotType != slotTypeOff)
+                        continue;
+                    if (slot.Equipment.EquipmentType == SD.EquipmentType.Shield)
+                        ShieldUsed = slot.Equipment;
+                    else if (slot.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee || slot.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged)
+                        OffWeaponUsed = slot.Equipment;
+                }
+                if (slot.SlotType == SD.SlotType.Body)
+                {
+                    ArmorUsed = slot.Equipment;
                 }
 
-                foreach (var slot in _allParams.EquipmentSlots)
+                if (slot.IsEquipped)
+                    AddWeaponQualityFromEquipment(slot.Equipment);
+            }
+
+            var parrySkill = Get(SD.WeaponQuality.Parrying);
+            if(parrySkill is not null)
+                isParrying = parrySkill.GearBonus > 0;
+
+            // calculate base propertiers 
+            foreach (var prop in GetAll())
+            {
+                switch (prop.Key)
                 {
-                    if (slot.SlotType == SD.SlotType.WeaponMain1 || slot.SlotType == SD.SlotType.WeaponMain2)
-                    {
-                        if (slot.SlotType != slotTypeMain)
-                            continue;
-                        MainWeaponUsed = slot.Equipment;
-                    }
-                    if (slot.SlotType == SD.SlotType.WeaponOff1 || slot.SlotType == SD.SlotType.WeaponOff2){
-                        if(slot.SlotType != slotTypeOff)
-                            continue;
-                        if (slot.Equipment.EquipmentType == SD.EquipmentType.Shield)
-                            ShieldUsed = slot.Equipment;
-                        else if (slot.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee || slot.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged)
-                            OffWeaponUsed = slot.Equipment;
-                    }
-                    if (slot.SlotType == SD.SlotType.Body)
-                    {
-                        ArmorUsed = slot.Equipment;
-                    }
-
-                    if (slot.IsEquipped)
-                        AddWeaponQualityFromEquipment(slot.Equipment);
-                }
-
-                var parrySkill = Get(SD.WeaponQuality.Parrying);
-                if(parrySkill is not null)
-                    isParrying = parrySkill.GearBonus > 0;
-
-                // calculate base propertiers 
-                foreach (var prop in GetAll())
-                {
-                    switch (prop.Key)
-                    {
-                        case SD.WeaponQuality.Parrying:
-                            Get(SD.BattleProperty.DefenceParry).GearBonus += prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.Fast:
-                            Get(SD.BattleProperty.AttackDodge).GearBonus += prop.Value.SumBonus;
-                            Get(SD.BattleProperty.AttackParry).GearBonus += prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.Slow:
-                            Get(SD.BattleProperty.AttackDodge).GearBonus -= prop.Value.SumBonus;
-                            Get(SD.BattleProperty.AttackParry).GearBonus -= prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.Heavy:
-                            Get(SD.BattleProperty.AttackParry).GearBonus += 3 * prop.Value.SumBonus;
-                            Get(SD.BattleProperty.AttackShield).GearBonus += prop.Value.SumBonus;
-                            Get(SD.BattleProperty.AttackArmor).GearBonus += prop.Value.SumBonus;
-                            Get(SD.BattleProperty.DefenceDodge).GearBonus -= prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.Devastating:
-                            Get(SD.BattleProperty.DamageBonus).GearBonus += prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.Weak:
-                            Get(SD.BattleProperty.DamageBonus).GearBonus -= prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.Precise:
-                            Get(SD.BattleProperty.AttackBase).GearBonus += prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.Bulky:
-                            Get(SD.BattleProperty.AttackBase).GearBonus -= prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.ShieldDestructive:
-                            Get(SD.BattleProperty.AttackShield).GearBonus += prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.Armor:
-                            Get(SD.BattleProperty.ArmorClass).GearBonus += prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.ArmorDefenceBonus:
-                            if (ArmorUsed is not null)
-                                Get(SD.BattleProperty.DefenceArmor).GearBonus += prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.ShieldDefenceBonus:
-                            if (ShieldUsed is not null)
-                                Get(SD.BattleProperty.DefenceShield).GearBonus += prop.Value.SumBonus;
-                            break;
-                        case SD.WeaponQuality.ArmorPenalty:
-                            Get(SD.BattleProperty.DefenceDodge).GearBonus -= prop.Value.SumBonus;
-                            //add bane to skills which are difficult to use with armor
-                            foreach (var skill in SD.SpecialSkills.ArmorPenaltySkills)
-                                AddGearBonusToSpecialSkill(skill, -prop.Value.SumBonus);
-                            break;
-                        case SD.BattleProperty.AttackBase:
+                    case SD.WeaponQuality.Parrying:
+                        Get(SD.BattleProperty.DefenceParry).GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Fast:
+                        Get(SD.BattleProperty.AttackDodge).GearBonus += prop.Value.SumBonus;
+                        Get(SD.BattleProperty.AttackParry).GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Slow:
+                        Get(SD.BattleProperty.AttackDodge).GearBonus -= prop.Value.SumBonus;
+                        Get(SD.BattleProperty.AttackParry).GearBonus -= prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Heavy:
+                        Get(SD.BattleProperty.AttackParry).GearBonus += 3 * prop.Value.SumBonus;
+                        Get(SD.BattleProperty.AttackShield).GearBonus += prop.Value.SumBonus;
+                        Get(SD.BattleProperty.AttackArmor).GearBonus += prop.Value.SumBonus;
+                        Get(SD.BattleProperty.DefenceDodge).GearBonus -= prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Devastating:
+                        Get(SD.BattleProperty.DamageBonus).GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Weak:
+                        Get(SD.BattleProperty.DamageBonus).GearBonus -= prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Precise:
+                        Get(SD.BattleProperty.AttackBase).GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Bulky:
+                        Get(SD.BattleProperty.AttackBase).GearBonus -= prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.ShieldDestructive:
+                        Get(SD.BattleProperty.AttackShield).GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.Armor:
+                        Get(SD.BattleProperty.ArmorClass).GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.ArmorDefenceBonus:
+                        if (ArmorUsed is not null)
+                            Get(SD.BattleProperty.DefenceArmor).GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.ShieldDefenceBonus:
+                        if (ShieldUsed is not null)
+                            Get(SD.BattleProperty.DefenceShield).GearBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.WeaponQuality.ArmorPenalty:
+                        Get(SD.BattleProperty.DefenceDodge).GearBonus -= prop.Value.SumBonus;
+                        //add bane to skills which are difficult to use with armor
+                        foreach (var skill in SD.SpecialSkills.ArmorPenaltySkills)
+                            AddGearBonusToSpecialSkill(skill, -prop.Value.SumBonus);
+                        break;
+                    case SD.BattleProperty.AttackBase:
+                        if (MainWeaponUsed is not null)
+                        {
+                            Get(SD.BattleProperty.AttackBase).BaseBonus = _allParams.SpecialSkills.Get(MainWeaponUsed.RelatedSkill).SumBonus;
+                        }
+                        break;
+                    case SD.BattleProperty.AttackDodge:
+                    case SD.BattleProperty.AttackArmor:
+                    case SD.BattleProperty.AttackShield:
+                    case SD.BattleProperty.AttackParry:
+                        Get(prop.Key).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
+                        Get(prop.Key).HealthBonus = Get(SD.BattleProperty.AttackBase).HealthBonus;
+                        Get(prop.Key).TempBonuses = Get(SD.BattleProperty.AttackBase).TempBonuses;
+                        Get(prop.Key).GearBonus = Get(SD.BattleProperty.AttackBase).GearBonus;
+                        Get(prop.Key).RaceBonus = Get(SD.BattleProperty.AttackBase).RaceBonus;
+                        Get(prop.Key).OtherBonuses = Get(SD.BattleProperty.AttackBase).OtherBonuses;
+                        break;
+                    case SD.BattleProperty.ArmorClass:
+                        if (ArmorUsed is not null)
+                            Get(SD.BattleProperty.ArmorClass).BaseBonus += prop.Value.SumBonus;
+                        break;
+                    case SD.BattleProperty.DefenceDodge:
+                        Get(SD.BattleProperty.DefenceDodge).BaseBonus = _allParams.SpecialSkills.Get(SD.SpecialSkills.Acrobatics.Dodge).SumBonus;
+                        break;
+                    case SD.BattleProperty.DefenceArmor:
+                        if (ArmorUsed is not null)
+                            Get(SD.BattleProperty.DefenceArmor).BaseBonus = _allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Armor).SumBonus;
+                        break;
+                    case SD.BattleProperty.DefenceShield:
+                        if (ShieldUsed is not null)
+                            Get(SD.BattleProperty.DefenceShield).BaseBonus = _allParams.SpecialSkills.Get(SD.SpecialSkills.Melee.Shields).SumBonus;
+                        break;
+                    case SD.BattleProperty.DefenceParry:
+                        if (isParrying)
+                        {
+                            int mainParryingSkillValue = 0, offParryingSkillValue = 0;
                             if (MainWeaponUsed is not null)
                             {
-                                Get(SD.BattleProperty.AttackBase).BaseBonus = _allParams.SpecialSkills.Get(MainWeaponUsed.RelatedSkill).SumBonus;
+                                mainParryingSkillValue = _allParams.SpecialSkills.Get(MainWeaponUsed.RelatedSkill).SumBonus;
                             }
-                            break;
-                        case SD.BattleProperty.AttackDodge:
-                        case SD.BattleProperty.AttackArmor:
-                        case SD.BattleProperty.AttackShield:
-                        case SD.BattleProperty.AttackParry:
-                            Get(prop.Key).BaseBonus = Get(SD.BattleProperty.AttackBase).BaseBonus;
-                            Get(prop.Key).HealthBonus = Get(SD.BattleProperty.AttackBase).HealthBonus;
-                            Get(prop.Key).TempBonuses = Get(SD.BattleProperty.AttackBase).TempBonuses;
-                            Get(prop.Key).GearBonus = Get(SD.BattleProperty.AttackBase).GearBonus;
-                            Get(prop.Key).RaceBonus = Get(SD.BattleProperty.AttackBase).RaceBonus;
-                            Get(prop.Key).OtherBonuses = Get(SD.BattleProperty.AttackBase).OtherBonuses;
-                            break;
-                        case SD.BattleProperty.ArmorClass:
-                            if (ArmorUsed is not null)
-                                Get(SD.BattleProperty.ArmorClass).BaseBonus += prop.Value.SumBonus;
-                            break;
-                        case SD.BattleProperty.DefenceDodge:
-                            Get(SD.BattleProperty.DefenceDodge).BaseBonus = _allParams.SpecialSkills.Get(SD.SpecialSkills.Acrobatics.Dodge).SumBonus;
-                            break;
-                        case SD.BattleProperty.DefenceArmor:
-                            if (ArmorUsed is not null)
-                                Get(SD.BattleProperty.DefenceArmor).BaseBonus = _allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Armor).SumBonus;
-                            break;
-                        case SD.BattleProperty.DefenceShield:
-                            if (ShieldUsed is not null)
-                                Get(SD.BattleProperty.DefenceShield).BaseBonus = _allParams.SpecialSkills.Get(SD.SpecialSkills.Melee.Shields).SumBonus;
-                            break;
-                        case SD.BattleProperty.DefenceParry:
-                            if (isParrying)
+                            if (OffWeaponUsed is not null)
                             {
-                                int mainParryingSkillValue = 0, offParryingSkillValue = 0;
-                                if (MainWeaponUsed is not null)
-                                {
-                                    mainParryingSkillValue = _allParams.SpecialSkills.Get(MainWeaponUsed.RelatedSkill).SumBonus;
-                                }
-                                if (OffWeaponUsed is not null)
-                                {
-                                    offParryingSkillValue = _allParams.SpecialSkills.Get(OffWeaponUsed.RelatedSkill).SumBonus;
-                                }
-                                Get(SD.BattleProperty.DefenceParry).BaseBonus = Math.Max(mainParryingSkillValue,offParryingSkillValue);
-                                    
+                                offParryingSkillValue = _allParams.SpecialSkills.Get(OffWeaponUsed.RelatedSkill).SumBonus;
                             }
-                            break;
-                    }
+                            Get(SD.BattleProperty.DefenceParry).BaseBonus = Math.Max(mainParryingSkillValue,offParryingSkillValue);
+                                    
+                        }
+                        break;
                 }
-            }
-            catch (Exception ex)
-            {
-                ;
             }
         }
 

@@ -42,7 +42,7 @@ namespace DA_Business.Repository.CharacterReps
             catch (Exception ex)
             {
 
-                throw new RepositoryErrorException("Error in Trait-race Repository Create");
+                throw new RepositoryErrorException("Error in Trait-race Repository Create: " + ex.Message);
             }
                 
         }
@@ -75,9 +75,8 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Trait-race Repository delete");
+                throw new RepositoryErrorException("Error in Trait-race Repository delete: " + ex.Message);
             }
-            return 0;
         }
 
         public async Task<IEnumerable<TraitRaceDTO>> GetAll(int? raceId = null)
@@ -172,7 +171,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in Trait-race Repository Update");
+                throw new RepositoryErrorException("Error in Trait-race Repository Update: " + ex.Message); ;
             }
         }
 

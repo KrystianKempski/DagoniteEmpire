@@ -12,15 +12,15 @@
         Character list
     </MudButton>
     <MudButton OnClick="GoToCharacter" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
-        <img src="@MyIcon.Helm_white" width="25px" height="24px" class="helm-icon" />
+        <img src="@MyIcon.Helm_white" width="25" height="24" class="helm-icon" />
         Character
     </MudButton>
     <MudButton OnClick="GoToClass" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
-        <img src="@MyIcon.Anvil_white" width="25px" height="24px" class="anvil-icon" />
+        <img src="@MyIcon.Anvil_white" width="25" height="24" class="anvil-icon" />
         Class
     </MudButton>
     <MudButton OnClick="GoToEquipment" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
-        <img src="@MyIcon.Chest" width="26px" height="25px" class="helm-icon" style="padding-bottom: 4px;" />
+        <img src="@MyIcon.Chest" width="26" height="25" class="helm-icon" style="padding-bottom: 4px;" />
         Equipment
     </MudButton>
     <MudButton OnClick="GoToHealth" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true" >
@@ -28,7 +28,7 @@
         Health
     </MudButton>
     <MudButton OnClick="GoToCampaign" Style="@($" color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
-        <img src="@MyIcon.BookmarkWhite" width="24px" height="24px" class="helm-icon" style="padding-right: 3px;" />
+        <img src="@MyIcon.BookmarkWhite" width="24" height="24" class="helm-icon" style="padding-right: 3px;" />
         Campaign
     </MudButton>
 </MudStack>
@@ -66,7 +66,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Uknnown error", Severity.Error);
+            _snackBar.Add("Error while going to campaign: " + e.Message, Severity.Error);
         }
     }
 
@@ -94,7 +94,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Uknnown error", Severity.Error);
+            _snackBar.Add("Error while going to class: " + e.Message, Severity.Error);
         }
 
     }
@@ -110,7 +110,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Uknnown error", Severity.Error);
+            _snackBar.Add("Error while going to character list: " + e.Message, Severity.Error);
         }
 
     }
@@ -138,7 +138,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Uknnown error", Severity.Error);
+            _snackBar.Add("Error while going to character: " + e.Message, Severity.Error);
         }
 
     }
@@ -165,7 +165,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Uknnown error", Severity.Error);
+            _snackBar.Add("Error while going to equipment: " + e.Message, Severity.Error);
         }
 
     }
@@ -193,7 +193,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Uknnown error", Severity.Error);
+            _snackBar.Add("Error while going to health: " + e.Message, Severity.Error);
         }
 
     }
