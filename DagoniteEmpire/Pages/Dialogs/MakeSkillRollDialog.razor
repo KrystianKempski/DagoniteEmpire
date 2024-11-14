@@ -67,9 +67,9 @@
                     @foreach(var item in AdditionalAttackerBonuses)
                     {
                         <MudStack Row>
-                            <MudTextField Value="item.Item1">@item.Item1</MudTextField>
+                            <MudTextField @bind-Value="item.First">@item.First</MudTextField>
                             <div style="width:40px;">
-                                <MudNumericField Value="item.Item2"> @item.Item2</MudNumericField>
+                                <MudNumericField @bind-Value="item.Second"> @item.Second</MudNumericField>
                             </div>
                         </MudStack>
                     }
@@ -77,17 +77,17 @@
                 </MudPaper>
             </MudItem>
             <MudItem xs="6">
-                @if (IsOppositeRoll == false)
+                 @if (IsOppositeRoll == false)
                 {
                     <MudPaper Elevation="1" Class="pa-2 h-100">
                         <MudSelect T="int" Required="true" @bind-Value="DifficultyValue" Label="Select dificulty">
                             @foreach (var defender in SD.DifficultyLevel.ToList())
                             {
-                                <MudSelectItem Value="defender.Value">@defender.Key</MudSelectItem>                            
-                            }                       
+                                <MudSelectItem Value="defender.Value">@defender.Key</MudSelectItem>
+                            }     
                         </MudSelect>
                         <MudNumericField Margin="0" Class="dense-numeric-field" Min="5" @bind-Value="DifficultyValue" ></MudNumericField>
-                    </MudPaper>
+                    </MudPaper> 
                 }
                 else
                 {                
@@ -136,8 +136,8 @@
                         @foreach (var item in AdditionalDefenderBonuses)
                         {
                             <MudStack Row>
-                                <MudTextField Value="item.Item1">@item.Item1</MudTextField>
-                                <MudNumericField Value="item.Item2"> @item.Item2</MudNumericField>
+                                <MudTextField @bind-Value="item.First">@item.First</MudTextField>
+                                <MudNumericField @bind-Value="item.Second"> @item.Second</MudNumericField>
                             </MudStack>
                         }
                     </MudPaper>                
@@ -158,7 +158,6 @@
     <DialogActions>
         <MudButton OnClick="Cancel">Exit</MudButton>
         <MudButton Color="Color.Error" OnClick="SaveSequenceBtn">Save</MudButton>
-        <MudButton Color="Color.Error" OnClick="SaveAndClearBtn">Save and clear</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -180,9 +179,25 @@
     private SpecialSkillDTO? SpecialSkillRoll = null;
     private SpecialSkillDTO? SpecialSkillDefence = null;
 
-    private Stack<Tuple<string, int>> AdditionalAttackerBonuses = new Stack<Tuple<string, int>>();
-    private Stack<Tuple<string, int>> AdditionalDefenderBonuses = new Stack<Tuple<string, int>>();
-    
+    public class Pair<T, U>
+    {
+        public Pair()
+        {
+        }
+
+        public Pair(T first, U second)
+        {
+            this.First = first;
+            this.Second = second;
+        }
+
+        public T First { get; set; }
+        public U Second { get; set; }
+    };
+
+    private List<Pair<string, int>> AdditionalAttackerBonuses = new List<Pair<string, int>>();
+    private List<Pair<string, int>> AdditionalDefenderBonuses = new List<Pair<string, int>>();
+
     private bool _isOppositeRoll = false;
     public bool IsOppositeRoll 
     {
@@ -238,21 +253,21 @@
 
     private async Task AddAttackerBonus()
     {
-        AdditionalAttackerBonuses.Push( new Tuple<string,int>("", 0));
+        AdditionalAttackerBonuses.Add(new Pair<string, int>("", 0));
     }
 
     private async Task RemoveAttackerBonus()
     {
-        AdditionalAttackerBonuses.Pop(); ;
+        AdditionalAttackerBonuses.RemoveAt(AdditionalAttackerBonuses.Count-1); 
     }
     private async Task AddDefenderBonus()
     {
-        AdditionalDefenderBonuses.Push(new Tuple<string, int>("", 0));
+        AdditionalDefenderBonuses.Add(new Pair<string, int>("", 0));
     }
 
     private async Task RemoveDefenderBonus()
     {
-        AdditionalDefenderBonuses.Pop(); ;
+        AdditionalDefenderBonuses.RemoveAt(AdditionalAttackerBonuses.Count-1);
     }
 
     private void SelectCharacterRolling(string attackerName)
@@ -303,19 +318,55 @@
 
     private void MakeRoll()
     {
-        // if (SelectedCharacterDefending is null || FightSequence is null || FightSequence.AttackAction == string.Empty ||
-        //    (_isTargeted == true && FightSequence.AttackLocation == string.Empty) || FightSequence.DefenceType == string.Empty)
-        // {
-        //     Snackbar.Add("Some component is missing", Severity.Warning);
-        //     return;
-        // }
+        RichText ResultStringMG = new();
+        int sumOfAll = 0;
+        if (SpecialSkillRoll is not null && SelectedCharacterRolling is not null)
+        {
+            sumOfAll = SpecialSkillRoll.SumBonus;
+            ResultStringMG += $"{SelectedCharacterRolling.Character.NPCName} skill value: {sumOfAll}";
+            ResultStringMG.NewLine();
+            foreach (var item in AdditionalAttackerBonuses)
+            {
+                sumOfAll += item.Second;
+                ResultStringMG += $"Bonus from {item.First}: {item.Second}";
+                ResultStringMG.NewLine();
+            }
+        }
+        ResultStringMG.NewLine();
+        Tuple<bool, string> result;
+        if (IsOppositeRoll == true && SpecialSkillDefence is not null && SelectedCharacterDefending is not null)
+        {
+            ResultStringMG += $"{SelectedCharacterDefending.Character.NPCName} skill value: {SpecialSkillDefence.SumBonus}";
+            ResultStringMG.NewLine();
+            DifficultyValue = SpecialSkillDefence.SumBonus;
 
-        
-       // var result CalculateAndWriteAttack();
-            // if (string.IsNullOrEmpty(result) == false)
-            // {
-            //     Snackbar.Add("Error :" + result, Severity.Warning);
-            // }
+            foreach(var item in AdditionalDefenderBonuses)
+            {
+                DifficultyValue += item.Second;
+                ResultStringMG += $"Bonus from {item.First}: {item.Second}";
+                ResultStringMG.NewLine();
+            }
+            result = SD.MakeOppositeRollTest(SelectedCharacterRolling.Character.NPCName, sumOfAll, SelectedCharacterDefending.Character.NPCName, DifficultyValue);
+        }
+        else
+        {
+            string? diffName = SD.DifficultyLevel.FirstOrDefault(u => u.Value == DifficultyValue).Key;
+
+            if(string.IsNullOrEmpty(diffName)== false)
+            {
+                ResultStringMG += $"Difficulty level: {diffName} ({DifficultyValue})";
+            }
+            else
+            {
+                ResultStringMG += $"Difficulty level: {DifficultyValue}";
+            }
+            ResultStringMG.NewLine();
+            result = SD.MakeRollTest(DifficultyValue, sumOfAll);
+        }        
+
+        ResultStringMG += result.Item2;
+        ResultStringMG.EndText();
+        RollResultString = ResultStringMG.AllText;
     }
 
     private async Task SaveSequenceBtn()
@@ -330,30 +381,5 @@
         {
             Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
         }
-    }
-
-
-    private async Task SaveAndClearBtn()
-    {
-        try
-        {
-            // await CalculateFight();
-
-            // Snackbar.Add("Fight resolved", Severity.Success);
-            // SelectedAttacker = string.Empty;
-            // SelectedDefender = string.Empty;
-            // FightSequence = new FightSequenceModel(Date);
-            // IsTargeted = false;
-            // IsFlanking = false;    
-            // IsSurrounded = false;    
-            // SurroundedValue = 2;
-
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
-        }
-    }
-
-    
+    }    
 }

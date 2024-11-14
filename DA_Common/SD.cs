@@ -508,7 +508,7 @@ namespace DA_Common
                 dice[2] = rnd.Next(1, 6);
 
                 result = dice.Sum();
-                text = $"(3d6: {dice[0].ToString()}+{dice[1].ToString()}+{dice[2].ToString()}={RichText.BoldText(result)})";
+                text = $"(3d6: {dice[0].ToString()}+{dice[1].ToString()}+{dice[2].ToString()}={result})";
             }
             return Tuple.Create(result, text);
         }
@@ -519,7 +519,19 @@ namespace DA_Common
             var roll = RollDice();
             result = skill + roll.Item1 >= DC;
             var sucess = result ? "Sucess!" : "Fail!";
-            text = $"{skill} + {roll.Item2} is {skill + roll.Item1} vs DC: {DC}. {RichText.BoldText(sucess)}";
+            text = $"{skill} + {roll.Item2} is {RichText.BoldText(skill + roll.Item1)} vs DC: {RichText.BoldText(DC)}. {RichText.BoldText(sucess)}";
+
+            return Tuple.Create(result, text);
+        }
+        public static Tuple<bool, string> MakeOppositeRollTest(string name1, int skill1,  string name2,int skill2 )
+        {
+            bool result = false;
+            string text = string.Empty;
+            var roll1 = RollDice();
+            var roll2 = RollDice();
+            result = skill1 + roll1.Item1 >= skill2 + roll2.Item1;
+            var sucess = result ? "Sucess!" : "Fail!";
+            text = $"{name1}: {skill1} + {roll1.Item2} is {RichText.BoldText(skill1 + roll1.Item1)} vs {name2}: {skill2} + {roll2.Item2} is {RichText.BoldText(skill2 + roll2.Item1)}. {RichText.BoldText(sucess)}";
 
             return Tuple.Create(result, text);
         }

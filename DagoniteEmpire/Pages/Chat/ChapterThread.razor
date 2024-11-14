@@ -715,14 +715,9 @@ else
 
         if (!result.Canceled)
         {
-            // IsLoadingCharacters = true;
-            // StateHasChanged();
-            // await LoadMobs();
-            // await LoadChapter();
-            // IsLoadingCharacters = false;
-            // StateHasChanged();
-            // if (result.Data is not null)
-            //     NewPost.Content += result.Data as string ?? string.Empty;
+            if (result.Data is not null)
+                NewPost.Content += result.Data as string ?? string.Empty;
+            StateHasChanged();
         }
     }
 
