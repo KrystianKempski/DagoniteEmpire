@@ -69,7 +69,7 @@ namespace DA_Business.Repository.CharacterReps
                 using var contex = await _db.CreateDbContextAsync();
                 //delete traits adv
                 var obj = await contex.Characters.Include(c=>c.EquipmentSlots).ThenInclude(e=>e.Equipment).ThenInclude(t=>t.Traits).FirstOrDefaultAsync(u => u.Id == id);
-                var traits = contex.TraitsCharacter.Where(c=>c.CharacterId ==  id);
+                var traits = contex.TraitsCharacter.Where(c=>c.CharacterId == id && c.TraitApproved == false);
                 foreach(var trait in traits)
                 {
                     contex.TraitsCharacter.Remove(trait);
@@ -80,7 +80,7 @@ namespace DA_Business.Repository.CharacterReps
                 if (race is not null)
                 {
                     if (!race.Traits.IsNullOrEmpty())
-                        race.Traits.ToList().ForEach(t =>contex.TraitsRace.Remove(t));
+                        race.Traits.Where(t=>t.TraitApproved==false).ToList().ForEach(t =>contex.TraitsRace.Remove(t));
                     contex.Races.Remove(race);
                 }
                 //delete equipment slots
