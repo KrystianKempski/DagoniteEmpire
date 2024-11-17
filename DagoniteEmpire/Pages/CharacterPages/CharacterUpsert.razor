@@ -332,7 +332,7 @@
                 Title = "Edit";
                 await LoadCharacter();
             }
-
+            IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer);
             AllParams.SpecialSkills.AddRelatedParametes();
             CurrentDate = new DateModel(AllParams.Character.CurrentDate);
             AllParams.AllTraitsChange();
