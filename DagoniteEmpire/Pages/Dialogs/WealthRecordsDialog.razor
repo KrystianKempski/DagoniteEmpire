@@ -9,14 +9,9 @@
             @HeaderName
         </MudText>
         <MudSpacer />
-        @* <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField> *@
     </TitleContent>
     <DialogContent>
         <MudStack Class="h-100"  Justify="Justify.SpaceBetween">
-
-        
-            @* <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="true"> *@
             <MudDataGrid  Breakpoint="Breakpoint.None" T="WealthRecordDTO" Items="@WealthRecords" ReadOnly="true" 
                          Style="overscroll-behavior-y: contain;" Class="p-1 m-0" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                          SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" >
@@ -34,7 +29,7 @@
             <MudPaper>
                 <MudGrid Spacing="0" Class="pa-1 ma-0">
                     <MudItem xs="12" sm="8" md="4" lg="4">                    
-                            <MudTextField Style="height:100%;" Label="Description" @bind-Value="@NewDescription"></MudTextField>
+                        <MudTextField Style="height:100%;" Label="Description" @bind-Value="@NewDescription"></MudTextField>
                     </MudItem>
                     <MudItem xs="3" sm="1" md="1" lg="1">
                         <MudNumericField Class="align-right" Label="Imperials" @bind-Value="@Imperials"> <img src="@MyIcon.Imperial" width="30" height="30" /></MudNumericField>
@@ -146,7 +141,6 @@
             await _wealthRecordRepository.Create(rec);
         }
         MudDialog.Close(DialogResult.Ok(Gold));
-
     }
 
 }
