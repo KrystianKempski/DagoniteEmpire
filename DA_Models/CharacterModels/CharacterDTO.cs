@@ -51,6 +51,7 @@ namespace DA_Models.CharacterModels
             }
             get =>  new DateModel(DateNumber);
         }
+        public int Gold { get; set; } = 0;
         public override string ToString() => NPCName;
 
     }

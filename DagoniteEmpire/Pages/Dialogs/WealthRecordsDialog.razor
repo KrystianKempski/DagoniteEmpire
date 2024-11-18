@@ -1,0 +1,152 @@
+﻿@using DA_DataAccess.CharacterClasses
+@inject IWealthRecordRepository _wealthRecordRepository
+@inject ISnackbar Snackbar
+
+<MudDialog ContentClass="p-1 m-0" Class="h-100 w-100 p-0 m-0">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <img src="@MyIcon.Imperial" width="40" height="40" class="pr-2" />
+            @HeaderName
+        </MudText>
+        <MudSpacer />
+        @* <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField> *@
+    </TitleContent>
+    <DialogContent>
+        <MudStack Class="h-100"  Justify="Justify.SpaceBetween">
+
+        
+            @* <MudHidden Breakpoint="Breakpoint.MdAndUp" Invert="true"> *@
+            <MudDataGrid  Breakpoint="Breakpoint.None" T="WealthRecordDTO" Items="@WealthRecords" ReadOnly="true" 
+                         Style="overscroll-behavior-y: contain;" Class="p-1 m-0" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                         SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" >
+                    <Columns>                  
+                    <PropertyColumn Property="x => x.Description" />
+                    <PropertyColumn Property="x => x.Imperials" />
+                    <PropertyColumn Property="x => x.Talars" />
+                    <PropertyColumn Property="x => x.Hellers" />
+                    <PropertyColumn Property="x => x.Coppers" />
+                    <PropertyColumn Property="x => x.CurrentDate" Title="Date" />
+                    </Columns>
+                </MudDataGrid>
+            <MudSpacer></MudSpacer>
+            
+            <MudPaper>
+                <MudGrid Spacing="0" Class="pa-1 ma-0">
+                    <MudItem xs="12" sm="8" md="4" lg="4">                    
+                            <MudTextField Style="height:100%;" Label="Description" @bind-Value="@NewDescription"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="3" sm="1" md="1" lg="1">
+                        <MudNumericField Class="align-right" Label="Imperials" @bind-Value="@Imperials"> <img src="@MyIcon.Imperial" width="30" height="30" /></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="3" sm="1" md="1" lg="1">
+                        <MudNumericField Class="align-right" Label="Talars" @bind-Value="@Talars"></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="3" sm="1" md="1" lg="1">
+                        <MudNumericField Class="align-right" Label="Hallers" @bind-Value="@Hallers"></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="3" sm="1" md="1" lg="1">
+                        <MudNumericField Class="align-right" Label="Coppers" @bind-Value="@Coppers"></MudNumericField>
+                    </MudItem>
+                    <MudItem xs="8" sm="8" md="3" lg="3" >
+                        <div class="ps-5">
+
+                            <DateComponent Editable="true" Date="@Date"></DateComponent>
+                        </div>
+                    </MudItem>
+                     <MudItem xs="4" sm="4" md="1" lg="1">                
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="w-80 m-2" OnClick="AddRecord">ADD</MudButton>
+                    </MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.h6"><img src="@MyIcon.Imperial" width="30" height="30" /> @Gold.ToString("F4")</MudText>
+            </MudPaper>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .align-right input {
+        text-align: right;
+    }
+</style>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = new();
+    [Parameter] public int CharacterId {get;set;} 
+    private ICollection<WealthRecordDTO> WealthRecords { get; set; } = new List<WealthRecordDTO>();
+    private ICollection<WealthRecordDTO> NewRecords { get; set; } = new List<WealthRecordDTO>();
+    // private FilterSettings FilterSettings = new FilterSettings { Operator = Syncfusion.Blazor.Operator.Contains, Type = Syncfusion.Blazor.Grids.FilterType.FilterBar };
+    public string HeaderName { get; set; } = "Wealth Records";
+
+    private string NewDescription = string.Empty;
+    private int Imperials = 0;
+    private int Talars = 0;
+    private int Hallers = 0;
+    private int Coppers = 0;
+    private DateModel Date = new DateModel(1, 1);
+    private decimal Gold = 0;
+
+    private void OnCancelBtnClick()
+    {
+        MudDialog.Cancel();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        WealthRecords = (await _wealthRecordRepository.GetAll(CharacterId)).ToList();
+        Calculate();
+    }
+
+    private void Calculate()
+    {
+        Gold = 0;
+        foreach (var record in WealthRecords)
+        {
+            Gold += record.Value;
+        }
+    }
+
+    private async Task AddRecord()
+    {
+        if (NewDescription == string.Empty)
+        {
+            Snackbar.Add("Add description", Severity.Warning);
+            return;
+        }
+
+        WealthRecordDTO newRecord= new WealthRecordDTO();
+        newRecord.Description = NewDescription;
+        newRecord.Value = (decimal)Imperials + (decimal)Talars * 0.1m + (decimal)Hallers * 0.01m + (decimal)Coppers * 0.0001m;
+        if (newRecord.Value == 0.0m)
+        {
+            Snackbar.Add("Add value", Severity.Warning);
+            return;
+        }
+        newRecord.DateNumber = Date.AllDays;
+        newRecord.CharacterId = CharacterId;
+        NewRecords.Add(newRecord);
+        WealthRecords.Add(newRecord);
+        Calculate();
+        NewDescription = string.Empty;
+        Imperials = 0;
+        Talars = 0;
+        Hallers = 0;
+        Coppers = 0;
+        Date = new DateModel(1, 1);
+    }
+
+    private async Task OnSaveTraitBtnClick()
+    {
+        foreach (var rec in NewRecords)
+        {
+            await _wealthRecordRepository.Create(rec);
+        }
+        MudDialog.Close(DialogResult.Ok(Gold));
+
+    }
+
+}

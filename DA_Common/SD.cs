@@ -581,6 +581,10 @@ namespace DA_Common
         public const string FreshWound = "icons/fresh-wound.svg";
         public const string CustomIcon = "icons/uncertainty.svg";
         public const string Ability = "icons/bolt-spell-cast.svg";
+        public const string Imperial = "icons/imperial.svg";
+        public const string Tallar = "icons/tallar.svg";
+        public const string Haller = "icons/haller.svg";
+        public const string Copper = "icons/copper.svg";
     }
 
     public enum Relation
