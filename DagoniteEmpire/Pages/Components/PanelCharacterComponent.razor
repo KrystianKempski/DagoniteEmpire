@@ -42,7 +42,10 @@
                     </div>
                     <div class="flex-grow-1 d-flex flex-column py-2 justify-content-around">
                         <MudText Typo="Typo.h5">@Name</MudText>
-                        <MudText Typo="Typo.subtitle1">@ProfessionName | @RaceName</MudText>
+                        @if(IsMob == true)
+                        {
+                            <MudText Typo="Typo.subtitle1">@ProfessionName | @RaceName</MudText>
+                        }
                         <MudText>
                             @foreach(var icon in Icons)
                             {
