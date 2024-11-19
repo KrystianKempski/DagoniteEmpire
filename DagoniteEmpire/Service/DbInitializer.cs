@@ -56,11 +56,10 @@ namespace DagoniteEmpire.Service
                 }
 
                 
-                if (contex.WealthRecords.Any() == false)
-                {
+
                     WealthRecord testRecord = new();
                     contex.WealthRecords.Add(testRecord);
-                }
+                
 
                 // characters
                 if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
