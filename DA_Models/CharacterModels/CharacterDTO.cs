@@ -54,7 +54,7 @@ namespace DA_Models.CharacterModels
         public decimal Gold { get; set; } = 0.0m;
         public override string ToString() => NPCName;
 
-        public ICollection<WealthRecord>? WealthLog { get; set; }
+        public ICollection<WealthRecordDTO>? WealthLog { get; set; }
 
     }
 
