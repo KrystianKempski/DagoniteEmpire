@@ -1,8 +1,9 @@
-﻿@using DA_DataAccess.CharacterClasses
+﻿
 @using System.Globalization;
 @using System.Text;
 @inject ISnackbar Snackbar
 @inject IUserService _userService
+@inject ISpecialSkillRepository _specialSkillRepository
 
 <MudDialog>
     <TitleContent>
@@ -30,10 +31,10 @@
                         <div class="d-flex flex-column flex-grow-1 px-1">
                             <label class="fw-bold py-1">Type</label>
                             <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.EquipmentType" class="form-select p-1">
-                                @foreach (var eq in SD.EquipmentType.All)
-                                {
-                                    <option selected="@(eq==NewSlot.Equipment.EquipmentType)" value="@eq"> @eq</option>
-                                }
+                            @foreach (var eq in SD.EquipmentType.All)
+                            {
+                                        <option selected="@(eq==NewSlot.Equipment.EquipmentType)" value="@eq"> @eq</option>
+                            }
                             </InputSelect>
                         </div>
 
@@ -42,9 +43,9 @@
                             <div class="d-flex flex-column flex-grow-1 px-1">
                                 <label class="fw-bold py-1">Weapon Type</label>
                                 <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
-                                    @foreach (string eq in SD.SpecialSkills.Melee.All)
+                                    @foreach (var eq in MeleeSkills)
                                     {
-                                        <option selected="@(eq==NewSlot.Equipment.RelatedSkill)" value="@eq"> @eq</option>
+                                    <option selected="@(eq.Name==NewSlot.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
                                     }
                                 </InputSelect>
                             </div>
@@ -60,9 +61,9 @@
                             <div class="d-flex flex-column flex-grow-1 px-1">
                                 <label class="fw-bold py-1">Weapon Type</label>
                                 <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
-                                    @foreach (var eq in SD.SpecialSkills.Shooting.All)
+                                    @foreach (var eq in ShootingSkills)
                                     {
-                                        <option selected="@(eq==NewSlot.Equipment.RelatedSkill)" value="@eq"> @eq</option>
+                                        <option selected="@(eq.Name==NewSlot.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
                                     }
                                 </InputSelect>
                             </div>
@@ -74,7 +75,7 @@
                             </div>
                         }
 
-                        @if (UserInfo?.IsAdminOrMG == true && IsInfoMode == false)
+                        @if (userInfo?.IsAdminOrMG == true && IsInfoMode == false)
                         {
                             <div class="d-flex flex-column px-1">
                                 <label class="fw-bold py-1">Approve</label>
@@ -147,7 +148,7 @@
                                 </div>
                             </div>
                         }
-                        @if (UserInfo?.IsAdminOrMG == true && IsInfoMode == false)
+                        @if (userInfo?.IsAdminOrMG == true && IsInfoMode == false)
                         {
                             <div class="d-flex flex-column px-1">
                                 <label class="fw-bold py-1">Approve</label>
@@ -200,6 +201,8 @@
     public string TraitType { get; set; } = SD.TraitType_Gear;
     public string HeaderName { get; set; } = "";
     private string ErrorMessage { get; set; } = string.Empty;
+    private IEnumerable<SpecialSkillDTO> MeleeSkills = new List<SpecialSkillDTO>();
+    private IEnumerable<SpecialSkillDTO> ShootingSkills = new List<SpecialSkillDTO>();
     // NumberFormatInfo nfi = new NumberFormatInfo()
     //     {
     //         CurrencyGroupSeparator = ":"
@@ -223,7 +226,7 @@
         new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
     };
 
-    public UserInfo? UserInfo { get; set; }
+    public UserInfo? userInfo { get; set; }
 
 
     private bool WeaponQualityAvalible()
@@ -290,7 +293,9 @@
         {
             Traits = NewSlot.Equipment.Traits.Cast<TraitDTO>().ToList();
         }
-        UserInfo = await _userService.GetUserInfo();
+        userInfo = await _userService.GetUserInfo();
+        MeleeSkills = await (_specialSkillRepository.GetAllFromGroup(userInfo.SelectedCharacter.Id , SD.BaseSkills.Melee));
+        ShootingSkills = await (_specialSkillRepository.GetAllFromGroup(userInfo.SelectedCharacter.Id, SD.BaseSkills.Shooting));
         HeaderName = IsEditMode ? "Edit" : "Add";
         HeaderName += " item";
         if (NewSlot.Equipment is not null && NewSlot.Equipment.IsApproved)

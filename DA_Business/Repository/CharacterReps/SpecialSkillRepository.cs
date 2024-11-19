@@ -80,6 +80,28 @@ namespace DA_Business.Repository.CharacterReps
             return new Dictionary<string, SpecialSkillDTO>();
         }
 
+        public async Task<IEnumerable<SpecialSkillDTO>> GetAllFromGroup(int charId ,string baseSkillName)
+        {
+            try
+            {
+                List<SpecialSkill> obj;
+                using var contex = await _db.CreateDbContextAsync();
+                if (charId == null || charId < 1 || baseSkillName == string.Empty)
+                {
+                    return new List<SpecialSkillDTO>();
+                }
+                else
+                {
+                    obj = contex.SpecialSkills.Where(u => u.CharacterId == charId && u.RelatedBaseSkillName == baseSkillName).OrderBy(u => u.Index).ToList();
+                    return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(obj);
+                }               
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+            }
+        }
+
         public async Task<SpecialSkillDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
