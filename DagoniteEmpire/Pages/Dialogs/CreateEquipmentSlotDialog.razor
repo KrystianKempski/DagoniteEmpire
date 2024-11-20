@@ -1,6 +1,7 @@
 ﻿
 @using System.Globalization;
 @using System.Text;
+@using DA_Models
 @inject ISnackbar Snackbar
 @inject IUserService _userService
 @inject ISpecialSkillRepository _specialSkillRepository
@@ -294,8 +295,19 @@
             Traits = NewSlot.Equipment.Traits.Cast<TraitDTO>().ToList();
         }
         userInfo = await _userService.GetUserInfo();
-        MeleeSkills = await (_specialSkillRepository.GetAllFromGroup(userInfo.SelectedCharacter.Id , SD.BaseSkills.Melee));
-        ShootingSkills = await (_specialSkillRepository.GetAllFromGroup(userInfo.SelectedCharacter.Id, SD.BaseSkills.Shooting));
+
+
+        if(userInfo?.SelectedCharacter is not null && userInfo.SelectedCharacter.Id != 0)
+        {
+
+            MeleeSkills = await (_specialSkillRepository.GetAllFromGroup(userInfo.SelectedCharacter.Id , SD.BaseSkills.Melee));
+            ShootingSkills = await (_specialSkillRepository.GetAllFromGroup(userInfo.SelectedCharacter.Id, SD.BaseSkills.Shooting));
+        }
+        else
+        {
+            MeleeSkills = CharacterSeeder.GetSpecialSkills().Where(u => u.RelatedBaseSkillName == SD.BaseSkills.Melee);
+            ShootingSkills = CharacterSeeder.GetSpecialSkills().Where(u => u.RelatedBaseSkillName == SD.BaseSkills.Shooting);
+        }
         HeaderName = IsEditMode ? "Edit" : "Add";
         HeaderName += " item";
         if (NewSlot.Equipment is not null && NewSlot.Equipment.IsApproved)

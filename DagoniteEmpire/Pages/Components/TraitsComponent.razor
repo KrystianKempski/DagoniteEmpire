@@ -149,17 +149,17 @@
     private async Task AddWeaponQualities()
     {
         NewTrait = CreateNewTrait();
-        var weaponPropertyTrait = Traits.FirstOrDefault(t => t.Name == SD.WeaponParametersDescr);
-        bool editMode = false;
-        if (weaponPropertyTrait is not null)
-        {
-            editMode = true;
-            NewTrait = new TraitEquipmentDTO(weaponPropertyTrait,null);
-        }
-        else
-        {
+        // var weaponPropertyTrait = Traits.FirstOrDefault(t => t.Name == SD.WeaponParametersDescr);
+        // bool editMode = false;
+        // if (weaponPropertyTrait is not null)
+        // {
+        //     editMode = true;
+        //     NewTrait = new TraitEquipmentDTO(weaponPropertyTrait,null);
+        // }
+        // else
+        // {
             NewTrait = new TraitEquipmentDTO();
-        }
+        //}
         var parameters = new DialogParameters<CreateTraitDialog> {  { x => x.NewTrait, NewTrait },
                                                                     { x => x.IsWeaponQualityMode, true }, 
                                                                     { x => x.AllParams, AllParams } };
@@ -170,14 +170,14 @@
         if (!result.Canceled)
         {
             NewTrait = (TraitDTO)result.Data;
-            if (editMode)
-            {
-                weaponPropertyTrait = NewTrait;
-            }
-            else
-            {                
+            // if (editMode)
+            // {
+            //     weaponPropertyTrait = NewTrait;
+            // }
+            // else
+            // {                
                 Traits.Add(NewTrait);
-            }
+           // }
             await UpdateTraits();
         }
     }
