@@ -318,7 +318,7 @@
                 AllParams.Profession = new();
                 AllParams.EquipmentSlots = new List<EquipmentSlotDTO>();
                 AllParams.Character.UserName = UserInfo?.UserName;
-                IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer);
+                IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer || UserInfo?.IsAdminOrMG == true);
 
                 if (IsDukeAllowed == false)
                     AllParams.Character.NPCType = SD.NPCType.Hero;

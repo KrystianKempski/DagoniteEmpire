@@ -1,6 +1,5 @@
 ﻿@page "/chapter/{id:int}"
 @using DA_Business.Services.Interfaces
-@using Syncfusion.Blazor.Navigations;
 @inject NavigationManager _navigationManager
 @inject ISnackbar SnackBar
 @inject IDialogService DialogService
@@ -23,15 +22,11 @@
 @inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IPostRepository _postRepository
 @inject IUserService _userService
-@inject IChatManager _chatManager
 @inject ICampaignRepository _campaignRepository
 @inject IBrowserViewportService _vieportService
-@inject IFileUpload _fileUpload;
-@inject IScrollManager  _scrollManager
 @inject CallbackService _callbackService
 @implements IDisposable
 
-@using Microsoft.AspNetCore.SignalR.Client;
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
 <PageTitle>Dagonie Empire | Thread</PageTitle>
 @if (IsLoading == true)
