@@ -148,31 +148,22 @@
             
             if (UserInfo.CharacterMG == true)
             {
-
-                Title = "All avalible campaingns";
                 Campaigns = (await _campaignRepository.GetAll()).ToList();
             }
             else
             {
-                Title = "Characters of " + UserInfo?.UserName;
-                Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
-                if (Characters.Any())
-                {
-                    if (UserInfo?.SelectedCharacter is not null)
-                        Campaigns = (await _campaignRepository.GetAll(UserInfo.SelectedCharacter.Id)).ToList();
-                }
+                if (UserInfo?.SelectedCharacter is not null && UserInfo?.SelectedCharacter.Id > 0)
+                    Campaigns = (await _campaignRepository.GetAll(UserInfo.SelectedCharacter.Id)).ToList();
+                
             }
         }
         else
         {
-            Title = "Characters of " + UserInfo?.UserName;
             Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
-            if (Characters.Any())
+            if (UserInfo?.SelectedCharacter is not null && UserInfo?.SelectedCharacter.Id > 0 )
             {
                 Campaigns = (await _campaignRepository.GetAll(UserInfo?.SelectedCharacter?.Id)).ToList();
             }
-
-
         }
         IsLoading = false;
         StateHasChanged();
