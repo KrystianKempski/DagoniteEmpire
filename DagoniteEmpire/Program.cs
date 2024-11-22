@@ -84,7 +84,7 @@ builder.Services.AddCropper();
 builder.Services.AddServerSideBlazor()
     .AddHubOptions(options =>
     {
-        options.MaximumReceiveMessageSize = 32 * 1024 * 100;
+        options.MaximumReceiveMessageSize = 320 * 1024 * 100;
     });
 
 builder.Services.AddControllersWithViews();

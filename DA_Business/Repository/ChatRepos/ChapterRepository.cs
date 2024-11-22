@@ -69,6 +69,18 @@ namespace DA_Business.Repository.ChatRepos
 
         }
 
+        public async Task<bool> CheckIfChapterBelongToUser(string userName, int chapterId)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.Chapters.Include(c => c.Characters).FirstOrDefaultAsync(i => i.Id == chapterId);
+
+            if (obj is null) return false;
+
+            var charac = obj.Characters.FirstOrDefault(c => c.UserName == userName);
+
+            return charac is not null;
+        }
+
         public async Task<int> Delete(int id)
         {
             try

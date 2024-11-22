@@ -23,5 +23,6 @@ namespace DA_Business.Repository.CharacterReps.IRepository
 
         public Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null, bool fullIncludes = false);
         public Task<string> GetPortraitUrl(int id);
+        public Task<bool> CheckIfCharacterBelongToUser(string userName, int characterId);
     }
 }

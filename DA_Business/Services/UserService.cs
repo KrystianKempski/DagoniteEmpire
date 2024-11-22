@@ -76,7 +76,15 @@ namespace DA_Business.Services
                         _userInfo.SelectedCharacter = _mapper.Map<Character,CharacterDTO>(obj);
                     else
                     {
-                        _userInfo.SelectedCharacter = null;
+                        obj = await contex.Characters.FirstOrDefaultAsync(u => u.UserName == _userInfo.UserName && u.IsApproved == true);
+                        if (obj is not null)
+                        {
+                            _userInfo.SelectedCharacter = _mapper.Map<Character, CharacterDTO>(obj);
+                            userdb.SelectedCharacterId = obj.Id;
+                            await contex.SaveChangesAsync();
+                        }
+                        else
+                            _userInfo.SelectedCharacter = null;
                     }
                     _userInfo.CharacterMG = _userInfo?.SelectedCharacter?.NPCName == SD.GameMaster_NPCName;
 

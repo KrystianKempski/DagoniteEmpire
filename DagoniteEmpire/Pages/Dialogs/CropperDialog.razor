@@ -83,15 +83,20 @@
     }
     public async Task GetDecodedImageDataAsync()
     {
-        GetCroppedCanvasOptions getCroppedCanvasOptions = new GetCroppedCanvasOptions
+        try
         {
-            // Height = 1800,
-            // Width = 1300,
-            //ImageSmoothingQuality = ImageSmoothingQuality.High.ToString()
-        };
 
+            GetCroppedCanvasOptions getCroppedCanvasOptions = new GetCroppedCanvasOptions
+            {
+                
+            };
+            ImageUrl = await cropperComponent!.GetCroppedCanvasDataURLAsync(getCroppedCanvasOptions);
+        }
+        catch(Exception ex)
+        {
+            Snackbar.Add("Error! " + ex.Message, Severity.Error);
 
-        ImageUrl = await cropperComponent!.GetCroppedCanvasDataURLAsync(getCroppedCanvasOptions);
+        }
 
     }
 

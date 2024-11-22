@@ -113,6 +113,19 @@ namespace DagoniteEmpire.Service
                         _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
 
                     }
+                    if (_userManager.FindByEmailAsync("player2@example.com").Result is null)
+                    {
+                        ApplicationUser user = new()
+                        {
+                            UserName = "player2",
+                            Email = "player2@example.com",
+                            EmailConfirmed = true,
+                        };
+
+                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
+                        _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
+
+                    }
 
                     if (_userManager.FindByEmailAsync("gm@example.com").Result is null)
                     {
