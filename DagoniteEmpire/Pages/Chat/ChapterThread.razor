@@ -315,9 +315,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-
         await AuthorizeEntry();
-
         PageCount = await GetPageCount();
         PageNum = PageCount;
         await LoadChapter();
@@ -329,6 +327,9 @@ else
     {
         if(firstRender)
             await AuthorizeEntry();
+        PageCount = await GetPageCount();
+        PageNum = PageCount;
+        await LoadChapter();
         if (_scrollDown == true)
         {           
             await Task.Delay(500);
