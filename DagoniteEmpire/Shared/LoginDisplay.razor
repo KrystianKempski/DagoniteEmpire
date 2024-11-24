@@ -11,7 +11,7 @@
         <MudMenu @onclick="RefreshCharacters"  Dense="true" Color="Color.Dark">
             <ActivatorContent>
                 <MudAvatar Size="Size.Small">
-                        <MudImage Src="@PortraitUrl" />
+                        <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@PortraitUrl" />
                 </MudAvatar>
             </ActivatorContent>
             <ChildContent >
@@ -21,7 +21,7 @@
                     <MudMenuItem OnClick="@(e => SelectCharacter())">
                         <div class="d-flex flex-row">
                             <MudAvatar>
-                                <MudImage Src="@SD.GameMaster_Portrait"></MudImage>
+                                <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@SD.GameMaster_Portrait"></MudImage>
                             </MudAvatar>
                             <MudText Class="align-content-center ps-1">
                                 @SD.GameMaster_NPCName
@@ -34,7 +34,7 @@
                     <MudMenuItem OnClick="@(e => SelectCharacter(character))">
                     <div class="d-flex flex-row">
                         <MudAvatar>
-                            <MudImage Src="@character.ImageUrl"></MudImage>
+                            <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@character.ImageUrl"></MudImage>
                         </MudAvatar>
                         <MudText Class="align-content-center ps-1">
                             @character.NPCName
