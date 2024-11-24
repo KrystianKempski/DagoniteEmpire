@@ -542,7 +542,7 @@
 
     private async Task AuthorizeEntry()
     {
-        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo is null) return;
         if (UserInfo?.IsAuthenticated == false)
         {
             var uri = new Uri(_navigationManager.Uri);
