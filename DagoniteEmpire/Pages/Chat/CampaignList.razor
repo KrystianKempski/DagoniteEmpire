@@ -252,11 +252,11 @@
         }
         IsLoading = false;
         StateHasChanged();
-
+        fix:
     }
 
 
-    private void ChooseCampaign(CampaignDTO campaign)
+    private async Task ChooseCampaign(CampaignDTO campaign)
     {
         UserInfo = await _userService.GetUserInfo();
         _navigationManager.NavigateTo($"/campaign/{campaign.Id}");
