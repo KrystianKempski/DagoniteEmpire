@@ -157,8 +157,7 @@
 
     private async Task LoadForSelectedCharacter()
     {
-        if (UserInfo is null)
-            return;
+        UserInfo = await _userService.GetUserInfo();
         IsLoading = true;
         StateHasChanged();
 
@@ -259,6 +258,7 @@
 
     private async Task ChooseChapter(ChapterDTO chapter)
     {
+        UserInfo = await _userService.GetUserInfo();
         if (chapter.Characters.FirstOrDefault(c => c.Id == UserInfo?.SelectedCharacter?.Id) is not null ||
                 UserInfo?.CharacterMG == true)
             _navigationManager.NavigateTo($"/chapter/{chapter.Id}");

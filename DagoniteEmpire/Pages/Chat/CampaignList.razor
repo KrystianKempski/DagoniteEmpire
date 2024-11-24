@@ -138,8 +138,7 @@
 
     private async Task LoadForSelectedCharacter()
     {
-        if (UserInfo is null)
-            return;
+        UserInfo = await _userService.GetUserInfo();
         IsLoading = true;
         StateHasChanged();
         if (UserInfo?.IsAdminOrMG == true)
@@ -259,7 +258,7 @@
 
     private void ChooseCampaign(CampaignDTO campaign)
     {
-        if (UserInfo is null) return;
+        UserInfo = await _userService.GetUserInfo();
         _navigationManager.NavigateTo($"/campaign/{campaign.Id}");
     }
 

@@ -332,6 +332,7 @@ else
             PageNum = PageCount;
             await LoadChapter();
         }
+        UserInfo = await _userService.GetUserInfo();
         if (_scrollDown == true)
         {           
             await Task.Delay(500);
@@ -362,11 +363,9 @@ else
 
     private async Task LoadForSelectedCharacter()
     {
-        if (UserInfo is null)
-            return;
+        UserInfo = await _userService.GetUserInfo();
         IsLoading = true;
         StateHasChanged();
-
         int charId = (int)UserInfo.SelectedCharacter.Id;
         if (charId == 0) 
             return;
@@ -381,7 +380,6 @@ else
         {
             SendPostEnabled = true;
             NewPost.Content = string.Empty;
-            //_navigationManager.NavigateTo($"/chapter/{Id}");
         }
         _scrollDown = true;
         IsLoading = false;
@@ -452,6 +450,7 @@ else
         {
             NewPost.ChapterId = Id;
             NewPost.CreatedDate = DateTime.Now;
+            UserInfo = await _userService.GetUserInfo();
             if(UserInfo?.IsAdminOrMG == true &&
               (UserInfo?.SelectedCharacter?.UserName != "gm" && UserInfo?.SelectedCharacter?.UserName != "GameMaster"))
             {
