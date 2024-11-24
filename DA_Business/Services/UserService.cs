@@ -65,7 +65,7 @@ namespace DA_Business.Services
                     _userInfo.Role = SD.Role_GameMaster;
                 }
                 if (user.Identity?.IsAuthenticated is null)
-                    throw new Exception();
+                    throw new Exception("Not authenticated");
 
                 using var contex = await _db.CreateDbContextAsync();
                 var userdb = await contex.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName == _userInfo.UserName);
@@ -94,8 +94,7 @@ namespace DA_Business.Services
             }
             catch (Exception ex)
             {
-               // await _jsRuntime.ToastrError("Error whike getting user info: " + ex.Message);
-                return _userInfo;
+                throw new Exception($"error: {ex.Message}");
             }
         }
 
@@ -129,7 +128,8 @@ namespace DA_Business.Services
             }
             catch (Exception ex)
             {
-            //    await _jsRuntime.ToastrError("Error whike getting user info: " + ex.Message);
+                throw new Exception($"error: {ex.Message}");
+                //    await _jsRuntime.ToastrError("Error whike getting user info: " + ex.Message);
             }
         }
     }
