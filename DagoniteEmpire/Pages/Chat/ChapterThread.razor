@@ -316,20 +316,22 @@ else
     protected override async Task OnInitializedAsync()
     {
         await AuthorizeEntry();
-        PageCount = await GetPageCount();
-        PageNum = PageCount;
-        await LoadChapter();
+        // PageCount = await GetPageCount();
+        // PageNum = PageCount;
+        // await LoadChapter();
         handler = async () => await LoadForSelectedCharacter();
         _callbackService.OnChange += handler;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if(firstRender)
+        if(firstRender){
+
             await AuthorizeEntry();
-        PageCount = await GetPageCount();
-        PageNum = PageCount;
-        await LoadChapter();
+            PageCount = await GetPageCount();
+            PageNum = PageCount;
+            await LoadChapter();
+        }
         if (_scrollDown == true)
         {           
             await Task.Delay(500);
