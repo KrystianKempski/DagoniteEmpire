@@ -127,7 +127,7 @@
             <MudPaper Width="300px" Height="50px" Elevation="25" Class="d-flex flex-row px-2" Style="">
                         <MudTextField @onfocus="@(() => OnMessageFocus(userbox))" Disabled="!userbox.IsUserChosen" @ref="userbox.ChatTextField" Immediate="true" T="string" Placeholder="Enter your message..." Class="mt-n2 mx-2"
                                         @bind-Value="userbox.CurrentMessage" For="@(()=> userbox.CurrentMessage)" OnKeyDown="Enter" />
-                        <MudButton @ref=ButtonRef2 Disabled="!userbox.IsUserChosen" OnClick="@(() => SubmitAsync(userbox))" StartIcon="@Icons.Material.Outlined.Send" Color="Color.Secondary" ButtonType="MudBlazor.ButtonType.Button">Send</MudButton>
+                        <MudButton @ref=userbox.MudButton Disabled="!userbox.IsUserChosen" OnClick="@(() => SubmitAsync(userbox))" StartIcon="@Icons.Material.Outlined.Send" Color="Color.Secondary" ButtonType="MudBlazor.ButtonType.Button">Send</MudButton>
             </MudPaper>
         </MudPaper>
         </div>
@@ -170,7 +170,7 @@
             <MudPaper Width="100%" Height="50px" Elevation="25" Class="d-flex flex-row px-2" Style="">
                 <MudTextField @onfocus="@(() => OnMessageFocus(ChosenUser))" Disabled="!ChosenUser.IsUserChosen" @ref="ChosenUser.ChatTextField" Immediate="true" T="string" Placeholder="Enter your message..."  Class="mt-n2 mx-2"
                                   @bind-Value="ChosenUser.CurrentMessage" For="@(()=> ChosenUser.CurrentMessage)" OnKeyDown="Enter" />
-                <MudButton @ref=ButtonRef  Disabled="!ChosenUser.IsUserChosen" OnClick="@(() => SubmitAsync(ChosenUser))" StartIcon="@Icons.Material.Outlined.Send" Color="Color.Secondary" ButtonType="MudBlazor.ButtonType.Button">Send</MudButton>
+                <MudButton Disabled="!ChosenUser.IsUserChosen" OnClick="@(() => SubmitAsync(ChosenUser))" StartIcon="@Icons.Material.Outlined.Send" Color="Color.Secondary" ButtonType="MudBlazor.ButtonType.Button">Send</MudButton>
             </MudPaper>
             </div>
         </MudPaper>
@@ -215,6 +215,7 @@
     {
         public string CurrentMessage { get; set; }
         public MudTextField<string> ChatTextField = new();
+        public MudButton MudButton = new();
         public List<ChatMessage> messages = new List<ChatMessage>();
         public string UserName { get; set; } = string.Empty;
         public string ContactId { get; set; } = string.Empty;
@@ -224,7 +225,6 @@
     private List<UserBox> UserBoxes { get; set; } = new List<UserBox>();
     private UserBox? ChosenUser { get; set; } = null;
     public List<ApplicationUser> ChatUsers = new List<ApplicationUser>();
-    private MudButton ButtonRef, ButtonRef2;
 
 
     private async Task SubmitAsync(UserBox user)
@@ -342,18 +342,33 @@
 
     public async Task Enter(KeyboardEventArgs e)
     {
-
-
-        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        try
         {
-
-            await ChosenUser.ChatTextField!.BlurAsync();
-            await ButtonRef.FocusAsync();
-            await ButtonRef2.FocusAsync();      
-            await SubmitAsync(ChosenUser);
-            // await ChosenUser.ChatTextField.Clear();
-            await ChosenUser.ChatTextField.FocusAsync();
-            // await ChosenUser.ChatTextField.FocusAsync();
+            if (e.Code == "Enter" || e.Code == "NumpadEnter")
+            {
+                @foreach (var userbox in UserBoxes)
+                {
+                    if (userbox.IsUserChosen){
+                        await userbox.MudButton.FocusAsync();
+                        break;
+                    }
+                }   
+                await ChosenUser.ChatTextField.BlurAsync();
+                await SubmitAsync(ChosenUser);
+                await ChosenUser.ChatTextField.FocusAsync();
+                @foreach (var userbox in UserBoxes)
+                {
+                    if (userbox.IsUserChosen)
+                    {
+                        await userbox.ChatTextField.FocusAsync();
+                        break;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _jsRuntime.ToastrError("Error while recive message: " + ex.Message);
         }
     }
 
