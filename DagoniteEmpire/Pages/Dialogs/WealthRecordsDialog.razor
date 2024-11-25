@@ -12,6 +12,9 @@
     </TitleContent>
     <DialogContent>
         <MudStack Class="h-100"  Justify="Justify.SpaceBetween">
+            <MudDataGrid  Breakpoint="Breakpoint.None" T="WealthRecordDTO" Items="@WealthRecords" ReadOnly="false" 
+                         Style="overscroll-behavior-y: contain;" Class="p-1 m-0" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                         SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" >
             <MudDataGrid  Breakpoint="Breakpoint.None" T="WealthRecordDTO" Items="@WealthRecords" ReadOnly="true" 
                          Style="overscroll-behavior-y: contain;" Class="p-1 m-0" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                          SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" >
@@ -22,6 +25,15 @@
                     <PropertyColumn Property="x => x.Hellers" />
                     <PropertyColumn Property="x => x.Coppers" />
                     <PropertyColumn Property="x => x.CurrentDate" Title="Date" />
+                    </Columns>
+                    <TemplateColumn T="WealthRecordDTO" Title="Actions">
+                        <CellTemplate>
+                            <MudStack Row="true">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditRecord(context.Item))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" OnClick="@(() => DeleteRecord(context.Item))" />
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
                     </Columns>
                 </MudDataGrid>
             <MudSpacer></MudSpacer>
@@ -50,6 +62,7 @@
                         </div>
                     </MudItem>
                      <MudItem xs="4" sm="4" md="1" lg="1">                
+                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="w-80 m-2" OnClick="@(IsEditing ? UpdateRecord : AddRecord)">@(IsEditing ? "UPDATE" : "ADD")</MudButton>
                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="w-80 m-2" OnClick="AddRecord">ADD</MudButton>
                     </MudItem>
                 </MudGrid>
@@ -84,6 +97,9 @@
     private int Coppers = 0;
     private DateModel Date = new DateModel(1, 1);
     private decimal Gold = 0;
+    private bool IsEditing = false;
+    private int EditingRecordId = 0;
+    private decimal Gold = 0;
 
     private void OnCancelBtnClick()
     {
@@ -105,6 +121,77 @@
         }
     }
 
+    private async Task AddRecord()
+    {
+        if (NewDescription == string.Empty)
+        {
+            Snackbar.Add("Add description", Severity.Warning);
+            return;
+        }
+
+        WealthRecordDTO newRecord = new WealthRecordDTO();
+        newRecord.Description = NewDescription;
+        newRecord.Value = (decimal)Imperials + (decimal)Talars * 0.1m + (decimal)Hallers * 0.01m + (decimal)Coppers * 0.0001m;
+        if (newRecord.Value == 0.0m)
+        {
+            Snackbar.Add("Add value", Severity.Warning);
+            return;
+        }
+        newRecord.DateNumber = Date.AllDays;
+        newRecord.CharacterId = CharacterId;
+        var createdRecord = await _wealthRecordRepository.Create(newRecord);
+        WealthRecords.Add(createdRecord);
+        Calculate();
+        ClearInputs();
+    }
+
+    private void EditRecord(WealthRecordDTO record)
+    {
+        IsEditing = true;
+        EditingRecordId = record.Id;
+        NewDescription = record.Description;
+        Imperials = (int)Math.Floor(record.Value);
+        Talars = (int)Math.Floor((record.Value - Imperials) * 10);
+        Hallers = (int)Math.Floor(((record.Value - Imperials) * 10 - Talars) * 10);
+        Coppers = (int)Math.Floor((((record.Value - Imperials) * 10 - Talars) * 10 - Hallers) * 10);
+        Date = new DateModel(record.DateNumber);
+    }
+
+    private async Task UpdateRecord()
+    {
+        var recordToUpdate = WealthRecords.FirstOrDefault(r => r.Id == EditingRecordId);
+        if (recordToUpdate != null)
+        {
+            recordToUpdate.Description = NewDescription;
+            recordToUpdate.Value = (decimal)Imperials + (decimal)Talars * 0.1m + (decimal)Hallers * 0.01m + (decimal)Coppers * 0.0001m;
+            recordToUpdate.DateNumber = Date.AllDays;
+
+            await _wealthRecordRepository.Update(recordToUpdate);
+            Calculate();
+            ClearInputs();
+            IsEditing = false;
+        }
+    }
+
+    private async Task DeleteRecord(WealthRecordDTO record)
+    {
+        var result = await _wealthRecordRepository.Delete(record.Id);
+        if (result == 0)
+        {
+            WealthRecords.Remove(record);
+            Calculate();
+        }
+    }
+
+    private void ClearInputs()
+    {
+        NewDescription = string.Empty;
+        Imperials = 0;
+        Talars = 0;
+        Hallers = 0;
+        Coppers = 0;
+        Date = new DateModel(1, 1);
+    }
     private async Task AddRecord()
     {
         if (NewDescription == string.Empty)

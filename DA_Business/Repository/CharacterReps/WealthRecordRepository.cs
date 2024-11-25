@@ -92,6 +92,28 @@ namespace DA_Business.Repository.CharacterReps
         {
             try
             {
+                using var context = await _db.CreateDbContextAsync();
+                var existingRecord = await context.WealthRecords.FirstOrDefaultAsync(w => w.Id == objDTO.Id);
+                if (existingRecord == null)
+                {
+                    throw new RepositoryErrorException("Wealth record not found");
+                }
+
+                _mapper.Map(objDTO, existingRecord);
+                context.WealthRecords.Update(existingRecord);
+                await context.SaveChangesAsync();
+
+                return _mapper.Map<WealthRecord, WealthRecordDTO>(existingRecord);
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in WealthRecords Repository Update: " + ex.Message);
+            }
+        }
+        public async Task<WealthRecordDTO> Update(WealthRecordDTO objDTO)
+        {
+            try
+            {
 
                 //await contex.SaveChangesAsync();
                 //return _mapper.Map<EquipmentSlot, EquipmentSlotDTO>(obj);
