@@ -215,7 +215,7 @@ else
                     <RichTextEditorToolbarSettings  Items="@Tools" />
                 </SfRichTextEditor>
                 <div class="d-flex flex-row">
-                    <MudButton Class="mt-2 py-0" OnClick="CreatePost">@SendButtonText</MudButton>
+                    <MudButton Disabled="(SendPostEnabled == false) " Class="mt-2 py-0" OnClick="CreatePost">@SendButtonText</MudButton>
                     @if (IsEditMode)
                     {
                         <MudButton Class="mt-2 py-0" OnClick="CancelEdit">Cancel Edit</MudButton>

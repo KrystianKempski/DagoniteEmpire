@@ -114,7 +114,7 @@ namespace DA_Business.Services
                         Character? obj = null;
                         if (charId>=0)
                             obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == charId);
-                        else
+                        else if (charId == -1)
                         {
                             obj = await contex.Characters.FirstOrDefaultAsync(u => u.NPCName == SD.GameMaster_NPCName);
                             charId = obj.Id;
