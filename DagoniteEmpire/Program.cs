@@ -72,7 +72,7 @@ builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
 builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
-builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<CallbackService>();
 builder.Services.AddSingleton<PanelActivation>();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
