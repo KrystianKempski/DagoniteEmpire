@@ -134,7 +134,7 @@ else
         {
             <MudText Typo="Typo.h4"><img src="@MyIcon.Quill" width="40" height="40" class="pr-2" />Chapter: @Chapter.Name</MudText>
             <MudText Class="py-2 flex-grow-1" Typo="Typo.h6"> @Chapter.Date, @Chapter.DayTime, @Chapter.Place </MudText>
-            <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate</MudText>
+            <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
 
             <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
                     <MudStack>
@@ -153,7 +153,7 @@ else
                                     </MudPaper>
                                     <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
                                         <MudStack Spacing="0" Row="true">
-                                            <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
+                                            <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
                                             @if (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true)
                                             {
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
@@ -196,7 +196,7 @@ else
                                             <RichTextEditorImageSettings Path="./upload/postImages/" />                                      
                                         <RichTextEditorToolbarSettings Items="@NoTools" />
                                     </SfRichTextEditor>
-                                    <MudText Typo="Typo.caption">Posted at: @post.CreatedDate</MudText>
+                                        <MudText Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
                                 </MudPaper>
                             }
                         }

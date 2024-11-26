@@ -119,7 +119,7 @@ namespace DA_Business.Repository.CharacterReps
                     var addedObj = await contex.Wounds.AddAsync(obj);
                     await contex.SaveChangesAsync();
                 }
-                return objDTO;
+                return _mapper.Map<Wound, WoundDTO>(obj);
             }
             catch (Exception ex)
             {

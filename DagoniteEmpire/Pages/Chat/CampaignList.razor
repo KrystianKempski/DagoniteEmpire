@@ -53,7 +53,7 @@
                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))"></MudIconButton>
                             }
                             </MudStack>
-                            <MudText Typo="Typo.caption">Started at: @camp.CreatedDate</MudText>
+                            <MudText Typo="Typo.caption">Started at: @camp.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
                             <MudText Class="py-1 flex-grow-1" Typo="Typo.body2"> @camp.Description </MudText>
                             <div class="d-flex flex-wrap">
                                 @foreach (var adv in camp.Characters)

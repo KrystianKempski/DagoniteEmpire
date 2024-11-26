@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DagoniteEmpire.Exceptions;
 using System.Runtime.Remoting;
+using System.Diagnostics.Metrics;
 
 namespace DA_Business.Repository.CharacterReps
 {
@@ -92,10 +93,24 @@ namespace DA_Business.Repository.CharacterReps
         {
             try
             {
-
-                //await contex.SaveChangesAsync();
-                //return _mapper.Map<EquipmentSlot, EquipmentSlotDTO>(obj);
-                return null;
+                using var contex = await _db.CreateDbContextAsync();
+                var obj = await contex.WealthRecords.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                if (obj != null)
+                {
+                    // Update parent
+                    contex.Entry(obj).CurrentValues.SetValues(objDTO);
+                    contex.WealthRecords.Update(obj);
+                    await contex.SaveChangesAsync();
+                    return _mapper.Map<WealthRecord, WealthRecordDTO>(obj);
+                }
+                else
+                {
+                    obj = _mapper.Map<WealthRecordDTO, WealthRecord>(objDTO);
+                    var addedObj = await contex.WealthRecords.AddAsync(obj);
+                    await contex.SaveChangesAsync();
+                }
+                
+                return _mapper.Map<WealthRecord, WealthRecordDTO>(obj);
 
             }
             catch (Exception ex)
