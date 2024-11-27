@@ -74,7 +74,6 @@ builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<CallbackService>();
-builder.Services.AddSingleton<PanelActivation>();
 builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
@@ -88,7 +87,6 @@ builder.Services.AddServerSideBlazor()
     });
 
 builder.Services.AddControllersWithViews();
-//builder.Services.AddMvc(option => option.EnableEndpointRouting = false);
 builder.Services.Configure<EmailConfiguration>(options =>
 {
     builder.Configuration.GetSection("Email").Bind(options);
@@ -103,7 +101,6 @@ Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQx
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 else
@@ -113,13 +110,9 @@ else
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 
-//chat endpoints
-
-
 app.UseStaticFiles();
 
 app.UseRouting();
-//app.UseMvcWithDefaultRoute();
 SeedDatabase();
 app.UseAuthentication();
 app.UseAuthorization();
