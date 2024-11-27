@@ -157,6 +157,7 @@ else
                                             @if (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true)
                                             {
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeletePost(post))"></MudIconButton>
                                             }
                                         </MudStack>                                
                                         <SfRichTextEditor Height="100%" ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
@@ -494,6 +495,29 @@ else
         SendButtonText = "Edit Post";
 
     }
+    private async Task DeletePost(PostDTO post)
+    {
+     
+        bool? result = await DialogService.ShowMessageBox(
+            "Warning",
+            "Are you sure you want to delete this post?",
+            yesText: "Yes", cancelText: "No");
+        if (result is null || result == false)
+        {
+            return;
+        }
+        IsLoading = true;
+        StateHasChanged();
+        int idToDelete = post.Id;
+
+        Posts.Remove(post);
+        await _postRepository.Delete(idToDelete);
+        IsLoading = false;
+
+        StateHasChanged();
+    }
+
+    
     private void CancelEdit()
     {
         NewPost = new();
