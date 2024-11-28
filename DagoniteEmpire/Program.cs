@@ -20,6 +20,7 @@ using DA_Business.Services.Interfaces;
 using DA_Business.Services;
 using Cropper.Blazor.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using DagoniteEmpire;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,7 +29,8 @@ builder.Services.AddAuthentication();
 builder.Services.AddRazorPages();
 
 builder.Services.AddSignalR();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
 builder.Host.UseNLog();
@@ -109,18 +111,19 @@ else
 }
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
+app.UseAntiforgery();
+app.MapStaticAssets();
 
-app.UseStaticFiles();
 
-app.UseRouting();
 SeedDatabase();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<ChatHub>(ChatHub.HubUrl);
 app.MapControllers();
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
+
 app.MapHealthChecks("/healthz");
 
 app.Run();
