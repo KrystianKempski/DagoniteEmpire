@@ -319,21 +319,21 @@ else
         await AuthorizeEntry();
         // PageCount = await GetPageCount();
         // PageNum = PageCount;
-        // await LoadChapter();
+        await LoadChapter();
         handler = async () => await LoadForSelectedCharacter();
         _callbackService.OnChange += handler;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        UserInfo = await _userService.GetUserInfo();
         if(firstRender){
 
             await AuthorizeEntry();
             PageCount = await GetPageCount();
             PageNum = PageCount;
-            await LoadChapter();
+            //await LoadChapter();
         }
-        UserInfo = await _userService.GetUserInfo();
         if (_scrollDown == true)
         {           
             await Task.Delay(500);
