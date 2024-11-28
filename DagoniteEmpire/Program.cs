@@ -31,6 +31,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
 builder.Host.UseNLog();
@@ -107,17 +108,19 @@ if (!app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseDeveloperExceptionPage();
+   app.UseDeveloperExceptionPage();
+    //  app.UseMigrationsEndPoint();
+
 }
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
-app.UseAntiforgery();
-app.MapStaticAssets();
+app.UseStaticFiles();
 
 
 SeedDatabase();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 
 app.MapHub<ChatHub>(ChatHub.HubUrl);
 app.MapControllers();
@@ -125,6 +128,8 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapHealthChecks("/healthz");
+// Add additional endpoints required by the Identity /Account Razor components.
+app.MapAdditionalIdentityEndpoints();
 
 app.Run();
 
