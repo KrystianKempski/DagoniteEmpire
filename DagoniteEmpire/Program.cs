@@ -36,6 +36,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddCascadingAuthenticationState();
 
 //identity 
 builder.Services.AddScoped<IdentityUserAccessor>();
@@ -50,7 +51,6 @@ builder.Services.AddAuthentication(options =>
     .AddIdentityCookies();
 
 
-builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
 builder.Host.UseNLog();
@@ -63,7 +63,7 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
                             options => options.EnableRetryOnFailure());
     options.EnableDetailedErrors();
 });
-
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
@@ -127,7 +127,7 @@ builder.Services.Configure<EmailConfiguration>(options =>
 });
 
 var app = builder.Build();
-app.UseStatusCodePages();
+//app.UseStatusCodePages();
 
 Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NDaF5cWWtCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH9ceHVRRWdYVUd3WUI=");
 //Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(builder.Configuration["SyncfusionKey"]);
