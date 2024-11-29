@@ -109,7 +109,10 @@ builder.Services.AddScoped<IFileUpload, FileUpload>();
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddTransient<IChatManager, ChatManager>();
-builder.Services.AddTransient<IEmailSender, EmailSender>();
+//    builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddTransient<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+
 builder.Services.AddCropper();
 builder.Services.AddServerSideBlazor()
     .AddHubOptions(options =>

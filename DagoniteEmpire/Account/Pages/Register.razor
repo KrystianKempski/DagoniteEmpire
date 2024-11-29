@@ -69,7 +69,16 @@
     {
         var user = CreateUser();
 
-        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+        await UserStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
+        var resultuser = await UserManager.FindByEmailAsync(Input.Email);
+
+        if (resultuser != null && resultuser.UserName != null)
+        {
+            IdentityError identityError = new();
+            identityError.Description = "Email already exists";
+            identityErrors = new List<IdentityError>() { identityError };
+            return;
+        }
         var emailStore = GetEmailStore();
         await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
         var result = await UserManager.CreateAsync(user, Input.Password);
@@ -126,6 +135,15 @@
 
     private sealed class InputModel
     {
+        [Required]
+        [StringLength(15, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Display(Name = "User name")]
+        public string UserName { get; set; }
+
+        [Required]
+        [Display(Name = "User role")]
+        public string UserRole { get; set; }
+
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
