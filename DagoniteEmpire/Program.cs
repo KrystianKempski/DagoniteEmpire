@@ -5,6 +5,7 @@ using DA_Business.Repository.CharacterReps;
 using DA_Business.Repository.CharacterReps.IRepository;
 using DagoniteEmpire.Service.IService;
 using DagoniteEmpire.Service;
+using DagoniteEmpire.Account;
 using Syncfusion.Blazor;
 using MudBlazor.Services;
 using NLog.Web;
@@ -21,6 +22,10 @@ using DA_Business.Services;
 using Cropper.Blazor.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using DagoniteEmpire;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +36,20 @@ builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+//identity 
+builder.Services.AddScoped<IdentityUserAccessor>();
+builder.Services.AddScoped<IdentityRedirectManager>();
+builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+})
+    .AddIdentityCookies();
+
+
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
@@ -44,12 +63,21 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
                             options => options.EnableRetryOnFailure());
     options.EnableDetailedErrors();
 });
+
+builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddSignInManager()
+    .AddRoles<IdentityRole>()
+    .AddRoleManager<RoleManager<IdentityRole>>()
+    .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>()
+    .AddDefaultTokenProviders();
+
 builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(config =>
-    {
-        config.SignIn.RequireConfirmedAccount = true;
-    }).AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
+//builder.Services.AddIdentity<ApplicationUser, IdentityRole>(config =>
+//    {
+//        config.SignIn.RequireConfirmedAccount = true;
+//    }).AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
@@ -103,13 +131,14 @@ Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQx
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
+    //app.UseExceptionHandler("/Error");
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 else
 {
-   app.UseDeveloperExceptionPage();
-    //  app.UseMigrationsEndPoint();
+  // app.UseDeveloperExceptionPage();
+     app.UseMigrationsEndPoint();
 
 }
 app.UseMiddleware<ErrorHandlingMiddleware>();
@@ -117,10 +146,10 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 
-SeedDatabase();
-app.UseAuthentication();
-app.UseAuthorization();
+//app.UseAuthentication();
+//app.UseAuthorization();
 app.UseAntiforgery();
+SeedDatabase();
 
 app.MapHub<ChatHub>(ChatHub.HubUrl);
 app.MapControllers();
