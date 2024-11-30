@@ -84,12 +84,10 @@
     {
         if (panel == "Register")
             RedirectManager.RedirectTo("Account/Register");
-        //    _navigationManager.NavigateTo($"/Account/Register", true);
         else if (panel == "Login")
             RedirectManager.RedirectTo("Account/Login");
-            //_navigationManager.NavigateTo($"/Account/Login", true);
-        // else if (panel == "Logout")
-        //     _navigationManager.NavigateTo($"/Account/Logout", true);
+        else if (panel == "Logout")
+            _navigationManager.NavigateTo("Account/Login");
     }
 
     protected override async Task OnInitializedAsync()
