@@ -64,13 +64,15 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.EnableDetailedErrors();
 });
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)    
+    .AddSignInManager()    
+    .AddDefaultTokenProviders()
+    .AddDefaultUI()
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddSignInManager()
     .AddRoles<IdentityRole>()
     .AddRoleManager<RoleManager<IdentityRole>>()
-    .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>()
-    .AddDefaultTokenProviders();
+    .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>();
+
 
 builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
 
@@ -149,8 +151,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 
-//app.UseAuthentication();
-//app.UseAuthorization();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 SeedDatabase();
 
