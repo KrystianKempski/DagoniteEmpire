@@ -28,11 +28,11 @@
     <link href="_content/Cropper.Blazor/cropper.min.css" rel="stylesheet" />
 
     <ImportMap />
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <HeadOutlet @rendermode="RenderModeForPage" />
 </head>
 <body>
 
-    <Routes @rendermode="InteractiveServer" />
+    <Routes @rendermode="RenderModeForPage" />
 
     <div id="blazor-error-ui">
         @if (Env.IsDevelopment())
@@ -72,3 +72,12 @@
         document.location.reload();
     }
 </script> *@
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? RenderModeForPage => HttpContext.Request.Path.StartsWithSegments("/Account")
+        ? null
+        : InteractiveServer;
+}

@@ -137,7 +137,7 @@
         if (UserInfo?.IsAuthenticated == false)
         {
             var uri = new Uri(_navigationManager.Uri);
-            _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+            _navigationManager.NavigateTo($"/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
         if (Id > 0 && UserInfo is not null && UserInfo.IsAdminOrMG == false)
         {

@@ -1,8 +1,10 @@
-﻿ @inject NavigationManager _navigationManager;
+﻿
+ @inject NavigationManager _navigationManager;
  @inject IUserService _userService
  @inject ICharacterRepository _characterRepository
  @inject ISnackbar _snackbar
  @inject CallbackService callbackService
+ @inject IdentityRedirectManager RedirectManager
 
 <AuthorizeView>
     <Authorized>
@@ -81,11 +83,13 @@
     void GoTo(string panel)
     {
         if (panel == "Register")
-            _navigationManager.NavigateTo($"/Identity/Account/Register", true);
+            RedirectManager.RedirectTo("Account/Register");
+        //    _navigationManager.NavigateTo($"/Account/Register", true);
         else if (panel == "Login")
-            _navigationManager.NavigateTo($"/Identity/Account/Login", true);
-        else if (panel == "Logout")
-            _navigationManager.NavigateTo($"/Identity/Account/Logout", true);
+            RedirectManager.RedirectTo("Account/Login");
+            //_navigationManager.NavigateTo($"/Account/Login", true);
+        // else if (panel == "Logout")
+        //     _navigationManager.NavigateTo($"/Account/Logout", true);
     }
 
     protected override async Task OnInitializedAsync()
