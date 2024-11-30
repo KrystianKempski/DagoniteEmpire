@@ -64,14 +64,15 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.EnableDetailedErrors();
 });
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)    
-    .AddSignInManager()    
-    .AddDefaultTokenProviders()
-    .AddDefaultUI()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
+builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddSignInManager()
+    //.AddDefaultUI()
     .AddRoles<IdentityRole>()
     .AddRoleManager<RoleManager<IdentityRole>>()
-    .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>();
+    .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>()
+    .AddDefaultTokenProviders()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
 
 
 builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
