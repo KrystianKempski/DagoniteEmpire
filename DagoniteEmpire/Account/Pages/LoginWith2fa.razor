@@ -10,7 +10,7 @@
 @inject ILogger<LoginWith2fa> Logger
 
 <PageTitle>Two-factor authentication</PageTitle>
-
+<div class="container">
 <h1>Two-factor authentication</h1>
 <hr />
 <StatusMessage Message="@message" />
@@ -43,7 +43,7 @@
     Don't have access to your authenticator device? You can
     <a href="Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl">log in with a recovery code</a>.
 </p>
-
+</div>
 @code {
     private string? message;
     private ApplicationUser user = default!;
