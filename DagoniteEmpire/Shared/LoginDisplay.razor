@@ -1,8 +1,10 @@
-﻿ @inject NavigationManager _navigationManager;
+﻿
+ @inject NavigationManager _navigationManager;
  @inject IUserService _userService
  @inject ICharacterRepository _characterRepository
  @inject ISnackbar _snackbar
  @inject CallbackService callbackService
+ @inject IdentityRedirectManager RedirectManager
 
 <AuthorizeView>
     <Authorized>
@@ -60,8 +62,8 @@
     </Authorized>
     <NotAuthorized>
         <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" Href="Identity/Account/Register">Register</MudButton>
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Secondary" Href="Identity/Account/Login">Log in</MudButton>
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" Href="Account/Register">Register</MudButton>
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Secondary" Href="Account/Login">Log in</MudButton>
         </div>
         <div class="small-screen">
             <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle">
@@ -81,11 +83,11 @@
     void GoTo(string panel)
     {
         if (panel == "Register")
-            _navigationManager.NavigateTo($"/Identity/Account/Register", true);
+            RedirectManager.RedirectTo("Account/Register");
         else if (panel == "Login")
-            _navigationManager.NavigateTo($"/Identity/Account/Login", true);
+            RedirectManager.RedirectTo("Account/Login");
         else if (panel == "Logout")
-            _navigationManager.NavigateTo($"/Identity/Account/Logout", true);
+            _navigationManager.NavigateTo("Account/Logout");
     }
 
     protected override async Task OnInitializedAsync()
