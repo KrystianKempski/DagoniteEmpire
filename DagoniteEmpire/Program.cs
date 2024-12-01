@@ -149,7 +149,7 @@ else
 }
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.MapStaticAssets();
 
 
 //app.UseAuthentication();
