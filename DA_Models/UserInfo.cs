@@ -11,11 +11,13 @@ namespace DA_DataAccess
     {
         public UserInfo() { }
         public CharacterDTO? SelectedCharacter { get; set; } = null;
+        public int SelectedCharacterId { get; set; } = 0;
         public string? UserName { get; set; }
         public string? UserId { get; set; }
         public bool? IsAdminOrMG { get; set; }
         public bool? CharacterMG { get; set; }
         public bool? IsAuthenticated { get; set; }
         public string? Role { get; set; }
+        public bool IsInited { get; set; } = false;
     }
 }
