@@ -18,6 +18,10 @@
 
 <MudLayout>
     <MudAppBar Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; width:100vw; height:64px; px-2")" Elevation="1">
+        <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerStartToggle())" />
+            @*  <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; font-family: 'Eagle Lake', serif; font-size: 14px;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton> *@
+        </MudHidden>
         <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; font-family: 'Eagle Lake', serif; font-size: 16px;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton>
         <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
             <div class="justify-center mud-text-align-center">
@@ -28,10 +32,7 @@
                 </AuthorizeView>
             </div> 
         </MudHidden>
-        <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
-                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerStartToggle())" />
-           @*  <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; font-family: 'Eagle Lake', serif; font-size: 14px;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton> *@
-        </MudHidden>
+       
         <MudSpacer />
         <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
             <MudIconButton Class="m-0 p-0" Icon="@Icons.Material.Filled.Chat" Color="Color.Inherit" OnClick="@ChatToggle" />

@@ -173,7 +173,7 @@ namespace DA_Business.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"error: {ex.Message}");
+                //throw new Exception($"error: {ex.Message}");
             }
         }
 
