@@ -33,11 +33,14 @@
                 <label for="username">User Name</label>
                 <ValidationMessage For="() => Input.UserName" class="text-danger" />
             </div>
-                <div class="form-floating mb-3">
-                    <Selec @bind-Value="Input.UserName" class="form-control" autocomplete="username" aria-required="true" placeholder="User name" />
-                    <label for="username">User Name</label>
-                    <ValidationMessage For="() => Input.UserName" class="text-danger" />
-                </div>
+            <div class="form-floating mb-3">
+                <InputSelect @bind-Value="Input.UserRole" class="form-select">
+                    <option selected value="@SD.NPCType.Hero">@SD.NPCType.Hero</option>
+                    <option value="@SD.NPCType.Duke">@SD.NPCType.Duke</option>                                    
+                </InputSelect>
+                <label for="userrole">User Role</label>
+                <ValidationMessage For="() => Input.UserRole" class="text-danger" />
+            </div>
             <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                 <label for="email">Email</label>
