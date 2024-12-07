@@ -64,6 +64,8 @@ namespace DA_Business.Services
             if (user is null)
                 throw new Exception("too fast authentication");
 
+            if (user.Identity?.IsAuthenticated == false)
+                return;
             _userInfo.IsAuthenticated = user.Identity?.IsAuthenticated;
             await _protectedLocalStorage.SetAsync("IsAuthenticated", _userInfo.IsAuthenticated);
             _userInfo.UserId = user.Claims.Where(a => a.Type == ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
@@ -114,6 +116,7 @@ namespace DA_Business.Services
             }
             await _protectedLocalStorage.SetAsync("CharacterMG", _userInfo.CharacterMG);
             _userInfo.IsInited = true;
+            await _protectedLocalStorage.SetAsync("IsInited", _userInfo.IsInited);
         }
 
         public async Task<UserInfo?> GetUserInfo()
@@ -123,6 +126,8 @@ namespace DA_Business.Services
 
                 if (_userInfo == null) return null;
 
+                var resultIsInited = await _protectedLocalStorage.GetAsync<bool>("IsInited");
+                _userInfo.IsInited = resultIsInited.Success ? resultIsInited.Value : false;
                 if (_userInfo.IsInited == false)
                     await InitUserInfo();
 
