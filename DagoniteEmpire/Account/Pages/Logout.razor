@@ -9,6 +9,7 @@
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject IUserService _userService
 
 
 @code {
@@ -23,10 +24,11 @@
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
             // Clear the existing external cookie to ensure a clean login process
-           
+
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
             await SignInManager.SignOutAsync();
+            _userService.LogOut();
             RedirectManager.RedirectTo("");
             
         }

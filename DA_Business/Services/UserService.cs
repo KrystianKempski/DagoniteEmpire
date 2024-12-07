@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.Metrics;
 using System.Security.Claims;
+using Abp.Extensions;
 using AutoMapper;
 using DA_Business.Services.Interfaces;
 using DA_Common;
@@ -48,13 +49,12 @@ namespace DA_Business.Services
 
             return user.Identity?.IsAuthenticated == true;
         }
-        //public async Task SelectCharacter()
-        //{
 
-
-
-        //    await _protectedLocalStorage.SetAsync("localdata", data);
-        //}
+        public async Task LogOut()
+        {
+            //await _protectedLocalStorage.SetAsync("IsInited", false);
+            _userInfo.IsInited = false;
+        }
 
         public async Task InitUserInfo()
         {
@@ -116,7 +116,7 @@ namespace DA_Business.Services
             }
             await _protectedLocalStorage.SetAsync("CharacterMG", _userInfo.CharacterMG);
             _userInfo.IsInited = true;
-            await _protectedLocalStorage.SetAsync("IsInited", _userInfo.IsInited);
+           // await _protectedLocalStorage.SetAsync("IsInited", _userInfo.IsInited);
         }
 
         public async Task<UserInfo?> GetUserInfo()
@@ -126,8 +126,8 @@ namespace DA_Business.Services
 
                 if (_userInfo == null) return null;
 
-                var resultIsInited = await _protectedLocalStorage.GetAsync<bool>("IsInited");
-                _userInfo.IsInited = resultIsInited.Success ? resultIsInited.Value : false;
+                //var resultIsInited = await _protectedLocalStorage.GetAsync<bool>("IsInited");
+                //_userInfo.IsInited = resultIsInited.Success ? resultIsInited.Value : false;
                 if (_userInfo.IsInited == false)
                     await InitUserInfo();
 
@@ -174,6 +174,8 @@ namespace DA_Business.Services
             catch (Exception ex)
             {
                 //throw new Exception($"error: {ex.Message}");
+                ;
+                return null;
             }
         }
 
@@ -204,6 +206,8 @@ namespace DA_Business.Services
                         _userInfo.SelectedCharacterId = _userInfo.SelectedCharacter.Id;
                         await _protectedLocalStorage.SetAsync("SelectedCharacterId", _userInfo.SelectedCharacterId);
                         await _protectedLocalStorage.SetAsync("CharacterMG", _userInfo.CharacterMG == true);
+                        _userInfo.IsInited = false;
+                        //await _protectedLocalStorage.SetAsync("IsInited", false);
                     }
                 }
             }
