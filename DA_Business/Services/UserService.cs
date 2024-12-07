@@ -52,7 +52,6 @@ namespace DA_Business.Services
 
         public async Task LogOut()
         {
-            //await _protectedLocalStorage.SetAsync("IsInited", false);
             _userInfo.IsInited = false;
         }
 
@@ -116,18 +115,13 @@ namespace DA_Business.Services
             }
             await _protectedLocalStorage.SetAsync("CharacterMG", _userInfo.CharacterMG);
             _userInfo.IsInited = true;
-           // await _protectedLocalStorage.SetAsync("IsInited", _userInfo.IsInited);
         }
 
         public async Task<UserInfo?> GetUserInfo()
         {
             try
             {
-
                 if (_userInfo == null) return null;
-
-                //var resultIsInited = await _protectedLocalStorage.GetAsync<bool>("IsInited");
-                //_userInfo.IsInited = resultIsInited.Success ? resultIsInited.Value : false;
                 if (_userInfo.IsInited == false)
                     await InitUserInfo();
 
