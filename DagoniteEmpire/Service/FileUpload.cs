@@ -38,6 +38,7 @@ namespace DagoniteEmpire.Service
 
                 var fileName = Guid.NewGuid().ToString() + ".webp";
                 var folderDirectory = $"{_environment.WebRootPath}/upload/{root}";
+                folderDirectory = folderDirectory.Replace(@"\", @"/");
 
                 if (!Directory.Exists(folderDirectory))
                 {
@@ -59,7 +60,7 @@ namespace DagoniteEmpire.Service
                     }
                 }
 
-                var fullPath = $"../upload/portraits/{fileName}";
+                var fullPath = $"/upload/portraits/{fileName}";
                 return fullPath;
             }
             catch (Exception ex)
@@ -77,7 +78,7 @@ namespace DagoniteEmpire.Service
                 FileInfo fileInfo = new(file.Name);
                 var fileName = Guid.NewGuid().ToString() + ".webp";
                 var folderDirectory = $"{_environment.WebRootPath}/upload/{root}";
-
+                folderDirectory = folderDirectory.Replace(@"\\", @"/");
                 if (!Directory.Exists(folderDirectory))
                 {
                     Directory.CreateDirectory(folderDirectory);
@@ -110,7 +111,7 @@ namespace DagoniteEmpire.Service
                     }
                 }
 
-                var fullPath = $"../upload/portraits/{fileName}";
+                var fullPath = $"/upload/portraits/{fileName}";
                 return fullPath;
             }
             catch (Exception ex)
