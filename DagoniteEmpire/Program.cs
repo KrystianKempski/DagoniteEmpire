@@ -26,155 +26,165 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 
-
-
-var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddAuthentication();
-
-builder.Services.AddRazorPages();
-
-builder.Services.AddSignalR();
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-builder.Services.AddCascadingAuthenticationState();
-
-//identity 
-builder.Services.AddScoped<IdentityUserAccessor>();
-builder.Services.AddScoped<IdentityRedirectManager>();
-builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
-
-builder.Services.AddAuthentication(options =>
+public class Program
 {
-    options.DefaultScheme = IdentityConstants.ApplicationScheme;
-    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-})
-    .AddIdentityCookies();
-
-
-builder.Services.AddSyncfusionBlazor();
-builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
-builder.Host.UseNLog();
-
-
-/// DB context 
-builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
-{
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
-                            options => options.EnableRetryOnFailure());
-    options.EnableDetailedErrors();
-});
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddSignInManager()
-    //.AddDefaultUI()
-    .AddRoles<IdentityRole>()
-    .AddRoleManager<RoleManager<IdentityRole>>()
-    .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>()
-    .AddDefaultTokenProviders()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
-
-
-
-builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
-
-//builder.Services.AddIdentity<ApplicationUser, IdentityRole>(config =>
-//    {
-//        config.SignIn.RequireConfirmedAccount = true;
-//    }).AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
-
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
-builder.Services.AddScoped<IMobRepository, MobRepository>();
-builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();
-builder.Services.AddScoped<ISpecialSkillRepository, SpecialSkillRepository>();
-builder.Services.AddScoped<IBaseSkillRepository, BaseSkillRepository>();
-builder.Services.AddScoped<ITraitRepository<TraitCharacterDTO>, TraitCharacterRepository>();
-builder.Services.AddScoped<ITraitRepository<TraitRaceDTO>, TraitRaceRepository>();
-builder.Services.AddScoped<ITraitRepository<TraitEquipmentDTO>, TraitEquipmentRepository>();
-builder.Services.AddScoped<ITraitRepository<TraitProfessionDTO>, TraitProfessionRepository>();
-builder.Services.AddScoped<IBonusRepository, BonusRepository>();
-builder.Services.AddScoped<IRaceRepository, RaceRepository>();
-builder.Services.AddScoped<IWoundRepository, WoundRepository>();
-builder.Services.AddScoped<IProfessionRepository, ProfessionRepository>();
-builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();
-builder.Services.AddScoped<IEquipmentSlotRepository, EquipmentSlotRepository>();
-builder.Services.AddScoped<IWealthRecordRepository, WealthRecordRepository>();
-builder.Services.AddScoped<ISpellCircleRepository, SpellCircleRepository>();
-builder.Services.AddScoped<ISpellSlotRepository, SpellSlotRepository>();
-builder.Services.AddScoped<ISpellRepository, SpellRepository>();
-builder.Services.AddScoped<IPostRepository, PostRepository>();
-builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
-builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
-builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<CallbackService>();
-builder.Services.AddScoped<IFileUpload, FileUpload>();
-builder.Services.AddScoped<IDbInitializer, DbInitializer>();
-builder.Services.AddScoped<ErrorHandlingMiddleware>();
-builder.Services.AddTransient<IChatManager, ChatManager>();
-//    builder.Services.AddTransient<IEmailSender, EmailSender>();
-builder.Services.AddTransient<IEmailSender, EmailSender>();
-
-
-builder.Services.AddCropper();
-builder.Services.AddServerSideBlazor()
-    .AddHubOptions(options =>
+    public static void Main(string[] args)
     {
-        options.MaximumReceiveMessageSize = 320 * 1024 * 100;
-    });
 
-builder.Services.AddControllersWithViews();
-builder.Services.Configure<EmailConfiguration>(options =>
-{
-    builder.Configuration.GetSection("Email").Bind(options);
-});
+        var builder = WebApplication.CreateBuilder(args);
+        builder.Services.AddAuthentication();
 
-var app = builder.Build();
-//app.UseStatusCodePages();
+        builder.Services.AddRazorPages();
 
-Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NDaF5cWWtCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH9ceHVRRWdYVUd3WUI=");
-//Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(builder.Configuration["SyncfusionKey"]);
+        builder.Services.AddSignalR();
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
+        builder.Services.AddCascadingAuthenticationState();
 
-if (!app.Environment.IsDevelopment())
-{
-    //app.UseExceptionHandler("/Error");
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts();
-}
-else
-{
-  // app.UseDeveloperExceptionPage();
-     app.UseMigrationsEndPoint();
+        //identity 
+        builder.Services.AddScoped<IdentityUserAccessor>();
+        builder.Services.AddScoped<IdentityRedirectManager>();
+        builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-}
-app.UseMiddleware<ErrorHandlingMiddleware>();
-app.UseHttpsRedirection();
-app.MapStaticAssets();
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = IdentityConstants.ApplicationScheme;
+            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+        })
+            .AddIdentityCookies();
 
 
-//app.UseAuthentication();
-//app.UseAuthorization();
-app.UseAntiforgery();
-SeedDatabase();
+        builder.Services.AddSyncfusionBlazor();
+        builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
+        builder.Host.UseNLog();
 
-app.MapHub<ChatHub>(ChatHub.HubUrl);
-app.MapControllers();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
 
-app.MapHealthChecks("/healthz");
-// Add additional endpoints required by the Identity /Account Razor components.
-app.MapAdditionalIdentityEndpoints();
-
-app.Run();
+        /// DB context 
+        builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+        {
+            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+                                    options => options.EnableRetryOnFailure());
+            options.EnableDetailedErrors();
+        });
+        builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+        builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            .AddSignInManager()
+            //.AddDefaultUI()
+            .AddRoles<IdentityRole>()
+            .AddRoleManager<RoleManager<IdentityRole>>()
+            .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>()
+            .AddDefaultTokenProviders()
+            .AddEntityFrameworkStores<ApplicationDbContext>();
 
 
 
-void SeedDatabase()
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-        dbInitializer.Initialize();
+        builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
+
+        //builder.Services.AddIdentity<ApplicationUser, IdentityRole>(config =>
+        //    {
+        //        config.SignIn.RequireConfirmedAccount = true;
+        //    }).AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
+
+        builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+        builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
+        builder.Services.AddScoped<IMobRepository, MobRepository>();
+        builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();
+        builder.Services.AddScoped<ISpecialSkillRepository, SpecialSkillRepository>();
+        builder.Services.AddScoped<IBaseSkillRepository, BaseSkillRepository>();
+        builder.Services.AddScoped<ITraitRepository<TraitCharacterDTO>, TraitCharacterRepository>();
+        builder.Services.AddScoped<ITraitRepository<TraitRaceDTO>, TraitRaceRepository>();
+        builder.Services.AddScoped<ITraitRepository<TraitEquipmentDTO>, TraitEquipmentRepository>();
+        builder.Services.AddScoped<ITraitRepository<TraitProfessionDTO>, TraitProfessionRepository>();
+        builder.Services.AddScoped<IBonusRepository, BonusRepository>();
+        builder.Services.AddScoped<IRaceRepository, RaceRepository>();
+        builder.Services.AddScoped<IWoundRepository, WoundRepository>();
+        builder.Services.AddScoped<IProfessionRepository, ProfessionRepository>();
+        builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();
+        builder.Services.AddScoped<IEquipmentSlotRepository, EquipmentSlotRepository>();
+        builder.Services.AddScoped<IWealthRecordRepository, WealthRecordRepository>();
+        builder.Services.AddScoped<ISpellCircleRepository, SpellCircleRepository>();
+        builder.Services.AddScoped<ISpellSlotRepository, SpellSlotRepository>();
+        builder.Services.AddScoped<ISpellRepository, SpellRepository>();
+        builder.Services.AddScoped<IPostRepository, PostRepository>();
+        builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
+        builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
+        builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
+        builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<CallbackService>();
+        builder.Services.AddScoped<IFileUpload, FileUpload>();
+        builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+        builder.Services.AddScoped<ErrorHandlingMiddleware>();
+        builder.Services.AddTransient<IChatManager, ChatManager>();
+        //    builder.Services.AddTransient<IEmailSender, EmailSender>();
+        builder.Services.AddTransient<IEmailSender, EmailSender>();
+
+
+        builder.Services.AddCropper();
+        builder.Services.AddServerSideBlazor()
+            .AddHubOptions(options =>
+            {
+                options.MaximumReceiveMessageSize = 320 * 1024 * 100;
+            });
+
+        builder.Services.AddControllersWithViews();
+        builder.Services.Configure<EmailConfiguration>(options =>
+        {
+            builder.Configuration.GetSection("Email").Bind(options);
+        });
+
+        var app = builder.Build();
+        //app.UseStatusCodePages();
+
+        Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NDaF5cWWtCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH9ceHVRRWdYVUd3WUI=");
+        //Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(builder.Configuration["SyncfusionKey"]);
+
+        if (!app.Environment.IsDevelopment())
+        {
+            //app.UseExceptionHandler("/Error");
+            app.UseExceptionHandler("/Error", createScopeForErrors: true);
+            app.UseHsts();
+        }
+        else
+        {
+            // app.UseDeveloperExceptionPage();
+            app.UseMigrationsEndPoint();
+
+        }
+        app.UseMiddleware<ErrorHandlingMiddleware>();
+        app.UseHttpsRedirection();
+        app.MapStaticAssets();
+
+
+        app.UseAntiforgery();
+        //seed database
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
+            dbInitializer.Initialize();
+        }
+        //SeedDatabase();
+
+        app.MapHub<ChatHub>(ChatHub.HubUrl);
+        app.MapControllers()
+            .WithStaticAssets();
+        app.MapRazorComponents<App>()
+            .AddInteractiveServerRenderMode()
+            .WithStaticAssets();
+
+        app.MapHealthChecks("/healthz");
+        // Add additional endpoints required by the Identity /Account Razor components.
+        app.MapAdditionalIdentityEndpoints();
+
+        app.Run();
+
     }
+    //void SeedDatabase()
+    //{
+    //    using (var scope = app.Services.CreateScope())
+    //    {
+    //        var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
+    //        dbInitializer.Initialize();
+    //    }
+    //}
 }
+
