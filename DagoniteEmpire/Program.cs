@@ -151,7 +151,8 @@ public class Program
         }
         app.UseMiddleware<ErrorHandlingMiddleware>();
         app.UseHttpsRedirection();
-        app.MapStaticAssets();
+        app.UseStaticFiles();
+        //app.MapStaticAssets();
 
 
         app.UseAntiforgery();
