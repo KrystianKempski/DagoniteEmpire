@@ -140,13 +140,11 @@ public class Program
 
         if (!app.Environment.IsDevelopment())
         {
-            //app.UseExceptionHandler("/Error");
             app.UseExceptionHandler("/Error", createScopeForErrors: true);
             app.UseHsts();
         }
         else
         {
-            // app.UseDeveloperExceptionPage();
             app.UseMigrationsEndPoint();
 
         }
@@ -162,7 +160,6 @@ public class Program
             var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
             dbInitializer.Initialize();
         }
-        //SeedDatabase();
 
         app.MapHub<ChatHub>(ChatHub.HubUrl);
         app.MapControllers()
@@ -178,13 +175,5 @@ public class Program
         app.Run();
 
     }
-    //void SeedDatabase()
-    //{
-    //    using (var scope = app.Services.CreateScope())
-    //    {
-    //        var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-    //        dbInitializer.Initialize();
-    //    }
-    //}
 }
 
