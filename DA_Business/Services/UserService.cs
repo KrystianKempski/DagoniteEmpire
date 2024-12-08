@@ -26,17 +26,17 @@ namespace DA_Business.Services
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
         private readonly IJSRuntime _jsRuntime;
-        private readonly ProtectedLocalStorage _protectedLocalStorage;
+        private readonly ProtectedSessionStorage _protectedSessionStorage;
 
 
-        public UserService(AuthenticationStateProvider authState, IOptions<UserInfo> userInfo, IDbContextFactory<ApplicationDbContext> db, IMapper mapper, IJSRuntime jsRuntime, ProtectedLocalStorage protectedLocalStorage)
+        public UserService(AuthenticationStateProvider authState, IOptions<UserInfo> userInfo, IDbContextFactory<ApplicationDbContext> db, IMapper mapper, IJSRuntime jsRuntime, ProtectedSessionStorage protectedSessionStorage)
         {
             _authState = authState;
             _userInfo = userInfo.Value;
             _db = db;
             _mapper = mapper;
             _jsRuntime = jsRuntime;
-            _protectedLocalStorage = protectedLocalStorage;
+            _protectedSessionStorage = protectedSessionStorage;
         }
 
         public async Task<bool> IsAuthenticated()
@@ -52,117 +52,119 @@ namespace DA_Business.Services
 
         public async Task LogOut()
         {
-            _userInfo.IsInited = false;
+            try
+            {
+
+            foreach(string key in ProtectedStorageKeys.All)
+            {
+                await _protectedSessionStorage.DeleteAsync(key);
+            }
+            }
+            catch(Exception ex)
+            {
+                ;
+            }
         }
 
         public async Task InitUserInfo()
         {
-            if (_userInfo is null) throw new Exception("too fast authentication");
-
             var user = (await _authState.GetAuthenticationStateAsync()).User;
             if (user is null)
                 throw new Exception("too fast authentication");
 
-            if (user.Identity?.IsAuthenticated == false)
+            if (user.Identity?.IsAuthenticated != true)
                 return;
-            _userInfo.IsAuthenticated = user.Identity?.IsAuthenticated;
-            await _protectedLocalStorage.SetAsync("IsAuthenticated", _userInfo.IsAuthenticated);
-            _userInfo.UserId = user.Claims.Where(a => a.Type == ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
-            await _protectedLocalStorage.SetAsync("UserId", _userInfo.UserId);
-            _userInfo.IsAdminOrMG = user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
-            await _protectedLocalStorage.SetAsync("IsAdminOrMG", _userInfo.IsAdminOrMG);
-            _userInfo.UserName = user.Identity?.Name;
-            await _protectedLocalStorage.SetAsync("UserName", _userInfo.UserName);
+
+            await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.IsAuthenticated, true);
+            await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.UserId, user.Claims.Where(a => a.Type == ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault());
+            await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.IsAdminOrMG, user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster));
+            await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.UserName, user.Identity?.Name);
+            string role = string.Empty;
             if (user.IsInRole(SD.Role_HeroPlayer))
             {
-                _userInfo.Role = SD.Role_HeroPlayer;
+                role = SD.Role_HeroPlayer;
             }
             else if (user.IsInRole(SD.Role_DukePlayer))
             {
-                _userInfo.Role = SD.Role_DukePlayer;
+                role = SD.Role_DukePlayer;
             }
             else if (user.IsInRole(SD.Role_Admin))
             {
-                _userInfo.Role = SD.Role_Admin;
+                role = SD.Role_Admin;
             }
             else if (user.IsInRole(SD.Role_GameMaster))
             {
-                _userInfo.Role = SD.Role_GameMaster;
+                role = SD.Role_GameMaster;
             }
-            await _protectedLocalStorage.SetAsync("Role", _userInfo.Role);
-            if (user.Identity?.IsAuthenticated is null)
-                throw new Exception("Not authenticated");
-
-            using var contex = await _db.CreateDbContextAsync();
-
-            Character? obj = null;
-            if (_userInfo.IsAdminOrMG == true)
-            {
-                obj = await contex.Characters.FirstOrDefaultAsync(u => u.NPCName == SD.GameMaster_NPCName);
-              
-                _userInfo.CharacterMG = true;
-            }
-            else
-            {
-                obj = await contex.Characters.FirstOrDefaultAsync(u => u.UserName == _userInfo.UserName);
-                _userInfo.CharacterMG = false;
-            }
-            if (obj is not null)
-            {
-                _userInfo.SelectedCharacter = _mapper.Map<Character, CharacterDTO>(obj);
-                _userInfo.SelectedCharacterId = _userInfo.SelectedCharacter.Id;
-                await _protectedLocalStorage.SetAsync("SelectedCharacterId", _userInfo.SelectedCharacterId);
-            }
-            await _protectedLocalStorage.SetAsync("CharacterMG", _userInfo.CharacterMG);
-            _userInfo.IsInited = true;
+            await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.Role, role);
+            await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.IsInited, true);
+            //_userInfo.IsInited = true;
         }
 
         public async Task<UserInfo?> GetUserInfo()
         {
             try
             {
-                if (_userInfo == null) return null;
-                if (_userInfo.IsInited == false)
+                UserInfo userInfo = new UserInfo();
+
+                if (userInfo == null) return null;
+
+                var resultIsInited = await _protectedSessionStorage.GetAsync<bool>(ProtectedStorageKeys.IsInited);
+                bool isInited = resultIsInited.Success ? resultIsInited.Value : false;
+                if (isInited == false)
                     await InitUserInfo();
 
-                var resultIsAuthenticated = await _protectedLocalStorage.GetAsync<bool?>("IsAuthenticated");
-                _userInfo.IsAuthenticated = resultIsAuthenticated.Success ? resultIsAuthenticated.Value : null;
+                var resultIsAuthenticated = await _protectedSessionStorage.GetAsync<bool?>(ProtectedStorageKeys.IsAuthenticated);
+                userInfo.IsAuthenticated = resultIsAuthenticated.Success ? resultIsAuthenticated.Value : null;
+                if (userInfo.IsAuthenticated == false)
+                    return null;
 
-                var resultUserId = await _protectedLocalStorage.GetAsync<string?>("UserId");
-                _userInfo.UserId = resultUserId.Success ? resultUserId.Value : null;
 
-                var resultIsAdminOrMG = await _protectedLocalStorage.GetAsync<bool?>("IsAdminOrMG");
-                _userInfo.IsAdminOrMG = resultIsAdminOrMG.Success ? resultIsAdminOrMG.Value : null;
 
-                var resultUserName = await _protectedLocalStorage.GetAsync<string?>("UserName");
-                _userInfo.UserName = resultUserName.Success ? resultUserName.Value : null;
+                var resultUserId = await _protectedSessionStorage.GetAsync<string?>(ProtectedStorageKeys.UserId);
+                userInfo.UserId = resultUserId.Success ? resultUserId.Value : null;
 
-                var resultRole = await _protectedLocalStorage.GetAsync<string?>("Role");
-                _userInfo.Role = resultRole.Success ? resultRole.Value : null;
+                var resultIsAdminOrMG = await _protectedSessionStorage.GetAsync<bool?>(ProtectedStorageKeys.IsAdminOrMG);
+                userInfo.IsAdminOrMG = resultIsAdminOrMG.Success ? resultIsAdminOrMG.Value : null;
 
-                var resultSelectedCharacterId = await _protectedLocalStorage.GetAsync<int>("SelectedCharacterId");
-                _userInfo.SelectedCharacterId = resultSelectedCharacterId.Success ? resultSelectedCharacterId.Value : 0;
-                if(_userInfo.SelectedCharacterId == 0)
+                var resultUserName = await _protectedSessionStorage.GetAsync<string?>(ProtectedStorageKeys.UserName);
+                userInfo.UserName = resultUserName.Success ? resultUserName.Value : null;
+
+                var resultRole = await _protectedSessionStorage.GetAsync<string?>(ProtectedStorageKeys.Role);
+                userInfo.Role = resultRole.Success ? resultRole.Value : null;
+
+                var resultSelectedCharacterId = await _protectedSessionStorage.GetAsync<int>(ProtectedStorageKeys.SelectedCharacterId);
+                userInfo.SelectedCharacterId = resultSelectedCharacterId.Success ? resultSelectedCharacterId.Value : 0;
+                if(userInfo.SelectedCharacterId == 0)
                 {
-                    _userInfo.SelectedCharacter = null;
+                    userInfo.SelectedCharacter = null;
                 }
+                
                 else
                 {
-                    if (_userInfo.SelectedCharacter is null || _userInfo.SelectedCharacter.Id != _userInfo.SelectedCharacterId)
+                    if (userInfo.SelectedCharacter is null || userInfo.SelectedCharacter.Id != userInfo.SelectedCharacterId)
                     {
                         using var contex = await _db.CreateDbContextAsync();
-                        var obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == _userInfo.SelectedCharacterId);
+                        Character? obj = null;
+                        if(userInfo.SelectedCharacterId == -1)
+                        { 
+                            obj = await contex.Characters.FirstOrDefaultAsync(u => u.NPCName == SD.GameMaster_NPCName);
+                        }
+                        else
+                        {
+                            obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == userInfo.SelectedCharacterId);
+                        }
                         if (obj == null)
                         {
                             throw new Exception($"Error! No character found");
                         }
-                        _userInfo.SelectedCharacter = _mapper.Map<Character, CharacterDTO>(obj);
+                        userInfo.SelectedCharacter = _mapper.Map<Character, CharacterDTO>(obj);
                     }
                 }
-                var resultCharacterMG = await _protectedLocalStorage.GetAsync<bool?>("CharacterMG");
-                _userInfo.CharacterMG = resultCharacterMG.Success ? resultCharacterMG.Value : null;
+                var resultCharacterMG = await _protectedSessionStorage.GetAsync<bool?>(ProtectedStorageKeys.CharacterMG);
+                userInfo.CharacterMG = resultCharacterMG.Success ? resultCharacterMG.Value : null;
 
-                return _userInfo;
+                return userInfo;
                 
             }
             catch (Exception ex)
@@ -178,31 +180,19 @@ namespace DA_Business.Services
         {
             try
             {
-                if (_userInfo is not null && charId != _userInfo.SelectedCharacterId)
+                var resultSelectedCharacterId = await _protectedSessionStorage.GetAsync<int>(ProtectedStorageKeys.SelectedCharacterId);
+                int currentCharacterId = resultSelectedCharacterId.Success ? resultSelectedCharacterId.Value : 0;
+                if (charId != currentCharacterId)
                 {
-                    using var contex = await _db.CreateDbContextAsync();
-
-                    Character? obj = null;
+                    bool characterMG = false;
                     if (charId == -1)
                     {
+                        characterMG = true;
+                    }
 
-                        obj = await contex.Characters.FirstOrDefaultAsync(u => u.NPCName == SD.GameMaster_NPCName);
-                        _userInfo.CharacterMG = true;
-                    }
-                    else
-                    {
-                        obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == charId);
-                        _userInfo.CharacterMG = false;
-                    }
-                    if (obj is not null)
-                    {
-                        _userInfo.SelectedCharacter = _mapper.Map<Character, CharacterDTO>(obj);
-                        _userInfo.SelectedCharacterId = _userInfo.SelectedCharacter.Id;
-                        await _protectedLocalStorage.SetAsync("SelectedCharacterId", _userInfo.SelectedCharacterId);
-                        await _protectedLocalStorage.SetAsync("CharacterMG", _userInfo.CharacterMG == true);
-                        _userInfo.IsInited = false;
-                        //await _protectedLocalStorage.SetAsync("IsInited", false);
-                    }
+                    await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.SelectedCharacterId, charId);
+                    await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.CharacterMG, characterMG);
+                    await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.IsInited, false);
                 }
             }
             catch (Exception ex)

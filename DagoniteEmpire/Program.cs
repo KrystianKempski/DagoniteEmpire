@@ -69,7 +69,6 @@ public class Program
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
         builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
             .AddSignInManager()
-            //.AddDefaultUI()
             .AddRoles<IdentityRole>()
             .AddRoleManager<RoleManager<IdentityRole>>()
             .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>()
@@ -79,11 +78,6 @@ public class Program
 
 
         builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
-
-        //builder.Services.AddIdentity<ApplicationUser, IdentityRole>(config =>
-        //    {
-        //        config.SignIn.RequireConfirmedAccount = true;
-        //    }).AddDefaultTokenProviders().AddDefaultUI().AddEntityFrameworkStores<ApplicationDbContext>();
 
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
@@ -115,7 +109,6 @@ public class Program
         builder.Services.AddScoped<IDbInitializer, DbInitializer>();
         builder.Services.AddScoped<ErrorHandlingMiddleware>();
         builder.Services.AddTransient<IChatManager, ChatManager>();
-        //    builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
 
 

@@ -28,10 +28,10 @@
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
             await SignInManager.SignOutAsync();
-            _userService.LogOut();
             RedirectManager.RedirectTo("");
-            
+
         }
     }
+
 
 }

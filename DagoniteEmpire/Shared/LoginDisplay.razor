@@ -107,6 +107,22 @@
             Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
         }
 
+        if(UserInfo.SelectedCharacterId > 0)
+        {
+            UserInfo.SelectedCharacter = Characters.FirstOrDefault(u => u.Id == UserInfo.SelectedCharacterId);
+            UserInfo = await _userService.GetUserInfo();
+        }
+        else if (Characters.Any() && UserInfo.IsAdminOrMG == false)
+        {
+            UserInfo.SelectedCharacter = Characters.First();
+            await _userService.SetSelectedCharId(UserInfo.SelectedCharacter.Id);         
+            UserInfo = await _userService.GetUserInfo();
+        }
+        else if (UserInfo.IsAdminOrMG == true){
+            await _userService.SetSelectedCharId(-1);
+            UserInfo = await _userService.GetUserInfo();
+        }
+
         if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
         {
             PortraitUrl = UserInfo.SelectedCharacter.ImageUrl;
@@ -127,14 +143,6 @@
                 await _userService.SetSelectedCharId(character.Id);
             UserInfo = await _userService.GetUserInfo();
 
-            // if (UserInfo?.CharacterMG == true)
-            // {
-            //     Characters = await _characterRepository.GetAll();
-            // }
-            // else
-            // {
-            //     Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
-            // }
 
             if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
             {

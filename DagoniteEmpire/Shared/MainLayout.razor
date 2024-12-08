@@ -11,8 +11,8 @@
 <MudThemeProvider/>
 <MudPopoverProvider />
 <MudDialogProvider 
-    FullWidth="true" 
-    MaxWidth="MaxWidth.Large" />
+FullWidth="true" 
+MaxWidth="MaxWidth.Large" />
 <MudSnackbarProvider />    
 
 
@@ -32,7 +32,7 @@
                 </AuthorizeView>
             </div> 
         </MudHidden>
-       
+
         <MudSpacer />
         <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
             <MudIconButton Class="m-0 p-0" Icon="@Icons.Material.Filled.Chat" Color="Color.Inherit" OnClick="@ChatToggle" />
@@ -46,7 +46,7 @@
             </MudDrawer>
         </CascadingValue>
     </MudHidden>
-    
+
     <MudContainer MaxWidth="MaxWidth.False" Class="m-0 p-0" Style="overflow:hidden; position:relative;">
         <AuthorizeView>
             <Authorized>
@@ -56,18 +56,18 @@
     </MudContainer>    
 
     <MudMainContent >   
-                    @Body
+        @Body
     </MudMainContent>
-    
+
 </MudLayout>
 
 <style>
     .mud-appbar .mud-toolbar-appbar{
-        height:64px;
+    height:64px;
     }
 
     .mud-main-content{
-        padding-top:64px;
+    padding-top:64px;
     }
 </style>
 
@@ -93,6 +93,12 @@
         DrawerStartToggle();
         StateHasChanged();
     }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var isAuth =  await _userService.IsAuthenticated();
+        if (isAuth == false)
+            await _userService.LogOut();
 
+    }
 
 }

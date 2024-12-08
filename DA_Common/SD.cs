@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
@@ -776,7 +777,20 @@ namespace DA_Common
             return isTended ? MyIcon.TendedWound : MyIcon.FreshWound;
         }
 
+
     }
+    public class ProtectedStorageKeys
+    {
+        public const string SelectedCharacterId = "SelectedCharacterId";
+        public const string UserName = "UserName";
+        public const string UserId = "UserId";
+        public const string IsAdminOrMG = "IsAdminOrMG";
+        public const string CharacterMG = "CharacterMG";
+        public const string IsAuthenticated = "IsAuthenticated";
+        public const string Role = "Role";
+        public const string IsInited = "IsInited";
+        public static readonly string[] All = { SelectedCharacterId, UserName, UserId, IsAdminOrMG, CharacterMG, IsAuthenticated, Role, IsInited };
+    }; 
 
     public class States
     {
