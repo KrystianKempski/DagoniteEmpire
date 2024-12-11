@@ -8,11 +8,13 @@
 <AuthorizeView>
     <Authorized>
         <div class="p-2 d-flex align-content-center">
-
+            <div class=big-screen "pa-4 justify-center my-4 mud-text-align-center">
+                <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary">Hi, @context.User.Identity.Name!</MudButton>
+            </div>
             <MudMenu @onclick="RefreshCharacters"  Dense="true" Color="Color.Dark">
                 <ActivatorContent>
                     <MudAvatar Size="Size.Small">
-                        <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@PortraitUrl" />
+                        <MudImage @ref=DisplayImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@PortraitUrl" />
                     </MudAvatar>
                 </ActivatorContent>
                 <ChildContent >
@@ -43,21 +45,15 @@
                             </div>
                         </MudMenuItem>
                     }
+                    <MudMenuItem Class="py-3" OnClick="@(() => GoTo("Logout"))">
+                        Log Out                        
+                    </MudMenuItem>
                 </ChildContent>
             </MudMenu>
         </div>
 
-        <div class=big-screen "pa-4 justify-center my-4 mud-text-align-center">
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary">Hi, @context.User.Identity.Name!</MudButton>
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GoTo("Logout"))">Log Out</MudButton>
-        </div>
-        <div class="small-screen">
-            <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle">
-                <MudMenuItem>Hi, @context.User.Identity.Name!</MudMenuItem>
+        
 
-                <MudMenuItem OnClick="@(() => GoTo("Logout"))">Log Out</MudMenuItem>
-            </MudMenu>
-        </div>
     </Authorized>
     <NotAuthorized>
         <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
@@ -76,7 +72,8 @@
 @code {
     public string PortraitUrl { get; set; } = "/images/def-char-img.webp";
     public IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
-    public UserInfo? UserInfo {get;set;} = null; 
+    public UserInfo? UserInfo {get;set;} = null;
+    private MudImage DisplayImage;
 
 
     void GoTo(string panel)
@@ -126,6 +123,8 @@
         if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
         {
             PortraitUrl = UserInfo.SelectedCharacter.ImageUrl;
+            //DisplayImage.
+            StateHasChanged();
         }
         
         if (UserInfo?.SelectedCharacter is not null)
