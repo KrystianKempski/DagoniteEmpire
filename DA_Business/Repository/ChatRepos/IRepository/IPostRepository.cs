@@ -22,5 +22,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
 
         Task<IEnumerable<PostDTO>> GetPage(int chapterId, int postPerPage, int pageNum);
         Task<int> GetPostCount(int chapterId);
+        Task<int> GetCharacterPostCount(int characterId, DateTime? From = null, DateTime? To = null);
+        Task<DateTime> GetCharacterLastPostDate(int characterId);
     }
 }

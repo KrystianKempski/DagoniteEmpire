@@ -43,45 +43,45 @@ else
         </MudHidden>
 
         <MudDrawer Width="400px" @bind-Open="@_open" Elevation="1" Variant="DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always">
-             <div class="px-1 py-2">
-            @if (UserInfo?.IsAdminOrMG == true)
-            {
-                <MudGrid Justify="Justify.Center" Spacing="1">
-                    <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
-                    @if (OngoingBattle)
-                    {
-                        <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase.CurrentTurn</MudText></MudItem>
-                        <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
-                        <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
-                        <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
-                    }
-                    <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
-                </MudGrid>
-            }
-            @if (IsLoadingCharacters == false)
-            {
-                <MudPaper Elevation="1" >
-                    <MudStack Spacing="2">
-                        @foreach (var charac in Chapter.Characters)
+            <div class="px-1 py-2">
+                @if (UserInfo?.IsAdminOrMG == true)
+                {
+                    <MudGrid Justify="Justify.Center" Spacing="1">
+                        <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
+                        @if (OngoingBattle)
                         {
-                            <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+                            <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase.CurrentTurn</MudText></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
                         }
-                        @foreach (var mob in Mobs)
-                        {
-                            <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
-                        }
-                    </MudStack>
-                </MudPaper>
-            }
-            else
-            {
-                <LoadingPage></LoadingPage>
-            }
+                        <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
+                    </MudGrid>
+                }
+                @if (IsLoadingCharacters == false)
+                {
+                    <MudPaper Elevation="1" >
+                        <MudStack Spacing="2">
+                            @foreach (var charac in Chapter.Characters)
+                            {
+                                <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+                            }
+                            @foreach (var mob in Mobs)
+                            {
+                                <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                }
+                else
+                {
+                    <LoadingPage></LoadingPage>
+                }
             </div>
         </MudDrawer>
-    
+
     </MudHidden>
- 
+
 
     <div id="mam" class="margin-side container-lg" >
 
@@ -137,19 +137,22 @@ else
             <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
 
             <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
-                    <MudStack>
+                <MudStack>
                     @if(Chapter.Posts is not null){
-                            @foreach (var post in Posts)
+                        @foreach (var post in Posts)
                         {
                             if (post.Character is not null)
                             {
                                 string postId = "post_big_number_" + post.Id.ToString();
-
                                 <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="300px">
                                     <MudPaper Class="d-flex flex-column pa-2" Width="200px">
-                                            <MudText Align="Align.Center" Typo="Typo.h5">@post.Character.NPCName</MudText>
+                                        <MudText Align="Align.Center" Typo="Typo.h5">@post.Character.NPCName</MudText>
                                         <MudImage Src="@post.Character.ImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg " />
-
+                                        @if (CharacterAllParams.Any() && CharacterAllParams.ContainsKey( post.CharacterId))
+                                        {
+                                            <MudText Align="Align.Center" Class="pt-2" Typo="Typo.caption">Posts: @CharacterAllParams[post.CharacterId].Character.NumberOfPosts.ToString()</MudText>
+                                            <MudText Align="Align.Center" Typo="Typo.caption">Last post: @CharacterAllParams[post.CharacterId].Character.LastPostDate.ToString("dd-MM-yyyy")</MudText>
+                                        }
                                     </MudPaper>
                                     <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
                                         <MudStack Spacing="0" Row="true">
@@ -174,36 +177,36 @@ else
             </MudHidden>
             <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
                 <div class="w-100">
-                <MudStack>
-                    @if (Chapter.Posts is not null)
-                    {
-                        @foreach (var post in Posts)
+                    <MudStack>
+                        @if (Chapter.Posts is not null)
                         {
-                            if (post.Character is not null)
+                            @foreach (var post in Posts)
                             {
-                                string postId = "post_small_number_" + post.Id.ToString();
+                                if (post.Character is not null)
+                                {
+                                    string postId = "post_small_number_" + post.Id.ToString();
 
-                                <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
-                                    <MudStack Class="pb-1" Spacing="0" Row="true">
-                                        <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@post.Character.ImageUrl"></MudImage></MudAvatar>
-                                        <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.Character.NPCName</MudText>
-                                        @if (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true)
-                                        {
-                                            <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
-                                        }
-                                    </MudStack>
+                                    <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
+                                        <MudStack Class="pb-1" Spacing="0" Row="true">
+                                            <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@post.Character.ImageUrl"></MudImage></MudAvatar>
+                                            <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.Character.NPCName</MudText>
+                                            @if (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true)
+                                            {
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                            }
+                                        </MudStack>
 
                                         <SfRichTextEditor Height="100%" ID="@postId" @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
                                             <RichTextEditorImageSettings Path="./upload/postImages/" />                                      
-                                        <RichTextEditorToolbarSettings Items="@NoTools" />
-                                    </SfRichTextEditor>
+                                            <RichTextEditorToolbarSettings Items="@NoTools" />
+                                        </SfRichTextEditor>
                                         <MudText Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
-                                </MudPaper>
+                                    </MudPaper>
+                                }
                             }
                         }
-                    }
-                    <MudPagination @ref="Pagination" Count="PageCount" SelectedChanged="SelectPage"></MudPagination>
-                </MudStack>
+                        <MudPagination @ref="Pagination" Count="PageCount" SelectedChanged="SelectPage"></MudPagination>
+                    </MudStack>
 
                 </div>
             </MudHidden>
@@ -222,35 +225,35 @@ else
                         <MudButton Class="mt-2 py-0" OnClick="CancelEdit">Cancel Edit</MudButton>
                     }
                 </div>
-        </MudPaper>
-         </div>       
-</div>
+            </MudPaper>
+        </div>       
+    </div>
 }
 
 <style>
     .e-richtexteditor.e-rte-tb-expand .e-rte-content, .e-richtexteditor.e-rte-tb-expand .e-source-content
     {
-        border: none;
+    border: none;
     }
 
     .e-richtexteditor .e-rte-container {
-        border: none;
+    border: none;
     }
 
     .e-richtexteditor.e-rte-tb-expand
     {
-        border: none;
+    border: none;
     }
 
     .e-richtexteditor .e-rte-content .e-content 
     {
-        padding: 4px;
+    padding: 4px;
     }
 
     .e-richtexteditor.e-rte-full-screen{
-        top:64px;
-        right:56px;
-        width:100%;
+    top:64px;
+    right:56px;
+    width:100%;
     }
 </style>
 
@@ -320,6 +323,7 @@ else
         PageCount = await GetPageCount();
         PageNum = PageCount;
         await LoadChapter();
+
         handler = async () => await LoadForSelectedCharacter();
         _callbackService.OnChange += handler;
     }
@@ -497,7 +501,7 @@ else
     }
     private async Task DeletePost(PostDTO post)
     {
-     
+
         bool? result = await DialogService.ShowMessageBox(
             "Warning",
             "Are you sure you want to delete this post?",
@@ -517,7 +521,7 @@ else
         StateHasChanged();
     }
 
-    
+
     private void CancelEdit()
     {
         NewPost = new();
@@ -784,6 +788,9 @@ else
         wounds = wounds.Concat(conds).ToList();
         allParams.Health.FillPropertiesContainer(wounds);
         allParams.Health.UpdateHealthBonusesInAttributes();
+
+        allParams.Character.NumberOfPosts = await _postRepository.GetCharacterPostCount(id);
+        allParams.Character.LastPostDate = await _postRepository.GetCharacterLastPostDate(id);
         return allParams;
     }
 

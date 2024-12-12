@@ -24,6 +24,7 @@ using Microsoft.Extensions.DependencyInjection;
 using DagoniteEmpire;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 
 public class Program
@@ -159,6 +160,12 @@ public class Program
         app.MapHub<ChatHub>(ChatHub.HubUrl);
         app.MapControllers()
             .WithStaticAssets();
+            //.RequireAuthorization(new AuthorizeAttribute
+            //{
+            //    AuthenticationSchemes = "JwtBearerDefaults.AuthenticationScheme",
+            //    Policy = "PlayerPolicy"
+            //});
+
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode()
             .WithStaticAssets();
