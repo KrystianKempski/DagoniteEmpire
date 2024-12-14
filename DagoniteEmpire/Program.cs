@@ -111,7 +111,7 @@ public class Program
         builder.Services.AddScoped<ErrorHandlingMiddleware>();
         builder.Services.AddTransient<IChatManager, ChatManager>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
-
+        builder.Services.AddHttpClient();
 
         builder.Services.AddCropper();
         builder.Services.AddServerSideBlazor()
