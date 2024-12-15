@@ -55,6 +55,7 @@ public class Program
             .AddIdentityCookies();
 
 
+
         builder.Services.AddSyncfusionBlazor();
         builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
         builder.Host.UseNLog();
@@ -112,6 +113,7 @@ public class Program
         builder.Services.AddTransient<IChatManager, ChatManager>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.AddHttpClient();
+        builder.Services.AddHttpContextAccessor();
 
         builder.Services.AddCropper();
         builder.Services.AddServerSideBlazor()
