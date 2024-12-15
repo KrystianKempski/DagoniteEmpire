@@ -14,6 +14,8 @@ using System.Linq;
 using Abp.Json;
 using Abp.Collections.Extensions;
 using Humanizer;
+using Microsoft.JSInterop;
+using DagoniteEmpire.Helper;
 
 namespace RichTextEditor.Data
 {
@@ -22,10 +24,14 @@ namespace RichTextEditor.Data
     public class CharacterPostsController : ControllerBase
     {
         private readonly IPostRepository _postRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IJSRuntime _jsRuntime;
 
-        public CharacterPostsController(IWebHostEnvironment env, IPostRepository postRepository)
+        public CharacterPostsController(IHttpContextAccessor httpContextAccessor, IPostRepository postRepository, IJSRuntime jsRuntime)
         {
             _postRepository = postRepository;
+            _httpContextAccessor = httpContextAccessor; 
+            _jsRuntime = jsRuntime;
         }
 
         [HttpGet("{id}")]
@@ -35,9 +41,14 @@ namespace RichTextEditor.Data
             try
             {
 
-            var re = Request;
-            var headers = re.Headers;
+                //var re = Request;
+                //var headers = re.Headers;
+            if(_httpContextAccessor?.HttpContext == null)
+            {
+                await _jsRuntime.ToastrError("No header detected");
+            }
 
+            var headers = _httpContextAccessor.HttpContext.Request.Headers;
             var dateFrom = headers["date_from"];
             var dateTo = headers["date_to"];
             int postCount = 0;
