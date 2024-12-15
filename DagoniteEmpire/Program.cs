@@ -33,7 +33,7 @@ public class Program
     {
 
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddAuthentication();
+        //builder.Services.AddAuthentication();
 
         builder.Services.AddRazorPages();
 

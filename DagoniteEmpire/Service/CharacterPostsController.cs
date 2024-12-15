@@ -15,7 +15,8 @@ using Abp.Json;
 using Abp.Collections.Extensions;
 using Humanizer;
 using Microsoft.JSInterop;
-using DagoniteEmpire.Helper;
+using MudBlazor;
+
 
 namespace RichTextEditor.Data
 {
@@ -25,31 +26,34 @@ namespace RichTextEditor.Data
     {
         private readonly IPostRepository _postRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IJSRuntime _jsRuntime;
 
-        public CharacterPostsController(IHttpContextAccessor httpContextAccessor, IPostRepository postRepository, IJSRuntime jsRuntime)
+        public CharacterPostsController(IHttpContextAccessor httpContextAccessor, IPostRepository postRepository)
         {
             _postRepository = postRepository;
-            _httpContextAccessor = httpContextAccessor; 
-            _jsRuntime = jsRuntime;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpGet("{id}")]
         [Consumes("application/json")]
-        public async Task<int> Get(int id)
+        public async Task<string> Get(int id)
         {
             try
             {
-
-                //var re = Request;
-                //var headers = re.Headers;
-            if(_httpContextAccessor?.HttpContext == null)
-            {
-                await _jsRuntime.ToastrError("No header detected");
-            }
+                if(_httpContextAccessor?.HttpContext == null)
+                {
+                    return "Null context";
+                }
 
             var headers = _httpContextAccessor.HttpContext.Request.Headers;
-            var dateFrom = headers["date_from"];
+
+                if (_httpContextAccessor.HttpContext.Request.Headers == null)
+                {
+                    return "null header";
+                }
+
+                return headers["date_from"].ToString();
+
+                var dateFrom = headers["date_from"];
             var dateTo = headers["date_to"];
             int postCount = 0;
             DateTime? from = null, to = null;
