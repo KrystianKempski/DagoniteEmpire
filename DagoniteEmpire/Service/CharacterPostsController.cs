@@ -50,8 +50,12 @@ namespace RichTextEditor.Data
                 {
                     return "null header";
                 }
-
-                return headers["date_from"].ToString();
+                string aa = "";
+                foreach (var head in headers)
+                {
+                    aa += head.Value.ToString();
+                }
+                return aa;
 
                 var dateFrom = headers["date_from"];
             var dateTo = headers["date_to"];
