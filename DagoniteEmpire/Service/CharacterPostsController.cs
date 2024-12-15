@@ -69,10 +69,10 @@ namespace RichTextEditor.Data
             }
             postCount = await _postRepository.GetCharacterPostCount(id,from,to);
 
-            return postCount;
+            return "";
             }catch(Exception ex)
             {
-                return 0;
+                return ex.Message;
             }
         }
     }
