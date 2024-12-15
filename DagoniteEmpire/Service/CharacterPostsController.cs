@@ -16,6 +16,7 @@ using Abp.Collections.Extensions;
 using Humanizer;
 using Microsoft.JSInterop;
 using MudBlazor;
+using Microsoft.Extensions.Primitives;
 
 
 namespace RichTextEditor.Data
@@ -50,13 +51,16 @@ namespace RichTextEditor.Data
                 {
                     return "null header";
                 }
-                string aa = "";
-                foreach (var head in headers)
-                {
-                    aa += head.Value.ToString();
-                }
-                return aa;
+                //string aa = "";
+                //foreach (var head in headers)
+                //{
+                //    aa += head.Value.ToString();
+                //}
+                //return aa;
 
+                _httpContextAccessor.HttpContext.Request.Headers.TryGetValue("date_from", out StringValues authString);
+
+                return authString;
                 var dateFrom = headers["date_from"];
             var dateTo = headers["date_to"];
             int postCount = 0;
