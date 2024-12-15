@@ -36,32 +36,32 @@ namespace RichTextEditor.Data
 
         [HttpGet("{id}")]
         [Consumes("application/json")]
-        public async Task<string> Get(int id)
+        public async Task<int> Get(int id)
         {
             try
             {
                 if(_httpContextAccessor?.HttpContext == null)
                 {
-                    return "Null context";
+                    return -1;
                 }
 
             var headers = _httpContextAccessor.HttpContext.Request.Headers;
 
                 if (_httpContextAccessor.HttpContext.Request.Headers == null)
                 {
-                    return "null header";
+                    return -2;
                 }
-                string aa = "";
-                foreach (var head in headers)
-                {
-                    aa += $"{head.Key}: {head.Value.ToString()} # ";
-                }
-                return aa;
+                //string aa = "";
+                //foreach (var head in headers)
+                //{
+                //    aa += $"{head.Key}: {head.Value.ToString()} # ";
+                //}
+                //return aa;
 
-                //_httpContextAccessor.HttpContext.Request.Headers.TryGetValue("date_from", out StringValues authString);
+                ////_httpContextAccessor.HttpContext.Request.Headers.TryGetValue("date_from", out StringValues authString);
 
-                var dateFrom = headers["date_from"];
-            var dateTo = headers["date_to"];
+                var dateFrom = headers["dateFrom"];
+            var dateTo = headers["dateTo"];
             int postCount = 0;
             DateTime? from = null, to = null;
             if (dateFrom.IsNullOrEmpty() == false)
@@ -76,10 +76,10 @@ namespace RichTextEditor.Data
             }
             postCount = await _postRepository.GetCharacterPostCount(id,from,to);
 
-            return "";
+            return postCount;
             }catch(Exception ex)
             {
-                return ex.Message;
+                return -3;
             }
         }
     }
