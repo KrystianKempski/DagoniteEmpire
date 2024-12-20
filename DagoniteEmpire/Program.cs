@@ -25,6 +25,10 @@ using DagoniteEmpire;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using DA_Models;
+using MimeKit;
 
 
 public class Program
@@ -47,13 +51,29 @@ public class Program
         builder.Services.AddScoped<IdentityRedirectManager>();
         builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
+        var bearerAuthenticationSettings = new BearerAuthenticationSettings();
+        builder.Configuration.GetSection("Authentication:Schemes:Bearer").Bind(bearerAuthenticationSettings);
+        builder.Services.AddSingleton(bearerAuthenticationSettings);
+
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultScheme = IdentityConstants.ApplicationScheme;
             options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
         })
-            .AddIdentityCookies();
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidIssuer = bearerAuthenticationSettings.ValidIssuer,
+                    ValidAudience = bearerAuthenticationSettings.ValidAudience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(bearerAuthenticationSettings.JwtKey)),
+                };
+            })
+            .AddIdentityCookies();               
 
+        builder.Services.AddAuthorization();
 
 
         builder.Services.AddSyncfusionBlazor();
@@ -110,6 +130,7 @@ public class Program
         builder.Services.AddScoped<IFileUpload, FileUpload>();
         builder.Services.AddScoped<IDbInitializer, DbInitializer>();
         builder.Services.AddScoped<ErrorHandlingMiddleware>();
+        builder.Services.AddScoped<ITokenService,TokenService>();
         builder.Services.AddTransient<IChatManager, ChatManager>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.AddHttpClient();

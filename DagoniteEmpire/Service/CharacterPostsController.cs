@@ -17,6 +17,10 @@ using Humanizer;
 using Microsoft.JSInterop;
 using MudBlazor;
 using Microsoft.Extensions.Primitives;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using DagoniteEmpire.Service;
+using DagoniteEmpire.Service.IService;
 
 
 namespace RichTextEditor.Data
@@ -27,40 +31,43 @@ namespace RichTextEditor.Data
     {
         private readonly IPostRepository _postRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ITokenService _tokenService;
 
-        public CharacterPostsController(IHttpContextAccessor httpContextAccessor, IPostRepository postRepository)
+        public CharacterPostsController(IHttpContextAccessor httpContextAccessor, IPostRepository postRepository, ITokenService tokenService)
         {
             _postRepository = postRepository;
             _httpContextAccessor = httpContextAccessor;
+            _tokenService = tokenService;
         }
 
+
+        [HttpPost("login")]
+        [Consumes("application/json")]
+        public async Task<string> LoginJwt()
+        {
+            return _tokenService.GenerateToken(); 
+        }
+
+
         [HttpGet("{id}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [Consumes("application/json")]
         public async Task<int> Get(int id)
         {
             try
             {
-                if(_httpContextAccessor?.HttpContext == null)
+                if (_httpContextAccessor?.HttpContext == null)
                 {
                     return -1;
                 }
 
             var headers = _httpContextAccessor.HttpContext.Request.Headers;
 
-                if (_httpContextAccessor.HttpContext.Request.Headers == null)
-                {
-                    return -2;
-                }
-                //string aa = "";
-                //foreach (var head in headers)
-                //{
-                //    aa += $"{head.Key}: {head.Value.ToString()} # ";
-                //}
-                //return aa;
-
-                ////_httpContextAccessor.HttpContext.Request.Headers.TryGetValue("date_from", out StringValues authString);
-
-                var dateFrom = headers["dateFrom"];
+            if (_httpContextAccessor.HttpContext.Request.Headers == null)
+            {
+                return -2;
+            }
+            var dateFrom = headers["dateFrom"];
             var dateTo = headers["dateTo"];
             int postCount = 0;
             DateTime? from = null, to = null;
