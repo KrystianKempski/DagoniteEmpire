@@ -136,7 +136,11 @@ namespace DA_Business.Repository.ChatRepos
                 using var contex = await _db.CreateDbContextAsync();
                 if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-                DateTime date = contex.Posts.Where(u => u.CharacterId == characterId).Max(r => r.CreatedDate);
+                var posts = contex.Posts.Where(u => u.CharacterId == characterId);
+                if (posts is null || posts.Count() ==0)
+                    return DateTime.MinValue;
+
+                DateTime date = posts.Max(r => r.CreatedDate);
 
                 return date;
             }
