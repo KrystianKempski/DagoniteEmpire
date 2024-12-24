@@ -76,10 +76,10 @@
     {
         try
         {
-            if (e.GetMultipleFiles(1).Count > 0)
+            if (e.GetMultipleFiles().Count > 0)
             {
                 ChooseFile = string.Empty;
-                foreach (var file in e.GetMultipleFiles(1))
+                foreach (var file in e.GetMultipleFiles())
                 {
                     var parameters = new DialogParameters<CropperDialog> { { x => x.File, e.File } };
                     var dialog = await DialogService.ShowAsync<CropperDialog>("Cropp portrait", parameters, await SetOptions());
