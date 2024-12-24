@@ -1,4 +1,5 @@
-﻿ @inject NavigationManager _navigationManager;
+﻿
+ @inject NavigationManager _navigationManager;
  @inject IUserService _userService
  @inject ICharacterRepository _characterRepository
  @inject ISnackbar _snackbar
@@ -7,61 +8,57 @@
 <AuthorizeView>
     <Authorized>
         <div class="p-2 d-flex align-content-center">
-
-        <MudMenu @onclick="RefreshCharacters"  Dense="true" Color="Color.Dark">
-            <ActivatorContent>
-                <MudAvatar Size="Size.Small">
-                        <MudImage Src="@PortraitUrl" />
-                </MudAvatar>
-            </ActivatorContent>
-            <ChildContent >
-                <MudMenuItem  Disabled>Select character</MudMenuItem>
-                @if (UserInfo?.IsAdminOrMG == true)
-                {
-                    <MudMenuItem OnClick="@(e => SelectCharacter())">
-                        <div class="d-flex flex-row">
-                            <MudAvatar>
-                                <MudImage Src="@SD.GameMaster_Portrait"></MudImage>
-                            </MudAvatar>
-                            <MudText Class="align-content-center ps-1">
-                                @SD.GameMaster_NPCName
-                            </MudText>
-                        </div>
+            <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
+                <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary">Hi, @context.User.Identity.Name!</MudButton>
+            </div>
+            <MudMenu @onclick="RefreshCharacters"  Dense="true" Color="Color.Dark">
+                <ActivatorContent>
+                    <MudAvatar Size="Size.Small">
+                        <MudImage @ref=DisplayImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@PortraitUrl" />
+                    </MudAvatar>
+                </ActivatorContent>
+                <ChildContent >
+                    <MudMenuItem  Disabled>Select character</MudMenuItem>
+                    @if (UserInfo?.IsAdminOrMG == true)
+                    {
+                        <MudMenuItem OnClick="@(e => SelectCharacter())">
+                            <div class="d-flex flex-row">
+                                <MudAvatar>
+                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@SD.GameMaster_Portrait"></MudImage>
+                                </MudAvatar>
+                                <MudText Class="align-content-center ps-1">
+                                    @SD.GameMaster_NPCName
+                                </MudText>
+                            </div>
+                        </MudMenuItem>
+                    }
+                    @foreach (CharacterDTO character in Characters)
+                    {
+                        <MudMenuItem OnClick="@(e => SelectCharacter(character))">
+                            <div class="d-flex flex-row">
+                                <MudAvatar>
+                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@character.ImageUrl"></MudImage>
+                                </MudAvatar>
+                                <MudText Class="align-content-center ps-1">
+                                    @character.NPCName
+                                </MudText>
+                            </div>
+                        </MudMenuItem>
+                    }
+                    <MudMenuItem Class="py-3" OnClick="@(() => GoTo("Logout"))">
+                        Log Out                        
                     </MudMenuItem>
-                }
-                @foreach (CharacterDTO character in Characters)
-                {
-                    <MudMenuItem OnClick="@(e => SelectCharacter(character))">
-                    <div class="d-flex flex-row">
-                        <MudAvatar>
-                            <MudImage Src="@character.ImageUrl"></MudImage>
-                        </MudAvatar>
-                        <MudText Class="align-content-center ps-1">
-                            @character.NPCName
-                        </MudText>
-                    </div>
-                </MudMenuItem>
-                }
-            </ChildContent>
-        </MudMenu>
-        </div>
-
-        <div class=big-screen "pa-4 justify-center my-4 mud-text-align-center">
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary">Hi, @context.User.Identity.Name!</MudButton>
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => GoTo("Logout"))">Log Out</MudButton>
-        </div>
-        <div class="small-screen">
-            <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle">
-                <MudMenuItem>Hi, @context.User.Identity.Name!</MudMenuItem>
-
-                <MudMenuItem OnClick="@(() => GoTo("Logout"))">Log Out</MudMenuItem>
+                </ChildContent>
             </MudMenu>
         </div>
+
+        
+
     </Authorized>
     <NotAuthorized>
         <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" Href="Identity/Account/Register">Register</MudButton>
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Secondary" Href="Identity/Account/Login">Log in</MudButton>
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" Href="Account/Register">Register</MudButton>
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Secondary" Href="Account/Login">Log in</MudButton>
         </div>
         <div class="small-screen">
             <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle">
@@ -75,21 +72,24 @@
 @code {
     public string PortraitUrl { get; set; } = "/images/def-char-img.webp";
     public IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
-    public UserInfo? UserInfo {get;set;} = null; 
+    public UserInfo? UserInfo {get;set;} = null;
+    private MudImage DisplayImage;
 
 
     void GoTo(string panel)
     {
         if (panel == "Register")
-            _navigationManager.NavigateTo($"/Identity/Account/Register", true);
+            _navigationManager.NavigateTo("Account/Register");
         else if (panel == "Login")
-            _navigationManager.NavigateTo($"/Identity/Account/Login", true);
+            _navigationManager.NavigateTo("Account/Login");
         else if (panel == "Logout")
-            _navigationManager.NavigateTo($"/Identity/Account/Logout", true);
+            _navigationManager.NavigateTo("Account/Logout");
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
+
         UserInfo = await _userService.GetUserInfo();
         PortraitUrl = "/images/def-char-img.webp";
         if (UserInfo is null || UserInfo?.UserName is null)
@@ -104,9 +104,27 @@
             Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
         }
 
+        if(UserInfo.SelectedCharacterId > 0)
+        {
+            UserInfo.SelectedCharacter = Characters.FirstOrDefault(u => u.Id == UserInfo.SelectedCharacterId);
+            UserInfo = await _userService.GetUserInfo();
+        }
+        else if (Characters.Any() && UserInfo.IsAdminOrMG == false)
+        {
+            UserInfo.SelectedCharacter = Characters.First();
+            await _userService.SetSelectedCharId(UserInfo.SelectedCharacter.Id);         
+            UserInfo = await _userService.GetUserInfo();
+        }
+        else if (UserInfo.IsAdminOrMG == true){
+            await _userService.SetSelectedCharId(-1);
+            UserInfo = await _userService.GetUserInfo();
+        }
+
         if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
         {
             PortraitUrl = UserInfo.SelectedCharacter.ImageUrl;
+            //DisplayImage.
+            StateHasChanged();
         }
         
         if (UserInfo?.SelectedCharacter is not null)
@@ -124,14 +142,6 @@
                 await _userService.SetSelectedCharId(character.Id);
             UserInfo = await _userService.GetUserInfo();
 
-            // if (UserInfo?.CharacterMG == true)
-            // {
-            //     Characters = await _characterRepository.GetAll();
-            // }
-            // else
-            // {
-            //     Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
-            // }
 
             if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
             {

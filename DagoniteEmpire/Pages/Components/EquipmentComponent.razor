@@ -1,4 +1,5 @@
 ﻿@inject ITraitRepository<TraitEquipmentDTO> _traitEquipmentRepository
+@inject IWealthRecordRepository _wealthRecordRepository
 @inject IUserService _userService
 @inject IBrowserViewportService _vieportService
 @inject IDialogService DialogService
@@ -81,6 +82,20 @@
         </table>
     </div>
     <div class="row">
+        @if (AllParams?.Character is not null && AllParams?.Character.Id > 0)
+        {            
+            <MudStack Row>
+            <MudSpacer></MudSpacer>
+                <img src="@MyIcon.Imperial" width="30" height="30" />
+            <MudText Typo="Typo.h6">@Gold.ToString("F4")</MudText>
+
+               
+                @* <MudButton Variant="Variant.Outlined" OnClick="GoToRecords">Records</MudButton> *@
+                <button @onclick="GoToRecords" class="add-trait">Purse</button>
+            </MudStack>
+        }
+
+
         <div class="buttons-row">
             <button @onclick="@(()=>AddCustomEquipment())" class="add-trait">Add new</button>
             <button @onclick="@(()=>AddExistingEquipment())" class="add-trait">Existing items</button>
@@ -103,6 +118,8 @@
     [Parameter]
     public bool PageMode { get; set; }
 
+    public decimal Gold { get; set; } = 0.0m;
+
     UserInfo? UserInfo { get; set; }
     private decimal EquipmentWeight;
     private decimal EquipmentPrice;
@@ -110,15 +127,17 @@
     {
         UserInfo = await _userService.GetUserInfo();
         CalculateEquipWeightAndPrice();
+
+        var records = _wealthRecordRepository.GetAll(AllParams.Character.Id);
+        if(records.Result is not null)
+        {
+            Gold = 0.0m;
+            foreach(var rec in records.Result)
+            {
+                Gold += rec.Value;
+            }
+        }
     }
-
-    // protected override async Task OnAfterRenderAsync(bool firstRender)
-    // {
-    //     if (firstRender)
-    //     {
-
-    //     }
-    // }
 
 
     private void CalculateEquipWeightAndPrice()
@@ -246,7 +265,19 @@
         }
     }
 
-   
+    private async Task GoToRecords()
+    {
+        var parameters = new DialogParameters<WealthRecordsDialog> {  { x => x.CharacterId, AllParams.Character.Id } };
+
+        var dialog = await DialogService.ShowAsync<WealthRecordsDialog>("Record dialog", parameters, await SetOptions());
+        var result = await dialog.Result;
+        if (result?.Data is null) return;
+        if (!result.Canceled)
+        {
+            Gold = (decimal)result.Data;
+            StateHasChanged();
+        }
+    }
 
     private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Large)
     {
@@ -255,5 +286,6 @@
             options.FullScreen = true;
         return options;
     }
-
+   
+        
 }

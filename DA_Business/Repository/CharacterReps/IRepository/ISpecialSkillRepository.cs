@@ -16,6 +16,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
 
         public Task<SpecialSkillDTO> GetById(int id);
         public Task<IDictionary<string, SpecialSkillDTO>> GetAll(int? baseId = null);
+        public Task<IEnumerable<SpecialSkillDTO>> GetAllFromGroup(int charId, string baseSkillName);
 
         public Task Delete(SpecialSkillDTO objDTO);
     }

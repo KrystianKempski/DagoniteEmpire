@@ -11,5 +11,7 @@ namespace DA_Business.Services.Interfaces
     {
         public Task<UserInfo?> GetUserInfo();
         public Task SetSelectedCharId(int charId);
+        public Task<bool> IsAuthenticated();
+        public Task LogOut();
     }
 }

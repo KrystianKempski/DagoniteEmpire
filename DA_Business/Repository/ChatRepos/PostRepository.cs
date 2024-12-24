@@ -112,6 +112,66 @@ namespace DA_Business.Repository.ChatRepos
                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
             }
         }
+        public async Task<int> GetCharacterPostCount(int characterId)
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                int count = contex.Posts.Where(u => u.CharacterId == characterId).Count();
+
+                return count;
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+            }
+        }
+
+        public async Task<DateTime> GetCharacterLastPostDate(int characterId)
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                var posts = contex.Posts.Where(u => u.CharacterId == characterId);
+                if (posts is null || posts.Count() ==0)
+                    return DateTime.MinValue;
+
+                DateTime date = posts.Max(r => r.CreatedDate);
+
+                return date;
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+            }
+        }
+
+        public async Task<int> GetCharacterPostCount(int characterId, DateTime? From = null, DateTime? To = null)
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                int count = 0;
+                if (From is null && To is null)
+                    count = contex.Posts.Where(u => u.CharacterId == characterId).Count();
+                else if (From is not null && To is null)
+                    count = contex.Posts.Where(u => u.CharacterId == characterId && u.CreatedDate >= From).Count();
+                else if(From is not null && To is not null)
+                {
+                    count = contex.Posts.Where(u => u.CharacterId == characterId && u.CreatedDate >= From && u.CreatedDate <= To).Count();
+                }
+                return count;
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+            }
+        }
 
         public async Task<PostDTO> GetById(int id)
         {

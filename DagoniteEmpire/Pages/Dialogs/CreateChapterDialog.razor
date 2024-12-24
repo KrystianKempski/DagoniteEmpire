@@ -13,7 +13,7 @@
         <MudTextField @bind-Value="@NewChapter.Description" Label="Description" Lines="3" />
         <MudStack Spacing="1" Row>
             <MudTextField @bind-Value="@NewChapter.DayTime" Label="Daytime" /> 
-            <DateComponent Date="@NewChapter.Date" Editable="true"></DateComponent>
+            <DateComponent Date="Date" Editable="true"></DateComponent>
         </MudStack>
         <MudTextField @bind-Value="@NewChapter.Place" Label="Location" />
         <MudText Typo="Typo.caption">Choose player characters for chapter</MudText>
@@ -42,6 +42,7 @@
     [Parameter] public ChapterDTO NewChapter { get; set; }
     [Parameter] public List<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
     [Parameter] public bool IsEdit { get; set; } = false;
+    private DateModel Date; 
     private string Title = "Create";
     private IReadOnlyCollection<CharacterDTO> SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
@@ -72,13 +73,14 @@
                 index++;
             }
         }
-        
+        Date =  NewChapter.Date;
+
     }
     protected override void OnAfterRender(bool firstRender)
     {
         if (!firstRender) return;
 
-        
+
     }
 
     private void CreateChapter()
@@ -91,9 +93,10 @@
                 Characters.Add(charac);               
             }
         }
-      
+
         NewChapter.Characters = Characters;
         NewChapter.CreatedDate = DateTime.Now;
+        NewChapter.DateNumber = Date.AllDays;
 
         MudDialog.Close(DialogResult.Ok(NewChapter));
         if (IsEdit)

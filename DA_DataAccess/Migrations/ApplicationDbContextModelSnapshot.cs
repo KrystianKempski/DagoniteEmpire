@@ -205,16 +205,10 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("AttributePoints")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CurrentDay")
-                        .HasColumnType("integer");
-
                     b.Property<int>("CurrentExpPoints")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CurrentMonth")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CurrentYear")
+                    b.Property<int>("DateNumber")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
@@ -709,6 +703,34 @@ namespace DA_DataAccess.Migrations
                     b.HasDiscriminator<string>("Discriminator").HasValue("Trait");
 
                     b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.WealthRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CharacterId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DateNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId");
+
+                    b.ToTable("WealthRecords");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Wound", b =>
@@ -1390,6 +1412,15 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("SpellCircle");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.CharacterClasses.WealthRecord", b =>
+                {
+                    b.HasOne("DA_DataAccess.CharacterClasses.Character", null)
+                        .WithMany("WealthLog")
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Wound", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
@@ -1540,6 +1571,8 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Posts");
 
                     b.Navigation("SpecialSkills");
+
+                    b.Navigation("WealthLog");
 
                     b.Navigation("Wounds");
                 });

@@ -1,5 +1,5 @@
 ﻿@using DA_Business.Services
-@using Microsoft.AspNetCore.SignalR.Client
+
 @inject ISnackbar _snackBar
 @inject IJSRuntime _jsRuntime
 @inject IUserService _userService
@@ -11,15 +11,19 @@
 <MudThemeProvider/>
 <MudPopoverProvider />
 <MudDialogProvider 
-    FullWidth="true" 
-    MaxWidth="MaxWidth.Large" />
+FullWidth="true" 
+MaxWidth="MaxWidth.Large" />
 <MudSnackbarProvider />    
 
 
 <MudLayout>
-    <MudAppBar Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; width:100vw; px-2")" Elevation="1">
+    <MudAppBar Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; width:100vw; height:64px; px-2")" Elevation="1">
+        <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerStartToggle())" />
+            @*  <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; font-family: 'Eagle Lake', serif; font-size: 14px;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton> *@
+        </MudHidden>
+        <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; font-family: 'Eagle Lake', serif; font-size: 16px;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton>
         <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
-            <MudButton Class="p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4}; font-family: 'Eagle Lake', serif; font-size: 20px;")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton>
             <div class="justify-center mud-text-align-center">
                 <AuthorizeView>
                     <Authorized>
@@ -28,10 +32,7 @@
                 </AuthorizeView>
             </div> 
         </MudHidden>
-        <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
-                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerStartToggle())" />
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:transparent; font-family: 'Eagle Lake', serif; font-size: 12px; padding: 6px;")" Variant="Variant.Text" DropShadow="true" Href="#">Dagonite Empire</MudButton>
-        </MudHidden>
+
         <MudSpacer />
         <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
             <MudIconButton Class="m-0 p-0" Icon="@Icons.Material.Filled.Chat" Color="Color.Inherit" OnClick="@ChatToggle" />
@@ -45,7 +46,7 @@
             </MudDrawer>
         </CascadingValue>
     </MudHidden>
-    
+
     <MudContainer MaxWidth="MaxWidth.False" Class="m-0 p-0" Style="overflow:hidden; position:relative;">
         <AuthorizeView>
             <Authorized>
@@ -55,10 +56,20 @@
     </MudContainer>    
 
     <MudMainContent >   
-                    @Body
+        @Body
     </MudMainContent>
-    
+
 </MudLayout>
+
+<style>
+    .mud-appbar .mud-toolbar-appbar{
+    height:64px;
+    }
+
+    .mud-main-content{
+    padding-top:64px;
+    }
+</style>
 
 
 @code {
@@ -82,6 +93,12 @@
         DrawerStartToggle();
         StateHasChanged();
     }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var isAuth =  await _userService.IsAuthenticated();
+        if (isAuth == false)
+            await _userService.LogOut();
 
+    }
 
 }

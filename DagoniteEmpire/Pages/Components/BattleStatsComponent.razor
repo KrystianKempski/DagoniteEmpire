@@ -186,7 +186,7 @@
                     }
             </div>
         </div>
-        @if (Armor is not null && ArmorBattleProperties is not null)
+        @if (Armor is not null && ArmorBattleProperties is not null && AllParams?.SpecialSkills is not null)
         {
         <div class="d-flex w-100 p-0 my-1">
             <div class="d-flex flex-column border w-100">
@@ -208,7 +208,7 @@
                                 <label>Armor defence bonus: </label>
                             </div>
                             <div class="weapon-prop-value">
-                                @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorDefenceBonus).GearBonus
+                                @ArmorDefenceBonus
                             </div>
                         </div>
                     </div>
@@ -218,7 +218,7 @@
                                 <label>Armor damage reduction: </label>
                             </div>
                             <div class="weapon-prop-value">
-                                @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.Armor).GearBonus
+                                @ArmorValue
                             </div>
                         </div>
                         <div class="d-flex">
@@ -226,7 +226,7 @@
                                 <label>Armor penalty: </label>
                             </div>
                             <div class="weapon-prop-value">
-                                @ArmorBattleProperties.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorPenalty).GearBonus
+                                @ArmorPenalty
                             </div>
                         </div>
                     </div>
@@ -342,9 +342,13 @@
     public Dictionary<EquippedItems, EquipItemComponent> EquipItemComp { get; set; } = new Dictionary<EquippedItems, EquipItemComponent>();
     public Dictionary<EquippedItems, IEnumerable<BattlePropertyDTO>?> WeaponBattleProperties { get; set; } = new Dictionary<EquippedItems, IEnumerable<BattlePropertyDTO>?>();
     public Dictionary<EquippedItems, EquipmentDTO?> Weapons { get; set; } = new Dictionary<EquippedItems, EquipmentDTO?>();
-    public  EquipmentDTO? Armor { get; set; } 
-    public IEnumerable<BattlePropertyDTO>? ArmorBattleProperties { get; set; }
-    
+    public  EquipmentDTO? Armor { get; set; }
+    public IEnumerable<BattlePropertyDTO>? ArmorBattleProperties { get; set; } = null;
+    public int ArmorDefenceBonus { get; set; } = 0;
+    public int ArmorValue { get; set; } = 0;
+    public int ArmorPenalty {get;set;} = 0;
+    public int a; 
+
     protected override async Task OnInitializedAsync()
     {
         for (EquippedItems i = EquippedItems.WeaponMain1; i <= EquippedItems.WeaponOff2; i++)
@@ -377,7 +381,38 @@
     {
         Armor = AllParams.EquipmentSlots?.FirstOrDefault(s => s.SlotType == SD.SlotType.Body)?.Equipment;
         if (Armor is not null)
+        {
+
             ArmorBattleProperties = AllParams.BattleProperties.GetWeaponQualityListFromItem(Armor);
+            BattlePropertyDTO? prop = ArmorBattleProperties?.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorDefenceBonus);
+            if(prop is null)
+            {
+                ArmorDefenceBonus = 0;
+            }
+            else
+            {
+                ArmorDefenceBonus = prop.GearBonus;
+            }
+            var arm = ArmorBattleProperties?.FirstOrDefault(p => p.Name == SD.WeaponQuality.Armor);
+            if (prop is null)
+            {
+                ArmorValue = 0;
+            }
+            else
+            {
+                ArmorValue = prop.GearBonus;
+            }
+            var def = ArmorBattleProperties?.FirstOrDefault(p => p.Name == SD.WeaponQuality.ArmorPenalty);
+            if (prop is null)
+            {
+                ArmorPenalty = 0;
+            }
+            else
+            {
+                ArmorPenalty = prop.GearBonus;
+            }
+           
+        }
         else
             ArmorBattleProperties = null;
     }

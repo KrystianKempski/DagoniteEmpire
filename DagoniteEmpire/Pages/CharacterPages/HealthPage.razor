@@ -272,6 +272,14 @@
             UserInfo = await _userService.GetUserInfo();
             if (UserInfo?.IsAuthenticated == false)
                 return;
+            if (Id > 0 && UserInfo?.UserName is not null && UserInfo.IsAdminOrMG == false)
+            {
+                if (await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id) == false)
+                {
+                    return;
+                }
+            }
+            await AuthorizeEntry();
             IsLoading = true;
             registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
             await LoadCharacter();
@@ -303,16 +311,31 @@
             await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
         }
     }
+    private async Task AuthorizeEntry()
+    {
+        if (UserInfo is null) return;
+        if (UserInfo?.IsAuthenticated == false)
+        {
+            var uri = new Uri(_navigationManager.Uri);
+            _navigationManager.NavigateTo($"/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+        }
+        if (Id > 0 && UserInfo?.UserName is not null && UserInfo.IsAdminOrMG == false)
+        {
+            if (await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id) == false)
+            {
+                if(UserInfo.SelectedCharacter is not null && UserInfo.SelectedCharacter.Id > 0)
+                    _navigationManager.NavigateTo($"/health/{UserInfo.SelectedCharacter.Id}", true);
+                 else
+                    _navigationManager.NavigateTo($"/#", true);
+            }
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            if (UserInfo?.IsAuthenticated == false)
-            {
-                var uri = new Uri(_navigationManager.Uri);
-                _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
-            }
+            await AuthorizeEntry();
         }
     }
 

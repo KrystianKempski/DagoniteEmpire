@@ -21,5 +21,6 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<ChapterDTO> GetById(int id);
 
         Task<ChapterDTO> Update(ChapterDTO objDTO);
+        Task<bool> CheckIfChapterBelongToUser(string userName, int chapterId);
     }
 }

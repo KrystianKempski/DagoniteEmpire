@@ -21,7 +21,7 @@ else
 {
     <div class="page">
 
-        <div class="row mt-4">
+        <div class="row m-0 mt-4">
             <div class="row p-0">
                 <div class="col-12 col-md-8">
                     <h4 class="card-title px-2 mx-2">@Title</h4>
@@ -29,7 +29,7 @@ else
             </div>
             
         </div>
-        <div class="row mt-4">
+        <div class="row m-0 mt-4">
             <div class="col-12">
                 <SfGrid ID="Grid" DataSource="@Characters" AllowPaging="true"
                         Toolbar="@ToolbarItems">
@@ -96,7 +96,8 @@ else
             if (UserInfo?.IsAuthenticated == false)
             {
                 var uri = new Uri(_navigationManager.Uri);
-                _navigationManager.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+
+                _navigationManager.NavigateTo($"/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
             }
         }
     }

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
@@ -495,6 +496,18 @@ namespace DA_Common
             { "Nearly impossible", 35 },
          };
 
+        public static string GetDifficultyName(int diffLevel)
+        {
+            if (diffLevel <= 5) return "Effortless";
+            if (diffLevel <= 8) return "Simple";
+            if (diffLevel <= 12) return "Straightforward";
+            if (diffLevel <= 16) return "Demanding";
+            if (diffLevel <= 20) return "Hard";
+            if (diffLevel <= 25) return "Challanging";
+            if (diffLevel <= 30) return "Very hard";
+            return "Nearly impossible";
+        }
+
         public static Tuple<int, string> RollDice()
         {
             int result = 0;
@@ -536,18 +549,67 @@ namespace DA_Common
             return Tuple.Create(result, text);
         }
 
+        public static Tuple<bool, string> MakeOppositeRollTest(string name1, List<Pair<string,int>> bonuses1, string name2, List<Pair<string, int>> bonuses2)
+        {
+            bool result = false;
+            string text = string.Empty;
+            var roll1 = RollDice();
+            var roll2 = RollDice();
+            int sum1 = roll1.Item1;
+            int sum2 = roll2.Item1;
+            foreach (var bonus in bonuses1)
+            {
+                sum1 += bonus.Second;
+            }
+            foreach (var bonus in bonuses2)
+            {
+                sum2 += bonus.Second;
+            }
+
+            result = sum1 >= sum2;
+            var sucess = result ? "Sucess!" : "Fail!";
+            text = $"{name1}: ";
+            foreach( var bonus in bonuses1)
+            {
+                text += bonus.Second >= 0 ? "+" : ""; 
+                text += $"{bonus.Second} ({bonus.First})";
+            }
+            text = $" {roll1.Item2} = {RichText.BoldText(sum1)} vs ";
+            text = $"{name2}: ";
+            foreach (var bonus in bonuses2)
+            {
+                text += bonus.Second >= 0 ? "+" : "";
+                text += $"{bonus.Second} ({bonus.First})";
+            }
+            text += $" {roll2.Item2} = {RichText.BoldText(sum2)}. {RichText.BoldText(sucess)}";
+
+            return Tuple.Create(result, text);
+        }
+
+
         public static string BonusText(int value)
         {
             string res = " (";
             res += value >= 0 ? $"+{value.ToString()}" : value.ToString();
             res += ")";
             return res;
+        }   
+    }
+    public class Pair<T, U>
+    {
+        public Pair()
+        {
         }
 
-        
+        public Pair(T first, U second)
+        {
+            this.First = first;
+            this.Second = second;
+        }
 
-
-    }
+        public T First { get; set; }
+        public U Second { get; set; }
+    };
     public static class MyIcon
     {
         public const string Bookmark = "icons/bookmarklet.svg";
@@ -581,6 +643,11 @@ namespace DA_Common
         public const string FreshWound = "icons/fresh-wound.svg";
         public const string CustomIcon = "icons/uncertainty.svg";
         public const string Ability = "icons/bolt-spell-cast.svg";
+        public const string Imperial = "icons/imperial.svg";
+        public const string Tallar = "icons/tallar.svg";
+        public const string Haller = "icons/haller.svg";
+        public const string Copper = "icons/copper.svg";
+        public const string Dice = "icons/dices.svg";
     }
 
     public enum Relation
@@ -772,7 +839,20 @@ namespace DA_Common
             return isTended ? MyIcon.TendedWound : MyIcon.FreshWound;
         }
 
+
     }
+    public class ProtectedStorageKeys
+    {
+        public const string SelectedCharacterId = "SelectedCharacterId";
+        public const string UserName = "UserName";
+        public const string UserId = "UserId";
+        public const string IsAdminOrMG = "IsAdminOrMG";
+        public const string CharacterMG = "CharacterMG";
+        public const string IsAuthenticated = "IsAuthenticated";
+        public const string Role = "Role";
+        public const string IsInited = "IsInited";
+        public static readonly string[] All = { SelectedCharacterId, UserName, UserId, IsAdminOrMG, CharacterMG, IsAuthenticated, Role, IsInited };
+    }; 
 
     public class States
     {

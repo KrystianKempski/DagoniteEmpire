@@ -11,14 +11,14 @@ using Microsoft.Extensions.Hosting;
 
 namespace RichTextEditor.Data
 {
-    [Route("api/[controller]")]
     [ApiController]
-    public class FileUploadController : Controller
+    [Route("api/[controller]")]
+    public class FileUploadController : ControllerBase
     {
-        public IActionResult Index()
-        {
-            return View();
-        }
+        //public IActionResult Index()
+        //{
+        //    return View();
+        //}
         private readonly IWebHostEnvironment hostingEnv;
 
         public FileUploadController(IWebHostEnvironment env)

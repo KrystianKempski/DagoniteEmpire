@@ -1,6 +1,10 @@
-﻿@using DA_DataAccess.CharacterClasses
+﻿
+@using System.Globalization;
+@using System.Text;
+@using DA_Models
 @inject ISnackbar Snackbar
 @inject IUserService _userService
+@inject ISpecialSkillRepository _specialSkillRepository
 
 <MudDialog>
     <TitleContent>
@@ -15,23 +19,23 @@
                     <div class="d-flex ">
                         <div class="d-flex flex-column flex-grow-1 pe-1">
                             <label class="fw-bold py-1">Item name</label>
-                            <SfTextBox Readonly="IsInfoMode" Placeholder="Insert item name" @bind-Value="@NewSlot.Equipment.Name"></SfTextBox>
+                        <MudTextField ReadOnly="IsInfoMode" Placeholder="Insert item name" @bind-Value="@NewSlot.Equipment.Name"></MudTextField>
                         </div>
                         <div class="d-flex flex-column px-1">
-                            <label class="fw-bold py-1">Weight</label>
-                            <SfNumericTextBox Readonly="IsInfoMode" Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@NewSlot.Equipment.Weight"></SfNumericTextBox>
+                            <label class="fw-bold py-1">Weight [St]</label>
+                        <MudNumericField ReadOnly="IsInfoMode" Min=0 T="decimal" Format="F4" HideSpinButtons="true" @bind-Value="@NewSlot.Equipment.Weight"></MudNumericField>
                         </div>
                         <div class="d-flex flex-column  px-1">
-                            <label class="fw-bold py-1">Price</label>
-                            <SfNumericTextBox Readonly="IsInfoMode" Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@NewSlot.Equipment.Price"></SfNumericTextBox>
+                            <label class="fw-bold py-1">Price [Imp]</label>
+                        <MudNumericField ReadOnly="IsInfoMode" Min=0 T="decimal" Format="F4" HideSpinButtons="true" @bind-Value="@NewSlot.Equipment.Price"></MudNumericField>
                         </div>
                         <div class="d-flex flex-column flex-grow-1 px-1">
                             <label class="fw-bold py-1">Type</label>
                             <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.EquipmentType" class="form-select p-1">
-                                @foreach (var eq in SD.EquipmentType.All)
-                                {
-                                    <option selected="@(eq==NewSlot.Equipment.EquipmentType)" value="@eq"> @eq</option>
-                                }
+                            @foreach (var eq in SD.EquipmentType.All)
+                            {
+                                        <option selected="@(eq==NewSlot.Equipment.EquipmentType)" value="@eq"> @eq</option>
+                            }
                             </InputSelect>
                         </div>
 
@@ -40,9 +44,9 @@
                             <div class="d-flex flex-column flex-grow-1 px-1">
                                 <label class="fw-bold py-1">Weapon Type</label>
                                 <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
-                                    @foreach (string eq in SD.SpecialSkills.Melee.All)
+                                    @foreach (var eq in MeleeSkills)
                                     {
-                                        <option selected="@(eq==NewSlot.Equipment.RelatedSkill)" value="@eq"> @eq</option>
+                                    <option selected="@(eq.Name==NewSlot.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
                                     }
                                 </InputSelect>
                             </div>
@@ -57,10 +61,10 @@
                         {
                             <div class="d-flex flex-column flex-grow-1 px-1">
                                 <label class="fw-bold py-1">Weapon Type</label>
-                            <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
-                                @foreach (var eq in SD.SpecialSkills.Shooting.All)
+                                <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
+                                    @foreach (var eq in ShootingSkills)
                                     {
-                                        <option selected="@(eq==NewSlot.Equipment.RelatedSkill)" value="@eq"> @eq</option>
+                                        <option selected="@(eq.Name==NewSlot.Equipment.RelatedSkill)" value="@eq.Name"> @eq.Name</option>
                                     }
                                 </InputSelect>
                             </div>
@@ -72,7 +76,7 @@
                             </div>
                         }
 
-                        @if (UserInfo?.IsAdminOrMG == true && IsInfoMode == false)
+                        @if (userInfo?.IsAdminOrMG == true && IsInfoMode == false)
                         {
                             <div class="d-flex flex-column px-1">
                                 <label class="fw-bold py-1">Approve</label>
@@ -88,17 +92,17 @@
                     <div class="d-flex ">
                         <div class="d-flex flex-column flex-grow-1 pe-1">
                             <label class="fw-bold py-1">Item name</label>
-                            <SfTextBox Readonly="IsInfoMode" Placeholder="Insert item name" @bind-Value="@NewSlot.Equipment.Name"></SfTextBox>
+                        <MudTextField ReadOnly="IsInfoMode" Placeholder="Insert item name" @bind-Value="@NewSlot.Equipment.Name"></MudTextField>
                         </div>
                     </div>
                     <div class="d-flex ">
                         <div class="d-flex flex-column px-1">
-                            <label class="fw-bold py-1">Weight</label>
-                            <SfNumericTextBox Readonly="IsInfoMode" Min=0 TValue="decimal" Format="C1" ShowSpinButton="false" @bind-Value="@NewSlot.Equipment.Weight"></SfNumericTextBox>
+                            <label class="fw-bold py-1">Weight [St]</label>
+                        <MudNumericField ReadOnly="IsInfoMode" Min=0 T="decimal" Format="F1" HideSpinButtons="true" @bind-Value="@NewSlot.Equipment.Weight"></MudNumericField>
                         </div>
                         <div class="d-flex flex-column px-1">
-                            <label class="fw-bold py-1">Price</label>
-                            <SfNumericTextBox Readonly="IsInfoMode" Min=0 TValue="decimal" Format="C4" ShowSpinButton="false" @bind-Value="@NewSlot.Equipment.Price"></SfNumericTextBox>
+                            <label class="fw-bold py-1">Price [Imp]</label>
+                        <MudNumericField ReadOnly="IsInfoMode" Min=0 T="decimal" Format="F4" HideSpinButtons="true" @bind-Value="@NewSlot.Equipment.Price"></MudNumericField>
                         </div>
                         <div class="d-flex flex-column flex-grow-1 px-1">
                             <label class="fw-bold py-1">Type</label>
@@ -145,7 +149,7 @@
                                 </div>
                             </div>
                         }
-                        @if (UserInfo?.IsAdminOrMG == true && IsInfoMode == false)
+                        @if (userInfo?.IsAdminOrMG == true && IsInfoMode == false)
                         {
                             <div class="d-flex flex-column px-1">
                                 <label class="fw-bold py-1">Approve</label>
@@ -158,9 +162,8 @@
                 </div>
                 <div class="d-flex flex-column flex-grow-1">
                     <label class="fw-bold  p-1">Item description</label>
-                    <SfRichTextEditor Readonly="IsInfoMode" Height="350px" @ref="DescrEdit" @bind-Value="@NewSlot.Equipment.Description" ShowTooltip="true">
-                        <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
-                    </SfRichTextEditor>
+                    <MudTextField ReadOnly="IsInfoMode" Class="" Variant="Variant.Outlined" Typo="Typo.body2" @bind-Value="@NewSlot.Equipment.Description" Lines="12"></MudTextField>
+       
                 </div>
 
                 <label class="fw-bold pt-4">Item traits</label>
@@ -198,8 +201,14 @@
     [Parameter] public AllParamsModel AllParams { get; set; }
     public string TraitType { get; set; } = SD.TraitType_Gear;
     public string HeaderName { get; set; } = "";
-    private SfRichTextEditor DescrEdit = new();
     private string ErrorMessage { get; set; } = string.Empty;
+    private IEnumerable<SpecialSkillDTO> MeleeSkills = new List<SpecialSkillDTO>();
+    private IEnumerable<SpecialSkillDTO> ShootingSkills = new List<SpecialSkillDTO>();
+    // NumberFormatInfo nfi = new NumberFormatInfo()
+    //     {
+    //         CurrencyGroupSeparator = ":"
+    //     };
+    // String.Format(nfi, "{0:0},-", 2295) //will result in 2:295,-
 
     public ICollection<TraitDTO>? Traits { get; set; } = new List<TraitDTO>();
 
@@ -218,7 +227,7 @@
         new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
     };
 
-    public UserInfo? UserInfo { get; set; }
+    public UserInfo? userInfo { get; set; }
 
 
     private bool WeaponQualityAvalible()
@@ -252,7 +261,7 @@
                 {
                     NewSlot.Equipment.Traits.Add(new TraitEquipmentDTO(trait, NewSlot.Equipment));
                 }
-                var shortDescr = (await DescrEdit.GetTextAsync());
+                var shortDescr = NewSlot.Equipment.Description; 
                 if (shortDescr.Length > 100)
                     shortDescr = shortDescr?[0..100] + "...";
                 NewSlot.Equipment.ShortDescr = shortDescr;
@@ -285,7 +294,20 @@
         {
             Traits = NewSlot.Equipment.Traits.Cast<TraitDTO>().ToList();
         }
-        UserInfo = await _userService.GetUserInfo();
+        userInfo = await _userService.GetUserInfo();
+
+
+        if(userInfo?.SelectedCharacter is not null && userInfo.SelectedCharacter.Id != 0)
+        {
+
+            MeleeSkills = await (_specialSkillRepository.GetAllFromGroup(userInfo.SelectedCharacter.Id , SD.BaseSkills.Melee));
+            ShootingSkills = await (_specialSkillRepository.GetAllFromGroup(userInfo.SelectedCharacter.Id, SD.BaseSkills.Shooting));
+        }
+        else
+        {
+            MeleeSkills = CharacterSeeder.GetSpecialSkills().Where(u => u.RelatedBaseSkillName == SD.BaseSkills.Melee);
+            ShootingSkills = CharacterSeeder.GetSpecialSkills().Where(u => u.RelatedBaseSkillName == SD.BaseSkills.Shooting);
+        }
         HeaderName = IsEditMode ? "Edit" : "Add";
         HeaderName += " item";
         if (NewSlot.Equipment is not null && NewSlot.Equipment.IsApproved)

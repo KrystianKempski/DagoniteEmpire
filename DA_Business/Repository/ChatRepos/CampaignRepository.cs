@@ -58,6 +58,18 @@ namespace DA_Business.Repository.ChatRepos
             
         }
 
+        public async Task<bool> CheckIfCampaignBelongToUser(string userName, int campaignId)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.Campaigns.Include(c=>c.Characters).FirstOrDefaultAsync(i=>i.Id == campaignId);
+
+            if (obj is null) return false;
+
+            var charac = obj.Characters.FirstOrDefault(c => c.UserName == userName);
+
+            return charac is not null;
+        }
+
         public async Task<int> Delete(int id)
         {
             try

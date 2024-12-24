@@ -50,10 +50,6 @@
 
 
 <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
-   @*  <div class="chat-show">
-            <MudIconButton Class="m-1 p-2" Icon="@Icons.Material.Filled.Chat" Color="Color.Dark" Style="background-color:white;" OnClick="@ToggleEndDrawer" />
-    </div> *@
-
     <MudDrawer @bind-Open="@OpenEnd" Fixed="true" Anchor="Anchor.End" Elevation="1" Variant="@DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always" Style="overflow:hidden; text-wrap: nowrap">
         <MudDrawerHeader Style="overflow:hidden; text-wrap: nowrap" Class="p-1">
             <MudText Typo="Typo.body2" Class="px-1" Style="font-size: 24px; "><MudIconButton OnClick="@ToggleEndDrawer" Color="Color.Dark" Icon="@Icons.Material.Filled.Chat"></MudIconButton> Chat </MudText>
@@ -125,9 +121,9 @@
                 }
             </div>
             <MudPaper Width="300px" Height="50px" Elevation="25" Class="d-flex flex-row px-2" Style="">
-                        <MudTextField @onfocus="@(() => OnMessageFocus(userbox))" Disabled="!userbox.IsUserChosen" @ref="userbox.ChatTextField" Immediate="true" T="string" Placeholder="Enter your message..." DisableUnderLine="true" Class="mt-n2 mx-2"
+                        <MudTextField @onfocus="@(() => OnMessageFocus(userbox))" Disabled="!userbox.IsUserChosen" @ref="userbox.ChatTextField" Immediate="true" T="string" Placeholder="Enter your message..." Class="mt-n2 mx-2"
                                         @bind-Value="userbox.CurrentMessage" For="@(()=> userbox.CurrentMessage)" OnKeyDown="Enter" />
-                        <MudButton Disabled="!userbox.IsUserChosen" OnClick="@(() => SubmitAsync(userbox))" StartIcon="@Icons.Material.Outlined.Send" Color="Color.Secondary" ButtonType="MudBlazor.ButtonType.Button">Send</MudButton>
+                        <MudButton @ref=userbox.MudButton Disabled="!userbox.IsUserChosen" OnClick="@(() => SubmitAsync(userbox))" StartIcon="@Icons.Material.Outlined.Send" Color="Color.Secondary" ButtonType="MudBlazor.ButtonType.Button">Send</MudButton>
             </MudPaper>
         </MudPaper>
         </div>
@@ -168,8 +164,8 @@
             </div>
             <div style="width:calc(100% - 10px);height=50px;">
             <MudPaper Width="100%" Height="50px" Elevation="25" Class="d-flex flex-row px-2" Style="">
-                <MudTextField @onfocus="@(() => OnMessageFocus(ChosenUser))" Disabled="!ChosenUser.IsUserChosen" @ref="ChosenUser.ChatTextField" Immediate="true" T="string" Placeholder="Enter your message..." DisableUnderLine="true" Class="mt-n2 mx-2"
-                              @bind-Value="ChosenUser.CurrentMessage" For="@(()=> ChosenUser.CurrentMessage)" OnKeyDown="Enter" />
+                <MudTextField @onfocus="@(() => OnMessageFocus(ChosenUser))" Disabled="!ChosenUser.IsUserChosen" @ref="ChosenUser.ChatTextField" Immediate="true" T="string" Placeholder="Enter your message..."  Class="mt-n2 mx-2"
+                                  @bind-Value="ChosenUser.CurrentMessage" For="@(()=> ChosenUser.CurrentMessage)" OnKeyDown="Enter" />
                 <MudButton Disabled="!ChosenUser.IsUserChosen" OnClick="@(() => SubmitAsync(ChosenUser))" StartIcon="@Icons.Material.Outlined.Send" Color="Color.Secondary" ButtonType="MudBlazor.ButtonType.Button">Send</MudButton>
             </MudPaper>
             </div>
@@ -215,6 +211,7 @@
     {
         public string CurrentMessage { get; set; }
         public MudTextField<string> ChatTextField = new();
+        public MudButton MudButton = new();
         public List<ChatMessage> messages = new List<ChatMessage>();
         public string UserName { get; set; } = string.Empty;
         public string ContactId { get; set; } = string.Empty;
@@ -274,7 +271,7 @@
                 ScrollToBottom = false;
             }
         }
-       
+
     }
 
     protected override async Task OnInitializedAsync()
@@ -341,17 +338,33 @@
 
     public async Task Enter(KeyboardEventArgs e)
     {
-        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        try
         {
-            ChosenUser.ChatTextField.TextUpdateSuppression = false;
-            await SubmitAsync(ChosenUser);
-            ChosenUser.CurrentMessage = string.Empty;
-            StateHasChanged();
-            await Task.Run(async () =>
+            if (e.Code == "Enter" || e.Code == "NumpadEnter")
             {
-                await Task.Delay(150);
-                ChosenUser.ChatTextField.TextUpdateSuppression = true;
-            });
+                @foreach (var userbox in UserBoxes)
+                {
+                    if (userbox.IsUserChosen){
+                        await userbox.MudButton.FocusAsync();
+                        break;
+                    }
+                }   
+                await ChosenUser.ChatTextField.BlurAsync();
+                await SubmitAsync(ChosenUser);
+                await ChosenUser.ChatTextField.FocusAsync();
+                @foreach (var userbox in UserBoxes)
+                {
+                    if (userbox.IsUserChosen)
+                    {
+                        await userbox.ChatTextField.FocusAsync();
+                        break;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _jsRuntime.ToastrError("Error while recive message: " + ex.Message);
         }
     }
 

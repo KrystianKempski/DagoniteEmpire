@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
+﻿
 @inject IChatManager _chatManager
 @inject IJSRuntime _jsRuntime
 @inject ISnackbar _snackBar
@@ -7,27 +7,27 @@
 
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 <MudStack Wrap="Wrap.NoWrap" Spacing="@Spaceing" Row="@IsRow" AlignItems="AlignItems.Start">
-    <MudButton OnClick="GoToCharacterList" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+    <MudButton FullWidth="@(IsRow==false)" OnClick="GoToCharacterList" Style="@($"color:{Color}; justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
         <MudIcon Class="px-1" Icon="@Icons.Material.Filled.PeopleAlt"></MudIcon>
         Character list
     </MudButton>
-    <MudButton OnClick="GoToCharacter" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+    <MudButton FullWidth="@(IsRow==false)" OnClick="GoToCharacter" Style="@($"color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
         <img src="@MyIcon.Helm_white" width="25" height="24" class="helm-icon" />
         Character
     </MudButton>
-    <MudButton OnClick="GoToClass" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+    <MudButton FullWidth="@(IsRow==false)" OnClick="GoToClass" Style="@($"color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
         <img src="@MyIcon.Anvil_white" width="25" height="24" class="anvil-icon" />
         Class
     </MudButton>
-    <MudButton OnClick="GoToEquipment" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+    <MudButton FullWidth="@(IsRow==false)" OnClick="GoToEquipment" Style="@($"color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
         <img src="@MyIcon.Chest" width="26" height="25" class="helm-icon" style="padding-bottom: 4px;" />
         Equipment
     </MudButton>
-    <MudButton OnClick="GoToHealth" Style="@($"color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true" >
+    <MudButton FullWidth="@(IsRow==false)" OnClick="GoToHealth" Style="@($"color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
         <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.Favorite" aria-label="Health"></MudIcon>
         Health
     </MudButton>
-    <MudButton OnClick="GoToCampaign" Style="@($" color:{Color}; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+    <MudButton FullWidth="@(IsRow==false)" OnClick="GoToCampaign" Style="@($" color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
         <img src="@MyIcon.BookmarkWhite" width="24" height="24" class="helm-icon" style="padding-right: 3px;" />
         Campaign
     </MudButton>

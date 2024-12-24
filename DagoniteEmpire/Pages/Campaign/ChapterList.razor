@@ -1,0 +1,270 @@
+﻿@page "/campaign/{id:int}"
+
+@using DA_Business.Services.Interfaces
+@using Syncfusion.Blazor.Navigations;
+@inject NavigationManager _navigationManager
+@inject ISnackbar _snackBar
+@inject IDialogService DialogService
+@inject IJSRuntime _jsRuntime
+@inject ICharacterRepository _characterRepository
+@inject ICampaignRepository _campaignRepository
+@inject IChapterRepository _chapterRepository
+@inject IUserService _userService
+@inject IChatManager _chatManager
+@inject ICampaignRepository _campaignRepository
+@inject CallbackService _callbackService
+@implements IDisposable
+<PageTitle>Dagonie Empire | Chapters</PageTitle>
+@using BreadcrumbItem = MudBlazor.BreadcrumbItem;
+
+<MudContainer Class="pr-1" Fixed="false">
+    @if (IsLoading == true){
+        <LoadingPage></LoadingPage>
+    }else{
+        <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+        @if (Campaign is not null)
+        {
+            <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />Chapter list of @Campaign.Name</MudText>
+        }
+        @if (UserInfo?.IsAdminOrMG == true)
+        {
+            <div class="camp">
+                <MudPaper Height="100px" Width="100%" Class="pa-3 mb-2 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateChapter">
+                    <MudText Align="Align.Center" Typo="Typo.h5"> Add new Chapter...</MudText>
+            </MudPaper>
+            </div>
+        }
+        else
+        {
+            <div class="camp">
+                <MudPaper Height="100px" Width="100%" Class="pa-3 my-2 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateChapter">
+                    <MudText Align="Align.Center" Typo="Typo.h5"> Add new Chapter...</MudText>
+                </MudPaper>
+            </div>
+            
+        }
+
+        <MudStack>
+            @if(Chapters is not null)
+            {
+                @foreach (var chap in Chapters)
+                {
+                    <div class="d-flex flex-column camp">
+                        <MudPaper Class="d-flex flex-column pa-3 ma-0" MinHeight="200px" Width="100%" @onclick="@(()=>ChooseChapter(chap))">
+
+                            <MudStack Spacing="0" Row="true">
+                                <MudText Class="flex-grow-1" Typo="Typo.h6">@chap.Name</MudText>
+                                @if (UserInfo?.IsAdminOrMG == true)
+                                {
+                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditChapter(chap))"></MudIconButton>
+                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteChapter(chap))"></MudIconButton>
+                                }
+                            </MudStack>
+                            <MudText Typo="Typo.caption">Started at: @chap.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+                            <MudText Class="py-1" Typo="Typo.subtitle2"> @chap.Date, @chap.DayTime, @chap.Place </MudText>
+                            <MudText Class="py-1 flex-grow-1" Typo="Typo.body2"> @chap.Description </MudText>
+                            <div class="d-flex flex-wrap">
+                                @foreach (var adv in chap.Characters)
+                                {
+                                    <MudChip T="CharacterDTO">
+                                        <AvatarContent>
+                                            @if (string.IsNullOrEmpty(adv.ImageUrl))
+                                            {
+                                                <MudAvatar>@adv.NPCName.ToUpper().First()</MudAvatar>
+                                            }
+                                            else
+                                            {
+                                                <MudAvatar>
+                                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@adv.ImageUrl"></MudImage>
+                                                </MudAvatar>
+                                            }
+                                        </AvatarContent>
+                                        <ChildContent>@adv.NPCName</ChildContent>
+                                    </MudChip>
+                                }
+                            </div>
+                        </MudPaper>
+
+                    </div>
+                    
+                }
+            }
+        </MudStack>
+    }
+    <MudPaper Width="100%" Square="true" Class="ma-2">
+
+
+    </MudPaper>
+</MudContainer>
+
+@code{
+    [Parameter]
+    public int Id { get; set; }
+    private CampaignDTO Campaign { get; set; }
+    private List<ChapterDTO> Chapters { get; set; } = new List<ChapterDTO>();
+    public ChapterDTO NewChapter { get; set; } = new();
+    public bool IsLoading { get; set; } = true;
+    private string Title { get; set; } = "Campaign name";
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    public UserInfo? UserInfo { get; set; }
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>();
+    private System.Action handler;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await AuthorizeEntry();
+
+        await LoadCampaign();
+        handler = async () => await LoadForSelectedCharacter();
+        _callbackService.OnChange += handler;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AuthorizeEntry();
+        }
+    }
+
+    private async Task AuthorizeEntry()
+    {
+        UserInfo = await _userService.GetUserInfo();
+        if (UserInfo?.IsAuthenticated == false)
+        {
+            var uri = new Uri(_navigationManager.Uri);
+            _navigationManager.NavigateTo($"/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+        }
+        if (Id > 0 && UserInfo is not null && UserInfo.IsAdminOrMG == false)
+        {
+
+            var res = await _campaignRepository.CheckIfCampaignBelongToUser( UserInfo.UserName, Id);
+            if (res == false)
+            {
+                _navigationManager.NavigateTo($"/campaignlist", forceLoad: true);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _callbackService.OnChange -= handler;
+    }
+
+    private async Task LoadForSelectedCharacter()
+    {
+        UserInfo = await _userService.GetUserInfo();
+        IsLoading = true;
+        StateHasChanged();
+
+        if (UserInfo.CharacterMG == true)
+        {
+            Chapters = (await _chapterRepository.GetAll(Id)).ToList();
+        }
+        else
+        {
+            if (UserInfo?.SelectedCharacter?.Id != null)
+                Chapters = (await _chapterRepository.GetAllForUser(UserInfo.SelectedCharacter.Id,Id)).ToList();
+        }  
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadCampaign()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        Campaign = await _campaignRepository.GetById(Id);
+        await LoadForSelectedCharacter();
+        Title = Campaign.Name;
+        _items = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Campaigns", href: $"/campaignlist/"),
+            new BreadcrumbItem("Chapters", href: $"/campaign/{Id}"),
+        };
+        
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task CreateChapter()
+    {
+        var AllCharacters = Campaign.Characters.ToList();
+        NewChapter = new();
+
+        var parameters = new DialogParameters<CreateChapterDialog> { { x => x.NewChapter, NewChapter }, { x => x.AllCharacters, AllCharacters } };
+
+        var dialog = await DialogService.ShowAsync<CreateChapterDialog>("Create chapter", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewChapter = (ChapterDTO)result.Data;
+            NewChapter.CampaignId = Campaign.Id;
+
+
+            Chapters.Add(await _chapterRepository.Create(NewChapter));
+        }
+    }
+
+    private async Task EditChapter(ChapterDTO chapter)
+    {
+        var AllCharacters = Campaign.Characters.ToList();
+        NewChapter = chapter;
+
+        var parameters = new DialogParameters<CreateChapterDialog> { { x => x.NewChapter, NewChapter }, { x => x.AllCharacters, AllCharacters }, { x => x.IsEdit, true } };
+
+        var dialog = await DialogService.ShowAsync<CreateChapterDialog>("Edit chapter", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            NewChapter = (ChapterDTO)result.Data;
+
+            int index = Chapters.FindIndex(u => u.Id == NewChapter.Id);
+            if (index >= 0)
+                Chapters[index] = await _chapterRepository.Update(NewChapter);
+        }
+    }
+
+    private async Task DeleteChapter(ChapterDTO chapter)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+         "Warning",
+         "Are you sure you want to delete this chapter?",
+         yesText: "Yes", cancelText: "No");
+
+        if (result is null || result == false)
+        {
+            return;
+        }
+        IsLoading = true;
+        StateHasChanged();
+
+        int index = Chapters.FindIndex(u => u.Id == chapter.Id);
+        if (index >= 0){
+            await _chapterRepository.Delete(chapter.Id);
+            Chapters = (await _chapterRepository.GetAll(Id)).ToList();
+        }
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task ChooseChapter(ChapterDTO chapter)
+    {
+        UserInfo = await _userService.GetUserInfo();
+        if (chapter.Characters.FirstOrDefault(c => c.Id == UserInfo?.SelectedCharacter?.Id) is not null ||
+                UserInfo?.CharacterMG == true)
+            _navigationManager.NavigateTo($"/chapter/{chapter.Id}");
+        else
+        {
+            _snackBar.Add("This character don't have access to that chapter", Severity.Warning);
+        }
+    }
+}

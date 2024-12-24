@@ -54,7 +54,7 @@ namespace DagoniteEmpire.Service
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_DukePlayer)).GetAwaiter().GetResult();
                     _roleManager.CreateAsync(new IdentityRole(SD.Role_GameMaster)).GetAwaiter().GetResult();
                 }
-
+                
                 // characters
                 if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
                 {
@@ -106,6 +106,19 @@ namespace DagoniteEmpire.Service
                         {
                             UserName = "player",
                             Email = "player@example.com",
+                            EmailConfirmed = true,
+                        };
+
+                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
+                        _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
+
+                    }
+                    if (_userManager.FindByEmailAsync("player2@example.com").Result is null)
+                    {
+                        ApplicationUser user = new()
+                        {
+                            UserName = "player2",
+                            Email = "player2@example.com",
                             EmailConfirmed = true,
                         };
 

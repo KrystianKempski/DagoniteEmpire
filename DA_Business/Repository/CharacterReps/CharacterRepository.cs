@@ -243,6 +243,13 @@ namespace DA_Business.Repository.CharacterReps
             return null;
         }
 
+        public async Task<bool> CheckIfCharacterBelongToUser(string userName, int characterId)
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var obj = await contex.Characters.FirstOrDefaultAsync(u => u.Id == characterId && u.UserName == userName);
+            return obj is not null;
+        }
+
         public async Task<CharacterDTO> Update(CharacterDTO objDTO)
         {
             try

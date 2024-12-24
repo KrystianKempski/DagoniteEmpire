@@ -38,6 +38,7 @@ namespace DA_Business.Mapper
             CreateMap<SpellCircle, SpellCircleDTO>().ReverseMap();
             CreateMap<Wound, WoundDTO>().ReverseMap();
             CreateMap<Wound, ConditionDTO>().ReverseMap();
+            CreateMap<WealthRecord, WealthRecordDTO>().ReverseMap();
         }
     }
 }

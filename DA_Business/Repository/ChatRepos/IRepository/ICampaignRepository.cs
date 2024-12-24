@@ -19,5 +19,6 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<CampaignDTO> GetById(int id);
 
         Task<CampaignDTO> Update(CampaignDTO objDTO);
+        Task<bool> CheckIfCampaignBelongToUser(string userName, int campaignId);
     }
 }

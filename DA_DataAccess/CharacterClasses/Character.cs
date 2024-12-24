@@ -57,8 +57,9 @@ namespace DA_DataAccess.CharacterClasses
 
         public int WeaponSet { get; set; } = 0;
 
-        public int CurrentDay { get; set; } = 1;
-        public int CurrentMonth { get; set; } = 1;
-        public int CurrentYear { get; set; } = SD.Calendar.StartYear;
+        public int DateNumber { get; set; } = 1;
+
+        public ICollection<WealthRecord>? WealthLog { get; set; }
+
     }
 }
