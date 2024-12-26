@@ -1,5 +1,6 @@
 ﻿@using DA_DataAccess.CharacterClasses
 @using DA_Models
+@using MudBlazor
 @inject IFileUpload _fileUpload;
 @inject ISnackbar Snackbar
 @inject IMobRepository _mobRepository
@@ -349,10 +350,6 @@
         {
             ResultStringMG += $"{RichText.BoldText(SelectedCharacterRolling.Character.NPCName)} is making an opposite {SpecialSkillRoll.Name} skill check vs. {RichText.BoldText(SelectedCharacterDefending.Character.NPCName)} {SpecialSkillDefence.Name} skill";
             ResultStringMG.NewLine();
-            // ResultStringMG += $"{SelectedCharacterRolling.Character.NPCName} skill value: {sumOfAll}";
-            // ResultStringMG.NewLine();
-            // ResultStringMG += $"{SelectedCharacterDefending.Character.NPCName} skill value: {SpecialSkillDefence.SumBonus}";
-            //ResultStringMG.NewLine();
             DifficultyValue = SpecialSkillDefence.SumBonus;
 
             List<Pair<string, int>> bonusesAttacker = new List<Pair<string, int>>();

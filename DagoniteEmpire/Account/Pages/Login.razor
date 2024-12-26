@@ -125,7 +125,10 @@
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
+            if(string.IsNullOrEmpty(ReturnUrl) == false)
+                RedirectManager.RedirectTo(ReturnUrl);  
+            else 
+               RedirectManager.RedirectTo("");
         }
         else if (result.RequiresTwoFactor)
         {

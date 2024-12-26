@@ -342,6 +342,7 @@ else
         {           
             await Task.Delay(500);
             await _jsRuntime.ScrollToElement("bottom-container");
+            PageNum = PageCount;
             _scrollDown = false;
         }  
     }
@@ -467,12 +468,20 @@ else
                 NewPost.ChapterId = Id;
                 NewPost.CharacterId = (int)UserInfo?.SelectedCharacter?.Id;
                 NewPost.Character = UserInfo?.SelectedCharacter;
-
+               // CharacterAllParams[NewPost.Character.Id].Character.NumberOfPosts++;
+                
             }
 
             var result = await _postRepository.Create(NewPost);
-            if(result is not null)
+            if(result is not null){
+                if (NewPost.Character.Id > 0)
+                {
+                    CharacterAllParams[NewPost.Character.Id].Character.NumberOfPosts = await _postRepository.GetCharacterPostCount(NewPost.Character.Id);
+                    CharacterAllParams[NewPost.Character.Id].Character.LastPostDate = await _postRepository.GetCharacterLastPostDate(NewPost.Character.Id);
+                }
                 Posts.Add(NewPost);
+                
+            }
         }
         NewPost = new();
 
