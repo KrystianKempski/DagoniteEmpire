@@ -9,30 +9,33 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="@NewChapter.Name" Label="Chapter name" />
-        <MudTextField @bind-Value="@NewChapter.Description" Label="Description" Lines="3" />
-        <MudStack Spacing="1" Row>
-            <MudTextField @bind-Value="@NewChapter.DayTime" Label="Daytime" /> 
-            <DateComponent Date="Date" Editable="true"></DateComponent>
-        </MudStack>
-        <MudTextField @bind-Value="@NewChapter.Place" Label="Location" />
-        <MudText Typo="Typo.caption">Choose player characters for chapter</MudText>
-        <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
-            @if (true)
-            {
-                int index = 0;
-                @foreach (var adv in AllCharacters.OrderBy(c => c.Id))
+        <MudForm @bind-IsValid="@success">
+
+            <MudTextField Required @bind-Value="@NewChapter.Name" Label="Chapter name" />
+            <MudTextField Required @bind-Value="@NewChapter.Description" Label="Description" Lines="3" />
+            <MudStack Spacing="1" Row>
+                <MudTextField Required @bind-Value="@NewChapter.DayTime" Label="Daytime" />
+                <DateComponent Date="Date" Editable="true"></DateComponent>
+            </MudStack>
+            <MudTextField Required @bind-Value="@NewChapter.Place" Label="Location" />
+            <MudText Typo="Typo.caption">Choose player characters for chapter</MudText>
+            <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
+                @if (true)
                 {
-                    <MudChip @bind-Selected="IncludedList[index]" Text="@adv.NPCName" Value="@adv"></MudChip>
-                    index++;
+                    int index = 0;
+                    @foreach (var adv in AllCharacters.OrderBy(c => c.Id))
+                    {
+                        <MudChip @bind-Selected="IncludedList[index]" Text="@adv.NPCName" Value="@adv"></MudChip>
+                        index++;
+                    }
                 }
-            }
-            
-        </MudChipSet>
+
+            </MudChipSet>
+        </MudForm>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="CreateChapter">SAVE</MudButton>
+        <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="CreateChapter">SAVE</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -44,6 +47,7 @@
     [Parameter] public bool IsEdit { get; set; } = false;
     private DateModel Date; 
     private string Title = "Create";
+    private bool success = false;
     private IReadOnlyCollection<CharacterDTO> SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private List<bool> IncludedList = new List<bool>();

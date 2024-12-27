@@ -22,5 +22,7 @@ namespace DA_DataAccess.Chat
         [ForeignKey(nameof(Chapter))]
         public int ChapterId { get; set; }
         public virtual Chapter? Chapter { get; set; }
+        public string? AlternativeName { get; set; } = null;
+        public string? AlternativeImageUrl { get; set; } = null;
     }
 }

@@ -146,8 +146,14 @@ else
                                 string postId = "post_big_number_" + post.Id.ToString();
                                 <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="300px">
                                     <MudPaper Class="d-flex flex-column pa-2" Width="200px">
-                                        <MudText Align="Align.Center" Typo="Typo.h5">@post.Character.NPCName</MudText>
-                                        <MudImage Src="@post.Character.ImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg " />
+                                        @if(post.AlternativeName is null)
+                                        {
+                                            <MudText Align="Align.Center" Typo="Typo.h5">@post.Character.NPCName</MudText>
+                                            <MudImage Src="@post.Character.ImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg " />
+                                        }else{
+                                            <MudText Align="Align.Center" Typo="Typo.h5">@post.AlternativeName</MudText>
+                                            <MudImage Src="@post.AlternativeImageUrl" Alt="Avatar" Elevation="25" Class="rounded-lg " />
+                                        }
                                         @if (CharacterAllParams.Any() && CharacterAllParams.ContainsKey( post.CharacterId))
                                         {
                                             <MudText Align="Align.Center" Class="pt-2" Typo="Typo.caption">Posts: @CharacterAllParams[post.CharacterId].Character.NumberOfPosts.ToString()</MudText>
@@ -188,8 +194,15 @@ else
 
                                     <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
                                         <MudStack Class="pb-1" Spacing="0" Row="true">
-                                            <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@post.Character.ImageUrl"></MudImage></MudAvatar>
-                                            <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.Character.NPCName</MudText>
+                                            @if(post.AlternativeName is null)
+                                            {
+                                                <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@post.Character.ImageUrl"></MudImage></MudAvatar>
+                                                <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.Character.NPCName</MudText>
+                                            }else{
+                                                <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;"><MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@post.AlternativeImageUrl"></MudImage></MudAvatar>
+                                                <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@post.AlternativeName</MudText>
+
+                                            }
                                             @if (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true)
                                             {
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
@@ -223,6 +236,17 @@ else
                     @if (IsEditMode)
                     {
                         <MudButton Class="mt-2 py-0" OnClick="CancelEdit">Cancel Edit</MudButton>
+                    }
+                    @if(UserInfo?.IsAdminOrMG == true)
+                    {
+                        <MudSelect @bind-Value="GmAsMob" T="MobDTO"  Label="Select Mob">
+                            <MudSelectItem Value="new MobDTO()">GM</MudSelectItem>
+                            @foreach (var mob in Mobs)
+                            {
+                                <MudSelectItem Value="mob">@mob.Name</MudSelectItem>                                
+                            }
+
+                        </MudSelect>
                     }
                 </div>
             </MudPaper>
@@ -277,7 +301,7 @@ else
     private int PageNum { get; set; } = 1;
     private int PageCount { get; set; } = 1;
     private bool SendPostEnabled = true;
-
+    private MobDTO GmAsMob = new MobDTO();
     private MudPagination Pagination;
     private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
     private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
@@ -434,47 +458,53 @@ else
 
     private async Task CreatePost()
     {
-        if (string.IsNullOrEmpty(NewPost.Content))
-            return;
+        try{
+
+            if (string.IsNullOrEmpty(NewPost.Content))
+                return;
 
 
-        IsLoading = true;
-        StateHasChanged();
-        if (IsEditMode)
-        {
-            var result = await _postRepository.Update(NewPost);
-            if (result is not null)
+            IsLoading = true;
+            StateHasChanged();
+            if (IsEditMode)
             {
-                var index =  Posts.FindIndex(p => p.Id == NewPost.Id);
-                if (index >= 0)
-                    Posts[index].Content = NewPost.Content;
+                var result = await _postRepository.Update(NewPost);
+                if (result is not null)
+                {
+                    var index =  Posts.FindIndex(p => p.Id == NewPost.Id);
+                    if (index >= 0)
+                        Posts[index].Content = NewPost.Content;
+                }
+                IsEditMode = false;
+                SendButtonText = "Send Post";
             }
-            IsEditMode = false;
-            SendButtonText = "Send Post";
-        }
-        else
-        {
-            NewPost.ChapterId = Id;
-            NewPost.CreatedDate = DateTime.Now;
-            UserInfo = await _userService.GetUserInfo();
-            if(UserInfo?.IsAdminOrMG == true &&
-              (UserInfo?.SelectedCharacter?.UserName != "gm" && UserInfo?.SelectedCharacter?.UserName != "GameMaster"))
+            else
             {
-                var character = await _characterRepository.GetByName(SD.GameMaster_NPCName);                    
-                NewPost.CharacterId = character.Id;
-                NewPost.Character = character;
-            }else{
-
                 NewPost.ChapterId = Id;
-                NewPost.CharacterId = (int)UserInfo?.SelectedCharacter?.Id;
-                NewPost.Character = UserInfo?.SelectedCharacter;
-               // CharacterAllParams[NewPost.Character.Id].Character.NumberOfPosts++;
-                
+                NewPost.CreatedDate = DateTime.Now;
+                UserInfo = await _userService.GetUserInfo();
+                if(UserInfo?.IsAdminOrMG == true &&
+                  (UserInfo?.SelectedCharacter?.UserName.ToLower() != "gm" && UserInfo?.SelectedCharacter?.UserName.ToLower() != "gamemaster"))
+                {
+                    var character = await _characterRepository.GetByName(SD.GameMaster_NPCName);                    
+                    NewPost.CharacterId = character.Id;
+                    NewPost.Character = character;
+                }else{
+
+                    NewPost.ChapterId = Id;
+                    NewPost.CharacterId = (int)UserInfo?.SelectedCharacter?.Id;
+                    NewPost.Character = UserInfo?.SelectedCharacter;
+                    if(string.IsNullOrEmpty(GmAsMob.Name) == false)
+                    {
+                        NewPost.AlternativeName = GmAsMob.Name;
+                        NewPost.AlternativeImageUrl = GmAsMob.ImageUrl;
+                    }
+                // CharacterAllParams[NewPost.Character.Id].Character.NumberOfPosts++;                
             }
 
             var result = await _postRepository.Create(NewPost);
             if(result is not null){
-                if (NewPost.Character.Id > 0)
+                if (NewPost.Character.Id > 0 && UserInfo?.CharacterMG == false)
                 {
                     CharacterAllParams[NewPost.Character.Id].Character.NumberOfPosts = await _postRepository.GetCharacterPostCount(NewPost.Character.Id);
                     CharacterAllParams[NewPost.Character.Id].Character.LastPostDate = await _postRepository.GetCharacterLastPostDate(NewPost.Character.Id);
@@ -498,6 +528,9 @@ else
 
         StateHasChanged();
         _scrollDown = true;
+        }catch(Exception ex){
+            SnackBar.Add("Error during creating post",Severity.Error);
+        }
     }
 
     private async Task EditPost(PostDTO post)

@@ -18,5 +18,7 @@ namespace DA_DataAccess.Chat
         public CharacterDTO? Character { get; set; }
         public int ChapterId { get; set; }
         public ChapterDTO? Chapter { get; set; }
+        public string? AlternativeName { get; set; } = null;
+        public string? AlternativeImageUrl { get; set; } = null;
     }
 }

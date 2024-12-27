@@ -8,9 +8,10 @@
             @Title Campaign
         </MudText>
     </TitleContent>
-    <DialogContent>
-        <MudTextField @bind-Value="@NewCampaign.Name" Label="Campaign name" />
-        <MudTextField @bind-Value="@NewCampaign.Description" Label="Description" Lines="5" />
+    <DialogContent>        
+        <MudForm @bind-IsValid="@success">
+        <MudTextField Required @bind-Value="@NewCampaign.Name" Label="Campaign name" />
+        <MudTextField Required @bind-Value="@NewCampaign.Description" Label="Description" Lines="5" />
         <MudText Typo="Typo.caption">Choose player characters for campaign</MudText>
         <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
             @if(true)
@@ -23,10 +24,11 @@
                 }
             }            
         </MudChipSet>
+        </MudForm>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="CreateCampaign">@Title</MudButton>
+        <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="CreateCampaign">@Title</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -40,6 +42,7 @@
     private IEnumerable<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
     private string Title { get; set; } = "Create";
     private List<bool> IncludedList = new List<bool>();
+    private bool success = false;
 
 
     protected override async Task OnInitializedAsync()
