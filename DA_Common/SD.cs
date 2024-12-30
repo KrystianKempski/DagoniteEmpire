@@ -977,6 +977,17 @@ namespace DA_Common
         {
             return "<strong>" + num.ToString() + "</strong>";
         }
+        public static string NumToStr(int value)
+        {
+            if (value < 0)
+            {
+                return $"{value}";
+            }
+            else
+            {
+                return $"+{value}";
+            }
+        }
 
         public static RichText operator+(RichText left, RichText right)
         {

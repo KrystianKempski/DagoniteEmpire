@@ -28,6 +28,8 @@ namespace DA_Models.ComponentModels
         public string OldStates { get; set; } = string.Empty;
         public string NewStates { get; set; } = string.Empty;
         public int ActionLeft { get; set; } = 2;
+
+        public List<Pair<string, int>> AdditionalBonuses = new List<Pair<string, int>>();
     }
 
     public class FightSequenceModel
@@ -46,7 +48,6 @@ namespace DA_Models.ComponentModels
         public string AttackAction { get; set; } = string.Empty;
         public string AttackLocation { get; set; } = string.Empty;
         public string DefenceType { get; set; } = string.Empty;
-
 
 
         // private variables
@@ -248,6 +249,8 @@ namespace DA_Models.ComponentModels
                     break;
             }
 
+            if (Attacker?.Props?.MainWeaponUsed?.Name is null)
+                throw new Exception("Attacker weapon is missing");
             weaponString += $"using {Attacker.Props.MainWeaponUsed.Name} {SD.BonusText(weaponCurrValue)} ";
             AttackValue += weaponCurrValue;
             AttackCurrValue = 0;
@@ -319,8 +322,12 @@ namespace DA_Models.ComponentModels
             }
             string attackerStatesString = GetStatesString(Attacker.OldStates);
             string defenderStatesString = GetStatesString(Defender.OldStates);
+            attackerStatesString += GetAdditionalBonusString(true);
+            defenderStatesString += GetAdditionalBonusString(false);
+            if(attackerStatesString.Length > 0) attackerStatesString = $"({attackerStatesString})";
+            if (defenderStatesString.Length > 0) defenderStatesString = $"({defenderStatesString})";
 
-            ResultStringMG += $"({RichText.BoldText(Attacker.Name)}{attackerStatesString} attacks {attackString} {weaponString}, {RichText.BoldText(Defender.Name)}{defenderStatesString} tries to {defenceString}.";
+            ResultStringMG += $"({RichText.BoldText(Attacker.Name)} {attackerStatesString} attacks {attackString} {weaponString}, {RichText.BoldText(Defender.Name)} {defenderStatesString} tries to {defenceString}.";
         }
 
         public void WriteBonusesFromStates()
@@ -727,7 +734,29 @@ namespace DA_Models.ComponentModels
             if (oldStates.Length > 4)
             {
                 res = oldStates;
-                res = $" ({res.Remove(res.Length - 2)})";
+                res = $"{res.Remove(res.Length - 2)}";
+            }
+            return res;
+        }
+        private string GetAdditionalBonusString(bool isAttacker)
+        {
+            string res = string.Empty;
+            FighterModel fighter;
+            if (isAttacker) fighter = Attacker;
+            else            fighter = Defender;
+
+            if (fighter.AdditionalBonuses is not null && Attacker.AdditionalBonuses.Count > 0)
+            {
+                foreach(var item in fighter.AdditionalBonuses)
+                {
+                    if (isAttacker == true)
+                        AttackValue += item.Second;
+                    else
+                        DefenceValue += item.Second;
+
+                    res += $"{item.First} ({RichText.NumToStr(item.Second)}), ";
+                }
+                res = $" {res.Remove(res.Length - 2)}";
             }
             return res;
         }
