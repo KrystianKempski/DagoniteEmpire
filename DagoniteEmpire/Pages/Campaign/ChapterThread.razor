@@ -57,6 +57,7 @@ else
                         }
                         <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
                         <MudItem xs="6"><MudButton FullWidth OnClick="MakeSkillRoll">Make a roll</MudButton></MudItem>
+                        <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
                     </MudGrid>
                 }
                 @if (IsLoadingCharacters == false)
@@ -800,7 +801,26 @@ else
             StateHasChanged();
         }
     }
+    
+    private async Task AddTemporaryStatus()
+    {
+        if (Chapter is null) return;
+        var parameters = new DialogParameters<AddStatusDialog>  {   { x => x.CharacterAllParams, CharacterAllParams.Values },
+                                                                        { x => x.Mobs, Mobs },};
 
+        var dialog = await DialogService.ShowAsync<AddStatusDialog>("Add status", parameters, await SetDialogOptions(MaxWidth.ExtraSmall));
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            IsLoadingCharacters = true;
+            StateHasChanged();
+            await LoadMobs();
+            await LoadChapter();
+            IsLoadingCharacters = false;
+            StateHasChanged();
+        }
+    }
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
     {
         DialogOptions options = new() { MaxWidth = maxWidth };

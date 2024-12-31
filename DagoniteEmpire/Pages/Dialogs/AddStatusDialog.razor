@@ -1,0 +1,155 @@
+﻿@using DA_DataAccess.CharacterClasses
+@using DA_Models
+@using MudBlazor
+@inject IFileUpload _fileUpload;
+@inject ISnackbar Snackbar
+@inject IMobRepository _mobRepository
+@inject ICampaignRepository _campaignRepository
+@inject IChapterRepository _chapterRepository
+@inject ITraitRepository<TraitCharacterDTO> _traitCharacterRepository
+@inject IWoundRepository _woundsRepository
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <img src="@MyIcon.Dice" width="40" height="40" />
+            Add temporary status
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        <MudGrid>
+            <MudItem xs="12">
+                @* CHARACTER *@
+                <MudPaper Elevation="1" Class="pa-2 h-100">
+
+                    @* Select Rolling character *@
+                    <MudSelect Value="@SelectedCharacterName" T="string" Required="true" ValueChanged="SelectCharacter" Label="Select Rolling character">
+                        <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
+                        @foreach(var attacker in CharacterAllParams)
+                        {
+                            @if (attacker is not null )
+                            {                            
+                                <MudSelectItem Value="attacker.Character.NPCName">@attacker.Character.NPCName</MudSelectItem>
+                            }
+                        }
+                        @foreach (var attacker in Mobs)
+                        {
+                            @if (attacker is not null)
+                            {
+                                <MudSelectItem Value="attacker.Name">@attacker.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>                
+                    @* Select state  *@
+                    <MudSelect  T="TraitDTO" Required="true" @bind-Value="@SelectedTrait" Label="Select state">
+                        @if (Traits is not null && Traits.Count() > 0)
+                        {
+                            @foreach (TraitDTO trait in Traits)
+                            {
+                                <MudSelectItem Value="trait">@trait.Name</MudSelectItem>
+                            }
+                        }
+
+                    </MudSelect>
+                    <MudNumericField Label="Duration" @bind-Value="StateDuration"> @StateDuration</MudNumericField>
+                   </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Exit</MudButton>
+        <MudButton Color="Color.Error" OnClick="AddStateAndExit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public ICollection<AllParamsModel?> CharacterAllParams { get; set; } = new List<AllParamsModel?>();
+    [Parameter] public IEnumerable<MobDTO> Mobs { get; set; } = new List<MobDTO>();
+
+    private IEnumerable<TraitDTO> Traits { get; set; }
+    private AllParamsModel? SelectedCharacter = null;
+    private MobDTO? SelectedMob= null;
+    private TraitDTO? SelectedTrait = null;
+    private string SelectedStateName = string.Empty;
+    private string SelectedCharacterName = string.Empty;
+    private int StateDuration = 1;
+    private bool IsCharacter = false;
+
+    private void Cancel()
+    {   
+        MudDialog.Cancel();        
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Traits = (await _traitCharacterRepository.GetAllApproved()).ToList().Where(t => t.IsTemporary == true);
+    }
+
+
+    private void SelectCharacter(string characterName)
+    {
+        try
+        {
+
+            var characterParams = CharacterAllParams.FirstOrDefault(p => p.Character.NPCName == characterName);
+            if (characterParams is not null)
+            {
+                SelectedCharacter = characterParams;
+                SelectedCharacterName = SelectedCharacter.Character.NPCName;
+                IsCharacter = true;
+                return;
+            }
+            var mob = Mobs.FirstOrDefault(m=>m.Name == characterName);
+            if(mob is not null)
+            {
+                SelectedMob = mob;
+                SelectedCharacterName = mob.Name;
+                IsCharacter = false;
+            }
+        }catch(Exception ex)
+        {
+            Snackbar.Add("Error while selecting character: " + ex.Message);
+        }
+    }
+
+
+    private async Task AddStateAndExit()
+    {
+        try
+        {
+            MudDialog.Close();
+            if (IsCharacter){
+                await AddCharacterState();
+            }else{
+                await AddMobState();
+            }
+            Snackbar.Add($"{SelectedTrait.Name} added to:{SelectedCharacterName}", Severity.Success);
+        }
+        catch(Exception ex)
+        {
+            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
+        }
+    }    
+
+    private async Task AddCharacterState()
+    {
+        if (SelectedCharacter?.Character is null || string.IsNullOrEmpty(SelectedTrait?.Name))
+            throw new Exception("No character or state selected");
+
+        // update Character traits
+        TraitCharacterDTO characterTrait = new(SelectedTrait,SelectedCharacter.Character.Id,true);
+        characterTrait.TraitValue = StateDuration;
+        await _traitCharacterRepository.Create(characterTrait);
+    }
+
+    private async Task AddMobState()
+    {
+        if (SelectedMob is null || string.IsNullOrEmpty(SelectedTrait?.Name))
+            throw new Exception("No Mob or state selected");
+
+        SelectedMob.States += $"{SelectedTrait.Name}:{StateDuration}, ";
+        await _mobRepository.Update(SelectedMob);
+    }
+}
