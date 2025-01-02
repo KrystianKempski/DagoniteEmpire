@@ -220,7 +220,7 @@ else
                                 }
                             }
                         }
-                        <MudPagination @ref="Pagination" Count="PageCount" SelectedChanged="SelectPage"></MudPagination>
+                        <MudPagination @ref="Pagination" Count="PageCount" Selected="PageNum" SelectedChanged="SelectPage"></MudPagination>
                     </MudStack>
 
                 </div>
@@ -359,16 +359,16 @@ else
         UserInfo = await _userService.GetUserInfo();
         if(firstRender){
 
-            await AuthorizeEntry();
-            PageCount = await GetPageCount();
-            PageNum = PageCount;
+           // await AuthorizeEntry();
+          //  PageCount = await GetPageCount();
+          //  PageNum = PageCount;
             //await LoadChapter();
         }
         if (_scrollDown == true)
         {           
             await Task.Delay(500);
             await _jsRuntime.ScrollToElement("bottom-container");
-            PageNum = PageCount;
+           // PageNum = PageCount;
             _scrollDown = false;
         }  
     }
