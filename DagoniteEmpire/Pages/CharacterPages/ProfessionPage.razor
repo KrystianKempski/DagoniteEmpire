@@ -506,22 +506,11 @@
         try
         {
             UserInfo = await _userService.GetUserInfo();
-            // if (UserInfo?.IsAuthenticated == false)
-            // {
-            //     return;
-            // }
-            // if (Id > 0 && UserInfo?.UserName is not null && UserInfo.IsAdminOrMG == false)
-            // {
-            //     var res = await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id);
-            //     if (res == false)
-            //     {
-            //         return;
-            //     }
-            // }
+
             await AuthorizeEntry();
             IsLoading = true;
             registration = _navigationManager.RegisterLocationChangingHandler(OnLocationChanging);
-            if (UserInfo?.IsAuthenticated == false)
+            if (UserInfo?.IsAuthenticated != true)
             {
                 var uri = new Uri(_navigationManager.Uri);
                 _navigationManager.NavigateTo($"/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
@@ -544,7 +533,7 @@
     private async Task AuthorizeEntry()
     {
         if (UserInfo is null) return;
-        if (UserInfo?.IsAuthenticated == false)
+        if (UserInfo?.IsAuthenticated != true)
         {
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/account/login?returnUrl={uri.LocalPath}", forceLoad: true);

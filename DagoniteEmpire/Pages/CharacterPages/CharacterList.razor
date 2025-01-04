@@ -73,7 +73,7 @@ else
         {
             IsLoading = true;
             UserInfo = await _userService.GetUserInfo();
-            if (UserInfo?.IsAuthenticated == false)
+            if (UserInfo?.IsAuthenticated != true)
             {
                 return;
             }
@@ -93,7 +93,7 @@ else
     {
         if (firstRender)
         {
-            if (UserInfo?.IsAuthenticated == false)
+            if (UserInfo?.IsAuthenticated != true)
             {
                 var uri = new Uri(_navigationManager.Uri);
 
