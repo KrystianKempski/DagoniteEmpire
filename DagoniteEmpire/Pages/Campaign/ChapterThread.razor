@@ -36,11 +36,11 @@
 else
 {
     <MudHidden Breakpoint="Breakpoint.LgAndDown" Invert="true">
-       @*  <MudHidden Hidden="@(_open == true)"> *@
-            <MudButton Style="p-2" OnClick="ToggleDrawer" Variant="Variant.Text" DropShadow="true">
-                <img src="@MyIcon.Helm" width="30" height="30" class="helm-icon" />
-            </MudButton>            
-       @*  </MudHidden> *@
+        @*  <MudHidden Hidden="@(_open == true)"> *@
+        <MudButton Style="p-2" OnClick="ToggleDrawer" Variant="Variant.Text" DropShadow="true">
+            <img src="@MyIcon.Helm" width="30" height="30" class="helm-icon" />
+        </MudButton>            
+        @*  </MudHidden> *@
 
         <MudDrawer Width="320px"  @bind-Open="@_open" Elevation="1" Variant="DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always">
             <div class="px-1 py-2">
@@ -395,27 +395,34 @@ else
 
     private async Task LoadForSelectedCharacter()
     {
-        UserInfo = await _userService.GetUserInfo();
-        IsLoading = true;
-        StateHasChanged();
-        int charId = (int)UserInfo.SelectedCharacter.Id;
-        if (charId == 0) 
-            return;
-        if (Chapter?.Characters.FirstOrDefault(c => c.Id == charId) is null
-           && UserInfo?.CharacterMG == false)
-        {
+        try{
 
-            NewPost.Content = "Character not present in this chapter!";
-            SendPostEnabled = false;
+            UserInfo = await _userService.GetUserInfo();
+            if(UserInfo is null) return;
+            IsLoading = true;
+            StateHasChanged();
+            int charId = (int)UserInfo.SelectedCharacter.Id;
+            if (charId == 0) 
+                return;
+            if (Chapter?.Characters.FirstOrDefault(c => c.Id == charId) is null
+               && UserInfo?.CharacterMG == false)
+            {
+
+                NewPost.Content = "Character not present in this chapter!";
+                SendPostEnabled = false;
+            }
+            else
+            {
+                SendPostEnabled = true;
+                NewPost.Content = string.Empty;
+            }
+            _scrollDown = true;
+            IsLoading = false;
+            StateHasChanged();
         }
-        else
-        {
-            SendPostEnabled = true;
-            NewPost.Content = string.Empty;
+        catch(Exception ex){
+            SnackBar.Add("Error: " + ex.Message, Severity.Error);
         }
-        _scrollDown = true;
-        IsLoading = false;
-        StateHasChanged();
     }
 
 
