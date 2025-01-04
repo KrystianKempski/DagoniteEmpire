@@ -24,5 +24,6 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<int> GetPostCount(int chapterId);
         Task<int> GetCharacterPostCount(int characterId, DateTime? From = null, DateTime? To = null);
         Task<DateTime> GetCharacterLastPostDate(int characterId);
+        Task<int> GetCharacterLastPostChapter(int characterId);
     }
 }

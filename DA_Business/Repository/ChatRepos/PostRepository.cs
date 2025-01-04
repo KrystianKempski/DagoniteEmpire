@@ -7,6 +7,7 @@ using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.Metrics;
+using static MudBlazor.CategoryTypes;
 
 namespace DA_Business.Repository.ChatRepos
 {
@@ -166,6 +167,30 @@ namespace DA_Business.Repository.ChatRepos
                     count = contex.Posts.Where(u => u.CharacterId == characterId && u.CreatedDate >= From && u.CreatedDate <= To).Count();
                 }
                 return count;
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+            }
+        }
+
+        public async Task<int> GetCharacterLastPostChapter(int characterId)
+        {
+            try
+            {
+                using var contex = await _db.CreateDbContextAsync();
+                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+
+                IEnumerable<Post> posts = contex.Posts.Include(p=>p.Chapter).Where(u => u.CharacterId == characterId);
+                if (posts is null || posts.Count() == 0)
+                    return 0;
+
+                var latestPost = posts.MaxBy(r=>r.CreatedDate);
+
+                if(latestPost?.Chapter is null)
+                    return 0;
+
+                return latestPost.Chapter.Id;
             }
             catch (Exception ex)
             {
