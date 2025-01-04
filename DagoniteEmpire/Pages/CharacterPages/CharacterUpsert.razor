@@ -28,195 +28,195 @@
 @inject NavigationManager _navigationManager
 <div class="on-top-dialog">
 
-<_LeavePage IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click" ></_LeavePage>
+    <_LeavePage IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click" ></_LeavePage>
 </div>
 <div class="container main-container justify-content-around px-1">
-<div class="page">
-    
-    <CascadingValue Value="@AllParams">
-    <div class="col-12">
-         @if (IsLoading)
-        {
-            <LoadingPage></LoadingPage>
-        }
-        else
-        {
-            @if(IsLeaveAllowed == false)
-            {
-                <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
+    <div class="page">
 
-                    <div class="save-btn"> 
-                        <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button>
+        <CascadingValue Value="@AllParams">
+            <div class="col-12">
+                @if (IsLoading)
+                {
+                    <LoadingPage></LoadingPage>
+                }
+                else
+                {
+                    @if(IsLeaveAllowed == false)
+                    {
+                        <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
 
-                    </div>
-                </MudHidden> 
-                <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
+                            <div class="save-btn"> 
+                                <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button>
 
-                    <div class="save-btn down"> 
-                        <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button>
+                            </div>
+                        </MudHidden> 
+                        <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
 
-                    </div>
-                </MudHidden> 
-            }
-            <section class="section-create-character">
-                <div class="container-fluid">
+                            <div class="save-btn down"> 
+                                <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button>
+
+                            </div>
+                        </MudHidden> 
+                    }
+                    <section class="section-create-character">
+                        <div class="container-fluid">
                             <h3 class="char-title card-title p-3 m-0">@Title character</h3>
-                    <div class="row">
-                        <div class="form-group col-8 col-md-3 px-1">
-                            <label>Character name</label>
-                            @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
-                            {
-                                 <input type="text" @bind-value="NPCName" class="form-control"></input>
-                            }
-                            else
-                            {
-                                 <input readonly type="text" @bind-value="NPCName" class="form-control"></input>
-                            }
-                            </div>
-                        <div class="form-group col-4 col-md-1 px-1">
-                            <label>Age</label>
-                            @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
-                            {
-                                <InputNumber  @bind-Value="NPCAge" class="form-control col-2"></InputNumber>
-                            }
-                            else
-                            {
-                                <InputNumber readonly @bind-Value="NPCAge" class="form-control col-2"></InputNumber>
-                            }
-                        </div>
-
-                        <div class="form-group col-8 col-md-3 px-1">
-                            <label>Character Type</label>
-                            @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
-                            {
-                                <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
-                                    <option selected="selected" value="@SD.NPCType.Hero">
-                                        @SD.NPCType.Hero
-                                    </option>
-                                    @if (IsDukeAllowed)
+                            <div class="row">
+                                <div class="form-group col-8 col-md-3 px-1">
+                                    <label>Character name</label>
+                                    @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                                     {
-                                        <option value="@SD.NPCType.Duke">
-                                            @SD.NPCType.Duke
-                                        </option>
+                                        <input type="text" @bind-value="NPCName" class="form-control"></input>
                                     }
-                                </InputSelect>
-                            }
-                            else
-                            {
-                                <input readonly type="text" @bind-value="AllParams.Character.NPCType" class="form-control"></input>
-                            }
-                        </div>
-                        <div class="form-group col-4 col-md-1 px-1">
-                            <label>Finished</label>
-                            <MudCheckBox Disabled="@((UserInfo?.IsAdminOrMG == false))" @bind-Value="@IsApproved" Size="Size.Medium"></MudCheckBox>
-                        </div>
-                        <div class="col-8 col-md-4 px-1">
-                            <MudStack Spacing="0">
-                                <label>Current date</label>
-                                <DateComponent Date="CurrentDate" Editable="UserInfo?.IsAdminOrMG == true"></DateComponent>
-                            </MudStack>
-                        </div>       
-                    </div>
-                </div>
-            </section>
-
-             <section class="section-create-character">
-                <div class="container-fluid">
-                    <div class="row">
-
-                        <PortraitComponent OnPortraitChange="ParamChange"></PortraitComponent>
-
-                        <AttributeComponent OnAttributesChange="ParamChange"></AttributeComponent>
-                        
-                        <BaseSkillsComponent OnBaseSkillsChange="ParamChange"></BaseSkillsComponent>
-
-
-                        <RaceComponent OnTraitsChange="ParamChange"></RaceComponent>
-
-                        <ProfessionComponent OnProfessionChanged="ParamChange" @bind-Profession="@AllParams.Profession"></ProfessionComponent>
-
-                        <div class="traits p-2">
-                            <MudPaper Class="p-2 m-0 w-100 h-100">
-                                <h3 class="p-3 m-0 text-center">TRAITS</h3>
-                                <div class="trait-container">
-                                   <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsCharacter" TraitType="@SD.TraitType_Character"></TraitsComponent>
+                                    else
+                                    {
+                                        <input readonly type="text" @bind-value="NPCName" class="form-control"></input>
+                                    }
                                 </div>
-                            </MudPaper>
-                        </div>
+                                <div class="form-group col-4 col-md-1 px-1">
+                                    <label>Age</label>
+                                    @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
+                                    {
+                                        <InputNumber  @bind-Value="NPCAge" class="form-control col-2"></InputNumber>
+                                    }
+                                    else
+                                    {
+                                        <InputNumber readonly @bind-Value="NPCAge" class="form-control col-2"></InputNumber>
+                                    }
+                                </div>
 
-                        <div class="description p-2">
-                            <MudPaper Class="p-2 m-0 w-100 h-100">
-                                <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
-                            </MudPaper>
-                        </div>
-                        <div class="equipment p-2">
-                             <MudPaper Class="p-2 m-0 w-100 h-100">
-                                <EquipmentComponent OnTraitsChange="TraitsChange" PageMode=true></EquipmentComponent>
-                             </MudPaper>
-                        </div>
-
-                        @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
-                        {
-                            <div class="traits p-2">
-                                <MudPaper Class="p-2 m-0 w-100 h-100">
-                                            <h3 class="p-3 m-0 text-center">TEMPORARY STATES</h3>
-                                    <div class="trait-container">
-                                            <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsTemporary" TraitType="@SD.TraitType_Temporary"></TraitsComponent>
-                                    </div>
-                                </MudPaper>
+                                <div class="form-group col-8 col-md-3 px-1">
+                                    <label>Character Type</label>
+                                    @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
+                                    {
+                                        <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
+                                            <option selected="selected" value="@SD.NPCType.Hero">
+                                                @SD.NPCType.Hero
+                                            </option>
+                                            @if (IsDukeAllowed)
+                                            {
+                                                <option value="@SD.NPCType.Duke">
+                                                    @SD.NPCType.Duke
+                                                </option>
+                                            }
+                                        </InputSelect>
+                                    }
+                                    else
+                                    {
+                                        <input readonly type="text" @bind-value="AllParams.Character.NPCType" class="form-control"></input>
+                                    }
+                                </div>
+                                <div class="form-group col-4 col-md-1 px-1">
+                                    <label>Finished</label>
+                                    <MudCheckBox Disabled="@((UserInfo?.IsAdminOrMG == false))" @bind-Value="@IsApproved" Size="Size.Medium"></MudCheckBox>
+                                </div>
+                                <div class="col-8 col-md-4 px-1">
+                                    <MudStack Spacing="0">
+                                        <label>Current date</label>
+                                        <DateComponent Date="CurrentDate" Editable="UserInfo?.IsAdminOrMG == true"></DateComponent>
+                                    </MudStack>
+                                </div>       
                             </div>
-                        }
-                    </div>
-                </div>
-            </section>
-
-            <section class="section-create-character">
-                <div class="container-fluid">
-                    <div class="row">
-                                <h3 class="p-3 m-0 text-center">SPECIAL SKILLS</h3>
-                        @if(AllParams.Character.IsApproved == false)
-                        {
-                                
-                            <button class="btn btn-secondary" style="width: 180px; margin-left:10px; " @onclick="AutoChooseRelatedAttributesForSpecialSkills">Autoselect attributes</button>
-                        }
-                        <div class="specialskills">
-                        
-                            @foreach (var baseSkill in AllParams.BaseSkills)
-                            {
-                                <SpecialSkillsComponent BaseSkill="baseSkill" OnSpecialSkillChange="SpecialSkillChange"></SpecialSkillsComponent>
-                            }
-
                         </div>
+                    </section>
 
+                    <section class="section-create-character">
+                        <div class="container-fluid">
+                            <div class="row">
+
+                                <PortraitComponent OnPortraitChange="ParamChange"></PortraitComponent>
+
+                                <AttributeComponent OnAttributesChange="ParamChange"></AttributeComponent>
+
+                                <BaseSkillsComponent OnBaseSkillsChange="ParamChange"></BaseSkillsComponent>
+
+
+                                <RaceComponent OnTraitsChange="ParamChange"></RaceComponent>
+
+                                <ProfessionComponent OnProfessionChanged="ParamChange" @bind-Profession="@AllParams.Profession"></ProfessionComponent>
+
+                                <div class="traits p-2">
+                                    <MudPaper Class="p-2 m-0 w-100 h-100">
+                                        <h3 class="p-3 m-0 text-center">TRAITS</h3>
+                                        <div class="trait-container">
+                                            <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsCharacter" TraitType="@SD.TraitType_Character"></TraitsComponent>
+                                        </div>
+                                    </MudPaper>
+                                </div>
+
+                                <div class="description p-2">
+                                    <MudPaper Class="p-2 m-0 w-100 h-100">
+                                        <CharDescriptionDialog DescriptionConfirmation="GetDescription" SavedDescription="@AllParams.Character.Description"></CharDescriptionDialog>
+                                    </MudPaper>
+                                </div>
+                                <div class="equipment p-2">
+                                    <MudPaper Class="p-2 m-0 w-100 h-100">
+                                        <EquipmentComponent OnTraitsChange="TraitsChange" PageMode=true></EquipmentComponent>
+                                    </MudPaper>
+                                </div>
+
+                                @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
+                                {
+                                    <div class="traits p-2">
+                                        <MudPaper Class="p-2 m-0 w-100 h-100">
+                                            <h3 class="p-3 m-0 text-center">TEMPORARY STATES</h3>
+                                            <div class="trait-container">
+                                                <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsTemporary" TraitType="@SD.TraitType_Temporary"></TraitsComponent>
+                                            </div>
+                                        </MudPaper>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section-create-character">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <h3 class="p-3 m-0 text-center">SPECIAL SKILLS</h3>
+                                @if(AllParams.Character.IsApproved == false)
+                                {
+
+                                    <button class="btn btn-secondary" style="width: 180px; margin-left:10px; " @onclick="AutoChooseRelatedAttributesForSpecialSkills">Autoselect attributes</button>
+                                }
+                                <div class="specialskills">
+
+                                    @foreach (var baseSkill in AllParams.BaseSkills)
+                                    {
+                                        <SpecialSkillsComponent BaseSkill="baseSkill" OnSpecialSkillChange="SpecialSkillChange"></SpecialSkillsComponent>
+                                    }
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </section>
+                    <div class="form-group py-2">
+                        <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
                     </div>
-                </div>
-            </section>
-            <div class="form-group py-2">
-                <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
+
+                }
             </div>
-           
-        }
+        </CascadingValue>
     </div>
-    </CascadingValue>
-</div>
 </div>
 
 <style>
 
     .e-richtexteditor .e-rte-content,
     .e-richtexteditor .e-source-content {
-        background: transparent;
+    background: transparent;
     }
 
     .dense-numeric-field .mud-input-control-input-container .mud-input .mud-input-root {
-        padding: 4px !important;
+    padding: 4px !important;
     }
 
     .dense-numeric-field .mud-input-control-input-container .mud-input-underline {
-        margin-top: 0px !important;
+    margin-top: 0px !important;
     }
     .mud-main-content {
-        position: relative;
+    position: relative;
     }
 </style>
 
@@ -291,19 +291,20 @@
     {
         AllParams = new();
         UserInfo = await _userService.GetUserInfo();
-        if (UserInfo?.IsAuthenticated == false)
-        {
-            return;
-        }
-        if (Id > 0 && UserInfo?.UserName is not null && UserInfo.IsAdminOrMG == false)
-        {
-            if (await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id) == false)
-            {
-                return;
-            }
-        }
+        // if (UserInfo?.IsAuthenticated == false)
+        // {
+        //     return;
+        // }
+        // if (Id > 0 && UserInfo?.UserName is not null && UserInfo.IsAdminOrMG == false)
+        // {
+        //     if (await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id) == false)
+        //     {
+        //         _navigationManager.NavigateTo($"/character", true);
+        //     }
+        // }
         try
         {
+            await AuthorizeEntry();
             IsLoading = true;
 
             //StateHasChanged();
@@ -366,7 +367,7 @@
     {
         if (firstRender)
         {
-            await AuthorizeEntry();
+           // await AuthorizeEntry();
 
         }
     }
