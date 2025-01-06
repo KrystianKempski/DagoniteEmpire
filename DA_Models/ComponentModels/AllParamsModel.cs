@@ -80,9 +80,15 @@ namespace DA_Models.ComponentModels
                 ProfTraitsChange();
         }
 
+        public IEnumerable<FeatureDTO>[] GetAllFeatures()
+        {
+            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray(), BattleProperties.GetAllArray() };
+            return allFeatures;
+        }
+
         public void CharTraitsChange()
         {
-            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
+            IEnumerable<FeatureDTO>[] allFeatures = GetAllFeatures();
 
             //clear all traits bonuses
             foreach (var feat in allFeatures)
@@ -109,7 +115,7 @@ namespace DA_Models.ComponentModels
 
         public void TempTraitsChange()
         {
-            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
+            IEnumerable<FeatureDTO>[] allFeatures = GetAllFeatures();
 
             //clear all traits bonuses
             foreach (var feat in allFeatures)
@@ -125,7 +131,7 @@ namespace DA_Models.ComponentModels
 
         public void RaceTraitsChange()
         {
-            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
+            IEnumerable<FeatureDTO>[] allFeatures = GetAllFeatures();
 
             //clear all traits bonuses
             foreach (var feat in allFeatures)
@@ -145,7 +151,7 @@ namespace DA_Models.ComponentModels
 
         public void GearTraitChange()
         {
-            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
+            IEnumerable<FeatureDTO>[] allFeatures = GetAllFeatures();
 
             //clear all traits bonuses
             foreach (var feat in allFeatures)
@@ -171,7 +177,7 @@ namespace DA_Models.ComponentModels
         }
         public void ProfTraitsChange()
         {
-            IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray() };
+            IEnumerable<FeatureDTO>[] allFeatures = GetAllFeatures();
 
             //clear all traits bonuses
             foreach (var feat in allFeatures)
