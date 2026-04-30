@@ -1,6 +1,5 @@
 ﻿using DA_Common;
 using DA_DataAccess.CharacterClasses;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using MudBlazor.Charts;
 using System;
 using System.Collections.Generic;

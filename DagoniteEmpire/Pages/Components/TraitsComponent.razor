@@ -228,10 +228,8 @@
     }
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
     {
-        DialogOptions options = new() { MaxWidth = maxWidth };
-        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
-            options.FullScreen = true;
-        return options;
+        var __isFs = await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
+        return new DialogOptions { MaxWidth = maxWidth, FullScreen = __isFs };
     }
 
     private async Task UpdateTraits()

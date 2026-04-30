@@ -526,7 +526,7 @@ else
         NewPost = new();
         if (PostEditor is not null)
         {
-            await PostEditor.LoadHTML(string.Empty);
+            await PostEditor.LoadHTMLContent(string.Empty);
         }
 
 
@@ -555,7 +555,7 @@ else
         SendButtonText = "Edit Post";
         if (PostEditor is not null)
         {
-            await PostEditor.LoadHTML(NewPost.Content ?? string.Empty);
+            await PostEditor.LoadHTMLContent(NewPost.Content ?? string.Empty);
         }
     }
     private async Task DeletePost(PostDTO post)
@@ -811,10 +811,8 @@ else
     }
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
     {
-        DialogOptions options = new() { MaxWidth = maxWidth };
-        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
-            options.FullScreen = true;
-        return options;
+        var __isFs = await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
+        return new DialogOptions { MaxWidth = maxWidth, FullScreen = __isFs };
     }
     private async Task<AllParamsModel> LoadCharacter(int id)
     {

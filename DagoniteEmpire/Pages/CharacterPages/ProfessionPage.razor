@@ -558,7 +558,7 @@
         if (!_descrEditorLoaded && DescrEdit is not null && ProfessionDTO is not null && !string.IsNullOrEmpty(ProfessionDTO.Description))
         {
             _descrEditorLoaded = true;
-            await DescrEdit.LoadHTML(ProfessionDTO.Description);
+            await DescrEdit.LoadHTMLContent(ProfessionDTO.Description);
         }
     }
     public async Task ReloadPage()
@@ -843,10 +843,8 @@
 
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Large)
     {
-        DialogOptions options = new() { MaxWidth = maxWidth };
-        if (await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md)
-            options.FullScreen = true;
-        return options;
+        var __isFs = await _vieportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
+        return new DialogOptions { MaxWidth = maxWidth, FullScreen = __isFs };
     }
 
     private async Task ActivateSkill(TraitProfessionDTO skill)

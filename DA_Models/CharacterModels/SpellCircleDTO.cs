@@ -2,7 +2,6 @@
 using DA_Common;
 using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
-using Microsoft.AspNetCore.Rewrite;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

@@ -1,5 +1,4 @@
 ﻿using Microsoft.JSInterop;
-using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 
 namespace DagoniteEmpire.Helper
 {

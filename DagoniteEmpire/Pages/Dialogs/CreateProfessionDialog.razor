@@ -368,7 +368,7 @@
         if (_createProfession is not null && _createProfession.IsVisible && !_descrEditorLoaded && DescrEdit is not null && _createProfession.ProfessionDTO is not null)
         {
             _descrEditorLoaded = true;
-            await DescrEdit.LoadHTML(_createProfession.ProfessionDTO.Description ?? string.Empty);
+            await DescrEdit.LoadHTMLContent(_createProfession.ProfessionDTO.Description ?? string.Empty);
         }
     }
     private void DialogOpen()
