@@ -45,7 +45,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = new();
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public ICollection<MobDTO> Mobs { get; set; } = new List<MobDTO>();
     [Parameter] public int CampaignId { get; set; } = 0;
     [Parameter] public int ChapterId { get; set; } = 0;

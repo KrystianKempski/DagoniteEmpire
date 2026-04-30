@@ -79,7 +79,7 @@
 </style>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = new();
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public int CharacterId {get;set;} 
     private ICollection<WealthRecordDTO> WealthRecords { get; set; } = new List<WealthRecordDTO>();
     private ICollection<WealthRecordDTO> NewRecords { get; set; } = new List<WealthRecordDTO>();

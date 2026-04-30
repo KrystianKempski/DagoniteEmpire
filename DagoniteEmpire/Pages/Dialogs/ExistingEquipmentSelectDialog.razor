@@ -92,7 +92,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = new();
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public AllParamsModel AllParams { get; set; } = new();
     [Parameter] public ICollection<EquipmentSlotDTO> SelectedEquipment { get; set; } = new List<EquipmentSlotDTO>();
     private ICollection<EquipmentDTO> SelectedItems = new List<EquipmentDTO>();
