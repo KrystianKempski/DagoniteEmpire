@@ -1,6 +1,5 @@
 ﻿@page "/character"
 @using DA_Business.Services
-@using Syncfusion.Blazor.Navigations;
 @inject ICharacterRepository _characterRepository
 @inject ISpecialSkillRepository _specialSkillRepository
 @inject ICampaignRepository _campaignRepository
@@ -31,21 +30,26 @@ else
         </div>
         <div class="row m-0 mt-4">
             <div class="col-12">
-                <SfGrid ID="Grid" DataSource="@Characters" AllowPaging="true"
-                        Toolbar="@ToolbarItems">
-                    
-                    <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="@EditMode.Dialog"></GridEditSettings>
-                    <GridEvents  OnActionBegin="ActionHandler" TValue="CharacterDTO"></GridEvents>
-                        <GridColumns>
-                            @if (UserInfo?.IsAdminOrMG == true){
-                                 <GridColumn Field=@nameof(CharacterDTO.UserName) HeaderText="User name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                            }
-                            <GridColumn Field=@nameof(CharacterDTO.NPCName) HeaderText="Name" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                            <GridColumn Field=@nameof(CharacterDTO.RaceName) HeaderText="Race" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                            <GridColumn Field=@nameof(CharacterDTO.ProfessionName) HeaderText="Class" TextAlign="TextAlign.Left" Width="200"></GridColumn>
-                        <GridColumn Field=@nameof(CharacterDTO.Age) HeaderText="Age" Format="d" TextAlign="TextAlign.Left" Width="50"></GridColumn>
-                        </GridColumns>
-                    </SfGrid>
+                <MudStack Row="true" Spacing="2" Class="mb-2">
+                    <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => _navigationManager.NavigateTo("/character/create/"))">Add Character</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Edit" Color="Color.Secondary" Variant="Variant.Filled" Disabled="@(_selected is null)" OnClick="@(() => { if (_selected is not null) _navigationManager.NavigateTo($"/character/edit/{_selected.Id}"); })">Edit Character</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" Variant="Variant.Filled" Disabled="@(_selected is null)" OnClick="@(() => { if (_selected is not null) HandleDelete(_selected.Id); })">Delete Character</MudButton>
+                </MudStack>
+                <MudDataGrid T="CharacterDTO" Items="@Characters" Dense="true" Hover="true" SelectedItemChanged="@((CharacterDTO c) => _selected = c)" RowClick="@(args => _selected = args.Item)">
+                    <Columns>
+                        @if (UserInfo?.IsAdminOrMG == true)
+                        {
+                            <PropertyColumn Property="x => x.UserName" Title="User name" />
+                        }
+                        <PropertyColumn Property="x => x.NPCName" Title="Name" />
+                        <PropertyColumn Property="x => x.RaceName" Title="Race" />
+                        <PropertyColumn Property="x => x.ProfessionName" Title="Class" />
+                        <PropertyColumn Property="x => x.Age" Title="Age" />
+                    </Columns>
+                    <PagerContent>
+                        <MudDataGridPager T="CharacterDTO" />
+                    </PagerContent>
+                </MudDataGrid>
             </div>
         </div>
 
@@ -104,11 +108,7 @@ else
         }
     }
 
-    private List<object> ToolbarItems = new List<object>() {
-        new ItemModel() { Text = "Add Character", PrefixIcon = "e-add", Id = "Grid_add"},//Here Grid is SfGrid ID
-        new ItemModel(){ Text = "Edit Character", PrefixIcon= "e-edit", Id="Grid_edit"},
-        new ItemModel(){ Text = "Delete Character", PrefixIcon= "e-delete", Id="Grid_delete"},
-    };
+    private CharacterDTO? _selected;
 
     private async Task LoadCharacters()
     {
@@ -137,22 +137,6 @@ else
             ApprovedCharacters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
         }
     }
-
-    public void ActionHandler(ActionEventArgs<CharacterDTO> args)
-    {
-        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Add))
-        {
-            _navigationManager.NavigateTo($"/character/create/");
-        }
-        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.BeginEdit))
-        {
-            _navigationManager.NavigateTo($"/character/edit/{args.Data.Id}");
-        }
-        else if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Delete)){
-            HandleDelete(args.RowData.Id);
-        }
-    }
-
 
     private void HandleDelete(int id)
     {

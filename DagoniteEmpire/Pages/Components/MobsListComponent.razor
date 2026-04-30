@@ -1,5 +1,4 @@
-﻿@using Syncfusion.Blazor.Navigations
-@inject IMobRepository _mobRepository
+﻿@inject IMobRepository _mobRepository
 @inject ICampaignRepository _campaignRepository
 @inject IChapterRepository _chapterRepository
 @inject IUserService _userService;
@@ -32,12 +31,6 @@
 
     private ICollection<MobDTO> Mobs { get; set; } = new List<MobDTO>();
     public bool IsLoading { get; set; } = true;
-
-     private List<object> ToolbarMods = new List<object>() {
-        new ItemModel() { Text = "Add Mod", PrefixIcon = "e-add", Id = "GridMob_add"},//Here Grid is SfGrid ID
-        new ItemModel(){ Text = "Edit Mod", PrefixIcon= "e-edit", Id="GridMob_edit"},
-        new ItemModel(){ Text = "Delete Mod", PrefixIcon= "e-delete", Id="GridMob_delete"},
-    };
 
     protected override async Task OnInitializedAsync()
     {

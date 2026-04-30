@@ -57,7 +57,7 @@
             <div class="d-flex ">
                 <div class="d-flex flex-column px-1 flex-grow-1">
                     <label class="class-section py-1">Class name</label>
-                    <SfTextBox OnChange="SomeChange" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></SfTextBox>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value:after="SomeChange" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
                 </div>
                 <div class="d-flex flex-column px-1">
                     <label class="class-section py-1">Related attribute</label>
@@ -67,7 +67,7 @@
                 {
                     <div class="d-flex flex-column px-1">
                         <label class="column-section py-1">Class Level</label>
-                        <SfNumericTextBox CssClass="e-style" Width="100px" ShowSpinButton="false" @bind-Value="@ProfessionDTO.ClassLevel" OnChange="ChangeProfLevel"></SfNumericTextBox>
+                        <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:100px" HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
                     </div>
                 }
                 else
@@ -95,14 +95,14 @@
                 <div class="d-flex">
                     <div class="d-flex flex-column px-1 flex-grow-1">
                         <label class="class-section py-1">Class name</label>
-                        <SfTextBox OnChange="SomeChange" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></SfTextBox>
+                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value:after="SomeChange" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
                     </div>
                    @*  @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <div class="d-flex flex-column px-1">
                             <label class="class-section py-1">Approve</label>
                             <div class="justify-content-center mx-auto my-auto">
-                                <SfCheckBox @bind-Checked="ProfessionDTO.IsApproved"></SfCheckBox>
+                                <MudCheckBox T="bool" @bind-Value="ProfessionDTO.IsApproved"></MudCheckBox>
                             </div>
                         </div>
                     } *@
@@ -116,7 +116,7 @@
                     {
                         <div class="d-flex flex-column px-1 variables">
                             <label class="column-section py-1">Class Level</label>
-                            <SfNumericTextBox ShowSpinButton="false" @bind-Value="@ProfessionDTO.ClassLevel" OnChange="ChangeProfLevel"></SfNumericTextBox>
+                            <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
                         </div>
                     }
                     else

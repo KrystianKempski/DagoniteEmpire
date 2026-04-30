@@ -16,7 +16,7 @@
             <div class="d-flex ">
                 <div class="d-flex flex-column flex-grow-1">
                 <label class="fw-bold py-1">Profession skill name</label>
-                    <SfTextBox Readonly="IsInfoMode" Placeholder="Talent name" @bind-Value="@NewTrait.Name"></SfTextBox>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Talent name" @bind-Value="@NewTrait.Name"></MudTextField>
                 </div>
 
                 @if (UserInfo?.IsAdminOrMG == true)
@@ -24,7 +24,7 @@
                 <div class="d-flex flex-column px-1">
                     <label class="fw-bold py-1">Approve</label>
                     <div class="justify-content-center mx-auto my-auto">
-                    <SfCheckBox  @bind-Checked="NewTrait.TraitApproved"></SfCheckBox>
+                    <MudCheckBox T="bool"  @bind-Value="NewTrait.TraitApproved"></MudCheckBox>
                     </div>
                 </div>
                 }
@@ -34,7 +34,7 @@
             </div>
             <div class="align-items-start">
                 <div class="col-12 bonus-name py-0">
-                    <SfTextBox Readonly="IsInfoMode" Multiline=true Placeholder="Insert general trait description" @bind-Value="@NewTrait.Descr"></SfTextBox>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Insert general trait description" @bind-Value="@NewTrait.Descr"></MudTextField>
                 </div>
             </div>
            
@@ -48,44 +48,46 @@
                     <label class="bonus-cell">Bonus @obj.Index</label>
                     <div class="bonuses-columns">
                             <div class="bonus-cell">
-                            <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem=string Width="100%" Placeholder="Select a feature type" DataSource="@FeatureData" @bind-Value="@obj.FeatureType"></SfDropDownList>
+                            <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select a feature type" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@__ft</MudSelectItem> }
+                            </MudSelect>
                             </div>
                         @if (obj.FeatureType == SD.FeatureAttribute)
                         {
                             <div class="bonus-cell">
-                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="AttributeDTO" Width="100%" Placeholder="Select an Attribute " DataSource="@AllParams.Attributes.GetAllArray()" @bind-Value="@obj.FeatureName">
-                                    <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
-                                </SfDropDownList>
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select an Attribute " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    @foreach (var __a in AllParams.Attributes.GetAllArray()) { <MudSelectItem Value="@__a.Name">@__a.Name</MudSelectItem> }
+                                </MudSelect>
                             </div>
                         }
                         else if (obj.FeatureType == SD.FeatureBaseSkill)
                         {
                             <div class="bonus-cell">
-                                <SfDropDownList Readonly="IsInfoMode"  TValue="string" TItem="BaseSkillDTO" Width="100%" Placeholder="Select base skill " DataSource="@AllParams.BaseSkills" @bind-Value="@obj.FeatureName">
-                                    <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
-                                </SfDropDownList>
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select base skill " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    @foreach (var __b in AllParams.BaseSkills) { <MudSelectItem Value="@__b.Name">@__b.Name</MudSelectItem> }
+                                </MudSelect>
                             </div>
                         }
                         else if (obj.FeatureType == SD.FeatureSpecialSkill)
                         {
                             <div class="bonus-cell">
-                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="SpecialSkillDTO" Width="100%" Placeholder="Select special skill " DataSource="@AllParams.SpecialSkills.GetAllArray()" @bind-Value="@obj.FeatureName">
-                                    <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
-                                </SfDropDownList>
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select special skill " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    @foreach (var __s in AllParams.SpecialSkills.GetAllArray()) { <MudSelectItem Value="@__s.Name">@__s.Name</MudSelectItem> }
+                                </MudSelect>
                             </div>
                         }
                         else if (obj.FeatureType == SD.FeatureWeaponQuality)
                         {
                             <div class="bonus-cell">
-                                <SfDropDownList Readonly="IsInfoMode" TValue="string" TItem="string" Width="100%" Placeholder="Select weapon quality" DataSource="@WeaponQualityList" @bind-Value="@obj.FeatureName">
-                                    <DropDownListFieldSettings Value="Id" Text="Id"></DropDownListFieldSettings>
-                                </SfDropDownList>
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select weapon quality" @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@__w</MudSelectItem> }
+                                </MudSelect>
                             </div>
                         }
                         else if(obj.FeatureType == SD.FeatureOther)
                         {
                             <div class="bonus-double-cell">
-                                <SfTextBox Readonly="IsInfoMode" Multiline=true Placeholder="Insert bonus description" @bind-Value="@obj.Description"></SfTextBox>
+                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Insert bonus description" @bind-Value="@obj.Description"></MudTextField>
 
                             </div>
                         }
@@ -94,14 +96,14 @@
                             if (obj.FeatureType == SD.FeatureWeaponQuality)
                             {
                                 <div class="bonus-cell">
-                                    <SfNumericTextBox Readonly="IsInfoMode"  Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode"  Style="width:100%" T="int" @bind-Value="@obj.BonusValue"></MudNumericField>
                                 </div>
                             }
                             else
                             {
 
                                 <div class="bonus-cell">
-                                    <SfNumericTextBox Readonly="IsInfoMode" Width="100%" TValue="int" @bind-Value="@obj.BonusValue"></SfNumericTextBox>
+                                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Style="width:100%" T="int" @bind-Value="@obj.BonusValue"></MudNumericField>
                                 </div>
                             }
                         }
@@ -125,15 +127,15 @@
             <div class="d-flex py-2">
                 <div class="d-flex flex-column me-4">
                     <label class="fw-bold py-1">DC</label>
-                    <SfNumericTextBox Readonly="IsInfoMode" Placeholder="DC" @bind-Value="@NewTrait.DC"></SfNumericTextBox>
+                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="DC" @bind-Value="@NewTrait.DC"></MudNumericField>
                 </div>
                 <div class="d-flex flex-column me-4">
                     <label class="fw-bold py-1">Cost</label>
-                    <SfNumericTextBox Readonly="IsInfoMode" Placeholder="Cost" @bind-Value="@NewTrait.Cost"></SfNumericTextBox>
+                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Cost" @bind-Value="@NewTrait.Cost"></MudNumericField>
                 </div>
                 <div class="d-flex flex-column me-4">
                     <label class="fw-bold py-1">Range</label>
-                    <SfTextBox Readonly="IsInfoMode" Placeholder="Range" @bind-Value="@NewTrait.Range"></SfTextBox>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Range" @bind-Value="@NewTrait.Range"></MudTextField>
                 </div>
             </div>
         }

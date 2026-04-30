@@ -17,14 +17,14 @@
             <div class="d-flex ">
                 <div class="d-flex flex-column flex-grow-1">
                     <label class="fw-bold py-1">Race name</label>
-                    <SfTextBox Placeholder="Insert race name" @bind-Value="@NewRace.Name"></SfTextBox>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert race name" @bind-Value="@NewRace.Name"></MudTextField>
                 </div>
                 @if (UserInfo?.IsAdminOrMG == true)
                 {
                     <div class="d-flex flex-column px-1">
                         <label class="fw-bold py-1">Approve</label>
                         <div class="justify-content-center mx-auto my-auto">
-                            <SfCheckBox @bind-Checked="NewRace.RaceApproved"></SfCheckBox>
+                            <MudCheckBox T="bool" @bind-Value="NewRace.RaceApproved"></MudCheckBox>
                         </div>
                     </div>
                 }

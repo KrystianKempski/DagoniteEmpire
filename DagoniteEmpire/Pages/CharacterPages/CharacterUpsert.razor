@@ -22,7 +22,6 @@
 @using DA_DataAccess.CharacterClasses
 @using DA_Models
 @using DagoniteEmpire.Pages.Components
-@using Syncfusion.Blazor.Navigations
 @using System.Text.Json
 <PageTitle>Dagonie Empire | Character</PageTitle>
 @inject NavigationManager _navigationManager
@@ -237,11 +236,6 @@
     private DateModel CurrentDate = new DateModel(1,1);
     private System.Action handler;
 
-    private List<object> ToolbarItems = new List<object>() {
-        new ItemModel() { Text = "Add", PrefixIcon = "e-add", Id = "Grid_add"},//Here Grid is SfGrid ID
-        new ItemModel(){ Text = "Edit", PrefixIcon= "e-edit", Id="Grid_edit"},
-        new ItemModel(){ Text = "Delete", PrefixIcon= "e-delete", Id="Grid_delete"},
-    };
     private string NPCName
     {
         get => AllParams?.Character is null ? "" : AllParams.Character.NPCName;
