@@ -48,12 +48,8 @@
     </table>
 
     <label class="prof-descr-label">Class description</label>
-    <div class="richtext-conteiner">
-
-        <SfRichTextEditor Height="100%" @bind-Value="@Profession.Description" Readonly="true" ShowTooltip="false">
-            <RichTextEditorToolbarSettings Enable="false" />
-        </SfRichTextEditor>
-
+    <div class="richtext-conteiner ql-editor" style="height:100%; overflow:auto;">
+        @((MarkupString)(Profession?.Description ?? string.Empty))
     </div>
     <div class="buttons">
         <button @onclick="@(()=>EditProfession())" class="add-trait">Edit class</button>

@@ -169,9 +169,27 @@
                 </MudItem>
 
                 <MudItem xs="12">
-                    <SfRichTextEditor Style="width:100%" Height="400px" @bind-Value="@FightSequence.ResultStringMG.AllText" ShowTooltip="true">
-                        <RichTextEditorToolbarSettings Items="@Tools" />
-                    </SfRichTextEditor>
+                    <BlazoredTextEditor @ref="@ResultEditor">
+                        <ToolbarContent>
+                            <span class="ql-formats">
+                                <button class="ql-bold"></button>
+                                <button class="ql-italic"></button>
+                                <button class="ql-underline"></button>
+                                <button class="ql-strike"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <select class="ql-color"></select>
+                                <select class="ql-background"></select>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-list" value="ordered"></button>
+                                <button class="ql-align" value=""></button>
+                                <button class="ql-align" value="center"></button>
+                                <button class="ql-align" value="right"></button>
+                            </span>
+                        </ToolbarContent>
+                        <EditorContent></EditorContent>
+                    </BlazoredTextEditor>
                 </MudItem>
             </MudGrid>
         }
@@ -260,37 +278,19 @@
 
         }
     }
-    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
-    {
-        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
-        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
-        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
-        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontColor },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
-        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
-        new ToolbarItemModel() { Command = ToolbarCommand.OrderedList },
-        new ToolbarItemModel() { Command = ToolbarCommand.UnorderedList },
-        new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Indent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
-        new ToolbarItemModel() { Command = ToolbarCommand.Image },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Undo },
-        new ToolbarItemModel() { Command = ToolbarCommand.Redo },
-        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-    };
+    private BlazoredTextEditor ResultEditor;
 
-    private void Cancel()
+    private async Task Cancel()
     {
         if(FightResult == string.Empty)
             MudDialog.Cancel();
         else
         {
+            if (ResultEditor is not null && FightSequence?.ResultStringMG is not null)
+            {
+                FightSequence.ResultStringMG.AllText = await ResultEditor.GetHTML();
+                FightResult = FightSequence.ResultStringMG.AllText;
+            }
             MudDialog.Close(DialogResult.Ok(FightResult));
             Snackbar.Add("Fight sequence added", Severity.Success);
         }
@@ -354,7 +354,7 @@
             FightSequence.DefenceType = FightSequence.SelectBestDefence();
     }
 
-    private void MakeAttackRoll()
+    private async Task MakeAttackRoll()
     {
         if (SelectedAttacker == string.Empty || SelectedDefender == string.Empty || FightSequence is null || FightSequence.AttackAction == string.Empty ||
            (_isTargeted == true && FightSequence.AttackLocation == string.Empty) || FightSequence.DefenceType == string.Empty)
@@ -501,6 +501,10 @@
                 await _mobRepository.Update(defenderMob);
             }
             FightResult += FightSequence?.ResultStringMG.ToString();
+            if (ResultEditor is not null && FightSequence?.ResultStringMG is not null)
+            {
+                await ResultEditor.LoadHTML(FightSequence.ResultStringMG.AllText ?? string.Empty);
+            }
         }
         catch (Exception ex)
         {

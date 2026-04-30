@@ -2,11 +2,9 @@
 @inject IJSRuntime _jsruntime
 @inject IUserService _userService
 <div class="race">
-    <SfDialog Width="80%" Height="80%" @bind-Visible="@_createProfession.IsVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
-        <DialogEvents Opened="@DialogOpen"></DialogEvents>
-        <DialogTemplates>
-            <Header>Specify class</Header>
-            <Content>       
+    <MudDialog @bind-Visible="@_createProfession.IsVisible" Options="@(new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.ExtraLarge })">
+        <TitleContent>Specify class</TitleContent>
+        <DialogContent>
                  <div class="main-table">
                      @if (IsLoading)
                     {
@@ -130,9 +128,20 @@
                         </div>
                         <div class="d-flex flex-column flex-grow-1">
                             <label class="class-section">Class description</label>
-                            <SfRichTextEditor Height="300px" @ref="DescrEdit" @bind-Value="@_createProfession.ProfessionDTO.Description" ShowTooltip="true">
-                                <RichTextEditorToolbarSettings Items="@Tools" Type="ToolbarType.MultiRow" />
-                            </SfRichTextEditor>
+                            <BlazoredTextEditor @ref="DescrEdit">
+                                <ToolbarContent>
+                                    <span class="ql-formats">
+                                        <button class="ql-bold"></button>
+                                        <button class="ql-italic"></button>
+                                        <button class="ql-underline"></button>
+                                        <button class="ql-strike"></button>
+                                    </span>
+                                    <span class="ql-formats">
+                                        <button class="ql-link"></button>
+                                    </span>
+                                </ToolbarContent>
+                                <EditorContent></EditorContent>
+                            </BlazoredTextEditor>
                         </div>
                         @*  ACTIVE SKILLS  *@
                         <label class="class-section">Active class skills</label>
@@ -269,16 +278,12 @@
                     } 
                 </div>  
                 
-            </Content>
-        </DialogTemplates>
-        <DialogButtons>
-
-            <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
-            </DialogButton>
-            <DialogButton OnClick="@OnSaveProfBtnClick" Content="Save" IsPrimary="true">
-            </DialogButton>
-        </DialogButtons>
-    </SfDialog>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="@OnCancelBtnClick">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@OnSaveProfBtnClick">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
 
 </div>
 
@@ -299,7 +304,8 @@
     public UserInfo? UserInfo { get; set; }
 
 
-    private SfRichTextEditor DescrEdit = new SfRichTextEditor();
+    private BlazoredTextEditor DescrEdit;
+    private bool _descrEditorLoaded = false;
 
     private CreateProfessionModel _createProfession;
     [Parameter]
@@ -324,20 +330,6 @@
     private string ErrorMessage { get; set; } = string.Empty;
     private bool IsLoading { get; set; }= true;
 
-    public IEditorSettings EditParams = new NumericEditCellParams
-    {
-        Params = new NumericTextBoxModel<object>() { ShowClearButton = true, ShowSpinButton = false }
-    };
-
-    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
-    {
-        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
-        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
-        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
-        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
-        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
-        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-    };
     public void ChangeDescription(int args)
     {
         //pass ID(column name) of multiline textbox
@@ -345,6 +337,10 @@
     }
     private async Task OnSaveProfBtnClick()
     {
+        if (DescrEdit is not null)
+        {
+            CreateProfession.ProfessionDTO.Description = await DescrEdit.GetHTML();
+        }
 
         if (string.IsNullOrEmpty(CreateProfession.ProfessionDTO.Name) || string.IsNullOrEmpty(CreateProfession.ProfessionDTO.Description))
         {
@@ -365,10 +361,18 @@
     private void OnCancelBtnClick()
     {
         CreateProfession.IsVisible = false;
+        _descrEditorLoaded = false;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_createProfession is not null && _createProfession.IsVisible && !_descrEditorLoaded && DescrEdit is not null && _createProfession.ProfessionDTO is not null)
+        {
+            _descrEditorLoaded = true;
+            await DescrEdit.LoadHTML(_createProfession.ProfessionDTO.Description ?? string.Empty);
+        }
     }
     private void DialogOpen()
     { 
-        // this.DescrEdit.RefreshUIAsync();
         ErrorMessage = string.Empty;
         StateHasChanged();
     }

@@ -149,9 +149,27 @@
             </MudItem>
 
             <MudItem xs="12">
-                <SfRichTextEditor Style="width:100%" Height="400px" @bind-Value="@RollResultString" ShowTooltip="true">
-                    <RichTextEditorToolbarSettings Items="@Tools" />
-                </SfRichTextEditor>
+                <BlazoredTextEditor @ref="@RollEditor">
+                    <ToolbarContent>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+                        <span class="ql-formats">
+                            <select class="ql-color"></select>
+                            <select class="ql-background"></select>
+                        </span>
+                        <span class="ql-formats">
+                            <button class="ql-list" value="ordered"></button>
+                            <button class="ql-align" value=""></button>
+                            <button class="ql-align" value="center"></button>
+                            <button class="ql-align" value="right"></button>
+                        </span>
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
             </MudItem>
         </MudGrid>
         }
@@ -210,34 +228,14 @@
         }
     }
     private int DifficultyValue = 5;
+    private BlazoredTextEditor RollEditor;
 
-    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
+    private async Task Cancel()
     {
-        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
-        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
-        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
-        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontColor },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
-        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
-        new ToolbarItemModel() { Command = ToolbarCommand.OrderedList },
-        new ToolbarItemModel() { Command = ToolbarCommand.UnorderedList },
-        new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Indent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
-        new ToolbarItemModel() { Command = ToolbarCommand.Image },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Undo },
-        new ToolbarItemModel() { Command = ToolbarCommand.Redo },
-        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-    };
-
-    private void Cancel()
-    {
+        if (RollEditor is not null)
+        {
+            RollResultString = await RollEditor.GetHTML();
+        }
         if(RollResultString == string.Empty)
             MudDialog.Cancel();
         else
@@ -319,7 +317,7 @@
 
 
 
-    private void MakeRoll()
+    private async Task MakeRoll()
     {
         if ((SelectedCharacterRolling?.Character is null || SelectedCharacterRolling.Character.NPCName == string.Empty || SpecialSkillRoll is null || SpecialSkillRoll.Name == string.Empty)
         || (IsOppositeRoll == true && (SelectedCharacterDefending?.Character is null || SelectedCharacterDefending.Character.NPCName == string.Empty || SpecialSkillDefence is null || SpecialSkillDefence.Name == string.Empty)))
@@ -374,13 +372,20 @@
         ResultStringMG += result.Item2;
         ResultStringMG.EndText();
         RollResultString = ResultStringMG.AllText;
+        if (RollEditor is not null)
+        {
+            await RollEditor.LoadHTML(RollResultString ?? string.Empty);
+        }
     }
 
     private async Task SaveSequenceBtn()
     {
         try
         {
-
+            if (RollEditor is not null)
+            {
+                RollResultString = await RollEditor.GetHTML();
+            }
             MudDialog.Close(DialogResult.Ok(RollResultString));
             Snackbar.Add("Fight resolved", Severity.Success);
         }

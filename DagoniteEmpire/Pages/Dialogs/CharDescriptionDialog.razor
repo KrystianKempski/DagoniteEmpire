@@ -1,4 +1,5 @@
 ﻿@inject IUserService _userService
+@inject IDialogService DialogService
 <div class="description-frame">
 
     <div class="sheet-img">
@@ -6,34 +7,51 @@
     </div>
     <h3 class="my-3 ml-3 text-center">DESCRIPTION</h3>
     <div class="descr-container">
-        <div class="description-richtext">
-            <SfRichTextEditor Height="100%"  @bind-Value="@SavedDescription" Readonly="true" ShowTooltip="false">
-                <RichTextEditorToolbarSettings Enable="false"/>
-                <p>Here write a description of your character</p>
-            </SfRichTextEditor>
+        <div class="description-richtext ql-editor" style="height:100%; overflow:auto;">
+            @((MarkupString)(SavedDescription ?? "<p>Here write a description of your character</p>"))
         </div>
-        <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>       
+        <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>
     </div>
-    <SfDialog Width="80%" Height="80%" @bind-Visible="@IsDescrDialVisible" IsModal="true" AllowDragging="true" CloseOnEscape="false" EnableResize="true">
-        <DialogEvents></DialogEvents>
-        <DialogTemplates>
-            <Header>Write character description</Header>
-            <Content >
-                <SfRichTextEditor   @bind-Value="@UnsavedDescription" Height="100%">
-                    <RichTextEditorEvents OnActionBegin="ActionHandler"/>
-                    <RichTextEditorToolbarSettings  Items="@Tools" Type="ToolbarType.MultiRow" />
-               
-                </SfRichTextEditor> 
-            </Content>
-        </DialogTemplates>
-        <DialogButtons>
 
-            <DialogButton OnClick="@OnCancelBtnClick" Content="Cancel">
-            </DialogButton>
-            <DialogButton OnClick="@OnSaveDescrBtnClick" Content="Save" IsPrimary="true">
-            </DialogButton>
-        </DialogButtons>
-    </SfDialog>
+    <MudDialog @bind-Visible="@IsDescrDialVisible" Options="@(new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large })">
+        <TitleContent>Write character description</TitleContent>
+        <DialogContent>
+            <BlazoredTextEditor @ref="@DescrEditor">
+                <ToolbarContent>
+                    <select class="ql-header">
+                        <option selected=""></option>
+                        <option value="1"></option>
+                        <option value="2"></option>
+                    </select>
+                    <span class="ql-formats">
+                        <button class="ql-bold"></button>
+                        <button class="ql-italic"></button>
+                        <button class="ql-underline"></button>
+                        <button class="ql-strike"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <select class="ql-color"></select>
+                        <select class="ql-background"></select>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-list" value="ordered"></button>
+                        <button class="ql-align" value=""></button>
+                        <button class="ql-align" value="center"></button>
+                        <button class="ql-align" value="right"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-link"></button>
+                        <button class="ql-image"></button>
+                    </span>
+                </ToolbarContent>
+                <EditorContent></EditorContent>
+            </BlazoredTextEditor>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="@OnCancelBtnClick">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@OnSaveDescrBtnClick">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
 </div>
 
 <style>
@@ -56,51 +74,31 @@
     [Parameter]
     public string SavedDescription { get; set; } = "<p>Here write a description of your character</p>";
 
-    private string UnsavedDescription { get; set; } = "";
     private bool IsDescrDialVisible = false;
-    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
+    private BlazoredTextEditor DescrEditor;
+
+    private async Task OnStartDescriptionDialog()
     {
-        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
-        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
-        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
-        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontColor },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
-        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
-        new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Indent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
-        new ToolbarItemModel() { Command = ToolbarCommand.Image },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Undo },
-        new ToolbarItemModel() { Command = ToolbarCommand.Redo },
-        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-    };
-    private void OnStartDescriptionDialog()
-    {
-        UnsavedDescription = SavedDescription;
         IsDescrDialVisible = true;
+        await Task.Yield();
+        if (DescrEditor is not null)
+        {
+            await DescrEditor.LoadHTML(SavedDescription ?? string.Empty);
+        }
     }
 
     private async Task OnSaveDescrBtnClick()
     {
+        if (DescrEditor is not null)
+        {
+            SavedDescription = await DescrEditor.GetHTML();
+        }
         IsDescrDialVisible = false;
-        SavedDescription = UnsavedDescription;
         await DescriptionConfirmation.InvokeAsync(SavedDescription);
     }
-    private async Task OnCancelBtnClick()
+    private void OnCancelBtnClick()
     {
         IsDescrDialVisible = false;
-    }
-
-    private void ActionHandler(Syncfusion.Blazor.RichTextEditor.ActionBeginEventArgs arg)
-    {
-        if (arg.RequestType == "UL")
-            arg.Cancel = true;
     }
 
     protected override async Task OnInitializedAsync()

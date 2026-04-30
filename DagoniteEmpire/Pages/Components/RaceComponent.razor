@@ -29,10 +29,8 @@
     }
     
     <label class="race-descr-label">Description</label>
-    <div class="richtext-conteiner">
-        <SfRichTextEditor Height="100%" @bind-Value="@AllParams.CurrentRace.Description" Readonly="true" ShowTooltip="false">
-            <RichTextEditorToolbarSettings Enable="false"/>
-        </SfRichTextEditor>
+    <div class="richtext-conteiner ql-editor" style="height:100%; overflow:auto;">
+        @((MarkupString)(AllParams.CurrentRace?.Description ?? string.Empty))
     </div>
     <label class="race-traits-label">Traits</label>
     <div class="flex-conteiner">

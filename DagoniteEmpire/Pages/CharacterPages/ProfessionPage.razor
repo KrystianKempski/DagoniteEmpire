@@ -142,9 +142,20 @@
         </div>
         <div class="d-flex flex-column flex-grow-1 mx-1">
             <label class="class-section">Class description</label>
-            <SfRichTextEditor @bind-Value:after="SomeChange" Height="300px" @ref="DescrEdit" @bind-Value="@ProfessionDTO.Description">
-                    <RichTextEditorToolbarSettings  Items="@Tools" Type="ToolbarType.MultiRow" />
-            </SfRichTextEditor>
+            <BlazoredTextEditor @ref="DescrEdit">
+                <ToolbarContent>
+                    <span class="ql-formats">
+                        <button class="ql-bold"></button>
+                        <button class="ql-italic"></button>
+                        <button class="ql-underline"></button>
+                        <button class="ql-strike"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-link"></button>
+                    </span>
+                </ToolbarContent>
+                <EditorContent></EditorContent>
+            </BlazoredTextEditor>
         </div>
 
         <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="px-2">
@@ -475,7 +486,8 @@
     public int AvalibleSpells { get; set; } = 0;
     public ProfessionDTO ProfessionDTO { get; set; }
     private AllParamsModel AllParams { get; set; } = new();
-    private SfRichTextEditor DescrEdit = new SfRichTextEditor();
+    private BlazoredTextEditor DescrEdit;
+    private bool _descrEditorLoaded = false;
     private ICollection<SpellCircleDTO> SpellCircles = new List<SpellCircleDTO>();
     private MudTable<SpellCircleDTO> CircleTable;
     public string TraitType = SD.TraitType_Profession;
@@ -489,17 +501,6 @@
     private bool IsLeaveAllowed { get; set; } = true;
     private string TargetLocation { get; set; } = "";
     private System.Action handler;
-
-
-    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
-    {
-        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
-        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
-        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
-        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
-        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
-        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-    };
 
     protected override async Task OnInitializedAsync()
     {        
@@ -554,9 +555,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!_descrEditorLoaded && DescrEdit is not null && ProfessionDTO is not null && !string.IsNullOrEmpty(ProfessionDTO.Description))
         {
-            //await AuthorizeEntry();
+            _descrEditorLoaded = true;
+            await DescrEdit.LoadHTML(ProfessionDTO.Description);
         }
     }
     public async Task ReloadPage()
@@ -623,6 +625,11 @@
             }
 
             ProfessionDTO.SpellCircles = SpellCircles;
+
+            if (DescrEdit is not null)
+            {
+                ProfessionDTO.Description = await DescrEdit.GetHTML();
+            }
 
             await _professionRepository.Update(ProfessionDTO);
 

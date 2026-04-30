@@ -171,10 +171,9 @@ else
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeletePost(post))"></MudIconButton>
                                             }
                                         </MudStack>                                
-                                        <SfRichTextEditor Height="100%" ID="@postId"  @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
-                                            <RichTextEditorImageSettings Path="./upload/postImages/" />
-                                            <RichTextEditorToolbarSettings Items="@NoTools" />
-                                        </SfRichTextEditor>
+                                        <div id="@postId" class="ql-editor" style="height:100%; overflow:auto;">
+                                            @((MarkupString)(post.Content ?? string.Empty))
+                                        </div>
                                     </MudPaper>
                                 </MudPaper>
                             }
@@ -211,10 +210,9 @@ else
                                             }
                                         </MudStack>
 
-                                        <SfRichTextEditor Height="100%" ID="@postId" @bind-Value="@post.Content" Readonly="true" ShowTooltip="false">
-                                            <RichTextEditorImageSettings Path="./upload/postImages/" />                                      
-                                            <RichTextEditorToolbarSettings Items="@NoTools" />
-                                        </SfRichTextEditor>
+                                        <div id="@postId" class="ql-editor" style="height:100%; overflow:auto;">
+                                            @((MarkupString)(post.Content ?? string.Empty))
+                                        </div>
                                         <MudText Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
                                     </MudPaper>
                                 }
@@ -228,11 +226,33 @@ else
         }
         <div id="bottom-container">
             <MudPaper Width="100%" Height="300px" Square="true" Class="d-flex flex-column my-2 pa-2">
-                <SfRichTextEditor Enabled="SendPostEnabled" Height="90%" @bind-Value="@NewPost.Content" ShowTooltip="true">
-                    <RichTextEditorImageSettings SaveFormat="SaveFormat.Blob" SaveUrl="api/FileUpload/Save" Path="./upload/postImages/" />
-                    <RichTextEditorEvents OnActionBegin="ActionHandler" BeforeUploadImage="@BeforeUploadImage" OnImageUploadSuccess="@ImageUploadSuccess" />
-                    <RichTextEditorToolbarSettings  Items="@Tools" />
-                </SfRichTextEditor>
+                <BlazoredTextEditor @ref="@PostEditor" ReadOnly="@(!SendPostEnabled)">
+                    <ToolbarContent>
+                        <select class="ql-header">
+                            <option selected=""></option>
+                            <option value="1"></option>
+                            <option value="2"></option>
+                        </select>
+                        <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                        </span>
+                        <span class="ql-formats">
+                            <select class="ql-color"></select>
+                            <select class="ql-background"></select>
+                        </span>
+                        <span class="ql-formats">
+                            <button class="ql-list" value="ordered"></button>
+                            <button class="ql-blockquote"></button>
+                        </span>
+                        <span class="ql-formats">
+                            <button class="ql-link"></button>
+                        </span>
+                    </ToolbarContent>
+                    <EditorContent></EditorContent>
+                </BlazoredTextEditor>
                 <div class="d-flex flex-row">
                     <MudButton Disabled="(SendPostEnabled == false) " Class="mt-2 py-0" OnClick="CreatePost">@SendButtonText</MudButton>
                     @if (IsEditMode)
@@ -305,31 +325,7 @@ else
     private bool SendPostEnabled = true;
     private MobDTO GmAsMob = new MobDTO();
     private MudPagination Pagination;
-    private List<ToolbarItemModel> NoTools = new List<ToolbarItemModel>();
-    private List<ToolbarItemModel> Tools = new List<ToolbarItemModel>()
-    {
-        new ToolbarItemModel() { Command = ToolbarCommand.Bold },
-        new ToolbarItemModel() { Command = ToolbarCommand.Italic },
-        new ToolbarItemModel() { Command = ToolbarCommand.Underline },
-        new ToolbarItemModel() { Command = ToolbarCommand.StrikeThrough },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontName },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontSize },
-        new ToolbarItemModel() { Command = ToolbarCommand.FontColor },
-        new ToolbarItemModel() { Command = ToolbarCommand.BackgroundColor },        
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Formats },
-        new ToolbarItemModel() { Command = ToolbarCommand.Alignments },
-        new ToolbarItemModel() { Command = ToolbarCommand.Outdent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Indent },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.CreateLink },
-        new ToolbarItemModel() { Command = ToolbarCommand.Image },
-        new ToolbarItemModel() { Command = ToolbarCommand.Separator },
-        new ToolbarItemModel() { Command = ToolbarCommand.Undo },
-        new ToolbarItemModel() { Command = ToolbarCommand.Redo },
-        new ToolbarItemModel() { Command = ToolbarCommand.FullScreen },
-        new ToolbarItemModel() { Command = ToolbarCommand.Blockquote },
-    };
+    private BlazoredTextEditor PostEditor;
 
 
     public UserInfo? UserInfo { get; set; }
@@ -469,6 +465,11 @@ else
     {
         try{
 
+            if (PostEditor is not null)
+            {
+                NewPost.Content = await PostEditor.GetHTML();
+            }
+
             if (string.IsNullOrEmpty(NewPost.Content))
                 return;
 
@@ -523,6 +524,10 @@ else
             }
         }
         NewPost = new();
+        if (PostEditor is not null)
+        {
+            await PostEditor.LoadHTML(string.Empty);
+        }
 
 
         var newPageCount = await GetPageCount();
@@ -548,7 +553,10 @@ else
         NewPost = post;
         IsEditMode = true;
         SendButtonText = "Edit Post";
-
+        if (PostEditor is not null)
+        {
+            await PostEditor.LoadHTML(NewPost.Content ?? string.Empty);
+        }
     }
     private async Task DeletePost(PostDTO post)
     {
@@ -579,33 +587,6 @@ else
         IsEditMode = false;
         SendButtonText = "Send Post";
 
-    }
-
-    private void BeforeUploadImage(ImageUploadingEventArgs args)
-    {
-        var sizeInBytes = args.FilesData[0].Size;
-        var imgSize = 500000;
-        if (imgSize < sizeInBytes)
-        {
-            args.Cancel = true;
-        }
-    }
-
-    private void ActionHandler(Syncfusion.Blazor.RichTextEditor.ActionBeginEventArgs arg)
-    {
-        if(arg.RequestType=="UL")
-            arg.Cancel = true;
-    }
-
-
-    private void ImageUploadSuccess(ImageSuccessEventArgs args)
-    {
-        var headersString = args.Response.Headers.ToString();
-        var headers = headersString.Split("name: ");
-        headers = headers[1].Split("\r");
-
-        // Update the modified image name to display a image in the editor.
-        args.File.Name = headers[0];
     }
 
     private async Task GenerateFightSequence()

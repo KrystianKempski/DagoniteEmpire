@@ -6,7 +6,6 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DagoniteEmpire.Service.IService;
 using DagoniteEmpire.Service;
 using DagoniteEmpire.Account;
-using Syncfusion.Blazor;
 using MudBlazor.Services;
 using NLog.Web;
 using DagoniteEmpire.Middleware;
@@ -76,7 +75,6 @@ public class Program
         builder.Services.AddAuthorization();
 
 
-        builder.Services.AddSyncfusionBlazor();
         builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
         builder.Host.UseNLog();
 
@@ -152,9 +150,6 @@ public class Program
         var app = builder.Build();
         app.UsePathBase("/");
         //app.UseStatusCodePages();
-
-        Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NDaF5cWWtCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH9ceHVRRWdYVUd3WUI=");
-        //Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(builder.Configuration["SyncfusionKey"]);
 
         if (!app.Environment.IsDevelopment())
         {
