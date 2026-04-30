@@ -2,25 +2,6 @@
 using MudBlazor;
 using MudBlazor.Charts;
 using Syncfusion.Blazor.RichTextEditor;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.Metrics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using static MudBlazor.CategoryTypes;
-using static MudBlazor.Colors;
-using static MudBlazor.Icons.Custom;
-using static Npgsql.PostgresTypes.PostgresCompositeType;
-using static System.Formats.Asn1.AsnWriter;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DA_Common
 {
