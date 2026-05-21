@@ -9,8 +9,8 @@ namespace DA_DataAccess
     public class ImageFile
     {
         public int Id { get; set; }
-        public string ImageName { get; set; }
+        public string ImageName { get; set; } = string.Empty;
 
-        public byte[] fileData { get; set; }
+        public byte[] fileData { get; set; } = Array.Empty<byte>();
     }
 }

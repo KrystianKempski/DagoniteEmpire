@@ -147,11 +147,10 @@ public class CharacterRepositoryTests : IClassFixture<DatabaseFixture>
     }
 
     [Fact]
-    public async Task Delete_ShouldCleanupCharacterRelatedData()
+    public async Task Delete_ShouldRemoveCharacterAndRelatedData()
     {
-        // Note: The repository Delete method cleans up related data (traits, equipment, etc.)
-        // but doesn't actually remove the Character entity itself. This test verifies
-        // the method runs without error for a character without related data.
+        // The repository Delete method cleans up related data (traits, equipment, etc.)
+        // and removes the Character entity itself.
         
         // Arrange
         using var context = _fixture.CreateContext();
@@ -166,11 +165,16 @@ public class CharacterRepositoryTests : IClassFixture<DatabaseFixture>
         await context.SaveChangesAsync();
         var id = character.Id;
 
-        // Act - should complete without exception
+        // Act - should delete character and return count of changes
         var result = await _repository.Delete(id);
 
-        // Assert - returns 0 when no related data to delete (profession is approved)
-        Assert.Equal(0, result);
+        // Assert - returns 1 when character is deleted (profession is approved so not deleted)
+        Assert.True(result >= 1);
+        
+        // Verify the character was actually deleted
+        using var verifyContext = _fixture.CreateContext();
+        var deleted = await verifyContext.Characters.FindAsync(id);
+        Assert.Null(deleted);
     }
 
     [Fact]

@@ -14,7 +14,7 @@ namespace DA_DataAccess.CharacterClasses
         [Key]
         public int Id { get; set; }
 
-        public string Name { get; set; }    
+        public string Name { get; set; } = string.Empty;    
         public string Description { get; set; } = string.Empty;
         public string RelatedAttributeName { get; set; } = string.Empty;
         public int ClassLevel { get; set; } = 1;

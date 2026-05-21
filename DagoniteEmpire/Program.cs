@@ -32,7 +32,7 @@ using MimeKit;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
 
         var builder = WebApplication.CreateBuilder(args);
@@ -84,7 +84,10 @@ public class Program
         {
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
                                     options => options.EnableRetryOnFailure());
-            options.EnableDetailedErrors();
+            if (builder.Environment.IsDevelopment())
+            {
+                options.EnableDetailedErrors();
+            }
         });
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
         builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -104,6 +107,7 @@ public class Program
             cfg.LicenseKey = builder.Configuration["AutoMapper:LicenseKey"];
             cfg.AddMaps(typeof(DA_Business.Mapper.MappingProfile).Assembly);
         });
+
         builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
         builder.Services.AddScoped<IMobRepository, MobRepository>();
         builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();
@@ -176,7 +180,7 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-            dbInitializer.Initialize();
+            await dbInitializer.Initialize();
         }
 
         app.MapHub<ChatHub>(ChatHub.HubUrl);

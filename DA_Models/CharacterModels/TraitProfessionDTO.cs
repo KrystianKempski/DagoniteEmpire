@@ -14,8 +14,9 @@ namespace DA_Models.CharacterModels
         {
             foreach (var prop in traitDTO.GetType().GetProperties())
             {
-                if (GetType().GetProperty(prop.Name).CanWrite)
-                    GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(traitDTO, null), null);
+                var targetProp = GetType().GetProperty(prop.Name);
+                if (targetProp?.CanWrite == true)
+                    targetProp.SetValue(this, prop.GetValue(traitDTO, null), null);
             }
             ProfessionId = profId;
             IsActiveSkill = isActiveSkill;

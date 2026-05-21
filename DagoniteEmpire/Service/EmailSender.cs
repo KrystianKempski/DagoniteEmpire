@@ -12,8 +12,6 @@ namespace DagoniteEmpire.Service
 
     public class EmailSender : IEmailSender
     {
-        private readonly ILogger _logger;
-
         private readonly EmailConfiguration _emailConfiguration;
 
         public EmailSender(IOptions<EmailConfiguration> emailConfiguration)
@@ -50,18 +48,11 @@ namespace DagoniteEmpire.Service
             using (var smtp = new SmtpClient())
             {
                 smtp.Timeout = 10000; // 10secs
-                try
-                {
-                    await smtp.ConnectAsync(host, port, enableSsl);
-                    if (!string.IsNullOrEmpty(username))
-                        smtp.Authenticate(username, password);
-                    await smtp.SendAsync(email);
-                    await smtp.DisconnectAsync(true);
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
+                await smtp.ConnectAsync(host, port, enableSsl);
+                if (!string.IsNullOrEmpty(username))
+                    await smtp.AuthenticateAsync(username, password);
+                await smtp.SendAsync(email);
+                await smtp.DisconnectAsync(true);
             }
         }
     }

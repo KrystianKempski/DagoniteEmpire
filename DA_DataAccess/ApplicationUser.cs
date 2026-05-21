@@ -10,7 +10,7 @@ namespace DA_DataAccess
 {
     public class ApplicationUser : IdentityUser
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public virtual ICollection<ChatMessage> ChatMessagesFromUsers { get; set; }
         public virtual ICollection<ChatMessage> ChatMessagesToUsers { get; set; }
 

@@ -31,7 +31,7 @@ namespace DA_Business.Repository.CharacterReps
                 await contex.SaveChangesAsync();
                 return _mapper.Map<Attribute, AttributeDTO>(addedObj.Entity);
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
         }
 
         public async Task<int> Delete(int id)
@@ -73,7 +73,7 @@ namespace DA_Business.Repository.CharacterReps
                 }
             }
             catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); 
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); 
             }
 
             return new Dictionary<string, AttributeDTO>();

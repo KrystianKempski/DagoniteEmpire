@@ -34,9 +34,7 @@ namespace DA_Business.Repository.CharacterReps
             using var contex = await _db.CreateDbContextAsync();
             try
             {
-                obj.Race = null;
-                obj.Profession = null;
-
+                // Navigation properties (Race, Profession) are ignored by AutoMapper
 
                 // Update and Insert equimpment
                 if (obj.EquipmentSlots is not null)
@@ -58,7 +56,7 @@ namespace DA_Business.Repository.CharacterReps
                 return _mapper.Map<Character, CharacterDTO>(addedObj.Entity);
             }
             catch (Exception ex) {
-                throw new RepositoryErrorException("Error in"+ System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); 
+                throw new RepositoryErrorException("Error in"+ System.Reflection.MethodBase.GetCurrentMethod().Name , ex); 
             }
         }
 
@@ -68,7 +66,15 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 //delete traits adv
-                var obj = await contex.Characters.Include(c=>c.EquipmentSlots).ThenInclude(e=>e.Equipment).ThenInclude(t=>t.Traits).FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await contex.Characters
+                    .Include(c => c.EquipmentSlots)
+                        .ThenInclude(e => e.Equipment)
+                        .ThenInclude(t => t.Traits)
+                    .AsSplitQuery()
+                    .FirstOrDefaultAsync(u => u.Id == id);
+                if (obj is null)
+                    return 0;
+                    
                 var traits = contex.TraitsCharacter.Where(c=>c.CharacterId == id && c.TraitApproved == false);
                 foreach(var trait in traits)
                 {
@@ -123,11 +129,14 @@ namespace DA_Business.Repository.CharacterReps
                 {
                     contex.Professions.Remove(profession);
                 }
-                //await contex.SaveChangesAsync();
+                
+                // Delete the character entity itself
+                contex.Characters.Remove(obj);
+                
                 return await contex.SaveChangesAsync();
             }
             catch (Exception ex) {
-                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message );
+                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex );
             }
         }
 
@@ -190,10 +199,15 @@ namespace DA_Business.Repository.CharacterReps
             if (fullIncludes)
             {
                 obj = await contex.Characters
-                .Include(r => r.Race)
-                .Include(r => r.Profession)
-                .Include(r => r.EquipmentSlots).ThenInclude(u => u.Equipment).ThenInclude(b => b.Traits)?.ThenInclude(b => b.Bonuses)
-                .FirstOrDefaultAsync(u => u.NPCName == npcName);
+                    .AsNoTracking()
+                    .Include(r => r.Race)
+                    .Include(r => r.Profession)
+                    .Include(r => r.EquipmentSlots)
+                        .ThenInclude(u => u.Equipment)
+                        .ThenInclude(b => b.Traits)
+                        .ThenInclude(b => b.Bonuses)
+                    .AsSplitQuery()
+                    .FirstOrDefaultAsync(u => u.NPCName == npcName);
             }
             else
             {
@@ -256,7 +270,11 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = await contex.Characters
-                    .Include(u=>u.EquipmentSlots).ThenInclude(e => e.Equipment).ThenInclude(e=>e.Traits).ThenInclude(t=>t.Bonuses)
+                    .Include(u => u.EquipmentSlots)
+                        .ThenInclude(e => e.Equipment)
+                        .ThenInclude(e => e.Traits)
+                        .ThenInclude(t => t.Bonuses)
+                    .AsSplitQuery()
                     .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
 
 
@@ -481,7 +499,7 @@ namespace DA_Business.Repository.CharacterReps
                     return objDTO;
             }
             catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); 
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); 
             }
         }
 

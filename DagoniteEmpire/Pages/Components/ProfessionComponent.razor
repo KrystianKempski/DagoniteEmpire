@@ -1,6 +1,7 @@
 ﻿
 @inject NavigationManager _navigationManager
 @inject IUserService _userService
+@inject IDialogService DialogService
 <div class="profession">
     <MudPaper Class="pa-2 m-0 w-100 h-100">
         <div class="profession-container">
@@ -55,12 +56,7 @@
         <button @onclick="@(()=>EditProfession())" class="add-trait">Edit class</button>
     </div>
 
-    @if (CreateProfession != null)
-    {
-        <CascadingValue Value="@AllParams">
-            <CreateProfessionDialog @bind-CreateProfession="@CreateProfession"></CreateProfessionDialog>
-        </CascadingValue>
-    }
+
         </div>
     </MudPaper>
 </div> 
@@ -80,23 +76,6 @@
     private string ProfessionName { get; set; }
 
 
-    private CreateProfessionModel _createProfession = new();
-    private CreateProfessionModel CreateProfession
-    {
-        get => _createProfession;
-        set
-        {
-            if (value.ProfessionDTO != null)
-            {
-
-                Profession = value.ProfessionDTO;
-                StateHasChanged();
-            }
-            if (_createProfession == value) return;
-            _createProfession = value;
-        }
-    }
-
     private async Task NotifyChange()
     {
         await OnProfessionChanged.InvokeAsync();
@@ -105,17 +84,26 @@
 
     private async Task EditProfession()
     {
-        if(AllParams.Character.IsApproved == false)
+        if (AllParams.Character.IsApproved == false)
         {
-
-            CreateProfession.ProfessionDTO = Profession;
-            CreateProfession.IsVisible = true;
+            var parameters = new DialogParameters<CreateProfessionDialog>
+            {
+                { x => x.ProfessionDTO, Profession },
+                { x => x.AllParams, AllParams }
+            };
+            var options = new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.ExtraLarge };
+            var dialog = await DialogService.ShowAsync<CreateProfessionDialog>("Specify class", parameters, options);
+            var result = await dialog.Result;
+            if (result?.Data is not null && !result.Canceled)
+            {
+                Profession = (ProfessionDTO)result.Data;
+                await NotifyChange();
+            }
         }
-        else 
+        else
         {
             _navigationManager.NavigateTo($"/profession/{AllParams.Character.Id}");
         }
-        await NotifyChange();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

@@ -15,8 +15,9 @@ namespace DA_Models.CharacterModels
         {
             foreach (var prop in traitDTO.GetType().GetProperties())
             {
-                if(this.GetType().GetProperty(prop.Name).CanWrite)
-                    this.GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(traitDTO, null), null);
+                var targetProp = this.GetType().GetProperty(prop.Name);
+                if (targetProp?.CanWrite == true)
+                    targetProp.SetValue(this, prop.GetValue(traitDTO, null), null);
             }
             if (this.Equipment is not null && equipmentDTO is not null)
             {

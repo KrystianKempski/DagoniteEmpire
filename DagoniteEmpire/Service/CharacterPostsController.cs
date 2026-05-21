@@ -83,7 +83,8 @@ namespace RichTextEditor.Data
             postCount = await _postRepository.GetCharacterPostCount(id,from,to);
 
             return postCount;
-            }catch(Exception ex)
+            }
+            catch (Exception)
             {
                 return -3;
             }

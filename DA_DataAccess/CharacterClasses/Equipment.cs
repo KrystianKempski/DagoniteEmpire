@@ -17,12 +17,12 @@ namespace DA_DataAccess.CharacterClasses
 
         public ICollection<EquipmentSlot>? EquipmentSlots { get; set; } = null;
 
-        public string Name { get; set; }                        //for example "axe"
+        public string Name { get; set; } = string.Empty;                        //for example "axe"
         public int Index { get; set; }
 
-        public string Description { get; set; }                 // descritpion of Equipment
+        public string Description { get; set; } = string.Empty;                 // descritpion of Equipment
 
-        public string ShortDescr { get; set; }                  // short item descr
+        public string ShortDescr { get; set; } = string.Empty;                  // short item descr
         public decimal Price { get; set; }
         public decimal Weight { get; set; }
         public bool IsApproved { get; set; }                    // Equipment have to be approved by Game Master

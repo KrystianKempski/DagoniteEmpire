@@ -20,7 +20,7 @@ namespace DagoniteEmpire.Middleware
         private readonly ILogger<ErrorHandlingMiddleware> _logger;
         private readonly IJSRuntime _jsRuntime;
 
-        public ErrorHandlingMiddleware(ILogger<ErrorHandlingMiddleware> logger, IJSRuntime jsRuntime, NavigationManager navigationManagerl)
+        public ErrorHandlingMiddleware(ILogger<ErrorHandlingMiddleware> logger, IJSRuntime jsRuntime)
         {
             _logger = logger;
             _jsRuntime = jsRuntime;

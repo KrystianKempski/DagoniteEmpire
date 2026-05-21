@@ -32,17 +32,19 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<EquipmentDTO, Equipment>(objDTO);
-                //handle traitsEquipment
-                var traits = await contex.TraitsEquipment.ToListAsync();
-                traits.ForEach(t =>
+                
+                // Replace untracked trait entities with tracked ones (only fetch needed IDs)
+                var traitIds = obj.Traits.Select(t => t.Id).ToList();
+                var trackedTraits = await contex.TraitsEquipment
+                    .Where(t => traitIds.Contains(t.Id))
+                    .ToDictionaryAsync(t => t.Id);
+                
+                var traitsToReplace = obj.Traits.Where(t => trackedTraits.ContainsKey(t.Id)).ToList();
+                foreach (var untracked in traitsToReplace)
                 {
-                    if (obj.Traits.Any(nt => nt.Id == t.Id))
-                    {
-                        var untracked = obj.Traits.FirstOrDefault(nt => nt.Id == t.Id);
-                        obj.Traits.Remove(untracked);
-                        obj.Traits.Add(t);
-                    }
-                });
+                    obj.Traits.Remove(untracked);
+                    obj.Traits.Add(trackedTraits[untracked.Id]);
+                }
 
                 var addedObj = await contex.Equipment.AddAsync(obj);
                 await contex.SaveChangesAsync();
@@ -85,20 +87,37 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<EquipmentDTO>> GetAll()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses));
-           
+            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(
+                await contex.Equipment
+                    .AsNoTracking()
+                    .Include(u => u.Traits)
+                        .ThenInclude(b => b.Bonuses)
+                    .AsSplitQuery()
+                    .ToListAsync());
         }
 
         public async Task<IEnumerable<EquipmentDTO>> GetAllApproved()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses).Where(t=>t.IsApproved == true && t.Name != SD.BasicWeaponsMelee.Fists));
+            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(
+                await contex.Equipment
+                    .AsNoTracking()
+                    .Where(t => t.IsApproved == true && t.Name != SD.BasicWeaponsMelee.Fists)
+                    .Include(u => u.Traits)
+                        .ThenInclude(b => b.Bonuses)
+                    .AsSplitQuery()
+                    .ToListAsync());
         }
 
         public async Task<EquipmentDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.Equipment
+                .AsNoTracking()
+                .Include(u => u.Traits)
+                    .ThenInclude(b => b.Bonuses)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Equipment, EquipmentDTO>(obj);
@@ -108,7 +127,12 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<EquipmentDTO> GetByName(string name)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Equipment.Include(u => u.Traits).ThenInclude(b => b.Bonuses).FirstOrDefaultAsync(u => u.Name == name);
+            var obj = await contex.Equipment
+                .AsNoTracking()
+                .Include(u => u.Traits)
+                    .ThenInclude(b => b.Bonuses)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(u => u.Name == name);
             if (obj != null)
             {
                 return _mapper.Map<Equipment, EquipmentDTO>(obj);
@@ -121,7 +145,11 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Equipment.Include(r=>r.Traits).ThenInclude(b => b.Bonuses).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                var obj = await contex.Equipment
+                    .Include(r => r.Traits)
+                        .ThenInclude(b => b.Bonuses)
+                    .AsSplitQuery()
+                    .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
                     var updatedEquipment = _mapper.Map<EquipmentDTO, Equipment>(objDTO);

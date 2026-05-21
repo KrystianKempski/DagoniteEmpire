@@ -60,9 +60,9 @@ namespace DA_Business.Services
                 await _protectedSessionStorage.DeleteAsync(key);
             }
             }
-            catch(Exception ex)
+            catch (Exception)
             {
-                ;
+                // Silently ignore - storage might not be available
             }
         }
 
@@ -167,10 +167,9 @@ namespace DA_Business.Services
                 return userInfo;
                 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                //throw new Exception($"error: {ex.Message}");
-                ;
+                // Failed to load user info
                 return null;
             }
         }

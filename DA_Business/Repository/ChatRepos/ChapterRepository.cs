@@ -31,32 +31,31 @@ namespace DA_Business.Repository.ChatRepos
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<ChapterDTO, Chapter>(objDTO);
 
-                foreach (var cha in obj.Characters)
+                // Replace untracked character entities with tracked ones (only fetch needed IDs)
+                var characterIds = obj.Characters.Select(c => c.Id).ToList();
+                var trackedCharacters = await contex.Characters
+                    .Where(c => characterIds.Contains(c.Id))
+                    .ToDictionaryAsync(c => c.Id);
+                
+                var charactersToReplace = obj.Characters.Where(c => trackedCharacters.ContainsKey(c.Id)).ToList();
+                foreach (var untracked in charactersToReplace)
                 {
-                    cha.Profession = null;
-                    cha.Race = null;
+                    obj.Characters.Remove(untracked);
+                    obj.Characters.Add(trackedCharacters[untracked.Id]);
                 }
 
-                var characterts = await contex.Characters.ToListAsync();
-                characterts.ForEach(t =>
+                // Replace untracked post entities with tracked ones
+                var postIds = obj.Posts.Select(p => p.Id).ToList();
+                var trackedPosts = await contex.Posts
+                    .Where(p => postIds.Contains(p.Id))
+                    .ToDictionaryAsync(p => p.Id);
+                
+                var postsToReplace = obj.Posts.Where(p => trackedPosts.ContainsKey(p.Id)).ToList();
+                foreach (var untracked in postsToReplace)
                 {
-                    if (obj.Characters.Any(nt => nt.Id == t.Id))
-                    {
-                        var untracked = obj.Characters.FirstOrDefault(nt => nt.Id == t.Id);
-                        obj.Characters.Remove(untracked);
-                        obj.Characters.Add(t);
-                    }
-                });
-                var posts = await contex.Posts.ToListAsync();
-                posts.ForEach(t =>
-                {
-                    if (obj.Posts.Any(nt => nt.Id == t.Id))
-                    {
-                        var untracked = obj.Posts.FirstOrDefault(nt => nt.Id == t.Id);
-                        obj.Posts.Remove(untracked);
-                        obj.Posts.Add(t);
-                    }
-                });
+                    obj.Posts.Remove(untracked);
+                    obj.Posts.Add(trackedPosts[untracked.Id]);
+                }
 
                 var addedObj = await contex.Chapters.AddAsync(obj);
                 await contex.SaveChangesAsync();
@@ -64,7 +63,7 @@ namespace DA_Business.Repository.ChatRepos
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
             }
 
         }
@@ -100,7 +99,7 @@ namespace DA_Business.Repository.ChatRepos
                     return contex.SaveChanges();
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);}
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);}
             return 0;
         }
 
@@ -116,7 +115,7 @@ namespace DA_Business.Repository.ChatRepos
                 if (obj != null && obj.Any())
                     return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(obj);
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
 
             return new List<ChapterDTO>();
         }
@@ -133,7 +132,7 @@ namespace DA_Business.Repository.ChatRepos
                 if (obj != null && obj.Any())
                     return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(obj);
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
 
             return new List<ChapterDTO>();
         }
@@ -143,13 +142,35 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Chapters.Include(a => a.Characters).Include(a => a.Posts).FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await contex.Chapters
+                    .AsNoTracking()
+                    .Where(u => u.Id == id)
+                    .Select(c => new ChapterDTO
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Description = c.Description,
+                        DateNumber = c.DateNumber,
+                        DayTime = c.DayTime,
+                        Place = c.Place,
+                        CreatedDate = c.CreatedDate,
+                        IsFinished = c.IsFinished,
+                        CampaignId = c.CampaignId,
+                        Characters = c.Characters
+                            .Select(ch => new CharacterDTO
+                            {
+                                Id = ch.Id
+                            })
+                            .ToList(),
+                        Posts = new List<PostDTO>()
+                    })
+                    .FirstOrDefaultAsync();
                 if (obj != null)
                 {
-                    return _mapper.Map<Chapter, ChapterDTO>(obj);
+                    return obj;
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
             return new ChapterDTO();
         }
 
@@ -201,23 +222,18 @@ namespace DA_Business.Repository.ChatRepos
                 {
                     obj = _mapper.Map<ChapterDTO, Chapter>(objDTO);
 
-
-                    foreach (var cha in obj.Characters)
+                    // Replace untracked character entities with tracked ones (only fetch needed IDs)
+                    var characterIds = obj.Characters.Select(c => c.Id).ToList();
+                    var trackedCharacters = await contex.Characters
+                        .Where(c => characterIds.Contains(c.Id))
+                        .ToDictionaryAsync(c => c.Id);
+                    
+                    var charactersToReplace = obj.Characters.Where(c => trackedCharacters.ContainsKey(c.Id)).ToList();
+                    foreach (var untracked in charactersToReplace)
                     {
-                        cha.Profession = null;
-                        cha.Race = null;
+                        obj.Characters.Remove(untracked);
+                        obj.Characters.Add(trackedCharacters[untracked.Id]);
                     }
-
-                    var characterts = await contex.Characters.ToListAsync();
-                    characterts.ForEach(t =>
-                    {
-                        if (obj.Characters.Any(nt => nt.Id == t.Id))
-                        {
-                            var untracked = obj.Characters.FirstOrDefault(nt => nt.Id == t.Id);
-                            obj.Characters.Remove(untracked);
-                            obj.Characters.Add(t);
-                        }
-                    });
 
                     var addedObj = contex.Chapters.Add(obj);
                     await contex.SaveChangesAsync();
@@ -226,7 +242,7 @@ namespace DA_Business.Repository.ChatRepos
                 }
             }
             catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
             }
         }
     }

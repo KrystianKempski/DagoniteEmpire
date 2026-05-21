@@ -26,6 +26,6 @@ namespace DA_DataAccess.CharacterClasses
         public int HealthBonus { get; set; } = 0;
         public int CharacterId { get; set; }
         [ForeignKey(nameof(CharacterId))]
-        public Character Character { get; set; }
+        public Character? Character { get; set; }
     }
 }
