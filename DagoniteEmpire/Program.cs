@@ -32,7 +32,7 @@ using MimeKit;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
 
         var builder = WebApplication.CreateBuilder(args);
@@ -180,7 +180,7 @@ public class Program
         using (var scope = app.Services.CreateScope())
         {
             var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-            dbInitializer.Initialize();
+            await dbInitializer.Initialize();
         }
 
         app.MapHub<ChatHub>(ChatHub.HubUrl);

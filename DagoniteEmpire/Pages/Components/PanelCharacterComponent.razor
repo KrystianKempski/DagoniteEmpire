@@ -395,6 +395,7 @@
     {
         try
         {
+            var shouldRecalculateDerivedState = false;
             if (AllParams is null){
 
                 AllParams = new();
@@ -413,13 +414,17 @@
                 ICollection<WoundDTO> conds = (await _woundRepository.GetAllCond(Id)).Cast<WoundDTO>().ToList();
                 wounds = wounds.Concat(conds).ToList();
                 AllParams.Health.FillPropertiesContainer(wounds);
+                shouldRecalculateDerivedState = true;
             }
 
-            AllParams.SpecialSkills.AddRelatedParametes();
-            AllParams.AllTraitsChange();
-            //await ChangeProfRelatedAttribute();
-            AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());
-            AllParams.Health.UpdateHealthBonusesInAttributes();
+            if (shouldRecalculateDerivedState)
+            {
+                AllParams.SpecialSkills.AddRelatedParametes();
+                AllParams.AllTraitsChange();
+                AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());
+                AllParams.Health.UpdateHealthBonusesInAttributes();
+            }
+
             MainWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.MainWeaponUsed);
             OffWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.OffWeaponUsed);
             ArmorProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ArmorUsed);

@@ -1,29 +1,22 @@
 ﻿@using DA_DataAccess.CharacterClasses
 @inject IJSRuntime _jsruntime
 @inject IUserService _userService
-<div class="race">
-    <MudDialog @bind-Visible="@_createProfession.IsVisible" Options="@(new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.ExtraLarge })">
-        <TitleContent>Specify class</TitleContent>
+<MudDialog>
+    <TitleContent>Specify class</TitleContent>
         <DialogContent>
-                 <div class="main-table">
-                     @if (IsLoading)
-                    {
-                        <LoadingPage></LoadingPage>
-                    }
-                    else
-                    {
+                 <div class="main-table">                    
                         <label class="warnign-message">@ErrorMessage</label>
                         <div class="wide-screen-table">
                             <div class="d-flex ">
                                 <div class="d-flex flex-column px-1 flex-grow-1">
                                     <label class="class-section py-1">Class name</label>
-                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert class name" @bind-Value="@_createProfession.ProfessionDTO.Name"></MudTextField>
+                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
                                 </div>
                                 <div class="d-flex flex-column px-1">
                                     <label class="class-section py-1">Related attribute</label>
                                     <InputSelect style="width: 150px;height: 32px;border: 1px solid RGB(206 212 218); border-radius: 4px; padding: 0px 4px 0px 4px;"
-                                                 ValueExpression="@(()=>_createProfession.ProfessionDTO.RelatedAttributeName)"
-                                                 Value="@_createProfession.ProfessionDTO.RelatedAttributeName"
+                                                 ValueExpression="@(()=>ProfessionDTO.RelatedAttributeName)"
+                                                 Value="@ProfessionDTO.RelatedAttributeName"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
                                         <option value="0" selected disabled>--Select--</option>
                                         @foreach(var attr in SD.Attributes.All)
@@ -36,31 +29,31 @@
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="column-section py-1">Class Level</label>
-                                        <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:100px"  HideSpinButtons="true" @bind-Value="@_createProfession.ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
+                                        <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:100px"  HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
                                     </div>
                                 }
                                 else
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="column-section py-1">Class Level</label>
-                                        <label class="prof-variables">@_createProfession.ProfessionDTO.ClassLevel</label>
+                                        <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                                     </div>
                                 }
 
                                 <div class="d-flex flex-column px-1">
                                     <label class="column-section py-1">Skill roll</label>
-                                    <label class="prof-variables">@_createProfession.ProfessionDTO.ProfessionSkillRoll</label>
+                                    <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                                 </div>
                                 <div class="d-flex flex-column px-1">
                                     <label class="column-section py-1">Focus points</label>
-                                     <label class="prof-variables">@_createProfession.ProfessionDTO.MaxFocusPoints</label>
+                                     <label class="prof-variables">@ProfessionDTO.MaxFocusPoints</label>
                                 </div>
                                 @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
                                         <label class="class-section py-1">Approve</label>
                                         <div class="justify-content-center mx-auto my-auto">
-                                            <MudCheckBox T="bool" @bind-Value="_createProfession.ProfessionDTO.IsApproved"></MudCheckBox>
+                                            <MudCheckBox T="bool" @bind-Value="ProfessionDTO.IsApproved"></MudCheckBox>
                                         </div>
                                     </div>
                                 }
@@ -71,14 +64,14 @@
                                 <div class="d-flex" >
                                     <div class="d-flex flex-column px-1 flex-grow-1">
                                         <label class="class-section py-1">Class name</label>
-                                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert class name" @bind-Value="@_createProfession.ProfessionDTO.Name"></MudTextField>
+                                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
                                     </div>
                                     @if (UserInfo?.IsAdminOrMG == true)
                                     {
                                         <div class="d-flex flex-column px-1">
                                             <label class="class-section py-1">Approve</label>
                                             <div class="justify-content-center mx-auto my-auto">
-                                                <MudCheckBox T="bool" @bind-Value="_createProfession.ProfessionDTO.IsApproved"></MudCheckBox>
+                                                <MudCheckBox T="bool" @bind-Value="ProfessionDTO.IsApproved"></MudCheckBox>
                                             </div>
                                         </div>
                                     }
@@ -86,8 +79,8 @@
                                 <div class="d-flex flex-column px-1">
                                     <label class="class-section py-1">Related attribute</label>
                                     <InputSelect style="height: 32px;border: 1px solid RGB(206 212 218); border-radius: 4px; padding: 0px 4px 0px 4px;"
-                                                 ValueExpression="@(()=>_createProfession.ProfessionDTO.RelatedAttributeName)"
-                                                 Value="@_createProfession.ProfessionDTO.RelatedAttributeName"
+                                                 ValueExpression="@(()=>ProfessionDTO.RelatedAttributeName)"
+                                                 Value="@ProfessionDTO.RelatedAttributeName"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
                                         
                                         <option value="0" selected disabled>--Select--</option>
@@ -102,24 +95,24 @@
                                     {
                                         <div class="d-flex flex-column px-1 variables">
                                             <label class="column-section py-1">Class Level</label>
-                                            <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense"  HideSpinButtons="true" @bind-Value="@_createProfession.ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
+                                            <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense"  HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
                                         </div>
                                     }
                                     else
                                     {
                                         <div class="d-flex flex-column px-1 variables">
                                             <label class="column-section py-1">Class Level</label>
-                                            <label class="prof-variables">@_createProfession.ProfessionDTO.ClassLevel</label>
+                                            <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                                         </div>
                                     }
 
                                     <div class="d-flex flex-column px-1 variables">
                                         <label class="column-section py-1">Skill roll</label>
-                                        <label class="prof-variables">@_createProfession.ProfessionDTO.ProfessionSkillRoll</label>
+                                        <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                                     </div>
                                     <div class="d-flex flex-column px-1 variables">
                                         <label class="column-section py-1">Focus points</label>
-                                        <label class="prof-variables">@_createProfession.ProfessionDTO.MaxFocusPoints</label>
+                                        <label class="prof-variables">@ProfessionDTO.MaxFocusPoints</label>
                                     </div>
                                  </div>
                                 
@@ -128,20 +121,7 @@
                         </div>
                         <div class="d-flex flex-column flex-grow-1">
                             <label class="class-section">Class description</label>
-                            <BlazoredTextEditor @ref="DescrEdit">
-                                <ToolbarContent>
-                                    <span class="ql-formats">
-                                        <button class="ql-bold"></button>
-                                        <button class="ql-italic"></button>
-                                        <button class="ql-underline"></button>
-                                        <button class="ql-strike"></button>
-                                    </span>
-                                    <span class="ql-formats">
-                                        <button class="ql-link"></button>
-                                    </span>
-                                </ToolbarContent>
-                                <EditorContent></EditorContent>
-                            </BlazoredTextEditor>
+                            <MudTextField T="string" Variant="Variant.Outlined" Lines="5" @bind-Value="@ProfessionDTO.Description" Placeholder="Enter class description"></MudTextField>
                         </div>
                         @*  ACTIVE SKILLS  *@
                         <label class="class-section">Active class skills</label>
@@ -160,7 +140,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                @foreach (var skill in _createProfession.ProfessionDTO.Traits.Where(t=>t.IsActiveSkill==true))
+                                @foreach (var skill in (ProfessionDTO.Traits ?? []).Where(t=>t.IsActiveSkill==true))
                                 {
                                     <tr>
                                         @if (skill.Index%2==0){
@@ -194,7 +174,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var skill in _createProfession.ProfessionDTO.Traits.Where(t => t.IsActiveSkill == true))
+                                    @foreach (var skill in (ProfessionDTO.Traits ?? []).Where(t => t.IsActiveSkill == true))
                                     {
                                         <tr>
                                             @if (skill.Index % 2 == 0)
@@ -231,7 +211,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var skill in _createProfession.ProfessionDTO.Traits.Where(t=>t.IsActiveSkill==false))
+                                    @foreach (var skill in (ProfessionDTO.Traits ?? []).Where(t=>t.IsActiveSkill==false))
                                     {
                                         <tr>
                                             <td> <label class="short-row">@skill.Level</label> </td>
@@ -257,7 +237,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var skill in _createProfession.ProfessionDTO.Traits.Where(t => t.IsActiveSkill == false))
+                                    @foreach (var skill in (ProfessionDTO.Traits ?? []).Where(t => t.IsActiveSkill == false))
                                     {
                                         <tr>
                                             <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
@@ -275,111 +255,63 @@
                         </div>
 
                         <label class="warnign-message">@ErrorMessage</label>
-                    } 
                 </div>  
                 
         </DialogContent>
         <DialogActions>
-            <MudButton OnClick="@OnCancelBtnClick">Cancel</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@OnSaveProfBtnClick">Save</MudButton>
+            <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OnSaveProfBtnClick">Save</MudButton>
         </DialogActions>
-    </MudDialog>
-
-</div>
-
-<style>
-
-    @@media (max-width: 800px) {
-        .e-dialog.e-popup{
-            width: 100% !important;
-            height: 100% !important;
-        }
-    }
-</style>
+</MudDialog>
 
 @code {
-    [CascadingParameter]
-    public AllParamsModel AllParams { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public AllParamsModel AllParams { get; set; }
+
+    [Parameter] public ProfessionDTO ProfessionDTO { get; set; } = new();
 
     public UserInfo? UserInfo { get; set; }
 
-
-    private BlazoredTextEditor DescrEdit;
-    private bool _descrEditorLoaded = false;
-
-    private CreateProfessionModel _createProfession;
-    [Parameter]
-    public CreateProfessionModel CreateProfession
-    {
-        get => _createProfession;
-        set{
-            if (_createProfession == value) return;
-            _createProfession = value;
-            if (_createProfession.ProfessionDTO != null)
-            {
-                _createProfession.ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
-            }
-            IsLoading = false;
-            StateHasChanged();
-            CreateProfessionChanged.InvokeAsync(value);
-        }
-    }
-    [Parameter]
-    public EventCallback<CreateProfessionModel> CreateProfessionChanged { get; set; }
-
     private string ErrorMessage { get; set; } = string.Empty;
-    private bool IsLoading { get; set; }= true;
 
     public void ChangeDescription(int args)
     {
-        //pass ID(column name) of multiline textbox
         _jsruntime.InvokeVoidAsync("ResizeTextArea", $"{args}");
     }
+
     private async Task OnSaveProfBtnClick()
     {
-        if (DescrEdit is not null)
+        try
         {
-            CreateProfession.ProfessionDTO.Description = await DescrEdit.GetHTML();
+            if (string.IsNullOrEmpty(ProfessionDTO.Name) || string.IsNullOrEmpty(ProfessionDTO.Description))
+            {
+                ErrorMessage = "Create name and description of class";
+                return;
+            }
+            if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
+            {
+                ErrorMessage = "Choose attribute related to class";
+                return;
+            }
+            ProfessionDTO.CurrentFocusPoints = ProfessionDTO.MaxFocusPoints;
+            ErrorMessage = string.Empty;
+            MudDialog.Close(DialogResult.Ok(ProfessionDTO));
         }
-
-        if (string.IsNullOrEmpty(CreateProfession.ProfessionDTO.Name) || string.IsNullOrEmpty(CreateProfession.ProfessionDTO.Description))
+        catch (Exception ex)
         {
-            ErrorMessage = $"Create name and description of class";
-            return;
+            ErrorMessage = "Save error: " + ex.Message;
+            await _jsruntime.ToastrError("Save failed: " + ex.Message + " | " + ex.GetType().Name);
         }
-        if (string.IsNullOrEmpty(CreateProfession.ProfessionDTO.RelatedAttributeName))
-        {
-            ErrorMessage = $"Choose attribute related to class";
-            return;
-        }
-        CreateProfession.ProfessionDTO.CurrentFocusPoints = CreateProfession.ProfessionDTO.MaxFocusPoints;
-        ErrorMessage = string.Empty;
-        CreateProfession.IsVisible = false;
-
-        await CreateProfessionChanged.InvokeAsync(CreateProfession);
     }
+
     private void OnCancelBtnClick()
     {
-        CreateProfession.IsVisible = false;
-        _descrEditorLoaded = false;
-    }
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (_createProfession is not null && _createProfession.IsVisible && !_descrEditorLoaded && DescrEdit is not null && _createProfession.ProfessionDTO is not null)
-        {
-            _descrEditorLoaded = true;
-            await DescrEdit.LoadHTMLContent(_createProfession.ProfessionDTO.Description ?? string.Empty);
-        }
-    }
-    private void DialogOpen()
-    { 
-        ErrorMessage = string.Empty;
-        StateHasChanged();
+        MudDialog.Cancel();
     }
 
     private void ChangeProfLevel()
     {
-        CreateProfession.ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
+        ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
         StateHasChanged();
     }
 
@@ -389,25 +321,27 @@
         {
             if (attrName != null && attrName != "0")
             {
-                CreateProfession.ProfessionDTO.RelatedAttributeName = attrName;
+                ProfessionDTO.RelatedAttributeName = attrName;
                 var attr = AllParams.Attributes.Get(attrName);
                 if (attr == null) return;
-                CreateProfession.ProfessionDTO.AddPropertyListener(attr);
-
-                CreateProfession.ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
+                ProfessionDTO.AddPropertyListener(attr);
+                ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
                 StateHasChanged();
-                return;
             }
         }
         catch (Exception ex)
         {
-            await _jsruntime.ToastrError("Error whlie changing profession related attribute: " + ex.Message);
-            IsLoading = false;
+            await _jsruntime.ToastrError("Error while changing profession related attribute: " + ex.Message);
         }
     }
+
     protected override async Task OnInitializedAsync()
     {
         UserInfo = await _userService.GetUserInfo();
+        if (ProfessionDTO is not null && AllParams is not null)
+        {
+            ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
+        }
     }
 
 }

@@ -25,6 +25,7 @@
 @inject ICampaignRepository _campaignRepository
 @inject IBrowserViewportService _vieportService
 @inject CallbackService _callbackService
+@inject ILogger<ChapterThread> Logger
 @implements IDisposable
 
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
@@ -32,6 +33,10 @@
 @if (IsLoading == true)
 {
     <LoadingPage></LoadingPage>
+    @if (string.IsNullOrWhiteSpace(CurrentDebugStep) == false)
+    {
+        <MudText Align="Align.Center" Class="mt-4">@CurrentDebugStep</MudText>
+    }
 }
 else
 {
@@ -310,6 +315,7 @@ else
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IDictionary<int, AllParamsModel?> CharacterAllParams { get; set; } = new Dictionary<int, AllParamsModel?>();
     private ICollection<MobDTO> Mobs = new List<MobDTO>();
+    private List<RaceDTO> ApprovedRacesCache { get; set; } = new();
     private BattlePhaseDTO? BattlePhase = null;
     public PostDTO NewPost { get; set; } = new();
     public bool IsLoading { get; set; } = true;
@@ -326,6 +332,7 @@ else
     private MobDTO GmAsMob = new MobDTO();
     private MudPagination Pagination;
     private BlazoredTextEditor PostEditor;
+    private string CurrentDebugStep = string.Empty;
 
 
     public UserInfo? UserInfo { get; set; }
@@ -333,6 +340,33 @@ else
     private System.Action handler;
     private bool _open = false;
     private bool _scrollDown = true;
+    private bool _afterRenderInProgress = false;
+
+    private async Task DebugStep(string message)
+    {
+        CurrentDebugStep = message;
+        Logger.LogWarning("ChapterThread debug: {Message}", message);
+        try
+        {
+            // Guard against occasional render pipeline stalls while preserving progress logging.
+            var renderTask = InvokeAsync(StateHasChanged);
+            var completedTask = await Task.WhenAny(renderTask, Task.Delay(500));
+            if (completedTask == renderTask)
+            {
+                await renderTask;
+            }
+            else
+            {
+                Logger.LogWarning("DebugStep render timed out at: {Message}", message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "DebugStep failed at: {Message}", message);
+        }
+
+        await Task.Yield();
+    }
 
     private void ToggleDrawer()
     {
@@ -341,10 +375,24 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await AuthorizeEntry();
-        PageCount = await GetPageCount();
-        PageNum = PageCount;
-        await LoadChapter();
+        try
+        {
+            await DebugStep("[1] OnInitializedAsync started");
+            await AuthorizeEntry();
+            await DebugStep("[2] AuthorizeEntry done");
+            PageCount = await GetPageCount();
+            await DebugStep($"[3] GetPageCount done: {PageCount}");
+            PageNum = PageCount;
+            await LoadChapter();
+            await DebugStep("[4] LoadChapter done");
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            StateHasChanged();
+            Logger.LogError(ex, "Error while initializing chapter page");
+            SnackBar.Add("Error while initializing chapter page: " + ex.Message, Severity.Error);
+        }
 
         handler = async () => await LoadForSelectedCharacter();
         _callbackService.OnChange += handler;
@@ -352,21 +400,60 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        UserInfo = await _userService.GetUserInfo();
-        if(firstRender){
-
-            await AuthorizeEntry();
-            PageCount = await GetPageCount();
-            PageNum = PageCount;
-            //await LoadChapter();
+        if (_afterRenderInProgress)
+        {
+            return;
         }
-        if (_scrollDown == true)
-        {           
-            await Task.Delay(500);
-            await _jsRuntime.ScrollToElement("bottom-container");
-            PageNum = PageCount;
+
+        _afterRenderInProgress = true;
+        try
+        {
+            Logger.LogWarning("ChapterThread debug: [AR1] OnAfterRender start firstRender={FirstRender}, scrollDown={ScrollDown}, isLoading={IsLoading}", firstRender, _scrollDown, IsLoading);
+            if (firstRender || UserInfo is null)
+            {
+                UserInfo = await _userService.GetUserInfo();
+            }
+
+            if (firstRender)
+            {
+                await AuthorizeEntry();
+                PageCount = await GetPageCount();
+                PageNum = PageCount;
+                Logger.LogWarning("ChapterThread debug: [AR2] firstRender auth/page init done");
+                //await LoadChapter();
+            }
+
+            // Avoid repeated scroll attempts while the page is still in loading cycles.
+            if (_scrollDown == true && IsLoading == false)
+            {
+                Logger.LogWarning("ChapterThread debug: [AR3] scrollDown requested");
+                _scrollDown = false;
+                await Task.Delay(200);
+
+                var scrollTask = _jsRuntime.ScrollToElement("bottom-container").AsTask();
+                var completedTask = await Task.WhenAny(scrollTask, Task.Delay(1500));
+                if (completedTask == scrollTask)
+                {
+                    await scrollTask;
+                    Logger.LogWarning("ChapterThread debug: [AR4] scrollDown done");
+                }
+                else
+                {
+                    Logger.LogWarning("ChapterThread debug: [AR4] scrollDown timeout");
+                }
+
+                PageNum = PageCount;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in OnAfterRenderAsync for chapter {ChapterId}", Id);
             _scrollDown = false;
-        }  
+        }
+        finally
+        {
+            _afterRenderInProgress = false;
+        }
     }
 
     private async Task AuthorizeEntry()
@@ -391,74 +478,149 @@ else
 
     private async Task LoadForSelectedCharacter()
     {
-        try{
+        try
+        {
+            await DebugStep("[LS1] LoadForSelectedCharacter started");
+            if (UserInfo is null)
+            {
+                UserInfo = await GetUserInfoWithTimeout();
+                await DebugStep("[LS1A] UserInfo fetched from service");
+            }
+            else
+            {
+                await DebugStep("[LS1A] Reusing existing UserInfo");
+            }
+            await DebugStep($"[LS2] UserInfo loaded: Auth={(UserInfo?.IsAuthenticated == true)}, SelectedId={UserInfo?.SelectedCharacterId ?? 0}");
 
-            UserInfo = await _userService.GetUserInfo();
-            if(UserInfo is null) return;
-            IsLoading = true;
-            StateHasChanged();
-            int charId = (int)UserInfo.SelectedCharacter.Id;
-            if (charId == 0) 
+            if (UserInfo?.SelectedCharacter is null)
+            {
+                await DebugStep("[LS3] SelectedCharacter is null");
+                SendPostEnabled = false;
+                NewPost.Content = "Select a character to post in chapter.";
                 return;
+            }
+
+            int charId = (int)UserInfo.SelectedCharacter.Id;
+            if (charId == 0)
+            {
+                await DebugStep("[LS4] SelectedCharacter.Id == 0");
+                SendPostEnabled = false;
+                NewPost.Content = "Select a character to post in chapter.";
+                return;
+            }
+
             if (Chapter?.Characters.FirstOrDefault(c => c.Id == charId) is null
                && UserInfo?.CharacterMG == false)
             {
+                await DebugStep($"[LS5] Selected character {charId} not in chapter");
 
                 NewPost.Content = "Character not present in this chapter!";
                 SendPostEnabled = false;
             }
             else
             {
+                await DebugStep($"[LS6] Selected character {charId} accepted");
                 SendPostEnabled = true;
                 NewPost.Content = string.Empty;
             }
             _scrollDown = true;
-            IsLoading = false;
-            StateHasChanged();
+            await DebugStep("[LS7] LoadForSelectedCharacter finished");
         }
-        catch(Exception ex){
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in LoadForSelectedCharacter for chapter {ChapterId}", Id);
             SnackBar.Add("Error: " + ex.Message, Severity.Error);
         }
+        finally
+        {
+            Logger.LogWarning("ChapterThread debug: [LS8] LoadForSelectedCharacter finally");
+        }
+    }
+
+    private async Task<UserInfo?> GetUserInfoWithTimeout(int timeoutMs = 3000)
+    {
+        var getUserInfoTask = _userService.GetUserInfo();
+        var completedTask = await Task.WhenAny(getUserInfoTask, Task.Delay(timeoutMs));
+        if (completedTask == getUserInfoTask)
+        {
+            return await getUserInfoTask;
+        }
+
+        Logger.LogWarning("GetUserInfo timed out after {TimeoutMs}ms on chapter {ChapterId}", timeoutMs, Id);
+        return UserInfo;
     }
 
 
     private async Task LoadChapter()
     {
-        IsLoading = true;
-        StateHasChanged();
-        Chapter = await _chapterRepository.GetById(Id);
-
-        PageCount = await GetPageCount();
-        Posts = (await _postRepository.GetPage(Id,PostsPerPage,PageNum)).ToList();
-
-        // load characters 
-        foreach(var charac in Chapter.Characters)
+        try
         {
-            CharacterAllParams[charac.Id] = await LoadCharacter(charac.Id);
+            await DebugStep("[LC1] LoadChapter started");
+            IsLoading = true;
+            StateHasChanged();
+
+            await DebugStep($"[LC2] Getting chapter by Id={Id}");
+            Chapter = await _chapterRepository.GetById(Id);
+            if (Chapter is null || Chapter.Id == 0)
+            {
+                SnackBar.Add("Chapter was not found.", Severity.Error);
+                return;
+            }
+            await DebugStep($"[LC3] Chapter loaded: {Chapter.Name}, Characters count: {Chapter.Characters?.Count ?? 0}");
+
+            PageCount = await GetPageCount();
+            await DebugStep($"[LC4] PageCount: {PageCount}");
+            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+            await DebugStep($"[LC5] Posts loaded: {Posts.Count}");
+
+            CharacterAllParams.Clear();
+            if (ApprovedRacesCache.Count == 0)
+            {
+                ApprovedRacesCache = (await _raceRepository.GetAllApproved()).ToList();
+            }
+            int charIndex = 0;
+            foreach (var charac in Chapter.Characters)
+            {
+                await DebugStep($"[LC6] Loading character {++charIndex}/{Chapter.Characters.Count}: Id={charac.Id}");
+                CharacterAllParams[charac.Id] = await LoadCharacter(charac.Id);
+            }
+            await DebugStep($"[LC7] All characters loaded");
+
+            await DebugStep("[LC8] Loading mobs...");
+            await LoadMobs();
+            await DebugStep("[LC9] Mobs loaded. Loading for selected character...");
+            await LoadForSelectedCharacter();
+            await DebugStep("[LC10] LoadForSelectedCharacter done");
+
+            _items = new List<BreadcrumbItem>
+            {
+                new BreadcrumbItem("Campaigns", href: $"/campaignlist/" ),
+                new BreadcrumbItem("Chapters", href: $"/campaign/{Chapter.CampaignId}"),
+                new BreadcrumbItem("Posts", href: $"/chapter/{Id}"),
+            };
+            Title = Chapter.Name;
+            BattlePhase = await _battlePhaseRepository.GetCurrentForChapter(Id);
+            if (BattlePhase is not null)
+            {
+                OngoingBattle = BattlePhase.BattleOngoing;
+                BattleButton = OngoingBattle ? "End Battle" : "Start Battle";
+            }
+            await DebugStep("[LC11] BattlePhase loaded");
+            // _scrollDown = true;
+            IsLoadingCharacters = false;
         }
-
-        // load mobs
-        await LoadMobs();
-        await LoadForSelectedCharacter();
-
-        _items = new List<BreadcrumbItem>
+        catch (Exception ex)
         {
-            new BreadcrumbItem("Campaigns", href: $"/campaignlist/" ),
-            new BreadcrumbItem("Chapters", href: $"/campaign/{Chapter.CampaignId}"),
-            new BreadcrumbItem("Posts", href: $"/chapter/{Id}"),
-        };
-        Title = Chapter.Name;
-        BattlePhase = await _battlePhaseRepository.GetCurrentForChapter(Id);
-        if (BattlePhase is not null)
-        {
-
-            OngoingBattle = BattlePhase.BattleOngoing;
-            BattleButton = OngoingBattle ? "End Battle" : "Start Battle";
+            Logger.LogError(ex, "Error while loading chapter {ChapterId}", Id);
+            SnackBar.Add("Error while loading chapter: " + ex.Message, Severity.Error);
         }
-        _scrollDown = true;
-        IsLoadingCharacters = false;
-        IsLoading = false;
-        StateHasChanged();
+        finally
+        {
+            IsLoading = false;
+            await DebugStep("[LCF] LoadChapter finally IsLoading=false");
+            StateHasChanged();
+            Logger.LogWarning("ChapterThread debug: [LCF] LoadChapter finally IsLoading=false");
+        }
     }
 
     private async Task CreatePost()
@@ -818,30 +980,70 @@ else
     }
     private async Task<AllParamsModel> LoadCharacter(int id)
     {
+        await DebugStep($"[LCH1] LoadCharacter start: Id={id}");
         AllParamsModel allParams = new();
-        allParams.Character = await _characterRepository.GetById(id);
-        allParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(id));
-        allParams.BaseSkills = await _baseSkillRepository.GetAll(id);
-        allParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(id));
-        allParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
-        allParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
-        allParams.CurrentRace = await _raceRepository.GetById(allParams.Character.RaceId);
-        allParams.Profession = await _professionRepository.GetById(allParams.Character.ProfessionId);
-        allParams.Profession.Traits = (await _traitProfessionRepository.GetAll(allParams.Character.Id)).ToList();
-        allParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(id)).ToList();
-        allParams.Races = (await _raceRepository.GetAllApproved()).ToList();
+        var characterTask = _characterRepository.GetById(id);
+        var attributesTask = _attributeRepository.GetAll(id);
+        var baseSkillsTask = _baseSkillRepository.GetAll(id);
+        var specialSkillsTask = _specialSkillRepository.GetAll(id);
+        var traitCharactersTask = _traitCharacterRepository.GetAll(id);
+        var equipmentSlotsTask = _equipmentSlotRepository.GetAll(id);
+        var woundsTask = _woundRepository.GetAll(id);
+        var condsTask = _woundRepository.GetAllCond(id);
+        var postCountTask = _postRepository.GetCharacterPostCount(id);
+        var lastPostDateTask = _postRepository.GetCharacterLastPostDate(id);
 
+        await Task.WhenAll(
+            characterTask,
+            attributesTask,
+            baseSkillsTask,
+            specialSkillsTask,
+            traitCharactersTask,
+            equipmentSlotsTask,
+            woundsTask,
+            condsTask,
+            postCountTask,
+            lastPostDateTask);
+
+        await DebugStep($"[LCH2] Base data loaded: Id={id}");
+
+        allParams.Character = await characterTask;
+        allParams.Attributes.FillPropertiesContainer(await attributesTask);
+        allParams.BaseSkills = await baseSkillsTask;
+        allParams.SpecialSkills.FillPropertiesContainer(await specialSkillsTask);
+
+        var characterTraits = (await traitCharactersTask).ToList();
+        allParams.TraitsCharacter = characterTraits.Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
+        allParams.TraitsTemporary = characterTraits.Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
+
+        var raceTask = _raceRepository.GetById(allParams.Character.RaceId);
+        var professionTask = _professionRepository.GetById(allParams.Character.ProfessionId);
+        var professionTraitsTask = _traitProfessionRepository.GetAll(allParams.Character.Id);
+
+        await Task.WhenAll(raceTask, professionTask, professionTraitsTask);
+
+        await DebugStep($"[LCH3] Race/profession loaded: Id={id}");
+
+        allParams.CurrentRace = await raceTask;
+        allParams.Profession = await professionTask;
+        allParams.Profession.Traits = (await professionTraitsTask).ToList();
+        allParams.EquipmentSlots = (await equipmentSlotsTask).ToList();
+        allParams.Races = ApprovedRacesCache.ToList();
+
+        await DebugStep($"[LCH3A] Applying derived stats: Id={id}");
         allParams.SpecialSkills.AddRelatedParametes();
         allParams.AllTraitsChange();
         allParams.Profession.CalculateClassParams(allParams.Attributes.GetAll());
-        ICollection<WoundDTO> wounds = (await _woundRepository.GetAll(allParams.Character.Id)).ToList();
-        ICollection<WoundDTO> conds = (await _woundRepository.GetAllCond(allParams.Character.Id)).Cast<WoundDTO>().ToList();
+        ICollection<WoundDTO> wounds = (await woundsTask).ToList();
+        ICollection<WoundDTO> conds = (await condsTask).Cast<WoundDTO>().ToList();
         wounds = wounds.Concat(conds).ToList();
         allParams.Health.FillPropertiesContainer(wounds);
         allParams.Health.UpdateHealthBonusesInAttributes();
+        await DebugStep($"[LCH3B] Derived stats applied: Id={id}");
 
-        allParams.Character.NumberOfPosts = await _postRepository.GetCharacterPostCount(id);
-        allParams.Character.LastPostDate = await _postRepository.GetCharacterLastPostDate(id);
+        allParams.Character.NumberOfPosts = await postCountTask;
+        allParams.Character.LastPostDate = await lastPostDateTask;
+        await DebugStep($"[LCH4] LoadCharacter done: Id={id}");
         return allParams;
     }
 

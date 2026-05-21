@@ -142,10 +142,32 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Chapters.Include(a => a.Characters).Include(a => a.Posts).FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await contex.Chapters
+                    .AsNoTracking()
+                    .Where(u => u.Id == id)
+                    .Select(c => new ChapterDTO
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Description = c.Description,
+                        DateNumber = c.DateNumber,
+                        DayTime = c.DayTime,
+                        Place = c.Place,
+                        CreatedDate = c.CreatedDate,
+                        IsFinished = c.IsFinished,
+                        CampaignId = c.CampaignId,
+                        Characters = c.Characters
+                            .Select(ch => new CharacterDTO
+                            {
+                                Id = ch.Id
+                            })
+                            .ToList(),
+                        Posts = new List<PostDTO>()
+                    })
+                    .FirstOrDefaultAsync();
                 if (obj != null)
                 {
-                    return _mapper.Map<Chapter, ChapterDTO>(obj);
+                    return obj;
                 }
             }
             catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
