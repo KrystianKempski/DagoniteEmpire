@@ -99,7 +99,11 @@ public class Program
 
         builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
 
-        builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+        builder.Services.AddAutoMapper(cfg =>
+        {
+            cfg.LicenseKey = builder.Configuration["AutoMapper:LicenseKey"];
+            cfg.AddMaps(typeof(DA_Business.Mapper.MappingProfile).Assembly);
+        });
         builder.Services.AddScoped<ICharacterRepository, CharacterRepository>();
         builder.Services.AddScoped<IMobRepository, MobRepository>();
         builder.Services.AddScoped<IAttributeRepository, AttributeRepository>();

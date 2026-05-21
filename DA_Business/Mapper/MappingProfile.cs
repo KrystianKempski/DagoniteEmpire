@@ -12,7 +12,7 @@ using Attribute = DA_DataAccess.CharacterClasses.Attribute;
 
 namespace DA_Business.Mapper
 {
-    internal class MappingProfile: Profile
+    public class MappingProfile: Profile
     {
         public MappingProfile()
         {
