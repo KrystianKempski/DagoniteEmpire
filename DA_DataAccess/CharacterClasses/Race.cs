@@ -16,7 +16,7 @@ namespace DA_DataAccess.CharacterClasses
 
         public ICollection<Character>? Characters { get; set; }
 
-        public string Name { get; set; }                                //for example "dwarf"
+        public string Name { get; set; } = string.Empty;                                //for example "dwarf"
         public int Index { get; set; } = 0;
 
         public string Description { get; set; } = string.Empty;         // descritpion of race

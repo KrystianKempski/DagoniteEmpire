@@ -13,18 +13,18 @@ namespace DA_DataAccess.Chat
     public class Chapter
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string DayTime { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string DayTime { get; set; } = string.Empty;
         public int DateNumber { get; set; } = 0;
-        public string Place { get; set; }
-        public ICollection<Post> Posts { get; set; }
+        public string Place { get; set; } = string.Empty;
+        public ICollection<Post> Posts { get; set; } = new List<Post>();
         public DateTime CreatedDate { get; set; }
-        public ICollection<Character> Characters { get; set; }
+        public ICollection<Character> Characters { get; set; } = new List<Character>();
         public bool IsFinished { get; set; }
 
         [ForeignKey(nameof(Campaign))]
         public int CampaignId { get; set; }
-        public virtual Campaign Campaign { get; set; }
+        public virtual Campaign? Campaign { get; set; }
     }
 }

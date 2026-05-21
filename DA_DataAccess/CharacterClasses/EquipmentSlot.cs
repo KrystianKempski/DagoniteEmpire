@@ -22,6 +22,6 @@ namespace DA_DataAccess.CharacterClasses
 
         public int CharacterID { get; set; } = 0;
         [ForeignKey(nameof(CharacterID))]
-        public Character Character { get; set; }
+        public Character? Character { get; set; }
     }
 }

@@ -31,29 +31,25 @@ namespace DA_Business.Repository.ChatRepos
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<CampaignDTO, Campaign>(objDTO);
 
-                foreach(var cha in obj.Characters)
+                // Replace untracked character entities with tracked ones (only fetch needed IDs)
+                var characterIds = obj.Characters.Select(c => c.Id).ToList();
+                var trackedCharacters = await contex.Characters
+                    .Where(c => characterIds.Contains(c.Id))
+                    .ToDictionaryAsync(c => c.Id);
+                
+                var charactersToReplace = obj.Characters.Where(c => trackedCharacters.ContainsKey(c.Id)).ToList();
+                foreach (var untracked in charactersToReplace)
                 {
-                    cha.Profession = null;
-                    cha.Race = null;
+                    obj.Characters.Remove(untracked);
+                    obj.Characters.Add(trackedCharacters[untracked.Id]);
                 }
-
-                var characterts = await contex.Characters.ToListAsync();
-                characterts.ForEach(t =>
-                {
-                    if (obj.Characters.Any(nt => nt.Id == t.Id))
-                    {
-                        var untracked = obj.Characters.FirstOrDefault(nt => nt.Id == t.Id);
-                        obj.Characters.Remove(untracked);
-                        obj.Characters.Add(t);
-                    }
-                });
 
                 var addedObj = await contex.Campaigns.AddAsync(obj);
                 await contex.SaveChangesAsync();
                 return _mapper.Map<Campaign, CampaignDTO>(addedObj.Entity);
             }
             catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); 
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); 
             }
             
         }
@@ -98,7 +94,7 @@ namespace DA_Business.Repository.ChatRepos
                 }
             }
             catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
             }
             return 0;
         }
@@ -121,7 +117,7 @@ namespace DA_Business.Repository.ChatRepos
 
             }
             catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); 
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); 
             }
         }
 
@@ -137,7 +133,7 @@ namespace DA_Business.Repository.ChatRepos
                 }
             }
             catch (Exception ex) {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message); 
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); 
             }
             return new CampaignDTO();
         }
@@ -208,23 +204,18 @@ namespace DA_Business.Repository.ChatRepos
                 {
                     obj = _mapper.Map<CampaignDTO, Campaign>(objDTO);
 
-
-                    foreach (var cha in obj.Characters)
+                    // Replace untracked character entities with tracked ones (only fetch needed IDs)
+                    var characterIds = obj.Characters.Select(c => c.Id).ToList();
+                    var trackedCharacters = await contex.Characters
+                        .Where(c => characterIds.Contains(c.Id))
+                        .ToDictionaryAsync(c => c.Id);
+                    
+                    var charactersToReplace = obj.Characters.Where(c => trackedCharacters.ContainsKey(c.Id)).ToList();
+                    foreach (var untracked in charactersToReplace)
                     {
-                        cha.Profession = null;
-                        cha.Race = null;
+                        obj.Characters.Remove(untracked);
+                        obj.Characters.Add(trackedCharacters[untracked.Id]);
                     }
-
-                    var characterts = await contex.Characters.ToListAsync();
-                    characterts.ForEach(t =>
-                    {
-                        if (obj.Characters.Any(nt => nt.Id == t.Id))
-                        {
-                            var untracked = obj.Characters.FirstOrDefault(nt => nt.Id == t.Id);
-                            obj.Characters.Remove(untracked);
-                            obj.Characters.Add(t);
-                        }
-                    });
 
                     var addedObj = contex.Campaigns.Add(obj);
                     await contex.SaveChangesAsync();
@@ -233,7 +224,7 @@ namespace DA_Business.Repository.ChatRepos
                 }
             }
             catch (Exception ex) {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
             }
         }
     }

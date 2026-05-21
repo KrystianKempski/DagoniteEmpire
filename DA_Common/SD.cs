@@ -586,8 +586,8 @@ namespace DA_Common
             this.Second = second;
         }
 
-        public T First { get; set; }
-        public U Second { get; set; }
+        public T First { get; set; } = default!;
+        public U Second { get; set; } = default!;
     };
     public static class MyIcon
     {

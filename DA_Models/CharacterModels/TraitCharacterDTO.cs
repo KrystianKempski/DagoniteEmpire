@@ -19,8 +19,9 @@ namespace DA_Models.CharacterModels
         {
             foreach (var prop in typeof(TraitCharacter).GetProperties())
             {
-                if (GetType().GetProperty(prop.Name).CanWrite)
-                    GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(trait, null), null);
+                var targetProp = GetType().GetProperty(prop.Name);
+                if (targetProp?.CanWrite == true)
+                    targetProp.SetValue(this, prop.GetValue(trait, null), null);
             }
         }
 
@@ -28,8 +29,9 @@ namespace DA_Models.CharacterModels
         {
             foreach (var prop in typeof(TraitDTO).GetProperties())
             {
-                if(GetType().GetProperty(prop.Name).CanWrite)
-                    GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(traitDTO, null), null);
+                var targetProp = GetType().GetProperty(prop.Name);
+                if (targetProp?.CanWrite == true)
+                    targetProp.SetValue(this, prop.GetValue(traitDTO, null), null);
             }
             Id = 0;
             foreach (var bonus in Bonuses)
@@ -48,8 +50,9 @@ namespace DA_Models.CharacterModels
             
             foreach (var prop in typeof(TraitDTO).GetProperties())
             {
-                if (GetType().GetProperty(prop.Name).CanWrite)
-                    GetType().GetProperty(prop.Name).SetValue(this, prop.GetValue(traitDTO, null), null);   
+                var targetProp = GetType().GetProperty(prop.Name);
+                if (targetProp?.CanWrite == true)
+                    targetProp.SetValue(this, prop.GetValue(traitDTO, null), null);   
             }
             Id = 0;
             foreach (var bonus in Bonuses)

@@ -36,7 +36,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name + ": " + ex.Message);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
             }
             return null;
         }

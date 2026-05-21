@@ -8,8 +8,8 @@ namespace DA_Models
 {
     public class BearerAuthenticationSettings
     {
-        public string JwtKey { get; set; }
-        public string ValidIssuer { get; set; }
-        public string ValidAudience { get; set; }
+        public string JwtKey { get; set; } = string.Empty;
+        public string ValidIssuer { get; set; } = string.Empty;
+        public string ValidAudience { get; set; } = string.Empty;
     }
 }

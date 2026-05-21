@@ -13,7 +13,7 @@ namespace DA_DataAccess.CharacterClasses
         [Key]
         public int Id { get; set; }
 
-        public string FeatureType { get; set; }  // for example Attribute
+        public string FeatureType { get; set; } = string.Empty;  // for example Attribute
         public string? FeatureName { get; set; } // for example Dexterity
         public int? BonusValue { get; set; }
         public string Description { get; set; } = "";  // for examlpe "lets you see in darkness", only when Feature type is "other"
@@ -22,7 +22,7 @@ namespace DA_DataAccess.CharacterClasses
         [ForeignKey(nameof(Trait))]
         public int TraitId { get; set; }
 
-        public virtual Trait Trait { get; set; }
+        public virtual Trait? Trait { get; set; }
 
     }
 }

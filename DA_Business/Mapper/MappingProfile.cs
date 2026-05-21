@@ -16,9 +16,22 @@ namespace DA_Business.Mapper
     {
         public MappingProfile()
         {
+            // Global null handling configuration
+            AllowNullCollections = true;
+            AllowNullDestinationValues = true;
+
             CreateMap<Attribute, AttributeDTO>().ReverseMap();
 
-            CreateMap<Character, CharacterDTO>().ReverseMap();
+            // Character: ignore navigation properties when mapping DTO -> Entity
+            // Ignore CurrentDate - it's a computed property in DTO that wraps DateNumber
+            CreateMap<Character, CharacterDTO>()
+                .ForMember(dest => dest.CurrentDate, opt => opt.Ignore());
+            CreateMap<CharacterDTO, Character>()
+                .ForMember(dest => dest.Race, opt => opt.Ignore())
+                .ForMember(dest => dest.Profession, opt => opt.Ignore())
+                .ForMember(dest => dest.Campaigns, opt => opt.Ignore())
+                .ForMember(dest => dest.Chapters, opt => opt.Ignore());
+
             CreateMap<BaseSkill, BaseSkillDTO>().ReverseMap();
             CreateMap<SpecialSkill, SpecialSkillDTO>().ReverseMap();
             CreateMap<TraitCharacter, TraitCharacterDTO>().ReverseMap();
@@ -31,14 +44,33 @@ namespace DA_Business.Mapper
             CreateMap<Profession, ProfessionDTO>().ReverseMap();
             CreateMap<Equipment, EquipmentDTO>().ReverseMap();
             CreateMap<EquipmentSlot, EquipmentSlotDTO>().ReverseMap();
-            CreateMap<Chapter,ChapterDTO>().ReverseMap();
-            CreateMap<Post, PostDTO>().ReverseMap();
+            
+            // Chapter: ignore navigation properties when mapping DTO -> Entity
+            CreateMap<Chapter, ChapterDTO>();
+            CreateMap<ChapterDTO, Chapter>()
+                .ForMember(dest => dest.Campaign, opt => opt.Ignore());
+
+            // Post: ignore navigation properties when mapping DTO -> Entity  
+            CreateMap<Post, PostDTO>();
+            CreateMap<PostDTO, Post>()
+                .ForMember(dest => dest.Character, opt => opt.Ignore())
+                .ForMember(dest => dest.Chapter, opt => opt.Ignore());
+
             CreateMap<Campaign, CampaignDTO>().ReverseMap();
             CreateMap<BattlePhase, BattlePhaseDTO>().ReverseMap();
             CreateMap<SpellCircle, SpellCircleDTO>().ReverseMap();
-            CreateMap<Wound, WoundDTO>().ReverseMap();
+            
+            // Wound: ignore navigation property when mapping DTO -> Entity
+            CreateMap<Wound, WoundDTO>();
+            CreateMap<WoundDTO, Wound>()
+                .ForMember(dest => dest.Character, opt => opt.Ignore());
+            
             CreateMap<Wound, ConditionDTO>().ReverseMap();
-            CreateMap<WealthRecord, WealthRecordDTO>().ReverseMap();
+            
+            // WealthRecord: ignore computed CurrentDate property (wraps DateNumber)
+            CreateMap<WealthRecord, WealthRecordDTO>()
+                .ForMember(dest => dest.CurrentDate, opt => opt.Ignore());
+            CreateMap<WealthRecordDTO, WealthRecord>();
         }
     }
 }

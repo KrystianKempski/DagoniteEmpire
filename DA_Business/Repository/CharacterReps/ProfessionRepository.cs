@@ -83,7 +83,12 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             var obj = await contex.Professions
-                .Include(p => p.SpellCircles).ThenInclude(p=>p.SpellSlots).ThenInclude(p=>p.Spell).FirstOrDefaultAsync(u => u.Id == id);
+                .AsNoTracking()
+                .Include(p => p.SpellCircles)
+                    .ThenInclude(p => p.SpellSlots)
+                    .ThenInclude(p => p.Spell)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Profession, ProfessionDTO>(obj);
@@ -97,7 +102,10 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = await contex.Professions
-                    .Include(p => p.SpellCircles).ThenInclude(c => c.SpellSlots).ThenInclude(s => s.Spell)
+                    .Include(p => p.SpellCircles)
+                        .ThenInclude(c => c.SpellSlots)
+                        .ThenInclude(s => s.Spell)
+                    .AsSplitQuery()
                     .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {

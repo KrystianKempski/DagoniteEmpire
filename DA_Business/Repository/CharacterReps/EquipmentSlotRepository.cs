@@ -73,15 +73,36 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<EquipmentSlot>, IEnumerable<EquipmentSlotDTO>>(contex.EquipmentSlots.Include(u => u.Equipment).ThenInclude(b => b.Traits).ThenInclude(b=>b.Bonuses));
-            return _mapper.Map<IEnumerable<EquipmentSlot>, IEnumerable<EquipmentSlotDTO>>(contex.EquipmentSlots.Include(u => u.Equipment).ThenInclude(b => b.Traits).ThenInclude(b => b.Bonuses).Where(u => u.CharacterID == charId));
+                return _mapper.Map<IEnumerable<EquipmentSlot>, IEnumerable<EquipmentSlotDTO>>(
+                    await contex.EquipmentSlots
+                        .AsNoTracking()
+                        .Include(u => u.Equipment)
+                            .ThenInclude(b => b.Traits)
+                            .ThenInclude(b => b.Bonuses)
+                        .AsSplitQuery()
+                        .ToListAsync());
+            return _mapper.Map<IEnumerable<EquipmentSlot>, IEnumerable<EquipmentSlotDTO>>(
+                await contex.EquipmentSlots
+                    .AsNoTracking()
+                    .Where(u => u.CharacterID == charId)
+                    .Include(u => u.Equipment)
+                        .ThenInclude(b => b.Traits)
+                        .ThenInclude(b => b.Bonuses)
+                    .AsSplitQuery()
+                    .ToListAsync());
         }
 
 
         public async Task<EquipmentSlotDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.EquipmentSlots?.Include(u => u.Equipment)?.ThenInclude(b => b.Traits)?.ThenInclude(b => b.Bonuses)?.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.EquipmentSlots
+                .AsNoTracking()
+                .Include(u => u.Equipment)
+                    .ThenInclude(b => b.Traits)
+                    .ThenInclude(b => b.Bonuses)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<EquipmentSlot, EquipmentSlotDTO>(obj);
@@ -94,7 +115,12 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.EquipmentSlots.Include(u => u.Equipment).ThenInclude(b => b.Traits).ThenInclude(b => b.Bonuses).FirstOrDefaultAsync(u => u.Id == objDTO.Id);
+                var obj = await contex.EquipmentSlots
+                    .Include(u => u.Equipment)
+                        .ThenInclude(b => b.Traits)
+                        .ThenInclude(b => b.Bonuses)
+                    .AsSplitQuery()
+                    .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
                     var updateSlot = _mapper.Map<EquipmentSlotDTO, EquipmentSlot>(objDTO);

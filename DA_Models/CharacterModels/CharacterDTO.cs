@@ -54,7 +54,7 @@ namespace DA_Models.CharacterModels
         public int NumberOfPosts { get; set; } = 0;
         public DateTime LastPostDate { get; set; } 
         public decimal Gold { get; set; } = 0.0m;
-        public override string ToString() => NPCName;
+        public override string ToString() => NPCName ?? string.Empty;
 
         public ICollection<WealthRecordDTO>? WealthLog { get; set; }
 

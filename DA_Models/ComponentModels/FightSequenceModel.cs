@@ -16,9 +16,9 @@ namespace DA_Models.ComponentModels
 {
     public class FighterModel {
         public string Name { get; set; } = string.Empty;
-        public BattlePropertyModel Props { get; set; } = null;
+        public BattlePropertyModel Props { get; set; } = null!;
         public ICollection<TraitDTO>? States { get; set; } = new List<TraitDTO>();
-        public HealthModel Health { get; set; } = null;
+        public HealthModel Health { get; set; } = null!;
         public int PainResistance { get; set; } = 0;
         public int Balance { get; set; } = 0;
         public int Lifting { get; set; } = 0;

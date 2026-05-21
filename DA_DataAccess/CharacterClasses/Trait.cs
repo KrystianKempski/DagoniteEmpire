@@ -22,7 +22,7 @@ namespace DA_DataAccess.CharacterClasses
         public bool IsRemovable { get; set; } = true;
         public bool IsUnique { get; set; }
 
-        public ICollection<Bonus> Bonuses { get; set; } 
+        public ICollection<Bonus> Bonuses { get; set; } = new List<Bonus>();
 
     }
 }
