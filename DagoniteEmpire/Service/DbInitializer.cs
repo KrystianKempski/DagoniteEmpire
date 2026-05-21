@@ -47,12 +47,12 @@ namespace DagoniteEmpire.Service
                     contex.Database.Migrate();
                 }
 
-                if (!_roleManager.RoleExistsAsync(SD.Role_Admin).GetAwaiter().GetResult())
+                if (!await _roleManager.RoleExistsAsync(SD.Role_Admin))
                 {
-                    _roleManager.CreateAsync(new IdentityRole(SD.Role_Admin)).GetAwaiter().GetResult();
-                    _roleManager.CreateAsync(new IdentityRole(SD.Role_HeroPlayer)).GetAwaiter().GetResult();
-                    _roleManager.CreateAsync(new IdentityRole(SD.Role_DukePlayer)).GetAwaiter().GetResult();
-                    _roleManager.CreateAsync(new IdentityRole(SD.Role_GameMaster)).GetAwaiter().GetResult();
+                    await _roleManager.CreateAsync(new IdentityRole(SD.Role_Admin));
+                    await _roleManager.CreateAsync(new IdentityRole(SD.Role_HeroPlayer));
+                    await _roleManager.CreateAsync(new IdentityRole(SD.Role_DukePlayer));
+                    await _roleManager.CreateAsync(new IdentityRole(SD.Role_GameMaster));
                 }
                 
                 // characters
@@ -60,7 +60,7 @@ namespace DagoniteEmpire.Service
                 {
                     throw new Exception("Could not get email or passwword from appisetting.json");
                 }
-                if (_userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")).Result is null)
+                if (await _userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")) is null)
                 {
                     var email = _configuration.GetConnectionString("GameMasterEmail");
                     if (email.IsNullOrEmpty())
@@ -80,7 +80,7 @@ namespace DagoniteEmpire.Service
                     {
                         throw new Exception("Could not get password from appisetting.json");
                     }
-                    var res1 = _userManager.CreateAsync(user, pass).GetAwaiter().GetResult();
+                    var res1 = await _userManager.CreateAsync(user, pass);
                     if (res1.Errors.Any())
                     {
                         foreach (var err in res1.Errors)
@@ -89,7 +89,7 @@ namespace DagoniteEmpire.Service
                         }
 
                     }
-                    var res2 = _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
+                    var res2 = await _userManager.AddToRoleAsync(user, SD.Role_Admin);
                     if (res2.Errors.Any())
                     {
                         foreach (var err in res1.Errors)
@@ -100,7 +100,7 @@ namespace DagoniteEmpire.Service
                 }
                 if (_configuration.GetConnectionString("TestAccountsEnable") == "true")
                 {
-                    if (_userManager.FindByEmailAsync("player@example.com").Result is null)
+                    if (await _userManager.FindByEmailAsync("player@example.com") is null)
                     {
                         ApplicationUser user = new()
                         {
@@ -109,11 +109,11 @@ namespace DagoniteEmpire.Service
                             EmailConfirmed = true,
                         };
 
-                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
-                        _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
+                        await _userManager.CreateAsync(user, "Guest123*");
+                        await _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer);
 
                     }
-                    if (_userManager.FindByEmailAsync("player2@example.com").Result is null)
+                    if (await _userManager.FindByEmailAsync("player2@example.com") is null)
                     {
                         ApplicationUser user = new()
                         {
@@ -122,12 +122,12 @@ namespace DagoniteEmpire.Service
                             EmailConfirmed = true,
                         };
 
-                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
-                        _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer).GetAwaiter().GetResult();
+                        await _userManager.CreateAsync(user, "Guest123*");
+                        await _userManager.AddToRoleAsync(user, SD.Role_HeroPlayer);
 
                     }
 
-                    if (_userManager.FindByEmailAsync("gm@example.com").Result is null)
+                    if (await _userManager.FindByEmailAsync("gm@example.com") is null)
                     {
                         ApplicationUser user = new()
                         {
@@ -135,8 +135,8 @@ namespace DagoniteEmpire.Service
                             Email = "gm@example.com",
                             EmailConfirmed = true,
                         };
-                        _userManager.CreateAsync(user, "Guest123*").GetAwaiter().GetResult();
-                        _userManager.AddToRoleAsync(user, SD.Role_GameMaster).GetAwaiter().GetResult();
+                        await _userManager.CreateAsync(user, "Guest123*");
+                        await _userManager.AddToRoleAsync(user, SD.Role_GameMaster);
                     }
                 }
 
