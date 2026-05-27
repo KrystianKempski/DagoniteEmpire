@@ -30,7 +30,7 @@
 
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
 <PageTitle>Dagonie Empire | Thread</PageTitle>
-@if (IsLoading == true)
+@if (IsLoading == true && Chapter is null)
 {
     <LoadingPage></LoadingPage>
     @if (string.IsNullOrWhiteSpace(CurrentDebugStep) == false)
@@ -40,6 +40,8 @@
 }
 else
 {
+    @if (_showDrawerPanelLayout)
+    {
     <MudHidden Breakpoint="Breakpoint.LgAndDown" Invert="true">
         @*  <MudHidden Hidden="@(_open == true)"> *@
         <MudButton Style="p-2" OnClick="ToggleDrawer" Variant="Variant.Text" DropShadow="true">
@@ -88,10 +90,13 @@ else
         </MudDrawer>
 
     </MudHidden>
+    }
 
 
     <div id="mam" class="margin-side container-lg" >
 
+        @if (_showDrawerPanelLayout == false)
+        {
         <MudHidden Breakpoint="Breakpoint.XlAndUp" Invert="true">
             <div class="character-panel">
                 @if (UserInfo?.IsAdminOrMG == true)
@@ -131,6 +136,7 @@ else
 
             </div>
         </MudHidden>
+        }
         @if (OngoingBattle)
         {
             <MudAlert Elevation="12" Severity="Severity.Error" Variant="Variant.Filled">Battle in progress!</MudAlert>
@@ -341,6 +347,7 @@ else
     private bool _open = false;
     private bool _scrollDown = true;
     private bool _afterRenderInProgress = false;
+    private bool _showDrawerPanelLayout = false;
 
     private async Task DebugStep(string message)
     {
@@ -409,6 +416,13 @@ else
         try
         {
             Logger.LogWarning("ChapterThread debug: [AR1] OnAfterRender start firstRender={FirstRender}, scrollDown={ScrollDown}, isLoading={IsLoading}", firstRender, _scrollDown, IsLoading);
+            if (firstRender)
+            {
+                var bp = await _vieportService.GetCurrentBreakpointAsync();
+                _showDrawerPanelLayout = bp <= Breakpoint.Lg;
+                Logger.LogWarning("ChapterThread debug: [AR0] Layout mode selected: Drawer={Drawer}, Breakpoint={Breakpoint}", _showDrawerPanelLayout, bp);
+            }
+
             if (firstRender || UserInfo is null)
             {
                 UserInfo = await _userService.GetUserInfo();
@@ -558,9 +572,16 @@ else
             StateHasChanged();
 
             await DebugStep($"[LC2] Getting chapter by Id={Id}");
-            Chapter = await _chapterRepository.GetById(Id);
-            if (Chapter is null || Chapter.Id == 0)
+            Chapter = await GetChapterWithTimeout(Id);
+            if (Chapter is null)
             {
+                await DebugStep("[LC2T] Chapter fetch timed out or null");
+                SnackBar.Add("Chapter fetch timed out.", Severity.Error);
+                return;
+            }
+            if (Chapter.Id == 0)
+            {
+                await DebugStep("[LC2E] Chapter returned with Id == 0");
                 SnackBar.Add("Chapter was not found.", Severity.Error);
                 return;
             }
@@ -638,6 +659,30 @@ else
 
         Logger.LogWarning("GetCurrentForChapter timed out after {TimeoutMs}ms on chapter {ChapterId}", timeoutMs, Id);
         return null;
+    }
+
+    private async Task<ChapterDTO?> GetChapterWithTimeout(int chapterId, int timeoutMs = 5000)
+    {
+        try
+        {
+            Logger.LogWarning("ChapterThread debug: [LC2A] GetChapterWithTimeout starting for chapter {ChapterId}", chapterId);
+            var getChapterTask = _chapterRepository.GetById(chapterId);
+            var completedTask = await Task.WhenAny(getChapterTask, Task.Delay(timeoutMs));
+            if (completedTask == getChapterTask)
+            {
+                var result = await getChapterTask;
+                Logger.LogWarning("ChapterThread debug: [LC2B] GetChapterWithTimeout completed: Id={ChapterId}", result?.Id ?? 0);
+                return result;
+            }
+
+            Logger.LogWarning("GetChapterWithTimeout timed out after {TimeoutMs}ms on chapter {ChapterId}", timeoutMs, chapterId);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "GetChapterWithTimeout exception on chapter {ChapterId}", chapterId);
+            return null;
+        }
     }
 
     private async Task CreatePost()
@@ -1097,11 +1142,29 @@ else
         }
     }
 
-    private async Task<int> GetPageCount()
+    private async Task<int> GetPageCount(int timeoutMs = 5000)
     {
-        int postCount = await _postRepository.GetPostCount(Id);
-        if (postCount == 0) return 1;
-        return postCount % PostsPerPage == 0 ? (postCount / PostsPerPage) : (postCount / PostsPerPage) + 1;
+        try
+        {
+            Logger.LogWarning("ChapterThread debug: [LC4A] GetPageCount starting");
+            var getCountTask = _postRepository.GetPostCount(Id);
+            var completedTask = await Task.WhenAny(getCountTask, Task.Delay(timeoutMs));
+            if (completedTask == getCountTask)
+            {
+                int postCount = await getCountTask;
+                Logger.LogWarning("ChapterThread debug: [LC4B] GetPageCount completed: postCount={PostCount}", postCount);
+                if (postCount == 0) return 1;
+                return postCount % PostsPerPage == 0 ? (postCount / PostsPerPage) : (postCount / PostsPerPage) + 1;
+            }
+
+            Logger.LogWarning("GetPageCount timed out after {TimeoutMs}ms on chapter {ChapterId}", timeoutMs, Id);
+            return 1;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "GetPageCount exception on chapter {ChapterId}", Id);
+            return 1;
+        }
     }      
 
     //Pagination 
@@ -1109,7 +1172,6 @@ else
     {
         try
         {
-            IsLoading = true;
             await DebugStep($"[PG1] SelectPage start: {page}");
             PageNum = page;
 
@@ -1127,9 +1189,8 @@ else
         }
         finally
         {
-            IsLoading = false;
             StateHasChanged();
-            Logger.LogWarning("ChapterThread debug: [PGF] SelectPage finally IsLoading=false");
+            Logger.LogWarning("ChapterThread debug: [PGF] SelectPage finally");
         }
     }
     public void Dispose()
