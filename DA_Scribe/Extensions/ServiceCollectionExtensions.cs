@@ -33,8 +33,8 @@ namespace DA_Scribe.Extensions
             services.AddSingleton<IChunkService, ChunkService>();
             services.AddSingleton<IDocumentParserService, DocumentParserService>();
             
-            // ScribeService will be added once repositories are implemented
-            // services.AddScoped<IScribeService, ScribeService>();
+            // Main SCRIBE service
+            services.AddScoped<IScribeService, ScribeService>();
             
             return services;
         }

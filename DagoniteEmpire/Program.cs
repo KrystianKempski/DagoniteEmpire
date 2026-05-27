@@ -28,6 +28,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DA_Models;
 using MimeKit;
+using DA_Scribe.Extensions;
 
 
 public class Program
@@ -141,6 +142,9 @@ public class Program
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.AddHttpClient();
         builder.Services.AddHttpContextAccessor();
+
+        // SCRIBE - AI Memory System
+        builder.Services.AddScribe(builder.Configuration);
 
         builder.Services.AddCropper();
         builder.Services.AddServerSideBlazor()

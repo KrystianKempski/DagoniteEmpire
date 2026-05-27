@@ -1,0 +1,227 @@
+@using DA_Business.Services.Interfaces
+@using DA_Scribe.Services.Interfaces
+@inject IScribeService _scribeService
+@inject IUserService _userService
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _jsRuntime
+
+<MudDrawer @bind-Open="@IsOpen" Anchor="Anchor.End" Elevation="2" Variant="DrawerVariant.Temporary" Width="400px">
+    <MudDrawerHeader Class="scribe-drawer-header">
+        <MudIcon Icon="@Icons.Material.Filled.AutoStories" Class="mr-2" />
+        <MudText Typo="Typo.h6">SCRIBE</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" 
+                       Size="Size.Small" 
+                       OnClick="OpenFullPage"
+                       Title="Otwórz pełną wersję" />
+        <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                       Size="Size.Small" 
+                       OnClick="Close" />
+    </MudDrawerHeader>
+
+    <div class="scribe-drawer-content">
+        <!-- Messages -->
+        <div class="scribe-drawer-messages" id="scribe-drawer-messages">
+            @if (!Messages.Any())
+            {
+                <div class="scribe-drawer-welcome">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoStories" Style="font-size: 48px;" Color="Color.Primary" />
+                    <MudText Typo="Typo.body1" Class="mt-2">Witaj w SCRIBE</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Zapytaj o przygody, postacie lub miejsca</MudText>
+                </div>
+            }
+            else
+            {
+                @foreach (var msg in Messages)
+                {
+                    <div class="drawer-message @(msg.IsUser ? "user" : "assistant")">
+                        <MudText Typo="Typo.body2">@msg.Content</MudText>
+                        @if (!msg.IsUser && msg.Sources?.Any() == true)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                                @msg.Sources.Count źródeł
+                            </MudText>
+                        }
+                    </div>
+                }
+                @if (IsThinking)
+                {
+                    <div class="drawer-message assistant">
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Input -->
+        <div class="scribe-drawer-input">
+            <MudTextField @bind-Value="CurrentMessage"
+                          Placeholder="Zadaj pytanie..."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Send"
+                          OnAdornmentClick="SendMessage"
+                          OnKeyDown="HandleKeyDown"
+                          Disabled="@IsThinking"
+                          Immediate="true" />
+        </div>
+    </div>
+</MudDrawer>
+
+<style>
+    .scribe-drawer-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%);
+        color: white;
+        padding: 8px 16px;
+    }
+
+    .scribe-drawer-content {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 64px);
+    }
+
+    .scribe-drawer-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        background-color: var(--mud-palette-background-gray);
+    }
+
+    .scribe-drawer-welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+        padding: 16px;
+    }
+
+    .drawer-message {
+        margin-bottom: 12px;
+        padding: 10px;
+        border-radius: 8px;
+        max-width: 90%;
+    }
+
+    .drawer-message.user {
+        background-color: var(--mud-palette-primary-lighten);
+        margin-left: auto;
+    }
+
+    .drawer-message.assistant {
+        background-color: white;
+        border: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .scribe-drawer-input {
+        padding: 12px;
+        background-color: white;
+        border-top: 1px solid var(--mud-palette-lines-default);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter]
+    public int? CampaignId { get; set; }
+
+    private List<DrawerMessage> Messages { get; set; } = new();
+    private string CurrentMessage { get; set; } = string.Empty;
+    private bool IsThinking { get; set; }
+    private UserInfo? UserInfo { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(CurrentMessage) || IsThinking)
+            return;
+
+        var question = CurrentMessage;
+        CurrentMessage = string.Empty;
+
+        Messages.Add(new DrawerMessage
+        {
+            Content = question,
+            IsUser = true
+        });
+
+        IsThinking = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await _scribeService.QueryAsync(
+                question,
+                UserInfo?.UserId ?? string.Empty,
+                UserInfo?.SelectedCharacter?.Id,
+                CampaignId);
+
+            Messages.Add(new DrawerMessage
+            {
+                Content = result.Response,
+                IsUser = false,
+                Sources = result.Sources?.Select(s => s.Memory?.Title ?? "").ToList()
+            });
+        }
+        catch
+        {
+            Messages.Add(new DrawerMessage
+            {
+                Content = "Przepraszam, wystąpił błąd. Spróbuj ponownie.",
+                IsUser = false
+            });
+        }
+        finally
+        {
+            IsThinking = false;
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await Task.Delay(50);
+        await _jsRuntime.InvokeVoidAsync("eval",
+            "document.getElementById('scribe-drawer-messages')?.scrollTo(0, 999999)");
+    }
+
+    private void Close()
+    {
+        IsOpen = false;
+        IsOpenChanged.InvokeAsync(false);
+    }
+
+    private void OpenFullPage()
+    {
+        Close();
+        _navigationManager.NavigateTo(CampaignId.HasValue ? $"/scribe/{CampaignId}" : "/scribe");
+    }
+
+    private class DrawerMessage
+    {
+        public string Content { get; set; } = string.Empty;
+        public bool IsUser { get; set; }
+        public List<string>? Sources { get; set; }
+    }
+}
