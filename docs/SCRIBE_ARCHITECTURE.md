@@ -602,8 +602,24 @@ dotnet add package Pgvector.EntityFrameworkCore
 | **GPU** | ✅ Available on server |
 | **Ollama location** | Same server, containerized (URL: `http://ollama:11434`) |
 | **First campaign** | "Kraina Możliwości" (Polish) |
-| **Source format** | Word documents (.docx) |
-| **Source location** | Google Drive (manual export for now) |
+| **Source format** | Word documents (.docx) + Campaign posts |
+| **Import method** | Manual upload via GM interface |
+| **Future** | Automatic indexing of campaign threads |
+
+## User Interface
+
+### 1. SCRIBE Page (`/scribe`)
+Full-featured interface for extended conversations with SCRIBE:
+- Chat interface with message history
+- Source citations with expandable details
+- Campaign selector
+- GM-only tools: document import, post indexing, summary generation
+
+### 2. Quick Access Drawer
+Compact chat accessible from any page via navbar button:
+- Lightweight chat interface
+- Link to open full SCRIBE page
+- Context-aware (inherits current campaign if viewing chapter)
 
 ## Polish Language Support
 
@@ -655,40 +671,63 @@ public class WordDocumentParser : IDocumentParser
 │                         DOCUMENT IMPORT FLOW                             │
 └──────────────────────────────────────────────────────────────────────────┘
 
-  Google Drive                     Dagonite Empire
-  ┌─────────────┐                 ┌─────────────────────────────────────┐
-  │  .docx      │  ───export──▶   │  /imports/kraina-mozliwosci/        │
-  │  files      │                 │    ├── chapter-01.docx              │
-  │             │                 │    ├── chapter-02.docx              │
-  └─────────────┘                 │    └── npcs.docx                    │
-                                  └─────────────────────────────────────┘
+  GM uploads .docx files            SCRIBE Page (/scribe)
+  via browser                       ┌─────────────────────────────────────┐
+  ┌─────────────────┐               │  GM Tools Panel                     │
+  │  .docx          │  ──────────▶  │  ┌───────────────────────────────┐  │
+  │  files          │               │  │ [Import Documents]            │  │
+  │                 │               │  │                               │  │
+  └─────────────────┘               │  │ Selected: chapter-01.docx     │  │
+                                    │  │           chapter-02.docx     │  │
+                                    │  │                               │  │
+                                    │  │ Type: [Document ▼]            │  │
+                                    │  │ [x] Public to all players     │  │
+                                    │  │                               │  │
+                                    │  │ [Import]                      │  │
+                                    │  └───────────────────────────────┘  │
+                                    └─────────────────────────────────────┘
                                                    │
                                                    ▼
-                                  ┌─────────────────────────────────────┐
-                                  │  GM Dashboard: "Process Documents"  │
-                                  │  ┌───────────────────────────────┐  │
-                                  │  │ [x] chapter-01.docx (✓ done)  │  │
-                                  │  │ [x] chapter-02.docx (pending) │  │
-                                  │  │ [ ] npcs.docx                 │  │
-                                  │  │                               │  │
-                                  │  │ [Process Selected]            │  │
-                                  │  └───────────────────────────────┘  │
-                                  └─────────────────────────────────────┘
-                                                   │
-                                                   ▼
-                                  ┌─────────────────────────────────────┐
-                                  │  Ingestion Pipeline:                │
-                                  │  1. Parse .docx → plain text        │
-                                  │  2. Chunk into ~500 token segments  │
-                                  │  3. Generate embeddings (Ollama)    │
-                                  │  4. Store in PostgreSQL (pgvector)  │
-                                  └─────────────────────────────────────┘
+                                    ┌─────────────────────────────────────┐
+                                    │  Ingestion Pipeline:                │
+                                    │  1. Parse .docx → plain text        │
+                                    │  2. Chunk into ~500 token segments  │
+                                    │  3. Generate embeddings (Ollama)    │
+                                    │  4. Store in PostgreSQL (pgvector)  │
+                                    └─────────────────────────────────────┘
+
+  Future: Campaign Post Indexing
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │  [Index Campaign Posts] button will:                                   │
+  │  1. Load all posts from campaign chapters                              │
+  │  2. Extract text content (strip HTML)                                  │
+  │  3. Associate with characters who were present                         │
+  │  4. Chunk, embed, and store with access control                        │
+  └─────────────────────────────────────────────────────────────────────────┘
 ```
+
+## Implemented Components
+
+### UI Components
+- `/scribe` - Full SCRIBE page with chat and GM tools
+- `ScribeDrawer.razor` - Quick-access chat drawer (navbar button)
+
+### Services (DA_Scribe project)
+- `ScribeService` - Main RAG orchestrator
+- `EmbeddingService` - Ollama embedding client
+- `LLMService` - Ollama chat client
+- `ChunkService` - Text splitting
+- `DocumentParserService` - Word document parser
+
+### Entities
+- `ScribeMemory` - Main knowledge unit
+- `ScribeChunk` - Vector-embedded text fragment
+- `ScribeConversation` - Chat session
+- `ScribeMessage` - Individual message
 
 ## Questions Still Open
 
-1. **UI preferences**: Modal chat dialog, sidebar, or separate page for SCRIBE?
-2. **GM tools**: What specific GM-only features would be most valuable?
+1. **UI preferences**: Any specific styling or behavior for the SCRIBE interface?
 
 ---
 
