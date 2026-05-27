@@ -33,10 +33,6 @@
 @if (IsLoading == true && Chapter is null)
 {
     <LoadingPage></LoadingPage>
-    @if (string.IsNullOrWhiteSpace(CurrentDebugStep) == false)
-    {
-        <MudText Align="Align.Center" Class="mt-4">@CurrentDebugStep</MudText>
-    }
 }
 else
 {
@@ -338,7 +334,6 @@ else
     private MobDTO GmAsMob = new MobDTO();
     private MudPagination Pagination;
     private BlazoredTextEditor PostEditor;
-    private string CurrentDebugStep = string.Empty;
 
 
     public UserInfo? UserInfo { get; set; }
@@ -350,13 +345,6 @@ else
     private bool _showDrawerPanelLayout = false;
     private bool _initializationComplete = false;
 
-    private void DebugStep(string message)
-    {
-        // Simple logging only - no StateHasChanged during critical loading to avoid Blazor Server deadlocks
-        CurrentDebugStep = message;
-        Logger.LogWarning("ChapterThread debug: {Message}", message);
-    }
-
     private void ToggleDrawer()
     {
         _open = !_open;
@@ -366,12 +354,8 @@ else
     {
         try
         {
-            DebugStep("[1] OnInitializedAsync started");
             await AuthorizeEntry();
-            DebugStep("[2] AuthorizeEntry done");
-            // Skip redundant GetPageCount - LoadChapter will fetch it
             await LoadChapter();
-            DebugStep("[4] LoadChapter done");
             _initializationComplete = true;
         }
         catch (Exception ex)
@@ -470,21 +454,11 @@ else
     {
         try
         {
-            DebugStep("[LS1] LoadForSelectedCharacter started");
-            if (UserInfo is null)
+            UserInfo = await _userService.GetUserInfo();
+            if (UserInfo is null) return;
+            
+            if (UserInfo.SelectedCharacter is null)
             {
-                UserInfo = await GetUserInfoWithTimeout();
-                DebugStep("[LS1A] UserInfo fetched from service");
-            }
-            else
-            {
-                DebugStep("[LS1A] Reusing existing UserInfo");
-            }
-            DebugStep($"[LS2] UserInfo loaded: Auth={(UserInfo?.IsAuthenticated == true)}, SelectedId={UserInfo?.SelectedCharacterId ?? 0}");
-
-            if (UserInfo?.SelectedCharacter is null)
-            {
-                DebugStep("[LS3] SelectedCharacter is null");
                 SendPostEnabled = false;
                 NewPost.Content = "Select a character to post in chapter.";
                 return;
@@ -493,7 +467,6 @@ else
             int charId = (int)UserInfo.SelectedCharacter.Id;
             if (charId == 0)
             {
-                DebugStep("[LS4] SelectedCharacter.Id == 0");
                 SendPostEnabled = false;
                 NewPost.Content = "Select a character to post in chapter.";
                 return;
@@ -502,42 +475,21 @@ else
             if (Chapter?.Characters.FirstOrDefault(c => c.Id == charId) is null
                && UserInfo?.CharacterMG == false)
             {
-                DebugStep($"[LS5] Selected character {charId} not in chapter");
-
                 NewPost.Content = "Character not present in this chapter!";
                 SendPostEnabled = false;
             }
             else
             {
-                DebugStep($"[LS6] Selected character {charId} accepted");
                 SendPostEnabled = true;
                 NewPost.Content = string.Empty;
             }
             _scrollDown = true;
-            DebugStep("[LS7] LoadForSelectedCharacter finished");
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error in LoadForSelectedCharacter for chapter {ChapterId}", Id);
             SnackBar.Add("Error: " + ex.Message, Severity.Error);
         }
-        finally
-        {
-            Logger.LogWarning("ChapterThread debug: [LS8] LoadForSelectedCharacter finally");
-        }
-    }
-
-    private async Task<UserInfo?> GetUserInfoWithTimeout(int timeoutMs = 3000)
-    {
-        var getUserInfoTask = _userService.GetUserInfo();
-        var completedTask = await Task.WhenAny(getUserInfoTask, Task.Delay(timeoutMs));
-        if (completedTask == getUserInfoTask)
-        {
-            return await getUserInfoTask;
-        }
-
-        Logger.LogWarning("GetUserInfo timed out after {TimeoutMs}ms on chapter {ChapterId}", timeoutMs, Id);
-        return UserInfo;
     }
 
 
@@ -974,7 +926,7 @@ else
     }
     private async Task<AllParamsModel> LoadCharacter(int id)
     {
-        DebugStep($"[LCH1] LoadCharacter start: Id={id}");
+        // Debug removed
         AllParamsModel allParams = new();
         var characterTask = _characterRepository.GetById(id);
         var attributesTask = _attributeRepository.GetAll(id);
@@ -999,7 +951,7 @@ else
             postCountTask,
             lastPostDateTask);
 
-        DebugStep($"[LCH2] Base data loaded: Id={id}");
+        // Debug removed
 
         allParams.Character = await characterTask;
         allParams.Attributes.FillPropertiesContainer(await attributesTask);
@@ -1016,7 +968,7 @@ else
 
         await Task.WhenAll(raceTask, professionTask, professionTraitsTask);
 
-        DebugStep($"[LCH3] Race/profession loaded: Id={id}");
+        // Debug removed
 
         allParams.CurrentRace = await raceTask;
         allParams.Profession = await professionTask;
@@ -1024,7 +976,7 @@ else
         allParams.EquipmentSlots = (await equipmentSlotsTask).ToList();
         allParams.Races = ApprovedRacesCache.ToList();
 
-        DebugStep($"[LCH3A] Applying derived stats: Id={id}");
+        // Debug removed
         allParams.SpecialSkills.AddRelatedParametes();
         allParams.AllTraitsChange();
         allParams.Profession.CalculateClassParams(allParams.Attributes.GetAll());
@@ -1033,11 +985,11 @@ else
         wounds = wounds.Concat(conds).ToList();
         allParams.Health.FillPropertiesContainer(wounds);
         allParams.Health.UpdateHealthBonusesInAttributes();
-        DebugStep($"[LCH3B] Derived stats applied: Id={id}");
+        // Debug removed
 
         allParams.Character.NumberOfPosts = await postCountTask;
         allParams.Character.LastPostDate = await lastPostDateTask;
-        DebugStep($"[LCH4] LoadCharacter done: Id={id}");
+        // Debug removed
         return allParams;
     }
 
@@ -1086,7 +1038,7 @@ else
     {
         try
         {
-            DebugStep($"[PG1] SelectPage start: {page}");
+            // Debug removed
             PageNum = page;
 
             if (Chapter is null)
@@ -1094,7 +1046,7 @@ else
 
             PageCount = await GetPageCount();
             Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-            DebugStep($"[PG2] SelectPage loaded posts: {Posts.Count}");
+            // Debug removed
         }
         catch (Exception ex)
         {
