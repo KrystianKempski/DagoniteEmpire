@@ -1,4 +1,5 @@
-using DA_Scribe.Entities;
+using DA_DataAccess.Scribe;
+using DA_Scribe.Models;
 
 namespace DA_Scribe.Services.Interfaces
 {
@@ -162,5 +163,19 @@ namespace DA_Scribe.Services.Interfaces
         /// Check if SCRIBE services are available
         /// </summary>
         Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Import pre-processed chunks from external extraction tool (e.g., Python script)
+        /// </summary>
+        /// <param name="importData">Pre-processed import data with chunks</param>
+        /// <param name="campaignId">Campaign to associate with</param>
+        /// <param name="characterNameToIdMap">Map of character names to database IDs</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Import result with statistics</returns>
+        Task<ScribeImportResult> ImportBatchAsync(
+            ScribeImportData importData,
+            int campaignId,
+            Dictionary<string, int>? characterNameToIdMap = null,
+            CancellationToken cancellationToken = default);
     }
 }

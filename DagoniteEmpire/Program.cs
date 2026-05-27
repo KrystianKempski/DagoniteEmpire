@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Pgvector.EntityFrameworkCore;
 using DA_DataAccess.Data;
 using DA_Business.Repository.CharacterReps;
 using DA_Business.Repository.CharacterReps.IRepository;
@@ -84,7 +85,11 @@ public class Program
         builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
         {
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
-                                    options => options.EnableRetryOnFailure());
+                                    npgsqlOptions => 
+                                    {
+                                        npgsqlOptions.EnableRetryOnFailure();
+                                        npgsqlOptions.UseVector(); // Enable pgvector for SCRIBE
+                                    });
             if (builder.Environment.IsDevelopment())
             {
                 options.EnableDetailedErrors();

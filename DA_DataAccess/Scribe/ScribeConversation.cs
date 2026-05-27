@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
-namespace DA_Scribe.Entities
+namespace DA_DataAccess.Scribe
 {
     /// <summary>
     /// A conversation session with SCRIBE.
