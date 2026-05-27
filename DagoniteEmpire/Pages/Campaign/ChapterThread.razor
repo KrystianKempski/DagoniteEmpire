@@ -441,8 +441,6 @@ else
                 {
                     Logger.LogWarning("ChapterThread debug: [AR4] scrollDown timeout");
                 }
-
-                PageNum = PageCount;
             }
         }
         catch (Exception ex)
@@ -592,22 +590,28 @@ else
             await LoadForSelectedCharacter();
             await DebugStep("[LC10] LoadForSelectedCharacter done");
 
+            await DebugStep("[LC11] Building breadcrumbs");
             _items = new List<BreadcrumbItem>
             {
                 new BreadcrumbItem("Campaigns", href: $"/campaignlist/" ),
                 new BreadcrumbItem("Chapters", href: $"/campaign/{Chapter.CampaignId}"),
                 new BreadcrumbItem("Posts", href: $"/chapter/{Id}"),
             };
+
+            await DebugStep("[LC12] Breadcrumbs done");
             Title = Chapter.Name;
-            BattlePhase = await _battlePhaseRepository.GetCurrentForChapter(Id);
+            await DebugStep("[LC13] Loading battle phase");
+            BattlePhase = await GetBattlePhaseWithTimeout();
             if (BattlePhase is not null)
             {
                 OngoingBattle = BattlePhase.BattleOngoing;
                 BattleButton = OngoingBattle ? "End Battle" : "Start Battle";
             }
-            await DebugStep("[LC11] BattlePhase loaded");
+
+            await DebugStep("[LC14] Battle phase handled");
             // _scrollDown = true;
             IsLoadingCharacters = false;
+            await DebugStep("[LC15] LoadChapter finished flags set");
         }
         catch (Exception ex)
         {
@@ -621,6 +625,19 @@ else
             StateHasChanged();
             Logger.LogWarning("ChapterThread debug: [LCF] LoadChapter finally IsLoading=false");
         }
+    }
+
+    private async Task<BattlePhaseDTO?> GetBattlePhaseWithTimeout(int timeoutMs = 3000)
+    {
+        var getBattleTask = _battlePhaseRepository.GetCurrentForChapter(Id);
+        var completedTask = await Task.WhenAny(getBattleTask, Task.Delay(timeoutMs));
+        if (completedTask == getBattleTask)
+        {
+            return await getBattleTask;
+        }
+
+        Logger.LogWarning("GetCurrentForChapter timed out after {TimeoutMs}ms on chapter {ChapterId}", timeoutMs, Id);
+        return null;
     }
 
     private async Task CreatePost()
@@ -1089,19 +1106,31 @@ else
 
     //Pagination 
     private async Task SelectPage(int page=1)
-    {        
-        IsLoading = true;
-        StateHasChanged();
-        PageNum = page;
+    {
+        try
+        {
+            IsLoading = true;
+            await DebugStep($"[PG1] SelectPage start: {page}");
+            PageNum = page;
 
-        if(Chapter is null )
-            Chapter = await _chapterRepository.GetById(Id);
+            if (Chapter is null)
+                Chapter = await _chapterRepository.GetById(Id);
 
-        PageCount = await GetPageCount();
-        Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-
-        IsLoading = false;
-        StateHasChanged();
+            PageCount = await GetPageCount();
+            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+            await DebugStep($"[PG2] SelectPage loaded posts: {Posts.Count}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error while selecting page {PageNum} for chapter {ChapterId}", page, Id);
+            SnackBar.Add("Error while changing page: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+            Logger.LogWarning("ChapterThread debug: [PGF] SelectPage finally IsLoading=false");
+        }
     }
     public void Dispose()
     {
