@@ -1,4 +1,4 @@
-namespace DA_Scribe.Entities
+namespace DA_DataAccess.Scribe
 {
     /// <summary>
     /// Type of memory stored in SCRIBE
@@ -30,6 +30,12 @@ namespace DA_Scribe.Entities
         SessionNotes = 7,
         
         /// <summary>Raw imported document content</summary>
-        Document = 8
+        Document = 8,
+        
+        /// <summary>World/setting descriptions (geography, politics, history)</summary>
+        World = 9,
+        
+        /// <summary>Game rules and mechanics</summary>
+        Rules = 10
     }
 }

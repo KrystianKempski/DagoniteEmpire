@@ -1,6 +1,9 @@
 using DA_Scribe.Configuration;
-using DA_Scribe.Entities;
+using DA_DataAccess.Data;
+using DA_DataAccess.Scribe;
+using DA_Scribe.Models;
 using DA_Scribe.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,6 +14,7 @@ namespace DA_Scribe.Services
     /// </summary>
     public class ScribeService : IScribeService
     {
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
         private readonly IEmbeddingService _embeddingService;
         private readonly ILLMService _llmService;
         private readonly IChunkService _chunkService;
@@ -19,6 +23,7 @@ namespace DA_Scribe.Services
         private readonly ScribeOptions _options;
 
         public ScribeService(
+            IDbContextFactory<ApplicationDbContext> contextFactory,
             IEmbeddingService embeddingService,
             ILLMService llmService,
             IChunkService chunkService,
@@ -26,6 +31,7 @@ namespace DA_Scribe.Services
             ILogger<ScribeService> logger,
             IOptions<ScribeOptions> options)
         {
+            _contextFactory = contextFactory;
             _embeddingService = embeddingService;
             _llmService = llmService;
             _chunkService = chunkService;
@@ -313,6 +319,199 @@ namespace DA_Scribe.Services
                 _logger.LogWarning(ex, "SCRIBE availability check failed");
                 return false;
             }
+        }
+
+        public async Task<ScribeImportResult> ImportBatchAsync(
+            ScribeImportData importData,
+            int campaignId,
+            Dictionary<string, int>? characterNameToIdMap = null,
+            CancellationToken cancellationToken = default)
+        {
+            var startTime = DateTime.UtcNow;
+            var result = new ScribeImportResult();
+            var errors = new List<string>();
+            
+            _logger.LogInformation(
+                "Starting batch import for campaign {CampaignId}: {ChunkCount} chunks from {Campaign}",
+                campaignId,
+                importData.Chunks.Count,
+                importData.Metadata.Campaign);
+
+            // Group chunks by document (act) for creating memories
+            var chunksByDocument = importData.Chunks
+                .GroupBy(c => c.DocumentPath ?? c.ActNumber ?? "unknown")
+                .ToList();
+            
+            _logger.LogInformation("Grouped into {DocumentCount} documents", chunksByDocument.Count);
+
+            foreach (var docGroup in chunksByDocument)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    // Determine memory type from chunk types
+                    var chunkTypes = docGroup.Select(c => c.ChunkType).Distinct().ToList();
+                    var memoryType = DetermineMemoryType(chunkTypes);
+                    
+                    // Get all characters present in this document
+                    var allCharacterNames = docGroup
+                        .SelectMany(c => c.CharactersPresent)
+                        .Distinct()
+                        .ToList();
+                    
+                    // Map character names to IDs
+                    var characterIds = MapCharacterNamesToIds(allCharacterNames, characterNameToIdMap);
+                    
+                    // Create a memory for this document
+                    var documentTitle = GenerateDocumentTitle(docGroup.Key, docGroup.First());
+                    var combinedContent = string.Join("\n\n", docGroup.Select(c => c.Content));
+                    
+                    var memory = new ScribeMemory
+                    {
+                        Title = documentTitle,
+                        Content = combinedContent,
+                        Type = memoryType,
+                        SourceCampaignId = campaignId,
+                        SourceDocumentName = docGroup.Key,
+                        CharacterIds = characterIds,
+                        IsPublic = memoryType == MemoryType.World || memoryType == MemoryType.Rules,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    // Process each chunk - embed and create ScribeChunk
+                    var scribeChunks = new List<ScribeChunk>();
+                    int chunkIndex = 0;
+                    
+                    foreach (var chunk in docGroup)
+                    {
+                        try
+                        {
+                            // Generate embedding for the plain text content
+                            var embedding = await _embeddingService.GetEmbeddingAsync(
+                                chunk.ContentPlain, 
+                                cancellationToken);
+                            
+                            // Map this chunk's characters
+                            var chunkCharacterIds = MapCharacterNamesToIds(
+                                chunk.CharactersPresent, 
+                                characterNameToIdMap);
+                            
+                            var scribeChunk = new ScribeChunk
+                            {
+                                Content = chunk.Content, // Keep annotated content
+                                Embedding = new Pgvector.Vector(embedding),
+                                ChunkIndex = chunkIndex++,
+                                TokenCount = chunk.WordCount * 4 / 3, // Rough estimate
+                                CampaignId = campaignId,
+                                MemoryType = memoryType,
+                                IsPublic = memory.IsPublic,
+                                CharacterIds = chunkCharacterIds,
+                                // Store additional metadata in extended properties if needed
+                            };
+                            
+                            scribeChunks.Add(scribeChunk);
+                            result.ChunksImported++;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to process chunk {ChunkId}", chunk.Id);
+                            errors.Add($"Chunk {chunk.Id}: {ex.Message}");
+                            result.ChunksFailed++;
+                        }
+                    }
+
+                    memory.Chunks = scribeChunks;
+                    result.MemoriesCreated++;
+                    
+                    // Save memory to database
+                    await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+                    context.ScribeMemories.Add(memory);
+                    await context.SaveChangesAsync(cancellationToken);
+                    
+                    _logger.LogDebug(
+                        "Saved memory '{Title}' with {ChunkCount} chunks to database",
+                        memory.Title,
+                        scribeChunks.Count);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to process document {Document}", docGroup.Key);
+                    errors.Add($"Document {docGroup.Key}: {ex.Message}");
+                }
+            }
+
+            result.Success = result.ChunksFailed == 0 && errors.Count == 0;
+            result.Duration = DateTime.UtcNow - startTime;
+            result.Errors = errors;
+            result.Message = $"Imported {result.ChunksImported} chunks into {result.MemoriesCreated} memories in {result.Duration.TotalSeconds:F1}s";
+
+            _logger.LogInformation(
+                "Batch import complete: {ChunksImported} imported, {ChunksFailed} failed, {MemoriesCreated} memories in {Duration}s",
+                result.ChunksImported,
+                result.ChunksFailed,
+                result.MemoriesCreated,
+                result.Duration.TotalSeconds);
+
+            return result;
+        }
+
+        private static MemoryType DetermineMemoryType(IList<string> chunkTypes)
+        {
+            if (chunkTypes.Contains("world"))
+                return MemoryType.World;
+            if (chunkTypes.Contains("rules"))
+                return MemoryType.Rules;
+            if (chunkTypes.Contains("character"))
+                return MemoryType.Character;
+            if (chunkTypes.Contains("combat"))
+                return MemoryType.Event;
+            
+            return MemoryType.Event;
+        }
+
+        private static List<int> MapCharacterNamesToIds(
+            IEnumerable<string> characterNames,
+            Dictionary<string, int>? nameToIdMap)
+        {
+            if (nameToIdMap == null || !characterNames.Any())
+                return new List<int>();
+            
+            return characterNames
+                .Where(name => nameToIdMap.ContainsKey(name))
+                .Select(name => nameToIdMap[name])
+                .Distinct()
+                .ToList();
+        }
+
+        private static string GenerateDocumentTitle(string documentPath, ScribeImportChunk firstChunk)
+        {
+            // Try to generate a meaningful title
+            if (!string.IsNullOrEmpty(firstChunk.SceneTitle))
+                return firstChunk.SceneTitle;
+            
+            if (!string.IsNullOrEmpty(firstChunk.ActNumber))
+            {
+                var actPart = $"Akt {firstChunk.ActNumber}";
+                
+                // Extract title from document path
+                var pathParts = documentPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+                var fileName = pathParts.LastOrDefault() ?? documentPath;
+                
+                // Remove act number prefix and extension
+                var title = System.Text.RegularExpressions.Regex.Replace(
+                    fileName, 
+                    @"^[Aa]kt\s*\d+(?:\.\d+)?\s*", 
+                    "");
+                title = System.IO.Path.GetFileNameWithoutExtension(title);
+                
+                if (!string.IsNullOrWhiteSpace(title))
+                    return $"{actPart}: {title}";
+                
+                return actPart;
+            }
+            
+            return System.IO.Path.GetFileNameWithoutExtension(documentPath);
         }
     }
 }

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Pgvector;
 
-namespace DA_Scribe.Entities
+namespace DA_DataAccess.Scribe
 {
     /// <summary>
     /// Chunked and embedded content for vector similarity search.

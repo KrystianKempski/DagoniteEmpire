@@ -1,6 +1,7 @@
 ﻿using Abp.Domain.Entities;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
+using DA_DataAccess.Scribe;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -44,9 +45,48 @@ namespace DA_DataAccess.Data
         public DbSet<BattlePhase> BattlePhases { get; set; }
         public DbSet<WealthRecord> WealthRecords { get; set; }
 
+        // SCRIBE - AI Memory System
+        public DbSet<ScribeMemory> ScribeMemories { get; set; }
+        public DbSet<ScribeChunk> ScribeChunks { get; set; }
+        public DbSet<ScribeConversation> ScribeConversations { get; set; }
+        public DbSet<ScribeMessage> ScribeMessages { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Enable pgvector extension for SCRIBE
+            modelBuilder.HasPostgresExtension("vector");
+            
+            // Configure SCRIBE entities
+            modelBuilder.Entity<ScribeChunk>(entity =>
+            {
+                // Vector column configuration
+                entity.Property(e => e.Embedding)
+                    .HasColumnType("vector(768)");
+                
+                // Index for vector similarity search using HNSW
+                entity.HasIndex(e => e.Embedding)
+                    .HasMethod("hnsw")
+                    .HasOperators("vector_cosine_ops");
+                
+                // Indexes for filtering
+                entity.HasIndex(e => e.CampaignId);
+                entity.HasIndex(e => e.MemoryType);
+                entity.HasIndex(e => e.IsPublic);
+            });
+            
+            modelBuilder.Entity<ScribeMemory>(entity =>
+            {
+                entity.HasIndex(e => e.SourceCampaignId);
+                entity.HasIndex(e => e.Type);
+            });
+            
+            modelBuilder.Entity<ScribeConversation>(entity =>
+            {
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.CampaignId);
+            });
 
             //modelBuilder.Entity<ProfessionSkill>()
             //    .HasOne(a => a.ActiveProfession)

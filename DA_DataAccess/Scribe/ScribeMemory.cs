@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace DA_Scribe.Entities
+namespace DA_DataAccess.Scribe
 {
     /// <summary>
     /// Core memory unit - extracted and processed content from campaigns.
