@@ -51,7 +51,6 @@
     [Parameter] public int ChapterId { get; set; } = 0;
 
     private IEnumerable<MobDTO> MobsToAdd = new List<MobDTO>();
-    private bool IsLoading = false;
 
     private string Title = "Add";
 
@@ -59,17 +58,10 @@
     {
         try
         {
-            IsLoading = true;
-            // StateHasChanged();
             await LoadMobs();
-
-            IsLoading = false;
-            // StateHasChanged();
-            
         }
         catch (Exception ex)
         {
-            IsLoading = false;
             _snackBar.Add("Error while initialize: " + ex.ToString(), Severity.Error);
         }
     }

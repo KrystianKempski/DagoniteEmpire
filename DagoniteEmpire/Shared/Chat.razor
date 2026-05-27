@@ -316,14 +316,14 @@
                 else if ((ChosenUser.ContactId == message.FromUserId && CurrentUserId == message.ToUserId))
                 {
                     ChosenUser.messages.Add(new ChatMessage { Message = message.Message, CreatedDate = message.CreatedDate, FromUser = new ApplicationUser() { UserName = ChosenUser.UserName } });
-                    ClearBadgeContent();
+                    await ClearBadgeContent();
                 }
             }
             else
             {
                 if (CurrentUserId == message.ToUserId)
                 {
-                    GetBadgeValue(message.FromUserId);
+                    await GetBadgeValue(message.FromUserId);
                 }
             }
             // Inform blazor the UI needs updating
@@ -391,7 +391,7 @@
         }
         else if (ChosenUser.ContactId == userId)
         {
-            CloseChatbox(ChosenUser);
+            await CloseChatbox(ChosenUser);
             return;
         }
         await ClearBadgeContent();

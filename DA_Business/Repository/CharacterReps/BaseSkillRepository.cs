@@ -38,7 +38,6 @@ namespace DA_Business.Repository.CharacterReps
             {
                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
             }
-            return null;
         }
 
         public async Task<int> Delete(int id)

@@ -86,7 +86,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 List<SpecialSkill> obj;
                 using var contex = await _db.CreateDbContextAsync();
-                if (charId == null || charId < 1 || baseSkillName == string.Empty)
+                if (charId < 1 || baseSkillName == string.Empty)
                 {
                     return new List<SpecialSkillDTO>();
                 }

@@ -433,7 +433,7 @@
         AllParams.GearTraitChange();
         LoadAttackStats();
         // clear of hand if weapon used is two-handed
-        if (ClearOffHand())
+        if (await ClearOffHandAsync())
             return;
         LoadArmorStats();
         await OnBattleStatsChange.InvokeAsync();
@@ -467,7 +467,7 @@
         return false;
     }
 
-    public bool ClearOffHand()
+    public async Task<bool> ClearOffHandAsync()
     {
         var mains = new List<EquippedItems>() { EquippedItems.WeaponMain1, EquippedItems.WeaponMain2 };
         foreach (var e in mains)
@@ -477,7 +477,7 @@
                 EquippedItems key = e + 1;
                 if (EquipItemComp[key].SelectedItem != null)
                 {
-                    EquipItemComp[key].ChangeGear("Empty");
+                    await EquipItemComp[key].ChangeGear("Empty");
                     return true;
                 }
             }
