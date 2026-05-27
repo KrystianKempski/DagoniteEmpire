@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DA_Scribe</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Vector Database -->
+    <PackageReference Include="Pgvector" />
+    <PackageReference Include="Pgvector.EntityFrameworkCore" />
+    
+    <!-- Document Parsing -->
+    <PackageReference Include="DocumentFormat.OpenXml" />
+    
+    <!-- HTTP Client for Ollama -->
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DA_DataAccess\DA_DataAccess.csproj" />
+    <ProjectReference Include="..\DA_Models\DA_Models.csproj" />
+  </ItemGroup>
+
+</Project>
