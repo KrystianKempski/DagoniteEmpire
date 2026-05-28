@@ -201,6 +201,70 @@ namespace DagoniteEmpire.Service
         }
 
         /// <summary>
+        /// Query SCRIBE with a question (RAG pipeline)
+        /// </summary>
+        [HttpPost("query")]
+        [AllowAnonymous] // TODO: Change to proper auth for production
+        public async Task<ActionResult<ScribeQueryResult>> Query(
+            [FromBody] ScribeQueryRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(request.Query))
+            {
+                return BadRequest("Query is required");
+            }
+
+            try
+            {
+                _logger.LogInformation(
+                    "SCRIBE query: '{Query}' for campaign {CampaignId}, character {CharacterId}",
+                    request.Query, request.CampaignId, request.CharacterId);
+
+                var result = await _scribeService.QueryAsync(
+                    request.Query,
+                    request.UserId ?? "anonymous",
+                    request.CharacterId,
+                    request.CampaignId,
+                    cancellationToken: cancellationToken);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Query failed");
+                return StatusCode(500, new ScribeQueryResult
+                {
+                    Response = $"Błąd: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Search for similar chunks without generating response (for debugging)
+        /// </summary>
+        [HttpPost("search")]
+        [AllowAnonymous]
+        public async Task<ActionResult<IList<ScribeSearchResult>>> Search(
+            [FromBody] ScribeQueryRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(request.Query))
+            {
+                return BadRequest("Query is required");
+            }
+
+            var results = await _scribeService.SearchAsync(
+                request.Query,
+                request.UserId ?? "anonymous",
+                request.CharacterId,
+                request.CampaignId,
+                request.TopK ?? 5,
+                cancellationToken);
+
+            return Ok(results);
+        }
+
+        /// <summary>
         /// Get character name to ID mapping for a campaign
         /// </summary>
         private Task<Dictionary<string, int>> GetCharacterMappingAsync(
