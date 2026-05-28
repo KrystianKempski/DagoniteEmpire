@@ -143,46 +143,7 @@ namespace DagoniteEmpire.Service
             }
         }
 
-        /// <summary>
-        /// TEST ONLY - Import without auth (remove in production)
-        /// </summary>
-        [HttpPost("test-import/{campaignId}")]
-        [AllowAnonymous]
-        public async Task<ActionResult<ScribeImportResult>> TestImport(
-            int campaignId,
-            [FromBody] ScribeImportData importData,
-            CancellationToken cancellationToken)
-        {
-            if (importData?.Chunks == null || importData.Chunks.Count == 0)
-            {
-                return BadRequest("No chunks provided");
-            }
-
-            try
-            {
-                _logger.LogInformation("TEST IMPORT: {ChunkCount} chunks for campaign {CampaignId}", 
-                    importData.Chunks.Count, campaignId);
-                    
-                var characterNameToIdMap = await GetCharacterMappingAsync(campaignId, cancellationToken);
-                
-                var result = await _scribeService.ImportBatchAsync(
-                    importData,
-                    campaignId,
-                    characterNameToIdMap,
-                    cancellationToken);
-
-                return result.Success ? Ok(result) : StatusCode(207, result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Test import failed");
-                return StatusCode(500, new ScribeImportResult
-                {
-                    Success = false,
-                    Message = $"Import failed: {ex.Message}"
-                });
-            }
-        }
+        // TEST ENDPOINT REMOVED - use /import/{campaignId} with proper authentication
         
         /// <summary>
         /// Check if SCRIBE services (Ollama) are available
@@ -204,7 +165,7 @@ namespace DagoniteEmpire.Service
         /// Query SCRIBE with a question (RAG pipeline)
         /// </summary>
         [HttpPost("query")]
-        [AllowAnonymous] // TODO: Change to proper auth for production
+        [Authorize] // Any authenticated user can query
         public async Task<ActionResult<ScribeQueryResult>> Query(
             [FromBody] ScribeQueryRequest request,
             CancellationToken cancellationToken)
@@ -216,36 +177,40 @@ namespace DagoniteEmpire.Service
 
             try
             {
+                // Server-side validation of GameMaster status - don't trust client
+                var isGameMaster = User.IsInRole("GameMaster") || User.IsInRole("Admin");
+                var userId = User.Identity?.Name ?? "anonymous";
+
                 _logger.LogInformation(
-                    "SCRIBE query: '{Query}' for campaign {CampaignId}, character {CharacterId}, GM={IsGM}",
-                    request.Query, request.CampaignId, request.CharacterId, request.IsGameMaster);
+                    "SCRIBE query: '{Query}' for campaign {CampaignId}, character {CharacterId}, user={User}, GM={IsGM}",
+                    request.Query, request.CampaignId, request.CharacterId, userId, isGameMaster);
 
                 var result = await _scribeService.QueryAsync(
                     request.Query,
-                    request.UserId ?? "anonymous",
+                    userId,
                     request.CharacterId,
                     request.CampaignId,
                     conversationId: null,
-                    isGameMaster: request.IsGameMaster,
+                    isGameMaster: isGameMaster,
                     cancellationToken: cancellationToken);
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Query failed");
+                _logger.LogError(ex, "Query failed for user {User}", User.Identity?.Name);
                 return StatusCode(500, new ScribeQueryResult
                 {
-                    Response = $"Błąd: {ex.Message}"
+                    Response = "Wystąpił błąd podczas przetwarzania zapytania."
                 });
             }
         }
 
         /// <summary>
-        /// Search for similar chunks without generating response (for debugging)
+        /// Search for similar chunks without generating response (for debugging/GM tools)
         /// </summary>
         [HttpPost("search")]
-        [AllowAnonymous]
+        [Authorize(Roles = "GameMaster,Admin")] // Only GM/Admin can use raw search
         public async Task<ActionResult<IList<ScribeSearchResult>>> Search(
             [FromBody] ScribeQueryRequest request,
             CancellationToken cancellationToken)
@@ -255,13 +220,17 @@ namespace DagoniteEmpire.Service
                 return BadRequest("Query is required");
             }
 
+            // Server-side: user is guaranteed to be GM/Admin due to [Authorize] attribute
+            var isGameMaster = true;
+            var userId = User.Identity?.Name ?? "anonymous";
+
             var results = await _scribeService.SearchAsync(
                 request.Query,
-                request.UserId ?? "anonymous",
+                userId,
                 request.CharacterId,
                 request.CampaignId,
                 request.TopK ?? 5,
-                isGameMaster: request.IsGameMaster,
+                isGameMaster: isGameMaster,
                 cancellationToken);
 
             return Ok(results);
