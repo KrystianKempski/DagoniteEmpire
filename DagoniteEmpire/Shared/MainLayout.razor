@@ -34,6 +34,11 @@ MaxWidth="MaxWidth.Large" />
         </MudHidden>
 
         <MudSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <MudIconButton Class="m-0 p-0 mr-2" Icon="@Icons.Material.Filled.AutoStories" Color="Color.Inherit" OnClick="@ScribeToggle" Title="SCRIBE" />
+            </Authorized>
+        </AuthorizeView>
         <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
             <MudIconButton Class="m-0 p-0" Icon="@Icons.Material.Filled.Chat" Color="Color.Inherit" OnClick="@ChatToggle" />
         </MudHidden>
@@ -51,6 +56,7 @@ MaxWidth="MaxWidth.Large" />
         <AuthorizeView>
             <Authorized>
                 <Chat ToggleChat="@OpenEnd"></Chat>
+                <ScribeDrawer @bind-IsOpen="@ScribeOpen" />
             </Authorized>
         </AuthorizeView>
     </MudContainer>    
@@ -76,6 +82,8 @@ MaxWidth="MaxWidth.Large" />
 
     private MudTheme Theme = new MudTheme();
     private bool OpenEnd { get; set; }
+    private bool ScribeOpen { get; set; }
+    
     void DrawerStartToggle()
     {
         _drawerOpen = !_drawerOpen;
@@ -83,6 +91,10 @@ MaxWidth="MaxWidth.Large" />
     void ChatToggle()
     {
         OpenEnd = !OpenEnd;
+    }
+    void ScribeToggle()
+    {
+        ScribeOpen = !ScribeOpen;
     }
 
     bool _drawerOpen;

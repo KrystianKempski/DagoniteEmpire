@@ -1,0 +1,872 @@
+@page "/scribe"
+@page "/scribe/{CampaignId:int}"
+@using DA_Business.Services.Interfaces
+@using DA_Scribe.Services.Interfaces
+@inject IScribeService _scribeService
+@inject ICampaignRepository _campaignRepository
+@inject IUserService _userService
+@inject ISnackbar SnackBar
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _jsRuntime
+@inject ILogger<ScribePage> Logger
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
+
+<PageTitle>Dagonite Empire | SCRIBE</PageTitle>
+
+<div class="scribe-container">
+    <MudGrid>
+        <!-- Main Chat Area -->
+        <MudItem xs="12" md="8" lg="9">
+            <MudPaper Class="scribe-chat-panel" Elevation="2">
+                <MudToolBar Dense="true" Class="scribe-header">
+                    <MudIcon Icon="@Icons.Material.Filled.AutoStories" Class="mr-2" />
+                    <MudText Typo="Typo.h6">SCRIBE - Archiwista Przygód</MudText>
+                    <MudSpacer />
+                    @if (SelectedCampaign != null)
+                    {
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small">@SelectedCampaign.Name</MudChip>
+                    }
+                    @if (!IsAvailable)
+                    {
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small">Niedostępny</MudChip>
+                    }
+                </MudToolBar>
+
+                <!-- Messages Area -->
+                <div class="scribe-messages" id="scribe-messages-container">
+                    @if (!Messages.Any())
+                    {
+                        <div class="scribe-welcome">
+                            <MudIcon Icon="@Icons.Material.Filled.AutoStories" Style="font-size: 64px;" Color="Color.Primary" />
+                            <MudText Typo="Typo.h5" Class="mt-4">Witaj w SCRIBE</MudText>
+                            <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-2">
+                                Jestem archiwistą Twoich przygód. Zapytaj mnie o postacie, miejsca, wydarzenia lub historię kampanii.
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="mt-4">
+                                Przykładowe pytania:
+                            </MudText>
+                            <MudStack Row="true" Justify="Justify.Center" Class="mt-2" Spacing="2">
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => AskQuestion("Kim jest Garrick?"))">Kim jest Garrick?</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => AskQuestion("Co wydarzyło się w Czarnej Wieży?"))">Co w Czarnej Wieży?</MudButton>
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => AskQuestion("Podsumuj ostatnią sesję"))">Ostatnia sesja</MudButton>
+                            </MudStack>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var message in Messages)
+                        {
+                            <div class="scribe-message @(message.IsUser ? "user-message" : "assistant-message")">
+                                <div class="message-header">
+                                    @if (message.IsUser)
+                                    {
+                                        <MudAvatar Size="Size.Small" Color="Color.Primary">
+                                            <MudIcon Icon="@Icons.Material.Filled.Person" />
+                                        </MudAvatar>
+                                        <MudText Typo="Typo.caption" Class="ml-2">Ty</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudAvatar Size="Size.Small" Color="Color.Secondary">
+                                            <MudIcon Icon="@Icons.Material.Filled.AutoStories" />
+                                        </MudAvatar>
+                                        <MudText Typo="Typo.caption" Class="ml-2">SCRIBE</MudText>
+                                    }
+                                    <MudSpacer />
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@message.Timestamp.ToString("HH:mm")</MudText>
+                                </div>
+                                <div class="message-content">
+                                    <MudText Typo="Typo.body1">
+                                        @message.Content@if (IsStreaming && message == Messages.LastOrDefault() && !message.IsUser)
+                                        {<span class="typing-cursor">▌</span>}
+                                    </MudText>
+                                </div>
+                                @if (message.Sources?.Any() == true)
+                                {
+                                    <MudExpansionPanels Class="mt-2" Elevation="0">
+                                        <MudExpansionPanel Text="@($"Źródła ({message.Sources.Count})")" Dense="true">
+                                            @foreach (var source in message.Sources)
+                                            {
+                                                <MudText Typo="Typo.caption" Class="source-item">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Article" Size="Size.Small" Class="mr-1" />
+                                                    @source
+                                                </MudText>
+                                            }
+                                        </MudExpansionPanel>
+                                    </MudExpansionPanels>
+                                }
+                            </div>
+                        }
+                        @if (IsThinking)
+                        {
+                            <div class="scribe-message assistant-message">
+                                <div class="message-header">
+                                    <MudAvatar Size="Size.Small" Color="Color.Secondary">
+                                        <MudIcon Icon="@Icons.Material.Filled.AutoStories" />
+                                    </MudAvatar>
+                                    <MudText Typo="Typo.caption" Class="ml-2">SCRIBE</MudText>
+                                </div>
+                                <div class="message-content">
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@ThinkingText</MudText>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <!-- Input Area -->
+                <div class="scribe-input">
+                    <MudTextField @bind-Value="CurrentMessage"
+                                  Placeholder="Zadaj pytanie SCRIBE..."
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.End"
+                                  AdornmentIcon="@Icons.Material.Filled.Send"
+                                  OnAdornmentClick="SendMessage"
+                                  OnKeyDown="HandleKeyDown"
+                                  Disabled="@(IsThinking || !IsAvailable)"
+                                  Immediate="true"
+                                  Class="flex-grow-1" />
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Sidebar -->
+        <MudItem xs="12" md="4" lg="3">
+            <!-- Conversation History -->
+            <MudPaper Class="pa-4 mb-4" Elevation="2">
+                <div class="d-flex align-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2" />
+                    <MudText Typo="Typo.h6">Historia</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" 
+                                   Size="Size.Small"
+                                   OnClick="StartNewConversation"
+                                   Title="Nowa rozmowa" />
+                </div>
+                
+                @if (PastConversations.Any())
+                {
+                    <MudList T="DA_DataAccess.Scribe.ScribeConversation" Dense="true" Class="conversation-list">
+                        @foreach (var conv in PastConversations.Take(10))
+                        {
+                            <MudListItem Class="@(CurrentConversationId == conv.Id ? "selected-conversation" : "")"
+                                         OnClick="@(() => LoadConversation(conv.Id))">
+                                <div class="d-flex align-center" style="width: 100%;">
+                                    <div class="flex-grow-1 text-truncate">
+                                        <MudText Typo="Typo.body2" Class="text-truncate">
+                                            @(conv.Title ?? "Rozmowa bez tytułu")
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            @((conv.LastMessageAt ?? conv.StartedAt).ToString("dd MMM, HH:mm"))
+                                        </MudText>
+                                    </div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   OnClick="@(() => DeleteConversation(conv.Id))"
+                                                   OnClickPreventDefault="true"
+                                                   Title="Usuń" />
+                                </div>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-center">
+                        Brak zapisanych rozmów
+                    </MudText>
+                }
+            </MudPaper>
+            
+            <!-- Campaign Selector -->
+            <MudPaper Class="pa-4 mb-4" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Campaign" Class="mr-2" />
+                    Kampania
+                </MudText>
+                <MudSelect T="CampaignDTO" @bind-Value="SelectedCampaign" Label="Wybierz kampanię" Variant="Variant.Outlined" Dense="true">
+                    @foreach (var campaign in Campaigns)
+                    {
+                        <MudSelectItem Value="campaign">@campaign.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudPaper>
+
+            <!-- GM Tools (only for GM/Admin) -->
+            @if (UserInfo?.IsAdminOrMG == true)
+            {
+                <MudPaper Class="pa-4 mb-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">
+                        <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Class="mr-2" />
+                        Narzędzia GM
+                    </MudText>
+                    
+                    <MudButton FullWidth="true" 
+                               Variant="Variant.Outlined" 
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Upload"
+                               OnClick="OpenImportDialog"
+                               Class="mb-2">
+                        Importuj dokumenty
+                    </MudButton>
+                    
+                    <MudButton FullWidth="true" 
+                               Variant="Variant.Outlined" 
+                               Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.Sync"
+                               OnClick="IndexCampaignPosts"
+                               Disabled="@(SelectedCampaign == null || IsIndexing)"
+                               Class="mb-2">
+                        @if (IsIndexing)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Indeksowanie...</span>
+                        }
+                        else
+                        {
+                            <span>Indeksuj posty kampanii</span>
+                        }
+                    </MudButton>
+
+                    <MudButton FullWidth="true" 
+                               Variant="Variant.Outlined" 
+                               Color="Color.Tertiary"
+                               StartIcon="@Icons.Material.Filled.Summarize"
+                               OnClick="GenerateSummaries"
+                               Disabled="@(SelectedCampaign == null)"
+                               Class="mb-2">
+                        Generuj podsumowania
+                    </MudButton>
+                    
+                    <MudDivider Class="my-3" />
+                    
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Status SCRIBE: @(IsAvailable ? "Dostępny" : "Niedostępny")
+                    </MudText>
+                </MudPaper>
+
+                <!-- Memory Stats -->
+                <MudPaper Class="pa-4" Elevation="2">
+                    <MudText Typo="Typo.h6" Class="mb-3">
+                        <MudIcon Icon="@Icons.Material.Filled.Memory" Class="mr-2" />
+                        Statystyki
+                    </MudText>
+                    <MudSimpleTable Dense="true" Hover="true">
+                        <tbody>
+                            <tr>
+                                <td>Wspomnienia</td>
+                                <td>@Stats.MemoryCount</td>
+                            </tr>
+                            <tr>
+                                <td>Fragmenty</td>
+                                <td>@Stats.ChunkCount</td>
+                            </tr>
+                            <tr>
+                                <td>Dokumenty</td>
+                                <td>@Stats.DocumentCount</td>
+                            </tr>
+                        </tbody>
+                    </MudSimpleTable>
+                </MudPaper>
+            }
+        </MudItem>
+    </MudGrid>
+</div>
+
+<!-- Import Dialog -->
+<MudDialog @bind-Visible="ShowImportDialog" Options="ImportDialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" />
+            Import dokumentów
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudAlert Severity="Severity.Info" Dense="true">
+                Obsługiwane formaty: .docx (Word)
+            </MudAlert>
+            
+            <MudFileUpload T="IReadOnlyList<IBrowserFile>" 
+                           FilesChanged="OnFilesSelected"
+                           Accept=".docx"
+                           MaximumFileCount="20">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.CloudUpload"
+                               FullWidth="true">
+                        Wybierz pliki
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+            
+            @if (SelectedFiles.Any())
+            {
+                <MudText Typo="Typo.body2">Wybrane pliki (@SelectedFiles.Count):</MudText>
+                <MudList T="string" Dense="true">
+                    @foreach (var file in SelectedFiles)
+                    {
+                        <MudListItem Icon="@Icons.Material.Filled.Description">
+                            @file.Name (@FormatFileSize(file.Size))
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+            
+            <MudSelect T="MemoryType" @bind-Value="ImportMemoryType" Label="Typ zawartości" Variant="Variant.Outlined">
+                <MudSelectItem Value="MemoryType.Document">Dokument</MudSelectItem>
+                <MudSelectItem Value="MemoryType.ChapterSummary">Podsumowanie rozdziału</MudSelectItem>
+                <MudSelectItem Value="MemoryType.Character">Postacie</MudSelectItem>
+                <MudSelectItem Value="MemoryType.Location">Lokacje</MudSelectItem>
+                <MudSelectItem Value="MemoryType.Lore">Wiedza/Lore</MudSelectItem>
+            </MudSelect>
+            
+            <MudCheckBox @bind-Value="ImportIsPublic" Label="Widoczne dla wszystkich graczy" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseImportDialog">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" 
+                   Variant="Variant.Filled"
+                   OnClick="ImportFiles"
+                   Disabled="@(!SelectedFiles.Any() || IsImporting)">
+            @if (IsImporting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Importowanie...</span>
+            }
+            else
+            {
+                <span>Importuj</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .scribe-container {
+        padding: 16px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .scribe-chat-panel {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 150px);
+        min-height: 500px;
+    }
+
+    .scribe-header {
+        background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%);
+        color: white;
+    }
+
+    .scribe-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        background-color: var(--mud-palette-background-gray);
+    }
+
+    .scribe-welcome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+        padding: 32px;
+    }
+
+    .scribe-message {
+        margin-bottom: 16px;
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .user-message {
+        background-color: var(--mud-palette-primary-lighten);
+        margin-left: 48px;
+    }
+
+    .assistant-message {
+        background-color: white;
+        margin-right: 48px;
+        border: 1px solid var(--mud-palette-lines-default);
+    }
+
+    .message-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .message-content {
+        padding-left: 40px;
+    }
+
+    .source-item {
+        display: flex;
+        align-items: center;
+        padding: 4px 0;
+    }
+
+    .scribe-input {
+        display: flex;
+        padding: 16px;
+        background-color: white;
+        border-top: 1px solid var(--mud-palette-lines-default);
+    }
+    
+    .conversation-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .selected-conversation {
+        background-color: var(--mud-palette-primary-lighten);
+        border-radius: 4px;
+    }
+    
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .typing-cursor {
+        animation: blink 1s step-end infinite;
+        color: var(--mud-palette-primary);
+    }
+    
+    @@keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int? CampaignId { get; set; }
+
+    private UserInfo? UserInfo { get; set; }
+    private List<CampaignDTO> Campaigns { get; set; } = new();
+    private CampaignDTO? SelectedCampaign { get; set; }
+    private List<ChatMessage> Messages { get; set; } = new();
+    private string CurrentMessage { get; set; } = string.Empty;
+    private bool IsThinking { get; set; }
+    private bool IsStreaming { get; set; }
+    private string ThinkingText { get; set; } = "Myślę...";
+    private bool IsAvailable { get; set; }
+    private bool IsIndexing { get; set; }
+    private bool IsImporting { get; set; }
+    private bool UseStreaming { get; set; } = true;
+    
+    // Conversation history
+    private int? CurrentConversationId { get; set; }
+    private List<DA_DataAccess.Scribe.ScribeConversation> PastConversations { get; set; } = new();
+    private bool ShowHistoryPanel { get; set; }
+    
+    // Import dialog
+    private bool ShowImportDialog { get; set; }
+    private List<IBrowserFile> SelectedFiles { get; set; } = new();
+    private MemoryType ImportMemoryType { get; set; } = MemoryType.Document;
+    private bool ImportIsPublic { get; set; }
+    
+    private ScribeStats Stats { get; set; } = new();
+    
+    private DialogOptions ImportDialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            UserInfo = await _userService.GetUserInfo();
+            Campaigns = (await _campaignRepository.GetAll()).ToList();
+            
+            if (CampaignId.HasValue)
+            {
+                SelectedCampaign = Campaigns.FirstOrDefault(c => c.Id == CampaignId.Value);
+            }
+            else if (Campaigns.Any())
+            {
+                SelectedCampaign = Campaigns.First();
+            }
+            
+            IsAvailable = await _scribeService.IsAvailableAsync();
+            
+            // Load conversation history
+            await LoadConversationHistory();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing SCRIBE page");
+            SnackBar.Add("Błąd inicjalizacji SCRIBE", Severity.Error);
+        }
+    }
+    
+    private async Task LoadConversationHistory()
+    {
+        if (UserInfo?.UserId == null) return;
+        
+        try
+        {
+            PastConversations = (await _scribeService.GetConversationsAsync(
+                UserInfo.UserId,
+                SelectedCampaign?.Id,
+                limit: 20)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading conversation history");
+        }
+    }
+    
+    private async Task LoadConversation(int conversationId)
+    {
+        try
+        {
+            var conversation = await _scribeService.GetConversationAsync(conversationId);
+            if (conversation == null) return;
+            
+            CurrentConversationId = conversationId;
+            Messages.Clear();
+            
+            foreach (var msg in conversation.Messages.OrderBy(m => m.Timestamp))
+            {
+                Messages.Add(new ChatMessage
+                {
+                    Content = msg.Content,
+                    IsUser = msg.Role == "user",
+                    Timestamp = msg.Timestamp
+                });
+            }
+            
+            ShowHistoryPanel = false;
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading conversation {ConversationId}", conversationId);
+            SnackBar.Add("Błąd wczytywania konwersacji", Severity.Error);
+        }
+    }
+    
+    private void StartNewConversation()
+    {
+        CurrentConversationId = null;
+        Messages.Clear();
+        ShowHistoryPanel = false;
+        StateHasChanged();
+    }
+    
+    private async Task DeleteConversation(int conversationId)
+    {
+        try
+        {
+            await _scribeService.DeleteConversationAsync(conversationId);
+            PastConversations.RemoveAll(c => c.Id == conversationId);
+            
+            if (CurrentConversationId == conversationId)
+            {
+                StartNewConversation();
+            }
+            
+            SnackBar.Add("Konwersacja usunięta", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting conversation {ConversationId}", conversationId);
+            SnackBar.Add("Błąd usuwania konwersacji", Severity.Error);
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(CurrentMessage) || IsThinking || !IsAvailable)
+            return;
+
+        await AskQuestion(CurrentMessage);
+        CurrentMessage = string.Empty;
+    }
+
+    private async Task AskQuestion(string question)
+    {
+        if (string.IsNullOrWhiteSpace(question))
+            return;
+
+        // Add user message
+        Messages.Add(new ChatMessage
+        {
+            Content = question,
+            IsUser = true,
+            Timestamp = DateTime.Now
+        });
+
+        IsThinking = true;
+        ThinkingText = "Przeszukuję archiwum...";
+        StateHasChanged();
+
+        try
+        {
+            if (UseStreaming)
+            {
+                await AskQuestionStreaming(question);
+            }
+            else
+            {
+                await AskQuestionNonStreaming(question);
+            }
+            
+            // Refresh conversation list
+            await LoadConversationHistory();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error querying SCRIBE");
+            Messages.Add(new ChatMessage
+            {
+                Content = "Przepraszam, wystąpił błąd podczas przetwarzania pytania. Spróbuj ponownie później.",
+                IsUser = false,
+                Timestamp = DateTime.Now
+            });
+        }
+        finally
+        {
+            IsThinking = false;
+            IsStreaming = false;
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+    }
+    
+    private async Task AskQuestionStreaming(string question)
+    {
+        ThinkingText = "Generuję odpowiedź...";
+        IsStreaming = true;
+        
+        // Add empty assistant message that we'll fill progressively
+        var assistantMessage = new ChatMessage
+        {
+            Content = "",
+            IsUser = false,
+            Timestamp = DateTime.Now
+        };
+        Messages.Add(assistantMessage);
+        IsThinking = false;
+        StateHasChanged();
+        
+        var responseBuilder = new System.Text.StringBuilder();
+        int tokenCount = 0;
+        
+        await foreach (var token in _scribeService.QueryStreamAsync(
+            question,
+            UserInfo?.UserId ?? string.Empty,
+            UserInfo?.SelectedCharacter?.Id,
+            SelectedCampaign?.Id,
+            CurrentConversationId,
+            UserInfo?.IsAdminOrMG == true))
+        {
+            responseBuilder.Append(token);
+            assistantMessage.Content = responseBuilder.ToString();
+            tokenCount++;
+            
+            // Update UI every few tokens for smoother rendering
+            if (tokenCount % 3 == 0)
+            {
+                StateHasChanged();
+                await ScrollToBottom();
+            }
+        }
+        
+        // Final update
+        assistantMessage.Content = responseBuilder.ToString();
+        StateHasChanged();
+    }
+    
+    private async Task AskQuestionNonStreaming(string question)
+    {
+        var result = await _scribeService.QueryAsync(
+            question,
+            UserInfo?.UserId ?? string.Empty,
+            UserInfo?.SelectedCharacter?.Id,
+            SelectedCampaign?.Id,
+            conversationId: CurrentConversationId,
+            isGameMaster: UserInfo?.IsAdminOrMG == true);
+        
+        // Update conversation ID for follow-up questions
+        if (result.ConversationId.HasValue)
+        {
+            CurrentConversationId = result.ConversationId;
+        }
+
+        ThinkingText = "Generuję odpowiedź...";
+        StateHasChanged();
+
+        // Add assistant message
+        Messages.Add(new ChatMessage
+        {
+            Content = result.Response,
+            IsUser = false,
+            Timestamp = DateTime.Now,
+            Sources = result.Sources?.Select(s => s.Memory?.Title ?? "Nieznane źródło").ToList()
+        });
+
+        if (result.AccessRestricted)
+        {
+            SnackBar.Add(result.AccessMessage ?? "Dostęp do niektórych informacji został ograniczony.", Severity.Warning);
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await Task.Delay(100);
+        await _jsRuntime.InvokeVoidAsync("eval", 
+            "document.getElementById('scribe-messages-container')?.scrollTo(0, 999999)");
+    }
+
+    // GM Tools
+    private void OpenImportDialog()
+    {
+        SelectedFiles.Clear();
+        ShowImportDialog = true;
+    }
+
+    private void CloseImportDialog()
+    {
+        ShowImportDialog = false;
+        SelectedFiles.Clear();
+    }
+
+    private void OnFilesSelected(IReadOnlyList<IBrowserFile> files)
+    {
+        SelectedFiles = files.ToList();
+    }
+
+    private async Task ImportFiles()
+    {
+        if (!SelectedFiles.Any() || SelectedCampaign == null)
+            return;
+
+        IsImporting = true;
+        StateHasChanged();
+
+        try
+        {
+            int successCount = 0;
+            foreach (var file in SelectedFiles)
+            {
+                try
+                {
+                    await using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB max
+                    using var ms = new MemoryStream();
+                    await stream.CopyToAsync(ms);
+                    ms.Position = 0;
+
+                    await _scribeService.IngestDocumentAsync(
+                        ms,
+                        file.Name,
+                        SelectedCampaign.Id,
+                        isPublic: ImportIsPublic);
+
+                    successCount++;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error importing file {FileName}", file.Name);
+                    SnackBar.Add($"Błąd importu: {file.Name}", Severity.Error);
+                }
+            }
+
+            SnackBar.Add($"Zaimportowano {successCount} z {SelectedFiles.Count} plików", 
+                successCount == SelectedFiles.Count ? Severity.Success : Severity.Warning);
+            
+            CloseImportDialog();
+        }
+        finally
+        {
+            IsImporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task IndexCampaignPosts()
+    {
+        if (SelectedCampaign == null)
+            return;
+
+        IsIndexing = true;
+        StateHasChanged();
+
+        try
+        {
+            // TODO: Implement campaign post indexing
+            await Task.Delay(2000); // Placeholder
+            SnackBar.Add("Indeksowanie postów w trakcie implementacji", Severity.Info);
+        }
+        finally
+        {
+            IsIndexing = false;
+            StateHasChanged();
+        }
+    }
+
+    private Task GenerateSummaries()
+    {
+        if (SelectedCampaign == null)
+            return Task.CompletedTask;
+
+        try
+        {
+            // TODO: Implement summary generation
+            SnackBar.Add("Generowanie podsumowań w trakcie implementacji", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error generating summaries");
+            SnackBar.Add("Błąd generowania podsumowań", Severity.Error);
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024:F1} KB";
+        return $"{bytes / (1024 * 1024):F1} MB";
+    }
+
+    // Inner classes
+    private class ChatMessage
+    {
+        public string Content { get; set; } = string.Empty;
+        public bool IsUser { get; set; }
+        public DateTime Timestamp { get; set; }
+        public List<string>? Sources { get; set; }
+    }
+
+    private class ScribeStats
+    {
+        public int MemoryCount { get; set; }
+        public int ChunkCount { get; set; }
+        public int DocumentCount { get; set; }
+    }
+}
