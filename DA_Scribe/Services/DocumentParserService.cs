@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace DA_Scribe.Services
 {
     /// <summary>
-    /// Parser for Word documents (.docx)
+    /// Parser for Word documents (.docx) with character color detection
     /// </summary>
     public partial class DocumentParserService : IDocumentParserService
     {
@@ -18,6 +18,29 @@ namespace DA_Scribe.Services
         private static readonly HashSet<string> _supportedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".docx"
+        };
+        
+        /// <summary>
+        /// Maps text color hex codes to character names.
+        /// Based on campaign convention where each player uses a specific color.
+        /// </summary>
+        private static readonly Dictionary<string, string> CharacterColors = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "b45f06", "Udar" },        // Orange/brown
+            { "38761d", "Tomin" },       // Green
+            { "0000ff", "Granit" },      // Blue
+            { "660000", "Sir Cedrick" }, // Dark red/maroon
+            { "6fa8dc", "Sharu" },       // Light blue (archived)
+            { "1c4587", "Bjorn" },       // Blue/purple (archived)
+            { "ff0000", "Orion" },       // Red (archived)
+        };
+        
+        /// <summary>
+        /// Colors to ignore (headers, formatting, default black)
+        /// </summary>
+        private static readonly HashSet<string> IgnoredColors = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "0000ee", "000000", "1155cc", "auto"
         };
         
         public IEnumerable<string> SupportedExtensions => _supportedExtensions;
@@ -67,22 +90,38 @@ namespace DA_Scribe.Services
                 result.Author = coreProps.Creator;
                 result.CreatedDate = coreProps.Created;
                 
-                // Extract body text
+                // Extract body text with color detection
                 var body = document.MainDocumentPart?.Document?.Body;
                 if (body != null)
                 {
-                    var sb = new StringBuilder();
-                    ExtractText(body, sb);
-                    result.Content = CleanText(sb.ToString());
+                    var plainSb = new StringBuilder();
+                    var annotatedSb = new StringBuilder();
+                    var characterTextLengths = new Dictionary<string, int>();
+                    
+                    ExtractTextWithColors(body, plainSb, annotatedSb, result.CharactersPresent, characterTextLengths);
+                    
+                    result.Content = CleanText(plainSb.ToString());
+                    result.ContentAnnotated = CleanText(annotatedSb.ToString());
+                    
+                    // Determine POV character (most text)
+                    if (characterTextLengths.Count > 0)
+                    {
+                        result.PovCharacter = characterTextLengths.MaxBy(kvp => kvp.Value).Key;
+                    }
+                    
+                    // Detect dialogue and game mechanics
+                    result.HasDialogue = DialogueRegex().IsMatch(result.Content);
+                    result.HasGameMechanics = GameMechanicsRegex().IsMatch(result.Content);
                 }
                 
                 // Count words (rough estimate)
                 result.WordCount = CountWords(result.Content);
                 
                 _logger.LogInformation(
-                    "Parsed document {FileName}: {WordCount} words", 
+                    "Parsed document {FileName}: {WordCount} words, {CharCount} characters detected", 
                     fileName, 
-                    result.WordCount);
+                    result.WordCount,
+                    result.CharactersPresent.Count);
                 
                 return Task.FromResult(result);
             }
@@ -93,34 +132,88 @@ namespace DA_Scribe.Services
             }
         }
         
-        private void ExtractText(OpenXmlElement element, StringBuilder sb)
+        private void ExtractTextWithColors(
+            OpenXmlElement element, 
+            StringBuilder plainSb, 
+            StringBuilder annotatedSb,
+            HashSet<string> charactersFound,
+            Dictionary<string, int> characterTextLengths)
         {
             foreach (var child in element.ChildElements)
             {
                 switch (child)
                 {
                     case Paragraph paragraph:
-                        var paraText = paragraph.InnerText;
-                        if (!string.IsNullOrWhiteSpace(paraText))
-                        {
-                            sb.AppendLine(paraText);
-                        }
-                        sb.AppendLine(); // Extra line break between paragraphs
+                        ExtractParagraphWithColors(paragraph, plainSb, annotatedSb, charactersFound, characterTextLengths);
                         break;
                         
                     case Table table:
-                        ExtractTableText(table, sb);
+                        ExtractTableText(table, plainSb);
+                        annotatedSb.Append(plainSb.ToString().Split('\n').Last());
                         break;
                         
                     default:
-                        // Recurse into other elements
                         if (child.HasChildren)
                         {
-                            ExtractText(child, sb);
+                            ExtractTextWithColors(child, plainSb, annotatedSb, charactersFound, characterTextLengths);
                         }
                         break;
                 }
             }
+        }
+        
+        private void ExtractParagraphWithColors(
+            Paragraph paragraph,
+            StringBuilder plainSb,
+            StringBuilder annotatedSb,
+            HashSet<string> charactersFound,
+            Dictionary<string, int> characterTextLengths)
+        {
+            var paraPlain = new StringBuilder();
+            var paraAnnotated = new StringBuilder();
+            
+            foreach (var run in paragraph.Elements<Run>())
+            {
+                var text = run.InnerText;
+                if (string.IsNullOrEmpty(text))
+                    continue;
+                
+                paraPlain.Append(text);
+                
+                // Get color from run properties
+                var runProps = run.RunProperties;
+                var color = runProps?.Color?.Val?.Value;
+                
+                string? character = null;
+                if (!string.IsNullOrEmpty(color) && !IgnoredColors.Contains(color))
+                {
+                    CharacterColors.TryGetValue(color, out character);
+                }
+                
+                if (character != null)
+                {
+                    charactersFound.Add(character);
+                    paraAnnotated.Append($"[{character}]{text}");
+                    
+                    // Track text length per character
+                    if (!characterTextLengths.ContainsKey(character))
+                        characterTextLengths[character] = 0;
+                    characterTextLengths[character] += text.Length;
+                }
+                else
+                {
+                    paraAnnotated.Append(text);
+                }
+            }
+            
+            var plainText = paraPlain.ToString();
+            if (!string.IsNullOrWhiteSpace(plainText))
+            {
+                plainSb.AppendLine(plainText);
+                annotatedSb.AppendLine(paraAnnotated.ToString());
+            }
+            plainSb.AppendLine();
+            annotatedSb.AppendLine();
         }
         
         private void ExtractTableText(Table table, StringBuilder sb)
@@ -169,5 +262,13 @@ namespace DA_Scribe.Services
         
         [GeneratedRegex(@"\b\w+\b")]
         private static partial Regex WordBoundaryRegex();
+        
+        /// <summary>Detects dialogue lines (starting with dash/em-dash)</summary>
+        [GeneratedRegex(@"^[\-–—]", RegexOptions.Multiline)]
+        private static partial Regex DialogueRegex();
+        
+        /// <summary>Detects game mechanics (dice rolls, tests, skill checks in Polish)</summary>
+        [GeneratedRegex(@"\((?:test|rzut|trafienie|obrażenia|inicjatywa|spostrzegawczość|siła|zręczność|wytrzymałość|inteligencja|mądrość|charyzma|atletyka|akrobatyka|percepcja|skradanie|perswazja|zastraszanie|oszustwo|wnikliwość|natura|religia|medycyna|przetrwanie|historia|arkana|vs|sprawność|biegłość|mod|bonus|kość|k\d+|d\d+)", RegexOptions.IgnoreCase)]
+        private static partial Regex GameMechanicsRegex();
     }
 }

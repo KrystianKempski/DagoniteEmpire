@@ -16,6 +16,11 @@ namespace DA_Scribe.Services.Interfaces
         public string Content { get; set; } = string.Empty;
         
         /// <summary>
+        /// Content with character annotations like [Tomin]text based on text colors
+        /// </summary>
+        public string ContentAnnotated { get; set; } = string.Empty;
+        
+        /// <summary>
         /// Document title (if available from metadata)
         /// </summary>
         public string? Title { get; set; }
@@ -34,6 +39,26 @@ namespace DA_Scribe.Services.Interfaces
         /// Estimated word count
         /// </summary>
         public int WordCount { get; set; }
+        
+        /// <summary>
+        /// Characters detected in the document (based on text color mapping)
+        /// </summary>
+        public HashSet<string> CharactersPresent { get; set; } = new();
+        
+        /// <summary>
+        /// Primary POV character (most prevalent by text length)
+        /// </summary>
+        public string? PovCharacter { get; set; }
+        
+        /// <summary>
+        /// Whether the document contains dialogue (lines starting with dash)
+        /// </summary>
+        public bool HasDialogue { get; set; }
+        
+        /// <summary>
+        /// Whether the document contains game mechanics (dice rolls, tests)
+        /// </summary>
+        public bool HasGameMechanics { get; set; }
     }
     
     /// <summary>
