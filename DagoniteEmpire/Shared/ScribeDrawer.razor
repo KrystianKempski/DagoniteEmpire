@@ -166,7 +166,9 @@
                 question,
                 UserInfo?.UserId ?? string.Empty,
                 UserInfo?.SelectedCharacter?.Id,
-                CampaignId);
+                CampaignId,
+                conversationId: null,
+                isGameMaster: UserInfo?.IsAdminOrMG == true);
 
             Messages.Add(new DrawerMessage
             {

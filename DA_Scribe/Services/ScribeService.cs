@@ -47,23 +47,42 @@ namespace DA_Scribe.Services
             int? characterId = null,
             int? campaignId = null,
             int? conversationId = null,
+            bool isGameMaster = false,
             CancellationToken cancellationToken = default)
         {
             var startTime = DateTime.UtcNow;
-            _logger.LogInformation("SCRIBE query from user {UserId}: {Query}", userId, query);
+            _logger.LogInformation("SCRIBE query from user {UserId}, character {CharacterId}, GM={IsGM}: {Query}", 
+                userId, characterId, isGameMaster, query);
 
             try
             {
+                // Step 0: Create or get conversation
+                int activeConversationId;
+                if (conversationId.HasValue)
+                {
+                    activeConversationId = conversationId.Value;
+                }
+                else
+                {
+                    var newConversation = await CreateConversationAsync(
+                        userId, campaignId, characterId, null, cancellationToken);
+                    activeConversationId = newConversation.Id;
+                }
+                
+                // Save user message
+                await SaveMessageAsync(activeConversationId, "user", query, cancellationToken: cancellationToken);
+                
                 // Step 1: Generate embedding for query
                 var queryEmbedding = await _embeddingService.GetEmbeddingAsync(query, cancellationToken);
 
-                // Step 2: Search for relevant chunks (TODO: implement vector search)
+                // Step 2: Search for relevant chunks with access control
                 var searchResults = await SearchInternalAsync(
                     queryEmbedding, 
                     userId, 
                     characterId, 
                     campaignId, 
                     _options.Search.TopK,
+                    isGameMaster,
                     cancellationToken);
 
                 // Step 3: Check access restrictions
@@ -96,6 +115,17 @@ namespace DA_Scribe.Services
                 }
 
                 var duration = (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
+                
+                // Save assistant response
+                var chunkIds = searchResults.Select(r => r.Chunk.Id).ToList();
+                await SaveMessageAsync(
+                    activeConversationId, 
+                    "assistant", 
+                    response, 
+                    chunkIds, 
+                    _llmService.ModelName, 
+                    duration, 
+                    cancellationToken);
 
                 return new ScribeQueryResult
                 {
@@ -104,7 +134,8 @@ namespace DA_Scribe.Services
                     GenerationTimeMs = duration,
                     ModelUsed = _llmService.ModelName,
                     AccessRestricted = accessRestricted,
-                    AccessMessage = accessMessage
+                    AccessMessage = accessMessage,
+                    ConversationId = activeConversationId
                 };
             }
             catch (Exception ex)
@@ -127,21 +158,56 @@ namespace DA_Scribe.Services
             int? characterId = null,
             int? campaignId = null,
             int? conversationId = null,
+            bool isGameMaster = false,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
+            var startTime = DateTime.UtcNow;
+            
+            // Create or get conversation
+            int activeConversationId;
+            if (conversationId.HasValue)
+            {
+                activeConversationId = conversationId.Value;
+            }
+            else
+            {
+                var newConversation = await CreateConversationAsync(
+                    userId, campaignId, characterId, null, cancellationToken);
+                activeConversationId = newConversation.Id;
+            }
+            
+            // Save user message
+            await SaveMessageAsync(activeConversationId, "user", query, cancellationToken: cancellationToken);
+            
             // Get embedding and search
             var queryEmbedding = await _embeddingService.GetEmbeddingAsync(query, cancellationToken);
             var searchResults = await SearchInternalAsync(
-                queryEmbedding, userId, characterId, campaignId, _options.Search.TopK, cancellationToken);
+                queryEmbedding, userId, characterId, campaignId, _options.Search.TopK, isGameMaster, cancellationToken);
 
             var contextChunks = searchResults.Select(r => r.Chunk.Content).ToList();
+            
+            // Collect full response for saving
+            var responseBuilder = new System.Text.StringBuilder();
 
             // Stream response
             await foreach (var token in _llmService.GenerateResponseStreamAsync(
                 query, contextChunks, cancellationToken: cancellationToken))
             {
+                responseBuilder.Append(token);
                 yield return token;
             }
+            
+            // Save assistant response after streaming completes
+            var duration = (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
+            var chunkIds = searchResults.Select(r => r.Chunk.Id).ToList();
+            await SaveMessageAsync(
+                activeConversationId, 
+                "assistant", 
+                responseBuilder.ToString(), 
+                chunkIds, 
+                _llmService.ModelName, 
+                duration, 
+                cancellationToken);
         }
 
         public async Task<IList<ScribeSearchResult>> SearchAsync(
@@ -150,10 +216,11 @@ namespace DA_Scribe.Services
             int? characterId = null,
             int? campaignId = null,
             int topK = 5,
+            bool isGameMaster = false,
             CancellationToken cancellationToken = default)
         {
             var queryEmbedding = await _embeddingService.GetEmbeddingAsync(query, cancellationToken);
-            return await SearchInternalAsync(queryEmbedding, userId, characterId, campaignId, topK, cancellationToken);
+            return await SearchInternalAsync(queryEmbedding, userId, characterId, campaignId, topK, isGameMaster, cancellationToken);
         }
 
         private async Task<IList<ScribeSearchResult>> SearchInternalAsync(
@@ -162,6 +229,7 @@ namespace DA_Scribe.Services
             int? characterId,
             int? campaignId,
             int topK,
+            bool isGameMaster,
             CancellationToken cancellationToken)
         {
             await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -179,25 +247,58 @@ namespace DA_Scribe.Services
                 query = query.Where(c => c.CampaignId == campaignId.Value);
             }
             
-            // Access control: show chunks that are either:
-            // 1. Public (world knowledge, rules)
-            // 2. Character was present (their POV or they witnessed it)
-            // 3. GM-only content for GM users (TODO: check user role)
-            var charIdStr = characterId?.ToString() ?? "";
-            if (characterId.HasValue)
+            // Access control logic:
+            // 1. GM sees everything (including IsGmOnly)
+            // 2. Players see: Public content + content where their character was present
+            // 3. Character must be in the campaign to see campaign-specific content
+            
+            if (isGameMaster)
             {
-                // CharacterIdsJson can be: "3" or "1,2,3" - check for exact match or in list
-                query = query.Where(c => 
-                    c.IsPublic || 
-                    c.CharacterIdsJson == charIdStr ||
-                    c.CharacterIdsJson!.StartsWith(charIdStr + ",") ||
-                    c.CharacterIdsJson!.EndsWith("," + charIdStr) ||
-                    c.CharacterIdsJson!.Contains("," + charIdStr + ","));
+                // GM has full access - no filtering needed
+                _logger.LogDebug("GM access granted - showing all content");
+            }
+            else if (characterId.HasValue)
+            {
+                // Check if character is in the requested campaign
+                bool characterInCampaign = true;
+                if (campaignId.HasValue)
+                {
+                    characterInCampaign = await context.Characters
+                        .Where(c => c.Id == characterId.Value)
+                        .SelectMany(c => c.Campaigns!)
+                        .AnyAsync(camp => camp.Id == campaignId.Value, cancellationToken);
+                    
+                    if (!characterInCampaign)
+                    {
+                        _logger.LogWarning(
+                            "Character {CharacterId} not in campaign {CampaignId} - access restricted",
+                            characterId, campaignId);
+                        
+                        // Character not in this campaign - only show public world knowledge
+                        query = query.Where(c => c.IsPublic && !c.IsGmOnly);
+                    }
+                }
+                
+                if (characterInCampaign)
+                {
+                    // Character is in campaign - show public content + content they witnessed
+                    var charIdStr = characterId.Value.ToString();
+                    
+                    // Filter: Public OR character was present, but never GM-only content
+                    query = query.Where(c => 
+                        !c.IsGmOnly && (
+                            c.IsPublic || 
+                            c.CharacterIdsJson == charIdStr ||
+                            c.CharacterIdsJson!.StartsWith(charIdStr + ",") ||
+                            c.CharacterIdsJson!.EndsWith("," + charIdStr) ||
+                            c.CharacterIdsJson!.Contains("," + charIdStr + ",")));
+                }
             }
             else
             {
-                // No character context - show all content (for GM/testing)
-                // TODO: In production, check if user is GM
+                // No character context and not GM - only public content
+                _logger.LogDebug("No character context - showing public content only");
+                query = query.Where(c => c.IsPublic && !c.IsGmOnly);
             }
             
             // Order by cosine distance (smaller = more similar) and take top K
@@ -212,8 +313,8 @@ namespace DA_Scribe.Services
                 .ToListAsync(cancellationToken);
             
             _logger.LogDebug(
-                "Vector search found {Count} results for campaign {CampaignId}, character {CharacterId}",
-                results.Count, campaignId, characterId);
+                "Vector search found {Count} results for campaign {CampaignId}, character {CharacterId}, GM={IsGM}",
+                results.Count, campaignId, characterId, isGameMaster);
             
             // Convert to ScribeSearchResult with similarity score
             IList<ScribeSearchResult> searchResults = results
@@ -569,6 +670,138 @@ namespace DA_Scribe.Services
             }
             
             return System.IO.Path.GetFileNameWithoutExtension(documentPath);
+        }
+        
+        // ==========================================
+        // Conversation History
+        // ==========================================
+        
+        public async Task<IList<ScribeConversation>> GetConversationsAsync(
+            string userId,
+            int? campaignId = null,
+            int limit = 20,
+            CancellationToken cancellationToken = default)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            
+            var query = context.ScribeConversations
+                .Where(c => c.UserId == userId)
+                .AsQueryable();
+            
+            if (campaignId.HasValue)
+            {
+                query = query.Where(c => c.CampaignId == campaignId.Value);
+            }
+            
+            return await query
+                .OrderByDescending(c => c.LastMessageAt ?? c.StartedAt)
+                .Take(limit)
+                .ToListAsync(cancellationToken);
+        }
+        
+        public async Task<ScribeConversation?> GetConversationAsync(
+            int conversationId,
+            CancellationToken cancellationToken = default)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            
+            return await context.ScribeConversations
+                .Include(c => c.Messages.OrderBy(m => m.Timestamp))
+                .FirstOrDefaultAsync(c => c.Id == conversationId, cancellationToken);
+        }
+        
+        public async Task<ScribeConversation> CreateConversationAsync(
+            string userId,
+            int? campaignId = null,
+            int? characterId = null,
+            string? title = null,
+            CancellationToken cancellationToken = default)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            
+            var conversation = new ScribeConversation
+            {
+                UserId = userId,
+                CampaignId = campaignId,
+                CharacterId = characterId,
+                Title = title,
+                StartedAt = DateTime.UtcNow
+            };
+            
+            context.ScribeConversations.Add(conversation);
+            await context.SaveChangesAsync(cancellationToken);
+            
+            _logger.LogInformation(
+                "Created conversation {ConversationId} for user {UserId}, campaign {CampaignId}",
+                conversation.Id, userId, campaignId);
+            
+            return conversation;
+        }
+        
+        public async Task DeleteConversationAsync(
+            int conversationId,
+            CancellationToken cancellationToken = default)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            
+            var conversation = await context.ScribeConversations
+                .Include(c => c.Messages)
+                .FirstOrDefaultAsync(c => c.Id == conversationId, cancellationToken);
+            
+            if (conversation != null)
+            {
+                context.ScribeConversations.Remove(conversation);
+                await context.SaveChangesAsync(cancellationToken);
+                
+                _logger.LogInformation("Deleted conversation {ConversationId}", conversationId);
+            }
+        }
+        
+        /// <summary>
+        /// Save a message to conversation and update LastMessageAt
+        /// </summary>
+        private async Task SaveMessageAsync(
+            int conversationId,
+            string role,
+            string content,
+            IEnumerable<int>? chunkIds = null,
+            string? modelUsed = null,
+            int? generationTimeMs = null,
+            CancellationToken cancellationToken = default)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            
+            var message = new ScribeMessage
+            {
+                ConversationId = conversationId,
+                Role = role,
+                Content = content,
+                Timestamp = DateTime.UtcNow,
+                SourceChunkIds = chunkIds != null ? string.Join(",", chunkIds) : null,
+                ModelUsed = modelUsed,
+                GenerationTimeMs = generationTimeMs
+            };
+            
+            context.ScribeMessages.Add(message);
+            
+            // Update conversation's LastMessageAt
+            var conversation = await context.ScribeConversations
+                .FirstOrDefaultAsync(c => c.Id == conversationId, cancellationToken);
+            
+            if (conversation != null)
+            {
+                conversation.LastMessageAt = message.Timestamp;
+                
+                // Auto-generate title from first user message if not set
+                if (string.IsNullOrEmpty(conversation.Title) && role == "user")
+                {
+                    conversation.Title = content.Length > 50 
+                        ? content[..50] + "..." 
+                        : content;
+                }
+            }
+            
+            await context.SaveChangesAsync(cancellationToken);
         }
     }
 }

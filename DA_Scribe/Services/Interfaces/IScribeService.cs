@@ -58,6 +58,11 @@ namespace DA_Scribe.Services.Interfaces
         /// Message if access was restricted
         /// </summary>
         public string? AccessMessage { get; set; }
+        
+        /// <summary>
+        /// Conversation ID (for continuing the conversation)
+        /// </summary>
+        public int? ConversationId { get; set; }
     }
     
     /// <summary>
@@ -81,6 +86,7 @@ namespace DA_Scribe.Services.Interfaces
             int? characterId = null,
             int? campaignId = null,
             int? conversationId = null,
+            bool isGameMaster = false,
             CancellationToken cancellationToken = default);
         
         /// <summary>
@@ -92,6 +98,7 @@ namespace DA_Scribe.Services.Interfaces
             int? characterId = null,
             int? campaignId = null,
             int? conversationId = null,
+            bool isGameMaster = false,
             CancellationToken cancellationToken = default);
         
         /// <summary>
@@ -109,6 +116,7 @@ namespace DA_Scribe.Services.Interfaces
             int? characterId = null,
             int? campaignId = null,
             int topK = 5,
+            bool isGameMaster = false,
             CancellationToken cancellationToken = default);
         
         /// <summary>
@@ -176,6 +184,56 @@ namespace DA_Scribe.Services.Interfaces
             ScribeImportData importData,
             int campaignId,
             Dictionary<string, int>? characterNameToIdMap = null,
+            CancellationToken cancellationToken = default);
+        
+        // ==========================================
+        // Conversation History
+        // ==========================================
+        
+        /// <summary>
+        /// Get user's conversations
+        /// </summary>
+        /// <param name="userId">User ID</param>
+        /// <param name="campaignId">Optional campaign filter</param>
+        /// <param name="limit">Max conversations to return</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        Task<IList<ScribeConversation>> GetConversationsAsync(
+            string userId,
+            int? campaignId = null,
+            int limit = 20,
+            CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Get a specific conversation with messages
+        /// </summary>
+        /// <param name="conversationId">Conversation ID</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        Task<ScribeConversation?> GetConversationAsync(
+            int conversationId,
+            CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Create a new conversation
+        /// </summary>
+        /// <param name="userId">User ID</param>
+        /// <param name="campaignId">Optional campaign context</param>
+        /// <param name="characterId">Optional character context</param>
+        /// <param name="title">Optional title</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        Task<ScribeConversation> CreateConversationAsync(
+            string userId,
+            int? campaignId = null,
+            int? characterId = null,
+            string? title = null,
+            CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Delete a conversation
+        /// </summary>
+        /// <param name="conversationId">Conversation to delete</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        Task DeleteConversationAsync(
+            int conversationId,
             CancellationToken cancellationToken = default);
     }
 }
