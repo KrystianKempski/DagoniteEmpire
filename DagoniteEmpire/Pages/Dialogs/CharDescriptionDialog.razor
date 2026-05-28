@@ -76,14 +76,30 @@
 
     private bool IsDescrDialVisible = false;
     private BlazoredTextEditor DescrEditor;
+    private bool _shouldLoadContent = false;
 
-    private async Task OnStartDescriptionDialog()
+    private void OnStartDescriptionDialog()
     {
         IsDescrDialVisible = true;
-        await Task.Yield();
-        if (DescrEditor is not null)
+        _shouldLoadContent = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldLoadContent && DescrEditor is not null)
         {
-            await DescrEditor.LoadHTMLContent(SavedDescription ?? string.Empty);
+            _shouldLoadContent = false;
+            try
+            {
+                await DescrEditor.LoadHTMLContent(SavedDescription ?? string.Empty);
+            }
+            catch (Exception)
+            {
+                // Editor not yet ready, will retry on next render
+                _shouldLoadContent = true;
+                await Task.Delay(50);
+                StateHasChanged();
+            }
         }
     }
 

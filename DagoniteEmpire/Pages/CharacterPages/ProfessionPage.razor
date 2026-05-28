@@ -557,8 +557,18 @@
     {
         if (!_descrEditorLoaded && DescrEdit is not null && ProfessionDTO is not null && !string.IsNullOrEmpty(ProfessionDTO.Description))
         {
-            _descrEditorLoaded = true;
-            await DescrEdit.LoadHTMLContent(ProfessionDTO.Description);
+            try
+            {
+                _descrEditorLoaded = true;
+                await DescrEdit.LoadHTMLContent(ProfessionDTO.Description);
+            }
+            catch (Exception)
+            {
+                // Editor not yet ready, will retry on next render
+                _descrEditorLoaded = false;
+                await Task.Delay(50);
+                StateHasChanged();
+            }
         }
     }
     public async Task ReloadPage()
