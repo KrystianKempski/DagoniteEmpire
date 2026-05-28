@@ -76,7 +76,10 @@
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">@message.Timestamp.ToString("HH:mm")</MudText>
                                 </div>
                                 <div class="message-content">
-                                    <MudText Typo="Typo.body1">@message.Content</MudText>
+                                    <MudText Typo="Typo.body1">
+                                        @message.Content@if (IsStreaming && message == Messages.LastOrDefault() && !message.IsUser)
+                                        {<span class="typing-cursor">▌</span>}
+                                    </MudText>
                                 </div>
                                 @if (message.Sources?.Any() == true)
                                 {
@@ -130,6 +133,53 @@
 
         <!-- Sidebar -->
         <MudItem xs="12" md="4" lg="3">
+            <!-- Conversation History -->
+            <MudPaper Class="pa-4 mb-4" Elevation="2">
+                <div class="d-flex align-center mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2" />
+                    <MudText Typo="Typo.h6">Historia</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" 
+                                   Size="Size.Small"
+                                   OnClick="StartNewConversation"
+                                   Title="Nowa rozmowa" />
+                </div>
+                
+                @if (PastConversations.Any())
+                {
+                    <MudList T="DA_DataAccess.Scribe.ScribeConversation" Dense="true" Class="conversation-list">
+                        @foreach (var conv in PastConversations.Take(10))
+                        {
+                            <MudListItem Class="@(CurrentConversationId == conv.Id ? "selected-conversation" : "")"
+                                         OnClick="@(() => LoadConversation(conv.Id))">
+                                <div class="d-flex align-center" style="width: 100%;">
+                                    <div class="flex-grow-1 text-truncate">
+                                        <MudText Typo="Typo.body2" Class="text-truncate">
+                                            @(conv.Title ?? "Rozmowa bez tytułu")
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            @((conv.LastMessageAt ?? conv.StartedAt).ToString("dd MMM, HH:mm"))
+                                        </MudText>
+                                    </div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   OnClick="@(() => DeleteConversation(conv.Id))"
+                                                   OnClickPreventDefault="true"
+                                                   Title="Usuń" />
+                                </div>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="text-center">
+                        Brak zapisanych rozmów
+                    </MudText>
+                }
+            </MudPaper>
+            
             <!-- Campaign Selector -->
             <MudPaper Class="pa-4 mb-4" Elevation="2">
                 <MudText Typo="Typo.h6" Class="mb-3">
@@ -371,6 +421,32 @@
         background-color: white;
         border-top: 1px solid var(--mud-palette-lines-default);
     }
+    
+    .conversation-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .selected-conversation {
+        background-color: var(--mud-palette-primary-lighten);
+        border-radius: 4px;
+    }
+    
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .typing-cursor {
+        animation: blink 1s step-end infinite;
+        color: var(--mud-palette-primary);
+    }
+    
+    @@keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+    }
 </style>
 
 @code {
@@ -383,10 +459,17 @@
     private List<ChatMessage> Messages { get; set; } = new();
     private string CurrentMessage { get; set; } = string.Empty;
     private bool IsThinking { get; set; }
+    private bool IsStreaming { get; set; }
     private string ThinkingText { get; set; } = "Myślę...";
     private bool IsAvailable { get; set; }
     private bool IsIndexing { get; set; }
     private bool IsImporting { get; set; }
+    private bool UseStreaming { get; set; } = true;
+    
+    // Conversation history
+    private int? CurrentConversationId { get; set; }
+    private List<DA_DataAccess.Scribe.ScribeConversation> PastConversations { get; set; } = new();
+    private bool ShowHistoryPanel { get; set; }
     
     // Import dialog
     private bool ShowImportDialog { get; set; }
@@ -419,11 +502,91 @@
             }
             
             IsAvailable = await _scribeService.IsAvailableAsync();
+            
+            // Load conversation history
+            await LoadConversationHistory();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error initializing SCRIBE page");
             SnackBar.Add("Błąd inicjalizacji SCRIBE", Severity.Error);
+        }
+    }
+    
+    private async Task LoadConversationHistory()
+    {
+        if (UserInfo?.UserId == null) return;
+        
+        try
+        {
+            PastConversations = (await _scribeService.GetConversationsAsync(
+                UserInfo.UserId,
+                SelectedCampaign?.Id,
+                limit: 20)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading conversation history");
+        }
+    }
+    
+    private async Task LoadConversation(int conversationId)
+    {
+        try
+        {
+            var conversation = await _scribeService.GetConversationAsync(conversationId);
+            if (conversation == null) return;
+            
+            CurrentConversationId = conversationId;
+            Messages.Clear();
+            
+            foreach (var msg in conversation.Messages.OrderBy(m => m.Timestamp))
+            {
+                Messages.Add(new ChatMessage
+                {
+                    Content = msg.Content,
+                    IsUser = msg.Role == "user",
+                    Timestamp = msg.Timestamp
+                });
+            }
+            
+            ShowHistoryPanel = false;
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading conversation {ConversationId}", conversationId);
+            SnackBar.Add("Błąd wczytywania konwersacji", Severity.Error);
+        }
+    }
+    
+    private void StartNewConversation()
+    {
+        CurrentConversationId = null;
+        Messages.Clear();
+        ShowHistoryPanel = false;
+        StateHasChanged();
+    }
+    
+    private async Task DeleteConversation(int conversationId)
+    {
+        try
+        {
+            await _scribeService.DeleteConversationAsync(conversationId);
+            PastConversations.RemoveAll(c => c.Id == conversationId);
+            
+            if (CurrentConversationId == conversationId)
+            {
+                StartNewConversation();
+            }
+            
+            SnackBar.Add("Konwersacja usunięta", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting conversation {ConversationId}", conversationId);
+            SnackBar.Add("Błąd usuwania konwersacji", Severity.Error);
         }
     }
 
@@ -455,28 +618,17 @@
 
         try
         {
-            var result = await _scribeService.QueryAsync(
-                question,
-                UserInfo?.UserId ?? string.Empty,
-                UserInfo?.SelectedCharacter?.Id,
-                SelectedCampaign?.Id);
-
-            ThinkingText = "Generuję odpowiedź...";
-            StateHasChanged();
-
-            // Add assistant message
-            Messages.Add(new ChatMessage
+            if (UseStreaming)
             {
-                Content = result.Response,
-                IsUser = false,
-                Timestamp = DateTime.Now,
-                Sources = result.Sources?.Select(s => s.Memory?.Title ?? "Nieznane źródło").ToList()
-            });
-
-            if (result.AccessRestricted)
-            {
-                SnackBar.Add(result.AccessMessage ?? "Dostęp do niektórych informacji został ograniczony.", Severity.Warning);
+                await AskQuestionStreaming(question);
             }
+            else
+            {
+                await AskQuestionNonStreaming(question);
+            }
+            
+            // Refresh conversation list
+            await LoadConversationHistory();
         }
         catch (Exception ex)
         {
@@ -491,8 +643,87 @@
         finally
         {
             IsThinking = false;
+            IsStreaming = false;
             StateHasChanged();
             await ScrollToBottom();
+        }
+    }
+    
+    private async Task AskQuestionStreaming(string question)
+    {
+        ThinkingText = "Generuję odpowiedź...";
+        IsStreaming = true;
+        
+        // Add empty assistant message that we'll fill progressively
+        var assistantMessage = new ChatMessage
+        {
+            Content = "",
+            IsUser = false,
+            Timestamp = DateTime.Now
+        };
+        Messages.Add(assistantMessage);
+        IsThinking = false;
+        StateHasChanged();
+        
+        var responseBuilder = new System.Text.StringBuilder();
+        int tokenCount = 0;
+        
+        await foreach (var token in _scribeService.QueryStreamAsync(
+            question,
+            UserInfo?.UserId ?? string.Empty,
+            UserInfo?.SelectedCharacter?.Id,
+            SelectedCampaign?.Id,
+            CurrentConversationId,
+            UserInfo?.IsAdminOrMG == true))
+        {
+            responseBuilder.Append(token);
+            assistantMessage.Content = responseBuilder.ToString();
+            tokenCount++;
+            
+            // Update UI every few tokens for smoother rendering
+            if (tokenCount % 3 == 0)
+            {
+                StateHasChanged();
+                await ScrollToBottom();
+            }
+        }
+        
+        // Final update
+        assistantMessage.Content = responseBuilder.ToString();
+        StateHasChanged();
+    }
+    
+    private async Task AskQuestionNonStreaming(string question)
+    {
+        var result = await _scribeService.QueryAsync(
+            question,
+            UserInfo?.UserId ?? string.Empty,
+            UserInfo?.SelectedCharacter?.Id,
+            SelectedCampaign?.Id,
+            conversationId: CurrentConversationId,
+            isGameMaster: UserInfo?.IsAdminOrMG == true);
+        
+        // Update conversation ID for follow-up questions
+        if (result.ConversationId.HasValue)
+        {
+            CurrentConversationId = result.ConversationId;
+        }
+
+        ThinkingText = "Generuję odpowiedź...";
+        StateHasChanged();
+
+        // Add assistant message
+        Messages.Add(new ChatMessage
+        {
+            Content = result.Response,
+            IsUser = false,
+            Timestamp = DateTime.Now,
+            Sources = result.Sources?.Select(s => s.Memory?.Title ?? "Nieznane źródło").ToList()
+        });
+
+        if (result.AccessRestricted)
+        {
+            SnackBar.Add(result.AccessMessage ?? "Dostęp do niektórych informacji został ograniczony.", Severity.Warning);
         }
     }
 
@@ -597,10 +828,10 @@
         }
     }
 
-    private async Task GenerateSummaries()
+    private Task GenerateSummaries()
     {
         if (SelectedCampaign == null)
-            return;
+            return Task.CompletedTask;
 
         try
         {
@@ -612,6 +843,8 @@
             Logger.LogError(ex, "Error generating summaries");
             SnackBar.Add("Błąd generowania podsumowań", Severity.Error);
         }
+        
+        return Task.CompletedTask;
     }
 
     private static string FormatFileSize(long bytes)

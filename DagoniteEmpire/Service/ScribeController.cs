@@ -217,14 +217,16 @@ namespace DagoniteEmpire.Service
             try
             {
                 _logger.LogInformation(
-                    "SCRIBE query: '{Query}' for campaign {CampaignId}, character {CharacterId}",
-                    request.Query, request.CampaignId, request.CharacterId);
+                    "SCRIBE query: '{Query}' for campaign {CampaignId}, character {CharacterId}, GM={IsGM}",
+                    request.Query, request.CampaignId, request.CharacterId, request.IsGameMaster);
 
                 var result = await _scribeService.QueryAsync(
                     request.Query,
                     request.UserId ?? "anonymous",
                     request.CharacterId,
                     request.CampaignId,
+                    conversationId: null,
+                    isGameMaster: request.IsGameMaster,
                     cancellationToken: cancellationToken);
 
                 return Ok(result);
@@ -259,6 +261,7 @@ namespace DagoniteEmpire.Service
                 request.CharacterId,
                 request.CampaignId,
                 request.TopK ?? 5,
+                isGameMaster: request.IsGameMaster,
                 cancellationToken);
 
             return Ok(results);

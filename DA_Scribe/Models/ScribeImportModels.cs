@@ -177,5 +177,10 @@ namespace DA_Scribe.Models
         /// Number of chunks to retrieve (default 5)
         /// </summary>
         public int? TopK { get; set; }
+        
+        /// <summary>
+        /// Whether the user is a Game Master (has full access)
+        /// </summary>
+        public bool IsGameMaster { get; set; } = false;
     }
 }
