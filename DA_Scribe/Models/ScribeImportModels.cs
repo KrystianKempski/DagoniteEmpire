@@ -147,4 +147,35 @@ namespace DA_Scribe.Models
         public List<string> Errors { get; set; } = new();
         public string? Message { get; set; }
     }
+
+    /// <summary>
+    /// Request for querying SCRIBE
+    /// </summary>
+    public class ScribeQueryRequest
+    {
+        /// <summary>
+        /// The question to ask
+        /// </summary>
+        public string Query { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// User making the request (for logging)
+        /// </summary>
+        public string? UserId { get; set; }
+        
+        /// <summary>
+        /// Character context - filters results to what this character knows
+        /// </summary>
+        public int? CharacterId { get; set; }
+        
+        /// <summary>
+        /// Campaign to search in
+        /// </summary>
+        public int? CampaignId { get; set; }
+        
+        /// <summary>
+        /// Number of chunks to retrieve (default 5)
+        /// </summary>
+        public int? TopK { get; set; }
+    }
 }

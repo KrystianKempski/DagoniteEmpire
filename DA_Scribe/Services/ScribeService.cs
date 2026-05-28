@@ -6,6 +6,7 @@ using DA_Scribe.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Pgvector.EntityFrameworkCore;
 
 namespace DA_Scribe.Services
 {
@@ -155,7 +156,7 @@ namespace DA_Scribe.Services
             return await SearchInternalAsync(queryEmbedding, userId, characterId, campaignId, topK, cancellationToken);
         }
 
-        private Task<IList<ScribeSearchResult>> SearchInternalAsync(
+        private async Task<IList<ScribeSearchResult>> SearchInternalAsync(
             float[] queryEmbedding,
             string userId,
             int? characterId,
@@ -163,12 +164,68 @@ namespace DA_Scribe.Services
             int topK,
             CancellationToken cancellationToken)
         {
-            // TODO: Implement actual vector search using pgvector
-            // For now, return empty results
-            _logger.LogDebug("Vector search not yet implemented - returning empty results");
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
             
-            IList<ScribeSearchResult> results = new List<ScribeSearchResult>();
-            return Task.FromResult(results);
+            var queryVector = new Pgvector.Vector(queryEmbedding);
+            
+            // Build query with vector similarity search
+            var query = context.ScribeChunks
+                .Include(c => c.ScribeMemory)
+                .AsQueryable();
+            
+            // Filter by campaign if specified
+            if (campaignId.HasValue)
+            {
+                query = query.Where(c => c.CampaignId == campaignId.Value);
+            }
+            
+            // Access control: show chunks that are either:
+            // 1. Public (world knowledge, rules)
+            // 2. Character was present (their POV or they witnessed it)
+            // 3. GM-only content for GM users (TODO: check user role)
+            var charIdStr = characterId?.ToString() ?? "";
+            if (characterId.HasValue)
+            {
+                // CharacterIdsJson can be: "3" or "1,2,3" - check for exact match or in list
+                query = query.Where(c => 
+                    c.IsPublic || 
+                    c.CharacterIdsJson == charIdStr ||
+                    c.CharacterIdsJson!.StartsWith(charIdStr + ",") ||
+                    c.CharacterIdsJson!.EndsWith("," + charIdStr) ||
+                    c.CharacterIdsJson!.Contains("," + charIdStr + ","));
+            }
+            else
+            {
+                // No character context - show all content (for GM/testing)
+                // TODO: In production, check if user is GM
+            }
+            
+            // Order by cosine distance (smaller = more similar) and take top K
+            var results = await query
+                .OrderBy(c => c.Embedding!.CosineDistance(queryVector))
+                .Take(topK)
+                .Select(c => new 
+                {
+                    Chunk = c,
+                    Distance = c.Embedding!.CosineDistance(queryVector)
+                })
+                .ToListAsync(cancellationToken);
+            
+            _logger.LogDebug(
+                "Vector search found {Count} results for campaign {CampaignId}, character {CharacterId}",
+                results.Count, campaignId, characterId);
+            
+            // Convert to ScribeSearchResult with similarity score
+            IList<ScribeSearchResult> searchResults = results
+                .Select(r => new ScribeSearchResult
+                {
+                    Chunk = r.Chunk,
+                    Similarity = (float)(1.0 - r.Distance), // Convert distance to similarity
+                    Memory = r.Chunk.ScribeMemory
+                })
+                .ToList();
+            
+            return searchResults;
         }
 
         public async Task<int> IngestDocumentAsync(
