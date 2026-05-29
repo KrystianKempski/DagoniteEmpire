@@ -19,8 +19,8 @@ System SCRIBE (AI Memory for RPG) wymaga dwóch maszyn w sieci lokalnej:
 │  │  PostgreSQL 16 + pgvector       │    │     │  └─────────────────────┘    │
 │  │  - Vector storage (768 dim)     │    │     │                             │
 │  │  - HNSW index                   │    │     │  Wymagania:                 │
-│  └─────────────────────────────────┘    │     │  - NVIDIA GPU 8GB+ VRAM     │
-│                                         │     │  - CUDA drivers             │
+│  └─────────────────────────────────┘    │     │  - AMD RX 9070 XT 16GB VRAM │
+│                                         │     │  - ROCm drivers             │
 │  Wymagania:                             │     │  - ~6GB disk (modele)       │
 │  - .NET 9.0 Runtime                     │     │                             │
 │  - PostgreSQL 16 + pgvector             │     │                             │
@@ -274,12 +274,12 @@ ss -tlnp | grep 11434
 ### Timeout przy zapytaniach LLM
 
 LLM na CPU jest bardzo wolne. Upewnij się, że:
-- Ollama używa GPU (`nvidia-smi` pokazuje proces ollama)
+- Ollama używa GPU (`rocm-smi` pokazuje proces ollama)
 - Model jest załadowany do VRAM
 
 ```bash
 # Sprawdź GPU
-nvidia-smi
+rocm-smi
 
 # Sprawdź załadowane modele
 curl http://localhost:11434/api/ps

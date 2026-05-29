@@ -2,45 +2,64 @@
 
 Ten dokument opisuje jak skonfigurować serwer z GPU do obsługi modeli AI dla systemu SCRIBE.
 
-## Wymagania sprzętowe
+## Docelowa konfiguracja
 
-| Komponent | Minimum | Zalecane |
-|-----------|---------|----------|
-| GPU | NVIDIA GTX 1060 6GB | RTX 3080+ / A10 |
-| VRAM | 6 GB | 12+ GB |
-| RAM | 8 GB | 16+ GB |
-| Dysk | 20 GB wolne | SSD 50GB+ |
-| System | Ubuntu 20.04+ | Ubuntu 22.04 LTS |
+| Komponent | Specyfikacja |
+|-----------|-------------|
+| GPU | **AMD Radeon RX 9070 XT** |
+| VRAM | **16 GB** |
+| RAM | 16+ GB |
+| Dysk | SSD 50GB+ |
+| System | Ubuntu 22.04 LTS / Ubuntu 24.04 |
+| Sterowniki | ROCm 6.x |
 
-> **Uwaga**: Model gemma2:9b wymaga ~6GB VRAM. Mniejsze karty mogą używać mniejszych modeli.
+> **Uwaga**: Model gemma2:9b wymaga ~6GB VRAM. RX 9070 XT z 16GB VRAM obsłuży nawet większe modele.
 
-## Krok 1: Instalacja sterowników NVIDIA
+## Krok 1: Instalacja sterowników AMD ROCm
 
+### 1.1 Aktualizacja systemu
 ```bash
-# Aktualizacja systemu
 sudo apt update && sudo apt upgrade -y
+```
 
-# Instalacja sterowników NVIDIA
-sudo apt install -y nvidia-driver-535
+### 1.2 Instalacja ROCm
+```bash
+# Dodaj repozytorium AMD ROCm
+wget https://repo.radeon.com/amdgpu-install/latest/ubuntu/jammy/amdgpu-install_6.0.60002-1_all.deb
+sudo apt install ./amdgpu-install_6.0.60002-1_all.deb
+
+# Zainstaluj ROCm i sterowniki
+sudo amdgpu-install --usecase=rocm,graphics --accept-eula
+
+# Dodaj użytkownika do grup
+sudo usermod -aG video,render $USER
 
 # Restart
 sudo reboot
+```
 
-# Weryfikacja
-nvidia-smi
+### 1.3 Weryfikacja
+```bash
+rocm-smi
 ```
 
 Powinieneś zobaczyć informacje o GPU:
 ```
-+-----------------------------------------------------------------------------+
-| NVIDIA-SMI 535.xx       Driver Version: 535.xx       CUDA Version: 12.x    |
-|-------------------------------+----------------------+----------------------+
-| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
-|===============================+======================+======================|
-|   0  NVIDIA GeForce ...  Off  | 00000000:01:00.0 Off |                  N/A |
-|  0%   35C    P8     5W / 250W |      0MiB / 12288MiB |      0%      Default |
-+-------------------------------+----------------------+----------------------+
+======================= ROCm System Management Interface =======================
+================================= Concise Info =================================
+GPU  Temp   AvgPwr  SCLK    MCLK     Fan    Perf  PwrCap  VRAM%  GPU%  
+0    35c    25W     500Mhz  1200Mhz  0%     auto  263W    0%     0%    
+================================================================================
+========================= End of ROCm SMI Log =================================
+```
+
+### 1.4 Sprawdź wykrywanie GPU
+```bash
+# Lista GPU
+rocminfo | grep -E "(Name:|Marketing)"
+
+# Powinno pokazać:
+# Marketing Name: AMD Radeon RX 9070 XT
 ```
 
 ## Krok 2: Instalacja Ollama
@@ -187,10 +206,11 @@ export Scribe__Ollama__BaseUrl="http://GPU_SERVER_IP:11434"
 ### Sprawdź użycie GPU
 ```bash
 # Ciągłe monitorowanie
-watch -n 1 nvidia-smi
+watch -n 1 rocm-smi
 
 # Lub szczegółowe
-nvidia-smi dmon
+rocm-smi --showmeminfo vram
+rocm-smi --showuse
 ```
 
 ### Logi Ollama
@@ -220,12 +240,12 @@ time curl -s http://localhost:11434/api/generate -d '{
 
 ## Oczekiwane czasy odpowiedzi
 
-| Operacja | CPU (bez GPU) | GPU (RTX 3080) |
-|----------|---------------|----------------|
-| Embedding (1 chunk) | ~2s | ~100ms |
-| LLM (krótka odp.) | timeout | ~2-5s |
-| LLM (długa odp.) | timeout | ~10-30s |
-| Import 50 chunków | ~100s | ~10s |
+| Operacja | CPU (bez GPU) | GPU (RX 9070 XT) |
+|----------|---------------|------------------|
+| Embedding (1 chunk) | ~2s | ~80ms |
+| LLM (krótka odp.) | timeout | ~2-4s |
+| LLM (długa odp.) | timeout | ~8-25s |
+| Import 50 chunków | ~100s | ~8s |
 
 ## Rozwiązywanie problemów
 
@@ -243,14 +263,19 @@ sudo systemctl restart ollama
 
 ### GPU nie wykrywane
 ```bash
-# Sprawdź sterowniki
-nvidia-smi
+# Sprawdź sterowniki ROCm
+rocm-smi
 
-# Sprawdź CUDA
-nvcc --version
+# Sprawdź wykrywanie GPU
+rocminfo
 
-# Reinstaluj sterowniki
-sudo apt install --reinstall nvidia-driver-535
+# Reinstaluj ROCm
+sudo amdgpu-install --uninstall
+sudo amdgpu-install --usecase=rocm,graphics --accept-eula
+
+# Sprawdź czy Ollama widzi GPU
+ollama run gemma2:9b "test"
+# W logach powinno być: "using ROCm"
 ```
 
 ### Timeout na długich zapytaniach
