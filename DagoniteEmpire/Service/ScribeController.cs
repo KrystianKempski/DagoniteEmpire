@@ -261,5 +261,93 @@ namespace DagoniteEmpire.Service
             
             return Task.FromResult(mapping);
         }
+        
+        // ==========================================
+        // Post Ingestion Endpoints
+        // ==========================================
+        
+        /// <summary>
+        /// Ingest all posts from a chapter into SCRIBE
+        /// </summary>
+        /// <param name="chapterId">Chapter ID to ingest posts from</param>
+        /// <param name="reindex">If true, re-process posts that were already indexed</param>
+        [HttpPost("ingest/chapter/{chapterId}")]
+        public async Task<ActionResult<IngestResult>> IngestChapterPosts(
+            int chapterId,
+            [FromQuery] bool reindex = false,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation(
+                    "Starting post ingestion for chapter {ChapterId}, reindex={Reindex}",
+                    chapterId, reindex);
+                
+                var count = await _scribeService.IngestChapterPostsAsync(chapterId, reindex, cancellationToken);
+                
+                return Ok(new IngestResult
+                {
+                    Success = true,
+                    PostsIngested = count,
+                    Message = $"Zindeksowano {count} postów z rozdziału."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ingest posts from chapter {ChapterId}", chapterId);
+                return StatusCode(500, new IngestResult
+                {
+                    Success = false,
+                    Message = $"Błąd podczas indeksowania: {ex.Message}"
+                });
+            }
+        }
+        
+        /// <summary>
+        /// Ingest all posts from all chapters of a campaign into SCRIBE
+        /// </summary>
+        /// <param name="campaignId">Campaign ID to ingest posts from</param>
+        /// <param name="reindex">If true, re-process posts that were already indexed</param>
+        [HttpPost("ingest/campaign/{campaignId}")]
+        public async Task<ActionResult<IngestResult>> IngestCampaignPosts(
+            int campaignId,
+            [FromQuery] bool reindex = false,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation(
+                    "Starting post ingestion for campaign {CampaignId}, reindex={Reindex}",
+                    campaignId, reindex);
+                
+                var count = await _scribeService.IngestCampaignPostsAsync(campaignId, reindex, cancellationToken);
+                
+                return Ok(new IngestResult
+                {
+                    Success = true,
+                    PostsIngested = count,
+                    Message = $"Zindeksowano {count} postów z kampanii."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ingest posts from campaign {CampaignId}", campaignId);
+                return StatusCode(500, new IngestResult
+                {
+                    Success = false,
+                    Message = $"Błąd podczas indeksowania: {ex.Message}"
+                });
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Result of post ingestion operation
+    /// </summary>
+    public class IngestResult
+    {
+        public bool Success { get; set; }
+        public int PostsIngested { get; set; }
+        public string Message { get; set; } = string.Empty;
     }
 }

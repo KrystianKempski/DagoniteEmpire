@@ -1,4 +1,5 @@
 using DA_Scribe.Configuration;
+using DA_DataAccess.Chat;
 using DA_DataAccess.Data;
 using DA_DataAccess.Scribe;
 using DA_Scribe.Models;
@@ -802,6 +803,352 @@ namespace DA_Scribe.Services
             }
             
             await context.SaveChangesAsync(cancellationToken);
+        }
+        
+        // ==========================================
+        // Post Ingestion (Chapter Threads)
+        // ==========================================
+        
+        public async Task<int> IngestChapterPostsAsync(
+            int chapterId,
+            bool reindexExisting = false,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Ingesting posts from chapter {ChapterId}, reindex={Reindex}", chapterId, reindexExisting);
+            
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            
+            // Load chapter with posts and character info
+            var chapter = await context.Chapters
+                .Include(c => c.Posts)
+                    .ThenInclude(p => p.Character)
+                .Include(c => c.Characters)
+                .Include(c => c.Campaign)
+                .FirstOrDefaultAsync(c => c.Id == chapterId, cancellationToken);
+            
+            if (chapter == null)
+            {
+                _logger.LogWarning("Chapter {ChapterId} not found", chapterId);
+                return 0;
+            }
+            
+            // Get already indexed post IDs
+            var indexedPostIds = reindexExisting 
+                ? new HashSet<int>()
+                : (await context.ScribeMemories
+                    .Where(m => m.SourceChapterId == chapterId && m.SourcePostId != null && m.Type == MemoryType.Post)
+                    .Select(m => m.SourcePostId!.Value)
+                    .ToListAsync(cancellationToken))
+                    .ToHashSet();
+            
+            // If reindexing, delete old memories for this chapter's posts
+            if (reindexExisting)
+            {
+                var oldMemories = await context.ScribeMemories
+                    .Include(m => m.Chunks)
+                    .Where(m => m.SourceChapterId == chapterId && m.Type == MemoryType.Post)
+                    .ToListAsync(cancellationToken);
+                
+                if (oldMemories.Any())
+                {
+                    context.ScribeMemories.RemoveRange(oldMemories);
+                    await context.SaveChangesAsync(cancellationToken);
+                    _logger.LogInformation("Deleted {Count} old post memories for chapter {ChapterId}", oldMemories.Count, chapterId);
+                }
+            }
+            
+            int ingestedCount = 0;
+            var characterIdsInChapter = chapter.Characters.Select(c => c.Id).ToList();
+            
+            // Process posts in chronological order
+            foreach (var post in chapter.Posts.OrderBy(p => p.CreatedDate))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                // Skip already indexed posts
+                if (indexedPostIds.Contains(post.Id))
+                    continue;
+                
+                // Skip very short posts (less than 50 chars of plain text)
+                var plainText = StripHtml(post.Content);
+                if (plainText.Length < 50)
+                {
+                    _logger.LogDebug("Skipping short post {PostId} ({Length} chars)", post.Id, plainText.Length);
+                    continue;
+                }
+                
+                try
+                {
+                    await IngestPostInternalAsync(
+                        post, 
+                        chapter, 
+                        characterIdsInChapter, 
+                        context, 
+                        cancellationToken);
+                    
+                    ingestedCount++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to ingest post {PostId}", post.Id);
+                }
+            }
+            
+            _logger.LogInformation(
+                "Ingested {Count} posts from chapter {ChapterId} '{ChapterName}'",
+                ingestedCount, chapterId, chapter.Name);
+            
+            return ingestedCount;
+        }
+        
+        public async Task<int> IngestCampaignPostsAsync(
+            int campaignId,
+            bool reindexExisting = false,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Ingesting posts from campaign {CampaignId}, reindex={Reindex}", campaignId, reindexExisting);
+            
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            
+            var chapterIds = await context.Chapters
+                .Where(c => c.CampaignId == campaignId)
+                .Select(c => c.Id)
+                .ToListAsync(cancellationToken);
+            
+            int totalIngested = 0;
+            
+            foreach (var chapterId in chapterIds)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                totalIngested += await IngestChapterPostsAsync(chapterId, reindexExisting, cancellationToken);
+            }
+            
+            _logger.LogInformation(
+                "Ingested {Count} posts from {ChapterCount} chapters in campaign {CampaignId}",
+                totalIngested, chapterIds.Count, campaignId);
+            
+            return totalIngested;
+        }
+        
+        public async Task<int?> IngestPostAsync(
+            int postId,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Ingesting single post {PostId}", postId);
+            
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            
+            // Check if already indexed
+            var exists = await context.ScribeMemories
+                .AnyAsync(m => m.SourcePostId == postId && m.Type == MemoryType.Post, cancellationToken);
+            
+            if (exists)
+            {
+                _logger.LogDebug("Post {PostId} already indexed, skipping", postId);
+                return null;
+            }
+            
+            // Load post with all needed navigation properties
+            var post = await context.Posts
+                .Include(p => p.Character)
+                .Include(p => p.Chapter)
+                    .ThenInclude(c => c!.Characters)
+                .Include(p => p.Chapter)
+                    .ThenInclude(c => c!.Campaign)
+                .FirstOrDefaultAsync(p => p.Id == postId, cancellationToken);
+            
+            if (post?.Chapter == null)
+            {
+                _logger.LogWarning("Post {PostId} or its chapter not found", postId);
+                return null;
+            }
+            
+            // Skip very short posts
+            var plainText = StripHtml(post.Content);
+            if (plainText.Length < 50)
+            {
+                _logger.LogDebug("Post {PostId} too short ({Length} chars), skipping", postId, plainText.Length);
+                return null;
+            }
+            
+            var characterIdsInChapter = post.Chapter.Characters.Select(c => c.Id).ToList();
+            
+            var memoryId = await IngestPostInternalAsync(
+                post, 
+                post.Chapter, 
+                characterIdsInChapter, 
+                context, 
+                cancellationToken);
+            
+            _logger.LogInformation("Ingested post {PostId} as memory {MemoryId}", postId, memoryId);
+            return memoryId;
+        }
+        
+        public async Task<bool> IsPostIndexedAsync(
+            int postId,
+            CancellationToken cancellationToken = default)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            
+            return await context.ScribeMemories
+                .AnyAsync(m => m.SourcePostId == postId && m.Type == MemoryType.Post, cancellationToken);
+        }
+        
+        /// <summary>
+        /// Internal method to ingest a single post
+        /// </summary>
+        private async Task<int> IngestPostInternalAsync(
+            DA_DataAccess.Chat.Post post,
+            DA_DataAccess.Chat.Chapter chapter,
+            IList<int> characterIdsInChapter,
+            ApplicationDbContext context,
+            CancellationToken cancellationToken)
+        {
+            var plainText = StripHtml(post.Content);
+            var characterName = post.AlternativeName ?? post.Character?.NPCName ?? "Narrator";
+            var isNpc = post.AlternativeName != null || (post.Character?.NPCType != DA_Common.SD.NPCType.PC);
+            
+            // Build title
+            var title = $"{characterName}: {(plainText.Length > 80 ? plainText[..80] + "..." : plainText)}";
+            
+            // Determine which characters have access to this post
+            // All characters in the chapter at the time can see it
+            var accessCharacterIds = characterIdsInChapter.ToList();
+            
+            // The posting character definitely has access
+            if (post.CharacterId > 0 && !accessCharacterIds.Contains(post.CharacterId))
+            {
+                accessCharacterIds.Add(post.CharacterId);
+            }
+            
+            // Build context-rich content for embedding
+            var contentForEmbedding = BuildPostContentForEmbedding(post, chapter, characterName);
+            
+            // Create memory
+            var memory = new ScribeMemory
+            {
+                Title = title,
+                Content = contentForEmbedding,
+                Type = MemoryType.Post,
+                SourcePostId = post.Id,
+                SourceChapterId = chapter.Id,
+                SourceCampaignId = chapter.CampaignId,
+                CharacterIds = accessCharacterIds,
+                IsPublic = false, // Posts are only visible to characters in the chapter
+                IsGmOnly = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            context.ScribeMemories.Add(memory);
+            await context.SaveChangesAsync(cancellationToken);
+            
+            // Chunk and embed
+            var chunks = _chunkService.ChunkText(contentForEmbedding, maxTokens: 400, overlapTokens: 50);
+            var scribeChunks = new List<ScribeChunk>();
+            
+            for (int i = 0; i < chunks.Count; i++)
+            {
+                var chunkText = chunks[i];
+                
+                try
+                {
+                    var embedding = await _embeddingService.GetEmbeddingAsync(chunkText, cancellationToken);
+                    
+                    var scribeChunk = new ScribeChunk
+                    {
+                        ScribeMemoryId = memory.Id,
+                        Content = chunkText,
+                        Embedding = new Pgvector.Vector(embedding),
+                        ChunkIndex = i,
+                        TokenCount = chunkText.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length * 4 / 3,
+                        CampaignId = chapter.CampaignId,
+                        ChapterId = chapter.Id,
+                        MemoryType = MemoryType.Post,
+                        IsPublic = false,
+                        IsGmOnly = false,
+                        CharacterIds = accessCharacterIds
+                    };
+                    
+                    scribeChunks.Add(scribeChunk);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to embed chunk {Index} of post {PostId}", i, post.Id);
+                }
+            }
+            
+            if (scribeChunks.Any())
+            {
+                context.ScribeChunks.AddRange(scribeChunks);
+                await context.SaveChangesAsync(cancellationToken);
+            }
+            
+            return memory.Id;
+        }
+        
+        /// <summary>
+        /// Build content for embedding with context about the post
+        /// </summary>
+        private static string BuildPostContentForEmbedding(
+            DA_DataAccess.Chat.Post post,
+            DA_DataAccess.Chat.Chapter chapter,
+            string characterName)
+        {
+            var sb = new System.Text.StringBuilder();
+            
+            // Add context header
+            sb.AppendLine($"[Kampania: {chapter.Campaign?.Name ?? "Nieznana"}]");
+            sb.AppendLine($"[Rozdział: {chapter.Name}]");
+            
+            if (!string.IsNullOrEmpty(chapter.Place))
+                sb.AppendLine($"[Miejsce: {chapter.Place}]");
+            
+            if (!string.IsNullOrEmpty(chapter.DayTime))
+                sb.AppendLine($"[Czas: {chapter.DayTime}]");
+            
+            sb.AppendLine($"[Postać: {characterName}]");
+            sb.AppendLine($"[Data: {post.CreatedDate:yyyy-MM-dd HH:mm}]");
+            sb.AppendLine();
+            
+            // Add the actual content
+            sb.AppendLine(StripHtml(post.Content));
+            
+            return sb.ToString();
+        }
+        
+        /// <summary>
+        /// Strip HTML tags from content
+        /// </summary>
+        private static string StripHtml(string html)
+        {
+            if (string.IsNullOrEmpty(html))
+                return string.Empty;
+            
+            // Remove script and style blocks completely
+            var result = System.Text.RegularExpressions.Regex.Replace(
+                html, 
+                @"<(script|style)[^>]*>[\s\S]*?</\1>", 
+                string.Empty, 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            
+            // Replace <br> and <p> with newlines
+            result = System.Text.RegularExpressions.Regex.Replace(
+                result, 
+                @"<br\s*/?>|</p>|</div>", 
+                "\n", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            
+            // Remove all remaining HTML tags
+            result = System.Text.RegularExpressions.Regex.Replace(result, @"<[^>]+>", string.Empty);
+            
+            // Decode HTML entities
+            result = System.Net.WebUtility.HtmlDecode(result);
+            
+            // Normalize whitespace
+            result = System.Text.RegularExpressions.Regex.Replace(result, @"\s+", " ");
+            result = System.Text.RegularExpressions.Regex.Replace(result, @"\n\s*\n", "\n\n");
+            
+            return result.Trim();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿@page "/chapter/{Id:int}"
 @using DA_Business.Services.Interfaces
+@using DA_Scribe.Services.Interfaces
 @using Microsoft.AspNetCore.SignalR.Client
 @using DA_Models.ChatModels
 @inject IChapterRepository _chapterRepository
@@ -18,6 +19,7 @@
 @inject IBattlePhaseRepository _battlePhaseRepository
 @inject IEquipmentRepository _equipmentRepository
 @inject IUserService _userService
+@inject IScribeService _scribeService
 @inject NavigationManager _navigationManager
 @inject ISnackbar SnackBar
 @inject IDialogService DialogService
@@ -632,6 +634,19 @@ else
                     {
                         await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
                     }
+                    
+                    // Index the post in SCRIBE (fire and forget)
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _scribeService.IngestPostAsync(result.Id);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogWarning(ex, "Failed to index post {PostId} in SCRIBE", result.Id);
+                        }
+                    });
                 }
             }
 

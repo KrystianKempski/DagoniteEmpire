@@ -235,5 +235,52 @@ namespace DA_Scribe.Services.Interfaces
         Task DeleteConversationAsync(
             int conversationId,
             CancellationToken cancellationToken = default);
+        
+        // ==========================================
+        // Post Ingestion (Chapter Threads)
+        // ==========================================
+        
+        /// <summary>
+        /// Ingest all posts from a chapter into SCRIBE
+        /// </summary>
+        /// <param name="chapterId">Chapter to ingest posts from</param>
+        /// <param name="reindexExisting">If true, re-process posts that were already indexed</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Number of posts ingested</returns>
+        Task<int> IngestChapterPostsAsync(
+            int chapterId,
+            bool reindexExisting = false,
+            CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Ingest all posts from all chapters of a campaign
+        /// </summary>
+        /// <param name="campaignId">Campaign to ingest posts from</param>
+        /// <param name="reindexExisting">If true, re-process posts that were already indexed</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Number of posts ingested</returns>
+        Task<int> IngestCampaignPostsAsync(
+            int campaignId,
+            bool reindexExisting = false,
+            CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Ingest a single post into SCRIBE (called when new post is created)
+        /// </summary>
+        /// <param name="postId">Post ID to ingest</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Created memory ID, or null if post was too short</returns>
+        Task<int?> IngestPostAsync(
+            int postId,
+            CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Check if a post has already been indexed
+        /// </summary>
+        /// <param name="postId">Post ID to check</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        Task<bool> IsPostIndexedAsync(
+            int postId,
+            CancellationToken cancellationToken = default);
     }
 }

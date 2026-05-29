@@ -36,6 +36,9 @@ namespace DA_DataAccess.Scribe
         World = 9,
         
         /// <summary>Game rules and mechanics</summary>
-        Rules = 10
+        Rules = 10,
+        
+        /// <summary>Player post from chapter thread</summary>
+        Post = 11
     }
 }
