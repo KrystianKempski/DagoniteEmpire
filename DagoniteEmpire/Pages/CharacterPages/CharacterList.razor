@@ -10,7 +10,6 @@
 @inject IDialogService DialogService
 @inject IBrowserViewportService _vieportService
 @implements IDisposable
-<_DeleteConfirmation IsParentComponentProcessing=IsLoading DeleteConfirmation="ConfirmDelete_Click" DeletingComponentName="this character"></_DeleteConfirmation>
 <PageTitle>Dagonie Empire | Character list</PageTitle>
 @if (IsLoading)
 {
@@ -31,25 +30,52 @@ else
         <div class="row m-0 mt-4">
             <div class="col-12">
                 <MudStack Row="true" Spacing="2" Class="mb-2">
-                    <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => _navigationManager.NavigateTo("/character/create/"))">Add Character</MudButton>
-                    <MudButton StartIcon="@Icons.Material.Filled.Edit" Color="Color.Secondary" Variant="Variant.Filled" Disabled="@(_selected is null)" OnClick="@(() => { if (_selected is not null) _navigationManager.NavigateTo($"/character/edit/{_selected.Id}"); })">Edit Character</MudButton>
-                    <MudButton StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" Variant="Variant.Filled" Disabled="@(_selected is null)" OnClick="@(() => { if (_selected is not null) HandleDelete(_selected.Id); })">Delete Character</MudButton>
+                    @if (Characters.Count() < 6 && UserInfo?.IsAdminOrMG == true)
+                    {
+                        <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" OnClick="@(() => _navigationManager.NavigateTo("/character/create/"))">Add Character</MudButton>
+                    }
+                    else
+                    {
+                        <MudTooltip Text="Maximum 6 characters allowed">
+                            <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="true">Add Character</MudButton>
+                        </MudTooltip>
+                    }
                 </MudStack>
-                <MudDataGrid T="CharacterDTO" Items="@Characters" Dense="true" Hover="true" SelectedItemChanged="@((CharacterDTO c) => _selected = c)" RowClick="@(args => _selected = args.Item)">
-                    <Columns>
-                        @if (UserInfo?.IsAdminOrMG == true)
+                
+                @* Character Grid *@
+                <div class="character-grid-container">
+                    <MudGrid Spacing="4" Justify="Justify.FlexStart">
+                        @foreach (var character in Characters.Take(6))
                         {
-                            <PropertyColumn Property="x => x.UserName" Title="User name" />
+                            <MudItem>
+                            <div class="character-tile"
+                                 style="background-image: url('@(string.IsNullOrEmpty(character.ImageUrl) ? "/images/default-avatar.png" : character.ImageUrl)');">
+                                <div class="character-overlay">
+                                    <span class="character-name">@character.NPCName</span>
+                                    <span class="character-info">@character.RaceName</span>
+                                </div>
+                                <div class="character-actions">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" 
+                                                   Style="color: white;" 
+                                                   OnClick="@(() => _navigationManager.NavigateTo($"/character/edit/{character.Id}"))" 
+                                                   OnClickStopPropagation="true" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" 
+                                                   Style="color: white;" 
+                                                   OnClick="@(() => HandleDelete(character.Id))" 
+                                                   OnClickStopPropagation="true" />
+                                </div>
+                            </div>
+                            </MudItem>
                         }
-                        <PropertyColumn Property="x => x.NPCName" Title="Name" />
-                        <PropertyColumn Property="x => x.RaceName" Title="Race" />
-                        <PropertyColumn Property="x => x.ProfessionName" Title="Class" />
-                        <PropertyColumn Property="x => x.Age" Title="Age" />
-                    </Columns>
-                    <PagerContent>
-                        <MudDataGridPager T="CharacterDTO" />
-                    </PagerContent>
-                </MudDataGrid>
+                    </MudGrid>
+                </div>
+                
+                @if (Characters.Count() > 6)
+                {
+                    <MudAlert Severity="Severity.Info" Class="mt-3">
+                        Showing first 6 characters. You have @Characters.Count() total.
+                    </MudAlert>
+                }
             </div>
         </div>
 
@@ -65,9 +91,7 @@ else
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IEnumerable<CharacterDTO> ApprovedCharacters { get; set; } = new List<CharacterDTO>();
     public bool IsLoading { get; set; } = true;
-    private int DeleteCharacterId { get; set; } = 0;
     private string Title { get; set; } = "Your characters";
-
 
     public UserInfo? UserInfo { get; set; }
 
@@ -108,8 +132,6 @@ else
         }
     }
 
-    private CharacterDTO? _selected;
-
     private async Task LoadCharacters()
     {
 
@@ -138,32 +160,31 @@ else
         }
     }
 
-    private void HandleDelete(int id)
+    private async Task HandleDelete(int id)
     {
-        DeleteCharacterId = id;
-        _jsRuntime.InvokeVoidAsync("ShowDeleteConfirmationModal");
-    }
-    public async Task ConfirmDelete_Click(bool isConfirmed)
-    {
-        IsLoading = true;
-        StateHasChanged();
-        if (isConfirmed == true && DeleteCharacterId != 0)
+        var character = Characters.FirstOrDefault(c => c.Id == id);
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Delete Character",
+            $"Are you sure you want to delete {character?.NPCName ?? "this character"}?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+        
+        if (result == true)
         {
-            await Task.Delay(500);
-            //delete
-            var prod = await _characterRepository.GetById(DeleteCharacterId);
-
-            await _characterRepository.Delete(DeleteCharacterId);
-            if (UserInfo?.SelectedCharacter?.Id == DeleteCharacterId)
+            IsLoading = true;
+            StateHasChanged();
+            
+            await _characterRepository.Delete(id);
+            if (UserInfo?.SelectedCharacter?.Id == id)
             {
                 _userService?.SetSelectedCharId(0);
                 UserInfo = await _userService.GetUserInfo();
             }
             await LoadCharacters();
-            await _jsRuntime.InvokeVoidAsync("HideDeleteConfirmationModal");
+            
+            IsLoading = false;
+            StateHasChanged();
         }
-        IsLoading = false;
-        StateHasChanged();
     }
 
     public void Dispose()

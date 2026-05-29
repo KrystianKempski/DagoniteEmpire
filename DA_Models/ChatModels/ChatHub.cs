@@ -19,6 +19,22 @@ namespace DA_Models.ChatModels
             await Clients.All.SendAsync("SendMessage", username, message);
         }
 
+        /// <summary>
+        /// Notify all clients about a new post in a chapter
+        /// </summary>
+        public async Task NotifyNewPost(int chapterId, int postId)
+        {
+            await Clients.All.SendAsync("NewPost", chapterId, postId);
+        }
+
+        /// <summary>
+        /// Notify all clients about an updated post
+        /// </summary>
+        public async Task NotifyPostUpdated(int chapterId, int postId)
+        {
+            await Clients.All.SendAsync("PostUpdated", chapterId, postId);
+        }
+
         public override Task OnConnectedAsync()
         {
             Console.WriteLine($"{Context.ConnectionId} hub connected");

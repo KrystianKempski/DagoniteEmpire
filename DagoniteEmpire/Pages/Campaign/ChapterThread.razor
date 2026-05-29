@@ -1,5 +1,7 @@
 ﻿@page "/chapter/{Id:int}"
 @using DA_Business.Services.Interfaces
+@using Microsoft.AspNetCore.SignalR.Client
+@using DA_Models.ChatModels
 @inject IChapterRepository _chapterRepository
 @inject IPostRepository _postRepository
 @inject ICharacterRepository _characterRepository
@@ -23,7 +25,7 @@
 @inject IJSRuntime _jsRuntime
 @inject CallbackService _callbackService
 @inject ILogger<ChapterThread> Logger
-@implements IDisposable
+@implements IAsyncDisposable
 
 <PageTitle>Dagonie Empire | Thread</PageTitle>
 
@@ -298,6 +300,7 @@ else
     private MobDTO GmAsMob = GmMobOption;
     private MudPagination? Pagination;
     private BlazoredTextEditor? PostEditor;
+    private HubConnection? _hubConnection;
     private System.Action? handler;
     private bool _scrollDown = true;
     private bool _afterRenderInProgress = false;
@@ -315,6 +318,7 @@ else
         {
             UserInfo = await _userService.GetUserInfo();
             await LoadChapter();
+            await InitializeSignalR();
         }
         catch (Exception ex)
         {
@@ -325,6 +329,54 @@ else
 
         handler = async () => await LoadForSelectedCharacter();
         _callbackService.OnChange += handler;
+    }
+
+    private async Task InitializeSignalR()
+    {
+        try
+        {
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
+                .WithAutomaticReconnect()
+                .Build();
+
+            _hubConnection.On<int, int>("NewPost", OnNewPost);
+            _hubConnection.On<int, int>("PostUpdated", OnPostUpdated);
+
+            await _hubConnection.StartAsync();
+            Logger.LogInformation("SignalR connection established for chapter {ChapterId}", Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing SignalR connection");
+        }
+    }
+
+    private async Task OnNewPost(int chapterId, int postId)
+    {
+        if (chapterId != Id) return;
+        
+        await InvokeAsync(async () =>
+        {
+            // Refresh posts to get the new one
+            PageCount = await GetPageCount();
+            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+            _scrollDown = true;
+            StateHasChanged();
+            SnackBar.Add("New post added!", Severity.Info);
+        });
+    }
+
+    private async Task OnPostUpdated(int chapterId, int postId)
+    {
+        if (chapterId != Id) return;
+        
+        await InvokeAsync(async () =>
+        {
+            // Refresh posts to get the updated one
+            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+            StateHasChanged();
+        });
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -544,6 +596,12 @@ else
                     var index = Posts.FindIndex(p => p.Id == NewPost.Id);
                     if (index >= 0)
                         Posts[index].Content = NewPost.Content;
+                    
+                    // Notify other clients about the updated post
+                    if (_hubConnection is not null)
+                    {
+                        await _hubConnection.SendAsync("NotifyPostUpdated", Id, NewPost.Id);
+                    }
                 }
                 IsEditMode = false;
                 SendButtonText = "Send Post";
@@ -568,6 +626,12 @@ else
                 if (result is not null)
                 {
                     Posts.Add(NewPost);
+                    
+                    // Notify other clients about the new post
+                    if (_hubConnection is not null)
+                    {
+                        await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
+                    }
                 }
             }
 
@@ -696,9 +760,14 @@ else
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         _callbackService.OnChange -= handler;
+        
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
     }
 
     // Battle and Dialog Methods

@@ -41,38 +41,40 @@
                 @foreach(var camp in Campaigns)
                 {
                     <div class="d-flex flex-column camp">
-                        <MudPaper Class="d-flex flex-column pa-3" MinHeight="250px" Width="100%" @onclick="@(()=>ChooseCampaign(camp))">
-
-
-                            <MudStack Spacing="0" Row="true">
-                            <MudText Class="flex-grow-1" Typo="Typo.h6">@camp.Name</MudText>
-                            @if (UserInfo?.IsAdminOrMG == true)
-                            {
-                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))"></MudIconButton>
-                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))"></MudIconButton>
-                            }
-                            </MudStack>
-                            <MudText Typo="Typo.caption">Started at: @camp.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
-                            <MudText Class="py-1 flex-grow-1" Typo="Typo.body2"> @camp.Description </MudText>
-                            <div class="d-flex flex-wrap">
-                                @foreach (var adv in camp.Characters)
+                        <MudPaper Class="campaign-tile" Style="position: relative; overflow: hidden; height: 200px;" Width="100%" @onclick="@(()=>ChooseCampaign(camp))">
+                            @* Character portraits as background *@
+                            <div class="portraits-background">
+                                @foreach (var adv in camp.Characters.Take(6))
                                 {
-                                    <MudChip  T="CharacterDTO">
-                                        <AvatarContent>
-                                            @if (string.IsNullOrEmpty(adv.ImageUrl))
-                                            {
-                                                <MudAvatar>@adv.NPCName.ToUpper().First()</MudAvatar>
-                                            }
-                                            else
-                                            {
-                                                <MudAvatar>
-                                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@adv.ImageUrl"></MudImage>
-                                                </MudAvatar>
-                                            }
-                                        </AvatarContent>
-                                        <ChildContent>@adv.NPCName</ChildContent>
-                                    </MudChip>
+                                    <div class="portrait-slice">
+                                        @if (!string.IsNullOrEmpty(adv.ImageUrl))
+                                        {
+                                            <img src="@adv.ImageUrl" alt="@adv.NPCName" />
+                                        }
+                                        else
+                                        {
+                                            <div class="portrait-placeholder">@adv.NPCName.ToUpper().First()</div>
+                                        }
+                                    </div>
                                 }
+                            </div>
+                            <div class="campaign-overlay">
+                                <MudStack Spacing="0" Row="true">
+                                    <MudText Class="flex-grow-1 campaign-title" Typo="Typo.h5">@camp.Name</MudText>
+                                    @if (UserInfo?.IsAdminOrMG == true)
+                                    {
+                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>
+                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))" OnClickStopPropagation="true"></MudIconButton>
+                                    }
+                                </MudStack>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.8);">@camp.CreatedDate.ToString("dd-MM-yyyy")</MudText>
+                                <MudText Class="py-1 campaign-description" Typo="Typo.body2">@camp.Description</MudText>
+                                <div class="adventurer-names">
+                                    @foreach (var adv in camp.Characters)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Style="color: white; background: rgba(255,255,255,0.15);">@adv.NPCName</MudChip>
+                                    }
+                                </div>
                             </div>
                         </MudPaper>
                     </div>
