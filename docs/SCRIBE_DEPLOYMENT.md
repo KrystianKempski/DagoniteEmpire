@@ -150,13 +150,36 @@ cd /opt/dagonite
   },
   "Scribe": {
     "Ollama": {
-      "BaseUrl": "http://192.168.1.20:11434"
+      "BaseUrl": "http://192.168.1.20:11434",
+      "PersonaFilePath": "Resources/scribe-persona.md"
     }
   }
 }
 ```
 
-### 2.6 Migracja bazy danych
+### 2.6 Konfiguracja persony SCRIBE (opcjonalne)
+
+SCRIBE może mieć własną "osobowość" zdefiniowaną w pliku tekstowym.
+Plik ten jest **sekretem** i nie powinien być w repozytorium.
+
+1. **Skopiuj template:**
+   ```bash
+   cp Resources/scribe-persona.template.md Resources/scribe-persona.md
+   ```
+
+2. **Edytuj plik `Resources/scribe-persona.md`:**
+   - Zdefiniuj charakter archiwisty (ton, styl odpowiedzi)
+   - Określ co może/nie może mówić
+   - Dodaj ograniczenia (np. ochrona sekretów graczy)
+
+3. **Ścieżka w konfiguracji:**
+   ```json
+   "PersonaFilePath": "Resources/scribe-persona.md"
+   ```
+
+Jeśli plik nie istnieje, SCRIBE używa domyślnego, neutralnego promptu.
+
+### 2.7 Migracja bazy danych
 
 ```bash
 # Przy pierwszym uruchomieniu lub po aktualizacji
