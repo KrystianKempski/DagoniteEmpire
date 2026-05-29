@@ -228,6 +228,30 @@ curl -X POST "http://localhost:5000/api/scribe/search" \
   -d '{"query": "warsztat barona", "campaignId": 1, "topK": 3}'
 ```
 
+### 3.5 Indeksowanie postów z wątków kampanii
+
+Po zaimportowaniu archiwum Word, posty z bieżących wątków (rozdziałów) są indeksowane **automatycznie** przy tworzeniu.
+
+#### Indeksowanie istniejących postów (jednorazowo)
+
+```bash
+# Wszystkie posty z całej kampanii
+curl -X POST "http://localhost:5000/api/scribe/ingest/campaign/1"
+
+# Tylko konkretny rozdział
+curl -X POST "http://localhost:5000/api/scribe/ingest/chapter/5"
+
+# Re-indeksowanie (usunięcie i ponowne przetworzenie)
+curl -X POST "http://localhost:5000/api/scribe/ingest/campaign/1?reindex=true"
+```
+
+#### Jak działa auto-sync
+
+- Każdy nowy post w wątku rozdziału jest automatycznie indeksowany w tle
+- Posty krótsze niż 50 znaków są pomijane
+- Dostęp do posta mają postacie obecne w rozdziale w momencie publikacji
+- GM widzi wszystkie posty
+
 ---
 
 ## 4. Testowanie
