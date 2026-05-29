@@ -18,6 +18,7 @@ namespace DA_Scribe.Services
         private readonly HttpClient _httpClient;
         private readonly ILogger<LLMService> _logger;
         private readonly ScribeOptions _options;
+        private readonly string _systemPrompt;
         
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -38,6 +39,39 @@ namespace DA_Scribe.Services
             
             _httpClient.BaseAddress = new Uri(_options.Ollama.BaseUrl);
             _httpClient.Timeout = TimeSpan.FromSeconds(_options.Ollama.TimeoutSeconds * 2); // Longer for generation
+            
+            // Load persona from file or fall back to config
+            _systemPrompt = LoadPersonaFromFile();
+        }
+        
+        private string LoadPersonaFromFile()
+        {
+            var personaPath = _options.Ollama.PersonaFilePath;
+            
+            if (string.IsNullOrEmpty(personaPath))
+            {
+                _logger.LogDebug("No persona file path configured, using default system prompt");
+                return _options.Ollama.SystemPrompt;
+            }
+            
+            try
+            {
+                if (File.Exists(personaPath))
+                {
+                    var content = File.ReadAllText(personaPath);
+                    _logger.LogInformation("Loaded SCRIBE persona from {Path} ({Length} chars)", 
+                        personaPath, content.Length);
+                    return content;
+                }
+                
+                _logger.LogWarning("Persona file not found: {Path}, using fallback prompt", personaPath);
+                return _options.Ollama.SystemPrompt;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading persona file: {Path}", personaPath);
+                return _options.Ollama.SystemPrompt;
+            }
         }
         
         public async Task<string> GenerateResponseAsync(
@@ -47,7 +81,7 @@ namespace DA_Scribe.Services
             CancellationToken cancellationToken = default)
         {
             var fullPrompt = BuildRAGPrompt(prompt, context);
-            var system = systemPrompt ?? _options.Ollama.SystemPrompt;
+            var system = systemPrompt ?? _systemPrompt;
             
             var request = new GenerateRequest
             {
@@ -101,7 +135,7 @@ namespace DA_Scribe.Services
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var fullPrompt = BuildRAGPrompt(prompt, context);
-            var system = systemPrompt ?? _options.Ollama.SystemPrompt;
+            var system = systemPrompt ?? _systemPrompt;
             
             var request = new GenerateRequest
             {

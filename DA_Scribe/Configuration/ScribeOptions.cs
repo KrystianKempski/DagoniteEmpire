@@ -54,13 +54,17 @@ namespace DA_Scribe.Configuration
         public int MaxTokens { get; set; } = 2048;
         
         /// <summary>
-        /// System prompt for SCRIBE assistant (Polish)
+        /// Path to the persona file for SCRIBE (relative to app root)
+        /// If not found, falls back to SystemPrompt
+        /// </summary>
+        public string PersonaFilePath { get; set; } = "Resources/scribe-persona.md";
+        
+        /// <summary>
+        /// Fallback system prompt if persona file is not found
         /// </summary>
         public string SystemPrompt { get; set; } = 
-            "Jesteś SCRIBE - pomocnikiem archiwistą w grze RPG 'Dagonite Empire'. " +
-            "Odpowiadaj po polsku na podstawie dostarczonych fragmentów tekstu z przygód. " +
-            "Bądź zwięzły i precyzyjny. Jeśli nie znasz odpowiedzi na podstawie kontekstu, " +
-            "powiedz o tym szczerze. Nie wymyślaj informacji, których nie ma w kontekście.";
+            "Jesteś archiwistą w grze RPG. Odpowiadaj po polsku na podstawie " +
+            "dostarczonych fragmentów. Bądź zwięzły. Nie wymyślaj informacji.";
         
         /// <summary>
         /// Timeout in seconds for Ollama requests
