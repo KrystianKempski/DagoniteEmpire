@@ -705,9 +705,14 @@ namespace DA_Scribe.Services
             
             int ingestedCount = 0;
             var characterIdsInChapter = chapter.Characters.Select(c => c.Id).ToList();
-            
+
+            var orderedPosts = chapter.Posts.OrderBy(p => p.CreatedDate).ToList();
+            var batchSize = Math.Clamp(_options.Ingest.BatchSize, 1, 500);
+            var batchDelayMs = Math.Clamp(_options.Ingest.BatchDelayMs, 0, 60_000);
+            var processedInBatch = 0;
+
             // Process posts in chronological order
-            foreach (var post in chapter.Posts.OrderBy(p => p.CreatedDate))
+            foreach (var post in orderedPosts)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 
@@ -733,6 +738,17 @@ namespace DA_Scribe.Services
                         cancellationToken);
                     
                     ingestedCount++;
+                    processedInBatch++;
+
+                    if (processedInBatch >= batchSize)
+                    {
+                        _logger.LogInformation(
+                            "Ingest progress: chapter {ChapterId} {Done}/{Total} posts done",
+                            chapterId, ingestedCount, orderedPosts.Count);
+                        processedInBatch = 0;
+                        if (batchDelayMs > 0)
+                            await Task.Delay(batchDelayMs, cancellationToken);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -762,11 +778,16 @@ namespace DA_Scribe.Services
                 .ToListAsync(cancellationToken);
             
             int totalIngested = 0;
-            
-            foreach (var chapterId in chapterIds)
+            var interChapterDelayMs = Math.Clamp(_options.Ingest.InterChapterDelayMs, 0, 60_000);
+
+            for (int i = 0; i < chapterIds.Count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                var chapterId = chapterIds[i];
                 totalIngested += await IngestChapterPostsAsync(chapterId, reindexExisting, cancellationToken);
+
+                if (interChapterDelayMs > 0 && i < chapterIds.Count - 1)
+                    await Task.Delay(interChapterDelayMs, cancellationToken);
             }
             
             _logger.LogInformation(

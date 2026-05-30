@@ -21,6 +21,11 @@ namespace DA_Scribe.Configuration
         /// Search configuration
         /// </summary>
         public SearchOptions Search { get; set; } = new();
+
+        /// <summary>
+        /// Bulk-ingest throttling / batching configuration
+        /// </summary>
+        public IngestOptions Ingest { get; set; } = new();
     }
     
     /// <summary>
@@ -112,5 +117,30 @@ namespace DA_Scribe.Configuration
         /// Minimum similarity threshold (0.0 - 1.0)
         /// </summary>
         public float SimilarityThreshold { get; set; } = 0.5f;
+    }
+
+    /// <summary>
+    /// Throttling for bulk post ingestion (chapter / campaign indexing).
+    /// Prevents a single button click from saturating the embedding host or DB.
+    /// </summary>
+    public class IngestOptions
+    {
+        /// <summary>
+        /// Posts processed between throttle pauses and progress logs.
+        /// Clamped to [1, 500]. Default 25.
+        /// </summary>
+        public int BatchSize { get; set; } = 25;
+
+        /// <summary>
+        /// Delay (ms) inserted after each batch of <see cref="BatchSize"/> posts.
+        /// 0 disables throttling. Clamped to [0, 60_000]. Default 0.
+        /// </summary>
+        public int BatchDelayMs { get; set; } = 0;
+
+        /// <summary>
+        /// Delay (ms) inserted between chapters when indexing a whole campaign.
+        /// 0 disables. Clamped to [0, 60_000]. Default 0.
+        /// </summary>
+        public int InterChapterDelayMs { get; set; } = 0;
     }
 }
