@@ -19,6 +19,8 @@ namespace DagoniteEmpire.Service
     [EnableRateLimiting("scribe-query")]
     public class ScribeController : ControllerBase
     {
+        private const int MaxImportChunks = 10_000;
+
         private readonly IScribeService _scribeService;
         private readonly IScribeAgentService _agentService;
         private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
@@ -139,6 +141,11 @@ namespace DagoniteEmpire.Service
                     return BadRequest("Invalid JSON structure");
                 }
 
+                if (importData.Chunks.Count > MaxImportChunks)
+                {
+                    return BadRequest($"Too many chunks: {importData.Chunks.Count} (max {MaxImportChunks} per import)");
+                }
+
                 _logger.LogInformation(
                     "Parsed import data: {ChunkCount} chunks from campaign '{Campaign}'",
                     importData.Chunks.Count,
@@ -195,6 +202,11 @@ namespace DagoniteEmpire.Service
                 return BadRequest("No chunks provided");
             }
 
+            if (importData.Chunks.Count > MaxImportChunks)
+            {
+                return BadRequest($"Too many chunks: {importData.Chunks.Count} (max {MaxImportChunks} per import)");
+            }
+
             var access = await EnsureCampaignAccessAsync(campaignId, cancellationToken);
             if (access is not null) return access;
 
@@ -227,7 +239,7 @@ namespace DagoniteEmpire.Service
         /// Check if SCRIBE services (Ollama) are available
         /// </summary>
         [HttpGet("status")]
-        [AllowAnonymous]
+        [Authorize]
         public async Task<ActionResult<object>> GetStatus(CancellationToken cancellationToken)
         {
             var isAvailable = await _scribeService.IsAvailableAsync(cancellationToken);

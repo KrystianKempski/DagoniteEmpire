@@ -93,6 +93,13 @@ namespace DA_DataAccess.Data
             {
                 entity.HasIndex(e => e.SourceCampaignId);
                 entity.HasIndex(e => e.Type);
+
+                // Prevent duplicate ingest of the same post (nullable -> partial unique on Npgsql).
+                var sourcePostIndex = entity.HasIndex(e => e.SourcePostId).IsUnique();
+                if (isNpgsql)
+                {
+                    sourcePostIndex.HasFilter("\"SourcePostId\" IS NOT NULL");
+                }
             });
             
             modelBuilder.Entity<ScribeConversation>(entity =>

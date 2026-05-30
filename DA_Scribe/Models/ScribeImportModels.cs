@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace DA_Scribe.Models
@@ -156,6 +157,8 @@ namespace DA_Scribe.Models
         /// <summary>
         /// The question to ask
         /// </summary>
+        [Required]
+        [StringLength(4000, MinimumLength = 1)]
         public string Query { get; set; } = string.Empty;
         
         /// <summary>
@@ -176,6 +179,7 @@ namespace DA_Scribe.Models
         /// <summary>
         /// Number of chunks to retrieve (default 5)
         /// </summary>
+        [Range(1, 20)]
         public int? TopK { get; set; }
         
         /// <summary>
