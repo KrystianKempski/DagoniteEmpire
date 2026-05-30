@@ -4,6 +4,39 @@
 
 **SCRIBE** (Semantic Campaign Retrieval and Intelligence Based Explorer) is an AI-powered memory system that helps players and Game Masters quickly access information about characters, locations, adventures, and events from their RPG campaigns.
 
+> **MVP status (2026-05-30).** The system is shipped as an MVP on branch
+> `feature/scribe-semantic-kernel`. Beyond the original RAG flow described
+> below, the live implementation now includes:
+>
+> - **Agentic layer** based on Microsoft Semantic Kernel
+>   (`Microsoft.SemanticKernel` 1.77 + `Connectors.Ollama` alpha) with auto
+>   tool-calling (`FunctionChoiceBehavior.Auto()`). Plugins:
+>   `ScribeSearchPlugin` (semantic memory), `CharacterPlugin`, `ChapterPlugin`.
+>   Default chat model: `qwen2.5:14b`.
+> - **Structured citations** (`ScribeCitation`) surfaced from every
+>   `search_memories` tool call – displayed in `ScribePage` / `ScribeDrawer`
+>   as numbered `[1]..[N]` items with similarity score and content snippet
+>   tooltip.
+> - **Conversation history** persisted per-user with 14-day retention
+>   (`ScribeRetentionService` hosted service).
+> - **Hardening:** input validation (`[StringLength]`, `[Range]`,
+>   `MaxImportChunks = 10_000`), `[Authorize]` on `/status`, unique partial
+>   index on `ScribeMemory.SourcePostId`, per-user **and** per-IP rate
+>   limiters (`scribe-query` 20/min, `scribe-ingest` 5/min), `JwtKey` moved
+>   to user-secrets/env with fail-fast validation on startup.
+> - **Observability:** `/health/scribe` readiness probe (Ollama + ChatModel
+>   presence), OpenTelemetry tracing opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`
+>   (ActivitySource `DagoniteEmpire.Scribe`, activities `scribe.agent.invoke`,
+>   `scribe.search`, `scribe.embedding`), per-batch ingest progress logs.
+> - **Throttling:** `ScribeOptions.Ingest.BatchSize` /
+>   `BatchDelayMs` / `InterChapterDelayMs` for slow / shared GPU hosts.
+>
+> The `ILLMService` interface referenced in earlier drafts of this doc was
+> removed; chat is now driven through Semantic Kernel’s
+> `IChatCompletionService` (Ollama). Embeddings still flow through
+> `IEmbeddingService` (`EmbeddingService` over a Polly-resilient named
+> HttpClient `scribe-embedding`).
+
 ## Table of Contents
 
 1. [What is RAG?](#what-is-rag)
@@ -106,8 +139,8 @@
 │  │  │  (orchestrator) │  │  (CRUD memories)│  │  (text → vectors)     │   │ │
 │  │  └─────────────────┘  └─────────────────┘  └───────────────────────┘   │ │
 │  │  ┌─────────────────┐  ┌─────────────────┐  ┌───────────────────────┐   │ │
-│  │  │  IChunkService  │  │  ILLMService    │  │  IAccessControlSvc    │   │ │
-│  │  │  (text → chunks)│  │  (Ollama client)│  │  (permission filter)  │   │ │
+  │  │  │  IChunkService  │  │  Semantic Kernel│  │  IAccessControlSvc    │   │ │
+  │  │  │  (text → chunks)│  │  (agent + LLM)  │  │  (permission filter)  │   │ │
 │  │  └─────────────────┘  └─────────────────┘  └───────────────────────┘   │ │
 │  └────────────────────────────────────────────────────────────────────────┘ │
 │                                    │                                        │

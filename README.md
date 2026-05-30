@@ -29,18 +29,33 @@ Default Game Master account:
 🚧 Work in progress.
 
 ## 🛠️ Used tools  
-Whole application was developed with .Net 7.0 Blazor Server.
+Whole application was developed with .NET 9.0 Blazor Server.
 
 Multiple frameworks and tools were used for best apperience and user-friendly interface:
   - Syncfusion solutions components
   - Mudblazor
-  - EntityFrameworkCore PostgreSQL
+  - EntityFrameworkCore PostgreSQL (+ pgvector for SCRIBE)
   - Magick.NET
   - AutoMapper
   - jquery
   - toastr
   - nlog
   - bootstrap
+  - Microsoft.SemanticKernel (+ Ollama connector) – agent layer for SCRIBE
+  - OpenTelemetry (opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`)
+
+## 🧠 SCRIBE – AI memory for campaigns
+
+SCRIBE (Semantic Campaign Retrieval and Intelligence Based Explorer) is an
+optional in-app RAG / agent layer that lets players and GMs ask Polish-language
+questions about their campaign history. It runs against a remote Ollama host
+(GPU) and stores embeddings in PostgreSQL via pgvector.
+
+Docs:
+  - [docs/SCRIBE_ARCHITECTURE.md](docs/SCRIBE_ARCHITECTURE.md) – architecture, data model, RAG flow
+  - [docs/SCRIBE_DEPLOYMENT.md](docs/SCRIBE_DEPLOYMENT.md) – deploy app + GPU host
+  - [docs/SCRIBE_QUICKREF.md](docs/SCRIBE_QUICKREF.md) – endpoints, request shapes, config keys
+  - [docs/GPU_SERVER_SETUP.md](docs/GPU_SERVER_SETUP.md) – Ollama + ROCm/CUDA setup
 
 ## 🏗️ Deploy
 Application is built automatically when new release is published using Github Actions as a Docker image and pushed to DockerHub. FluxCD residing on private Kubernetes cluster is monitoring DockerHub registry and when a new version is ready it recreates the app container with new image wihitn 5 minutes. Deployment configuration is set using custom helm chart available in [drik-homelab-helm-charts](https://github.com/drikqlis/drik-homelab-helm-charts) repository and managed by FluxCD.

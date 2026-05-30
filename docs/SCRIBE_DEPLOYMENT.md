@@ -151,11 +151,61 @@ cd /opt/dagonite
   "Scribe": {
     "Ollama": {
       "BaseUrl": "http://192.168.1.20:11434",
+      "ChatModel": "qwen2.5:14b",
       "PersonaFilePath": "Resources/scribe-persona.md"
+    },
+    "Ingest": {
+      "BatchSize": 25,
+      "BatchDelayMs": 0,
+      "InterChapterDelayMs": 0
     }
   }
 }
 ```
+
+> **Model agenta:** dla `/api/scribe/agent/query` wymagany jest model z
+> obsługą tool-callingu (`qwen2.5:14b` / `qwen2.5:7b` / `mistral-nemo` /
+> `llama3.1`). Modele bez wsparcia (`gemma2`, `llama3.2`) **nie zadziałają**.
+
+#### Sekret: JwtKey (wymagany, fail-fast)
+
+Klucz JWT **nie jest** w `appsettings.json`. Aplikacja przerywa start jeśli
+klucz jest pusty, równy placeholderowi lub krótszy niż 32 znaki.
+
+```bash
+# Dev: user-secrets (UserSecretsId jest już w csproj)
+cd DagoniteEmpire
+dotnet user-secrets set "Authentication:Schemes:Bearer:JwtKey" \
+  "$(openssl rand -base64 48 | tr -d '\n')"
+
+# Prod: zmienna środowiskowa (systemd / docker / kubernetes)
+export Authentication__Schemes__Bearer__JwtKey="<>=32 znaki>"
+```
+
+#### Throttling indeksowania (opcjonalne)
+
+Domyślnie indeks postów chodzi na pełnej prędkości. Dla wielkich kampanii
+lub współdzielonego GPU można zwolnić:
+
+```json
+"Ingest": {
+  "BatchSize": 25,           // co ile postów log + ewentualna pauza
+  "BatchDelayMs": 500,       // pauza między batchami w obrębie rozdziału
+  "InterChapterDelayMs": 1000 // pauza między rozdziałami w IngestCampaignPostsAsync
+}
+```
+
+#### Telemetria (opcjonalna)
+
+OpenTelemetry uruchamia się tylko gdy ustawione `OTEL_EXPORTER_OTLP_ENDPOINT`:
+
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector:4317"
+# (opcjonalnie) export OTEL_EXPORTER_OTLP_HEADERS="x-api-key=..."
+```
+
+Zbieramy: aktywności AspNetCore, HttpClient oraz Scribe
+(`scribe.agent.invoke`, `scribe.search`, `scribe.embedding`).
 
 ### 2.6 Konfiguracja persony SCRIBE (opcjonalne)
 
@@ -259,11 +309,14 @@ curl -X POST "http://localhost:5000/api/scribe/ingest/campaign/1?reindex=true"
 ### 4.1 Health check
 
 ```bash
-# Aplikacja
+# Liveness aplikacji (DB)
 curl http://localhost:5000/healthz
 
-# SCRIBE status (sprawdza połączenie z Ollama)
-curl http://localhost:5000/api/scribe/status
+# Readiness Scribe (Ollama + obecność ChatModel)
+# Healthy   = Ollama OK i model zainstalowany
+# Degraded  = Ollama OK ale brak modelu (200 z payloadem 'Degraded')
+# Unhealthy = Ollama nieosiągalne
+curl http://localhost:5000/health/scribe
 ```
 
 ### 4.2 Test wyszukiwania (vector search)
@@ -364,10 +417,14 @@ ufw allow from 192.168.1.0/24 to any port 11434
 ## Checklist przed uruchomieniem
 
 - [ ] PostgreSQL działa i ma rozszerzenie pgvector
-- [ ] Ollama działa i ma modele: nomic-embed-text, gemma2:9b
+- [ ] Ollama działa i ma modele: `nomic-embed-text`, `qwen2.5:14b` (lub inny z tool-callingiem)
 - [ ] Ollama słucha na 0.0.0.0:11434 (nie tylko localhost)
-- [ ] appsettings.Production.json ma poprawny IP maszyny GPU
-- [ ] Migracja bazy danych wykonana
+- [ ] `appsettings.Production.json` ma poprawny IP maszyny GPU
+- [ ] `Authentication:Schemes:Bearer:JwtKey` ustawione (user-secrets lub env, min. 32 znaki)
+- [ ] Migracja bazy danych wykonana (`dotnet ef database update`)
 - [ ] Import danych wykonany
-- [ ] Test wyszukiwania działa
-- [ ] Test RAG query działa
+- [ ] `/healthz` zwraca 200
+- [ ] `/health/scribe` zwraca 200 Healthy
+- [ ] Test `/api/scribe/search` działa
+- [ ] Test `/api/scribe/agent/query` działa
+- [ ] (opcjonalnie) `OTEL_EXPORTER_OTLP_ENDPOINT` ustawione i traces docierają do backendu
