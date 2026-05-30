@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using DA_Scribe.Models;
 using DA_Scribe.Services.Interfaces;
+using DagoniteEmpire.Service.Scribe;
 using System.Text.Json;
 
 namespace DagoniteEmpire.Service
@@ -336,6 +337,46 @@ namespace DagoniteEmpire.Service
                 {
                     Success = false,
                     Message = $"Błąd podczas indeksowania: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Agentic query - lets the LLM autonomously call tools (memory search, character lookup, chapter listing)
+        /// to answer questions. Slower than /query but richer reasoning.
+        /// </summary>
+        [HttpPost("agent/query")]
+        [Authorize]
+        public async Task<ActionResult<ScribeAgentResult>> AgentQuery(
+            [FromBody] ScribeQueryRequest request,
+            [FromServices] IScribeAgentService agent,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(request.Query))
+                return BadRequest("Query is required");
+
+            var isGameMaster = User.IsInRole("GameMaster") || User.IsInRole("Admin");
+            var userId = User.Identity?.Name ?? "anonymous";
+
+            try
+            {
+                var result = await agent.InvokeAsync(new ScribeAgentRequest
+                {
+                    Question = request.Query,
+                    UserId = userId,
+                    CharacterId = request.CharacterId,
+                    CampaignId = request.CampaignId,
+                    IsGameMaster = isGameMaster,
+                }, cancellationToken);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Agent query failed for user {User}", userId);
+                return StatusCode(500, new ScribeAgentResult
+                {
+                    Response = "Wystąpił błąd podczas przetwarzania zapytania przez agenta."
                 });
             }
         }

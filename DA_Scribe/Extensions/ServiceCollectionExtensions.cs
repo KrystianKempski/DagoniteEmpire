@@ -1,4 +1,5 @@
 using DA_Scribe.Configuration;
+using DA_Scribe.Kernel;
 using DA_Scribe.Services;
 using DA_Scribe.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -14,9 +15,6 @@ namespace DA_Scribe.Extensions
         /// <summary>
         /// Add SCRIBE services to the dependency injection container
         /// </summary>
-        /// <param name="services">Service collection</param>
-        /// <param name="configuration">Configuration</param>
-        /// <returns>Service collection for chaining</returns>
         public static IServiceCollection AddScribe(
             this IServiceCollection services,
             IConfiguration configuration)
@@ -24,19 +22,27 @@ namespace DA_Scribe.Extensions
             // Bind configuration
             services.Configure<ScribeOptions>(
                 configuration.GetSection(ScribeOptions.SectionName));
-            
-            // Register HTTP clients for Ollama services
+
+            // Embedding service still uses typed HttpClient (raw Ollama embedding API)
             services.AddHttpClient<IEmbeddingService, EmbeddingService>();
-            services.AddHttpClient<ILLMService, LLMService>();
-            
-            // Register other services
+
+            // Ensure IHttpClientFactory is available for LLMService + kernel factory
+            services.AddHttpClient();
+
+            // Semantic Kernel factory (one kernel per app, but lightweight to build)
+            services.AddSingleton<IScribeKernelFactory, ScribeKernelFactory>();
+
+            // LLM service now backed by Semantic Kernel
+            services.AddSingleton<ILLMService, LLMService>();
+
             services.AddSingleton<IChunkService, ChunkService>();
             services.AddSingleton<IDocumentParserService, DocumentParserService>();
-            
+
             // Main SCRIBE service
             services.AddScoped<IScribeService, ScribeService>();
-            
+
             return services;
         }
     }
 }
+

@@ -1,69 +1,64 @@
-using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using DA_Scribe.Configuration;
+using DA_Scribe.Kernel;
 using DA_Scribe.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.Ollama;
 
 namespace DA_Scribe.Services
 {
     /// <summary>
-    /// LLM service using Ollama API for text generation
+    /// LLM service backed by Semantic Kernel + Ollama chat completion.
+    /// Preserves the original ILLMService contract used by ScribeService.
     /// </summary>
     public class LLMService : ILLMService
     {
-        private readonly HttpClient _httpClient;
         private readonly ILogger<LLMService> _logger;
         private readonly ScribeOptions _options;
+        private readonly Microsoft.SemanticKernel.Kernel _kernel;
+        private readonly IChatCompletionService _chat;
+        private readonly HttpClient _httpClient;
         private readonly string _systemPrompt;
-        
-        private static readonly JsonSerializerOptions JsonOptions = new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-        
+
         public string ModelName => _options.Ollama.ChatModel;
-        
+
         public LLMService(
-            HttpClient httpClient,
             ILogger<LLMService> logger,
-            IOptions<ScribeOptions> options)
+            IOptions<ScribeOptions> options,
+            IScribeKernelFactory kernelFactory,
+            IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClient;
             _logger = logger;
             _options = options.Value;
-            
+            _kernel = kernelFactory.Create();
+            _chat = _kernel.GetRequiredService<IChatCompletionService>();
+
+            _httpClient = httpClientFactory.CreateClient(nameof(LLMService));
             _httpClient.BaseAddress = new Uri(_options.Ollama.BaseUrl);
-            _httpClient.Timeout = TimeSpan.FromSeconds(_options.Ollama.TimeoutSeconds * 2); // Longer for generation
-            
-            // Load persona from file or fall back to config
+            _httpClient.Timeout = TimeSpan.FromSeconds(_options.Ollama.TimeoutSeconds);
+
             _systemPrompt = LoadPersonaFromFile();
         }
-        
+
         private string LoadPersonaFromFile()
         {
             var personaPath = _options.Ollama.PersonaFilePath;
-            
             if (string.IsNullOrEmpty(personaPath))
-            {
-                _logger.LogDebug("No persona file path configured, using default system prompt");
                 return _options.Ollama.SystemPrompt;
-            }
-            
+
             try
             {
                 if (File.Exists(personaPath))
                 {
                     var content = File.ReadAllText(personaPath);
-                    _logger.LogInformation("Loaded SCRIBE persona from {Path} ({Length} chars)", 
+                    _logger.LogInformation("Loaded SCRIBE persona from {Path} ({Length} chars)",
                         personaPath, content.Length);
                     return content;
                 }
-                
                 _logger.LogWarning("Persona file not found: {Path}, using fallback prompt", personaPath);
                 return _options.Ollama.SystemPrompt;
             }
@@ -73,151 +68,84 @@ namespace DA_Scribe.Services
                 return _options.Ollama.SystemPrompt;
             }
         }
-        
+
         public async Task<string> GenerateResponseAsync(
             string prompt,
             IEnumerable<string> context,
             string? systemPrompt = null,
             CancellationToken cancellationToken = default)
         {
-            var fullPrompt = BuildRAGPrompt(prompt, context);
-            var system = systemPrompt ?? _systemPrompt;
-            
-            var request = new GenerateRequest
-            {
-                Model = _options.Ollama.ChatModel,
-                Prompt = fullPrompt,
-                System = system,
-                Stream = false,
-                Options = new GenerateOptions
-                {
-                    Temperature = _options.Ollama.Temperature,
-                    NumPredict = _options.Ollama.MaxTokens
-                }
-            };
-            
+            var history = BuildHistory(prompt, context, systemPrompt);
+            var settings = BuildSettings();
+
             try
             {
-                _logger.LogDebug("Sending prompt to {Model}", _options.Ollama.ChatModel);
-                
-                var response = await _httpClient.PostAsJsonAsync(
-                    "/api/generate",
-                    request,
-                    JsonOptions,
+                _logger.LogDebug("SK: chat completion via {Model}", _options.Ollama.ChatModel);
+
+                var result = await _chat.GetChatMessageContentAsync(
+                    history,
+                    settings,
+                    _kernel,
                     cancellationToken);
-                
-                response.EnsureSuccessStatusCode();
-                
-                var result = await response.Content.ReadFromJsonAsync<GenerateResponse>(
-                    JsonOptions,
-                    cancellationToken);
-                
-                _logger.LogDebug(
-                    "Generated response in {Duration}ms, {TokenCount} tokens",
-                    result?.TotalDuration / 1_000_000, // nanoseconds to ms
-                    result?.EvalCount);
-                
-                return result?.Response ?? string.Empty;
+
+                return result.Content ?? string.Empty;
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "Failed to connect to Ollama for generation");
+                _logger.LogError(ex, "Failed to connect to Ollama via Semantic Kernel");
                 throw new InvalidOperationException(
                     $"Failed to connect to Ollama. Is it running at {_options.Ollama.BaseUrl}?",
                     ex);
             }
         }
-        
+
         public async IAsyncEnumerable<string> GenerateResponseStreamAsync(
             string prompt,
             IEnumerable<string> context,
             string? systemPrompt = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var fullPrompt = BuildRAGPrompt(prompt, context);
-            var system = systemPrompt ?? _systemPrompt;
-            
-            var request = new GenerateRequest
+            var history = BuildHistory(prompt, context, systemPrompt);
+            var settings = BuildSettings();
+
+            await foreach (var chunk in _chat.GetStreamingChatMessageContentsAsync(
+                history,
+                settings,
+                _kernel,
+                cancellationToken))
             {
-                Model = _options.Ollama.ChatModel,
-                Prompt = fullPrompt,
-                System = system,
-                Stream = true,
-                Options = new GenerateOptions
-                {
-                    Temperature = _options.Ollama.Temperature,
-                    NumPredict = _options.Ollama.MaxTokens
-                }
-            };
-            
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/generate")
-            {
-                Content = new StringContent(
-                    JsonSerializer.Serialize(request, JsonOptions),
-                    Encoding.UTF8,
-                    "application/json")
-            };
-            
-            var response = await _httpClient.SendAsync(
-                httpRequest,
-                HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken);
-            
-            response.EnsureSuccessStatusCode();
-            
-            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            using var reader = new StreamReader(stream);
-            
-            while (!reader.EndOfStream)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                
-                var line = await reader.ReadLineAsync(cancellationToken);
-                if (string.IsNullOrEmpty(line)) continue;
-                
-                var chunk = JsonSerializer.Deserialize<GenerateResponse>(line, JsonOptions);
-                if (chunk?.Response != null)
-                {
-                    yield return chunk.Response;
-                }
-                
-                if (chunk?.Done == true)
-                {
-                    break;
-                }
+                if (!string.IsNullOrEmpty(chunk.Content))
+                    yield return chunk.Content;
             }
         }
-        
+
         public async Task<string> SummarizeAsync(string text, CancellationToken cancellationToken = default)
         {
-            var summaryPrompt = 
+            var summaryPrompt =
                 "Stwórz zwięzłe podsumowanie poniższego tekstu w maksymalnie 3-4 zdaniach. " +
                 "Skup się na najważniejszych wydarzeniach, postaciach i miejscach.\n\n" +
                 $"Tekst:\n{text}";
-            
-            var systemPrompt = 
+
+            var systemPrompt =
                 "Jesteś asystentem tworzącym podsumowania przygód RPG. " +
                 "Pisz zwięźle, ale zachowaj kluczowe informacje.";
-            
+
             return await GenerateResponseAsync(
                 summaryPrompt,
                 Enumerable.Empty<string>(),
                 systemPrompt,
                 cancellationToken);
         }
-        
+
         public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 var response = await _httpClient.GetAsync("/api/tags", cancellationToken);
-                
                 if (!response.IsSuccessStatusCode)
                     return false;
-                
+
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
-                
-                // Check if chat model is available
                 return content.Contains(_options.Ollama.ChatModel);
             }
             catch (Exception ex)
@@ -226,63 +154,43 @@ namespace DA_Scribe.Services
                 return false;
             }
         }
-        
+
+        private ChatHistory BuildHistory(string prompt, IEnumerable<string> context, string? systemPromptOverride)
+        {
+            var history = new ChatHistory();
+            history.AddSystemMessage(systemPromptOverride ?? _systemPrompt);
+            history.AddUserMessage(BuildRAGPrompt(prompt, context));
+            return history;
+        }
+
+        private OllamaPromptExecutionSettings BuildSettings() => new()
+        {
+            Temperature = _options.Ollama.Temperature,
+            NumPredict = _options.Ollama.MaxTokens,
+        };
+
         private static string BuildRAGPrompt(string question, IEnumerable<string> context)
         {
             var contextList = context.ToList();
-            
-            if (!contextList.Any())
-            {
+            if (contextList.Count == 0)
                 return question;
-            }
-            
+
             var sb = new StringBuilder();
             sb.AppendLine("Na podstawie poniższych fragmentów z archiwum przygód, odpowiedz na pytanie.");
             sb.AppendLine();
             sb.AppendLine("=== FRAGMENTY Z ARCHIWUM ===");
             sb.AppendLine();
-            
             for (int i = 0; i < contextList.Count; i++)
             {
                 sb.AppendLine($"[Fragment {i + 1}]");
                 sb.AppendLine(contextList[i]);
                 sb.AppendLine();
             }
-            
             sb.AppendLine("=== PYTANIE ===");
             sb.AppendLine(question);
             sb.AppendLine();
             sb.AppendLine("Odpowiedź:");
-            
             return sb.ToString();
-        }
-        
-        // Request/Response DTOs
-        
-        private class GenerateRequest
-        {
-            public string Model { get; set; } = string.Empty;
-            public string Prompt { get; set; } = string.Empty;
-            public string? System { get; set; }
-            public bool Stream { get; set; }
-            public GenerateOptions? Options { get; set; }
-        }
-        
-        private class GenerateOptions
-        {
-            public float Temperature { get; set; }
-            [JsonPropertyName("num_predict")]
-            public int NumPredict { get; set; }
-        }
-        
-        private class GenerateResponse
-        {
-            public string? Response { get; set; }
-            public bool Done { get; set; }
-            [JsonPropertyName("total_duration")]
-            public long? TotalDuration { get; set; }
-            [JsonPropertyName("eval_count")]
-            public int? EvalCount { get; set; }
         }
     }
 }

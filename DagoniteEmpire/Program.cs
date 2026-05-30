@@ -150,6 +150,7 @@ public class Program
 
         // SCRIBE - AI Memory System
         builder.Services.AddScribe(builder.Configuration);
+        builder.Services.AddScoped<DagoniteEmpire.Service.Scribe.IScribeAgentService, DagoniteEmpire.Service.Scribe.ScribeAgentService>();
 
         builder.Services.AddCropper();
         builder.Services.AddServerSideBlazor()
