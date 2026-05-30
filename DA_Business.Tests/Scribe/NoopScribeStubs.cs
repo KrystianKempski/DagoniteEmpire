@@ -21,23 +21,6 @@ internal sealed class NoopEmbeddingService : IEmbeddingService
         => Task.FromResult(false);
 }
 
-internal sealed class NoopLLMService : ILLMService
-{
-    public string ModelName => "noop";
-
-    public Task<string> GenerateResponseAsync(string prompt, IEnumerable<string> context, string? systemPrompt = null, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException("LLM not available in unit tests");
-
-    public IAsyncEnumerable<string> GenerateResponseStreamAsync(string prompt, IEnumerable<string> context, string? systemPrompt = null, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException("LLM not available in unit tests");
-
-    public Task<string> SummarizeAsync(string text, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException("LLM not available in unit tests");
-
-    public Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult(false);
-}
-
 internal sealed class NoopChunkService : IChunkService
 {
     public IList<string> ChunkText(string text, int maxTokens = 500, int overlapTokens = 50)
@@ -57,4 +40,9 @@ internal sealed class NoopDocumentParserService : IDocumentParserService
 
     public Task<ParsedDocument> ParseWordDocumentAsync(string filePath, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
+}
+
+internal sealed class NoopHttpClientFactory : IHttpClientFactory
+{
+    public HttpClient CreateClient(string name) => new HttpClient();
 }

@@ -18,7 +18,7 @@ namespace DA_Scribe.Services
     {
         private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
         private readonly IEmbeddingService _embeddingService;
-        private readonly ILLMService _llmService;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IChunkService _chunkService;
         private readonly IDocumentParserService _documentParser;
         private readonly ILogger<ScribeService> _logger;
@@ -27,7 +27,7 @@ namespace DA_Scribe.Services
         public ScribeService(
             IDbContextFactory<ApplicationDbContext> contextFactory,
             IEmbeddingService embeddingService,
-            ILLMService llmService,
+            IHttpClientFactory httpClientFactory,
             IChunkService chunkService,
             IDocumentParserService documentParser,
             ILogger<ScribeService> logger,
@@ -35,7 +35,7 @@ namespace DA_Scribe.Services
         {
             _contextFactory = contextFactory;
             _embeddingService = embeddingService;
-            _llmService = llmService;
+            _httpClientFactory = httpClientFactory;
             _chunkService = chunkService;
             _documentParser = documentParser;
             _logger = logger;
@@ -295,13 +295,31 @@ namespace DA_Scribe.Services
             try
             {
                 var embeddingAvailable = await _embeddingService.IsAvailableAsync(cancellationToken);
-                var llmAvailable = await _llmService.IsAvailableAsync(cancellationToken);
-                
+                var llmAvailable = await IsChatModelAvailableAsync(cancellationToken);
+
                 return embeddingAvailable && llmAvailable;
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "SCRIBE availability check failed");
+                return false;
+            }
+        }
+
+        private async Task<bool> IsChatModelAvailableAsync(CancellationToken ct)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("scribe-ollama-health");
+                client.BaseAddress ??= new Uri(_options.Ollama.BaseUrl);
+                using var response = await client.GetAsync("/api/tags", ct);
+                if (!response.IsSuccessStatusCode) return false;
+                var content = await response.Content.ReadAsStringAsync(ct);
+                return content.Contains(_options.Ollama.ChatModel, StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Ollama chat model availability check failed");
                 return false;
             }
         }

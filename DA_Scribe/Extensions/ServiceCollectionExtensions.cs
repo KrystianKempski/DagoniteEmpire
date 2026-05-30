@@ -39,16 +39,8 @@ namespace DA_Scribe.Extensions
                     totalSeconds: scribeOptions.Ollama.TimeoutSeconds * 2,
                     maxRetryAttempts: 3));
 
-            // Named clients used by LLMService and ScribeKernelFactory for chat completion.
+            // Named client used by ScribeKernelFactory for chat completion.
             // Chat calls can be slow (large model + tool calls) -> long timeouts, fewer retries.
-            services
-                .AddHttpClient(nameof(LLMService))
-                .AddResilienceHandler("scribe-llm", b => ConfigureOllamaResilience(
-                    b,
-                    perAttemptSeconds: scribeOptions.Ollama.TimeoutSeconds,
-                    totalSeconds: scribeOptions.Ollama.TimeoutSeconds * 3,
-                    maxRetryAttempts: 2));
-
             services
                 .AddHttpClient(nameof(ScribeKernelFactory))
                 .AddResilienceHandler("scribe-kernel", b => ConfigureOllamaResilience(
@@ -57,14 +49,18 @@ namespace DA_Scribe.Extensions
                     totalSeconds: scribeOptions.Ollama.TimeoutSeconds * 4,
                     maxRetryAttempts: 2));
 
+            // Lightweight client for /api/tags availability probe (used by ScribeService.IsAvailableAsync).
+            services
+                .AddHttpClient("scribe-ollama-health", c =>
+                {
+                    c.Timeout = TimeSpan.FromSeconds(Math.Min(scribeOptions.Ollama.TimeoutSeconds, 10));
+                });
+
             // Fallback default client (used elsewhere if anyone calls CreateClient() w/o a name).
             services.AddHttpClient();
 
             // Semantic Kernel factory (one kernel per app, but lightweight to build)
             services.AddSingleton<IScribeKernelFactory, ScribeKernelFactory>();
-
-            // LLM service now backed by Semantic Kernel
-            services.AddSingleton<ILLMService, LLMService>();
 
             services.AddSingleton<IChunkService, ChunkService>();
             services.AddSingleton<IDocumentParserService, DocumentParserService>();

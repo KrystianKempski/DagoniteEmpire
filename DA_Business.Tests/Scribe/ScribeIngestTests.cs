@@ -19,7 +19,7 @@ public class ScribeIngestTests : IClassFixture<ScribeInMemoryDatabaseFixture>
         _service = new ScribeService(
             _fixture.DbContextFactory,
             new NoopEmbeddingService(),
-            new NoopLLMService(),
+            new NoopHttpClientFactory(),
             new NoopChunkService(),
             new NoopDocumentParserService(),
             NullLogger<ScribeService>.Instance,
