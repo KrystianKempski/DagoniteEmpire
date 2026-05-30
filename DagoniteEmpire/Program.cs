@@ -60,6 +60,21 @@ public class Program
 
         var bearerAuthenticationSettings = new BearerAuthenticationSettings();
         builder.Configuration.GetSection("Authentication:Schemes:Bearer").Bind(bearerAuthenticationSettings);
+
+        // JwtKey must come from user-secrets (dev) or a real secret store / env var
+        // (prod). Fail fast on startup rather than minting tokens signed with a
+        // placeholder or empty key, which would let anyone forge bearer tokens.
+        if (string.IsNullOrWhiteSpace(bearerAuthenticationSettings.JwtKey)
+            || bearerAuthenticationSettings.JwtKey == "SET_IN_USER_SECRETS_OR_ENV"
+            || bearerAuthenticationSettings.JwtKey.Length < 32)
+        {
+            throw new InvalidOperationException(
+                "Authentication:Schemes:Bearer:JwtKey is not configured. " +
+                "Set it via user-secrets ('dotnet user-secrets set \"Authentication:Schemes:Bearer:JwtKey\" \"<>=32-char-random>\"') " +
+                "or the environment variable 'Authentication__Schemes__Bearer__JwtKey'. " +
+                "Minimum length is 32 characters.");
+        }
+
         builder.Services.AddSingleton(bearerAuthenticationSettings);
 
         builder.Services.AddAuthentication(options =>
