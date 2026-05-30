@@ -30,6 +30,8 @@ using System.Text;
 using DA_Models;
 using MimeKit;
 using DA_Scribe.Extensions;
+using DA_Scribe.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 
@@ -108,7 +110,12 @@ public class Program
 
 
 
-        builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
+        builder.Services.AddHealthChecks()
+            .AddDbContextCheck<ApplicationDbContext>()
+            .AddCheck<ScribeOllamaHealthCheck>(
+                name: "scribe-ollama",
+                failureStatus: HealthStatus.Degraded,
+                tags: new[] { "scribe", "ollama" });
 
         builder.Services.AddAutoMapper(cfg =>
         {
@@ -257,6 +264,10 @@ public class Program
             .WithStaticAssets();
 
         app.MapHealthChecks("/healthz");
+        app.MapHealthChecks("/health/scribe", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+        {
+            Predicate = check => check.Tags.Contains("scribe"),
+        });
         // Add additional endpoints required by the Identity /Account Razor components.
         app.MapAdditionalIdentityEndpoints();
 
