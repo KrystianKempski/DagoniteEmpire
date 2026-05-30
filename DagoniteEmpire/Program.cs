@@ -158,12 +158,23 @@ public class Program
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-            // Per-user fixed window: 20 requests / minute. Anonymous clients share a single bucket.
+            static string ResolvePartitionKey(HttpContext ctx)
+            {
+                var name = ctx.User.Identity?.Name;
+                if (!string.IsNullOrWhiteSpace(name))
+                    return "u:" + name;
+
+                var ip = ctx.Connection.RemoteIpAddress?.ToString();
+                return "ip:" + (string.IsNullOrWhiteSpace(ip) ? "unknown" : ip);
+            }
+
+            // Per-user fixed window: 20 requests / minute.
+            // Unauthenticated clients fall back to a per-IP bucket so a single
+            // misbehaving anonymous host cannot exhaust everyone's budget.
             options.AddPolicy("scribe-query", httpContext =>
             {
-                var key = httpContext.User.Identity?.Name ?? "anonymous";
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: key,
+                    partitionKey: ResolvePartitionKey(httpContext),
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 20,
@@ -176,9 +187,8 @@ public class Program
             // Ingest / import are expensive — much tighter bucket.
             options.AddPolicy("scribe-ingest", httpContext =>
             {
-                var key = httpContext.User.Identity?.Name ?? "anonymous";
                 return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: key,
+                    partitionKey: ResolvePartitionKey(httpContext),
                     factory: _ => new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 5,
