@@ -55,21 +55,34 @@ namespace DA_DataAccess.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Enable pgvector extension for SCRIBE
-            modelBuilder.HasPostgresExtension("vector");
-            
+            var isNpgsql = Database.IsNpgsql();
+
+            if (isNpgsql)
+            {
+                // Enable pgvector extension for SCRIBE (PostgreSQL only)
+                modelBuilder.HasPostgresExtension("vector");
+            }
+
             // Configure SCRIBE entities
             modelBuilder.Entity<ScribeChunk>(entity =>
             {
-                // Vector column configuration
-                entity.Property(e => e.Embedding)
-                    .HasColumnType("vector(768)");
-                
-                // Index for vector similarity search using HNSW
-                entity.HasIndex(e => e.Embedding)
-                    .HasMethod("hnsw")
-                    .HasOperators("vector_cosine_ops");
-                
+                if (isNpgsql)
+                {
+                    // Vector column configuration
+                    entity.Property(e => e.Embedding)
+                        .HasColumnType("vector(768)");
+
+                    // Index for vector similarity search using HNSW
+                    entity.HasIndex(e => e.Embedding)
+                        .HasMethod("hnsw")
+                        .HasOperators("vector_cosine_ops");
+                }
+                else
+                {
+                    // Other providers (in-memory, SQLite used in tests) cannot map pgvector
+                    entity.Ignore(e => e.Embedding);
+                }
+
                 // Indexes for filtering
                 entity.HasIndex(e => e.CampaignId);
                 entity.HasIndex(e => e.MemoryType);
