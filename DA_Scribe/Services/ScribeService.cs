@@ -995,6 +995,33 @@ namespace DA_Scribe.Services
             return await context.ScribeMemories
                 .AnyAsync(m => m.SourcePostId == postId && m.Type == MemoryType.Post, cancellationToken);
         }
+
+        public async Task RemovePostAsync(
+            int postId,
+            CancellationToken cancellationToken = default)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+            var memories = await context.ScribeMemories
+                .Include(m => m.Chunks)
+                .Where(m => m.SourcePostId == postId && m.Type == MemoryType.Post)
+                .ToListAsync(cancellationToken);
+
+            if (memories.Count == 0)
+                return;
+
+            context.ScribeMemories.RemoveRange(memories);
+            await context.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Removed {Count} memory record(s) for post {PostId} from SCRIBE", memories.Count, postId);
+        }
+
+        public async Task<int?> ReindexPostAsync(
+            int postId,
+            CancellationToken cancellationToken = default)
+        {
+            await RemovePostAsync(postId, cancellationToken);
+            return await IngestPostAsync(postId, cancellationToken);
+        }
         
         /// <summary>
         /// Internal method to ingest a single post

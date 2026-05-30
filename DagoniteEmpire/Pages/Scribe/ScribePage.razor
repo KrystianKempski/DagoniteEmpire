@@ -619,10 +619,8 @@
 
         try
         {
-            // Agent path replaces the previous RAG pipeline. Streaming is not yet
-            // supported with auto tool-calling, so we always invoke non-streaming.
             await AskQuestionWithAgent(question);
-            
+
             // Refresh conversation list
             await LoadConversationHistory();
         }
@@ -650,6 +648,18 @@
         ThinkingText = "Skryba szuka w archiwum...";
         StateHasChanged();
 
+        if (UseStreaming)
+        {
+            await AskQuestionStreamingWithAgent(question);
+        }
+        else
+        {
+            await AskQuestionBlockingWithAgent(question);
+        }
+    }
+
+    private async Task AskQuestionBlockingWithAgent(string question)
+    {
         var result = await _agentService.InvokeAsync(new ScribeAgentRequest
         {
             Question = question,
@@ -669,6 +679,57 @@
             Timestamp = DateTime.Now,
             Sources = result.ToolCalls
         });
+    }
+
+    private async Task AskQuestionStreamingWithAgent(string question)
+    {
+        var assistantMessage = new ChatMessage
+        {
+            Content = string.Empty,
+            IsUser = false,
+            Timestamp = DateTime.Now
+        };
+        Messages.Add(assistantMessage);
+        IsThinking = false;
+        IsStreaming = true;
+        StateHasChanged();
+
+        var sb = new System.Text.StringBuilder();
+        var tokenCount = 0;
+
+        await foreach (var chunk in _agentService.InvokeStreamingAsync(new ScribeAgentRequest
+        {
+            Question = question,
+            UserId = UserInfo?.UserId ?? string.Empty,
+            CharacterId = UserInfo?.SelectedCharacter?.Id,
+            CampaignId = SelectedCampaign?.Id,
+            IsGameMaster = UserInfo?.IsAdminOrMG == true,
+            ConversationId = CurrentConversationId,
+        }))
+        {
+            if (chunk.IsFinal)
+            {
+                if (chunk.ConversationId.HasValue)
+                    CurrentConversationId = chunk.ConversationId;
+                if (chunk.ToolCalls is { Count: > 0 })
+                    assistantMessage.Sources = chunk.ToolCalls.ToList();
+                continue;
+            }
+
+            sb.Append(chunk.Token);
+            assistantMessage.Content = sb.ToString();
+            tokenCount++;
+
+            if (tokenCount % 3 == 0)
+            {
+                StateHasChanged();
+                await ScrollToBottom();
+            }
+        }
+
+        assistantMessage.Content = sb.ToString();
+        IsStreaming = false;
+        StateHasChanged();
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)

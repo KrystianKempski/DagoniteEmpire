@@ -39,6 +39,29 @@ namespace DagoniteEmpire.Service.Scribe
     public interface IScribeAgentService
     {
         Task<ScribeAgentResult> InvokeAsync(ScribeAgentRequest request, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Streams the assistant's reply token-by-token. Tool calls happen transparently
+        /// before any visible token is produced (Ollama only streams the final turn).
+        /// The full reply is persisted to the conversation when streaming completes.
+        /// </summary>
+        IAsyncEnumerable<ScribeAgentStreamChunk> InvokeStreamingAsync(
+            ScribeAgentRequest request,
+            CancellationToken cancellationToken = default);
+    }
+
+    public class ScribeAgentStreamChunk
+    {
+        /// <summary>Text delta. Empty for control chunks.</summary>
+        public string Token { get; set; } = string.Empty;
+        /// <summary>Set on the final chunk only.</summary>
+        public bool IsFinal { get; set; }
+        /// <summary>Set on the final chunk only.</summary>
+        public int? ConversationId { get; set; }
+        /// <summary>Set on the final chunk only.</summary>
+        public IReadOnlyList<string>? ToolCalls { get; set; }
+        /// <summary>Set on the final chunk only.</summary>
+        public int? GenerationTimeMs { get; set; }
     }
 
     /// <summary>
@@ -89,7 +112,93 @@ namespace DagoniteEmpire.Service.Scribe
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            var conversation = await GetOrCreateConversationAsync(request, cancellationToken);
+            var setup = await PrepareInvocationAsync(request, cancellationToken);
+
+            _logger.LogInformation(
+                "Agent invoke: conv={Conv} user={User} campaign={Campaign} q='{Question}'",
+                setup.Conversation.Id, request.UserId, request.CampaignId, request.Question);
+
+            var reply = await setup.Chat.GetChatMessageContentAsync(
+                setup.History, setup.Settings, setup.Kernel, cancellationToken);
+            sw.Stop();
+
+            var responseText = reply.Content ?? string.Empty;
+            var toolCalls = CollectToolCalls(setup.History);
+
+            await PersistTurnAsync(
+                setup.Conversation.Id,
+                userMessage: request.Question,
+                assistantMessage: responseText,
+                modelUsed: _options.Ollama.ChatModel,
+                generationTimeMs: (int)sw.ElapsedMilliseconds,
+                cancellationToken);
+
+            return new ScribeAgentResult
+            {
+                Response = responseText,
+                GenerationTimeMs = (int)sw.ElapsedMilliseconds,
+                ModelUsed = _options.Ollama.ChatModel,
+                ToolCalls = toolCalls,
+                ConversationId = setup.Conversation.Id,
+            };
+        }
+
+        public async IAsyncEnumerable<ScribeAgentStreamChunk> InvokeStreamingAsync(
+            ScribeAgentRequest request,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var setup = await PrepareInvocationAsync(request, cancellationToken);
+
+            _logger.LogInformation(
+                "Agent invoke (stream): conv={Conv} user={User} campaign={Campaign} q='{Question}'",
+                setup.Conversation.Id, request.UserId, request.CampaignId, request.Question);
+
+            var buffer = new System.Text.StringBuilder();
+
+            await foreach (var update in setup.Chat.GetStreamingChatMessageContentsAsync(
+                setup.History, setup.Settings, setup.Kernel, cancellationToken))
+            {
+                var token = update.Content;
+                if (string.IsNullOrEmpty(token))
+                    continue;
+
+                buffer.Append(token);
+                yield return new ScribeAgentStreamChunk { Token = token };
+            }
+
+            sw.Stop();
+            var responseText = buffer.ToString();
+            var toolCalls = CollectToolCalls(setup.History);
+
+            await PersistTurnAsync(
+                setup.Conversation.Id,
+                userMessage: request.Question,
+                assistantMessage: responseText,
+                modelUsed: _options.Ollama.ChatModel,
+                generationTimeMs: (int)sw.ElapsedMilliseconds,
+                cancellationToken);
+
+            yield return new ScribeAgentStreamChunk
+            {
+                IsFinal = true,
+                ConversationId = setup.Conversation.Id,
+                ToolCalls = toolCalls,
+                GenerationTimeMs = (int)sw.ElapsedMilliseconds,
+            };
+        }
+
+        private sealed record InvocationSetup(
+            ScribeConversation Conversation,
+            global::Microsoft.SemanticKernel.Kernel Kernel,
+            IChatCompletionService Chat,
+            ChatHistory History,
+            OllamaPromptExecutionSettings Settings);
+
+        private async Task<InvocationSetup> PrepareInvocationAsync(
+            ScribeAgentRequest request, CancellationToken ct)
+        {
+            var conversation = await GetOrCreateConversationAsync(request, ct);
 
             var kernel = _kernelFactory.Create();
 
@@ -110,7 +219,7 @@ namespace DagoniteEmpire.Service.Scribe
 
             var chat = kernel.GetRequiredService<IChatCompletionService>();
 
-            var history = await LoadHistoryAsync(conversation.Id, cancellationToken);
+            var history = await LoadHistoryAsync(conversation.Id, ct);
             history.AddUserMessage(request.Question);
 
             var settings = new OllamaPromptExecutionSettings
@@ -120,37 +229,15 @@ namespace DagoniteEmpire.Service.Scribe
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
             };
 
-            _logger.LogInformation(
-                "Agent invoke: conv={Conv} user={User} campaign={Campaign} q='{Question}'",
-                conversation.Id, request.UserId, request.CampaignId, request.Question);
+            return new InvocationSetup(conversation, kernel, chat, history, settings);
+        }
 
-            var reply = await chat.GetChatMessageContentAsync(history, settings, kernel, cancellationToken);
-            sw.Stop();
-
-            var responseText = reply.Content ?? string.Empty;
-            var toolCalls = history
+        private static List<string> CollectToolCalls(ChatHistory history) =>
+            history
                 .Where(m => m.Role == AuthorRole.Tool)
                 .Select(m => m.AuthorName ?? "tool")
                 .Distinct()
                 .ToList();
-
-            await PersistTurnAsync(
-                conversation.Id,
-                userMessage: request.Question,
-                assistantMessage: responseText,
-                modelUsed: _options.Ollama.ChatModel,
-                generationTimeMs: (int)sw.ElapsedMilliseconds,
-                cancellationToken);
-
-            return new ScribeAgentResult
-            {
-                Response = responseText,
-                GenerationTimeMs = (int)sw.ElapsedMilliseconds,
-                ModelUsed = _options.Ollama.ChatModel,
-                ToolCalls = toolCalls,
-                ConversationId = conversation.Id,
-            };
-        }
 
         private async Task<ScribeConversation> GetOrCreateConversationAsync(
             ScribeAgentRequest request, CancellationToken ct)

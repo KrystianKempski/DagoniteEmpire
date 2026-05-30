@@ -604,6 +604,20 @@ else
                     {
                         await _hubConnection.SendAsync("NotifyPostUpdated", Id, NewPost.Id);
                     }
+
+                    // Re-index the edited post in SCRIBE so the index reflects the new content
+                    var editedId = NewPost.Id;
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _scribeService.ReindexPostAsync(editedId);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogWarning(ex, "Failed to re-index edited post {PostId} in SCRIBE", editedId);
+                        }
+                    });
                 }
                 IsEditMode = false;
                 SendButtonText = "Send Post";
@@ -703,6 +717,20 @@ else
 
         Posts.Remove(post);
         await _postRepository.Delete(idToDelete);
+
+        // Remove the post from the SCRIBE index (fire and forget)
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _scribeService.RemovePostAsync(idToDelete);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to remove post {PostId} from SCRIBE", idToDelete);
+            }
+        });
+
         IsLoading = false;
         StateHasChanged();
     }

@@ -282,5 +282,20 @@ namespace DA_Scribe.Services.Interfaces
         Task<bool> IsPostIndexedAsync(
             int postId,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Re-index a post: removes any prior memory/chunks for the post and re-ingests it.
+        /// Use after a post is edited so the index reflects the new content.
+        /// </summary>
+        Task<int?> ReindexPostAsync(
+            int postId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Remove a post from the SCRIBE index (memory + chunks). No-op if not indexed.
+        /// </summary>
+        Task RemovePostAsync(
+            int postId,
+            CancellationToken cancellationToken = default);
     }
 }
