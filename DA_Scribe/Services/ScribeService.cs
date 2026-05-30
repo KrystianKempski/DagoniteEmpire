@@ -387,14 +387,17 @@ namespace DA_Scribe.Services
 
             memory.Chunks = scribeChunks;
 
-            // TODO: Save to database
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            context.ScribeMemories.Add(memory);
+            await context.SaveChangesAsync(cancellationToken);
+
             _logger.LogInformation(
-                "Document {FileName} ingested: {ChunkCount} chunks with embeddings (DB save pending)",
-                fileName, 
+                "Document {FileName} ingested: memory {MemoryId} with {ChunkCount} chunks",
+                fileName,
+                memory.Id,
                 scribeChunks.Count);
 
-            // Return placeholder ID (actual implementation would return DB-generated ID)
-            return 0;
+            return memory.Id;
         }
 
         public async Task<int> IngestContentAsync(
@@ -443,8 +446,17 @@ namespace DA_Scribe.Services
 
             memory.Chunks = scribeChunks;
 
-            // TODO: Save to database
-            return 0;
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            context.ScribeMemories.Add(memory);
+            await context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Content '{Title}' ingested: memory {MemoryId} with {ChunkCount} chunks",
+                title,
+                memory.Id,
+                scribeChunks.Count);
+
+            return memory.Id;
         }
 
         public async Task<int> GenerateChapterSummaryAsync(

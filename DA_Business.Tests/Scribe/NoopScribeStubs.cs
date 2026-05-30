@@ -9,11 +9,13 @@ namespace DA_Business.Tests.Scribe;
 /// </summary>
 internal sealed class NoopEmbeddingService : IEmbeddingService
 {
+    private static float[] FakeVector() => Enumerable.Repeat(0.01f, 768).ToArray();
+
     public Task<float[]> GetEmbeddingAsync(string text, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException("Embeddings not available in unit tests");
+        => Task.FromResult(FakeVector());
 
     public Task<IList<float[]>> GetEmbeddingsAsync(IEnumerable<string> texts, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException("Embeddings not available in unit tests");
+        => Task.FromResult<IList<float[]>>(texts.Select(_ => FakeVector()).ToList());
 
     public Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
         => Task.FromResult(false);
