@@ -32,6 +32,8 @@ using MimeKit;
 using DA_Scribe.Extensions;
 using DA_Scribe.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 
@@ -116,6 +118,23 @@ public class Program
                 name: "scribe-ollama",
                 failureStatus: HealthStatus.Degraded,
                 tags: new[] { "scribe", "ollama" });
+
+        // OpenTelemetry tracing for the Scribe stack. Only activates an OTLP
+        // exporter when OTEL_EXPORTER_OTLP_ENDPOINT is set, so local/dev runs
+        // pay no cost and don't need a collector.
+        var otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+        {
+            builder.Services.AddOpenTelemetry()
+                .ConfigureResource(rb => rb.AddService(
+                    serviceName: "DagoniteEmpire",
+                    serviceVersion: typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.0.0"))
+                .WithTracing(t => t
+                    .AddSource(DA_Scribe.Diagnostics.ScribeTelemetry.SourceName)
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddOtlpExporter());
+        }
 
         builder.Services.AddAutoMapper(cfg =>
         {

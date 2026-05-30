@@ -2,6 +2,7 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.Data;
 using DA_DataAccess.Scribe;
 using DA_Scribe.Configuration;
+using DA_Scribe.Diagnostics;
 using DA_Scribe.Kernel;
 using DA_Scribe.Models;
 using DA_Scribe.Plugins;
@@ -121,6 +122,13 @@ namespace DagoniteEmpire.Service.Scribe
             ScribeAgentRequest request,
             CancellationToken cancellationToken = default)
         {
+            using var activity = ScribeTelemetry.ActivitySource.StartActivity("scribe.agent.invoke");
+            activity?.SetTag("scribe.agent.user_id", request.UserId);
+            activity?.SetTag("scribe.agent.campaign_id", request.CampaignId);
+            activity?.SetTag("scribe.agent.is_gm", request.IsGameMaster);
+            activity?.SetTag("scribe.agent.streaming", false);
+            activity?.SetTag("scribe.agent.model", _options.Ollama.ChatModel);
+
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             var setup = await PrepareInvocationAsync(request, cancellationToken);
@@ -150,6 +158,12 @@ namespace DagoniteEmpire.Service.Scribe
                 generationTimeMs: (int)sw.ElapsedMilliseconds,
                 cancellationToken);
 
+            activity?.SetTag("scribe.agent.tokens_in", usage.PromptTokens);
+            activity?.SetTag("scribe.agent.tokens_out", usage.CompletionTokens);
+            activity?.SetTag("scribe.agent.tool_calls", toolCalls.Count);
+            activity?.SetTag("scribe.agent.citations", setup.Search.Citations.Count);
+            activity?.SetTag("scribe.agent.duration_ms", sw.ElapsedMilliseconds);
+
             return new ScribeAgentResult
             {
                 Response = responseText,
@@ -165,6 +179,13 @@ namespace DagoniteEmpire.Service.Scribe
             ScribeAgentRequest request,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
+            using var activity = ScribeTelemetry.ActivitySource.StartActivity("scribe.agent.invoke");
+            activity?.SetTag("scribe.agent.user_id", request.UserId);
+            activity?.SetTag("scribe.agent.campaign_id", request.CampaignId);
+            activity?.SetTag("scribe.agent.is_gm", request.IsGameMaster);
+            activity?.SetTag("scribe.agent.streaming", true);
+            activity?.SetTag("scribe.agent.model", _options.Ollama.ChatModel);
+
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var setup = await PrepareInvocationAsync(request, cancellationToken);
 

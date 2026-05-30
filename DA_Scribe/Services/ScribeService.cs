@@ -2,6 +2,7 @@ using DA_Scribe.Configuration;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Data;
 using DA_DataAccess.Scribe;
+using DA_Scribe.Diagnostics;
 using DA_Scribe.Models;
 using DA_Scribe.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -51,8 +52,17 @@ namespace DA_Scribe.Services
             bool isGameMaster = false,
             CancellationToken cancellationToken = default)
         {
-            var queryEmbedding = await _embeddingService.GetEmbeddingAsync(query, cancellationToken);
-            return await SearchInternalAsync(queryEmbedding, userId, characterId, campaignId, topK, isGameMaster, cancellationToken);
+            using var activity = ScribeTelemetry.ActivitySource.StartActivity("scribe.search");
+            activity?.SetTag("scribe.search.character_id", characterId);
+            activity?.SetTag("scribe.search.campaign_id", campaignId);
+            activity?.SetTag("scribe.search.top_k", topK);
+            activity?.SetTag("scribe.search.is_gm", isGameMaster);
+            activity?.SetTag("scribe.search.query_length", query?.Length ?? 0);
+
+            var queryEmbedding = await _embeddingService.GetEmbeddingAsync(query!, cancellationToken);
+            var results = await SearchInternalAsync(queryEmbedding, userId, characterId, campaignId, topK, isGameMaster, cancellationToken);
+            activity?.SetTag("scribe.search.result_count", results.Count);
+            return results;
         }
 
         private async Task<IList<ScribeSearchResult>> SearchInternalAsync(

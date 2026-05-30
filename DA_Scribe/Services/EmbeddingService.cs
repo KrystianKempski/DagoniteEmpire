@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DA_Scribe.Configuration;
+using DA_Scribe.Diagnostics;
 using DA_Scribe.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -42,7 +43,11 @@ namespace DA_Scribe.Services
             {
                 throw new ArgumentException("Text cannot be empty", nameof(text));
             }
-            
+
+            using var activity = ScribeTelemetry.ActivitySource.StartActivity("scribe.embedding");
+            activity?.SetTag("scribe.embedding.model", _options.Ollama.EmbeddingModel);
+            activity?.SetTag("scribe.embedding.text_length", text.Length);
+
             var request = new EmbeddingRequest
             {
                 Model = _options.Ollama.EmbeddingModel,
