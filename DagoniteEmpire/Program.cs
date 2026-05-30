@@ -30,6 +30,8 @@ using System.Text;
 using DA_Models;
 using MimeKit;
 using DA_Scribe.Extensions;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 
 public class Program
@@ -150,6 +152,42 @@ public class Program
 
         // SCRIBE - AI Memory System
         builder.Services.AddScribe(builder.Configuration);
+
+        // Rate limiting for SCRIBE endpoints (protects the GPU host from per-user bursts).
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            // Per-user fixed window: 20 requests / minute. Anonymous clients share a single bucket.
+            options.AddPolicy("scribe-query", httpContext =>
+            {
+                var key = httpContext.User.Identity?.Name ?? "anonymous";
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: key,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 20,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    });
+            });
+
+            // Ingest / import are expensive — much tighter bucket.
+            options.AddPolicy("scribe-ingest", httpContext =>
+            {
+                var key = httpContext.User.Identity?.Name ?? "anonymous";
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: key,
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    });
+            });
+        });
         builder.Services.AddScoped<DagoniteEmpire.Service.Scribe.IScribeAgentService, DagoniteEmpire.Service.Scribe.ScribeAgentService>();
         builder.Services.AddHostedService<DagoniteEmpire.Service.Scribe.ScribeRetentionService>();
 
@@ -187,6 +225,7 @@ public class Program
 
 
         app.UseAntiforgery();
+        app.UseRateLimiter();
         //seed database
         using (var scope = app.Services.CreateScope())
         {

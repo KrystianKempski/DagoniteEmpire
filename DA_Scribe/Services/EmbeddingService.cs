@@ -90,21 +90,30 @@ namespace DA_Scribe.Services
         }
         
         public async Task<IList<float[]>> GetEmbeddingsAsync(
-            IEnumerable<string> texts, 
+            IEnumerable<string> texts,
             CancellationToken cancellationToken = default)
         {
-            var results = new List<float[]>();
-            
-            // Ollama doesn't support batch embeddings yet, so we process one at a time
-            // Consider parallel processing with semaphore for better performance
-            foreach (var text in texts)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                
-                var embedding = await GetEmbeddingAsync(text, cancellationToken);
-                results.Add(embedding);
-            }
-            
+            // Ollama's /api/embeddings is single-prompt. We fan out with a small
+            // degree of parallelism to keep latency reasonable on large imports
+            // while not overwhelming a single remote GPU host. Order is preserved
+            // via index-based assignment.
+            var items = texts.ToList();
+            var results = new float[items.Count][];
+
+            var maxParallel = Math.Clamp(_options.Ollama.EmbeddingConcurrency, 1, 8);
+
+            await Parallel.ForEachAsync(
+                Enumerable.Range(0, items.Count),
+                new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = maxParallel,
+                    CancellationToken = cancellationToken,
+                },
+                async (i, ct) =>
+                {
+                    results[i] = await GetEmbeddingAsync(items[i], ct);
+                });
+
             return results;
         }
         

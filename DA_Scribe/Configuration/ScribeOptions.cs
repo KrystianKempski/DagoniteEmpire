@@ -73,6 +73,13 @@ namespace DA_Scribe.Configuration
         /// Timeout in seconds for Ollama requests
         /// </summary>
         public int TimeoutSeconds { get; set; } = 120;
+
+        /// <summary>
+        /// Max number of concurrent embedding requests issued against Ollama.
+        /// Bumps batch throughput on imports without overwhelming a single GPU host.
+        /// Clamped to [1, 8].
+        /// </summary>
+        public int EmbeddingConcurrency { get; set; } = 3;
     }
     
     /// <summary>

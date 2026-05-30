@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using DA_Scribe.Models;
 using DA_Scribe.Services.Interfaces;
+using DA_DataAccess.Data;
 using DagoniteEmpire.Service.Scribe;
 using System.Text.Json;
 
@@ -13,20 +16,81 @@ namespace DagoniteEmpire.Service
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = "GameMaster,Admin")]
+    [EnableRateLimiting("scribe-query")]
     public class ScribeController : ControllerBase
     {
         private readonly IScribeService _scribeService;
         private readonly IScribeAgentService _agentService;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
         private readonly ILogger<ScribeController> _logger;
 
         public ScribeController(
             IScribeService scribeService,
             IScribeAgentService agentService,
+            IDbContextFactory<ApplicationDbContext> contextFactory,
             ILogger<ScribeController> logger)
         {
             _scribeService = scribeService;
             _agentService = agentService;
+            _contextFactory = contextFactory;
             _logger = logger;
+        }
+
+        private bool IsAdmin => User.IsInRole("Admin");
+        private string CurrentUserName => User.Identity?.Name ?? string.Empty;
+
+        /// <summary>
+        /// Confirms that the current user owns the campaign (is its GM) or has the Admin role.
+        /// Returns null when access is granted, or a ForbidResult/NotFoundResult to return otherwise.
+        /// </summary>
+        private async Task<ActionResult?> EnsureCampaignAccessAsync(int campaignId, CancellationToken cancellationToken)
+        {
+            if (IsAdmin)
+                return null;
+
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            var owner = await context.Campaigns
+                .Where(c => c.Id == campaignId)
+                .Select(c => (string?)c.GameMaster)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (owner is null)
+                return NotFound($"Campaign {campaignId} not found");
+
+            if (!string.Equals(owner, CurrentUserName, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(
+                    "User {User} attempted to access campaign {CampaignId} owned by {Owner}",
+                    CurrentUserName, campaignId, owner);
+                return Forbid();
+            }
+
+            return null;
+        }
+
+        private async Task<ActionResult?> EnsureChapterAccessAsync(int chapterId, CancellationToken cancellationToken)
+        {
+            if (IsAdmin)
+                return null;
+
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            var record = await context.Chapters
+                .Where(ch => ch.Id == chapterId)
+                .Select(ch => new { ch.CampaignId, Owner = ch.Campaign != null ? ch.Campaign.GameMaster : null })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (record is null)
+                return NotFound($"Chapter {chapterId} not found");
+
+            if (!string.Equals(record.Owner, CurrentUserName, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(
+                    "User {User} attempted to access chapter {ChapterId} from campaign {CampaignId} owned by {Owner}",
+                    CurrentUserName, chapterId, record.CampaignId, record.Owner);
+                return Forbid();
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -36,6 +100,7 @@ namespace DagoniteEmpire.Service
         /// <param name="file">JSON file with ScribeImportData structure</param>
         [HttpPost("import/{campaignId}")]
         [RequestSizeLimit(100_000_000)] // 100MB limit for large imports
+        [EnableRateLimiting("scribe-ingest")]
         public async Task<ActionResult<ScribeImportResult>> ImportBatch(
             int campaignId,
             IFormFile file,
@@ -50,6 +115,9 @@ namespace DagoniteEmpire.Service
             {
                 return BadRequest("File must be a JSON file");
             }
+
+            var access = await EnsureCampaignAccessAsync(campaignId, cancellationToken);
+            if (access is not null) return access;
 
             try
             {
@@ -116,6 +184,7 @@ namespace DagoniteEmpire.Service
         /// Import pre-processed chunks from JSON body (for smaller imports or API clients)
         /// </summary>
         [HttpPost("import-json/{campaignId}")]
+        [EnableRateLimiting("scribe-ingest")]
         public async Task<ActionResult<ScribeImportResult>> ImportBatchJson(
             int campaignId,
             [FromBody] ScribeImportData importData,
@@ -125,6 +194,9 @@ namespace DagoniteEmpire.Service
             {
                 return BadRequest("No chunks provided");
             }
+
+            var access = await EnsureCampaignAccessAsync(campaignId, cancellationToken);
+            if (access is not null) return access;
 
             try
             {
@@ -252,27 +324,37 @@ namespace DagoniteEmpire.Service
         /// <summary>
         /// Get character name to ID mapping for a campaign
         /// </summary>
-        private Task<Dictionary<string, int>> GetCharacterMappingAsync(
-            int campaignId, 
+        /// <summary>
+        /// Builds a name -> id lookup for every character bound to the campaign, using both the
+        /// player-facing UserName (player characters) and NPCName (when the character is an NPC).
+        /// Case-insensitive. Replaces the previous hardcoded mapping.
+        /// </summary>
+        private async Task<Dictionary<string, int>> GetCharacterMappingAsync(
+            int campaignId,
             CancellationToken cancellationToken)
         {
-            // TODO: Load from database - for now use hardcoded mapping for Kraina Możliwości
-            var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+            var characters = await context.Campaigns
+                .Where(c => c.Id == campaignId)
+                .SelectMany(c => c.Characters)
+                .Select(ch => new { ch.Id, ch.UserName, ch.NPCName })
+                .ToListAsync(cancellationToken);
+
+            var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var ch in characters)
             {
-                // Active characters - IDs should match database
-                { "Udar", 1 },
-                { "Tomin", 2 },
-                { "Granit", 3 },
-                { "Sir Cedrick", 4 },
-                
-                // Archived characters
-                { "Sharu", 5 },
-                { "Bjorn", 6 },
-                { "Orion", 7 },
-                { "Roolf", 8 },
-            };
-            
-            return Task.FromResult(mapping);
+                if (!string.IsNullOrWhiteSpace(ch.UserName))
+                    mapping[ch.UserName] = ch.Id;
+                if (!string.IsNullOrWhiteSpace(ch.NPCName))
+                    mapping[ch.NPCName] = ch.Id;
+            }
+
+            _logger.LogDebug(
+                "Resolved {Count} character name aliases for campaign {CampaignId}",
+                mapping.Count, campaignId);
+
+            return mapping;
         }
         
         // ==========================================
@@ -285,11 +367,15 @@ namespace DagoniteEmpire.Service
         /// <param name="chapterId">Chapter ID to ingest posts from</param>
         /// <param name="reindex">If true, re-process posts that were already indexed</param>
         [HttpPost("ingest/chapter/{chapterId}")]
+        [EnableRateLimiting("scribe-ingest")]
         public async Task<ActionResult<IngestResult>> IngestChapterPosts(
             int chapterId,
             [FromQuery] bool reindex = false,
             CancellationToken cancellationToken = default)
         {
+            var access = await EnsureChapterAccessAsync(chapterId, cancellationToken);
+            if (access is not null) return access;
+
             try
             {
                 _logger.LogInformation(
@@ -322,11 +408,15 @@ namespace DagoniteEmpire.Service
         /// <param name="campaignId">Campaign ID to ingest posts from</param>
         /// <param name="reindex">If true, re-process posts that were already indexed</param>
         [HttpPost("ingest/campaign/{campaignId}")]
+        [EnableRateLimiting("scribe-ingest")]
         public async Task<ActionResult<IngestResult>> IngestCampaignPosts(
             int campaignId,
             [FromQuery] bool reindex = false,
             CancellationToken cancellationToken = default)
         {
+            var access = await EnsureCampaignAccessAsync(campaignId, cancellationToken);
+            if (access is not null) return access;
+
             try
             {
                 _logger.LogInformation(
