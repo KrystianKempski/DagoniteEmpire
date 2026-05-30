@@ -1,5 +1,6 @@
 @using DA_Business.Services.Interfaces
 @using DA_Scribe.Services.Interfaces
+@using DA_Scribe.Models
 @inject IScribeService _scribeService
 @inject IScribeAgentService _agentService
 @inject IUserService _userService
@@ -37,7 +38,25 @@
                 {
                     <div class="drawer-message @(msg.IsUser ? "user" : "assistant")">
                         <MudText Typo="Typo.body2">@msg.Content</MudText>
-                        @if (!msg.IsUser && msg.Sources?.Any() == true)
+                        @if (!msg.IsUser && msg.Citations?.Any() == true)
+                        {
+                            <MudExpansionPanels Class="mt-1" Elevation="0" Dense="true">
+                                <MudExpansionPanel Text="@($"Źródła ({msg.Citations.Count})")" Dense="true">
+                                    @{ var dIdx = 0; }
+                                    @foreach (var c in msg.Citations)
+                                    {
+                                        dIdx++;
+                                        <MudTooltip Text="@c.Snippet" Placement="Placement.Left">
+                                            <MudText Typo="Typo.caption" Class="d-block">
+                                                [@dIdx] @c.Title
+                                                <span class="ml-1" style="opacity:.6">(@c.Similarity.ToString("F2"))</span>
+                                            </MudText>
+                                        </MudTooltip>
+                                    }
+                                </MudExpansionPanel>
+                            </MudExpansionPanels>
+                        }
+                        else if (!msg.IsUser && msg.Sources?.Any() == true)
                         {
                             <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
                                 @msg.Sources.Count źródeł
@@ -176,7 +195,8 @@
             {
                 Content = result.Response,
                 IsUser = false,
-                Sources = result.ToolCalls
+                Sources = result.ToolCalls,
+                Citations = result.Citations
             });
         }
         catch
@@ -227,5 +247,6 @@
         public string Content { get; set; } = string.Empty;
         public bool IsUser { get; set; }
         public List<string>? Sources { get; set; }
+        public List<ScribeCitation>? Citations { get; set; }
     }
 }

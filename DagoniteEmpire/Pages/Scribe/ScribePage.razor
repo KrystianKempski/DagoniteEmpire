@@ -2,6 +2,7 @@
 @page "/scribe/{CampaignId:int}"
 @using DA_Business.Services.Interfaces
 @using DA_Scribe.Services.Interfaces
+@using DA_Scribe.Models
 @inject IScribeService _scribeService
 @inject IScribeAgentService _agentService
 @inject ICampaignRepository _campaignRepository
@@ -82,7 +83,26 @@
                                         {<span class="typing-cursor">▌</span>}
                                     </MudText>
                                 </div>
-                                @if (message.Sources?.Any() == true)
+                                @if (message.Citations?.Any() == true)
+                                {
+                                    <MudExpansionPanels Class="mt-2" Elevation="0">
+                                        <MudExpansionPanel Text="@($"Źródła ({message.Citations.Count})")" Dense="true">
+                                            @{ var idx = 0; }
+                                            @foreach (var c in message.Citations)
+                                            {
+                                                idx++;
+                                                <MudTooltip Text="@c.Snippet" Placement="Placement.Top">
+                                                    <MudText Typo="Typo.caption" Class="source-item">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Article" Size="Size.Small" Class="mr-1" />
+                                                        [@idx] @c.Title
+                                                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Class="ml-1">@c.Similarity.ToString("F2")</MudChip>
+                                                    </MudText>
+                                                </MudTooltip>
+                                            }
+                                        </MudExpansionPanel>
+                                    </MudExpansionPanels>
+                                }
+                                else if (message.Sources?.Any() == true)
                                 {
                                     <MudExpansionPanels Class="mt-2" Elevation="0">
                                         <MudExpansionPanel Text="@($"Źródła ({message.Sources.Count})")" Dense="true">
@@ -667,7 +687,8 @@
             Content = result.Response,
             IsUser = false,
             Timestamp = DateTime.Now,
-            Sources = result.ToolCalls
+            Sources = result.ToolCalls,
+            Citations = result.Citations
         });
     }
 
@@ -703,6 +724,8 @@
                     CurrentConversationId = chunk.ConversationId;
                 if (chunk.ToolCalls is { Count: > 0 })
                     assistantMessage.Sources = chunk.ToolCalls.ToList();
+                if (chunk.Citations is { Count: > 0 })
+                    assistantMessage.Citations = chunk.Citations.ToList();
                 continue;
             }
 
@@ -845,6 +868,7 @@
         public bool IsUser { get; set; }
         public DateTime Timestamp { get; set; }
         public List<string>? Sources { get; set; }
+        public List<ScribeCitation>? Citations { get; set; }
     }
 
     private class ScribeStats

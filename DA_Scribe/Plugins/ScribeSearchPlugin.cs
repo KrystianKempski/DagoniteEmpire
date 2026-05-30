@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text;
+using DA_Scribe.Models;
 using DA_Scribe.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
@@ -26,6 +27,12 @@ namespace DA_Scribe.Plugins
         public int? CharacterId { get; set; }
         public int? CampaignId { get; set; }
         public bool IsGameMaster { get; set; }
+
+        /// <summary>
+        /// Citations collected across all tool invocations during this agent run.
+        /// The host reads this after the chat completes to surface sources in the UI.
+        /// </summary>
+        public List<ScribeCitation> Citations { get; } = new();
 
         [KernelFunction("search_memories")]
         [Description("Searches the campaign memory archive (posts, lore, notes) by semantic similarity. " +
@@ -66,8 +73,31 @@ namespace DA_Scribe.Plugins
                 sb.AppendLine(SanitizeChunkContent(r.Chunk.Content));
                 sb.Append("<<<END FRAGMENT ").Append(n).AppendLine(">>>");
                 sb.AppendLine();
+
+                Citations.Add(new ScribeCitation
+                {
+                    MemoryId = r.Memory?.Id ?? 0,
+                    ChunkId = r.Chunk.Id,
+                    Title = title,
+                    MemoryType = r.Memory?.Type.ToString() ?? string.Empty,
+                    Similarity = r.Similarity,
+                    Snippet = BuildSnippet(r.Chunk.Content),
+                    SourcePostId = r.Memory?.SourcePostId,
+                    SourceChapterId = r.Memory?.SourceChapterId,
+                    SourceCampaignId = r.Memory?.SourceCampaignId,
+                });
             }
             return sb.ToString();
+        }
+
+        private const int SnippetMaxLength = 280;
+
+        private static string BuildSnippet(string content)
+        {
+            if (string.IsNullOrEmpty(content)) return string.Empty;
+            var cleaned = content.Trim();
+            if (cleaned.Length <= SnippetMaxLength) return cleaned;
+            return cleaned.Substring(0, SnippetMaxLength) + "…";
         }
 
         internal static string SanitizeChunkContent(string content)

@@ -3,6 +3,7 @@ using DA_DataAccess.Data;
 using DA_DataAccess.Scribe;
 using DA_Scribe.Configuration;
 using DA_Scribe.Kernel;
+using DA_Scribe.Models;
 using DA_Scribe.Plugins;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -33,6 +34,7 @@ namespace DagoniteEmpire.Service.Scribe
         public int GenerationTimeMs { get; set; }
         public string? ModelUsed { get; set; }
         public List<string> ToolCalls { get; set; } = new();
+        public List<ScribeCitation> Citations { get; set; } = new();
         public int ConversationId { get; set; }
     }
 
@@ -60,6 +62,8 @@ namespace DagoniteEmpire.Service.Scribe
         public int? ConversationId { get; set; }
         /// <summary>Set on the final chunk only.</summary>
         public IReadOnlyList<string>? ToolCalls { get; set; }
+        /// <summary>Set on the final chunk only.</summary>
+        public IReadOnlyList<ScribeCitation>? Citations { get; set; }
         /// <summary>Set on the final chunk only.</summary>
         public int? GenerationTimeMs { get; set; }
     }
@@ -152,6 +156,7 @@ namespace DagoniteEmpire.Service.Scribe
                 GenerationTimeMs = (int)sw.ElapsedMilliseconds,
                 ModelUsed = _options.Ollama.ChatModel,
                 ToolCalls = toolCalls,
+                Citations = setup.Search.Citations.ToList(),
                 ConversationId = setup.Conversation.Id,
             };
         }
@@ -197,6 +202,7 @@ namespace DagoniteEmpire.Service.Scribe
                 IsFinal = true,
                 ConversationId = setup.Conversation.Id,
                 ToolCalls = toolCalls,
+                Citations = setup.Search.Citations.ToList(),
                 GenerationTimeMs = (int)sw.ElapsedMilliseconds,
             };
         }
@@ -206,7 +212,8 @@ namespace DagoniteEmpire.Service.Scribe
             global::Microsoft.SemanticKernel.Kernel Kernel,
             IChatCompletionService Chat,
             ChatHistory History,
-            OllamaPromptExecutionSettings Settings);
+            OllamaPromptExecutionSettings Settings,
+            ScribeSearchPlugin Search);
 
         private async Task<InvocationSetup> PrepareInvocationAsync(
             ScribeAgentRequest request, CancellationToken ct)
@@ -242,7 +249,7 @@ namespace DagoniteEmpire.Service.Scribe
                 FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),
             };
 
-            return new InvocationSetup(conversation, kernel, chat, history, settings);
+            return new InvocationSetup(conversation, kernel, chat, history, settings, search);
         }
 
         private static List<string> CollectToolCalls(ChatHistory history) =>
