@@ -3,6 +3,7 @@
 @using DA_Business.Services.Interfaces
 @using DA_Scribe.Services.Interfaces
 @inject IScribeService _scribeService
+@inject IScribeAgentService _agentService
 @inject ICampaignRepository _campaignRepository
 @inject IUserService _userService
 @inject ISnackbar SnackBar
@@ -534,7 +535,7 @@
     {
         try
         {
-            var conversation = await _scribeService.GetConversationAsync(conversationId);
+            var conversation = await _scribeService.GetConversationAsync(conversationId, UserInfo?.UserId ?? string.Empty);
             if (conversation == null) return;
             
             CurrentConversationId = conversationId;
@@ -573,7 +574,7 @@
     {
         try
         {
-            await _scribeService.DeleteConversationAsync(conversationId);
+            await _scribeService.DeleteConversationAsync(conversationId, UserInfo?.UserId ?? string.Empty);
             PastConversations.RemoveAll(c => c.Id == conversationId);
             
             if (CurrentConversationId == conversationId)
@@ -618,14 +619,9 @@
 
         try
         {
-            if (UseStreaming)
-            {
-                await AskQuestionStreaming(question);
-            }
-            else
-            {
-                await AskQuestionNonStreaming(question);
-            }
+            // Agent path replaces the previous RAG pipeline. Streaming is not yet
+            // supported with auto tool-calling, so we always invoke non-streaming.
+            await AskQuestionWithAgent(question);
             
             // Refresh conversation list
             await LoadConversationHistory();
@@ -649,82 +645,30 @@
         }
     }
     
-    private async Task AskQuestionStreaming(string question)
+    private async Task AskQuestionWithAgent(string question)
     {
-        ThinkingText = "Generuję odpowiedź...";
-        IsStreaming = true;
-        
-        // Add empty assistant message that we'll fill progressively
-        var assistantMessage = new ChatMessage
-        {
-            Content = "",
-            IsUser = false,
-            Timestamp = DateTime.Now
-        };
-        Messages.Add(assistantMessage);
-        IsThinking = false;
-        StateHasChanged();
-        
-        var responseBuilder = new System.Text.StringBuilder();
-        int tokenCount = 0;
-        
-        await foreach (var token in _scribeService.QueryStreamAsync(
-            question,
-            UserInfo?.UserId ?? string.Empty,
-            UserInfo?.SelectedCharacter?.Id,
-            SelectedCampaign?.Id,
-            CurrentConversationId,
-            UserInfo?.IsAdminOrMG == true))
-        {
-            responseBuilder.Append(token);
-            assistantMessage.Content = responseBuilder.ToString();
-            tokenCount++;
-            
-            // Update UI every few tokens for smoother rendering
-            if (tokenCount % 3 == 0)
-            {
-                StateHasChanged();
-                await ScrollToBottom();
-            }
-        }
-        
-        // Final update
-        assistantMessage.Content = responseBuilder.ToString();
-        StateHasChanged();
-    }
-    
-    private async Task AskQuestionNonStreaming(string question)
-    {
-        var result = await _scribeService.QueryAsync(
-            question,
-            UserInfo?.UserId ?? string.Empty,
-            UserInfo?.SelectedCharacter?.Id,
-            SelectedCampaign?.Id,
-            conversationId: CurrentConversationId,
-            isGameMaster: UserInfo?.IsAdminOrMG == true);
-        
-        // Update conversation ID for follow-up questions
-        if (result.ConversationId.HasValue)
-        {
-            CurrentConversationId = result.ConversationId;
-        }
-
-        ThinkingText = "Generuję odpowiedź...";
+        ThinkingText = "Skryba szuka w archiwum...";
         StateHasChanged();
 
-        // Add assistant message
+        var result = await _agentService.InvokeAsync(new ScribeAgentRequest
+        {
+            Question = question,
+            UserId = UserInfo?.UserId ?? string.Empty,
+            CharacterId = UserInfo?.SelectedCharacter?.Id,
+            CampaignId = SelectedCampaign?.Id,
+            IsGameMaster = UserInfo?.IsAdminOrMG == true,
+            ConversationId = CurrentConversationId,
+        });
+
+        CurrentConversationId = result.ConversationId;
+
         Messages.Add(new ChatMessage
         {
             Content = result.Response,
             IsUser = false,
             Timestamp = DateTime.Now,
-            Sources = result.Sources?.Select(s => s.Memory?.Title ?? "Nieznane źródło").ToList()
+            Sources = result.ToolCalls
         });
-
-        if (result.AccessRestricted)
-        {
-            SnackBar.Add(result.AccessMessage ?? "Dostęp do niektórych informacji został ograniczony.", Severity.Warning);
-        }
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)

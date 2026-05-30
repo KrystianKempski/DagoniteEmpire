@@ -39,9 +39,12 @@ namespace DA_Scribe.Configuration
         public string EmbeddingModel { get; set; } = "nomic-embed-text";
         
         /// <summary>
-        /// Model to use for chat/generation (e.g., "gemma2:9b")
+        /// Model to use for chat/generation (e.g., "qwen2.5:14b").
+        /// MUST support tool/function calling for the agentic Skryba.
+        /// Verified tool-calling models: qwen2.5, llama3.1, mistral-small, mistral-nemo.
+        /// NOT supported: gemma2 (no tools), llama3.2 (limited).
         /// </summary>
-        public string ChatModel { get; set; } = "gemma2:9b";
+        public string ChatModel { get; set; } = "qwen2.5:14b";
         
         /// <summary>
         /// Temperature for generation (0.0 = deterministic, 1.0 = creative)

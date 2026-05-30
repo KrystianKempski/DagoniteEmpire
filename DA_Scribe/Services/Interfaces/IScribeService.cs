@@ -204,12 +204,13 @@ namespace DA_Scribe.Services.Interfaces
             CancellationToken cancellationToken = default);
         
         /// <summary>
-        /// Get a specific conversation with messages
+        /// Get a specific conversation with messages. Returns null if the conversation
+        /// does not exist or does not belong to <paramref name="userId"/>.
+        /// Ownership is enforced strictly: even Game Masters cannot read other users' chats.
         /// </summary>
-        /// <param name="conversationId">Conversation ID</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         Task<ScribeConversation?> GetConversationAsync(
             int conversationId,
+            string userId,
             CancellationToken cancellationToken = default);
         
         /// <summary>
@@ -228,12 +229,11 @@ namespace DA_Scribe.Services.Interfaces
             CancellationToken cancellationToken = default);
         
         /// <summary>
-        /// Delete a conversation
+        /// Delete a conversation owned by <paramref name="userId"/>. No-op if not found or not owned.
         /// </summary>
-        /// <param name="conversationId">Conversation to delete</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         Task DeleteConversationAsync(
             int conversationId,
+            string userId,
             CancellationToken cancellationToken = default);
         
         // ==========================================

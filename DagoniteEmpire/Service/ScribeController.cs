@@ -16,11 +16,16 @@ namespace DagoniteEmpire.Service
     public class ScribeController : ControllerBase
     {
         private readonly IScribeService _scribeService;
+        private readonly IScribeAgentService _agentService;
         private readonly ILogger<ScribeController> _logger;
 
-        public ScribeController(IScribeService scribeService, ILogger<ScribeController> logger)
+        public ScribeController(
+            IScribeService scribeService,
+            IScribeAgentService agentService,
+            ILogger<ScribeController> logger)
         {
             _scribeService = scribeService;
+            _agentService = agentService;
             _logger = logger;
         }
 
@@ -183,19 +188,26 @@ namespace DagoniteEmpire.Service
                 var userId = User.Identity?.Name ?? "anonymous";
 
                 _logger.LogInformation(
-                    "SCRIBE query: '{Query}' for campaign {CampaignId}, character {CharacterId}, user={User}, GM={IsGM}",
+                    "SCRIBE query (agent): '{Query}' for campaign {CampaignId}, character {CharacterId}, user={User}, GM={IsGM}",
                     request.Query, request.CampaignId, request.CharacterId, userId, isGameMaster);
 
-                var result = await _scribeService.QueryAsync(
-                    request.Query,
-                    userId,
-                    request.CharacterId,
-                    request.CampaignId,
-                    conversationId: null,
-                    isGameMaster: isGameMaster,
-                    cancellationToken: cancellationToken);
+                var agentResult = await _agentService.InvokeAsync(new Scribe.ScribeAgentRequest
+                {
+                    Question = request.Query,
+                    UserId = userId,
+                    CharacterId = request.CharacterId,
+                    CampaignId = request.CampaignId,
+                    IsGameMaster = isGameMaster,
+                }, cancellationToken);
 
-                return Ok(result);
+                // Map agent result to the legacy ScribeQueryResult shape so the existing UI keeps working
+                return Ok(new ScribeQueryResult
+                {
+                    Response = agentResult.Response,
+                    GenerationTimeMs = agentResult.GenerationTimeMs,
+                    ModelUsed = agentResult.ModelUsed,
+                    ConversationId = agentResult.ConversationId,
+                });
             }
             catch (Exception ex)
             {

@@ -1,7 +1,10 @@
 using DA_Business.Repository.CharacterReps.IRepository;
+using DA_DataAccess.Data;
+using DA_DataAccess.Scribe;
 using DA_Scribe.Configuration;
 using DA_Scribe.Kernel;
 using DA_Scribe.Plugins;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
@@ -17,6 +20,11 @@ namespace DagoniteEmpire.Service.Scribe
         public int? CharacterId { get; set; }
         public int? CampaignId { get; set; }
         public bool IsGameMaster { get; set; }
+
+        /// <summary>
+        /// Existing conversation to continue. If null, a new one is created.
+        /// </summary>
+        public int? ConversationId { get; set; }
     }
 
     public class ScribeAgentResult
@@ -25,6 +33,7 @@ namespace DagoniteEmpire.Service.Scribe
         public int GenerationTimeMs { get; set; }
         public string? ModelUsed { get; set; }
         public List<string> ToolCalls { get; set; } = new();
+        public int ConversationId { get; set; }
     }
 
     public interface IScribeAgentService
@@ -34,10 +43,12 @@ namespace DagoniteEmpire.Service.Scribe
 
     /// <summary>
     /// Agentic Skryba: a Semantic-Kernel chat completion loop with auto tool-calling.
-    /// The LLM decides when to call search_memories / get_character / list_chapters etc.
+    /// Persists conversation history per user (14-day retention enforced by cleanup service).
     /// </summary>
     public class ScribeAgentService : IScribeAgentService
     {
+        private const int MaxHistoryMessages = 20;
+
         private const string DefaultInstructions = """
             Jesteś Skrybą - archiwistą kampanii Dagonite Empire.
             Odpowiadasz po polsku, zwięźle i konkretnie.
@@ -53,17 +64,20 @@ namespace DagoniteEmpire.Service.Scribe
             """;
 
         private readonly IScribeKernelFactory _kernelFactory;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
         private readonly ScribeOptions _options;
         private readonly ILogger<ScribeAgentService> _logger;
         private readonly IServiceProvider _sp;
 
         public ScribeAgentService(
             IScribeKernelFactory kernelFactory,
+            IDbContextFactory<ApplicationDbContext> contextFactory,
             IOptions<ScribeOptions> options,
             ILogger<ScribeAgentService> logger,
             IServiceProvider sp)
         {
             _kernelFactory = kernelFactory;
+            _contextFactory = contextFactory;
             _options = options.Value;
             _logger = logger;
             _sp = sp;
@@ -75,9 +89,10 @@ namespace DagoniteEmpire.Service.Scribe
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
+            var conversation = await GetOrCreateConversationAsync(request, cancellationToken);
+
             var kernel = _kernelFactory.Create();
 
-            // Build plugins with per-request context
             var search = ActivatorUtilities.CreateInstance<ScribeSearchPlugin>(_sp);
             search.UserId = request.UserId;
             search.CharacterId = request.CharacterId;
@@ -95,8 +110,7 @@ namespace DagoniteEmpire.Service.Scribe
 
             var chat = kernel.GetRequiredService<IChatCompletionService>();
 
-            var history = new ChatHistory();
-            history.AddSystemMessage(DefaultInstructions);
+            var history = await LoadHistoryAsync(conversation.Id, cancellationToken);
             history.AddUserMessage(request.Question);
 
             var settings = new OllamaPromptExecutionSettings
@@ -107,27 +121,133 @@ namespace DagoniteEmpire.Service.Scribe
             };
 
             _logger.LogInformation(
-                "Agent invoke: question='{Question}' user={User} campaign={Campaign}",
-                request.Question, request.UserId, request.CampaignId);
+                "Agent invoke: conv={Conv} user={User} campaign={Campaign} q='{Question}'",
+                conversation.Id, request.UserId, request.CampaignId, request.Question);
 
             var reply = await chat.GetChatMessageContentAsync(history, settings, kernel, cancellationToken);
-
             sw.Stop();
 
-            // Collect tool-call trace from history (auto-invoked functions are appended)
+            var responseText = reply.Content ?? string.Empty;
             var toolCalls = history
                 .Where(m => m.Role == AuthorRole.Tool)
                 .Select(m => m.AuthorName ?? "tool")
                 .Distinct()
                 .ToList();
 
+            await PersistTurnAsync(
+                conversation.Id,
+                userMessage: request.Question,
+                assistantMessage: responseText,
+                modelUsed: _options.Ollama.ChatModel,
+                generationTimeMs: (int)sw.ElapsedMilliseconds,
+                cancellationToken);
+
             return new ScribeAgentResult
             {
-                Response = reply.Content ?? string.Empty,
+                Response = responseText,
                 GenerationTimeMs = (int)sw.ElapsedMilliseconds,
                 ModelUsed = _options.Ollama.ChatModel,
                 ToolCalls = toolCalls,
+                ConversationId = conversation.Id,
             };
+        }
+
+        private async Task<ScribeConversation> GetOrCreateConversationAsync(
+            ScribeAgentRequest request, CancellationToken ct)
+        {
+            await using var ctx = await _contextFactory.CreateDbContextAsync(ct);
+
+            if (request.ConversationId.HasValue)
+            {
+                var existing = await ctx.ScribeConversations
+                    .FirstOrDefaultAsync(c => c.Id == request.ConversationId.Value, ct);
+
+                // Per-user ownership: even GM cannot continue another user's conversation
+                if (existing is not null && existing.UserId == request.UserId)
+                    return existing;
+
+                _logger.LogWarning(
+                    "Conversation {Conv} not found or owned by another user (requester={User}); starting new",
+                    request.ConversationId, request.UserId);
+            }
+
+            var conv = new ScribeConversation
+            {
+                UserId = request.UserId,
+                CharacterId = request.CharacterId,
+                CampaignId = request.CampaignId,
+                StartedAt = DateTime.UtcNow,
+            };
+            ctx.ScribeConversations.Add(conv);
+            await ctx.SaveChangesAsync(ct);
+            return conv;
+        }
+
+        private async Task<ChatHistory> LoadHistoryAsync(int conversationId, CancellationToken ct)
+        {
+            await using var ctx = await _contextFactory.CreateDbContextAsync(ct);
+
+            var recent = await ctx.ScribeMessages
+                .Where(m => m.ConversationId == conversationId)
+                .OrderByDescending(m => m.Timestamp)
+                .Take(MaxHistoryMessages)
+                .ToListAsync(ct);
+
+            var history = new ChatHistory();
+            history.AddSystemMessage(DefaultInstructions);
+
+            foreach (var m in recent.OrderBy(m => m.Timestamp))
+            {
+                if (m.Role == "user")
+                    history.AddUserMessage(m.Content);
+                else if (m.Role == "assistant")
+                    history.AddAssistantMessage(m.Content);
+            }
+            return history;
+        }
+
+        private async Task PersistTurnAsync(
+            int conversationId,
+            string userMessage,
+            string assistantMessage,
+            string modelUsed,
+            int generationTimeMs,
+            CancellationToken ct)
+        {
+            await using var ctx = await _contextFactory.CreateDbContextAsync(ct);
+
+            var now = DateTime.UtcNow;
+
+            ctx.ScribeMessages.Add(new ScribeMessage
+            {
+                ConversationId = conversationId,
+                Role = "user",
+                Content = userMessage,
+                Timestamp = now,
+            });
+            ctx.ScribeMessages.Add(new ScribeMessage
+            {
+                ConversationId = conversationId,
+                Role = "assistant",
+                Content = assistantMessage,
+                Timestamp = now.AddMilliseconds(1),
+                ModelUsed = modelUsed,
+                GenerationTimeMs = generationTimeMs,
+            });
+
+            var conv = await ctx.ScribeConversations.FirstOrDefaultAsync(c => c.Id == conversationId, ct);
+            if (conv is not null)
+            {
+                conv.LastMessageAt = now;
+                if (string.IsNullOrEmpty(conv.Title))
+                {
+                    conv.Title = userMessage.Length > 60
+                        ? userMessage[..60] + "..."
+                        : userMessage;
+                }
+            }
+
+            await ctx.SaveChangesAsync(ct);
         }
     }
 }

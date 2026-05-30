@@ -1,6 +1,7 @@
 @using DA_Business.Services.Interfaces
 @using DA_Scribe.Services.Interfaces
 @inject IScribeService _scribeService
+@inject IScribeAgentService _agentService
 @inject IUserService _userService
 @inject NavigationManager _navigationManager
 @inject IJSRuntime _jsRuntime
@@ -162,19 +163,20 @@
 
         try
         {
-            var result = await _scribeService.QueryAsync(
-                question,
-                UserInfo?.UserId ?? string.Empty,
-                UserInfo?.SelectedCharacter?.Id,
-                CampaignId,
-                conversationId: null,
-                isGameMaster: UserInfo?.IsAdminOrMG == true);
+            var result = await _agentService.InvokeAsync(new ScribeAgentRequest
+            {
+                Question = question,
+                UserId = UserInfo?.UserId ?? string.Empty,
+                CharacterId = UserInfo?.SelectedCharacter?.Id,
+                CampaignId = CampaignId,
+                IsGameMaster = UserInfo?.IsAdminOrMG == true,
+            });
 
             Messages.Add(new DrawerMessage
             {
                 Content = result.Response,
                 IsUser = false,
-                Sources = result.Sources?.Select(s => s.Memory?.Title ?? "").ToList()
+                Sources = result.ToolCalls
             });
         }
         catch

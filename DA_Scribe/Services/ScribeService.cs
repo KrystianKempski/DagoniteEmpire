@@ -702,13 +702,14 @@ namespace DA_Scribe.Services
         
         public async Task<ScribeConversation?> GetConversationAsync(
             int conversationId,
+            string userId,
             CancellationToken cancellationToken = default)
         {
             await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
             
             return await context.ScribeConversations
                 .Include(c => c.Messages.OrderBy(m => m.Timestamp))
-                .FirstOrDefaultAsync(c => c.Id == conversationId, cancellationToken);
+                .FirstOrDefaultAsync(c => c.Id == conversationId && c.UserId == userId, cancellationToken);
         }
         
         public async Task<ScribeConversation> CreateConversationAsync(
@@ -741,20 +742,21 @@ namespace DA_Scribe.Services
         
         public async Task DeleteConversationAsync(
             int conversationId,
+            string userId,
             CancellationToken cancellationToken = default)
         {
             await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
             
             var conversation = await context.ScribeConversations
                 .Include(c => c.Messages)
-                .FirstOrDefaultAsync(c => c.Id == conversationId, cancellationToken);
+                .FirstOrDefaultAsync(c => c.Id == conversationId && c.UserId == userId, cancellationToken);
             
             if (conversation != null)
             {
                 context.ScribeConversations.Remove(conversation);
                 await context.SaveChangesAsync(cancellationToken);
                 
-                _logger.LogInformation("Deleted conversation {ConversationId}", conversationId);
+                _logger.LogInformation("Deleted conversation {ConversationId} for user {UserId}", conversationId, userId);
             }
         }
         
