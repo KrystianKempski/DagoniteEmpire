@@ -131,6 +131,12 @@ namespace DagoniteEmpire.Service.Scribe
 
             var responseText = reply.Content ?? string.Empty;
             var toolCalls = CollectToolCalls(setup.History);
+            var usage = ExtractUsage(reply.Metadata);
+
+            _logger.LogInformation(
+                "Agent reply: conv={Conv} model={Model} time={Time}ms tokens_in={In} tokens_out={Out} tool_calls={Tools}",
+                setup.Conversation.Id, _options.Ollama.ChatModel, sw.ElapsedMilliseconds,
+                usage.PromptTokens, usage.CompletionTokens, toolCalls.Count);
 
             await PersistTurnAsync(
                 setup.Conversation.Id,
@@ -245,6 +251,51 @@ namespace DagoniteEmpire.Service.Scribe
                 .Select(m => m.AuthorName ?? "tool")
                 .Distinct()
                 .ToList();
+
+        private static (int? PromptTokens, int? CompletionTokens) ExtractUsage(
+            IReadOnlyDictionary<string, object?>? metadata)
+        {
+            if (metadata is null || metadata.Count == 0)
+                return (null, null);
+
+            int? prompt = TryReadInt(metadata, "PromptEvalCount")
+                ?? TryReadInt(metadata, "prompt_eval_count")
+                ?? TryReadInt(metadata, "InputTokenCount")
+                ?? TryReadInt(metadata, "PromptTokens");
+            int? completion = TryReadInt(metadata, "EvalCount")
+                ?? TryReadInt(metadata, "eval_count")
+                ?? TryReadInt(metadata, "OutputTokenCount")
+                ?? TryReadInt(metadata, "CompletionTokens");
+
+            if (prompt is null && completion is null &&
+                metadata.TryGetValue("Usage", out var usageObj) && usageObj is not null)
+            {
+                var t = usageObj.GetType();
+                prompt = ReadIntProp(usageObj, t, "InputTokens", "PromptTokens", "InputTokenCount");
+                completion = ReadIntProp(usageObj, t, "OutputTokens", "CompletionTokens", "OutputTokenCount");
+            }
+
+            return (prompt, completion);
+        }
+
+        private static int? TryReadInt(IReadOnlyDictionary<string, object?> metadata, string key)
+        {
+            if (!metadata.TryGetValue(key, out var v) || v is null) return null;
+            try { return Convert.ToInt32(v); } catch { return null; }
+        }
+
+        private static int? ReadIntProp(object instance, Type t, params string[] names)
+        {
+            foreach (var n in names)
+            {
+                var p = t.GetProperty(n);
+                if (p?.GetValue(instance) is { } v)
+                {
+                    try { return Convert.ToInt32(v); } catch { }
+                }
+            }
+            return null;
+        }
 
         private async Task<ScribeConversation> GetOrCreateConversationAsync(
             ScribeAgentRequest request, CancellationToken ct)

@@ -60,6 +60,7 @@ else
                             <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
                             <MudItem xs="6"><MudButton FullWidth OnClick="MakeSkillRoll">Make a roll</MudButton></MudItem>
                             <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth Color="Color.Secondary" Disabled="IsIndexingChapter" OnClick="IndexChapterPosts">@(IsIndexingChapter ? "Indeksowanie..." : "Indeksuj posty")</MudButton></MudItem>
                         </MudGrid>
                     }
                     @if (IsLoadingCharacters)
@@ -104,6 +105,7 @@ else
                             }
                             <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
                             <MudItem xs="6"><MudButton FullWidth OnClick="MakeSkillRoll">Make a roll</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth Color="Color.Secondary" Disabled="IsIndexingChapter" OnClick="IndexChapterPosts">@(IsIndexingChapter ? "Indeksowanie..." : "Indeksuj posty")</MudButton></MudItem>
                         </MudGrid>
                     }
                     @if (IsLoadingCharacters)
@@ -288,6 +290,7 @@ else
     
     public bool IsLoading { get; set; } = true;
     public bool IsLoadingCharacters { get; set; } = true;
+    private bool IsIndexingChapter { get; set; } = false;
     private bool OngoingBattle = false;
     private bool IsEditMode = false;
     private string SendButtonText { get; set; } = "Send Post";
@@ -941,6 +944,30 @@ else
             await LoadMobs();
             await LoadChapter();
             SnackBar.Add($"Battle Ended", Severity.Normal);
+        }
+    }
+
+    private async Task IndexChapterPosts()
+    {
+        if (Chapter is null) return;
+        IsIndexingChapter = true;
+        StateHasChanged();
+        try
+        {
+            var count = await _scribeService.IngestChapterPostsAsync(Chapter.Id);
+            SnackBar.Add(
+                count > 0 ? $"Zaindeksowano {count} postów rozdziału" : "Brak nowych postów do zaindeksowania",
+                count > 0 ? Severity.Success : Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error indexing chapter posts for {ChapterId}", Chapter.Id);
+            SnackBar.Add("Błąd indeksowania postów rozdziału", Severity.Error);
+        }
+        finally
+        {
+            IsIndexingChapter = false;
+            StateHasChanged();
         }
     }
 
