@@ -231,16 +231,6 @@
                         }
                     </MudButton>
 
-                    <MudButton FullWidth="true" 
-                               Variant="Variant.Outlined" 
-                               Color="Color.Tertiary"
-                               StartIcon="@Icons.Material.Filled.Summarize"
-                               OnClick="GenerateSummaries"
-                               Disabled="@(SelectedCampaign == null)"
-                               Class="mb-2">
-                        Generuj podsumowania
-                    </MudButton>
-                    
                     <MudDivider Class="my-3" />
                     
                     <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -822,34 +812,23 @@
 
         try
         {
-            // TODO: Implement campaign post indexing
-            await Task.Delay(2000); // Placeholder
-            SnackBar.Add("Indeksowanie postów w trakcie implementacji", Severity.Info);
+            var count = await _scribeService.IngestCampaignPostsAsync(SelectedCampaign.Id);
+            SnackBar.Add(
+                count > 0
+                    ? $"Zaindeksowano {count} postów z kampanii"
+                    : "Brak nowych postów do zaindeksowania",
+                count > 0 ? Severity.Success : Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error indexing campaign posts for {CampaignId}", SelectedCampaign.Id);
+            SnackBar.Add("Błąd indeksowania postów kampanii", Severity.Error);
         }
         finally
         {
             IsIndexing = false;
             StateHasChanged();
         }
-    }
-
-    private Task GenerateSummaries()
-    {
-        if (SelectedCampaign == null)
-            return Task.CompletedTask;
-
-        try
-        {
-            // TODO: Implement summary generation
-            SnackBar.Add("Generowanie podsumowań w trakcie implementacji", Severity.Info);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error generating summaries");
-            SnackBar.Add("Błąd generowania podsumowań", Severity.Error);
-        }
-        
-        return Task.CompletedTask;
     }
 
     private static string FormatFileSize(long bytes)

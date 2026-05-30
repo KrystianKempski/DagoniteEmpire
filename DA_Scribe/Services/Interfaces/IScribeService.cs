@@ -72,35 +72,6 @@ namespace DA_Scribe.Services.Interfaces
     {
         /// <summary>
         /// Query SCRIBE with a natural language question
-        /// </summary>
-        /// <param name="query">User's question</param>
-        /// <param name="userId">Current user ID</param>
-        /// <param name="characterId">Optional character ID for access control</param>
-        /// <param name="campaignId">Optional campaign ID to scope search</param>
-        /// <param name="conversationId">Optional existing conversation ID</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Generated response with sources</returns>
-        Task<ScribeQueryResult> QueryAsync(
-            string query,
-            string userId,
-            int? characterId = null,
-            int? campaignId = null,
-            int? conversationId = null,
-            bool isGameMaster = false,
-            CancellationToken cancellationToken = default);
-        
-        /// <summary>
-        /// Query SCRIBE with streaming response
-        /// </summary>
-        IAsyncEnumerable<string> QueryStreamAsync(
-            string query,
-            string userId,
-            int? characterId = null,
-            int? campaignId = null,
-            int? conversationId = null,
-            bool isGameMaster = false,
-            CancellationToken cancellationToken = default);
-        
         /// <summary>
         /// Search for relevant chunks without generating a response
         /// </summary>
@@ -155,16 +126,6 @@ namespace DA_Scribe.Services.Interfaces
             int campaignId,
             IEnumerable<int>? characterIds = null,
             bool isPublic = false,
-            CancellationToken cancellationToken = default);
-        
-        /// <summary>
-        /// Generate a summary for a chapter
-        /// </summary>
-        /// <param name="chapterId">Chapter to summarize</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Generated summary memory ID</returns>
-        Task<int> GenerateChapterSummaryAsync(
-            int chapterId,
             CancellationToken cancellationToken = default);
         
         /// <summary>
