@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SCRIBE Import Schema",
+  "description": "Schema for importing pre-processed campaign chunks into SCRIBE",
+  "type": "object",
+  "required": ["metadata", "chunks"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "campaign": {
+          "type": "string",
+          "description": "Campaign name"
+        },
+        "processed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the extraction was performed"
+        },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "total_documents": { "type": "integer" },
+            "total_chunks": { "type": "integer" },
+            "all_characters": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "all_npcs": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "all_locations": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "chunks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Chunk"
+      }
+    }
+  },
+  "definitions": {
+    "Chunk": {
+      "type": "object",
+      "required": ["id", "content", "content_plain"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this chunk"
+        },
+        "document_path": {
+          "type": "string",
+          "description": "Original document path"
+        },
+        "act_number": {
+          "type": ["string", "null"],
+          "description": "Act number (e.g., '22', '22.1')"
+        },
+        "scene_title": {
+          "type": ["string", "null"],
+          "description": "Scene or chapter title"
+        },
+        "content": {
+          "type": "string",
+          "description": "Full content with character annotations like [Tomin]text"
+        },
+        "content_plain": {
+          "type": "string",
+          "description": "Plain text content without annotations"
+        },
+        "pov_characters": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Point-of-view characters in this chunk"
+        },
+        "characters_present": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "All player characters mentioned/present"
+        },
+        "npcs_mentioned": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Non-player characters mentioned"
+        },
+        "locations": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Locations mentioned in this chunk"
+        },
+        "items_mentioned": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Items, equipment, or possessions mentioned"
+        },
+        "date_in_game": {
+          "type": ["string", "null"],
+          "description": "In-game date (e.g., '4 Erastus')"
+        },
+        "has_dialogue": {
+          "type": "boolean",
+          "description": "Whether chunk contains dialogue"
+        },
+        "has_combat": {
+          "type": "boolean",
+          "description": "Whether chunk contains combat"
+        },
+        "has_game_mechanics": {
+          "type": "boolean",
+          "description": "Whether chunk contains game mechanics (dice rolls, etc.)"
+        },
+        "chunk_type": {
+          "type": "string",
+          "enum": ["narrative", "dialogue", "combat", "mechanics", "summary", "world", "rules", "character"],
+          "description": "Primary type of content"
+        },
+        "word_count": {
+          "type": "integer",
+          "description": "Number of words in plain content"
+        }
+      }
+    }
+  }
+}

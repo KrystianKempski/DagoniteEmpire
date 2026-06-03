@@ -151,7 +151,7 @@ cd /opt/dagonite
   "Scribe": {
     "Ollama": {
       "BaseUrl": "http://192.168.1.20:11434",
-      "PersonaFilePath": "Resources/scribe-persona.md"
+      "PersonaFilePath": "tools/Resources/scribe-persona.md"
     }
   }
 }
@@ -164,17 +164,17 @@ Plik ten jest **sekretem** i nie powinien być w repozytorium.
 
 1. **Skopiuj template:**
    ```bash
-   cp Resources/scribe-persona.template.md Resources/scribe-persona.md
+   cp tools/Resources/scribe-persona.template.md tools/Resources/scribe-persona.md
    ```
 
-2. **Edytuj plik `Resources/scribe-persona.md`:**
+2. **Edytuj plik `tools/Resources/scribe-persona.md`:**
    - Zdefiniuj charakter archiwisty (ton, styl odpowiedzi)
    - Określ co może/nie może mówić
    - Dodaj ograniczenia (np. ochrona sekretów graczy)
 
 3. **Ścieżka w konfiguracji:**
    ```json
-   "PersonaFilePath": "Resources/scribe-persona.md"
+   "PersonaFilePath": "tools/Resources/scribe-persona.md"
    ```
 
 Jeśli plik nie istnieje, SCRIBE używa domyślnego, neutralnego promptu.
@@ -192,7 +192,7 @@ dotnet ef database update --project DA_DataAccess --startup-project DagoniteEmpi
 
 ### 3.1 Przygotowanie danych
 
-Dane do importu znajdują się w `Resources/processed/all_chunks.json`.
+Dane do importu znajdują się w `tools/Resources/processed/all_chunks.json`.
 Plik ten zawiera 2406 chunków wyekstrahowanych z kampanii.
 
 ### 3.2 Wykonanie importu

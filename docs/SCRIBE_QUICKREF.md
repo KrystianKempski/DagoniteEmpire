@@ -35,7 +35,7 @@ curl -X POST http://localhost:5000/api/scribe/query \
 ```bash
 curl -X POST http://localhost:5000/api/scribe/import-json/1 \
   -H "Content-Type: application/json" \
-  -d @Resources/processed/all_chunks.json
+  -d @tools/Resources/processed/all_chunks.json
 ```
 
 ## Request body
