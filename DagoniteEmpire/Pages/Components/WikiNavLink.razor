@@ -1,0 +1,62 @@
+@inject IWikiLinkService WikiLinks
+@inject NavigationManager Navigation
+
+@if (_path is not null)
+{
+    @if (string.IsNullOrWhiteSpace(Label))
+    {
+        <MudIconButton Icon="@Icons.Material.Filled.MenuBook"
+                       Size="@Size"
+                       Color="@Color"
+                       OnClick="OpenWiki"
+                       Class="@Class"
+                       title="Wiki" />
+    }
+    else
+    {
+        <MudButton Variant="@Variant"
+                   Color="@Color"
+                   Size="@Size"
+                   StartIcon="@Icons.Material.Filled.MenuBook"
+                   OnClick="OpenWiki"
+                   Class="@Class">
+            @Label
+        </MudButton>
+    }
+}
+
+@code {
+    [Parameter] public string? CharacterName { get; set; }
+    [Parameter] public string? CampaignName { get; set; }
+    [Parameter] public string? ChapterName { get; set; }
+    [Parameter] public string Label { get; set; } = "Wiki";
+    [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
+    [Parameter] public Color Color { get; set; } = Color.Info;
+    [Parameter] public Size Size { get; set; } = Size.Small;
+    [Parameter] public string? Class { get; set; }
+
+    private string? _path;
+
+    protected override void OnParametersSet()
+    {
+        if (!WikiLinks.IsWikiDeployed())
+        {
+            _path = null;
+            return;
+        }
+
+        _path = !string.IsNullOrWhiteSpace(CharacterName)
+            ? WikiLinks.GetCharacterPagePath(CharacterName)
+            : !string.IsNullOrWhiteSpace(ChapterName)
+                ? WikiLinks.GetChapterArchivePath(ChapterName)
+                : WikiLinks.GetCampaignPagePath(CampaignName);
+    }
+
+    private void OpenWiki()
+    {
+        if (_path is not null)
+        {
+            Navigation.NavigateTo(_path, forceLoad: true);
+        }
+    }
+}

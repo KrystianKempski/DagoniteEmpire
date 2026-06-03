@@ -59,8 +59,11 @@
                                 }
                             </div>
                             <div class="campaign-overlay">
-                                <MudStack Spacing="0" Row="true">
+                                <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center">
                                     <MudText Class="flex-grow-1 campaign-title" Typo="Typo.h5">@camp.Name</MudText>
+                                    <span @onclick:stopPropagation="true">
+                                        <WikiNavLink CampaignName="@camp.Name" Label="Wiki" Variant="Variant.Text" Color="Color.Inherit" Class="pa-0" />
+                                    </span>
                                     @if (UserInfo?.IsAdminOrMG == true)
                                     {
                                         <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>

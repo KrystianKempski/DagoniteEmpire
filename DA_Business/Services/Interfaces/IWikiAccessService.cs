@@ -1,0 +1,21 @@
+namespace DA_Business.Services.Interfaces;
+
+/// <summary>
+/// Phase 2: per-slug wiki visibility from character ownership and party rules.
+/// Phase 1: <see cref="CanAccessAllWiki"/> mirrors authenticated access.
+/// </summary>
+public interface IWikiAccessService
+{
+    Task<bool> CanAccessAllWiki(string? userName, bool isAdminOrMg);
+
+    Task<bool> CanAccessSlug(string? userName, bool isAdminOrMg, string slug);
+
+    Task<string?> FilterContentIndexAsync(string? userName, bool isAdminOrMg, string json);
+
+    /// <summary>Shadow index for encrypted/unlisted pages — opaque blobs; non-MG get empty entries.</summary>
+    Task<string> FilterEncryptedContentIndexAsync(string? userName, bool isAdminOrMg, string json);
+
+    Task<string?> FilterSitemapAsync(string? userName, bool isAdminOrMg, string xml);
+
+    bool IsAnonymousPublicPath(string slug);
+}

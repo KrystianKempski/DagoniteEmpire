@@ -40,6 +40,10 @@
         <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.AutoStories" aria-label="SCRIBE"></MudIcon>
         SCRIBE
     </MudButton>
+    <MudButton FullWidth="@(IsRow==false)" OnClick="GoToWiki" Style="@($" color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+        <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.MenuBook" aria-label="Wiki"></MudIcon>
+        Wiki
+    </MudButton>
 </MudStack>
 
 
@@ -250,6 +254,19 @@
         catch (Exception e)
         {
             _snackBar.Add("Error while going to SCRIBE: " + e.Message, Severity.Error);
+        }
+    }
+
+    private async Task GoToWiki()
+    {
+        try
+        {
+            await OnDrawerChanged.InvokeAsync();
+            _navigationManager.NavigateTo("/wiki");
+        }
+        catch (Exception e)
+        {
+            _snackBar.Add("Error while going to Wiki: " + e.Message, Severity.Error);
         }
     }
 

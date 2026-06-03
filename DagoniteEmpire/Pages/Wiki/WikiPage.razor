@@ -1,0 +1,146 @@
+@page "/wiki"
+@inject IWebHostEnvironment HostEnvironment
+@inject IUserService UserService
+@inject IWikiLinkService WikiLinks
+@inject ISnackbar Snackbar
+@inject IWikiViewAsService WikiViewAs
+@inject NavigationManager Navigation
+@attribute [AllowAnonymous]
+
+<PageTitle>Dagonite Empire | Wiki</PageTitle>
+
+<div class="wiki-shell">
+    @if (_showPreviewBar)
+    {
+        <MudPaper Class="wiki-preview-bar pa-2" Elevation="4" Square="true">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+                <MudIcon Icon="@Icons.Material.Filled.Visibility" />
+                <MudText Typo="Typo.subtitle2">Podgląd jako gracz</MudText>
+                <MudSelect T="string"
+                           @bind-Value="_selectedPreview"
+                           Label="Postać"
+                           Dense="true"
+                           Variant="Variant.Outlined"
+                           Style="min-width: 200px;"
+                           Clearable="true">
+                    @foreach (var name in _previewNames)
+                    {
+                        <MudSelectItem T="string" Value="@name">@name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="ApplyPreview">
+                    Zastosuj
+                </MudButton>
+                <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ClearPreview">
+                    Pełny dostęp MG
+                </MudButton>
+                @if (!string.IsNullOrWhiteSpace(_activePreview))
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">Aktywny: @_activePreview</MudChip>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+
+    @if (_wikiAvailable)
+    {
+        <iframe src="@WikiEntryUrl"
+                title="DagoniteEmpire Wiki"
+                class="wiki-iframe @(_showPreviewBar ? "wiki-iframe-with-bar" : "")"
+                referrerpolicy="same-origin" />
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Warning" Class="ma-4">
+            Wiki nie jest jeszcze wdrożona na tym serwerze. Uruchom
+            <code>tools/Scripts/build_wiki_for_empire.sh</code> (lub pełny pipeline
+            <code>sync_wiki_pipeline.sh</code>).
+        </MudAlert>
+    }
+</div>
+
+<style>
+    .wiki-shell {
+        width: 100%;
+        height: calc(100vh - 64px);
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #1a1109;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .wiki-preview-bar {
+        flex-shrink: 0;
+        background: #2a1f14;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .wiki-iframe {
+        display: block;
+        width: 100%;
+        flex: 1;
+        border: none;
+        min-height: 0;
+    }
+
+    .wiki-iframe-with-bar {
+        height: auto;
+    }
+</style>
+
+@code {
+    private const string WikiEntryUrl = "/wiki/index.html";
+    private bool _wikiAvailable;
+    private bool _showPreviewBar;
+    private string? _selectedPreview;
+    private string? _activePreview;
+    private List<string> _previewNames = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var wikiRoot = Path.Combine(HostEnvironment.WebRootPath ?? "", "wiki");
+        _wikiAvailable = File.Exists(Path.Combine(wikiRoot, "index.html"));
+
+        var userInfo = await UserService.GetUserInfo();
+        _showPreviewBar = userInfo?.IsAdminOrMG == true && _wikiAvailable;
+        if (_showPreviewBar)
+        {
+            _previewNames = WikiLinks.GetAllPlayerNamesForPreview().ToList();
+            _activePreview = WikiViewAs.GetViewAsCharacterName();
+            _selectedPreview = _activePreview;
+        }
+    }
+
+    private void ApplyPreview()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_selectedPreview))
+            {
+                WikiViewAs.ClearViewAs();
+                _activePreview = null;
+            }
+            else
+            {
+                WikiViewAs.SetViewAs(_selectedPreview);
+                _activePreview = _selectedPreview;
+                Snackbar.Add($"Podgląd jako {_selectedPreview}", Severity.Info);
+            }
+
+            Navigation.NavigateTo(WikiEntryUrl, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Nie udało się ustawić podglądu: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private void ClearPreview()
+    {
+        _selectedPreview = null;
+        _activePreview = null;
+        ApplyPreview();
+    }
+}

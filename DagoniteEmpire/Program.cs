@@ -10,6 +10,7 @@ using DagoniteEmpire.Account;
 using MudBlazor.Services;
 using NLog.Web;
 using DagoniteEmpire.Middleware;
+using DA_Business.Services.Interfaces;
 using DA_DataAccess;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using DagoniteEmpire.Helper;
@@ -142,6 +143,11 @@ public class Program
         builder.Services.AddScoped<IFileUpload, FileUpload>();
         builder.Services.AddScoped<IDbInitializer, DbInitializer>();
         builder.Services.AddScoped<ErrorHandlingMiddleware>();
+        builder.Services.AddMemoryCache();
+        builder.Services.AddScoped<IWikiAccessService, WikiAccessService>();
+        builder.Services.AddScoped<IWikiViewAsService, WikiViewAsService>();
+        builder.Services.AddSingleton<IWikiLinkService, WikiLinkService>();
+        builder.Services.AddScoped<WikiStaticFileMiddleware>();
         builder.Services.AddScoped<ITokenService,TokenService>();
         builder.Services.AddTransient<IChatManager, ChatManager>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -180,6 +186,9 @@ public class Program
         }
         app.UseMiddleware<ErrorHandlingMiddleware>();
         app.UseHttpsRedirection();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.UseMiddleware<WikiStaticFileMiddleware>();
         app.UseStaticFiles();
         //app.MapStaticAssets();
 

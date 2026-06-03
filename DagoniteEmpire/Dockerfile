@@ -22,6 +22,7 @@ RUN dotnet publish "./DagoniteEmpire.csproj" -c $BUILD_CONFIGURATION -o /app/pub
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+# wwwroot/wiki is included in publish when deploy_wiki_to_wwwroot.sh was run before docker build
 
 ARG ENVIRONMENT=Production
 ENV ASPNETCORE_ENVIRONMENT $ENVIRONMENT

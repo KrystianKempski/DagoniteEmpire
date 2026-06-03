@@ -138,7 +138,10 @@ else
         
         @if (Chapter is not null)
         {
-            <MudText Typo="Typo.h4">Chapter: @Chapter.Name</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="flex-wrap">
+                <MudText Typo="Typo.h4">Chapter: @Chapter.Name</MudText>
+                <WikiNavLink ChapterName="@Chapter.Name" Label="Archiwum wiki" />
+            </MudStack>
             <MudText Class="py-2 flex-grow-1" Typo="Typo.h6">@Chapter.Date, @Chapter.DayTime, @Chapter.Place</MudText>
             <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
 
