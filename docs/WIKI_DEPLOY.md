@@ -1,5 +1,7 @@
 # Wiki w DagoniteEmpire
 
+**Instrukcja dla administratora serwera (Docker/K8s):** [WIKI_DEPLOY_OPS.md](./WIKI_DEPLOY_OPS.md)
+
 ## Integracja
 
 - Zakładka **Wiki** w panelu → `/wiki` (layout + iframe).
@@ -17,6 +19,10 @@
 - **Wątki kroniki** — publiczne dla zalogowanych, chyba że dotyczą jednego bohatera (tag/treść).
 - **Kampania W służbie Bonefyre** — postacie z drużyn Bonefyre + Pijany Smok (obie w kampanii).
 - **MG/Admin** — wszystko.
+
+### Brak dostępu (UI)
+
+Gdy gracz otworzy stronę spoza uprawnień, middleware zwraca **`wiki-access-denied.html`** (403) zamiast pustej odpowiedzi — w iframe widać komunikat i link do „Świat i zasady”.
 
 ## Publikacja na serwer (Docker)
 
@@ -97,11 +103,16 @@ chmod +x sync_wiki_pipeline.sh build_wiki_for_empire.sh
 
 Kolejność: `build_obsidian_vault.py` → `sync_vault_to_quartz.sh` → `build_wiki_for_empire.sh`.
 
-### Podgląd MG „jako gracz”
+### Dostęp a „Select character”
 
-Na `/wiki` pasek u góry (Admin/MG): wybór postaci → cookie `wiki_view_as` → middleware stosuje reguły jak dla tej postaci. **Pełny dostęp MG** = wyczyść podgląd.
+Wiki korzysta z tej samej sesji co reszta aplikacji (`LoginDisplay` → **Select character**):
 
-API (opcjonalnie): `POST/DELETE/GET /api/wiki/view-as`.
+- **Game Master** (wybór MG w menu) → pełny dostęp do wiki.
+- **Konkretna postać** → ACL według `NPCName` wybranej postaci (manifest `wiki-access.json`).
+- Postać **spoza drużyn** w `wiki-parties.json` → tylko **Świat i zasady** (+ strona główna wiki, mapy dla zalogowanych).
+- Postać **w drużynie** → kampania i pliki zgodnie z regułami manifestu (sceny 1–2, wątki, NPC itd.).
+- Po zmianie postaci w menu wiki przeładowuje iframe (jak przy pierwszym wejściu).
+- Nieznane slugi → domyślnie **odmowa** (nie „każdy zalogowany”).
 
 ### Linki wiki ↔ aplikacja
 

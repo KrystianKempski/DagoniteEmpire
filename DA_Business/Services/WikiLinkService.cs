@@ -114,17 +114,6 @@ public class WikiLinkService : IWikiLinkService
         return bestSlug is null ? null : ToWikiPath(bestSlug);
     }
 
-    public IReadOnlyList<string> GetAllPlayerNamesForPreview()
-    {
-        var links = LoadLinks();
-        if (links?.AllPlayerNames.Count > 0)
-        {
-            return links.AllPlayerNames.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
-        }
-
-        return [];
-    }
-
     private WikiLinksFile? LoadLinks()
     {
         return _cache.GetOrCreate(LinksCacheKey, entry =>

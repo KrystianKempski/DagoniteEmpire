@@ -18,4 +18,10 @@ public interface IWikiAccessService
     Task<string?> FilterSitemapAsync(string? userName, bool isAdminOrMg, string xml);
 
     bool IsAnonymousPublicPath(string slug);
+
+    /// <summary>First iframe URL: campaign hub when allowed, otherwise public lore root.</summary>
+    Task<string> GetDefaultWikiIframePathAsync(string? userName, bool isAdminOrMg);
+
+    /// <summary>MG/Admin (or CharacterMG): no tag/slug checks in app or iframe JS.</summary>
+    Task<bool> ShouldBypassAccessChecksAsync(string? userName, bool isAdminOrMg);
 }

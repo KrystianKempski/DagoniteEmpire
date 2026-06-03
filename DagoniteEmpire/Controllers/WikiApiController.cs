@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using DA_Business.Services.Interfaces;
 using DA_Common;
 using Microsoft.AspNetCore.Authorization;
@@ -8,48 +7,44 @@ namespace DagoniteEmpire.Controllers;
 
 [ApiController]
 [Route("api/wiki")]
-[Authorize]
 public class WikiApiController : ControllerBase
 {
-    private readonly IWikiViewAsService _viewAs;
+    private readonly IWikiAccessService _wikiAccess;
 
-    public WikiApiController(IWikiViewAsService viewAs)
+    public WikiApiController(IWikiAccessService wikiAccess)
     {
-        _viewAs = viewAs;
+        _wikiAccess = wikiAccess;
     }
 
-    [HttpPost("view-as")]
-    [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster)]
-    public IActionResult SetViewAs([FromBody] WikiViewAsRequest? request)
+    /// <summary>Used by wiki iframe to block navigation before Quartz shows a 404 page.</summary>
+    [HttpGet("access")]
+    public async Task<IActionResult> CheckAccess([FromQuery] string? slug)
     {
-        if (string.IsNullOrWhiteSpace(request?.NpcName))
+        if (string.IsNullOrWhiteSpace(slug))
         {
-            _viewAs.ClearViewAs();
-            return Ok(new { active = false });
+            return BadRequest(new { allowed = false, error = "slug required" });
         }
 
-        _viewAs.SetViewAs(request.NpcName.Trim());
-        return Ok(new { active = true, npcName = request.NpcName.Trim() });
-    }
+        slug = slug.Trim().TrimStart('/');
 
-    [HttpDelete("view-as")]
-    [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster)]
-    public IActionResult ClearViewAs()
-    {
-        _viewAs.ClearViewAs();
-        return Ok(new { active = false });
-    }
+        if (_wikiAccess.IsAnonymousPublicPath(slug))
+        {
+            return Ok(new { allowed = true });
+        }
 
-    [HttpGet("view-as")]
-    [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster)]
-    public IActionResult GetViewAs()
-    {
-        var name = _viewAs.GetViewAsCharacterName();
-        return Ok(new { active = !string.IsNullOrWhiteSpace(name), npcName = name });
-    }
+        if (!(User.Identity?.IsAuthenticated ?? false))
+        {
+            return Ok(new { allowed = false });
+        }
 
-    public sealed class WikiViewAsRequest
-    {
-        public string? NpcName { get; set; }
+        var userName = User.Identity?.Name;
+        var isAdminOrMg = User.IsInRole(SD.Role_Admin) || User.IsInRole(SD.Role_GameMaster);
+        if (await _wikiAccess.ShouldBypassAccessChecksAsync(userName, isAdminOrMg))
+        {
+            return Ok(new { allowed = true, bypass = true });
+        }
+
+        var allowed = await _wikiAccess.CanAccessSlug(userName, isAdminOrMg, slug);
+        return Ok(new { allowed });
     }
 }

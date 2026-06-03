@@ -9,6 +9,4 @@ public interface IWikiLinkService
     string? GetCampaignPagePath(string? campaignName);
 
     string? GetChapterArchivePath(string? chapterName);
-
-    IReadOnlyList<string> GetAllPlayerNamesForPreview();
 }

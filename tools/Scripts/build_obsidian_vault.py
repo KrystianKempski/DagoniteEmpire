@@ -29,6 +29,79 @@ WORLD_DIR = BASE / "Resources" / "Opis świata i zasady"
 JSON_PATH = BASE / "Scripts" / "output" / "adventure_map.json"
 MERMAID_PATH = BASE / "Scripts" / "output" / "adventure_map.md"
 VAULT_DIR = BASE / "Resources" / "Wiki"
+PARTIES_CONFIG_PATH = BASE.parent.parent / "dagonite-wiki" / "content" / "_meta" / "wiki-parties.json"
+
+# ── Konfiguracja dostępu (drużyny) ────────────────────────────────────────────
+# Wyliczamy DOMYŚLNY blok `access:` dla generowanych stron. Reguły można potem
+# nadpisać ręcznie we frontmatter lub w _meta/wiki-access-overrides.json.
+PARTY_BY_CHARACTER: dict[str, list[str]] = {}
+CHAR_CANON: dict[str, str] = {}
+CAMPAIGN_PARTY_IDS: list[str] = []
+
+
+def _norm_char(value: str) -> str:
+    return re.sub(r"[\s\-_.]+", "", str(value)).lower()
+
+
+def resolve_char(value: str) -> str | None:
+    return CHAR_CANON.get(_norm_char(value))
+
+
+def load_wiki_access_config() -> None:
+    global CAMPAIGN_PARTY_IDS
+    if not PARTIES_CONFIG_PATH.exists():
+        print(f"  ↷ Brak {PARTIES_CONFIG_PATH} — access: zostanie ograniczony do prostych reguł")
+        return
+    try:
+        cfg = json.loads(PARTIES_CONFIG_PATH.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as ex:
+        print(f"  ! Nie udało się wczytać wiki-parties.json: {ex}")
+        return
+
+    for pid, party in cfg.get("parties", {}).items():
+        for name in party.get("characters", []):
+            PARTY_BY_CHARACTER.setdefault(name, []).append(pid)
+            CHAR_CANON[_norm_char(name)] = name
+    for canonical, aliases in cfg.get("characterAliases", {}).items():
+        for alias in aliases:
+            CHAR_CANON[_norm_char(alias)] = canonical
+
+    ids: set[str] = set()
+    for camp in cfg.get("campaigns", []):
+        ids.update(camp.get("partyIds", []))
+    CAMPAIGN_PARTY_IDS = sorted(ids)
+
+
+def access_block_lines(visibility: str, characters: list[str] | None = None,
+                       parties: list[str] | None = None) -> list[str]:
+    lines = ["access:", f"  visibility: {visibility}"]
+    if characters:
+        lines.append("  characters: [" + ", ".join(yaml_str(c) for c in characters) + "]")
+    if parties:
+        lines.append("  parties: [" + ", ".join(parties) + "]")
+    return lines
+
+
+def scene_access(name: str, players: list[str]) -> tuple[str, list[str] | None, list[str] | None]:
+    """Domyślny dostęp sceny: mirror heurystyki z build_wiki_access_manifest.py."""
+    title = (name or "").strip()
+    if title.lower().startswith("wstęp"):
+        hero = re.sub(r"(?i)^wstęp\s*", "", title).strip()
+        canonical = resolve_char(hero)
+        if canonical:
+            return ("characters", [canonical], None)
+        return ("party", None, CAMPAIGN_PARTY_IDS)
+
+    if not players:
+        return ("party", None, CAMPAIGN_PARTY_IDS)
+
+    canon = sorted({resolve_char(p) or p for p in players})
+    if len(players) <= 2:
+        return ("characters", canon, None)
+
+    pids = sorted({pid for p in players for pid in PARTY_BY_CHARACTER.get(resolve_char(p) or p, [])})
+    return ("party", None, pids or CAMPAIGN_PARTY_IDS)
+
 
 # ── Pomocnicze ───────────────────────────────────────────────────────────────
 
@@ -112,6 +185,8 @@ def make_frontmatter(node: dict[str, Any], players: list[str], gdrive: str) -> s
     tags_yaml = "[" + ", ".join(tags_list) + "]"
     players_yaml = "[" + ", ".join(yaml_str(p) for p in players) + "]"
 
+    visibility, chars, parties = scene_access(node.get("name", ""), players)
+
     lines = [
         "---",
         f"title: {title}",
@@ -121,6 +196,7 @@ def make_frontmatter(node: dict[str, Any], players: list[str], gdrive: str) -> s
         f"players: {players_yaml}",
         f"gdrive: {yaml_str(gdrive)}",
         f"tags: {tags_yaml}",
+        *access_block_lines(visibility, chars, parties),
         "---",
         "",
     ]
@@ -267,7 +343,9 @@ def _convert_world_file(docx_file: Path, out_dir: Path) -> None:
     else:
         tags = "[lore]"
 
-    fm = f"---\ntitle: \"{stem}\"\ntags: {tags}\n---\n\n"
+    # "Świat i zasady" to publiczne lore (anonymousPublicPrefixes) → dostęp public.
+    access = "\n".join(access_block_lines("public"))
+    fm = f"---\ntitle: \"{stem}\"\ntags: {tags}\n{access}\n---\n\n"
     body = extract_text_from_docx(docx_file)
     content = fm + f"# {stem}\n\n" + body
 
@@ -295,7 +373,13 @@ def create_character_pages(nodes_by_name: dict, nodes_by_id: dict, links_map: di
                 char_scenes[p].append(node.get("name", ""))
 
     for char, scenes in char_scenes.items():
+        canonical = resolve_char(char) or char
         lines = [
+            "---",
+            f"title: {yaml_str(char)}",
+            *access_block_lines("characters", [canonical]),
+            "---",
+            "",
             f"# {char}",
             "",
             "> Strona postaci gracza.",
@@ -491,6 +575,9 @@ def write_obsidian_config() -> None:
 def main() -> None:
     print(f"\n🏗️  Budowanie Obsidian Vault w: {VAULT_DIR}\n")
     VAULT_DIR.mkdir(parents=True, exist_ok=True)
+
+    print("🔐 Wczytywanie konfiguracji dostępu (drużyny)...")
+    load_wiki_access_config()
 
     print("📖 Wczytywanie mapy przygód...")
     nodes_by_name, nodes_by_id, edges = load_map_data()

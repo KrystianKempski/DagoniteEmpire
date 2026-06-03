@@ -1,11 +1,31 @@
 #!/usr/bin/env python3
-"""Build wiki/static/wiki-access.json from content + _meta/wiki-parties.json."""
+"""Build wiki-access.json from markdown tags in dagonite-wiki/content.
+
+Access rule (same in app + explorer / contentIndex filter):
+
+  Postać X widzi stronę, gdy:
+    • tag strony zawiera slug bohatera X (np. lawenda), lub
+    • tag strony to team-<party-id>, a X należy do tej drużyny (wiki-parties.json).
+
+  Dodatkowo (bez tagów bohaterów):
+    • wiki-public     → wszyscy (lore)
+    • wiki-logged-in  → każdy zalogowany (index, mapy)
+
+  Brak tagów i poza publicznymi ścieżkami → deny (tylko MG/Admin).
+
+Nadpisania MG: content/_meta/wiki-access-overrides.json (najwyższy priorytet).
+
+Usage:
+  python3 build_wiki_access_manifest.py
+"""
 
 from __future__ import annotations
 
 import ast
+import fnmatch
 import json
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -13,28 +33,76 @@ EMPIRE_ROOT = SCRIPT_DIR.parent.parent
 WIKI_ROOT = EMPIRE_ROOT.parent / "dagonite-wiki"
 CONTENT = WIKI_ROOT / "content"
 PARTIES_FILE = CONTENT / "_meta" / "wiki-parties.json"
+OVERRIDES_FILE = CONTENT / "_meta" / "wiki-access-overrides.json"
 QUARTZ_PUBLIC = WIKI_ROOT / "public"
 OUTPUT = EMPIRE_ROOT / "DagoniteEmpire" / "wwwroot" / "wiki" / "static" / "wiki-access.json"
 PARTIES_OUTPUT = OUTPUT.parent / "wiki-parties.json"
 LINKS_OUTPUT = OUTPUT.parent / "wiki-links.json"
+AUDIT_FILE = SCRIPT_DIR / "output" / "wiki-access-audit.tsv"
 
-CONFIG: dict = {}
-PLAYER_NAMES: set[str] = set()
-PARTY_BY_CHARACTER: dict[str, list[str]] = {}
-PARTY_CHARACTERS: dict[str, list[str]] = {}
-MIN_PARTY_SCENE = 3
+TEAM_TAG_RE = re.compile(r"^team-(.+)$", re.I)
+
+# Not used for access — only metadata / Quartz
+STRUCTURAL_TAGS = frozenset({
+    "wiki-public", "wiki-logged-in",
+    "przygoda", "wspolne", "wątek", "watek", "index", "kronika", "wątki",
+    "akt", "akt-1", "akt-2", "akt-3", "akt-4", "akt-5",
+    "podsumowanie", "otwarty", "zamknięty", "zamkniety", "zamknięty-tymczasowo",
+    "częściowo-zamknięty", "tajemnica", "główny", "glowny", "zaplanowany", "krytyczny",
+    "choroba", "artefakt", "zlecenie", "npc", "lore", "mapa", "archiwum", "kampania",
+    "organizacja", "zasady", "postać-gracza", "postac-gracza", "budynek", "lokacja",
+    "dzielnica", "miasto", "region", "dzicz", "straż", "sojusznik", "antagonista",
+    "zakon-gromu", "postacie", "status", "priorytet", "wysoki", "trwająca", "trwajaca",
+})
+
+VISIBILITY_BY_TAG = {
+    "wiki-public": "anonymous",
+    "wiki-logged-in": "authenticated",
+}
 
 
-def load_config() -> None:
-    global CONFIG, PLAYER_NAMES, PARTY_BY_CHARACTER, PARTY_CHARACTERS, MIN_PARTY_SCENE
-    CONFIG = json.loads(PARTIES_FILE.read_text(encoding="utf-8"))
-    MIN_PARTY_SCENE = int(CONFIG.get("partySceneMinPlayers", 3))
-    for party_id, party in CONFIG.get("parties", {}).items():
+@dataclass
+class Config:
+    anonymous_prefixes: list[str] = field(default_factory=list)
+    logged_in_prefixes: list[str] = field(default_factory=list)
+    party_characters: dict[str, list[str]] = field(default_factory=dict)
+    char_by_party: dict[str, list[str]] = field(default_factory=dict)
+    char_canon: dict[str, str] = field(default_factory=dict)
+    player_names: set[str] = field(default_factory=set)
+    campaigns: list[dict] = field(default_factory=list)
+    overrides: dict[str, dict] = field(default_factory=dict)
+
+
+def load_config() -> Config:
+    raw = json.loads(PARTIES_FILE.read_text(encoding="utf-8"))
+    cfg = Config(
+        anonymous_prefixes=list(raw.get("anonymousPublicPrefixes", [])),
+        logged_in_prefixes=list(raw.get("loggedInPublicPrefixes", [])),
+        campaigns=list(raw.get("campaigns", [])),
+        overrides={},
+    )
+    for party_id, party in raw.get("parties", {}).items():
         chars = list(party.get("characters", []))
-        PARTY_CHARACTERS[party_id] = chars
+        cfg.party_characters[party_id] = chars
         for name in chars:
-            PLAYER_NAMES.add(name)
-            PARTY_BY_CHARACTER.setdefault(name, []).append(party_id)
+            cfg.player_names.add(name)
+            cfg.char_by_party.setdefault(name, []).append(party_id)
+            cfg.char_canon[norm_char(name)] = name
+    for canonical, aliases in raw.get("characterAliases", {}).items():
+        if canonical in cfg.player_names:
+            for alias in aliases:
+                cfg.char_canon[norm_char(alias)] = canonical
+    if OVERRIDES_FILE.exists():
+        cfg.overrides = json.loads(OVERRIDES_FILE.read_text(encoding="utf-8")).get("overrides", {}) or {}
+    return cfg
+
+
+def norm_char(value: str) -> str:
+    return re.sub(r"[\s\-_.]+", "", value.lower())
+
+
+def resolve_character(value: str, cfg: Config) -> str | None:
+    return cfg.char_canon.get(norm_char(value))
 
 
 def parse_frontmatter(text: str) -> dict:
@@ -51,16 +119,10 @@ def parse_frontmatter(text: str) -> dict:
     except Exception:
         data: dict = {}
         for line in block.splitlines():
-            if ":" not in line:
-                continue
-            key, _, val = line.partition(":")
-            val = val.strip().strip('"').strip("'")
-            data[key.strip()] = val
+            if ":" in line:
+                k, _, v = line.partition(":")
+                data[k.strip()] = v.strip().strip('"').strip("'")
         return data
-
-
-def clean_title(title: str) -> str:
-    return title.strip().strip('"').strip("'")
 
 
 def parse_tags(fm: dict) -> list[str]:
@@ -68,40 +130,142 @@ def parse_tags(fm: dict) -> list[str]:
     if raw is None:
         return []
     if isinstance(raw, list):
-        return [str(t).strip() for t in raw]
-    if isinstance(raw, str):
-        s = raw.strip().strip("[]")
-        if not s:
-            return []
-        try:
-            parsed = ast.literal_eval("[" + s + "]" if not s.startswith("[") else s)
-            if isinstance(parsed, list):
-                return [str(t).strip() for t in parsed]
-        except (SyntaxError, ValueError):
-            return [t.strip() for t in s.split(",")]
-    return []
-
-
-def parse_players(fm: dict) -> list[str]:
-    raw = fm.get("players")
-    if raw is None:
+        return [str(t).strip() for t in raw if str(t).strip()]
+    s = str(raw).strip().strip("[]")
+    if not s:
         return []
-    if isinstance(raw, list):
-        return [str(p).strip() for p in raw if str(p).strip()]
-    if isinstance(raw, str):
-        s = raw.strip()
-        if not s:
-            return []
-        try:
-            parsed = ast.literal_eval(s)
-            if isinstance(parsed, list):
-                return [str(p).strip() for p in parsed]
-        except (SyntaxError, ValueError):
-            pass
-    return []
+    try:
+        parsed = ast.literal_eval(s if s.startswith("[") else f"[{s}]")
+        if isinstance(parsed, list):
+            return [str(t).strip() for t in parsed]
+    except (SyntaxError, ValueError):
+        pass
+    return [p.strip() for p in s.split(",") if p.strip()]
 
 
-def slugify_segment(segment: str) -> str:
+@dataclass
+class AccessRule:
+    mode: str
+    characters: list[str] = field(default_factory=list)
+    parties: list[str] = field(default_factory=list)
+    reason: str = ""
+    source_file: str = ""
+
+    def to_json(self) -> dict:
+        return {
+            "mode": self.mode,
+            "characters": self.characters,
+            "parties": self.parties,
+            "reason": self.reason,
+            "source": self.source_file,
+        }
+
+
+def rule_from_tags(tags: list[str], cfg: Config) -> AccessRule | None:
+    """Map frontmatter tags → manifest entry. Core rule for heroes + parties."""
+    for tag in tags:
+        tl = tag.strip().lower()
+        vis = VISIBILITY_BY_TAG.get(tl)
+        if vis:
+            return AccessRule(mode=vis, reason=f"tag-{tl}")
+
+    characters: list[str] = []
+    parties: list[str] = []
+    for tag in tags:
+        tl = tag.strip().lower()
+        if not tl or tl in STRUCTURAL_TAGS:
+            continue
+        m = TEAM_TAG_RE.match(tl)
+        if m:
+            pid = m.group(1).lower()
+            if pid in cfg.party_characters:
+                parties.append(pid)
+            continue
+        canonical = resolve_character(tl, cfg) or resolve_character(tl.replace("-", " "), cfg)
+        if canonical:
+            characters.append(canonical)
+
+    characters = sorted(set(characters))
+    parties = sorted(set(parties))
+    if not characters and not parties:
+        return None
+
+    # App treats Characters and Party the same: user in characters[] OR in parties[].
+    return AccessRule(
+        mode="characters",
+        characters=characters,
+        parties=parties,
+        reason="tags",
+    )
+
+
+def rule_from_path_prefix(slug: str, cfg: Config) -> AccessRule | None:
+    for prefix in cfg.anonymous_prefixes:
+        p = slugify(prefix)
+        if slug == p or slug.startswith(p + "/"):
+            return AccessRule(mode="anonymous", reason="path-public")
+    for prefix in cfg.logged_in_prefixes:
+        p = slugify(prefix)
+        if slug == p or slug.startswith(p + "/"):
+            return AccessRule(mode="authenticated", reason="path-logged-in")
+    return None
+
+
+def rule_from_override(slug: str, cfg: Config) -> AccessRule | None:
+    bare = slug.rstrip("/")
+    for key in (slug, bare, bare + "/"):
+        if key in cfg.overrides:
+            return _override_to_rule(cfg.overrides[key])
+    for pattern, data in cfg.overrides.items():
+        if fnmatch.fnmatch(bare, pattern.rstrip("/")) or fnmatch.fnmatch(bare + "/", pattern):
+            return _override_to_rule(data)
+    return None
+
+
+def _override_to_rule(data: dict) -> AccessRule:
+    vis = str(data.get("visibility", "deny")).lower()
+    chars = data.get("characters") or []
+    parties = data.get("parties") or []
+    if isinstance(chars, str):
+        chars = [c.strip() for c in chars.split(",") if c.strip()]
+    if isinstance(parties, str):
+        parties = [p.strip() for p in parties.split(",") if p.strip()]
+    mode = {
+        "public": "anonymous",
+        "anonymous": "anonymous",
+        "authenticated": "authenticated",
+        "logged-in": "authenticated",
+        "party": "party",
+        "characters": "characters",
+        "deny": "deny",
+        "gm-only": "deny",
+        "gm": "deny",
+    }.get(vis, "deny")
+    return AccessRule(
+        mode=mode,
+        characters=list(chars),
+        parties=list(parties),
+        reason="override",
+    )
+
+
+def classify_page(slug: str, tags: list[str], cfg: Config, rel: str) -> tuple[AccessRule, str]:
+    override = rule_from_override(slug, cfg)
+    if override:
+        return override, "override"
+
+    tagged = rule_from_tags(tags, cfg)
+    if tagged:
+        return tagged, "tags"
+
+    by_path = rule_from_path_prefix(slug, cfg)
+    if by_path:
+        return by_path, "path"
+
+    return AccessRule(mode="deny", reason="missing-tags"), "deny"
+
+
+def slugify(segment: str) -> str:
     return segment.strip().lower().replace(" ", "-")
 
 
@@ -109,184 +273,28 @@ def content_rel_to_slug(rel: Path) -> str:
     parts = list(rel.with_suffix("").parts)
     if parts and parts[-1].lower() in ("index", "_index"):
         parts = parts[:-1]
-        if not parts:
-            return "index"
-        return "/".join(slugify_segment(p) for p in parts) + "/"
-    return "/".join(slugify_segment(p) for p in parts)
+        return "/".join(slugify(p) for p in parts) + "/" if parts else "index/"
+    return "/".join(slugify(p) for p in parts)
 
 
-def read_data_slug(html_path: Path) -> str | None:
-    text = html_path.read_text(encoding="utf-8", errors="ignore")[:8000]
-    match = re.search(r'<body[^>]*\sdata-slug="([^"]+)"', text)
-    return match.group(1).strip("/") if match else None
-
-
-def resolve_slug(md: Path, public_dir: Path) -> str:
+def read_quartz_slug(md: Path) -> str | None:
     rel = md.relative_to(CONTENT)
     guessed = content_rel_to_slug(rel).strip("/")
-    if not public_dir.is_dir():
-        return guessed
-
-    candidates = [
-        public_dir / f"{guessed}.html",
-        public_dir / guessed / "index.html",
-    ]
-    for html_path in candidates:
-        if html_path.is_file():
-            return read_data_slug(html_path) or guessed
-
-    return guessed
-
-
-def wikilinks_in(text: str) -> list[str]:
-    return [m.group(1).split("|")[0].strip() for m in re.finditer(r"\[\[([^\]]+)\]\]", text)]
-
-
-def player_names_in_text(text: str) -> set[str]:
-    found: set[str] = set()
-    for link in wikilinks_in(text):
-        base = link.split("/")[-1].strip()
-        for player in PLAYER_NAMES:
-            if base.lower() == player.lower():
-                found.add(player)
-    return found
-
-
-def parties_for_players(players: list[str]) -> set[str]:
-    result: set[str] = set()
-    for p in players:
-        result.update(PARTY_BY_CHARACTER.get(p, []))
-    return result
-
-
-def characters_for_parties(party_ids: set[str]) -> list[str]:
-    chars: list[str] = []
-    for pid in party_ids:
-        chars.extend(PARTY_CHARACTERS.get(pid, []))
-    return sorted(set(chars))
-
-
-def campaign_party_characters() -> list[str]:
-    chars: list[str] = []
-    for camp in CONFIG.get("campaigns", []):
-        for pid in camp.get("partyIds", []):
-            chars.extend(PARTY_CHARACTERS.get(pid, []))
-    return sorted(set(chars))
-
-
-def entry(mode: str, characters: list[str] | None = None, reason: str = "") -> dict:
-    return {
-        "mode": mode,
-        "characters": characters or [],
-        "reason": reason,
-    }
-
-
-def scene_access(fm: dict, title: str) -> dict:
-    title = clean_title(title)
-    players = parse_players(fm)
-    if "wstęp" in title.lower():
-        hero = re.sub(r"(?i)^wstęp\s*", "", title).strip()
-        for player in PLAYER_NAMES:
-            if hero.lower() == player.lower():
-                return entry("characters", [player], "intro-title")
-        return entry("authenticated", reason="intro-unknown")
-
-    if not players:
-        return entry("authenticated", reason="scene-no-players")
-
-    if len(players) <= 2:
-        return entry("characters", sorted(set(players)), "scene-secret-1-2")
-
-    party_ids = parties_for_players(players)
-    return entry("characters", characters_for_parties(party_ids), "scene-party-3plus")
-
-
-def thread_access(fm: dict, title: str, body: str) -> dict:
-    title = clean_title(title)
-    tags = parse_tags(fm)
-    tag_hits = []
-    for t in tags:
-        tl = str(t).lower().replace("-", "")
-        for player in PLAYER_NAMES:
-            pl = player.lower().replace("-", "")
-            if tl == pl or tl in pl or pl in tl:
-                tag_hits.append(player)
-                break
-    if len(tag_hits) == 1:
-        return entry("characters", [tag_hits[0]], "thread-single-hero-tag")
-
-    mentioned = player_names_in_text(body)
-    if len(mentioned) == 1:
-        return entry("characters", sorted(mentioned), "thread-single-hero-body")
-
-    if len(mentioned) == 0 and any(
-        name.lower() in title.lower() for name in PLAYER_NAMES if title.count(name) == 1
+    if not QUARTZ_PUBLIC.is_dir():
+        return guessed or None
+    for candidate in (
+        QUARTZ_PUBLIC / f"{guessed}.html",
+        QUARTZ_PUBLIC / guessed / "index.html",
     ):
-        for name in PLAYER_NAMES:
-            if name.lower() in title.lower():
-                return entry("characters", [name], "thread-single-hero-title")
-
-    return entry("authenticated", reason="thread-public")
-
-
-def npc_access(body: str) -> dict:
-    mentioned = player_names_in_text(body)
-    if len(mentioned) == 1:
-        return entry("characters", sorted(mentioned), "npc-single-contact")
-    return entry("authenticated", reason="npc-public")
+        if candidate.is_file():
+            text = candidate.read_text(encoding="utf-8", errors="ignore")[:8000]
+            m = re.search(r'<body[^>]*\sdata-slug="([^"]+)"', text)
+            if m:
+                return m.group(1).strip("/")
+    return guessed or None
 
 
-def classify(md: Path, fm: dict, body: str, slug: str) -> dict:
-    rel = md.relative_to(CONTENT).as_posix()
-    title = clean_title(str(fm.get("title") or md.stem))
-
-    for prefix in CONFIG.get("anonymousPublicPrefixes", []):
-        pslug = slugify_segment(prefix)
-        if slug == pslug or slug.startswith(pslug + "/"):
-            return entry("anonymous", reason="world-lore")
-
-    for prefix in CONFIG.get("loggedInPublicPrefixes", []):
-        pslug = slugify_segment(prefix)
-        if slug == pslug or slug.startswith(pslug + "/"):
-            return entry("authenticated", reason="public-logged-in")
-
-    if "Archiwum sesji" in rel:
-        return scene_access(fm, title)
-
-    if "Kronika/Wątki" in rel:
-        return thread_access(fm, title, body)
-
-    if "Kronika" in rel:
-        return entry("authenticated", reason="chronicle")
-
-    if rel.startswith("W służbie Bonefyre/Postacie/NPC/"):
-        return npc_access(body)
-
-    if rel.startswith("W służbie Bonefyre/Postacie/"):
-        name = md.stem
-        for player in PLAYER_NAMES:
-            if name.lower().replace("-", " ") == player.lower().replace("-", " "):
-                return entry("characters", [player], "player-sheet")
-        # Baron Mevir.md etc.
-        if name in PLAYER_NAMES:
-            return entry("characters", [name], "player-sheet")
-        return entry("authenticated", reason="player-page")
-
-    for camp in CONFIG.get("campaigns", []):
-        folder = camp.get("contentFolder", "")
-        if rel == folder or rel.startswith(folder + "/"):
-            return entry("characters", campaign_party_characters(), "campaign-" + camp.get("id", ""))
-
-    return entry("authenticated", reason="default")
-
-
-def normalize_match_key(value: str) -> str:
-    value = value.lower()
-    return re.sub(r"[^a-z0-9ąćęłńóśźż]+", "", value)
-
-
-def build_links(slugs: dict[str, dict]) -> dict:
+def build_links(cfg: Config, slug_by_rel: dict[str, str]) -> dict:
     characters: dict[str, str] = {}
     campaigns: dict[str, str] = {}
     chapters: dict[str, str] = {}
@@ -295,82 +303,162 @@ def build_links(slugs: dict[str, dict]) -> dict:
         if "_meta" in md.parts:
             continue
         rel = md.relative_to(CONTENT).as_posix()
-        slug = next((s for s, r in slugs.items() if r.get("source") == rel and not s.endswith("/")), None)
-        if not slug:
-            slug = content_rel_to_slug(md.relative_to(CONTENT)).strip("/")
+        slug = slug_by_rel.get(rel) or content_rel_to_slug(md.relative_to(CONTENT)).strip("/")
 
         if rel.startswith("W służbie Bonefyre/Postacie/") and "/NPC/" not in rel:
-            name = md.stem
-            for player in PLAYER_NAMES:
-                if name.lower().replace("-", " ") == player.lower().replace("-", " "):
-                    characters[player] = slug
-                    break
-            else:
-                if name in PLAYER_NAMES:
-                    characters[name] = slug
+            c = resolve_character(md.stem, cfg)
+            if c:
+                characters[c] = slug
 
-        for camp in CONFIG.get("campaigns", []):
+        for camp in cfg.campaigns:
             folder = camp.get("contentFolder", "")
             title = camp.get("title", "")
-            camp_id = camp.get("id", "").strip("/")
+            cid = camp.get("id", "").strip("/")
             if rel == folder or rel == f"{folder}/index.md":
                 if title:
-                    campaigns[title] = camp_id
+                    campaigns[title] = cid
                 for alias in camp.get("aliases", []) or []:
-                    campaigns[alias] = camp_id
+                    campaigns[alias] = cid
 
         if "Archiwum sesji" in rel and md.stem.lower() not in ("index", "_index"):
             chapters[md.stem] = slug
-            chapters[normalize_match_key(md.stem)] = slug
-
-    for camp in CONFIG.get("campaigns", []):
-        title = camp.get("title", "")
-        camp_id = camp.get("id", "").strip("/")
-        if title and title not in campaigns:
-            campaigns[title] = camp_id
+            key = re.sub(r"[^a-z0-9ąćęłńóśźż]+", "", md.stem.lower())
+            chapters[key] = slug
 
     return {
         "version": 1,
         "characters": characters,
         "campaigns": campaigns,
         "chapters": {k: v for k, v in chapters.items() if not k.isdigit()},
-        "allPlayerNames": sorted(PLAYER_NAMES),
+        "allPlayerNames": sorted(cfg.player_names),
     }
 
 
+def write_audit(pages: list[tuple[str, AccessRule, str]]) -> None:
+    AUDIT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lines = ["slug\tmode\tsource\treason\tcharacters\tparties\tsource_file"]
+    for slug, rule, src in pages:
+        lines.append("\t".join([
+            slug,
+            rule.mode,
+            src,
+            rule.reason,
+            ",".join(rule.characters),
+            ",".join(rule.parties),
+            rule.source_file,
+        ]))
+    AUDIT_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def print_report(pages: list[tuple[str, AccessRule, str]]) -> None:
+    by_mode: dict[str, int] = {}
+    by_src: dict[str, int] = {}
+    denied: list[str] = []
+
+    for slug, rule, src in pages:
+        by_mode[rule.mode] = by_mode.get(rule.mode, 0) + 1
+        by_src[src] = by_src.get(src, 0) + 1
+        if rule.mode == "deny":
+            denied.append(slug)
+
+    print("\n── Wiki access (tag rule) ───────────────────────────")
+    print(f"Pages: {len(pages)}")
+    print("Visibility: " + ", ".join(f"{k}={v}" for k, v in sorted(by_mode.items())))
+    print("Source:     " + ", ".join(f"{k}={v}" for k, v in sorted(by_src.items())))
+    print(f"Audit: {AUDIT_FILE}")
+    if denied:
+        print(f"\n! {len(denied)} bez tagów (deny):")
+        for s in denied[:30]:
+            print(f"    {s}")
+        if len(denied) > 30:
+            print(f"    ... +{len(denied) - 30}")
+    else:
+        print("\nOK — wszystkie strony mają tagi lub ścieżkę publiczną.")
+    print("────────────────────────────────────────────────────\n")
+
+
 def main() -> None:
-    load_config()
     if not PARTIES_FILE.exists():
         raise SystemExit(f"Missing {PARTIES_FILE}")
 
-    slugs: dict[str, dict] = {}
+    cfg = load_config()
+    slug_by_rel: dict[str, str] = {}
+    all_rules: dict[str, AccessRule] = {}
+    report_rows: list[tuple[str, AccessRule, str]] = []
 
     for md in sorted(CONTENT.rglob("*.md")):
         if "_meta" in md.parts:
             continue
-        body = md.read_text(encoding="utf-8")
-        fm = parse_frontmatter(body)
-        slug = resolve_slug(md, QUARTZ_PUBLIC)
-        if not slug:
-            slug = "index"
-        rule = classify(md, fm, body, slug)
-        rule["source"] = md.relative_to(CONTENT).as_posix()
-        slugs[slug] = rule
+        rel = md.relative_to(CONTENT).as_posix()
+        slug = read_quartz_slug(md) or "index"
+        slug_by_rel[rel] = slug
+
+        fm = parse_frontmatter(md.read_text(encoding="utf-8"))
+        rule, src = classify_page(slug, parse_tags(fm), cfg, rel)
+        rule.source_file = rel
+
+        all_rules[slug] = rule
         if not slug.endswith("/"):
-            slugs[slug + "/"] = rule
+            all_rules[slug + "/"] = rule
+        if not slug.endswith("/index"):
+            report_rows.append((slug, rule, src))
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     manifest = {
-        "version": 2,
-        "generatedFrom": "content/_meta/wiki-parties.json",
-        "slugs": slugs,
+        "version": 4,
+        "generatedFrom": "content tags (hero | team-*) + wiki-public | wiki-logged-in + overrides",
+        "accessRule": (
+            "Character X sees page if X is in page tags OR page has team-<party> and X is in that party."
+        ),
+        "slugs": {k: v.to_json() for k, v in all_rules.items()},
     }
     OUTPUT.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     PARTIES_OUTPUT.write_text(PARTIES_FILE.read_text(encoding="utf-8"), encoding="utf-8")
-    links = build_links(slugs)
-    LINKS_OUTPUT.write_text(json.dumps(links, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Wrote {len(slugs)} slug rules -> {OUTPUT}")
-    print(f"Wrote wiki links ({len(links['characters'])} chars) -> {LINKS_OUTPUT}")
+    LINKS_OUTPUT.write_text(
+        json.dumps(build_links(cfg, slug_by_rel), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    print(f"Wrote {len(all_rules)} slug rules → {OUTPUT}")
+    print_report(report_rows)
+
+
+# ── Helpers for tag_wiki_content.py ────────────────────────────────────────────
+
+def parse_players(fm: dict) -> list[str]:
+    raw = fm.get("players")
+    if not raw:
+        return []
+    if isinstance(raw, list):
+        return [str(p).strip() for p in raw if str(p).strip()]
+    try:
+        parsed = ast.literal_eval(str(raw))
+        if isinstance(parsed, list):
+            return [str(p).strip() for p in parsed]
+    except (SyntaxError, ValueError):
+        pass
+    return []
+
+
+def canonicalize_players(names: list[str], cfg: Config) -> list[str]:
+    out: list[str] = []
+    for n in names:
+        out.append(resolve_character(n, cfg) or n)
+    return sorted(set(out))
+
+
+def clean_title(title: str) -> str:
+    return title.strip().strip('"').strip("'")
+
+
+def player_names_in_text(body: str, cfg: Config) -> set[str]:
+    found: set[str] = set()
+    for link in re.findall(r"\[\[([^\]]+)\]\]", body):
+        base = link.split("|")[0].split("/")[-1].strip()
+        c = resolve_character(base, cfg)
+        if c:
+            found.add(c)
+    return found
 
 
 if __name__ == "__main__":

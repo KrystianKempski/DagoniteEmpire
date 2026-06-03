@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brak dostępu — DagoniteEmpire Wiki</title>
+  <script>
+    (function () {
+      try {
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "dagonite-wiki-denied" }, window.location.origin);
+        }
+      } catch (e) { }
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      font-family: Georgia, "Times New Roman", serif;
+      background: linear-gradient(160deg, #4a3828 0%, #2a2118 45%, #1a1510 100%);
+      color: #f8f4ec;
+    }
+    .card {
+      max-width: 34rem;
+      text-align: center;
+      padding: 2.5rem 2.25rem;
+      border: 2px solid #c9a227;
+      border-radius: 10px;
+      background: #f3ebe0;
+      color: #2c2218;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    h1 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: #5c3d1e;
+      margin: 0 0 1rem;
+    }
+    p {
+      line-height: 1.6;
+      margin: 0 0 0.85rem;
+      font-size: 1.1rem;
+      color: #3a2f24;
+    }
+    .hint {
+      font-size: 1rem;
+      color: #5a4a38;
+    }
+    a {
+      display: inline-block;
+      margin-top: 1.35rem;
+      padding: 0.7rem 1.5rem;
+      color: #fff;
+      background: #7a5c2e;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+    a:hover { background: #5c4522; }
+  </style>
+</head>
+<body data-wiki-access-denied="1">
+  <div class="card">
+    <h1>Brak dostępu do tej strony</h1>
+    <p>Ta część wiki jest dostępna tylko dla wybranych bohaterów lub drużyn kampanii.</p>
+    <p class="hint">Jeśli uważasz, że powinieneś mieć dostęp, skontaktuj się z Mistrzem Gry.</p>
+    <a href="/wiki/świat-i-zasady/">Wróć do: Świat i zasady</a>
+  </div>
+</body>
+</html>

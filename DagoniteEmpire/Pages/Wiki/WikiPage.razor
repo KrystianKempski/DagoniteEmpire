@@ -1,52 +1,26 @@
 @page "/wiki"
+@using DA_Business.Services.Interfaces
+@using DA_Common
+@using System.Security.Claims
 @inject IWebHostEnvironment HostEnvironment
-@inject IUserService UserService
-@inject IWikiLinkService WikiLinks
 @inject ISnackbar Snackbar
-@inject IWikiViewAsService WikiViewAs
-@inject NavigationManager Navigation
+@inject IJSRuntime Js
+@inject CallbackService CallbackService
+@inject IWikiAccessService WikiAccess
+@inject AuthenticationStateProvider AuthState
+@implements IAsyncDisposable
 @attribute [AllowAnonymous]
 
 <PageTitle>Dagonite Empire | Wiki</PageTitle>
 
 <div class="wiki-shell">
-    @if (_showPreviewBar)
-    {
-        <MudPaper Class="wiki-preview-bar pa-2" Elevation="4" Square="true">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
-                <MudIcon Icon="@Icons.Material.Filled.Visibility" />
-                <MudText Typo="Typo.subtitle2">Podgląd jako gracz</MudText>
-                <MudSelect T="string"
-                           @bind-Value="_selectedPreview"
-                           Label="Postać"
-                           Dense="true"
-                           Variant="Variant.Outlined"
-                           Style="min-width: 200px;"
-                           Clearable="true">
-                    @foreach (var name in _previewNames)
-                    {
-                        <MudSelectItem T="string" Value="@name">@name</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="ApplyPreview">
-                    Zastosuj
-                </MudButton>
-                <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ClearPreview">
-                    Pełny dostęp MG
-                </MudButton>
-                @if (!string.IsNullOrWhiteSpace(_activePreview))
-                {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">Aktywny: @_activePreview</MudChip>
-                }
-            </MudStack>
-        </MudPaper>
-    }
-
     @if (_wikiAvailable)
     {
-        <iframe src="@WikiEntryUrl"
+        <iframe id="wiki-content-iframe"
+                @key="_iframeRenderKey"
+                src="@_iframeSrc"
                 title="DagoniteEmpire Wiki"
-                class="wiki-iframe @(_showPreviewBar ? "wiki-iframe-with-bar" : "")"
+                class="wiki-iframe"
                 referrerpolicy="same-origin" />
     }
     else
@@ -71,12 +45,6 @@
         flex-direction: column;
     }
 
-    .wiki-preview-bar {
-        flex-shrink: 0;
-        background: #2a1f14;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
     .wiki-iframe {
         display: block;
         width: 100%;
@@ -84,63 +52,168 @@
         border: none;
         min-height: 0;
     }
-
-    .wiki-iframe-with-bar {
-        height: auto;
-    }
 </style>
 
 @code {
-    private const string WikiEntryUrl = "/wiki/index.html";
+    private const string AccessDeniedMessage = "Nie masz dostępu do tej części wiki.";
     private bool _wikiAvailable;
-    private bool _showPreviewBar;
-    private string? _selectedPreview;
-    private string? _activePreview;
-    private List<string> _previewNames = [];
+    private string _iframeSrc = "/wiki/świat-i-zasady/";
+    private string _lastGoodIframeSrc = "/wiki/świat-i-zasady/";
+    private int _iframeRenderKey;
+    private DotNetObjectReference<WikiPage>? _dotNetRef;
+    private bool _iframeJsInitialized;
+    private bool _bypassWikiAccessChecks;
+    private Action? _onCharacterChanged;
 
     protected override async Task OnInitializedAsync()
     {
         var wikiRoot = Path.Combine(HostEnvironment.WebRootPath ?? "", "wiki");
         _wikiAvailable = File.Exists(Path.Combine(wikiRoot, "index.html"));
+        await ApplyDefaultWikiPathAsync();
 
-        var userInfo = await UserService.GetUserInfo();
-        _showPreviewBar = userInfo?.IsAdminOrMG == true && _wikiAvailable;
-        if (_showPreviewBar)
+        _onCharacterChanged = OnSelectedCharacterChanged;
+        CallbackService.OnChange += _onCharacterChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_wikiAvailable || _iframeJsInitialized)
         {
-            _previewNames = WikiLinks.GetAllPlayerNamesForPreview().ToList();
-            _activePreview = WikiViewAs.GetViewAsCharacterName();
-            _selectedPreview = _activePreview;
+            return;
+        }
+
+        _dotNetRef ??= DotNetObjectReference.Create(this);
+        await Js.InvokeVoidAsync("dagoniteWikiIframe.init", _dotNetRef, "wiki-content-iframe", _bypassWikiAccessChecks);
+        _iframeJsInitialized = true;
+    }
+
+    private async void OnSelectedCharacterChanged()
+    {
+        await ApplyDefaultWikiPathAsync();
+        _iframeRenderKey++;
+        await InvokeAsync(StateHasChanged);
+        if (_iframeJsInitialized)
+        {
+            try
+            {
+                await Js.InvokeVoidAsync("dagoniteWikiIframe.setBypassAccessChecks", _bypassWikiAccessChecks);
+                await Js.InvokeVoidAsync("dagoniteWikiIframe.reloadAllowedIndex");
+            }
+            catch (JSDisconnectedException)
+            {
+            }
         }
     }
 
-    private void ApplyPreview()
+    [JSInvokable]
+    public void OnWikiIframeNavigated(string path)
     {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(_selectedPreview))
-            {
-                WikiViewAs.ClearViewAs();
-                _activePreview = null;
-            }
-            else
-            {
-                WikiViewAs.SetViewAs(_selectedPreview);
-                _activePreview = _selectedPreview;
-                Snackbar.Add($"Podgląd jako {_selectedPreview}", Severity.Info);
-            }
-
-            Navigation.NavigateTo(WikiEntryUrl, forceLoad: true);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add("Nie udało się ustawić podglądu: " + ex.Message, Severity.Error);
-        }
+        _lastGoodIframeSrc = path;
     }
 
-    private void ClearPreview()
+    [JSInvokable]
+    public async Task OnWikiBlocked(string? lastGoodPath)
     {
-        _selectedPreview = null;
-        _activePreview = null;
-        ApplyPreview();
+        var (userName, isAdminOrMg) = await GetWikiAuthAsync();
+        if (await WikiAccess.ShouldBypassAccessChecksAsync(userName, isAdminOrMg))
+        {
+            return;
+        }
+
+        Snackbar.Add(AccessDeniedMessage, Severity.Warning);
+        var fallback = await WikiAccess.GetDefaultWikiIframePathAsync(userName, isAdminOrMg);
+
+        if (!string.IsNullOrWhiteSpace(lastGoodPath)
+            && lastGoodPath.StartsWith("/wiki", StringComparison.OrdinalIgnoreCase)
+            && await WikiAccess.CanAccessSlug(userName, isAdminOrMg, SlugFromWikiPath(lastGoodPath)))
+        {
+            _lastGoodIframeSrc = lastGoodPath;
+        }
+        else
+        {
+            _lastGoodIframeSrc = fallback;
+        }
+
+        _iframeSrc = AppendCacheBuster(_lastGoodIframeSrc);
+        _iframeRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ApplyDefaultWikiPathAsync()
+    {
+        var (userName, isAdminOrMg) = await GetWikiAuthAsync();
+        _bypassWikiAccessChecks = await WikiAccess.ShouldBypassAccessChecksAsync(userName, isAdminOrMg);
+        var path = await WikiAccess.GetDefaultWikiIframePathAsync(userName, isAdminOrMg);
+        _iframeSrc = path;
+        _lastGoodIframeSrc = path;
+    }
+
+    private async Task<(string? UserName, bool IsAdminOrMg)> GetWikiAuthAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var user = state.User;
+        return (
+            user.Identity?.Name,
+            user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster));
+    }
+
+    private static string SlugFromWikiPath(string wikiPath)
+    {
+        var path = wikiPath;
+        if (path.StartsWith("/wiki/", StringComparison.OrdinalIgnoreCase))
+        {
+            path = path[6..];
+        }
+        else if (path.StartsWith("/wiki", StringComparison.OrdinalIgnoreCase))
+        {
+            path = path[5..];
+        }
+
+        path = path.Trim('/');
+        if (path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+        {
+            path = path[..^5];
+        }
+
+        if (path.EndsWith("/index", StringComparison.OrdinalIgnoreCase))
+        {
+            path = path[..^6].TrimEnd('/');
+        }
+
+        if (string.IsNullOrEmpty(path) || path.Equals("index", StringComparison.OrdinalIgnoreCase))
+        {
+            return "index";
+        }
+
+        return path;
+    }
+
+    private static string AppendCacheBuster(string path)
+    {
+        var tick = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return path.Contains('?', StringComparison.Ordinal)
+            ? $"{path}&_r={tick}"
+            : $"{path}?_r={tick}";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_onCharacterChanged is not null)
+        {
+            CallbackService.OnChange -= _onCharacterChanged;
+        }
+
+        if (_iframeJsInitialized)
+        {
+            try
+            {
+                await Js.InvokeVoidAsync("dagoniteWikiIframe.dispose");
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+
+        _dotNetRef?.Dispose();
     }
 }

@@ -145,7 +145,6 @@ public class Program
         builder.Services.AddScoped<ErrorHandlingMiddleware>();
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<IWikiAccessService, WikiAccessService>();
-        builder.Services.AddScoped<IWikiViewAsService, WikiViewAsService>();
         builder.Services.AddSingleton<IWikiLinkService, WikiLinkService>();
         builder.Services.AddScoped<WikiStaticFileMiddleware>();
         builder.Services.AddScoped<ITokenService,TokenService>();
