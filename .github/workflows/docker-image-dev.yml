@@ -20,8 +20,43 @@ jobs:
       - name: Set current date as env variable
         run: echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
 
-      - name: Checkout repository
+      - name: Checkout DagoniteEmpire
         uses: actions/checkout@v4
+        with:
+          path: empire
+
+      - name: Checkout dagonite-wiki
+        uses: actions/checkout@v4
+        with:
+          repository: KrystianKempski/dagonite-wiki
+          ssh-key: ${{ secrets.WIKI_DEPLOY_KEY }}
+          path: dagonite-wiki
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: dagonite-wiki/package-lock.json
+
+      - name: Setup Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install pyyaml
+        run: pip install pyyaml
+
+      - name: Build wiki
+        working-directory: empire/tools/Scripts
+        run: |
+          chmod +x build_wiki_for_empire.sh deploy_wiki_to_wwwroot.sh
+          ./build_wiki_for_empire.sh
+
+      - name: Verify wiki output
+        run: |
+          test -f empire/DagoniteEmpire/wwwroot/wiki/index.html
+          test -f empire/DagoniteEmpire/wwwroot/wiki/static/wiki-access.json
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3.0.0
@@ -44,8 +79,8 @@ jobs:
         id: push
         uses: docker/build-push-action@v5.1.0
         with:
-          context: .
-          file: ./DagoniteEmpire/Dockerfile
+          context: empire
+          file: empire/DagoniteEmpire/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
