@@ -16,6 +16,9 @@ cd "$WIKI_ROOT"
 if [ ! -d node_modules ]; then
     npm ci
 fi
+if [ ! -d .quartz/plugins ]; then
+    npx quartz plugin install
+fi
 npx quartz build
 
 echo ""
