@@ -88,10 +88,8 @@
             _navigationManager.NavigateTo("Account/Logout");
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (!firstRender) return;
-
         UserInfo = await _userService.GetUserInfo();
         PortraitUrl = "/images/def-char-img.webp";
         if (UserInfo is null || UserInfo?.UserName is null)
@@ -109,6 +107,7 @@
         if(UserInfo.SelectedCharacterId > 0)
         {
             UserInfo.SelectedCharacter = Characters.FirstOrDefault(u => u.Id == UserInfo.SelectedCharacterId);
+            await _userService.SetSelectedCharId(UserInfo.SelectedCharacterId);
             UserInfo = await _userService.GetUserInfo();
         }
         else if (Characters.Any() && UserInfo.IsAdminOrMG == false)
@@ -125,12 +124,12 @@
         if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
         {
             PortraitUrl = UserInfo.SelectedCharacter.ImageUrl;
-            //DisplayImage.
-            StateHasChanged();
         }
-        
+
         if (UserInfo?.SelectedCharacter is not null)
-            callbackService.SetSelectedChar((int)UserInfo?.SelectedCharacter?.Id);
+        {
+            callbackService.SetSelectedChar((int)UserInfo.SelectedCharacter.Id);
+        }
     }
 
     private async Task SelectCharacter(CharacterDTO? character = null)

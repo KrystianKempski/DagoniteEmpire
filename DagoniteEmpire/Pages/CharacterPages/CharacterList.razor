@@ -30,9 +30,9 @@ else
         <div class="row m-0 mt-4">
             <div class="col-12">
                 <MudStack Row="true" Spacing="2" Class="mb-2">
-                    @if (Characters.Count() < 6 && UserInfo?.IsAdminOrMG == true)
+                    @if (Characters.Count() < 6 || UserInfo?.IsAdminOrMG == true)
                     {
-                        <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" OnClick="@(() => _navigationManager.NavigateTo("/character/create/"))">Add Character</MudButton>
+                        <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="false" OnClick="@(() => _navigationManager.NavigateTo("/character/create/"))">Add Character</MudButton>
                     }
                     else
                     {

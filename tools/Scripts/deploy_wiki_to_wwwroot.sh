@@ -29,10 +29,30 @@ echo "🔧 Przepisuję base path → $BASE_PATH ..."
 export TARGET BASE_PATH
 python3 <<'PY'
 import os
+import re
 from pathlib import Path
 
 target = Path(os.environ["TARGET"])
 base = os.environ["BASE_PATH"].rstrip("/") or "/wiki"
+
+# Quartz slugi z przecinkami (np. "barana,-cz.-2") — bez %2C serwer/SPA często zwraca 404.
+# Tylko wewnętrzne linki wiki (data-slug lub względny href), nie zewnętrzne URL (Google Fonts itd.).
+_COMMA_ATTR_RE = re.compile(
+    r'(?P<attr>(?:data-slug)=["\'])(?P<url>[^"\']*?,[^"\']*?)(?=["\'])'
+    r'|(?P<href>href=["\'])(?P<hurl>(?:\.\./|\./|/wiki/)[^"\']*?,[^"\']*?)(?=["\'])',
+    re.IGNORECASE,
+)
+
+
+def encode_commas_in_wiki_urls(text: str) -> str:
+    def repl(m: re.Match) -> str:
+        if m.group("url"):
+            return f'{m.group("attr")}{m.group("url").replace(",", "%2C")}'
+        return f'{m.group("href")}{m.group("hurl").replace(",", "%2C")}'
+
+    return _COMMA_ATTR_RE.sub(repl, text)
+
+
 replacements = [
     ("/dagonite-wiki", base),
     ('data-basepath="/dagonite-wiki"', f'data-basepath="{base}"'),
@@ -50,6 +70,7 @@ for path in target.rglob("*"):
     original = text
     for old, new in replacements:
         text = text.replace(old, new)
+    text = encode_commas_in_wiki_urls(text)
     if text != original:
         path.write_text(text, encoding="utf-8")
         count += 1

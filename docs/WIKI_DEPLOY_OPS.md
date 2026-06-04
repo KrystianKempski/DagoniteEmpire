@@ -1,44 +1,55 @@
 # Wiki DagoniteEmpire — instrukcja dla administratora serwera
 
 Dokument dla osoby wdrażającej aplikację na produkcję (Docker / Kubernetes).  
-Szczegóły reguł dostępu i developera: [WIKI_DEPLOY.md](./WIKI_DEPLOY.md).
+Reguły biznesowe i rozwój: [WIKI_DEPLOY.md](./WIKI_DEPLOY.md).
 
 ---
 
-## Co musisz wiedzieć na start
+## Szybki start
 
-| Element | Gdzie jest | Uwagi |
-|---------|------------|--------|
-| Kod aplikacji | Repo **DagoniteEmpire** (`master`) | Sam `git pull` **nie** wgrywa treści wiki |
-| Generator strony wiki | Repo **dagonite-wiki** (obok Empire) | Quartz, Node.js — potrzebny **przy każdym buildzie** obrazu z wiki |
-| Pliki wiki w kontenerze | `DagoniteEmpire/wwwroot/wiki/` | Tworzone skryptem **przed** `docker build` |
-| Publiczne GitHub Pages | Wyłączone | Wiki tylko pod `https://dagonite-empire.drik.it/wiki` |
+1. Sklonuj **oba** repozytoria obok siebie (`Dag1/DagoniteEmpire` + `Dag1/dagonite-wiki`).
+2. Na maszynie buildowej: `./DagoniteEmpire/tools/Scripts/build_wiki_for_empire.sh`
+3. Zbuduj obraz Docker z katalogu solution (zawiera `wwwroot/wiki/` z kroku 2).
+4. Wdróż obraz. Wiki jest pod ścieżką `/wiki` tej samej domeny co aplikacja.
 
-**Bez katalogu `wwwroot/wiki/` w obrazie Docker** zakładka Wiki w aplikacji pokaże ostrzeżenie „Wiki nie jest wdrożona”.
+**Bez kroku 2** użytkownicy zobaczą: „Wiki nie jest jeszcze wdrożona na tym serwerze”.
+
+---
+
+## Repozytoria
+
+| Repo | Branch produkcyjny | Zawartość |
+|------|-------------------|-----------|
+| **DagoniteEmpire** | `master` | Aplikacja .NET, middleware ACL, skrypty w `tools/Scripts/` |
+| **dagonite-wiki** | `main` | Markdown `content/`, Quartz, `content/_meta/wiki-parties.json` |
+
+`git pull` samego Empire **nie** aktualizuje HTML wiki — trzeba przebudować z `dagonite-wiki`.
 
 ---
 
 ## Wymagania na maszynie buildowej
 
-- Git (oba repozytoria w jednym katalogu nadrzędnym, np. `Dag1/`)
-- **.NET 9 SDK** (build aplikacji)
-- **Node.js 22** + npm (build Quartza)
-- **Python 3** (skrypty manifestu ACL)
-- Dostęp do Docker registry (push obrazu)
-
-Struktura katalogów:
+- Git (oba repozytoria, ta sama struktura `Dag1/`)
+- **.NET 9 SDK** (opcjonalnie: testy; runtime w obrazie)
+- **Node.js 22** + npm (`npx quartz build`)
+- **Python 3** (`build_wiki_access_manifest.py`, `tag_wiki_content.py`)
+- Docker (build + push obrazu)
 
 ```
 Dag1/
-├── DagoniteEmpire/          ← docker build stąd (root solution)
-└── dagonite-wiki/           ← npm / quartz build
+├── DagoniteEmpire/          ← docker build (root według Waszego Dockerfile)
+│   ├── DagoniteEmpire/
+│   │   └── wwwroot/wiki/    ← powstaje przy buildzie, NIE w git
+│   └── tools/Scripts/
+└── dagonite-wiki/
+    ├── content/
+    ├── quartz.config.yaml
+    └── public/              ← wynik `npx quartz build`
 ```
 
 ---
 
-## Procedura: aktualizacja aplikacji + wiki (standard)
-
-Wykonaj na hoście CI lub lokalnie przed push obrazu.
+## Procedura standardowa (aplikacja + wiki)
 
 ### 1. Pobierz kod
 
@@ -54,28 +65,28 @@ git pull origin main
 
 ```bash
 cd /ścieżka/Dag1/DagoniteEmpire/tools/Scripts
-chmod +x build_wiki_for_empire.sh sync_wiki_pipeline.sh deploy_wiki_to_wwwroot.sh
+chmod +x build_wiki_for_empire.sh deploy_wiki_to_wwwroot.sh
 
 ./build_wiki_for_empire.sh
 ```
 
-Skrypt:
+Skrypt wykonuje:
 
-1. Uruchamia `npx quartz build` w `dagonite-wiki`
-2. Kopiuje `dagonite-wiki/public/` → `DagoniteEmpire/DagoniteEmpire/wwwroot/wiki/`
-3. Przepisuje ścieżki `/dagonite-wiki` → `/wiki`
-4. Generuje `wwwroot/wiki/static/wiki-access.json`, `wiki-parties.json`, `wiki-links.json`
+1. `npx quartz build` w `../dagonite-wiki`
+2. Kopię `public/` → `DagoniteEmpire/wwwroot/wiki/`
+3. Przepisanie ścieżek `/dagonite-wiki` → `/wiki`
+4. Generowanie `static/wiki-access.json`, `wiki-parties.json`, `wiki-links.json`
 
-**Sprawdzenie:**
+**Weryfikacja:**
 
 ```bash
-test -f /ścieżka/Dag1/DagoniteEmpire/DagoniteEmpire/wwwroot/wiki/index.html && echo OK
-ls /ścieżka/Dag1/DagoniteEmpire/DagoniteEmpire/wwwroot/wiki/static/wiki-access.json
+WIKI=/ścieżka/Dag1/DagoniteEmpire/DagoniteEmpire/wwwroot/wiki
+test -f "$WIKI/index.html" && echo "OK: wiki hub"
+test -f "$WIKI/static/wiki-access.json" && echo "OK: manifest"
+wc -c "$WIKI/static/wiki-access.json"
 ```
 
-### 3. Zbuduj obraz Docker
-
-Z katalogu, w którym jest Dockerfile (zazwyczaj `DagoniteEmpire/` — zgodnie z Waszym pipeline):
+### 3. Zbuduj i wdróż obraz Docker
 
 ```bash
 cd /ścieżka/Dag1/DagoniteEmpire
@@ -83,75 +94,65 @@ docker build -f DagoniteEmpire/Dockerfile -t <registry>/dagonite-empire:<tag> .
 docker push <registry>/dagonite-empire:<tag>
 ```
 
-Upewnij się, że kontekst buildu **zawiera** wypełniony `DagoniteEmpire/wwwroot/wiki/` (nie jest w git — musi powstać w kroku 2).
+Kontekst buildu musi zawierać **świeży** katalog `wwwroot/wiki/` z kroku 2.
 
-### 4. Wdróż nowy obraz
+### 4. Rollout + testy
 
-Według Waszego procesu (FluxCD / Helm / ręczny restart):
-
-- Zaktualizuj tag obrazu w manifeście
-- Poczekaj na rollout poda
-- Sprawdź logi startu aplikacji (migracje DB, brak błędów ładowania wiki)
-
-### 5. Testy po wdrożeniu
-
-| Test | Oczekiwany wynik |
-|------|------------------|
-| `https://dagonite-empire.drik.it/wiki` | Strona wiki (logowanie jeśli wymagane) |
-| Gość → `…/wiki/świat-i-zasady/` | Lore bez logowania |
-| Gracz bez drużyny → link do sekretu kampanii | Komunikat **„Brak dostępu do tej strony”** (nie czarny ekran) |
-| MG / Admin | Pełna wiki |
+| Test | URL / akcja | Oczekiwany wynik |
+|------|-------------|------------------|
+| Wiki działa | `/wiki` | Iframe z hubem kampanii lub lore |
+| Lore publiczne | `/wiki/świat-i-zasady/` | Bez logowania |
+| Sekret | URL sesji jako inna postać | „Brak dostępu” (403), nie treść |
+| Home w wiki | Breadcrumb „Home” | Hub `index.html`, nie czarny ekran |
+| Manifest | `/wiki/static/wiki-access.json` jako gracz | 403 |
+| MG | Zalogowany Admin/MG | Pełna wiki, explorer, wszystkie strony |
 
 ---
 
-## Procedura: tylko nowa treść wiki (bez zmian w C#)
+## Inne procedury
 
-Gdy zmieniła się tylko treść w `dagonite-wiki` / docx, a kod aplikacji ten sam:
+### Tylko nowa treść Markdown (bez zmian C#)
 
-1. Kroki 1–2 jak wyżej (`build_wiki_for_empire.sh`)
-2. Nowy `docker build` + deploy (wiki jest **wbudowane** w obraz)
+1. `git pull` w `dagonite-wiki` (+ ewentualnie Empire jeśli skrypty się zmieniły)
+2. `./build_wiki_for_empire.sh`
+3. Nowy `docker build` + deploy
 
-Nie ma osobnego wolumenu wiki na serwerze — treść musi być w obrazie przy buildzie.
-
----
-
-## Procedura: pełna regeneracja z docx
-
-Gdy autor kampanii zaktualizował pliki źródłowe w `DagoniteEmpire/tools/Resources/`:
+### Pełna regeneracja z docx
 
 ```bash
 cd DagoniteEmpire/tools/Scripts
 ./sync_wiki_pipeline.sh
 ```
 
-Następnie `docker build` + deploy jak w sekcji standardowej.
+Potem docker build jak wyżej.
 
----
+### Tylko uprawnienia / drużyny
 
-## Procedura: tylko zmiana drużyn / uprawnień
+Edycja w repo wiki:
 
-Edycja pliku w repo wiki (autor/MG):
+- `content/_meta/wiki-parties.json`
+- tagi w `content/**/*.md` (np. `lawenda`, `team-bonefyre`)
 
-`dagonite-wiki/content/_meta/wiki-parties.json`
-
-Potem na buildowej:
+Na buildowej:
 
 ```bash
 cd DagoniteEmpire/tools/Scripts
+./build_wiki_for_empire.sh
+# lub jeśli HTML się nie zmienił, a jest już public/:
+python3 build_wiki_access_manifest.py
 ./deploy_wiki_to_wwwroot.sh
-# opcjonalnie sam manifest bez pełnego quartz build, jeśli HTML się nie zmienił:
-# python3 build_wiki_access_manifest.py
 ```
 
-I ponownie **docker build** + deploy.
+Ponownie **docker build** + deploy.
 
 ---
 
-## Co NIE trzeba robić na serwerze produkcyjnym
+## Co NIE robić na produkcji
 
-- Instalacja Node.js na **podzie** aplikacji (wiki jest statyczne)
-- Włączanie GitHub Pages w repo `dagonite-wiki`
-- Ręczne kopiowanie plików do działającego poda (chyba że macie niestandardowy proces — domyślnie wszystko w obrazie)
+- Instalować Node na **podzie** aplikacji (wiki jest statyczne w obrazie).
+- Włączać publiczne GitHub Pages dla `dagonite-wiki` (wyciek treści + inny host).
+- Kopiować pliki wiki do działającego poda bez przebudowy obrazu (chyba że macie custom volume — domyślnie: wszystko w obrazie).
+- Commitować `wwwroot/wiki/` do git (generowane przy CI/build).
 
 ---
 
@@ -159,29 +160,30 @@ I ponownie **docker build** + deploy.
 
 | Objaw | Przyczyna | Działanie |
 |-------|-----------|-----------|
-| „Wiki nie jest wdrożona” | Brak `wwwroot/wiki/index.html` w obrazie | Powtórz `build_wiki_for_empire.sh` przed `docker build` |
-| Czarny ekran w wiki | Stary obraz bez `wiki-access-denied.html` | Pull najnowszego `master`, przebuduj obraz |
-| Gracz widzi cudze sekrety | Stary manifest lub publiczne Pages | Wyłącz Pages; przebuduj wiki + manifest |
-| 502 / aplikacja nie startuje | Błąd DB, nie wiki | Logi poda, connection string Postgres |
+| „Wiki nie jest wdrożona” | Brak `wwwroot/wiki/index.html` w obrazie | `build_wiki_for_empire.sh` przed `docker build` |
+| Czarny ekran po **Home** | Stary build / `/wiki/` bez `index.html` | Najnowszy `master` Empire + przebudowa wiki |
+| Gracz widzi cudze wątki | Stary manifest lub `team-bonefyre` na prywatnym wątku | Pull `dagonite-wiki`, przebuduj manifest |
+| Explorer pusty | OK — pokazuje tylko dozwolone strony z `contentIndex` | — |
+| Zmiana postaci bez efektu | Cache przeglądarki | Ctrl+Shift+R; manifest odświeża się po `mtime` |
+| 502 aplikacji | Postgres / app, nie wiki | Logi poda, connection string |
 
 ---
 
-## Repozytorium `dagonite-wiki` — czy można je „zamknąć”?
+## Pierwsze wdrożenie (checklist)
 
-**Nie usuwać** — nadal jest potrzebne do:
-
-- przechowywania treści Markdown (`content/`)
-- konfiguracji Quartz (`quartz.config.yaml`)
-- `wiki-parties.json`
-- budowania HTML (`npm` / `quartz build`)
-
-**Można wyłączyć** tylko publiczne **GitHub Pages** (już wyłączone auto-deploy; workflow tylko ręczny).
-
-Hosting produkcyjny = wyłącznie aplikacja DagoniteEmpire pod `/wiki`.
+- [ ] Oba repozytoria obok siebie na build server
+- [ ] `build_wiki_for_empire.sh` w pipeline CI lub ręcznie przed każdym release z treścią wiki
+- [ ] Obraz Docker z `wwwroot/wiki/`
+- [ ] Postgres dla aplikacji (postacie, `SelectedCharacterId`)
+- [ ] GitHub Pages **wyłączone** w `dagonite-wiki`
+- [ ] Test kont: gość, gracz drużyny, MG
 
 ---
 
-## Kontakt / eskalacja
+## Eskalacja
 
-Problemy z regułami widoczności (kto co widzi): autor kampanii + plik `wiki-parties.json`.  
-Problemy z buildem Docker / K8s: administrator infrastruktury + ten dokument.
+| Temat | Kto |
+|-------|-----|
+| Kto widzi którą stronę (tagi, wątki) | Autor kampanii + `wiki-parties.json` |
+| Docker / K8s / domena | Administrator + ten dokument |
+| Błąd aplikacji po logowaniu | Zespół Empire (Blazor / DB) |

@@ -8,6 +8,7 @@ namespace DagoniteEmpire.Middleware;
 
 /// <summary>
 /// Serves the pre-built Quartz site from wwwroot/wiki under /wiki/* with per-slug access control.
+/// Runtime model B: middleware only (no client-side iframe ACL). Explorer/search chrome hidden for players via injected CSS.
 /// </summary>
 public class WikiStaticFileMiddleware : IMiddleware
 {
@@ -16,7 +17,22 @@ public class WikiStaticFileMiddleware : IMiddleware
     [
         "static/wiki-access.json",
         "static/wiki-parties.json",
+        // Read server-side by WikiLinkService only; never needs to be reachable over HTTP and
+        // would otherwise leak the character→slug map and the full roster of player characters.
+        "static/wiki-links.json",
     ];
+
+    private const string OgImageMarker = "-og-image";
+
+    /// <summary>
+    /// Slugi Quartz (np. wizyta-w-kojcu-cz.1, barana,-cz.-2) zawierają kropki — Path.GetExtension
+    /// mylnie traktuje .1 / .-2 jako rozszerzenie pliku i blokuje dopięcie .html.
+    /// </summary>
+    private static readonly HashSet<string> WikiStaticExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".html", ".htm", ".css", ".js", ".mjs", ".json", ".xml", ".webp", ".png", ".jpg", ".jpeg",
+        ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".map", ".txt",
+    };
 
     private readonly IWebHostEnvironment _environment;
     private readonly IWikiAccessService _wikiAccess;
@@ -39,11 +55,12 @@ public class WikiStaticFileMiddleware : IMiddleware
             return;
         }
 
-        var subPath = remainder.Value ?? string.Empty;
+        var subPath = GetWikiSubPath(context, remainder.Value);
+        // Breadcrumb "Home" resolves to /wiki/ (relative ../..). That must serve the Quartz hub,
+        // not the Blazor @page "/wiki" shell (black iframe-in-iframe).
         if (subPath is "" or "/")
         {
-            await next(context);
-            return;
+            subPath = "index.html";
         }
 
         EnsureWikiProvider();
@@ -53,35 +70,33 @@ public class WikiStaticFileMiddleware : IMiddleware
             return;
         }
 
-        var relativePath = subPath.TrimStart('/');
+        var relativePath = Uri.UnescapeDataString(subPath.TrimStart('/'));
         var slug = SlugFromRelativePath(relativePath);
         var isAdminOrMg = IsAdminOrMg(context.User);
         var userName = context.User.Identity?.Name;
 
-        if (MgOnlyStaticFiles.Any(f =>
-                relativePath.Equals(f, StringComparison.OrdinalIgnoreCase)))
+        if (relativePath.Equals("debug/access.json", StringComparison.OrdinalIgnoreCase))
         {
-            if (!isAdminOrMg)
-            {
-                await ServeAccessDeniedAsync(context);
-                return;
-            }
+            await ServeAccessDiagnosticsAsync(context, userName, isAdminOrMg);
+            return;
         }
-        else if (!_wikiAccess.IsAnonymousPublicPath(slug))
+
+        var access = await AuthorizeRequestAsync(context, relativePath, slug, isAdminOrMg, userName);
+        switch (access.Outcome)
         {
-            if (!(context.User.Identity?.IsAuthenticated ?? false))
-            {
+            case AccessOutcome.RedirectToLogin:
                 var returnUrl = Uri.EscapeDataString(context.Request.Path + context.Request.QueryString);
                 context.Response.Redirect($"/Account/Login?returnUrl={returnUrl}");
                 return;
-            }
-
-            if (!await _wikiAccess.CanAccessSlug(userName, isAdminOrMg, slug))
-            {
+            case AccessOutcome.Denied:
                 await ServeAccessDeniedAsync(context);
                 return;
-            }
+            case AccessOutcome.NotFound:
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
         }
+
+        var aclGated = access.AclGated;
 
         if (relativePath.Equals("static/contentIndex.json", StringComparison.OrdinalIgnoreCase))
         {
@@ -132,8 +147,67 @@ public class WikiStaticFileMiddleware : IMiddleware
         }
 
         context.Response.ContentType = contentType;
-        context.Response.Headers.CacheControl = "private, max-age=300";
+        // ACL-gated responses depend on the active character, so they must not be cached and
+        // replayed after a character switch or sign-out.
+        context.Response.Headers.CacheControl = aclGated ? "private, no-store" : "private, max-age=300";
+
+        // Players get the full Quartz chrome (explorer/search) for navigation: the explorer is built
+        // client-side from the per-user filtered contentIndex.json, so it only lists pages they can open.
         await context.Response.SendFileAsync(fileInfo.PhysicalPath, context.RequestAborted);
+    }
+
+    private enum AccessOutcome
+    {
+        Allow,
+        RedirectToLogin,
+        Denied,
+        NotFound,
+    }
+
+    private readonly record struct AccessDecision(AccessOutcome Outcome, bool AclGated)
+    {
+        public static AccessDecision Allow(bool aclGated) => new(AccessOutcome.Allow, aclGated);
+        public static readonly AccessDecision Redirect = new(AccessOutcome.RedirectToLogin, false);
+        public static readonly AccessDecision Denied = new(AccessOutcome.Denied, false);
+        public static readonly AccessDecision NotFound = new(AccessOutcome.NotFound, false);
+    }
+
+    /// <summary>
+    /// Decides whether the request may be served, without writing to the response. Content assets
+    /// (images, og-images, attachments) are gated by the slug of their owning page; denied asset
+    /// requests return 404 (rather than a redirect/denied page) so they don't leak existence.
+    /// </summary>
+    private async Task<AccessDecision> AuthorizeRequestAsync(
+        HttpContext context,
+        string relativePath,
+        string slug,
+        bool isAdminOrMg,
+        string? userName)
+    {
+        if (MgOnlyStaticFiles.Any(f => relativePath.Equals(f, StringComparison.OrdinalIgnoreCase)))
+        {
+            return isAdminOrMg ? AccessDecision.Allow(false) : AccessDecision.Denied;
+        }
+
+        var isAsset = IsStaticAssetFile(relativePath);
+        var accessSlug = isAsset ? AssetOwnerSlug(relativePath) : slug;
+
+        if (IsQuartzChromeAsset(relativePath) || _wikiAccess.IsAnonymousPublicPath(accessSlug))
+        {
+            return AccessDecision.Allow(false);
+        }
+
+        if (!(context.User.Identity?.IsAuthenticated ?? false))
+        {
+            return isAsset ? AccessDecision.NotFound : AccessDecision.Redirect;
+        }
+
+        if (!await _wikiAccess.CanAccessSlug(userName, isAdminOrMg, accessSlug))
+        {
+            return isAsset ? AccessDecision.NotFound : AccessDecision.Denied;
+        }
+
+        return AccessDecision.Allow(true);
     }
 
     private async Task ServeFilteredJson(
@@ -188,7 +262,7 @@ public class WikiStaticFileMiddleware : IMiddleware
             return fileInfo;
         }
 
-        if (!Path.HasExtension(relativePath))
+        if (ShouldAppendHtmlExtension(relativePath))
         {
             var htmlPath = $"{relativePath.TrimEnd('/')}.html";
             fileInfo = _wikiFiles.GetFileInfo(htmlPath);
@@ -218,19 +292,79 @@ public class WikiStaticFileMiddleware : IMiddleware
             return true;
         }
 
+        return ShouldAppendHtmlExtension(relativePath);
+    }
+
+    private static bool ShouldAppendHtmlExtension(string relativePath)
+    {
         var extension = Path.GetExtension(relativePath);
-        return string.IsNullOrEmpty(extension)
-            || extension.Equals(".html", StringComparison.OrdinalIgnoreCase);
+        return string.IsNullOrEmpty(extension) || !WikiStaticExtensions.Contains(extension);
+    }
+
+    /// <summary>
+    /// Shared Quartz chrome (CSS/JS/fonts/icons) is not in the access manifest, so slug ACL must not
+    /// block it. Only the site-wide static/ bundle and root-level assets count as chrome; assets nested
+    /// under content folders are treated as page attachments and go through <see cref="AssetOwnerSlug"/>.
+    /// </summary>
+    private static bool IsQuartzChromeAsset(string relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            return false;
+        }
+
+        if (MgOnlyStaticFiles.Any(f => relativePath.Equals(f, StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        if (relativePath.StartsWith("static/", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Root-level assets (index.css, prescript.js, postscript.js, favicon, default og-image, …).
+        if (!relativePath.Contains('/', StringComparison.Ordinal))
+        {
+            return IsStaticAssetFile(relativePath);
+        }
+
+        return false;
+    }
+
+    /// <summary>True for files served verbatim (images, css, js, fonts, …); false for HTML page requests.</summary>
+    private static bool IsStaticAssetFile(string relativePath)
+    {
+        var extension = Path.GetExtension(relativePath);
+        return !string.IsNullOrEmpty(extension)
+            && WikiStaticExtensions.Contains(extension)
+            && !extension.Equals(".html", StringComparison.OrdinalIgnoreCase)
+            && !extension.Equals(".htm", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Maps a nested content asset to the slug of its owning page. <c>foo/bar-og-image.webp</c> belongs
+    /// to page <c>foo/bar</c>; any other nested file inherits the ACL of its containing folder page.
+    /// </summary>
+    private static string AssetOwnerSlug(string relativePath)
+    {
+        var dir = relativePath.Contains('/', StringComparison.Ordinal)
+            ? relativePath[..relativePath.LastIndexOf('/')]
+            : string.Empty;
+
+        var fileStem = Path.GetFileNameWithoutExtension(relativePath);
+        if (fileStem.EndsWith(OgImageMarker, StringComparison.OrdinalIgnoreCase))
+        {
+            var pageStem = fileStem[..^OgImageMarker.Length];
+            var ownerSlug = string.IsNullOrEmpty(dir) ? pageStem : $"{dir}/{pageStem}";
+            return ownerSlug.Trim('/');
+        }
+
+        return dir.Trim('/');
     }
 
     private async Task ServeNotFoundAsync(HttpContext context)
     {
-        if (IsIframeRequest(context))
-        {
-            await ServeIframeBlockedNotifyAsync(context, StatusCodes.Status404NotFound);
-            return;
-        }
-
         var notFound = _wikiFiles?.GetFileInfo("404.html");
         if (notFound?.Exists == true && !string.IsNullOrEmpty(notFound.PhysicalPath))
         {
@@ -244,27 +378,20 @@ public class WikiStaticFileMiddleware : IMiddleware
         context.Response.StatusCode = StatusCodes.Status404NotFound;
     }
 
-    private static bool IsIframeRequest(HttpContext context) =>
-        string.Equals(
-            context.Request.Headers["Sec-Fetch-Dest"].FirstOrDefault(),
-            "iframe",
-            StringComparison.OrdinalIgnoreCase);
-
-    private static async Task ServeIframeBlockedNotifyAsync(HttpContext context, int statusCode)
+    /// <summary>
+    /// Kestrel keeps commas in Path, but some clients split at ',' into QueryString — merge when needed.
+    /// </summary>
+    private static string GetWikiSubPath(HttpContext context, string? remainder)
     {
-        context.Response.StatusCode = statusCode;
-        context.Response.ContentType = "text/html; charset=utf-8";
-        context.Response.Headers.CacheControl = "private, no-store";
-        await context.Response.WriteAsync(IframeBlockedNotifyHtml, context.RequestAborted);
-    }
+        var sub = Uri.UnescapeDataString((remainder ?? string.Empty).TrimStart('/'));
+        var qs = context.Request.QueryString.Value;
+        if (!string.IsNullOrEmpty(qs) && qs.StartsWith(",", StringComparison.Ordinal))
+        {
+            sub += Uri.UnescapeDataString(qs);
+        }
 
-    private const string IframeBlockedNotifyHtml =
-        """
-        <!DOCTYPE html><html lang="pl"><head><meta charset="utf-8"><title>Brak dostępu</title></head>
-        <body data-wiki-access-denied="1"><script>
-        (function(){try{if(window.parent!==window)window.parent.postMessage({type:'dagonite-wiki-blocked'},window.location.origin);}catch(e){}})();
-        </script></body></html>
-        """;
+        return sub;
+    }
 
     private static string SlugFromRelativePath(string relativePath)
     {
@@ -308,12 +435,6 @@ public class WikiStaticFileMiddleware : IMiddleware
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         context.Response.Headers.CacheControl = "private, no-store";
 
-        if (IsIframeRequest(context))
-        {
-            await ServeIframeBlockedNotifyAsync(context, StatusCodes.Status403Forbidden);
-            return;
-        }
-
         if (!string.IsNullOrEmpty(_accessDeniedHtmlPath) && File.Exists(_accessDeniedHtmlPath))
         {
             context.Response.ContentType = "text/html; charset=utf-8";
@@ -333,6 +454,27 @@ public class WikiStaticFileMiddleware : IMiddleware
             </div></body></html>
             """,
             context.RequestAborted);
+    }
+
+    private async Task ServeAccessDiagnosticsAsync(HttpContext context, string? userName, bool isAdminOrMg)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        if (!(context.User.Identity?.IsAuthenticated ?? false))
+        {
+            var returnUrl = Uri.EscapeDataString(context.Request.Path + context.Request.QueryString);
+            context.Response.Redirect($"/Account/Login?returnUrl={returnUrl}");
+            return;
+        }
+
+        var diagnostics = await _wikiAccess.GetAccessDiagnosticsAsync(userName, isAdminOrMg);
+        context.Response.ContentType = "application/json; charset=utf-8";
+        context.Response.Headers.CacheControl = "private, no-store";
+        await context.Response.WriteAsJsonAsync(diagnostics, context.RequestAborted);
     }
 
     private static bool IsAdminOrMg(ClaimsPrincipal user) =>

@@ -3,6 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IJSRuntime _jsRuntime
 @inject IUserService _userService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inherits LayoutComponentBase
 
 <PageTitle>DagoniteEmpire</PageTitle>
@@ -34,14 +35,6 @@ MaxWidth="MaxWidth.Large" />
         </MudHidden>
 
         <MudSpacer />
-        <AuthorizeView>
-            <Authorized>
-                <MudIconButton Class="m-0 p-0 mr-2" Icon="@Icons.Material.Filled.AutoStories" Color="Color.Inherit" OnClick="@ScribeToggle" Title="SCRIBE" />
-            </Authorized>
-        </AuthorizeView>
-        <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
-            <MudIconButton Class="m-0 p-0" Icon="@Icons.Material.Filled.Chat" Color="Color.Inherit" OnClick="@ChatToggle" />
-        </MudHidden>
         <LoginDisplay />
     </MudAppBar>
     <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
@@ -51,15 +44,6 @@ MaxWidth="MaxWidth.Large" />
             </MudDrawer>
         </CascadingValue>
     </MudHidden>
-
-    <MudContainer MaxWidth="MaxWidth.False" Class="m-0 p-0" Style="overflow:hidden; position:relative;">
-        <AuthorizeView>
-            <Authorized>
-                <Chat ToggleChat="@OpenEnd"></Chat>
-                <ScribeDrawer @bind-IsOpen="@ScribeOpen" />
-            </Authorized>
-        </AuthorizeView>
-    </MudContainer>    
 
     <MudMainContent >   
         @Body
@@ -81,20 +65,10 @@ MaxWidth="MaxWidth.Large" />
 @code {
 
     private MudTheme Theme = new MudTheme();
-    private bool OpenEnd { get; set; }
-    private bool ScribeOpen { get; set; }
-    
+
     void DrawerStartToggle()
     {
         _drawerOpen = !_drawerOpen;
-    }
-    void ChatToggle()
-    {
-        OpenEnd = !OpenEnd;
-    }
-    void ScribeToggle()
-    {
-        ScribeOpen = !ScribeOpen;
     }
 
     bool _drawerOpen;
@@ -107,10 +81,23 @@ MaxWidth="MaxWidth.Large" />
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var isAuth =  await _userService.IsAuthenticated();
-        if (isAuth == false)
-            await _userService.LogOut();
+        if (!firstRender)
+        {
+            return;
+        }
 
+        try
+        {
+            var state = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (state.User.Identity?.IsAuthenticated != true)
+            {
+                await _userService.LogOut();
+            }
+        }
+        catch
+        {
+            // Ignore during prerender / reconnect — cookie auth is authoritative.
+        }
     }
 
 }

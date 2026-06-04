@@ -2,123 +2,161 @@
 
 **Instrukcja dla administratora serwera (Docker/K8s):** [WIKI_DEPLOY_OPS.md](./WIKI_DEPLOY_OPS.md)
 
-## Integracja
+## Architektura (dwa repozytoria)
 
-- Zakładka **Wiki** w panelu → `/wiki` (layout + iframe).
-- Statyczny build Quartz w `DagoniteEmpire/wwwroot/wiki/`.
-- Reguły dostępu: `dagonite-wiki/content/_meta/wiki-parties.json` (drużyny, kampanie).
-- Manifest: `wwwroot/wiki/static/wiki-access.json` (generowany przy deploy).
+| Repo | Rola |
+|------|------|
+| **[dagonite-wiki](https://github.com/…/dagonite-wiki)** (obok Empire w `Dag1/`) | Treść Markdown, Quartz, `wiki-parties.json`, tagi w frontmatter |
+| **DagoniteEmpire** | Aplikacja ASP.NET — serwuje build pod `/wiki/*`, ACL per postać |
 
-### Widoczność (skrót)
+Wiki **nie** jest osobnym serwisem. Host produkcyjny: `https://dagonite-empire.drik.it/wiki` (statyczne pliki + middleware ACL w tej samej aplikacji).
 
-- **Świat i zasady** — bez logowania.
-- **Scena 3+ graczy** — cała drużyna (lub obie drużyny, jeśli gracze z dwóch party).
-- **Scena 1–2 graczy** — tylko te postacie.
-- **Wstęp …** — tylko bohater z tytułu.
-- **NPC** — wszyscy zalogowani, chyba że w tekście jeden kontakt z bohaterem.
-- **Wątki kroniki** — publiczne dla zalogowanych, chyba że dotyczą jednego bohatera (tag/treść).
-- **Kampania W służbie Bonefyre** — postacie z drużyn Bonefyre + Pijany Smok (obie w kampanii).
-- **MG/Admin** — wszystko.
+```
+Dag1/
+├── dagonite-wiki/     ← autorzy treści, npx quartz build
+└── DagoniteEmpire/    ← dotnet run, wwwroot/wiki/ (generowany przy buildzie obrazu)
+```
 
-### Brak dostępu (UI)
+## Integracja w aplikacji
 
-Gdy gracz otworzy stronę spoza uprawnień, middleware zwraca **`wiki-access-denied.html`** (403) zamiast pustej odpowiedzi — w iframe widać komunikat i link do „Świat i zasady”.
+- Zakładka **Wiki** → `/wiki` (Blazor + iframe na `/wiki/…`).
+- Build Quartz kopiowany do `DagoniteEmpire/wwwroot/wiki/` (nie commitowany do git — patrz `.gitignore`).
+- **WikiStaticFileMiddleware** — każde żądanie `/wiki/*` przechodzi ACL przed serwowaniem pliku.
+- **WikiAccessService** + manifest `wwwroot/wiki/static/wiki-access.json` (generowany ze tagów).
+- Wybrana postać: ta sama co w menu (**Select character**), zapis w DB (`SelectedCharacterId`) + sesja Blazor.
 
-## Publikacja na serwer (Docker)
+## Widoczność (skrót)
 
-1. Zaktualizuj treść i zbuduj Quartza:
+| Typ treści | Kto widzi |
+|------------|-----------|
+| `wiki-public` / **Świat i zasady** | Wszyscy (bez logowania) |
+| `wiki-logged-in` / index, mapy | Zalogowany + postać z drużyny kampanii |
+| Tag bohatera (`lawenda`, `werner`, …) | Tylko ta postać (+ ewentualnie inne tagi na stronie) |
+| `team-bonefyre` / `team-pijany-smok` | Członkowie danej drużyny |
+| **Wątek z imieniem PC w tytule** (np. „Klątwa Lawendy”) | Tylko ten bohater i wpisani współwiedzący — **bez** `team-bonefyre` |
+| Kampania (folder) | Uczestnik drużyny z `wiki-parties.json` |
+| **MG / Admin** | Wszystko (pełny explorer, search, manifest) |
 
-   ```bash
-   cd dagonite-wiki
-   npx quartz build
-   ```
+Szczegóły tagów: `dagonite-wiki/content/_meta/wiki-parties.json`.
 
-2. Skopiuj do aplikacji (przed `docker build`):
+## Model dostępu (runtime)
 
-   ```bash
-   cd DagoniteEmpire/tools/Scripts
-   ./deploy_wiki_to_wwwroot.sh
-   ```
+1. **Tagi** w frontmatter → `build_wiki_access_manifest.py` → `wiki-access.json`.
+2. **Middleware** sprawdza slug (normalizacja końcowego `/`, mapowanie folderów na `index`).
+3. Brak dostępu → **403** + `wiki-access-denied.html` (strony) lub **404** (zasoby graficzne — bez zdradzania istnienia pliku).
+4. **Explorer Quartz** — widoczny u graczy; drzewo budowane z **filtrowanego** `contentIndex.json` (tylko dozwolone strony).
+5. **MG/Admin** — pełna wiki bez filtrów indeksu.
+6. Pliki chronione: `wiki-access.json`, `wiki-parties.json`, `wiki-links.json` — tylko MG/Admin po HTTP (`wiki-links` czytany też po stronie serwera w `WikiLinkService`).
 
-3. Zbuduj obraz Docker z katalogu `DagoniteEmpire` (zawiera `wwwroot/wiki`).
+### Co middleware filtruje
 
-4. Wyłącz **GitHub Pages** w ustawieniach repo `dagonite-wiki` (workflow `deploy.yml` publikuje tylko ręcznie przez `workflow_dispatch`).
+| Zasób | Zachowanie |
+|-------|------------|
+| `static/contentIndex.json` | Per postać (fail-closed przy braku manifestu) |
+| `static/encryptedContentIndex.json` | Gracze: puste `entries` |
+| `sitemap.xml` | Tylko dozwolone URL-e |
+| Obrazy/og-image przy stronach | ACL strony-właściciela |
+| `/wiki/` lub `/wiki` (bez pliku) | Serwuje `index.html` hubu (nie pusty shell Blazor) |
 
-### Jedna komenda (build + kopiowanie)
+## Publikacja na serwer
+
+### Standard (tylko treść wiki)
 
 ```bash
-cd DagoniteEmpire/tools/Scripts
+cd /ścieżka/Dag1/dagonite-wiki
+git pull origin main
+
+cd /ścieżka/Dag1/DagoniteEmpire
+git pull origin master
+
+cd tools/Scripts
+chmod +x build_wiki_for_empire.sh
 ./build_wiki_for_empire.sh
 ```
 
-## Faza 3 — bezpieczeństwo (serwer)
+Następnie `docker build` z katalogu zawierającego Dockerfile (wiki musi być już w `wwwroot/wiki/`).
 
-Middleware filtruje lub blokuje:
-
-| Plik | Zachowanie |
-|------|------------|
-| `static/contentIndex.json` | Filtrowany per postać (wyszukiwarka) |
-| `static/encryptedContentIndex.json` | Gracze: puste `entries` (MG: pełny) |
-| `sitemap.xml` | Tylko URL-e dozwolone dla użytkownika |
-| `static/wiki-access.json`, `wiki-parties.json` | Tylko Admin/MG (404 dla reszty) |
-
-## Test po wdrożeniu
-
-- [ ] Gość: `/wiki` → lore (`świat-i-zasady`), sekrety → 404
-- [ ] Gracz A: nie widzi wstępu postaci B (bezpośredni URL → 404)
-- [ ] Wyszukiwarka: brak tytułów cudzych sekretów
-- [ ] `/wiki/static/wiki-access.json` jako gracz → 404
-- [ ] `/wiki/sitemap.xml` jako gracz → tylko własne ścieżki
-- [ ] MG: pełna wiki + manifest
-
-### baseUrl Quartza (opcjonalnie)
-
-Dla czystszego buildu ustaw w `dagonite-wiki/quartz.config.yaml`:
-
-```yaml
-baseUrl: dagonite-empire.drik.it/wiki
-```
-
-Skrypt `deploy_wiki_to_wwwroot.sh` i tak przepisuje ścieżki z `/dagonite-wiki` na `/wiki`.
-
-## Edycja drużyn
-
-Zmień `dagonite-wiki/content/_meta/wiki-parties.json`, potem:
-
-```bash
-./deploy_wiki_to_wwwroot.sh
-```
-
-`NPCName` w bazie musi odpowiadać nazwom w `characters` (np. `Lawenda`, `Werner` dla Granita).
-
-## Faza 4 — utrzymanie i UX
-
-### Pełny pipeline treści
+### Pełny pipeline (docx → vault → wiki)
 
 ```bash
 cd DagoniteEmpire/tools/Scripts
-chmod +x sync_wiki_pipeline.sh build_wiki_for_empire.sh
 ./sync_wiki_pipeline.sh
 ```
 
 Kolejność: `build_obsidian_vault.py` → `sync_vault_to_quartz.sh` → `build_wiki_for_empire.sh`.
 
-### Dostęp a „Select character”
+### Tylko drużyny / manifest ACL
 
-Wiki korzysta z tej samej sesji co reszta aplikacji (`LoginDisplay` → **Select character**):
+Edycja `dagonite-wiki/content/_meta/wiki-parties.json` lub tagów w `.md`, potem:
 
-- **Game Master** (wybór MG w menu) → pełny dostęp do wiki.
-- **Konkretna postać** → ACL według `NPCName` wybranej postaci (manifest `wiki-access.json`).
-- Postać **spoza drużyn** w `wiki-parties.json` → tylko **Świat i zasady** (+ strona główna wiki, mapy dla zalogowanych).
-- Postać **w drużynie** → kampania i pliki zgodnie z regułami manifestu (sceny 1–2, wątki, NPC itd.).
-- Po zmianie postaci w menu wiki przeładowuje iframe (jak przy pierwszym wejściu).
-- Nieznane slugi → domyślnie **odmowa** (nie „każdy zalogowany”).
+```bash
+cd DagoniteEmpire/tools/Scripts
+python3 build_wiki_access_manifest.py   # wymaga wcześniejszego public/ z quartza
+# lub pełne:
+./deploy_wiki_to_wwwroot.sh
+```
 
-### Linki wiki ↔ aplikacja
+`NPCName` w bazie musi odpowiadać nazwom w `characters` (aliasy w `characterAliases`).
 
-- `static/wiki-links.json` — mapowanie postaci / kampanii / rozdziałów (generowane z manifestem).
-- Komponent `WikiNavLink` na liście postaci, kampanii i w wątku rozdziału (`ChapterThread`).
+## Edycja treści i tagów (autor)
 
-### DukePlayer
+W `dagonite-wiki`:
 
-W `wiki-parties.json`: `dukeAccessibleCampaignIds` — Duke bez bohatera z drużyny wiki widzi tylko lore (`świat-i-zasady`) i slugi kampanii z tej listy. Duke z postacią w `characters` ma normalny dostęp.
+1. Edytuj `content/**/*.md` — frontmatter `tags: [lawenda, …]`.
+2. Dla wątków prywatnych: **imię bohatera w tytule** + tylko tagi konkretnych postaci (nie `team-bonefyre`).
+3. `npx quartz build` (lokalnie podgląd) — **produkcja** i tak buduje Empire.
+
+Po zmianach tagów na serwerze buildowej: `./build_wiki_for_empire.sh` + nowy obraz Docker.
+
+Skrypt `tag_wiki_content.py` (opcjonalnie, masowo):
+
+```bash
+cd DagoniteEmpire/tools/Scripts
+python3 tag_wiki_content.py
+python3 build_wiki_access_manifest.py
+```
+
+## Test po wdrożeniu
+
+- [ ] Gość: `/wiki/świat-i-zasady/` → lore; sekret kampanii → 403/404
+- [ ] Gracz (np. Werner): wątek „Klątwa Lawendy” → brak dostępu; własne wątki → OK
+- [ ] Explorer: tylko strony dozwolone dla postaci
+- [ ] Link **Home** w breadcrumb → hub wiki (`index.html`), nie czarny ekran
+- [ ] `/wiki/static/wiki-access.json` jako gracz → 403
+- [ ] MG: pełna wiki + manifest + diagnostyka dev: `/wiki/debug/access.json`
+
+## Konfiguracja Quartz (opcjonalnie)
+
+W `dagonite-wiki/quartz.config.yaml`:
+
+```yaml
+baseUrl: dagonite-empire.drik.it/wiki
+```
+
+`deploy_wiki_to_wwwroot.sh` i tak przepisuje `/dagonite-wiki` → `/wiki`.
+
+## GitHub Pages (dagonite-wiki)
+
+Wyłącz automatyczne publikowanie — wiki produkcyjne tylko w Empire. Workflow deploy tylko ręczny (`workflow_dispatch`), jeśli w ogóle.
+
+## DukePlayer
+
+`dukeAccessibleCampaignIds` w `wiki-parties.json` — lore + wybrane kampanie bez bohatera z drużyny. Z postacią w `characters` — normalny ACL.
+
+## Rozwój lokalny
+
+```bash
+# Terminal 1 — baza
+docker start postgres-pgvector
+
+# Terminal 2 — aplikacja
+cd DagoniteEmpire/DagoniteEmpire
+dotnet run --launch-profile http
+
+# Po zmianie treści wiki:
+cd ../tools/Scripts && ./build_wiki_for_empire.sh
+```
+
+Wiki: http://127.0.0.1:5093/wiki
+
+Testy ACL: `dotnet test DA_Business.Tests --filter WikiAccessEvaluatorTests`

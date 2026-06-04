@@ -1,5 +1,4 @@
 ﻿
-@inject IChatManager _chatManager
 @inject IJSRuntime _jsRuntime
 @inject ISnackbar _snackBar
 @inject NavigationManager _navigationManager;
@@ -35,10 +34,6 @@
     <MudButton FullWidth="@(IsRow==false)" OnClick="GoToLastPost" Style="@($" color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
         <img src="@MyIcon.ScrollWhite" width="24" height="24" class="helm-icon" style="padding-right: 3px;" />
         Last post
-    </MudButton>
-    <MudButton FullWidth="@(IsRow==false)" OnClick="GoToScribe" Style="@($" color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
-        <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.AutoStories" aria-label="SCRIBE"></MudIcon>
-        SCRIBE
     </MudButton>
     <MudButton FullWidth="@(IsRow==false)" OnClick="GoToWiki" Style="@($" color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
         <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.MenuBook" aria-label="Wiki"></MudIcon>
@@ -242,19 +237,6 @@
             _snackBar.Add("Error while going to health: " + e.Message, Severity.Error);
         }
 
-    }
-
-    private async Task GoToScribe()
-    {
-        try
-        {
-            await OnDrawerChanged.InvokeAsync();
-            _navigationManager.NavigateTo("/scribe");
-        }
-        catch (Exception e)
-        {
-            _snackBar.Add("Error while going to SCRIBE: " + e.Message, Severity.Error);
-        }
     }
 
     private async Task GoToWiki()

@@ -74,6 +74,45 @@ def players_mentioned(body: str) -> set[str]:
     return found
 
 
+def heroes_in_title(title: str, stem: str) -> list[str]:
+    """Player character names (or unambiguous surname) in page title / filename."""
+    cfg = _cfg()
+    hay = f"{m.clean_title(title)} {stem}"
+    found: set[str] = set()
+    for name in sorted(cfg.player_names, key=len, reverse=True):
+        if name.lower() in hay.lower():
+            found.add(name)
+            continue
+        last = name.split()[-1]
+        if len(last) >= 4 and last.lower() in hay.lower():
+            canonical = m.resolve_character(last, cfg)
+            if canonical:
+                found.add(canonical)
+    return sorted(found)
+
+
+def tags_for_watek(fm: dict, title: str, stem: str, body: str) -> list[str]:
+    """Story-thread pages: title with a hero name → that hero's private arc, not whole party."""
+    title_heroes = heroes_in_title(title, stem)
+    if title_heroes:
+        tags = [char_to_tag(h) for h in title_heroes]
+        for name in m.canonicalize_players(m.parse_players(fm), _cfg()):
+            if name not in title_heroes:
+                tags.append(char_to_tag(name))
+        # Do not scan body wikilinks — they name NPCs and scenes and would grant whole-party access.
+        return sorted(set(tags))
+
+    players = m.canonicalize_players(m.parse_players(fm), _cfg())
+    if players:
+        return access_tags_for_players(set(players))
+
+    mentioned = players_mentioned(body)
+    if mentioned:
+        return access_tags_for_players(mentioned)
+
+    return list(BOTH_TEAMS)
+
+
 def resolve_wstęp_hero(title: str) -> str | None:
     hero = re.sub(r"(?i)^wstęp\s*", "", title).strip()
     for candidate in (hero, *hero.split()):
@@ -148,8 +187,11 @@ def tags_for_path(rel: str, md: Path, fm: dict, body: str) -> list[str]:
         auth = access_tags_for_players(mentioned)
         return auth or ["team-bonefyre"]
 
+    if rel.startswith(f"{CAMPAIGN_ROOT}/Kronika/Wątki/") and md.name != "index.md":
+        return tags_for_watek(fm, title, md.stem, body)
+
     if rel.startswith(f"{CAMPAIGN_ROOT}/Kronika"):
-        if md.name == "index.md" or rel.endswith("Kronika/index.md") or rel.endswith("Wątki/index.md"):
+        if md.name == "index.md" or rel.endswith("Kronika/index.md"):
             return list(BOTH_TEAMS)
         existing_auth = [t for t in m.parse_tags(fm) if _is_access_tag(t)]
         if existing_auth:

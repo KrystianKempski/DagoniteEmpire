@@ -3,12 +3,9 @@
 @using DA_Common
 @using System.Security.Claims
 @inject IWebHostEnvironment HostEnvironment
-@inject ISnackbar Snackbar
-@inject IJSRuntime Js
 @inject CallbackService CallbackService
 @inject IWikiAccessService WikiAccess
 @inject AuthenticationStateProvider AuthState
-@implements IAsyncDisposable
 @attribute [AllowAnonymous]
 
 <PageTitle>Dagonite Empire | Wiki</PageTitle>
@@ -55,14 +52,9 @@
 </style>
 
 @code {
-    private const string AccessDeniedMessage = "Nie masz dostępu do tej części wiki.";
     private bool _wikiAvailable;
     private string _iframeSrc = "/wiki/świat-i-zasady/";
-    private string _lastGoodIframeSrc = "/wiki/świat-i-zasady/";
     private int _iframeRenderKey;
-    private DotNetObjectReference<WikiPage>? _dotNetRef;
-    private bool _iframeJsInitialized;
-    private bool _bypassWikiAccessChecks;
     private Action? _onCharacterChanged;
 
     protected override async Task OnInitializedAsync()
@@ -75,66 +67,9 @@
         CallbackService.OnChange += _onCharacterChanged;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!_wikiAvailable || _iframeJsInitialized)
-        {
-            return;
-        }
-
-        _dotNetRef ??= DotNetObjectReference.Create(this);
-        await Js.InvokeVoidAsync("dagoniteWikiIframe.init", _dotNetRef, "wiki-content-iframe", _bypassWikiAccessChecks);
-        _iframeJsInitialized = true;
-    }
-
     private async void OnSelectedCharacterChanged()
     {
         await ApplyDefaultWikiPathAsync();
-        _iframeRenderKey++;
-        await InvokeAsync(StateHasChanged);
-        if (_iframeJsInitialized)
-        {
-            try
-            {
-                await Js.InvokeVoidAsync("dagoniteWikiIframe.setBypassAccessChecks", _bypassWikiAccessChecks);
-                await Js.InvokeVoidAsync("dagoniteWikiIframe.reloadAllowedIndex");
-            }
-            catch (JSDisconnectedException)
-            {
-            }
-        }
-    }
-
-    [JSInvokable]
-    public void OnWikiIframeNavigated(string path)
-    {
-        _lastGoodIframeSrc = path;
-    }
-
-    [JSInvokable]
-    public async Task OnWikiBlocked(string? lastGoodPath)
-    {
-        var (userName, isAdminOrMg) = await GetWikiAuthAsync();
-        if (await WikiAccess.ShouldBypassAccessChecksAsync(userName, isAdminOrMg))
-        {
-            return;
-        }
-
-        Snackbar.Add(AccessDeniedMessage, Severity.Warning);
-        var fallback = await WikiAccess.GetDefaultWikiIframePathAsync(userName, isAdminOrMg);
-
-        if (!string.IsNullOrWhiteSpace(lastGoodPath)
-            && lastGoodPath.StartsWith("/wiki", StringComparison.OrdinalIgnoreCase)
-            && await WikiAccess.CanAccessSlug(userName, isAdminOrMg, SlugFromWikiPath(lastGoodPath)))
-        {
-            _lastGoodIframeSrc = lastGoodPath;
-        }
-        else
-        {
-            _lastGoodIframeSrc = fallback;
-        }
-
-        _iframeSrc = AppendCacheBuster(_lastGoodIframeSrc);
         _iframeRenderKey++;
         await InvokeAsync(StateHasChanged);
     }
@@ -142,10 +77,8 @@
     private async Task ApplyDefaultWikiPathAsync()
     {
         var (userName, isAdminOrMg) = await GetWikiAuthAsync();
-        _bypassWikiAccessChecks = await WikiAccess.ShouldBypassAccessChecksAsync(userName, isAdminOrMg);
         var path = await WikiAccess.GetDefaultWikiIframePathAsync(userName, isAdminOrMg);
-        _iframeSrc = path;
-        _lastGoodIframeSrc = path;
+        _iframeSrc = AppendCacheBuster(path);
     }
 
     private async Task<(string? UserName, bool IsAdminOrMg)> GetWikiAuthAsync()
@@ -157,37 +90,6 @@
             user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster));
     }
 
-    private static string SlugFromWikiPath(string wikiPath)
-    {
-        var path = wikiPath;
-        if (path.StartsWith("/wiki/", StringComparison.OrdinalIgnoreCase))
-        {
-            path = path[6..];
-        }
-        else if (path.StartsWith("/wiki", StringComparison.OrdinalIgnoreCase))
-        {
-            path = path[5..];
-        }
-
-        path = path.Trim('/');
-        if (path.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
-        {
-            path = path[..^5];
-        }
-
-        if (path.EndsWith("/index", StringComparison.OrdinalIgnoreCase))
-        {
-            path = path[..^6].TrimEnd('/');
-        }
-
-        if (string.IsNullOrEmpty(path) || path.Equals("index", StringComparison.OrdinalIgnoreCase))
-        {
-            return "index";
-        }
-
-        return path;
-    }
-
     private static string AppendCacheBuster(string path)
     {
         var tick = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -196,24 +98,11 @@
             : $"{path}?_r={tick}";
     }
 
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         if (_onCharacterChanged is not null)
         {
             CallbackService.OnChange -= _onCharacterChanged;
         }
-
-        if (_iframeJsInitialized)
-        {
-            try
-            {
-                await Js.InvokeVoidAsync("dagoniteWikiIframe.dispose");
-            }
-            catch (JSDisconnectedException)
-            {
-            }
-        }
-
-        _dotNetRef?.Dispose();
     }
 }

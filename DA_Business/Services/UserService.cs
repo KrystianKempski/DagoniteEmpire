@@ -10,6 +10,7 @@ using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
@@ -27,9 +28,17 @@ namespace DA_Business.Services
         private readonly IMapper _mapper;
         private readonly IJSRuntime _jsRuntime;
         private readonly ProtectedSessionStorage _protectedSessionStorage;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
 
-        public UserService(AuthenticationStateProvider authState, IOptions<UserInfo> userInfo, IDbContextFactory<ApplicationDbContext> db, IMapper mapper, IJSRuntime jsRuntime, ProtectedSessionStorage protectedSessionStorage)
+        public UserService(
+            AuthenticationStateProvider authState,
+            IOptions<UserInfo> userInfo,
+            IDbContextFactory<ApplicationDbContext> db,
+            IMapper mapper,
+            IJSRuntime jsRuntime,
+            ProtectedSessionStorage protectedSessionStorage,
+            IHttpContextAccessor httpContextAccessor)
         {
             _authState = authState;
             _userInfo = userInfo.Value;
@@ -37,6 +46,7 @@ namespace DA_Business.Services
             _mapper = mapper;
             _jsRuntime = jsRuntime;
             _protectedSessionStorage = protectedSessionStorage;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<bool> IsAuthenticated()
@@ -64,6 +74,8 @@ namespace DA_Business.Services
             {
                 // Silently ignore - storage might not be available
             }
+
+            ClearWikiCharacterCookie();
         }
 
         public async Task InitUserInfo()
@@ -193,12 +205,105 @@ namespace DA_Business.Services
                     await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.CharacterMG, characterMG);
                     await _protectedSessionStorage.SetAsync(ProtectedStorageKeys.IsInited, false);
                 }
+
+                if (charId != 0)
+                {
+                    await PersistWikiCharacterSelectionAsync(charId);
+                }
+                else if (charId == 0 && currentCharacterId != 0)
+                {
+                    ClearWikiCharacterCookie();
+                    await ClearDatabaseSelectedCharacterAsync();
+                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new Exception($"Error: {ex.Message}");
-                //    await _jsRuntime.ToastrError("Error whike getting user info: " + ex.Message);
+                // Blazor Server circuits often cannot set response cookies (headers already sent).
+                // Wiki ACL falls back to ApplicationUser.SelectedCharacterId in the database.
             }
+        }
+
+        private static bool CanWriteResponseCookies(HttpContext? http) =>
+            http is not null && !http.Response.HasStarted;
+
+        private void ClearWikiCharacterCookie()
+        {
+            var http = _httpContextAccessor.HttpContext;
+            if (!CanWriteResponseCookies(http))
+            {
+                return;
+            }
+
+            http!.Response.Cookies.Delete(SD.WikiSelectedCharacterCookie, new CookieOptions { Path = "/" });
+        }
+
+        private void SetWikiCharacterCookie(int charId)
+        {
+            var http = _httpContextAccessor.HttpContext;
+            if (!CanWriteResponseCookies(http))
+            {
+                return;
+            }
+
+            if (charId == 0)
+            {
+                ClearWikiCharacterCookie();
+                return;
+            }
+
+            http!.Response.Cookies.Append(
+                SD.WikiSelectedCharacterCookie,
+                charId.ToString(),
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    IsEssential = true,
+                    SameSite = SameSiteMode.Lax,
+                    Path = "/",
+                    MaxAge = TimeSpan.FromDays(400),
+                });
+        }
+
+        private async Task PersistWikiCharacterSelectionAsync(int charId)
+        {
+            SetWikiCharacterCookie(charId);
+
+            var auth = await _authState.GetAuthenticationStateAsync();
+            var userId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return;
+            }
+
+            await using var context = await _db.CreateDbContextAsync();
+            var user = await context.Users.OfType<ApplicationUser>().FirstOrDefaultAsync(u => u.Id == userId);
+            if (user is null)
+            {
+                return;
+            }
+
+            user.SelectedCharacterId = charId;
+            await context.SaveChangesAsync();
+        }
+
+        private async Task ClearDatabaseSelectedCharacterAsync()
+        {
+            var auth = await _authState.GetAuthenticationStateAsync();
+            var userId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return;
+            }
+
+            await using var context = await _db.CreateDbContextAsync();
+            var user = await context.Users.OfType<ApplicationUser>().FirstOrDefaultAsync(u => u.Id == userId);
+            if (user is null)
+            {
+                return;
+            }
+
+            user.SelectedCharacterId = 0;
+            await context.SaveChangesAsync();
         }
     }
 }

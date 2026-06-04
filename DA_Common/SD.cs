@@ -27,6 +27,8 @@ namespace DA_Common
         public const string GameMaster_NPCName = "Game Master";
         public const string GameMaster_Portrait = "../images/gm_avatar.webp";
 
+        /// <summary>HttpOnly cookie so wiki static middleware can read the active hero (Blazor session storage is not available there).</summary>
+        public const string WikiSelectedCharacterCookie = "dagonite_wiki_character_id";
 
         public static string Portrait = "portraits";
         public static string PostImage = "postImages";
@@ -818,9 +820,8 @@ namespace DA_Common
         {
             return isTended ? MyIcon.TendedWound : MyIcon.FreshWound;
         }
-
-
     }
+
     public class ProtectedStorageKeys
     {
         public const string SelectedCharacterId = "SelectedCharacterId";

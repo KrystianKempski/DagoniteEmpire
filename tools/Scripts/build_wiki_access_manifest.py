@@ -403,6 +403,30 @@ def main() -> None:
         if not slug.endswith("/index"):
             report_rows.append((slug, rule, src))
 
+    # Quartz tag listing pages (tags/foo.html) — not backed by .md files.
+    tag_names: set[str] = set()
+    for md in CONTENT.rglob("*.md"):
+        if "_meta" in md.parts:
+            continue
+        fm = parse_frontmatter(md.read_text(encoding="utf-8"))
+        for t in parse_tags(fm):
+            tag_names.add(t.strip().lower())
+
+    tag_index_rule = AccessRule(mode="authenticated", reason="tag-index")
+    for tag_slug in ("tags", "tags/"):
+        all_rules[tag_slug] = tag_index_rule
+
+    for tag in sorted(tag_names):
+        tag_slug = f"tags/{tag}"
+        if tag_slug in all_rules:
+            continue
+        tag_rule = rule_from_tags([tag], cfg)
+        if tag_rule is None:
+            tag_rule = AccessRule(mode="deny", reason="tag-unknown")
+        all_rules[tag_slug] = tag_rule
+        if not tag_slug.endswith("/"):
+            all_rules[tag_slug + "/"] = tag_rule
+
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     manifest = {
         "version": 4,

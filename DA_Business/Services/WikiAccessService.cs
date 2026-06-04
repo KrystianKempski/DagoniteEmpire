@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
@@ -5,18 +6,25 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DA_Business.Services.Interfaces;
 using DA_Business.Services.Wiki;
 using DA_Common;
+using DA_DataAccess;
+using DA_DataAccess.Data;
+using DA_Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace DA_Business.Services;
 
 public class WikiAccessService : IWikiAccessService
 {
-    private const string ManifestCacheKey = "wiki-access-manifest-v6";
+    private const string ManifestCacheKey = "wiki-access-manifest-v7";
     private const string DefaultLoreIframePath = "/wiki/świat-i-zasady/";
     private const string CampaignHubIframePath = "/wiki/index.html";
+    private const string EmptySitemap =
+        """<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>""";
 
     private readonly ICharacterRepository _characters;
     private readonly IWebHostEnvironment _environment;
@@ -24,6 +32,8 @@ public class WikiAccessService : IWikiAccessService
     private readonly ILogger<WikiAccessService> _logger;
     private readonly IUserService _userService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IDbContextFactory<ApplicationDbContext> _db;
+    private readonly bool _logAccessDecisions;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -36,7 +46,9 @@ public class WikiAccessService : IWikiAccessService
         IMemoryCache cache,
         ILogger<WikiAccessService> logger,
         IUserService userService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IDbContextFactory<ApplicationDbContext> db,
+        IConfiguration configuration)
     {
         _characters = characters;
         _environment = environment;
@@ -44,6 +56,10 @@ public class WikiAccessService : IWikiAccessService
         _logger = logger;
         _userService = userService;
         _httpContextAccessor = httpContextAccessor;
+        _db = db;
+        _logAccessDecisions = configuration.GetValue(
+            "WikiAccess:LogDecisions",
+            string.Equals(environment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task<bool> CanAccessAllWiki(string? userName, bool isAdminOrMg)
@@ -63,10 +79,28 @@ public class WikiAccessService : IWikiAccessService
         var manifest = LoadManifest();
         if (manifest is null)
         {
-            return context.TreatAsAdmin || IsPrefixMatch(NormalizeSlug(slug), ["świat-i-zasady"]);
+            return context.TreatAsAdmin
+                || WikiAccessEvaluator.IsPrefixMatch(WikiAccessEvaluator.NormalizeSlug(slug), ["świat-i-zasady"]);
         }
 
-        return ResolveSlugAccess(userName, context, slug, manifest);
+        var allowed = WikiAccessEvaluator.CanAccessSlug(userName, context, slug, manifest);
+        if (_logAccessDecisions && !allowed && !context.TreatAsAdmin)
+        {
+            var normalized = WikiAccessEvaluator.NormalizeSlug(slug);
+            if (WikiAccessEvaluator.IsUnderCampaign(normalized, manifest)
+                || WikiAccessEvaluator.IsPrefixMatch(normalized, manifest.LoggedInPublicPrefixes))
+            {
+                _logger.LogInformation(
+                    "Wiki deny slug={Slug} identity={Identity} owner={Owner} chars=[{Chars}] campaignParticipant={Participant}",
+                    normalized,
+                    userName,
+                    await ResolveOwnerUserNameAsync(userName),
+                    string.Join(", ", context.UserCharacters),
+                    context.IsCampaignParticipant);
+            }
+        }
+
+        return allowed;
     }
 
     public async Task<string?> FilterContentIndexAsync(string? userName, bool isAdminOrMg, string json)
@@ -80,7 +114,9 @@ public class WikiAccessService : IWikiAccessService
         var manifest = LoadManifest();
         if (manifest is null)
         {
-            return json;
+            // Fail closed: contentIndex.json carries the full page text, so a missing manifest
+            // must hide everything for non-MG rather than expose the whole wiki.
+            return "{}";
         }
 
         try
@@ -88,13 +124,13 @@ public class WikiAccessService : IWikiAccessService
             using var doc = JsonDocument.Parse(json);
             if (doc.RootElement.ValueKind != JsonValueKind.Object)
             {
-                return json;
+                return "{}";
             }
 
             var filtered = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
             foreach (var prop in doc.RootElement.EnumerateObject())
             {
-                if (ResolveSlugAccess(userName, context, prop.Name, manifest))
+                if (WikiAccessEvaluator.CanAccessSlug(userName, context, prop.Name, manifest))
                 {
                     filtered[prop.Name] = prop.Value.Clone();
                 }
@@ -105,7 +141,7 @@ public class WikiAccessService : IWikiAccessService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to filter wiki content index");
-            return json;
+            return "{}";
         }
     }
 
@@ -151,7 +187,8 @@ public class WikiAccessService : IWikiAccessService
         var manifest = LoadManifest();
         if (manifest is null)
         {
-            return xml;
+            // Fail closed: serve an empty sitemap rather than leak every slug when the manifest is gone.
+            return EmptySitemap;
         }
 
         try
@@ -168,7 +205,7 @@ public class WikiAccessService : IWikiAccessService
                 }
 
                 var slug = ExtractSlugFromSitemapLoc(loc);
-                if (!ResolveSlugAccess(userName, context, slug, manifest))
+                if (!WikiAccessEvaluator.CanAccessSlug(userName, context, slug, manifest))
                 {
                     url.Remove();
                 }
@@ -202,144 +239,68 @@ public class WikiAccessService : IWikiAccessService
         return context.TreatAsAdmin;
     }
 
-    public bool IsAnonymousPublicPath(string slug)
+    public async Task<WikiAccessDiagnostics> GetAccessDiagnosticsAsync(string? userName, bool isAdminOrMg)
     {
         var manifest = LoadManifest();
-        slug = NormalizeSlug(slug);
+        var ownerUserName = await ResolveOwnerUserNameAsync(userName);
+        var userInfo = await TryGetUserInfoSafeAsync();
+        var context = await BuildContextAsync(userName, isAdminOrMg);
+        var cookieId = TryReadWikiCharacterCookie();
+        var dbId = await TryReadDatabaseSelectedCharacterIdAsync();
 
-        if (manifest is null)
+        var samples = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
         {
-            return slug.StartsWith("świat-i-zasady", StringComparison.OrdinalIgnoreCase);
-        }
+            ["index"] = await CanAccessSlug(userName, isAdminOrMg, "index"),
+            ["mapy/mapa-powiązań"] = await CanAccessSlug(userName, isAdminOrMg, "mapy/mapa-powiązań"),
+            ["w-służbie-bonefyre"] = await CanAccessSlug(userName, isAdminOrMg, "w-służbie-bonefyre"),
+            ["świat-i-zasady"] = await CanAccessSlug(userName, isAdminOrMg, "świat-i-zasady"),
+        };
 
-        if (manifest.Slugs.TryGetValue(slug, out var entry) && entry.Mode == WikiAccessMode.Anonymous)
+        return new WikiAccessDiagnostics
         {
-            return true;
-        }
-
-        return IsPrefixMatch(slug, manifest.AnonymousPrefixes);
-    }
-
-    private bool ResolveSlugAccess(string? userName, WikiAccessContext context, string slug, WikiAccessManifest manifest)
-    {
-        if (context.TreatAsAdmin)
-        {
-            return true;
-        }
-
-        slug = NormalizeSlug(slug);
-
-        if (IsPrefixMatch(slug, manifest.AnonymousPrefixes))
-        {
-            return true;
-        }
-
-        if (string.IsNullOrWhiteSpace(userName))
-        {
-            return false;
-        }
-
-        // Index, maps, etc. — only for characters tied to a campaign party (explorer + pages).
-        if (context.IsCampaignParticipant && IsPrefixMatch(slug, manifest.LoggedInPublicPrefixes))
-        {
-            return true;
-        }
-
-        if (context.IsDukeLoreOnly)
-        {
-            return AllowsDukePlayerSlug(slug, manifest);
-        }
-
-        if (IsUnderCampaign(slug, manifest) && !context.IsCampaignParticipant)
-        {
-            return false;
-        }
-
-        if (!TryGetManifestEntry(slug, manifest, out var entry))
-        {
-            return false;
-        }
-
-        return EvaluateEntry(entry, userName, context, slug, manifest);
-    }
-
-    private static bool EvaluateEntry(
-        WikiAccessEntry entry,
-        string? userName,
-        WikiAccessContext context,
-        string slug,
-        WikiAccessManifest manifest)
-    {
-        return entry.Mode switch
-        {
-            WikiAccessMode.Anonymous => true,
-            WikiAccessMode.Deny => false,
-            WikiAccessMode.Authenticated => IsPrefixMatch(slug, manifest.LoggedInPublicPrefixes)
-                    || IsUnderCampaign(slug, manifest)
-                ? context.IsCampaignParticipant
-                : !string.IsNullOrWhiteSpace(userName),
-            WikiAccessMode.Characters or WikiAccessMode.Party =>
-                HasCharacterAccess(entry, context, manifest),
-            _ => false,
+            IdentityName = userName,
+            ResolvedOwnerUserName = ownerUserName,
+            CookieCharacterId = cookieId,
+            DatabaseSelectedCharacterId = dbId,
+            BlazorSelectedCharacterId = userInfo?.SelectedCharacterId,
+            SelectedNpcName = userInfo?.SelectedCharacter?.NPCName,
+            UserCharacters = context.UserCharacters.OrderBy(c => c, StringComparer.OrdinalIgnoreCase).ToList(),
+            IsCampaignParticipant = context.IsCampaignParticipant,
+            TreatAsAdmin = context.TreatAsAdmin,
+            UserInfoFromBlazorSession = userInfo is not null,
+            SampleSlugAccess = samples,
         };
     }
 
-    /// <summary>
-    /// Allowed characters = explicitly listed characters ∪ members of referenced parties
-    /// (expanded from the manifest at runtime, so party membership lives in one place).
-    /// </summary>
-    private static bool HasCharacterAccess(
-        WikiAccessEntry entry,
-        WikiAccessContext context,
-        WikiAccessManifest manifest)
-    {
-        if (context.UserCharacters.Count == 0)
-        {
-            return false;
-        }
-
-        if (entry.Characters.Any(c =>
-                context.UserCharacters.Contains(c, StringComparer.OrdinalIgnoreCase)))
-        {
-            return true;
-        }
-
-        foreach (var partyId in entry.Parties)
-        {
-            if (manifest.Parties.TryGetValue(partyId, out var members)
-                && members.Any(m => context.UserCharacters.Contains(m, StringComparer.OrdinalIgnoreCase)))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool TryGetManifestEntry(string slug, WikiAccessManifest manifest, out WikiAccessEntry entry)
-    {
-        if (manifest.Slugs.TryGetValue(slug, out entry!))
-        {
-            return true;
-        }
-
-        if (slug.EndsWith("/index", StringComparison.OrdinalIgnoreCase))
-        {
-            var parent = slug[..^6].TrimEnd('/');
-            if (manifest.Slugs.TryGetValue(parent, out entry!))
-            {
-                return true;
-            }
-        }
-
-        entry = null!;
-        return false;
-    }
+    public bool IsAnonymousPublicPath(string slug) =>
+        WikiAccessEvaluator.IsAnonymousPublicPath(LoadManifest(), slug);
 
     private async Task<WikiAccessContext> BuildContextAsync(string? userName, bool isAdminOrMg)
     {
+        // BuildContext hits the DB (owner resolution + character names + selected hero); a single
+        // request can ask for many slugs (content index, sitemap), so memoize it per HttpContext.
+        var items = _httpContextAccessor.HttpContext?.Items;
+        var cacheKey = $"__wiki_access_ctx::{userName}::{isAdminOrMg}";
+        if (items is not null
+            && items.TryGetValue(cacheKey, out var cached)
+            && cached is WikiAccessContext cachedContext)
+        {
+            return cachedContext;
+        }
+
+        var built = await BuildContextCoreAsync(userName, isAdminOrMg);
+        if (items is not null)
+        {
+            items[cacheKey] = built;
+        }
+
+        return built;
+    }
+
+    private async Task<WikiAccessContext> BuildContextCoreAsync(string? userName, bool isAdminOrMg)
+    {
         var manifest = LoadManifest();
-        var userInfo = await _userService.GetUserInfo();
+        var userInfo = await TryGetUserInfoSafeAsync();
 
         // MG/Admin always see everything — even when a player character is selected in the UI.
         if (userInfo?.CharacterMG == true || isAdminOrMg)
@@ -347,36 +308,177 @@ public class WikiAccessService : IWikiAccessService
             return new WikiAccessContext { TreatAsAdmin = true };
         }
 
-        var selectedNpc = userInfo?.SelectedCharacter?.NPCName;
-        if (!string.IsNullOrWhiteSpace(selectedNpc)
-            && !string.Equals(selectedNpc, SD.GameMaster_NPCName, StringComparison.OrdinalIgnoreCase))
+        var ownerUserName = await ResolveOwnerUserNameAsync(userName);
+        var selected = await TryGetSelectedCharacterNamesAsync(userInfo, ownerUserName, manifest);
+        if (selected.Count > 0)
         {
-            var selected = Canonicalize([selectedNpc], manifest);
             return new WikiAccessContext
             {
                 UserCharacters = selected,
-                IsCampaignParticipant = IsCampaignParticipant(selected, manifest),
+                IsCampaignParticipant = WikiAccessEvaluator.IsCampaignParticipant(selected, manifest),
                 IsDukeLoreOnly = IsDukeLoreOnlyUser(selected),
             };
         }
 
-        var chars = Canonicalize(await GetUserCharacterNames(userName), manifest);
+        var chars = WikiAccessEvaluator.Canonicalize(await GetUserCharacterNames(ownerUserName), manifest);
         return new WikiAccessContext
         {
             UserCharacters = chars,
-            IsCampaignParticipant = IsCampaignParticipant(chars, manifest),
+            IsCampaignParticipant = WikiAccessEvaluator.IsCampaignParticipant(chars, manifest),
             IsDukeLoreOnly = IsDukeLoreOnlyUser(chars),
         };
     }
 
-    private static bool IsCampaignParticipant(HashSet<string> userCharacters, WikiAccessManifest? manifest)
+    private async Task<UserInfo?> TryGetUserInfoSafeAsync()
     {
-        if (manifest is null || manifest.AllPartyCharacters.Count == 0)
+        try
         {
-            return false;
+            return await _userService.GetUserInfo();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "GetUserInfo unavailable outside Blazor circuit");
+            return null;
+        }
+    }
+
+    private async Task<string?> ResolveOwnerUserNameAsync(string? identityName)
+    {
+        if (!string.IsNullOrWhiteSpace(identityName))
+        {
+            var fromIdentity = await GetUserCharacterNames(identityName);
+            if (fromIdentity.Count > 0)
+            {
+                return identityName;
+            }
         }
 
-        return userCharacters.Any(c => manifest.AllPartyCharacters.Contains(c, StringComparer.OrdinalIgnoreCase));
+        var httpUser = _httpContextAccessor.HttpContext?.User;
+        var userId = httpUser?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return identityName;
+        }
+
+        await using var context = await _db.CreateDbContextAsync();
+        var appUser = await context.Users.OfType<ApplicationUser>().AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (appUser is null || string.IsNullOrWhiteSpace(appUser.UserName))
+        {
+            return identityName;
+        }
+
+        if (!string.Equals(appUser.UserName, identityName, StringComparison.OrdinalIgnoreCase))
+        {
+            var fromDbUserName = await GetUserCharacterNames(appUser.UserName);
+            if (fromDbUserName.Count > 0)
+            {
+                return appUser.UserName;
+            }
+        }
+
+        return identityName ?? appUser.UserName;
+    }
+
+    private async Task<HashSet<string>> TryGetSelectedCharacterNamesAsync(
+        UserInfo? userInfo,
+        string? ownerUserName,
+        WikiAccessManifest? manifest)
+    {
+        var npc = userInfo?.SelectedCharacter?.NPCName;
+        if (!string.IsNullOrWhiteSpace(npc)
+            && !string.Equals(npc, SD.GameMaster_NPCName, StringComparison.OrdinalIgnoreCase))
+        {
+            return WikiAccessEvaluator.Canonicalize([npc], manifest);
+        }
+
+        var charId = await TryResolveSelectedCharacterIdAsync(userInfo, ownerUserName);
+        if (charId is null or 0)
+        {
+            return [];
+        }
+
+        if (charId == -1)
+        {
+            return [];
+        }
+
+        try
+        {
+            var dto = await _characters.GetById(charId.Value);
+            if (string.IsNullOrWhiteSpace(dto?.NPCName)
+                || string.Equals(dto.NPCName, SD.GameMaster_NPCName, StringComparison.OrdinalIgnoreCase))
+            {
+                return [];
+            }
+
+            if (!string.IsNullOrWhiteSpace(ownerUserName)
+                && !await _characters.CheckIfCharacterBelongToUser(ownerUserName, charId.Value))
+            {
+                _logger.LogWarning(
+                    "Wiki selected character {CharId} does not belong to {Owner}",
+                    charId,
+                    ownerUserName);
+                return [];
+            }
+
+            return WikiAccessEvaluator.Canonicalize([dto.NPCName], manifest);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load wiki selected character {CharId}", charId);
+            return [];
+        }
+    }
+
+    private async Task<int?> TryResolveSelectedCharacterIdAsync(UserInfo? userInfo, string? ownerUserName)
+    {
+        if (userInfo?.SelectedCharacterId is > 0)
+        {
+            return userInfo.SelectedCharacterId;
+        }
+
+        var cookieId = TryReadWikiCharacterCookie();
+        if (cookieId is > 0)
+        {
+            return cookieId;
+        }
+
+        var dbId = await TryReadDatabaseSelectedCharacterIdAsync();
+        if (dbId is > 0)
+        {
+            return dbId;
+        }
+
+        return null;
+    }
+
+    private int? TryReadWikiCharacterCookie()
+    {
+        var http = _httpContextAccessor.HttpContext;
+        if (http?.Request.Cookies.TryGetValue(SD.WikiSelectedCharacterCookie, out var raw) != true)
+        {
+            return null;
+        }
+
+        return int.TryParse(raw, out var id) ? id : null;
+    }
+
+    private async Task<int?> TryReadDatabaseSelectedCharacterIdAsync()
+    {
+        var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return null;
+        }
+
+        await using var context = await _db.CreateDbContextAsync();
+        var selected = await context.Users
+            .OfType<ApplicationUser>()
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.SelectedCharacterId)
+            .FirstOrDefaultAsync();
+        return selected == 0 ? null : selected;
     }
 
     private bool IsDukeLoreOnlyUser(HashSet<string> userCharacters)
@@ -398,30 +500,8 @@ public class WikiAccessService : IWikiAccessService
             return false;
         }
 
-        return !IsCampaignParticipant(userCharacters, manifest);
+        return !WikiAccessEvaluator.IsCampaignParticipant(userCharacters, manifest);
     }
-
-    private static bool AllowsDukePlayerSlug(string slug, WikiAccessManifest manifest)
-    {
-        if (IsPrefixMatch(slug, manifest.AnonymousPrefixes))
-        {
-            return true;
-        }
-
-        return manifest.DukeAccessibleCampaignIds.Any(id =>
-            slug.Equals(id, StringComparison.OrdinalIgnoreCase)
-            || slug.StartsWith(id + "/", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static bool IsUnderCampaign(string slug, WikiAccessManifest manifest) =>
-        manifest.CampaignIds.Any(id =>
-            slug.Equals(id, StringComparison.OrdinalIgnoreCase)
-            || slug.StartsWith(id + "/", StringComparison.OrdinalIgnoreCase));
-
-    private static bool IsPrefixMatch(string slug, IEnumerable<string> prefixes) =>
-        prefixes.Any(p =>
-            slug.Equals(p, StringComparison.OrdinalIgnoreCase)
-            || slug.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase));
 
     private async Task<HashSet<string>> GetUserCharacterNames(string? userName)
     {
@@ -439,19 +519,30 @@ public class WikiAccessService : IWikiAccessService
 
     private WikiAccessManifest? LoadManifest()
     {
-        return _cache.GetOrCreate(ManifestCacheKey, entry =>
+        var webRoot = _environment.WebRootPath ?? "";
+        var accessPath = Path.Combine(webRoot, "wiki", "static", "wiki-access.json");
+        var partiesPath = Path.Combine(webRoot, "wiki", "static", "wiki-parties.json");
+        if (!File.Exists(accessPath))
+        {
+            _logger.LogWarning("Wiki access manifest missing: {Path}", accessPath);
+            return null;
+        }
+
+        // Key the cache by the source files' last-write time so a rebuilt manifest is picked up
+        // immediately instead of waiting out the TTL or requiring a manual cache-key bump.
+        var stamp = File.GetLastWriteTimeUtc(accessPath).Ticks;
+        if (File.Exists(partiesPath))
+        {
+            stamp ^= File.GetLastWriteTimeUtc(partiesPath).Ticks;
+        }
+
+        return _cache.GetOrCreate($"{ManifestCacheKey}:{stamp}", entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
-            var path = Path.Combine(_environment.WebRootPath ?? "", "wiki", "static", "wiki-access.json");
-            if (!File.Exists(path))
-            {
-                _logger.LogWarning("Wiki access manifest missing: {Path}", path);
-                return null;
-            }
 
             try
             {
-                var raw = File.ReadAllText(path);
+                var raw = File.ReadAllText(accessPath);
                 var doc = JsonSerializer.Deserialize<ManifestFileDto>(raw, JsonOptions);
                 if (doc?.Slugs is null)
                 {
@@ -466,7 +557,7 @@ public class WikiAccessService : IWikiAccessService
 
                 foreach (var (key, value) in doc.Slugs)
                 {
-                    manifest.Slugs[NormalizeSlug(key)] = new WikiAccessEntry
+                    manifest.Slugs[WikiAccessEvaluator.NormalizeSlug(key)] = new WikiAccessEntry
                     {
                         Mode = ParseMode(value.Visibility ?? value.Mode),
                         Characters = value.Characters ?? [],
@@ -475,7 +566,6 @@ public class WikiAccessService : IWikiAccessService
                     };
                 }
 
-                var partiesPath = Path.Combine(_environment.WebRootPath ?? "", "wiki", "static", "wiki-parties.json");
                 if (File.Exists(partiesPath))
                 {
                     var parties = JsonSerializer.Deserialize<WikiPartiesConfig>(File.ReadAllText(partiesPath), JsonOptions);
@@ -495,7 +585,7 @@ public class WikiAccessService : IWikiAccessService
                             foreach (var name in party.Characters)
                             {
                                 manifest.AllPartyCharacters.Add(name);
-                                manifest.CharacterCanonical[NormalizeCharacter(name)] = name;
+                                manifest.CharacterCanonical[WikiAccessEvaluator.NormalizeCharacter(name)] = name;
                             }
                         }
                     }
@@ -506,7 +596,7 @@ public class WikiAccessService : IWikiAccessService
                         {
                             foreach (var alias in aliases)
                             {
-                                manifest.CharacterCanonical[NormalizeCharacter(alias)] = canonical;
+                                manifest.CharacterCanonical[WikiAccessEvaluator.NormalizeCharacter(alias)] = canonical;
                             }
                         }
                     }
@@ -547,7 +637,7 @@ public class WikiAccessService : IWikiAccessService
     {
         if (!Uri.TryCreate(loc, UriKind.Absolute, out var uri))
         {
-            return NormalizeSlug(loc);
+            return WikiAccessEvaluator.NormalizeSlug(loc);
         }
 
         var path = uri.AbsolutePath.Trim('/');
@@ -558,54 +648,7 @@ public class WikiAccessService : IWikiAccessService
             path = path[(idx + wikiPrefix.Length)..];
         }
 
-        return NormalizeSlug(path);
-    }
-
-    private static string NormalizeCharacter(string value) =>
-        new string((value ?? string.Empty)
-            .Where(ch => ch is not (' ' or '-' or '_' or '.'))
-            .ToArray())
-            .ToLowerInvariant();
-
-    /// <summary>Maps raw character names (e.g. from the selected hero) to their canonical form.</summary>
-    private static HashSet<string> Canonicalize(IEnumerable<string> names, WikiAccessManifest? manifest)
-    {
-        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var name in names)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                continue;
-            }
-
-            if (manifest is not null
-                && manifest.CharacterCanonical.TryGetValue(NormalizeCharacter(name), out var canonical))
-            {
-                result.Add(canonical);
-            }
-            else
-            {
-                result.Add(name);
-            }
-        }
-
-        return result;
-    }
-
-    private static string NormalizeSlug(string slug)
-    {
-        slug = slug.Trim().TrimStart('/').Replace('\\', '/');
-        if (slug.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
-        {
-            slug = slug[..^5];
-        }
-
-        if (slug.EndsWith("/index", StringComparison.OrdinalIgnoreCase))
-        {
-            slug = slug[..^6].TrimEnd('/');
-        }
-
-        return slug;
+        return WikiAccessEvaluator.NormalizeSlug(path);
     }
 
     private sealed class ManifestFileDto
