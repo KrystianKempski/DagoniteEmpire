@@ -18,6 +18,7 @@ RUN dotnet build "./DagoniteEmpire.csproj" -c $BUILD_CONFIGURATION -o /app/build
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./DagoniteEmpire.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN cp -r /src/DagoniteEmpire/wwwroot/wiki /app/publish/wwwroot/wiki
 
 FROM base AS final
 WORKDIR /app
