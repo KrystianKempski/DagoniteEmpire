@@ -3,17 +3,17 @@
 
 Access rule (same in app + explorer / contentIndex filter):
 
-  Postać X widzi stronę, gdy:
-    • tag strony zawiera slug bohatera X (np. lawenda), lub
-    • tag strony to team-<party-id>, a X należy do tej drużyny (wiki-parties.json).
+  Character X can open a page when:
+    • the page tag contains hero slug X (e.g. lawenda), or
+    • the page tag is team-<party-id> and X belongs to that party (wiki-parties.json).
 
-  Dodatkowo (bez tagów bohaterów):
-    • wiki-public     → wszyscy (lore)
-    • wiki-logged-in  → każdy zalogowany (index, mapy)
+  Additionally (no hero tags required):
+    • wiki-public     → everyone (lore)
+    • wiki-logged-in  → logged-in campaign participant only (index, mapy prefixes)
 
-  Brak tagów i poza publicznymi ścieżkami → deny (tylko MG/Admin).
+  No tags and outside public prefixes → deny (MG/Admin only).
 
-Nadpisania MG: content/_meta/wiki-access-overrides.json (najwyższy priorytet).
+  MG overrides: content/_meta/wiki-access-overrides.json (highest priority).
 
 Usage:
   python3 build_wiki_access_manifest.py

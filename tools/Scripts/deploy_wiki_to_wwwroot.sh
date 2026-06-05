@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # deploy_wiki_to_wwwroot.sh
-# Kopiuje zbudowany Quartz (dagonite-wiki/public) do DagoniteEmpire/wwwroot/wiki
-# i przepisuje base path z GitHub Pages (/dagonite-wiki) na hosting w aplikacji (/wiki).
+# Copies the built Quartz site (dagonite-wiki/public) into DagoniteEmpire/wwwroot/wiki
+# and rewrites the base path from GitHub Pages (/dagonite-wiki) to in-app hosting (/wiki).
 
 set -euo pipefail
 
@@ -35,8 +35,8 @@ from pathlib import Path
 target = Path(os.environ["TARGET"])
 base = os.environ["BASE_PATH"].rstrip("/") or "/wiki"
 
-# Quartz slugi z przecinkami (np. "barana,-cz.-2") — bez %2C serwer/SPA często zwraca 404.
-# Tylko wewnętrzne linki wiki (data-slug lub względny href), nie zewnętrzne URL (Google Fonts itd.).
+# Quartz slugs with commas (e.g. "barana,-cz.-2") — without %2C the server/SPA often returns 404.
+# Only internal wiki links (data-slug or relative href), not external URLs (Google Fonts, etc.).
 _COMMA_ATTR_RE = re.compile(
     r'(?P<attr>(?:data-slug)=["\'])(?P<url>[^"\']*?,[^"\']*?)(?=["\'])'
     r'|(?P<href>href=["\'])(?P<hurl>(?:\.\./|\./|/wiki/)[^"\']*?,[^"\']*?)(?=["\'])',

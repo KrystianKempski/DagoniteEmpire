@@ -21,8 +21,8 @@ namespace DA_Business.Services;
 public class WikiAccessService : IWikiAccessService
 {
     private const string ManifestCacheKey = "wiki-access-manifest-v7";
-    private const string DefaultLoreIframePath = "/wiki/świat-i-zasady/";
-    private const string CampaignHubIframePath = "/wiki/index.html";
+    private const string DefaultLoreEntryPath = "/wiki/świat-i-zasady/";
+    private const string CampaignHubEntryPath = "/wiki/index.html";
     private const string EmptySitemap =
         """<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>""";
 
@@ -222,15 +222,15 @@ public class WikiAccessService : IWikiAccessService
         }
     }
 
-    public async Task<string> GetDefaultWikiIframePathAsync(string? userName, bool isAdminOrMg)
+    public async Task<string> GetDefaultWikiEntryPathAsync(string? userName, bool isAdminOrMg)
     {
         if (await ShouldBypassAccessChecksAsync(userName, isAdminOrMg)
             || await CanAccessSlug(userName, isAdminOrMg, "index"))
         {
-            return CampaignHubIframePath;
+            return CampaignHubEntryPath;
         }
 
-        return DefaultLoreIframePath;
+        return DefaultLoreEntryPath;
     }
 
     public async Task<bool> ShouldBypassAccessChecksAsync(string? userName, bool isAdminOrMg)
@@ -277,7 +277,7 @@ public class WikiAccessService : IWikiAccessService
 
     private async Task<WikiAccessContext> BuildContextAsync(string? userName, bool isAdminOrMg)
     {
-        // BuildContext hits the DB (owner resolution + character names + selected hero); a single
+        // BuildContext hits the DB (owner resolution + approved character names); a single
         // request can ask for many slugs (content index, sitemap), so memoize it per HttpContext.
         var items = _httpContextAccessor.HttpContext?.Items;
         var cacheKey = $"__wiki_access_ctx::{userName}::{isAdminOrMg}";
@@ -309,18 +309,8 @@ public class WikiAccessService : IWikiAccessService
         }
 
         var ownerUserName = await ResolveOwnerUserNameAsync(userName);
-        var selected = await TryGetSelectedCharacterNamesAsync(userInfo, ownerUserName, manifest);
-        if (selected.Count > 0)
-        {
-            return new WikiAccessContext
-            {
-                UserCharacters = selected,
-                IsCampaignParticipant = WikiAccessEvaluator.IsCampaignParticipant(selected, manifest),
-                IsDukeLoreOnly = IsDukeLoreOnlyUser(selected),
-            };
-        }
-
-        var chars = WikiAccessEvaluator.Canonicalize(await GetUserCharacterNames(ownerUserName), manifest);
+        // Union of all IsApproved characters — selection in the UI is not required for wiki ACL.
+        var chars = WikiAccessEvaluator.Canonicalize(await GetApprovedCharacterNames(ownerUserName), manifest);
         return new WikiAccessContext
         {
             UserCharacters = chars,
@@ -346,7 +336,7 @@ public class WikiAccessService : IWikiAccessService
     {
         if (!string.IsNullOrWhiteSpace(identityName))
         {
-            var fromIdentity = await GetUserCharacterNames(identityName);
+            var fromIdentity = await GetApprovedCharacterNames(identityName);
             if (fromIdentity.Count > 0)
             {
                 return identityName;
@@ -369,7 +359,7 @@ public class WikiAccessService : IWikiAccessService
 
         if (!string.Equals(appUser.UserName, identityName, StringComparison.OrdinalIgnoreCase))
         {
-            var fromDbUserName = await GetUserCharacterNames(appUser.UserName);
+            var fromDbUserName = await GetApprovedCharacterNames(appUser.UserName);
             if (fromDbUserName.Count > 0)
             {
                 return appUser.UserName;
@@ -377,79 +367,6 @@ public class WikiAccessService : IWikiAccessService
         }
 
         return identityName ?? appUser.UserName;
-    }
-
-    private async Task<HashSet<string>> TryGetSelectedCharacterNamesAsync(
-        UserInfo? userInfo,
-        string? ownerUserName,
-        WikiAccessManifest? manifest)
-    {
-        var npc = userInfo?.SelectedCharacter?.NPCName;
-        if (!string.IsNullOrWhiteSpace(npc)
-            && !string.Equals(npc, SD.GameMaster_NPCName, StringComparison.OrdinalIgnoreCase))
-        {
-            return WikiAccessEvaluator.Canonicalize([npc], manifest);
-        }
-
-        var charId = await TryResolveSelectedCharacterIdAsync(userInfo, ownerUserName);
-        if (charId is null or 0)
-        {
-            return [];
-        }
-
-        if (charId == -1)
-        {
-            return [];
-        }
-
-        try
-        {
-            var dto = await _characters.GetById(charId.Value);
-            if (string.IsNullOrWhiteSpace(dto?.NPCName)
-                || string.Equals(dto.NPCName, SD.GameMaster_NPCName, StringComparison.OrdinalIgnoreCase))
-            {
-                return [];
-            }
-
-            if (!string.IsNullOrWhiteSpace(ownerUserName)
-                && !await _characters.CheckIfCharacterBelongToUser(ownerUserName, charId.Value))
-            {
-                _logger.LogWarning(
-                    "Wiki selected character {CharId} does not belong to {Owner}",
-                    charId,
-                    ownerUserName);
-                return [];
-            }
-
-            return WikiAccessEvaluator.Canonicalize([dto.NPCName], manifest);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to load wiki selected character {CharId}", charId);
-            return [];
-        }
-    }
-
-    private async Task<int?> TryResolveSelectedCharacterIdAsync(UserInfo? userInfo, string? ownerUserName)
-    {
-        if (userInfo?.SelectedCharacterId is > 0)
-        {
-            return userInfo.SelectedCharacterId;
-        }
-
-        var cookieId = TryReadWikiCharacterCookie();
-        if (cookieId is > 0)
-        {
-            return cookieId;
-        }
-
-        var dbId = await TryReadDatabaseSelectedCharacterIdAsync();
-        if (dbId is > 0)
-        {
-            return dbId;
-        }
-
-        return null;
     }
 
     private int? TryReadWikiCharacterCookie()
@@ -503,17 +420,18 @@ public class WikiAccessService : IWikiAccessService
         return !WikiAccessEvaluator.IsCampaignParticipant(userCharacters, manifest);
     }
 
-    private async Task<HashSet<string>> GetUserCharacterNames(string? userName)
+    private async Task<HashSet<string>> GetApprovedCharacterNames(string? userName)
     {
         if (string.IsNullOrWhiteSpace(userName))
         {
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         }
 
-        var chars = await _characters.GetAllForUser(userName);
+        var chars = await _characters.GetAllApproved(userName);
         return chars
             .Select(c => c.NPCName)
-            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Where(n => !string.IsNullOrWhiteSpace(n)
+                && !string.Equals(n, SD.GameMaster_NPCName, StringComparison.OrdinalIgnoreCase))
             .ToHashSet(StringComparer.OrdinalIgnoreCase)!;
     }
 

@@ -9,6 +9,7 @@ public sealed class WikiAccessDiagnostics
     public int? DatabaseSelectedCharacterId { get; init; }
     public int? BlazorSelectedCharacterId { get; init; }
     public string? SelectedNpcName { get; init; }
+    /// <summary>Union of NPC names from all <c>IsApproved</c> characters (wiki ACL identity).</summary>
     public IReadOnlyList<string> UserCharacters { get; init; } = [];
     public bool IsCampaignParticipant { get; init; }
     public bool TreatAsAdmin { get; init; }

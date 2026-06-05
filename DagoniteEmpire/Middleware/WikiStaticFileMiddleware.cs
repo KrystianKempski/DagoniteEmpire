@@ -8,7 +8,8 @@ namespace DagoniteEmpire.Middleware;
 
 /// <summary>
 /// Serves the pre-built Quartz site from wwwroot/wiki under /wiki/* with per-slug access control.
-/// Runtime model B: middleware only (no client-side iframe ACL). Explorer/search chrome hidden for players via injected CSS.
+/// Runtime model B: middleware only (no client-side ACL in the Blazor iframe host). Players get full Quartz chrome;
+/// the explorer is built client-side from per-user filtered static/contentIndex.json.
 /// </summary>
 public class WikiStaticFileMiddleware : IMiddleware
 {
@@ -25,8 +26,8 @@ public class WikiStaticFileMiddleware : IMiddleware
     private const string OgImageMarker = "-og-image";
 
     /// <summary>
-    /// Slugi Quartz (np. wizyta-w-kojcu-cz.1, barana,-cz.-2) zawierają kropki — Path.GetExtension
-    /// mylnie traktuje .1 / .-2 jako rozszerzenie pliku i blokuje dopięcie .html.
+    /// Quartz slugs (e.g. wizyta-w-kojcu-cz.1, barana,-cz.-2) contain dots — Path.GetExtension
+    /// wrongly treats .1 / .-2 as file extensions and blocks appending .html.
     /// </summary>
     private static readonly HashSet<string> WikiStaticExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -57,7 +58,7 @@ public class WikiStaticFileMiddleware : IMiddleware
 
         var subPath = GetWikiSubPath(context, remainder.Value);
         // Breadcrumb "Home" resolves to /wiki/ (relative ../..). That must serve the Quartz hub,
-        // not the Blazor @page "/wiki" shell (black iframe-in-iframe).
+        // not the Blazor @page "/wiki" iframe wrapper (iframe-in-iframe).
         if (subPath is "" or "/")
         {
             subPath = "index.html";

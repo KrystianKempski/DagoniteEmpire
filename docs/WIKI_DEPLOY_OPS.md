@@ -100,7 +100,7 @@ Kontekst buildu musi zawierać **świeży** katalog `wwwroot/wiki/` z kroku 2.
 
 | Test | URL / akcja | Oczekiwany wynik |
 |------|-------------|------------------|
-| Wiki działa | `/wiki` | Iframe z hubem kampanii lub lore |
+| Wiki działa | `/wiki` | Zakładka Blazor z iframe (hub kampanii lub lore wewnątrz) |
 | Lore publiczne | `/wiki/świat-i-zasady/` | Bez logowania |
 | Sekret | URL sesji jako inna postać | „Brak dostępu” (403), nie treść |
 | Home w wiki | Breadcrumb „Home” | Hub `index.html`, nie czarny ekran |
@@ -175,7 +175,7 @@ Ponownie **docker build** + deploy.
 - [ ] `build_wiki_for_empire.sh` w pipeline CI lub ręcznie przed każdym release z treścią wiki
 - [ ] Obraz Docker z `wwwroot/wiki/`
 - [ ] Postgres dla aplikacji (postacie, `SelectedCharacterId`)
-- [ ] GitHub Pages **wyłączone** w `dagonite-wiki`
+- [ ] GitHub Pages **wyłączone** + repo **private** (`dagonite-wiki/docs/ACCESS_AND_HOSTING.md`)
 - [ ] Test kont: gość, gracz drużyny, MG
 
 ---
