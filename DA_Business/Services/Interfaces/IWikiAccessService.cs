@@ -21,10 +21,10 @@ public interface IWikiAccessService
 
     bool IsAnonymousPublicPath(string slug);
 
-    /// <summary>First iframe URL: campaign hub when allowed, otherwise public lore root.</summary>
-    Task<string> GetDefaultWikiIframePathAsync(string? userName, bool isAdminOrMg);
+    /// <summary>Default wiki entry URL: campaign hub when allowed, otherwise public lore root.</summary>
+    Task<string> GetDefaultWikiEntryPathAsync(string? userName, bool isAdminOrMg);
 
-    /// <summary>MG/Admin (or CharacterMG): no tag/slug checks in app or iframe JS.</summary>
+    /// <summary>MG/Admin (or CharacterMG): no tag/slug checks in app or wiki shell JS.</summary>
     Task<bool> ShouldBypassAccessChecksAsync(string? userName, bool isAdminOrMg);
 
     /// <summary>Development troubleshooting — who the wiki ACL layer thinks you are.</summary>

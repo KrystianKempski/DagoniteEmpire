@@ -19,18 +19,35 @@ Dag1/
 
 ## Integracja w aplikacji
 
-- Zakładka **Wiki** → `/wiki` (Blazor + iframe na `/wiki/…`).
+- Zakładka **Wiki** → `/wiki` (`WikiPage.razor`): pasek MudBlazor + **`<iframe>`** ładujący Quartz pod `/wiki/…`.
 - Build Quartz kopiowany do `DagoniteEmpire/wwwroot/wiki/` (nie commitowany do git — patrz `.gitignore`).
+
+### Dlaczego iframe?
+
+Quartz buduje **samodzielną statyczną aplikację web** (HTML, bundlowany JS, SPA-routing, explorer, search). DagoniteEmpire to **osobna aplikacja Blazor** — nie da się wkleić wygenerowanych stron Quartz jako komponentów Razor bez przepisania całej wiki.
+
+**Iframe to tu świadomy wybór**, nie obejście:
+
+| Powód | Wyjaśnienie |
+|--------|-------------|
+| Osobny runtime | Quartz ma własny JS (nawigacja, explorer, Mermaid). Iframe izoluje go od Blazor bez konfliktów DOM/routera. |
+| Ten sam origin | `src="/wiki/…"` na tej samej domenie — żądania z iframe niosą te same cookies i sesję ASP.NET co reszta aplikacji. |
+| ACL po stronie serwera | Każde żądanie `/wiki/*` (także z iframe) przechodzi `WikiStaticFileMiddleware` — filtrowanie nie musi być w JS. |
+| Mały koszt utrzymania | Build Quartz → kopia do `wwwroot/wiki/`; bez forkowania szablonów ani przepisywania UI wiki w MudBlazor. |
+
+**Alternatywy odrzucone:** przepisanie wiki w Blazor (zbyt duży nakład); osobna subdomena (gorsze UX, ten sam problem osadzenia w zakładce); „goły” redirect z `/wiki` na statyczne HTML (tracimy chrome aplikacji na głównej zakładce Wiki).
+
+Głębokie linki (`WikiNavLink` z `forceLoad`) omijają shell Blazor i ładują stronę Quartz bezpośrednio — to ten sam build, ten sam middleware ACL.
 - **WikiStaticFileMiddleware** — każde żądanie `/wiki/*` przechodzi ACL przed serwowaniem pliku.
 - **WikiAccessService** + manifest `wwwroot/wiki/static/wiki-access.json` (generowany ze tagów).
-- Wybrana postać: ta sama co w menu (**Select character**), zapis w DB (`SelectedCharacterId`) + sesja Blazor.
+- Tożsamość wiki: **suma wszystkich zatwierdzonych postaci** gracza (`Character.IsApproved`). Wybór w menu (**Select character**) nie jest wymagany do ACL.
 
 ## Widoczność (skrót)
 
 | Typ treści | Kto widzi |
 |------------|-----------|
 | `wiki-public` / **Świat i zasady** | Wszyscy (bez logowania) |
-| `wiki-logged-in` / index, mapy | Zalogowany + postać z drużyny kampanii |
+| `wiki-logged-in` / index, mapy | Zalogowany + zatwierdzona postać z drużyny kampanii |
 | Tag bohatera (`lawenda`, `werner`, …) | Tylko ta postać (+ ewentualnie inne tagi na stronie) |
 | `team-bonefyre` / `team-pijany-smok` | Członkowie danej drużyny |
 | **Wątek z imieniem PC w tytule** (np. „Klątwa Lawendy”) | Tylko ten bohater i wpisani współwiedzący — **bez** `team-bonefyre` |
@@ -135,9 +152,9 @@ baseUrl: dagonite-empire.drik.it/wiki
 
 `deploy_wiki_to_wwwroot.sh` i tak przepisuje `/dagonite-wiki` → `/wiki`.
 
-## GitHub Pages (dagonite-wiki)
+## GitHub Pages i dostęp do repo (dagonite-wiki)
 
-Wyłącz automatyczne publikowanie — wiki produkcyjne tylko w Empire. Workflow deploy tylko ręczny (`workflow_dispatch`), jeśli w ogóle.
+Wiki produkcyjne **tylko** w Empire. Publiczne `github.io` wyłącz w ustawieniach GitHub; repo ustaw na **private** i dodaj collaboratorów — krok po kroku: `dagonite-wiki/docs/ACCESS_AND_HOSTING.md`. Workflow CI buduje artefakt bez publikacji na Pages.
 
 ## DukePlayer
 

@@ -3,7 +3,7 @@
 
 Convention (see content/_meta/wiki-parties.json):
   wiki-public       — lore for everyone (anonymous)
-  wiki-logged-in    — wiki navigation (any logged-in user)
+  wiki-logged-in    — wiki navigation (logged-in campaign participant only)
   lawenda, sir-bron — single hero who may read the page
   team-bonefyre     — whole party (2+ heroes from that party in scene)
 

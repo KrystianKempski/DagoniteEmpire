@@ -2,22 +2,28 @@
 @using DA_Business.Services.Interfaces
 @using DA_Common
 @using System.Security.Claims
+@using Microsoft.JSInterop
+@implements IDisposable
+@implements IAsyncDisposable
 @inject IWebHostEnvironment HostEnvironment
 @inject CallbackService CallbackService
 @inject IWikiAccessService WikiAccess
 @inject AuthenticationStateProvider AuthState
+@inject IJSRuntime JS
 @attribute [AllowAnonymous]
 
 <PageTitle>Dagonite Empire | Wiki</PageTitle>
 
+@* Quartz is a standalone static SPA — embedding it in Blazor requires an iframe (same-origin /wiki/*).
+   ACL runs in WikiStaticFileMiddleware on every iframe sub-request, not in client JS. *@
 <div class="wiki-shell">
     @if (_wikiAvailable)
     {
-        <iframe id="wiki-content-iframe"
-                @key="_iframeRenderKey"
-                src="@_iframeSrc"
+        <iframe id="wiki-content"
+                @key="_contentRenderKey"
+                src="@_contentSrc"
                 title="DagoniteEmpire Wiki"
-                class="wiki-iframe"
+                class="wiki-content"
                 referrerpolicy="same-origin" />
     }
     else
@@ -42,7 +48,7 @@
         flex-direction: column;
     }
 
-    .wiki-iframe {
+    .wiki-content {
         display: block;
         width: 100%;
         flex: 1;
@@ -52,10 +58,14 @@
 </style>
 
 @code {
+    private const string LoreFallbackPath = "/wiki/świat-i-zasady/";
+
     private bool _wikiAvailable;
-    private string _iframeSrc = "/wiki/świat-i-zasady/";
-    private int _iframeRenderKey;
+    private string _contentSrc = LoreFallbackPath;
+    private int _contentRenderKey;
     private Action? _onCharacterChanged;
+    private DotNetObjectReference<WikiPage>? _dotNetRef;
+    private IJSObjectReference? _wikiJsModule;
 
     protected override async Task OnInitializedAsync()
     {
@@ -67,18 +77,41 @@
         CallbackService.OnChange += _onCharacterChanged;
     }
 
-    private async void OnSelectedCharacterChanged()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await ApplyDefaultWikiPathAsync();
-        _iframeRenderKey++;
-        await InvokeAsync(StateHasChanged);
+        if (!firstRender || !_wikiAvailable || _wikiJsModule is not null)
+        {
+            return;
+        }
+
+        _dotNetRef = DotNetObjectReference.Create(this);
+        _wikiJsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/wiki-shell.js");
+        await _wikiJsModule.InvokeVoidAsync("registerDeniedListener", _dotNetRef);
+    }
+
+    private void OnSelectedCharacterChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await ApplyDefaultWikiPathAsync();
+            _contentRenderKey++;
+            StateHasChanged();
+        });
+    }
+
+    [JSInvokable]
+    public Task OnWikiAccessDenied()
+    {
+        _contentSrc = AppendCacheBuster(LoreFallbackPath);
+        _contentRenderKey++;
+        return InvokeAsync(StateHasChanged);
     }
 
     private async Task ApplyDefaultWikiPathAsync()
     {
         var (userName, isAdminOrMg) = await GetWikiAuthAsync();
-        var path = await WikiAccess.GetDefaultWikiIframePathAsync(userName, isAdminOrMg);
-        _iframeSrc = AppendCacheBuster(path);
+        var path = await WikiAccess.GetDefaultWikiEntryPathAsync(userName, isAdminOrMg);
+        _contentSrc = AppendCacheBuster(path);
     }
 
     private async Task<(string? UserName, bool IsAdminOrMg)> GetWikiAuthAsync()
@@ -103,6 +136,26 @@
         if (_onCharacterChanged is not null)
         {
             CallbackService.OnChange -= _onCharacterChanged;
+        }
+
+        _dotNetRef?.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Dispose();
+
+        if (_wikiJsModule is not null)
+        {
+            try
+            {
+                await _wikiJsModule.InvokeVoidAsync("unregisterDeniedListener");
+                await _wikiJsModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already torn down.
+            }
         }
     }
 }
