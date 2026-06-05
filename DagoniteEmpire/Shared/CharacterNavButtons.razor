@@ -39,6 +39,13 @@
         <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.MenuBook" aria-label="Wiki"></MudIcon>
         Wiki
     </MudButton>
+    @if (UserInfo?.IsAdminOrMG == true)
+    {
+        <MudButton FullWidth="@(IsRow==false)" OnClick="GoToGmPanel" Style="@($" color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+            <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.AdminPanelSettings" aria-label="Panel MG"></MudIcon>
+            Panel MG
+        </MudButton>
+    }
 </MudStack>
 
 
@@ -51,6 +58,38 @@
 
     public UserInfo? UserInfo { get; set; }
     private string Color = Colors.Gray.Lighten5;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            UserInfo = await _userService.GetUserInfo();
+        }
+        catch
+        {
+            // Ignore — auth state may not be ready during prerender.
+        }
+    }
+
+    private async Task GoToGmPanel()
+    {
+        try
+        {
+            UserInfo = await _userService.GetUserInfo();
+            if (UserInfo?.IsAdminOrMG != true)
+            {
+                _snackBar.Add("Panel MG jest dostępny wyłącznie dla Mistrza Gry.", Severity.Warning);
+                return;
+            }
+
+            await OnDrawerChanged.InvokeAsync();
+            _navigationManager.NavigateTo("/gm-panel");
+        }
+        catch (Exception e)
+        {
+            _snackBar.Add("Błąd przejścia do Panelu MG: " + e.Message, Severity.Error);
+        }
+    }
 
     private async Task GoToCampaign()
     {

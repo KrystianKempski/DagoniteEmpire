@@ -139,6 +139,7 @@ public class Program
         builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
         builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
         builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<ICampaignSummaryService, CampaignSummaryService>();
         builder.Services.AddScoped<CallbackService>();
         builder.Services.AddScoped<IFileUpload, FileUpload>();
         builder.Services.AddScoped<IDbInitializer, DbInitializer>();

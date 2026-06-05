@@ -1,0 +1,216 @@
+@page "/gm-panel"
+@using BreadcrumbItem = MudBlazor.BreadcrumbItem
+@inject ICampaignSummaryService _summaryService
+@inject ICampaignRepository _campaignRepository
+@inject IChapterRepository _chapterRepository
+@inject IUserService _userService
+@inject ISnackbar _snackBar
+@inject NavigationManager _navigationManager
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster)]
+
+<PageTitle>Dagonite Empire | Panel Mistrza Gry</PageTitle>
+
+<MudContainer Class="px-3" Fixed="false">
+    @if (IsLoading)
+    {
+        <LoadingPage />
+    }
+    else if (UserInfo?.IsAdminOrMG != true)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mt-4">
+            Ta strona jest dostępna wyłącznie dla Mistrza Gry.
+        </MudAlert>
+    }
+    else
+    {
+        <MudBreadcrumbs Items="_breadcrumbs" />
+        <MudText Typo="Typo.h4" Class="py-3">
+            <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Class="mr-2" />
+            Panel Mistrza Gry
+        </MudText>
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="pb-4">
+            Wygeneruj podsumowanie tekstowe rozdziału lub całej kampanii — wszystkie posty, dialogi, opisy i akcje w jednym pliku.
+        </MudText>
+
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="CampaignDTO" Label="Kampania" Value="SelectedCampaign" ValueChanged="OnCampaignChanged" Variant="Variant.Outlined" Dense="true">
+                        @foreach (var campaign in Campaigns)
+                        {
+                            <MudSelectItem Value="@campaign">@campaign.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="ChapterDTO?" Label="Rozdział (opcjonalnie)" @bind-Value="SelectedChapter" Variant="Variant.Outlined" Dense="true" Disabled="@(SelectedCampaign is null)">
+                        <MudSelectItem Value="@((ChapterDTO?)null)">Cała kampania</MudSelectItem>
+                        @foreach (var chapter in Chapters)
+                        {
+                            <MudSelectItem Value="@chapter">@chapter.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <MudStack Row="true" Class="mt-4" Spacing="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Summarize"
+                           Disabled="@(SelectedCampaign is null || IsGenerating)"
+                           OnClick="GenerateSummary">
+                    @if (IsGenerating)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    }
+                    Generuj podsumowanie
+                </MudButton>
+                @if (SummaryResult is not null)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.Download"
+                               OnClick="DownloadSummary">
+                        Pobierz plik .txt
+                    </MudButton>
+                }
+            </MudStack>
+
+            @if (SummaryResult is not null)
+            {
+                <MudStack Row="true" Class="mt-3" Spacing="2">
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@SummaryResult.ChapterCount rozdział(ów)</MudChip>
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@SummaryResult.PostCount post(ów)</MudChip>
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small">@SummaryResult.FileName</MudChip>
+                </MudStack>
+            }
+        </MudPaper>
+
+        @if (SummaryResult is not null)
+        {
+            <MudPaper Class="pa-4" Elevation="1">
+                <MudText Typo="Typo.h6" Class="mb-2">Podgląd</MudText>
+                <MudTextField T="string"
+                              Value="@SummaryResult.Content"
+                              Variant="Variant.Outlined"
+                              Lines="20"
+                              ReadOnly="true"
+                              FullWidth="true"
+                              Class="summary-preview" />
+            </MudPaper>
+        }
+    }
+</MudContainer>
+
+@code {
+    private UserInfo? UserInfo { get; set; }
+    private List<CampaignDTO> Campaigns { get; set; } = new();
+    private List<ChapterDTO> Chapters { get; set; } = new();
+    private CampaignDTO? SelectedCampaign { get; set; }
+    private ChapterDTO? SelectedChapter { get; set; }
+    private CampaignSummaryResult? SummaryResult { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private bool IsGenerating { get; set; }
+
+    private List<BreadcrumbItem> _breadcrumbs = new()
+    {
+        new BreadcrumbItem("Panel MG", href: "/gm-panel", disabled: true)
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            UserInfo = await _userService.GetUserInfo();
+            if (UserInfo?.IsAdminOrMG == true)
+            {
+                Campaigns = (await _campaignRepository.GetAll()).OrderBy(c => c.Name).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Błąd ładowania panelu: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task OnCampaignChanged(CampaignDTO? campaign)
+    {
+        SelectedCampaign = campaign;
+        await LoadChapters();
+    }
+
+    private async Task LoadChapters()
+    {
+        Chapters.Clear();
+        SelectedChapter = null;
+        SummaryResult = null;
+
+        if (SelectedCampaign is null)
+            return;
+
+        try
+        {
+            Chapters = (await _chapterRepository.GetAll(SelectedCampaign.Id))
+                .OrderBy(c => c.CreatedDate)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Błąd ładowania rozdziałów: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task GenerateSummary()
+    {
+        if (SelectedCampaign is null)
+            return;
+
+        IsGenerating = true;
+        SummaryResult = null;
+
+        try
+        {
+            if (SelectedChapter is not null)
+            {
+                SummaryResult = await _summaryService.GenerateChapterSummaryAsync(SelectedChapter.Id);
+            }
+            else
+            {
+                SummaryResult = await _summaryService.GenerateCampaignSummaryAsync(SelectedCampaign.Id);
+            }
+
+            if (SummaryResult is null)
+            {
+                _snackBar.Add("Nie udało się wygenerować podsumowania.", Severity.Warning);
+            }
+            else
+            {
+                _snackBar.Add("Podsumowanie wygenerowane.", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Błąd generowania: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            IsGenerating = false;
+        }
+    }
+
+    private void DownloadSummary()
+    {
+        if (SummaryResult is null || SelectedCampaign is null)
+            return;
+
+        var url = SelectedChapter is not null
+            ? $"/api/gm-panel/download?chapterId={SelectedChapter.Id}"
+            : $"/api/gm-panel/download?campaignId={SelectedCampaign.Id}";
+
+        _navigationManager.NavigateTo(url, forceLoad: true);
+    }
+}
