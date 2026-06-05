@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using DA_Business.Services.Interfaces;
 using DA_Common;
 using Microsoft.AspNetCore.StaticFiles;
@@ -35,11 +36,17 @@ public class WikiStaticFileMiddleware : IMiddleware
         ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".map", ".txt",
     };
 
+    /// <summary>Quartz emits fingerprinted bundles (index-abc12345.css). Safe to cache forever by filename.</summary>
+    private static readonly Regex ContentHashedAssetRegex = new(
+        @"-[a-f0-9]{8}\.(?:css|js|mjs)$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     private readonly IWebHostEnvironment _environment;
     private readonly IWikiAccessService _wikiAccess;
     private readonly FileExtensionContentTypeProvider _contentTypes = new();
     private PhysicalFileProvider? _wikiFiles;
     private string? _accessDeniedHtmlPath;
+    private long _wikiDeployStamp;
 
     public WikiStaticFileMiddleware(IWebHostEnvironment environment, IWikiAccessService wikiAccess)
     {
@@ -148,9 +155,7 @@ public class WikiStaticFileMiddleware : IMiddleware
         }
 
         context.Response.ContentType = contentType;
-        // ACL-gated responses depend on the active character, so they must not be cached and
-        // replayed after a character switch or sign-out.
-        context.Response.Headers.CacheControl = aclGated ? "private, no-store" : "private, max-age=300";
+        ApplyWikiCacheHeaders(context, relativePath, fileInfo.Name, aclGated);
 
         // Players get the full Quartz chrome (explorer/search) for navigation: the explorer is built
         // client-side from the per-user filtered contentIndex.json, so it only lists pages they can open.
@@ -371,7 +376,7 @@ public class WikiStaticFileMiddleware : IMiddleware
         {
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             context.Response.ContentType = "text/html; charset=utf-8";
-            context.Response.Headers.CacheControl = "private, no-store";
+            context.Response.Headers.CacheControl = "no-cache";
             await context.Response.SendFileAsync(notFound.PhysicalPath, context.RequestAborted);
             return;
         }
@@ -417,18 +422,64 @@ public class WikiStaticFileMiddleware : IMiddleware
             }
         }
 
-        if (_wikiFiles is not null)
-        {
-            return;
-        }
-
         var wikiRoot = Path.GetFullPath(Path.Combine(webRoot, "wiki"));
         if (!Directory.Exists(wikiRoot))
         {
+            _wikiFiles = null;
             return;
         }
 
+        var indexPath = Path.Combine(wikiRoot, "index.html");
+        var deployStamp = File.Exists(indexPath) ? File.GetLastWriteTimeUtc(indexPath).Ticks : 0L;
+        if (_wikiFiles is not null && deployStamp == _wikiDeployStamp)
+        {
+            return;
+        }
+
+        _wikiDeployStamp = deployStamp;
         _wikiFiles = new PhysicalFileProvider(wikiRoot);
+    }
+
+    /// <summary>
+    /// HTML must always revalidate so a rebuild cannot pair stale markup with deleted CSS hashes.
+    /// Fingerprinted CSS/JS can be cached immutably — the filename changes when content changes.
+    /// </summary>
+    private static void ApplyWikiCacheHeaders(
+        HttpContext context,
+        string relativePath,
+        string fileName,
+        bool aclGated)
+    {
+        if (IsWikiHtmlRequest(relativePath, fileName))
+        {
+            context.Response.Headers.CacheControl = "no-cache";
+            return;
+        }
+
+        if (ContentHashedAssetRegex.IsMatch(fileName))
+        {
+            context.Response.Headers.CacheControl = "public, max-age=31536000, immutable";
+            return;
+        }
+
+        // ACL-gated responses depend on the active character — never cache across sessions.
+        context.Response.Headers.CacheControl = aclGated ? "private, no-store" : "private, max-age=300";
+    }
+
+    private static bool IsWikiHtmlRequest(string relativePath, string fileName)
+    {
+        if (fileName.Equals("404.html", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (relativePath.EndsWith(".html", StringComparison.OrdinalIgnoreCase)
+            || relativePath.EndsWith(".htm", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return ShouldAppendHtmlExtension(relativePath) && !IsStaticAssetFile(relativePath);
     }
 
     private async Task ServeAccessDeniedAsync(HttpContext context)

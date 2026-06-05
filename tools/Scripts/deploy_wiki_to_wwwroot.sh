@@ -18,12 +18,15 @@ if [ ! -d "$QUARTZ_PUBLIC" ] || [ ! -f "$QUARTZ_PUBLIC/index.html" ]; then
     exit 1
 fi
 
-echo "🧹 Czyszczę $TARGET ..."
-rm -rf "$TARGET"
-mkdir -p "$TARGET"
+# Atomic deploy: build into a staging dir, then swap — avoids serving a half-deleted wiki mid-rsync.
+STAGING="${TARGET}.staging.$$"
+PREVIOUS="${TARGET}.previous"
 
-echo "📦 Kopiuję public → wwwroot/wiki ..."
-rsync -a --delete "$QUARTZ_PUBLIC/" "$TARGET/"
+echo "📦 Kopiuję public → staging ..."
+rm -rf "$STAGING"
+mkdir -p "$STAGING"
+rsync -a --delete "$QUARTZ_PUBLIC/" "$STAGING/"
+TARGET="$STAGING"
 
 echo "🔧 Przepisuję base path → $BASE_PATH ..."
 export TARGET BASE_PATH
@@ -78,10 +81,17 @@ for path in target.rglob("*"):
 print(f"  ✓ zaktualizowano {count} plików")
 PY
 
+FINAL_TARGET="$EMPIRE_ROOT/DagoniteEmpire/wwwroot/wiki"
+rm -rf "$PREVIOUS"
+if [ -d "$FINAL_TARGET" ]; then
+    mv "$FINAL_TARGET" "$PREVIOUS"
+fi
+mv "$STAGING" "$FINAL_TARGET"
+rm -rf "$PREVIOUS"
+
 echo "🔐 Buduję manifest dostępu..."
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 python3 "$SCRIPT_DIR/build_wiki_access_manifest.py"
 
 echo ""
-echo "✅ Wiki wdrożone do: $TARGET"
+echo "✅ Wiki wdrożone do: $FINAL_TARGET"
 echo "   Otwórz w aplikacji: /wiki"
