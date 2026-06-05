@@ -26,7 +26,7 @@ from datetime import datetime
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = SCRIPT_DIR / "output"
+OUTPUT_DIR = SCRIPT_DIR / "outputKraina"
 JSON_FILE = OUTPUT_DIR / "adventure_map.json"
 MD_FILE = OUTPUT_DIR / "adventure_map.md"
 WIKI_FILE = Path("/home/kkempski/other_repos/Dag1/dagonite-wiki/content/Mapy/Mapa powiązań.md")
@@ -236,6 +236,8 @@ def build_mermaid(nodes: dict, edges: list) -> str:
             mid = mermaid_id(nid)
             name = node["name"].replace('"', "'")
             date = node.get("date", "brak info").replace('"', "'")
+            if node.get("dateInferred"):
+                date = f"~ {date}"
             location = node.get("location", "brak info").replace('"', "'")
             label = f"{name}<br/><i>{date}</i><br/><i>{location}</i>"
             url = node.get("url", "")
@@ -306,7 +308,10 @@ def main():
         if node["mimeType"] == IS_FOLDER:
             node["sortKey"] = None
             continue
-        sk = date_to_sortkey(node.get("date", ""))
+        if node.get("dateInferred") and node.get("sortKey") is not None:
+            sk = node["sortKey"]
+        else:
+            sk = date_to_sortkey(node.get("date", ""))
         node["sortKey"] = sk
         if sk is not None:
             changed += 1
@@ -337,18 +342,20 @@ def main():
     )
 
     table_lines = [
-        "| # | Name | Sort key | Date | Location | Players | Folder | URL |",
-        "|---|------|----------|------|----------|---------|--------|-----|",
+        "| # | Name | Sort key | Date | Wywn. | Location | Players | Folder | URL |",
+        "|---|------|----------|------|-------|----------|---------|--------|-----|",
     ]
     for i, node in enumerate(doc_nodes_sorted, 1):
         mime_short = node["mimeType"].split(".")[-1] if node["mimeType"] else "—"
         url_md = f"[link]({node['url']})" if node.get("url") else "—"
         date = node.get("date", "—")
+        inferred = "tak" if node.get("dateInferred") else "—"
         location = node.get("location", "—")
         players = ", ".join(node.get("players", [])) or "—"
         sk_human = sortkey_to_human(node.get("sortKey"))
         table_lines.append(
-            f"| {i} | {node['name']} | {sk_human} | {date} | {location} | {players} | {node['folder']} | {url_md} |"
+            f"| {i} | {node['name']} | {sk_human} | {date} | {inferred} | {location} | "
+            f"{players} | {node['folder']} | {url_md} |"
         )
     table_str = "\n".join(table_lines)
 

@@ -58,8 +58,9 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
+# Must match apply_kraina_renames / sync (drive write) + Docs API read
 SCOPES = [
-    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/drive",
     "https://www.googleapis.com/auth/documents.readonly",
 ]
 
@@ -75,45 +76,7 @@ GDRIVE_ID_PATTERNS = [
 
 TOKEN_FILE = "token.json"
 
-# Golarion / Pathfinder calendar months (with Polish spelling variants commonly
-# used by the GM). Matching is case-insensitive.
-MONTH_NAMES = [
-    "Abadius",
-    "Calistril", "Kalistril",
-    "Pharast", "Faraskt", "Pharasma",
-    "Gozran",
-    "Desnus",
-    "Sarenith", "Serenith",
-    "Erastus", "Erastil",
-    "Arodus",
-    "Rova",
-    "Lamashan", "Lamasht",
-    "Neth",
-    "Kuthona",
-]
-
-_MONTH_ALT = "|".join(sorted(MONTH_NAMES, key=len, reverse=True))
-DATE_RE = re.compile(rf"\b(\d{{1,2}})?\s*({_MONTH_ALT})\b", re.IGNORECASE)
-
-# Words that indicate time-of-day rather than a location.
-TIME_HINT_WORDS = re.compile(
-    r"\b(rano|poranek|przedpołudnie|popołudnie|po\s*południu|południe|"
-    r"wiecz[oó]r\w*|noc\w*|p[oó]łnoc\w*|"
-    r"dzwon\w*|godzin\w*|świt\w*|zmierzch\w*|p[oó]źnym|wczesnym|następn\w+|"
-    r"przed|po|koło)\b",
-    re.IGNORECASE,
-)
-
-# Trailing time-of-day phrases to strip from a location segment.
-# Examples: "Po szóstym dzwonie", "Koło piątego dzwonu", "Przed ósmym dzwonem".
-TRAILING_TIME_RE = re.compile(
-    r"[.,;\s-]+(po|koło|przed)\s+\w+\s+(dzwonie|dzwonu|dzwonem)\b.*$",
-    re.IGNORECASE,
-)
-
-# Maximum length of an acceptable location segment. Anything longer is
-# almost certainly a sentence from the document body, not a location.
-MAX_LOCATION_LEN = 80
+from kraina_header import DATE_RE, parse_header
 
 # ---------------------------------------------------------------------------
 # Auth
@@ -126,6 +89,13 @@ def get_credentials(credentials_path: str) -> Credentials:
 
     if token_path.exists():
         creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+        if creds and not set(SCOPES).issubset(set(creds.scopes or [])):
+            print(
+                "Token bez scope documents.readonly — usuwam token.json, "
+                "za chwilę otworzy się przeglądarka."
+            )
+            token_path.unlink()
+            creds = None
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -215,74 +185,6 @@ def _api_call_with_retry(call, max_retries: int = 3, base_delay: float = 2.0):
             else:
                 raise
     return None  # unreachable, satisfies type checkers
-
-
-def _parse_single_line(text: str) -> tuple[str, str]:
-    """Parse one header-style line into (date, location). Returns ('brak info', 'brak info') if nothing useful found."""
-    if not text:
-        return ("brak info", "brak info")
-
-    text = text.strip()
-    if not text:
-        return ("brak info", "brak info")
-
-    date_str = "brak info"
-    m = DATE_RE.search(text)
-    if m:
-        day = m.group(1)
-        month = m.group(2)
-        date_str = f"{day} {month}" if day else month
-        text_wo_date = (text[: m.start()] + text[m.end():]).strip(" ,.;:—-")
-    else:
-        text_wo_date = text
-
-    location = "brak info"
-    for segment in text_wo_date.split(","):
-        seg = segment.strip(" .;:—-“”\"")
-        if not seg:
-            continue
-        # Skip segments that are entirely a time hint (e.g. "Poranek", "Po południu")
-        # but allow segments that merely contain such words inside a longer name
-        # (e.g. "karczma Pod Południem").
-        stripped_seg = TIME_HINT_WORDS.sub("", seg).strip(" .,;:—-“”\"")
-        if not stripped_seg:
-            continue
-        # Reject obvious body-text sentences
-        if len(stripped_seg) > MAX_LOCATION_LEN:
-            continue
-        # Clean trailing "po Xtym dzwonie" etc. from the already-stripped segment
-        cleaned = TRAILING_TIME_RE.sub("", stripped_seg).strip(" .,;:—-“”\"")
-        if cleaned and len(cleaned) <= MAX_LOCATION_LEN:
-            location = cleaned
-            break
-
-    return (date_str, location)
-
-
-def parse_header(filename: str, header_text: str) -> tuple[str, str]:
-    """
-    Extract (date, location) using both the document header and the filename.
-
-    Strategy:
-      1. Try the first paragraph of the document first \u2014 it usually contains
-         the most precise scene description.
-      2. Fall back to the filename for any missing field (in this campaign
-         filenames often follow the canonical "X Erastus, Location, time" form).
-
-    Examples:
-      header="3 Erastus, Warsztat, wiecz\u00f3r", filename="Cokolwiek"
-          -> ("3 Erastus", "Warsztat")
-      header="", filename="4 Erastus, Karczma \u015alicznotka z Haldren"
-          -> ("4 Erastus", "Karczma \u015alicznotka z Haldren")
-    """
-    head_date, head_loc = _parse_single_line(
-        (header_text or "").split("\n")[0] if header_text else ""
-    )
-    name_date, name_loc = _parse_single_line(filename or "")
-
-    date = head_date if head_date != "brak info" else name_date
-    location = head_loc if head_loc != "brak info" else name_loc
-    return (date, location)
 
 
 def extract_doc_data(docs_service, file_id: str) -> dict:

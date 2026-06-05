@@ -33,20 +33,32 @@ NS = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
 # CHARACTER COLOR MAPPING
 # ============================================================================
 CHARACTER_COLORS = {
-    'b45f06': 'Udar',        # Orange/brown
-    '38761d': 'Tomin',       # Green
-    '0000ff': 'Granit',      # Blue
-    '660000': 'Sir Cedrick', # Dark red/maroon
-    '6fa8dc': 'Sharu',       # Light blue (archived)
-    '1c4587': 'Bjorn',       # Blue/purple (archived) - tentative
-    'ff0000': 'Orion',       # Red (archived) - tentative
+    'b45f06': 'Udar',
+    'ff9900': 'Udar',
+    '38761d': 'Tomin',
+    '274e13': 'Tomin',
+    '0000ff': 'Granit',
+    '4a86e8': 'Granit',
+    'ff0000': 'Glorio',
+    'c27ba0': 'Bjorn',
+    'a64d79': 'Bjorn',
+    '980000': 'Sharu',
+    '990000': 'Sharu',
+    'cc0000': 'Sharu',
+    '5b0f00': 'Sharu',
+    '6fa8dc': 'Sharu',
+    '660000': 'Sir Cedrick',
 }
 
-# Archived characters (no longer active in campaign)
-ARCHIVED_CHARACTERS = {'Sharu', 'Bjorn', 'Orion', 'Roolf'}
+ARCHIVED_CHARACTERS = {'Sharu'}
 
-# Header/formatting colors to ignore
-IGNORED_COLORS = {'0000ee', '000000', '1155cc'}
+IGNORED_COLORS = {
+    '0000ee', '000000', '1155cc', 'auto',
+    '674ea7', '351c75', '20124d',  # Baron Mevir
+    'b7b7b7', '6aa84f', '1c4587', '434343',
+    'e69138', '783f04', '434343', '85200c', 'a61c00',
+    '666666', '999999', 'd5a6bd', '741b47', 'e06666',
+}
 
 # ============================================================================
 # DATA CLASSES

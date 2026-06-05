@@ -58,6 +58,14 @@ public class WikiAccessEvaluatorTests
     // Unknown slug fails closed for non-MG.
     [InlineData("nieznany/slug", Bonefyre, false)]
     [InlineData("nieznany/slug", Anon, false)]
+    // Quartz folder listings without their own manifest row (auto-generated index.html).
+    [InlineData("w-służbie-bonefyre/lokacje/budynki", Bonefyre, true)]
+    [InlineData("w-służbie-bonefyre/lokacje/budynki/", Bonefyre, true)]
+    [InlineData("w-służbie-bonefyre/lokacje/budynki", LoggedNoParty, false)]
+    [InlineData("w-służbie-bonefyre/lokacje/budynki", Smok, false)]
+    // index.md pages stored as folder/index in the manifest.
+    [InlineData("w-służbie-bonefyre/lokacje", Bonefyre, true)]
+    [InlineData("w-służbie-bonefyre/lokacje/index", Bonefyre, true)]
     public void CanAccessSlug_matches_golden_matrix(string slug, string profile, bool expected)
     {
         var manifest = BuildManifest();
@@ -149,6 +157,10 @@ public class WikiAccessEvaluatorTests
             new WikiAccessEntry { Mode = WikiAccessMode.Party, Parties = ["bonefyre"] };
         manifest.Slugs["w-służbie-bonefyre/postacie/udar"] =
             new WikiAccessEntry { Mode = WikiAccessMode.Characters, Parties = ["pijany-smok"] };
+        manifest.Slugs["w-służbie-bonefyre/lokacje/index"] =
+            new WikiAccessEntry { Mode = WikiAccessMode.Party, Parties = ["bonefyre", "pijany-smok"] };
+        manifest.Slugs["w-służbie-bonefyre/lokacje/budynki/antykwariat"] =
+            new WikiAccessEntry { Mode = WikiAccessMode.Party, Parties = ["bonefyre"] };
         manifest.Slugs["tajne/gm"] = new WikiAccessEntry { Mode = WikiAccessMode.Deny };
 
         return manifest;

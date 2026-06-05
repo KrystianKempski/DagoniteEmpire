@@ -26,21 +26,33 @@ namespace DA_Scribe.Services
         /// </summary>
         private static readonly Dictionary<string, string> CharacterColors = new(StringComparer.OrdinalIgnoreCase)
         {
-            { "b45f06", "Udar" },        // Orange/brown
-            { "38761d", "Tomin" },       // Green
-            { "0000ff", "Granit" },      // Blue
-            { "660000", "Sir Cedrick" }, // Dark red/maroon
-            { "6fa8dc", "Sharu" },       // Light blue (archived)
-            { "1c4587", "Bjorn" },       // Blue/purple (archived)
-            { "ff0000", "Orion" },       // Red (archived)
+            { "b45f06", "Udar" },
+            { "ff9900", "Udar" },
+            { "38761d", "Tomin" },
+            { "274e13", "Tomin" },
+            { "0000ff", "Granit" },
+            { "4a86e8", "Granit" },
+            { "ff0000", "Glorio" },
+            { "c27ba0", "Bjorn" },
+            { "a64d79", "Bjorn" },
+            { "980000", "Sharu" },
+            { "990000", "Sharu" },
+            { "cc0000", "Sharu" },
+            { "5b0f00", "Sharu" },
+            { "6fa8dc", "Sharu" },
+            { "660000", "Sir Cedrick" },
         };
         
         /// <summary>
-        /// Colors to ignore (headers, formatting, default black)
+        /// Colors to ignore (MG black, headers, NPC dialogue colours)
         /// </summary>
         private static readonly HashSet<string> IgnoredColors = new(StringComparer.OrdinalIgnoreCase)
         {
-            "0000ee", "000000", "1155cc", "auto"
+            "0000ee", "000000", "1155cc", "auto",
+            "674ea7", "351c75", "20124d",
+            "e69138", "783f04", "434343", "85200c", "a61c00",
+            "666666", "999999", "d5a6bd", "741b47", "e06666",
+            "b7b7b7", "6aa84f", "1c4587",
         };
         
         public IEnumerable<string> SupportedExtensions => _supportedExtensions;
@@ -188,6 +200,12 @@ namespace DA_Scribe.Services
                 if (!string.IsNullOrEmpty(color) && !IgnoredColors.Contains(color))
                 {
                     CharacterColors.TryGetValue(color, out character);
+                    // 660000 = Sir Cedrick; Triaxianka is Sharu in disguise (Akt 8)
+                    if (character == "Sir Cedrick"
+                        && TriaxiankaKeywordRegex().IsMatch(paraPlain.ToString() + text))
+                    {
+                        character = "Sharu";
+                    }
                 }
                 
                 if (character != null)
@@ -270,5 +288,9 @@ namespace DA_Scribe.Services
         /// <summary>Detects game mechanics (dice rolls, tests, skill checks in Polish)</summary>
         [GeneratedRegex(@"\((?:test|rzut|trafienie|obrażenia|inicjatywa|spostrzegawczość|siła|zręczność|wytrzymałość|inteligencja|mądrość|charyzma|atletyka|akrobatyka|percepcja|skradanie|perswazja|zastraszanie|oszustwo|wnikliwość|natura|religia|medycyna|przetrwanie|historia|arkana|vs|sprawność|biegłość|mod|bonus|kość|k\d+|d\d+)", RegexOptions.IgnoreCase)]
         private static partial Regex GameMechanicsRegex();
+
+        /// <summary>Triaxianka reused Sir Cedrick colour (#660000) in Akt 8</summary>
+        [GeneratedRegex(@"triaxianka|dertu\s+terh|dawhar|musheee\s+mojha", RegexOptions.IgnoreCase)]
+        private static partial Regex TriaxiankaKeywordRegex();
     }
 }

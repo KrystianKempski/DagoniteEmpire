@@ -51,7 +51,9 @@ public static class WikiAccessEvaluator
 
         if (!TryGetManifestEntry(slug, manifest, out var entry))
         {
-            return false;
+            // Quartz auto-generated folder listings (e.g. lokacje/budynki/index.html) often have no
+            // manifest row; allow the folder when the user can open at least one descendant page.
+            return HasAccessibleDescendant(slug, userName, context, manifest);
         }
 
         return EvaluateEntry(entry, userName, context, slug, manifest);
@@ -198,21 +200,62 @@ public static class WikiAccessEvaluator
 
     private static bool TryGetManifestEntry(string slug, WikiAccessManifest manifest, out WikiAccessEntry entry)
     {
-        if (manifest.Slugs.TryGetValue(slug, out entry!))
+        foreach (var candidate in ManifestSlugCandidates(slug))
         {
-            return true;
-        }
-
-        if (slug.EndsWith("/index", StringComparison.OrdinalIgnoreCase))
-        {
-            var parent = slug[..^6].TrimEnd('/');
-            if (manifest.Slugs.TryGetValue(parent, out entry!))
+            if (manifest.Slugs.TryGetValue(candidate, out entry!))
             {
                 return true;
             }
         }
 
         entry = null!;
+        return false;
+    }
+
+    /// <summary>
+    /// Maps a normalized folder slug to manifest keys. Quartz folder URLs use trailing slashes;
+    /// index pages are stored as <c>folder/index</c> after <see cref="NormalizeSlug"/> strips the suffix.
+    /// </summary>
+    private static IEnumerable<string> ManifestSlugCandidates(string slug)
+    {
+        yield return slug;
+        yield return slug + "/";
+        yield return slug + "/index";
+        yield return slug + "/index/";
+    }
+
+    /// <summary>
+    /// True when any manifest page under <paramref name="folderSlug"/> is accessible (folder listing pages).
+    /// </summary>
+    private static bool HasAccessibleDescendant(
+        string folderSlug,
+        string? userName,
+        WikiAccessContext context,
+        WikiAccessManifest manifest)
+    {
+        var prefix = folderSlug.TrimEnd('/') + "/";
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (childSlug, childEntry) in manifest.Slugs)
+        {
+            var normalized = NormalizeSlug(childSlug);
+            if (normalized.Length <= folderSlug.Length
+                || !normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (!seen.Add(normalized))
+            {
+                continue;
+            }
+
+            if (EvaluateEntry(childEntry, userName, context, normalized, manifest))
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 

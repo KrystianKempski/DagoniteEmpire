@@ -350,6 +350,74 @@ def write_audit(pages: list[tuple[str, AccessRule, str]]) -> None:
     AUDIT_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+_BODY_SLUG_RE = re.compile(r'<body[^>]*\sdata-slug="([^"]+)"', re.I)
+
+
+def merge_child_rules(rules: list[AccessRule]) -> AccessRule:
+    """Union access from child pages for a Quartz auto-generated folder listing."""
+    chars: set[str] = set()
+    parties: set[str] = set()
+    for rule in rules:
+        chars.update(rule.characters)
+        parties.update(rule.parties)
+    if chars or parties:
+        return AccessRule(
+            mode="characters",
+            characters=sorted(chars),
+            parties=sorted(parties),
+            reason="folder-listing",
+        )
+    return AccessRule(mode="authenticated", reason="folder-listing")
+
+
+def infer_quartz_folder_listing_rules(all_rules: dict[str, AccessRule]) -> None:
+    """Register ACL for Quartz folder index.html pages that have no backing index.md."""
+    if not QUARTZ_PUBLIC.is_dir():
+        return
+
+    added = 0
+    for index_html in sorted(QUARTZ_PUBLIC.rglob("index.html")):
+        rel = index_html.relative_to(QUARTZ_PUBLIC).as_posix()
+        if rel == "index.html":
+            continue
+
+        folder_base = rel[: -len("index.html")].strip("/")
+        if not folder_base:
+            continue
+
+        text = index_html.read_text(encoding="utf-8", errors="ignore")[:8000]
+        match = _BODY_SLUG_RE.search(text)
+        page_slug = match.group(1).strip("/") if match else f"{folder_base}/index"
+
+        keys = {
+            folder_base,
+            folder_base + "/",
+            page_slug,
+            page_slug + "/",
+        }
+        if keys & all_rules.keys():
+            continue
+
+        prefix = folder_base.rstrip("/") + "/"
+        child_rules = [
+            rule
+            for slug, rule in all_rules.items()
+            if slug.startswith(prefix)
+            and not slug.rstrip("/").endswith("/index")
+            and slug.rstrip("/") != folder_base.rstrip("/")
+        ]
+        if not child_rules:
+            continue
+
+        merged = merge_child_rules(child_rules)
+        for key in keys:
+            all_rules[key] = merged
+        added += 1
+
+    if added:
+        print(f"  + {added} Quartz folder listing rules (inferred from children)")
+
+
 def print_report(pages: list[tuple[str, AccessRule, str]]) -> None:
     by_mode: dict[str, int] = {}
     by_src: dict[str, int] = {}
@@ -426,6 +494,8 @@ def main() -> None:
         all_rules[tag_slug] = tag_rule
         if not tag_slug.endswith("/"):
             all_rules[tag_slug + "/"] = tag_rule
+
+    infer_quartz_folder_listing_rules(all_rules)
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     manifest = {
