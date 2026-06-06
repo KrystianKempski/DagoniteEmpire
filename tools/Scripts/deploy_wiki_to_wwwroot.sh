@@ -92,6 +92,25 @@ rm -rf "$PREVIOUS"
 echo "🔐 Buduję manifest dostępu..."
 python3 "$SCRIPT_DIR/build_wiki_access_manifest.py"
 
+BUILD_INFO="$FINAL_TARGET/.wiki-build-info.json"
+EMPIRE_SHA="$(git -C "$EMPIRE_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+WIKI_SHA="$(git -C "$WIKI_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+BUILT_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+python3 - <<PY
+import json
+from pathlib import Path
+
+info = {
+    "builtAt": "$BUILT_AT",
+    "empireCommit": "$EMPIRE_SHA",
+    "wikiCommit": "$WIKI_SHA",
+    "target": "$FINAL_TARGET",
+}
+Path("$BUILD_INFO").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
+print(f"  ✓ zapisano {Path('$BUILD_INFO').name}")
+PY
+
 echo ""
 echo "✅ Wiki wdrożone do: $FINAL_TARGET"
+echo "   Empire: $EMPIRE_SHA  |  dagonite-wiki: $WIKI_SHA  |  $BUILT_AT"
 echo "   Otwórz w aplikacji: /wiki"

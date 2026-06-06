@@ -77,6 +77,10 @@ Szczegóły tagów: `dagonite-wiki/content/_meta/wiki-parties.json`.
 
 ## Publikacja na serwer
 
+**Pełna procedura, CI, tagi obrazów i troubleshooting:** [WIKI_DEPLOY_OPS.md](./WIKI_DEPLOY_OPS.md)
+
+Kluczowe: treść wiki jest **wbudowana w obraz Docker** przy `build_wiki_for_empire.sh`. Sam `git pull` lub restart kontenera **nie** aktualizuje stron. Po zmianie tylko w `dagonite-wiki` trzeba zbudować nowy obraz Empire (push do `master` lub ręczny *Run workflow* w Actions).
+
 ### Standard (tylko treść wiki)
 
 ```bash
@@ -88,10 +92,10 @@ git pull origin master
 
 cd tools/Scripts
 chmod +x build_wiki_for_empire.sh
-./build_wiki_for_empire.sh
+./build_wiki_for_empire.sh   # tworzy wwwroot/wiki/ + .wiki-build-info.json
 ```
 
-Następnie `docker build` z katalogu zawierającego Dockerfile (wiki musi być już w `wwwroot/wiki/`).
+Następnie `docker build` + `docker push` + wdrożenie **nowego tagu** obrazu (wiki musi być już w `wwwroot/wiki/`).
 
 ### Pełny pipeline (docx → vault → wiki)
 
