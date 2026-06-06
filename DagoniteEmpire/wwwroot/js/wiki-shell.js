@@ -10,6 +10,13 @@ export function registerDeniedListener(dotNetRef) {
     }
     if (event.data?.type === "dagonite-wiki-denied") {
       dotNetRef.invokeMethodAsync("OnWikiAccessDenied");
+      return;
+    }
+    if (event.data?.type === "dagonite-wiki-open-external") {
+      const url = event.data.url;
+      if (typeof url === "string" && /^https?:\/\//i.test(url)) {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
     }
   };
   window.addEventListener("message", deniedHandler);
