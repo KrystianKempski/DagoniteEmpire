@@ -45,7 +45,7 @@ else
                 @* Character Grid *@
                 <div class="character-grid-container">
                     <MudGrid Spacing="4" Justify="Justify.FlexStart">
-                        @foreach (var character in Characters.Take(6))
+                        @foreach (var character in Characters)
                         {
                             <MudItem>
                             <div class="character-tile"
@@ -70,13 +70,6 @@ else
                         }
                     </MudGrid>
                 </div>
-                
-                @if (Characters.Count() > 6)
-                {
-                    <MudAlert Severity="Severity.Info" Class="mt-3">
-                        Showing first 6 characters. You have @Characters.Count() total.
-                    </MudAlert>
-                }
             </div>
         </div>
 
