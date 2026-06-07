@@ -19,9 +19,26 @@ namespace DA_Models.CharacterModels
         {
             foreach (var prop in typeof(TraitCharacter).GetProperties())
             {
+                if (prop.Name == nameof(Bonuses))
+                    continue;
+
                 var targetProp = GetType().GetProperty(prop.Name);
                 if (targetProp?.CanWrite == true)
                     targetProp.SetValue(this, prop.GetValue(trait, null), null);
+            }
+
+            foreach (var bonus in trait.Bonuses)
+            {
+                Bonuses.Add(new BonusDTO
+                {
+                    Id = bonus.Id,
+                    FeatureType = bonus.FeatureType,
+                    FeatureName = bonus.FeatureName,
+                    BonusValue = bonus.BonusValue ?? 0,
+                    Description = bonus.Description,
+                    Index = bonus.Index,
+                    TraitId = bonus.TraitId,
+                });
             }
         }
 

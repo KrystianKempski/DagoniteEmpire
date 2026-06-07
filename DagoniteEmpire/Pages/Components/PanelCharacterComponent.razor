@@ -337,6 +337,15 @@
     private Relation Relation = Relation.Teammate;
     public UserInfo? UserInfo { get; set; }
     private List<string> MobWounds { get; set; } = new List<string>();
+    private bool _initialized;
+    private string _trackedCharacterSignature = string.Empty;
+    private string _trackedMobSignature = string.Empty;
+
+    private static string GetCharacterSignature(AllParamsModel allParams) =>
+        $"{allParams.States}|{allParams.Health?.CurrentWounds ?? 0}|{allParams.Health?.MaxWounds ?? 0}";
+
+    private static string GetMobSignature(MobDTO mob) =>
+        $"{mob.States}|{mob.CurrentWounds}|{mob.MaxWounds}";
 
 
     private void OnExpandCollapseClick()
@@ -361,11 +370,46 @@
             }
 
             IsLoading = false;
+            _initialized = true;
            // StateHasChanged();
         }
         catch (Exception ex)
         {            
             Snackbar.Add("Error initializing panel Character: " + ex.Message, Severity.Warning);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_initialized)
+            return;
+
+        try
+        {
+            if (IsMob && Mob is not null)
+            {
+                var signature = GetMobSignature(Mob);
+                if (signature != _trackedMobSignature)
+                {
+                    _trackedMobSignature = signature;
+                    await ApplyMobDisplayAsync(Mob);
+                    StateHasChanged();
+                }
+            }
+            else if (!IsMob && AllParams is not null)
+            {
+                var signature = GetCharacterSignature(AllParams);
+                if (signature != _trackedCharacterSignature)
+                {
+                    _trackedCharacterSignature = signature;
+                    ApplyCharacterDisplay(AllParams);
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error refreshing panel: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -425,26 +469,8 @@
                 AllParams.Health.UpdateHealthBonusesInAttributes();
             }
 
-            MainWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.MainWeaponUsed);
-            OffWeaponProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.OffWeaponUsed);
-            ArmorProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ArmorUsed);
-            ShieldProps = AllParams.BattleProperties.GetWeaponQualityListFromItem(AllParams.BattleProperties.ShieldUsed);
-            BattleProperties = AllParams.BattleProperties.GetAll();
-
-            BattlePropertyModel = AllParams.BattleProperties;
-            ProfessionName = AllParams.Profession.Name;
-            RaceName = AllParams.CurrentRace.Name;
-            ImageUrl = AllParams.Character.ImageUrl;
-            Name = AllParams.Character.NPCName;
-            Relation = AllParams.Character.Relation;
-            StatesString = AllParams.States;
-            LoadHealthBar();
-            LoadIcons();
-            BackgroundColor = $"background:{Colors.Blue.Lighten5};";
-
-            if (BattleProperties is null)
-                throw new Exception();
-
+            ApplyCharacterDisplay(AllParams);
+            _trackedCharacterSignature = GetCharacterSignature(AllParams);
         }
         catch (Exception ex)
         {
@@ -452,62 +478,104 @@
         }
     }
 
+    private void ApplyCharacterDisplay(AllParamsModel allParams)
+    {
+        MainWeaponProps = allParams.BattleProperties.GetWeaponQualityListFromItem(allParams.BattleProperties.MainWeaponUsed);
+        OffWeaponProps = allParams.BattleProperties.GetWeaponQualityListFromItem(allParams.BattleProperties.OffWeaponUsed);
+        ArmorProps = allParams.BattleProperties.GetWeaponQualityListFromItem(allParams.BattleProperties.ArmorUsed);
+        ShieldProps = allParams.BattleProperties.GetWeaponQualityListFromItem(allParams.BattleProperties.ShieldUsed);
+        BattleProperties = allParams.BattleProperties.GetAll();
+        BattlePropertyModel = allParams.BattleProperties;
+        ProfessionName = allParams.Profession.Name;
+        RaceName = allParams.CurrentRace.Name;
+        ImageUrl = allParams.Character.ImageUrl;
+        Name = allParams.Character.NPCName;
+        Relation = allParams.Character.Relation;
+        StatesString = allParams.States;
+        LoadHealthBar();
+        LoadIcons();
+        BackgroundColor = $"background:{Colors.Blue.Lighten5};";
+
+        if (BattleProperties is null)
+            throw new Exception();
+    }
+
     private async Task LoadMob()
     {
         try
         {
-            Mob = await _mobRepository.GetById(Id);
-            Mob.BattleProperties = new(Mob);
-            BattlePropertyModel = Mob.BattleProperties;
-            ImageUrl = Mob.ImageUrl;
-            ProfessionName = Mob.ProfessionName;
-            RaceName = Mob.RaceName;
-            Name = Mob.Name;
-            Relation = Mob.Relation;
-            if (string.IsNullOrEmpty(Mob.MainWeaponName) == false)
-            {
-                Mob.MainWeapon = await _equipmentRepository.GetByName(Mob.MainWeaponName);            
-                MainWeaponProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.MainWeapon);
-            }
-            if (string.IsNullOrEmpty(Mob.OffWeaponName) == false)
-            {
-                Mob.OffWeapon = await _equipmentRepository.GetByName(Mob.OffWeaponName);
-                OffWeaponProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.OffWeapon);
-            }
-            if (string.IsNullOrEmpty(Mob.ShieldWeaponName) == false)
-            {
-                Mob.ShieldWeapon = await _equipmentRepository.GetByName(Mob.ShieldWeaponName);
-                ShieldProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.ShieldWeapon);
-            }
-            if (string.IsNullOrEmpty(Mob.ArmorName) == false)
-            {
-                Mob.Armor = await _equipmentRepository.GetByName(Mob.ArmorName);
-                ArmorProps = Mob.BattleProperties.GetWeaponQualityListFromItem(Mob.Armor);
-            }
-            if (Mob.Relation == Relation.Ally)
-            {
-                BackgroundColor = $"background:{Colors.Green.Lighten5};";
-            }else if (Mob.Relation == Relation.Neutral)
-            {
-                BackgroundColor = $"background:{Colors.Yellow.Lighten5};";
-            }
-            else if (Mob.Relation == Relation.Enemy)
-            {
-                BackgroundColor = $"background:{Colors.Red.Lighten5};";
-            }
-            StatesString = Mob.States;
-            LoadHealthBar();
-            LoadIcons();
-            BattleProperties = Mob.BattleProperties.GetAll();
-            BattlePropertyModel.CalculateBattleStats();
-            if (BattleProperties is null)
-                throw new Exception();
+            Mob ??= await _mobRepository.GetById(Id);
+            if (Mob.BattleProperties is null)
+                Mob.BattleProperties = new MobBattlePropertyModel(Mob);
 
+            await ApplyMobDisplayAsync(Mob);
+            _trackedMobSignature = GetMobSignature(Mob);
         }
         catch (Exception ex)
         {
             Snackbar.Add("Error loading Character: " + ex.Message, Severity.Warning);
         }
+    }
+
+    private async Task ApplyMobDisplayAsync(MobDTO mob)
+    {
+        if (mob.BattleProperties is null)
+        {
+            mob.BattleProperties = new MobBattlePropertyModel(mob);
+            if (string.IsNullOrEmpty(mob.MainWeaponName) == false)
+            {
+                mob.MainWeapon = await _equipmentRepository.GetByName(mob.MainWeaponName);
+                MainWeaponProps = mob.BattleProperties.GetWeaponQualityListFromItem(mob.MainWeapon);
+            }
+            if (string.IsNullOrEmpty(mob.OffWeaponName) == false)
+            {
+                mob.OffWeapon = await _equipmentRepository.GetByName(mob.OffWeaponName);
+                OffWeaponProps = mob.BattleProperties.GetWeaponQualityListFromItem(mob.OffWeapon);
+            }
+            if (string.IsNullOrEmpty(mob.ShieldWeaponName) == false)
+            {
+                mob.ShieldWeapon = await _equipmentRepository.GetByName(mob.ShieldWeaponName);
+                ShieldProps = mob.BattleProperties.GetWeaponQualityListFromItem(mob.ShieldWeapon);
+            }
+            if (string.IsNullOrEmpty(mob.ArmorName) == false)
+            {
+                mob.Armor = await _equipmentRepository.GetByName(mob.ArmorName);
+                ArmorProps = mob.BattleProperties.GetWeaponQualityListFromItem(mob.Armor);
+            }
+        }
+        else
+        {
+            mob.BattleProperties.CalculateBattleStats();
+            if (string.IsNullOrEmpty(mob.MainWeaponName) == false && mob.MainWeapon is not null)
+                MainWeaponProps = mob.BattleProperties.GetWeaponQualityListFromItem(mob.MainWeapon);
+            if (string.IsNullOrEmpty(mob.OffWeaponName) == false && mob.OffWeapon is not null)
+                OffWeaponProps = mob.BattleProperties.GetWeaponQualityListFromItem(mob.OffWeapon);
+            if (string.IsNullOrEmpty(mob.ShieldWeaponName) == false && mob.ShieldWeapon is not null)
+                ShieldProps = mob.BattleProperties.GetWeaponQualityListFromItem(mob.ShieldWeapon);
+            if (string.IsNullOrEmpty(mob.ArmorName) == false && mob.Armor is not null)
+                ArmorProps = mob.BattleProperties.GetWeaponQualityListFromItem(mob.Armor);
+        }
+
+        BattlePropertyModel = mob.BattleProperties;
+        ImageUrl = mob.ImageUrl;
+        ProfessionName = mob.ProfessionName;
+        RaceName = mob.RaceName;
+        Name = mob.Name;
+        Relation = mob.Relation;
+        if (mob.Relation == Relation.Ally)
+            BackgroundColor = $"background:{Colors.Green.Lighten5};";
+        else if (mob.Relation == Relation.Neutral)
+            BackgroundColor = $"background:{Colors.Yellow.Lighten5};";
+        else if (mob.Relation == Relation.Enemy)
+            BackgroundColor = $"background:{Colors.Red.Lighten5};";
+
+        StatesString = mob.States;
+        LoadHealthBar();
+        LoadIcons();
+        BattleProperties = mob.BattleProperties.GetAll();
+
+        if (BattleProperties is null)
+            throw new Exception();
     }
 
     public void LoadIcons()
@@ -543,20 +611,12 @@
     public void LoadHealthBar()
     {
         int cover = 0;
-        //for characters 
-        if(AllParams is not null){
 
-            if (AllParams?.Health is null) return;
-            cover = (int)(100.0 * (double)AllParams.Health.CurrentWounds / (double)AllParams.Health.MaxWounds);
+        if (AllParams?.Health is not null && AllParams.Health.MaxWounds > 0)
+            cover = (int)(100.0 * AllParams.Health.CurrentWounds / AllParams.Health.MaxWounds);
+        else if (Mob is not null && Mob.MaxWounds > 0)
+            cover = (int)(100.0 * Mob.CurrentWounds / Mob.MaxWounds);
 
-        }else if (Mob is not null)
-        {
-            cover = (int)(100.0 * (double)Mob.CurrentWounds / (double)Mob.MaxWounds);
-        }
-        if (cover > 0 && cover <= 100)
-            WoundLevel = $"{cover}%";
-        else if (cover > 100)
-            WoundLevel = "100%";
-
+        WoundLevel = cover <= 0 ? "0%" : cover > 100 ? "100%" : $"{cover}%";
     }
 }

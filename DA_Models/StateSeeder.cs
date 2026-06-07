@@ -13,8 +13,34 @@ namespace DA_Models
     {
         public static TraitCharacterDTO GetStateDTO(string name, bool approved = false, int duration = 0, int characterId = 0)
         {
-            return new TraitCharacterDTO(GetState(name, approved, duration, characterId));
-        } 
+            var trait = GetState(name, approved, duration, characterId);
+            var dto = new TraitCharacterDTO(isTemporary: true)
+            {
+                Name = trait.Name,
+                Descr = trait.Descr,
+                TraitApproved = trait.TraitApproved,
+                IsUnique = trait.IsUnique,
+                Level = trait.Level,
+                TraitValue = trait.TraitValue,
+                CharacterId = characterId > 0 ? characterId : trait.CharacterId,
+            };
+
+            foreach (var bonus in trait.Bonuses)
+            {
+                dto.Bonuses.Add(new BonusDTO
+                {
+                    Id = bonus.Id,
+                    FeatureType = bonus.FeatureType,
+                    FeatureName = bonus.FeatureName,
+                    BonusValue = bonus.BonusValue ?? 0,
+                    Description = bonus.Description,
+                    Index = bonus.Index,
+                    TraitId = bonus.TraitId,
+                });
+            }
+
+            return dto;
+        }
 
         public static TraitCharacter GetState(string name, bool approved = false, int duration = 0,int characterId =0)
         {

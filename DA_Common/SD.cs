@@ -1,4 +1,5 @@
-﻿using MudBlazor;
+﻿using System.Text;
+using MudBlazor;
 using MudBlazor.Charts;
 
 namespace DA_Common
@@ -491,80 +492,45 @@ namespace DA_Common
 
         public static Tuple<int, string> RollDice()
         {
-            int result = 0;
-            string text = string.Empty;
-            Random rnd = new Random();
-            int[] dice = { 1, 1, 1 };
-            if (true)
-            {
-                dice[0] = rnd.Next(1, 6);  // creates a number between 1 and 6
-                dice[1] = rnd.Next(1, 6);
-                dice[2] = rnd.Next(1, 6);
-
-                result = dice.Sum();
-                text = $"(3d6: {dice[0].ToString()}+{dice[1].ToString()}+{dice[2].ToString()}={result})";
-            }
-            return Tuple.Create(result, text);
+            var roll = RollService.RollDice();
+            return Tuple.Create(roll.Sum, roll.Text);
         }
+
         public static Tuple<bool, string> MakeRollTest(int DC, int skill)
         {
-            bool result = false;
-            string text = string.Empty;
-            var roll = RollDice();
-            result = skill + roll.Item1 >= DC;
-            var sucess = result ? "Sucess!" : "Fail!";
-            text = $"{skill} + {roll.Item2} is {RichText.BoldText(skill + roll.Item1)} vs DC: {RichText.BoldText(DC)}. {RichText.BoldText(sucess)}";
-
-            return Tuple.Create(result, text);
-        }
-        public static Tuple<bool, string> MakeOppositeRollTest(string name1, int skill1,  string name2,int skill2 )
-        {
-            bool result = false;
-            string text = string.Empty;
-            var roll1 = RollDice();
-            var roll2 = RollDice();
-            result = skill1 + roll1.Item1 >= skill2 + roll2.Item1;
-            var sucess = result ? "Sucess!" : "Fail!";
-            text = $"{name1}: {skill1} + {roll1.Item2} is {RichText.BoldText(skill1 + roll1.Item1)} vs {name2}: {skill2} + {roll2.Item2} is {RichText.BoldText(skill2 + roll2.Item1)}. {RichText.BoldText(sucess)}";
-
-            return Tuple.Create(result, text);
+            var result = RollService.MakeRollTest(DC, skill);
+            return Tuple.Create(result.Success, result.Text);
         }
 
-        public static Tuple<bool, string> MakeOppositeRollTest(string name1, List<Pair<string,int>> bonuses1, string name2, List<Pair<string, int>> bonuses2)
+        public static Tuple<bool, string> MakeRollTestPlain(int DC, int skill)
         {
-            bool result = false;
-            string text = string.Empty;
-            var roll1 = RollDice();
-            var roll2 = RollDice();
-            int sum1 = roll1.Item1;
-            int sum2 = roll2.Item1;
-            foreach (var bonus in bonuses1)
-            {
-                sum1 += bonus.Second;
-            }
-            foreach (var bonus in bonuses2)
-            {
-                sum2 += bonus.Second;
-            }
+            var result = MakeRollTest(DC, skill);
+            var plain = result.Item2
+                .Replace("<strong>", "", StringComparison.Ordinal)
+                .Replace("</strong>", "", StringComparison.Ordinal);
+            return Tuple.Create(result.Item1, plain);
+        }
 
-            result = sum1 >= sum2;
-            var sucess = result ? "Sucess!" : "Fail!";
-            text = $"{name1}: ";
-            foreach( var bonus in bonuses1)
-            {
-                text += bonus.Second >= 0 ? "+" : ""; 
-                text += $"{bonus.Second} ({bonus.First})";
-            }
-            text = $" {roll1.Item2} = {RichText.BoldText(sum1)} vs ";
-            text = $"{name2}: ";
-            foreach (var bonus in bonuses2)
-            {
-                text += bonus.Second >= 0 ? "+" : "";
-                text += $"{bonus.Second} ({bonus.First})";
-            }
-            text += $" {roll2.Item2} = {RichText.BoldText(sum2)}. {RichText.BoldText(sucess)}";
+        /// <summary>Fight sequence roll test: plain totals, bold Success!/Fail! only.</summary>
+        public static Tuple<bool, string> MakeRollTestForFight(int DC, int skill)
+        {
+            var result = MakeRollTestPlain(DC, skill);
+            var text = result.Item2
+                .Replace("Success!", RichText.BoldText("Success!"), StringComparison.Ordinal)
+                .Replace("Fail!", RichText.BoldText("Fail!"), StringComparison.Ordinal);
+            return Tuple.Create(result.Item1, text);
+        }
 
-            return Tuple.Create(result, text);
+        public static Tuple<bool, string> MakeOppositeRollTest(string name1, int skill1, string name2, int skill2)
+        {
+            var result = RollService.MakeOppositeRollTest(name1, skill1, name2, skill2);
+            return Tuple.Create(result.FirstSideWins, result.Text);
+        }
+
+        public static Tuple<bool, string> MakeOppositeRollTest(string name1, List<Pair<string, int>> bonuses1, string name2, List<Pair<string, int>> bonuses2)
+        {
+            var result = RollService.MakeOppositeRollTest(name1, bonuses1, name2, bonuses2);
+            return Tuple.Create(result.FirstSideWins, result.Text);
         }
 
 
@@ -945,6 +911,106 @@ namespace DA_Common
         {
             _allText += "</p></blockquote></div><br>";
         }
+
+        /// <summary>Converts RichText blocks to plain paragraph HTML that Quill editors can display.</summary>
+        public string ToQuillHtml() => ToQuillHtml(_allText);
+
+        public static string ToQuillHtml(string? richHtml)
+        {
+            if (string.IsNullOrEmpty(richHtml))
+                return string.Empty;
+
+            const string prefix = "<div style=\"background-color: #eaeaea;color: black;\"><blockquote><p>";
+            const string suffix = "</p></blockquote></div><br>";
+            var result = new StringBuilder();
+            var remaining = richHtml;
+
+            while (true)
+            {
+                var start = remaining.IndexOf(prefix, StringComparison.Ordinal);
+                if (start < 0)
+                    break;
+
+                var end = remaining.IndexOf(suffix, start, StringComparison.Ordinal);
+                if (end < 0)
+                    break;
+
+                var inner = remaining.Substring(start + prefix.Length, end - start - prefix.Length);
+                result.Append("<p>").Append(inner).Append("</p>");
+                remaining = remaining.Substring(end + suffix.Length);
+            }
+
+            return result.Length > 0 ? result.ToString() : richHtml;
+        }
+
+        private static string ExtractQuillParagraphContent(string? richHtml)
+        {
+            var inner = ToQuillHtml(richHtml);
+            if (string.IsNullOrEmpty(inner))
+                return string.Empty;
+
+            var content = new StringBuilder();
+            var remaining = inner;
+            while (remaining.Contains("<p>", StringComparison.Ordinal))
+            {
+                var start = remaining.IndexOf("<p>", StringComparison.Ordinal);
+                var end = remaining.IndexOf("</p>", start, StringComparison.Ordinal);
+                if (end < 0)
+                    break;
+
+                if (content.Length > 0)
+                    content.Append(' ');
+                content.Append(remaining.Substring(start + 3, end - start - 3));
+                remaining = remaining.Substring(end + 4);
+            }
+
+            return content.ToString();
+        }
+
+        /// <summary>Bold, parenthesized Quill HTML for pasting a saved roll batch into a thread post.</summary>
+        public static string ToThreadPostQuillHtml(string? richHtml)
+        {
+            var content = ExtractQuillParagraphContent(richHtml);
+            return string.IsNullOrEmpty(content)
+                ? string.Empty
+                : $"<p><strong>({content})</strong></p>";
+        }
+
+        /// <summary>Italic Quill HTML for displaying a fight sequence in the roll dialog editor.</summary>
+        public static string ToFightQuillHtml(string? richHtml) => WrapQuillParagraphs(richHtml, wrapInner: static c => $"<em>{c}</em>");
+
+        /// <summary>Italic, parenthesized Quill HTML for pasting a fight sequence into a thread post.</summary>
+        public static string ToThreadFightPostQuillHtml(string? richHtml)
+        {
+            var content = ExtractQuillParagraphContent(richHtml);
+            return string.IsNullOrEmpty(content)
+                ? string.Empty
+                : $"<p><em>({content})</em></p>";
+        }
+
+        private static string WrapQuillParagraphs(string? richHtml, Func<string, string> wrapInner)
+        {
+            var inner = ToQuillHtml(richHtml);
+            if (string.IsNullOrEmpty(inner))
+                return string.Empty;
+
+            var result = new StringBuilder();
+            var remaining = inner;
+            while (remaining.Contains("<p>", StringComparison.Ordinal))
+            {
+                var start = remaining.IndexOf("<p>", StringComparison.Ordinal);
+                var end = remaining.IndexOf("</p>", start, StringComparison.Ordinal);
+                if (end < 0)
+                    break;
+
+                var paragraph = remaining.Substring(start + 3, end - start - 3);
+                result.Append("<p>").Append(wrapInner(paragraph)).Append("</p>");
+                remaining = remaining.Substring(end + 4);
+            }
+
+            return result.Length > 0 ? result.ToString() : inner;
+        }
+
         public void NewLine()
         {
             _allText += "</p>";

@@ -3,6 +3,8 @@
 @using DA_Scribe.Services.Interfaces
 @using Microsoft.AspNetCore.SignalR.Client
 @using DA_Models.ChatModels
+@using DA_Models
+@using DA_Models.ComponentModels
 @inject IChapterRepository _chapterRepository
 @inject IPostRepository _postRepository
 @inject ICharacterRepository _characterRepository
@@ -40,9 +42,13 @@ else
     @if (_showDrawerPanelLayout)
     {
         <MudHidden Breakpoint="Breakpoint.LgAndDown" Invert="true">
-            <MudButton Style="p-2" OnClick="ToggleDrawer" Variant="Variant.Text" DropShadow="true">
-                Open Drawer
+            <MudButton Class="characters-drawer-btn"
+                       Style="position: fixed; top: 72px; left: 8px; z-index: 1300;"
+                       OnClick="ToggleDrawer"
+                       Variant="Variant.Filled">
+                Characters
             </MudButton>
+        </MudHidden>
 
             <MudDrawer Width="320px" @bind-Open="@_open" Elevation="1" Variant="DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always">
                 <div class="px-1 py-2">
@@ -72,18 +78,22 @@ else
                             <MudStack Spacing="2">
                                 @foreach (var charac in Chapter!.Characters)
                                 {
-                                    <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+                                    <PanelCharacterComponent @key="@($"char-{charac.Id}-{_participantsRenderKey}")"
+                                                             AllParams="CharacterAllParams[charac.Id]"
+                                                             Id="charac.Id"></PanelCharacterComponent>
                                 }
                                 @foreach (var mob in Mobs)
                                 {
-                                    <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
+                                    <PanelCharacterComponent @key="@($"mob-{mob.Id}-{mob.States}-{mob.CurrentWounds}-{_participantsRenderKey}")"
+                                                             Mob="mob"
+                                                             Id="mob.Id"
+                                                             IsMob="true"></PanelCharacterComponent>
                                 }
                             </MudStack>
                         </MudPaper>
                     }
                 </div>
             </MudDrawer>
-        </MudHidden>
     }
 
     <div id="mam" class="margin-side container-lg">
@@ -116,11 +126,16 @@ else
                             <MudStack Spacing="2">
                                 @foreach (var charac in Chapter!.Characters)
                                 {
-                                    <PanelCharacterComponent AllParams="CharacterAllParams[charac.Id]" Id="charac.Id"></PanelCharacterComponent>
+                                    <PanelCharacterComponent @key="@($"char-{charac.Id}-{_participantsRenderKey}")"
+                                                             AllParams="CharacterAllParams[charac.Id]"
+                                                             Id="charac.Id"></PanelCharacterComponent>
                                 }
                                 @foreach (var mob in Mobs)
                                 {
-                                    <PanelCharacterComponent Mob="mob" Id="mob.Id" IsMob="true"></PanelCharacterComponent>
+                                    <PanelCharacterComponent @key="@($"mob-{mob.Id}-{mob.States}-{mob.CurrentWounds}-{_participantsRenderKey}")"
+                                                             Mob="mob"
+                                                             Id="mob.Id"
+                                                             IsMob="true"></PanelCharacterComponent>
                                 }
                             </MudStack>
                         </MudPaper>
@@ -296,6 +311,7 @@ else
     private string SendButtonText { get; set; } = "Send Post";
     private string BattleButton { get; set; } = "Start Battle";
     private bool _open = false;
+    private int _participantsRenderKey;
     private bool _showDrawerPanelLayout = true;
     private int PostsPerPage { get; set; } = 10;
     private int PageNum { get; set; } = 1;
@@ -930,20 +946,134 @@ else
             { x => x.ChapterId, Id }
         };
 
-        var dialog = await DialogService.ShowAsync<CreateFightSequenceDialog>("Fight sequence", parameters, await SetDialogOptions());
+        var dialog = await DialogService.ShowAsync<CreateFightSequenceDialog>("Fight sequence", parameters, await SetFightDialogOptions());
         var result = await dialog.Result;
 
-        if (result is not null && !result.Canceled)
+        _open = false;
+
+        if (result is not null && !result.Canceled && result.Data is FightSequenceDialogResult fightResult)
         {
-            IsLoadingCharacters = true;
+            if (fightResult.Persistence is not null)
+                await PersistFightAsync(fightResult.Persistence);
+
+            await AppendRollToPostEditorAsync(fightResult.RichHtml, fightResult.WrapForThread, fightFormat: true);
+            await RefreshBattleParticipantsAsync();
+
+            if (!string.IsNullOrEmpty(fightResult.AttackerName))
+                SnackBar.Add($"Fight sequence performed. {fightResult.AttackerName} attacks {fightResult.DefenderName}", Severity.Success);
+
             StateHasChanged();
-            await LoadMobs();
-            await LoadChapter();
-            IsLoadingCharacters = false;
-            StateHasChanged();
-            if (result.Data is not null)
-                NewPost.Content += result.Data as string ?? string.Empty;
         }
+    }
+
+    private async Task PersistFightAsync(FightPersistenceSnapshot snapshot)
+    {
+        try
+        {
+            AllParamsModel? attackerChar = null;
+            AllParamsModel? defenderChar = null;
+            MobDTO? attackerMob = null;
+            MobDTO? defenderMob = null;
+
+            foreach (var charParams in CharacterAllParams.Values)
+            {
+                if (charParams is null) continue;
+                if (charParams.Character.NPCName == snapshot.SelectedAttacker)
+                    attackerChar = charParams;
+                if (charParams.Character.NPCName == snapshot.SelectedDefender)
+                    defenderChar = charParams;
+            }
+
+            foreach (var mob in Mobs)
+            {
+                if (mob is null) continue;
+                if (mob.Name == snapshot.SelectedAttacker)
+                    attackerMob = mob;
+                if (mob.Name == snapshot.SelectedDefender)
+                    defenderMob = mob;
+            }
+
+            if (attackerChar is not null && string.IsNullOrEmpty(snapshot.AttackerNewStates) == false)
+                await AddFightStatesAsync(snapshot.AttackerNewStates, attackerChar.Character.Id);
+
+            if (defenderChar is not null)
+            {
+                foreach (var wound in snapshot.NewWounds)
+                {
+                    wound.CharacterId = defenderChar.Character.Id;
+                    await _woundRepository.Create(wound);
+                }
+
+                if (string.IsNullOrEmpty(snapshot.DefenderNewStates) == false)
+                    await AddFightStatesAsync(snapshot.DefenderNewStates, defenderChar.Character.Id);
+            }
+
+            if (attackerMob is not null && string.IsNullOrEmpty(snapshot.AttackerNewStates) == false)
+            {
+                attackerMob.States = FightSequenceModel.MergeMobStates(attackerMob.States, snapshot.AttackerNewStates);
+                await _mobRepository.Update(attackerMob);
+            }
+
+            if (defenderMob is not null)
+            {
+                defenderMob.CurrentWounds += Wounds.GetValueFromSeverity(snapshot.WoundSeverity);
+                if (string.IsNullOrEmpty(snapshot.DefenderNewStates) == false)
+                    defenderMob.States = FightSequenceModel.MergeMobStates(defenderMob.States, snapshot.DefenderNewStates);
+                await _mobRepository.Update(defenderMob);
+            }
+        }
+        catch (Exception ex)
+        {
+            SnackBar.Add("Error while calculating fight: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AddFightStatesAsync(string stateString, int charId)
+    {
+        if (string.IsNullOrEmpty(stateString))
+            return;
+
+        foreach (var state in stateString.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var stateArray = state.Split(':', 2);
+            if (stateArray.Length < 2)
+                continue;
+
+            var name = stateArray[0].Trim();
+            if (string.IsNullOrEmpty(name) || !int.TryParse(stateArray[1].Trim(), out var duration))
+                continue;
+
+            var traits = (await _traitCharacterRepository.GetAll(charId)).ToList();
+            if (name == States.Names.NoTurn)
+            {
+                var halfTurnTrait = traits.FirstOrDefault(t => t.Name == States.Names.HalfTurn);
+                if (halfTurnTrait is not null)
+                    await _traitCharacterRepository.Delete(halfTurnTrait.Id);
+            }
+
+            var existingTrait = traits.FirstOrDefault(t => t.Name == name);
+            if (existingTrait is not null)
+            {
+                existingTrait.TraitValue = duration;
+                await _traitCharacterRepository.Update(existingTrait);
+            }
+            else
+            {
+                await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(name, false, duration, charId));
+            }
+        }
+    }
+
+    private async Task RefreshBattleParticipantsAsync()
+    {
+        await LoadMobs();
+        if (Chapter is null)
+            return;
+
+        foreach (var charac in Chapter.Characters)
+            CharacterAllParams[charac.Id] = await LoadCharacter(charac.Id);
+
+        _participantsRenderKey++;
     }
 
     private async Task AddExistingMob()
@@ -969,6 +1099,46 @@ else
         }
     }
 
+    private static bool IsEmptyEditorHtml(string? html) =>
+        string.IsNullOrWhiteSpace(html)
+        || html.Trim() is "<p><br></p>" or "<p></p>";
+
+    private async Task AppendRollToPostEditorAsync(string rollRichHtml, bool wrapForThread = false, bool fightFormat = false)
+    {
+        if (string.IsNullOrEmpty(rollRichHtml))
+            return;
+
+        var rollQuillHtml = fightFormat && wrapForThread
+            ? RichText.ToThreadFightPostQuillHtml(rollRichHtml)
+            : wrapForThread
+                ? RichText.ToThreadPostQuillHtml(rollRichHtml)
+                : RichText.ToQuillHtml(rollRichHtml);
+
+        if (string.IsNullOrEmpty(rollQuillHtml))
+            rollQuillHtml = fightFormat
+                ? RichText.ToFightQuillHtml(rollRichHtml)
+                : RichText.ToQuillHtml(rollRichHtml);
+
+        if (string.IsNullOrEmpty(rollQuillHtml))
+            return;
+
+        if (PostEditor is not null)
+        {
+            var existingHtml = await PostEditor.GetHTML();
+            var editorHtml = IsEmptyEditorHtml(existingHtml)
+                ? rollQuillHtml
+                : existingHtml + rollQuillHtml;
+            await PostEditor.LoadHTMLContent(editorHtml);
+            NewPost.Content = await PostEditor.GetHTML();
+        }
+        else
+        {
+            NewPost.Content += rollRichHtml;
+        }
+
+        await _jsRuntime.ScrollToElement("bottom-container");
+    }
+
     private async Task MakeSkillRoll()
     {
         if (Chapter is null) return;
@@ -978,13 +1148,14 @@ else
             { x => x.Mobs, Mobs }
         };
 
-        var dialog = await DialogService.ShowAsync<MakeSkillRollDialog>("Skill roll", parameters, await SetDialogOptions());
+        var dialog = await DialogService.ShowAsync<MakeSkillRollDialog>("Skill roll", parameters, await SetSkillRollDialogOptions());
         var result = await dialog.Result;
 
-        if (result is not null && !result.Canceled)
+        if (result is not null && !result.Canceled && result.Data is MakeSkillRollDialog.SkillRollDialogResult rollResult)
         {
-            if (result.Data is not null)
-                NewPost.Content += result.Data as string ?? string.Empty;
+            await AppendRollToPostEditorAsync(rollResult.RichHtml, rollResult.WrapForThread);
+            if (rollResult.WrapForThread)
+                _open = false;
             StateHasChanged();
         }
     }
@@ -1016,5 +1187,17 @@ else
     {
         var isFs = await _viewportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
         return new DialogOptions { MaxWidth = maxWidth, FullScreen = isFs };
+    }
+
+    private async Task<DialogOptions> SetSkillRollDialogOptions()
+    {
+        var isFs = await _viewportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
+        return new DialogOptions { MaxWidth = MaxWidth.Medium, FullScreen = isFs, BackdropClick = false };
+    }
+
+    private async Task<DialogOptions> SetFightDialogOptions()
+    {
+        var isFs = await _viewportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
+        return new DialogOptions { MaxWidth = MaxWidth.Medium, FullScreen = isFs, BackdropClick = false };
     }
 }
