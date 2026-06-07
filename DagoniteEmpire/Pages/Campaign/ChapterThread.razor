@@ -42,12 +42,14 @@ else
     @if (_showDrawerPanelLayout)
     {
         <MudHidden Breakpoint="Breakpoint.LgAndDown" Invert="true">
-            <MudButton Class="characters-drawer-btn"
-                       Style="position: fixed; top: 72px; left: 8px; z-index: 1300;"
-                       OnClick="ToggleDrawer"
-                       Variant="Variant.Filled">
-                Characters
-            </MudButton>
+            <div class="characters-drawer-btn-wrapper">
+                <MudButton Class="characters-drawer-btn"
+                           OnClick="ToggleDrawer"
+                           Variant="Variant.Filled"
+                           Color="Color.Surface">
+                    Characters
+                </MudButton>
+            </div>
         </MudHidden>
 
             <MudDrawer Width="320px" @bind-Open="@_open" Elevation="1" Variant="DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always">
@@ -55,16 +57,48 @@ else
                     @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <MudGrid Justify="Justify.Center" Spacing="1">
-                            <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
                             @if (OngoingBattle)
                             {
+                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
                                 <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase?.CurrentTurn</MudText></MudItem>
-                                <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
-                                <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
-                                <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
+                                <MudItem xs="6">
+                                    <MudButton FullWidth OnClick="GenerateFightSequence">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
+                                            <img src="@MyIcon.Attack" width="22" height="22" alt="" />
+                                            <span>Fight</span>
+                                        </MudStack>
+                                    </MudButton>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudButton FullWidth OnClick="MakeSkillRoll">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
+                                            <img src="@MyIcon.Dice" width="22" height="22" alt="" />
+                                            <span>Make a roll</span>
+                                        </MudStack>
+                                    </MudButton>
+                                </MudItem>
                             }
-                            <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
-                            <MudItem xs="6"><MudButton FullWidth OnClick="MakeSkillRoll">Make a roll</MudButton></MudItem>
+                            else
+                            {
+                                <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
+                                <MudItem xs="12">
+                                    <MudButton FullWidth OnClick="MakeSkillRoll">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
+                                            <img src="@MyIcon.Dice" width="22" height="22" alt="" />
+                                            <span>Make a roll</span>
+                                        </MudStack>
+                                    </MudButton>
+                                </MudItem>
+                            }
+                            <MudItem xs="6">
+                                <MudButton FullWidth OnClick="AddExistingMob">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
+                                        <img src="@MyIcon.Goblin" width="22" height="22" alt="" />
+                                        <span>Existing mobs</span>
+                                    </MudStack>
+                                </MudButton>
+                            </MudItem>
                             <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
                         </MudGrid>
                     }
@@ -104,16 +138,49 @@ else
                     @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <MudGrid Justify="Justify.Center" Spacing="1">
-                            <MudItem xs="8"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
                             @if (OngoingBattle)
                             {
+                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
                                 <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase?.CurrentTurn</MudText></MudItem>
-                                <MudItem xs="6"><MudButton FullWidth OnClick="GenerateFightSequence">Generate fight</MudButton></MudItem>
-                                <MudItem xs="6"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
-                                <MudItem xs="6"><MudButton FullWidth OnClick="EndBattlePhase">End Battle</MudButton></MudItem>
+                                <MudItem xs="6">
+                                    <MudButton FullWidth OnClick="GenerateFightSequence">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
+                                            <img src="@MyIcon.Attack" width="22" height="22" alt="" />
+                                            <span>Fight</span>
+                                        </MudStack>
+                                    </MudButton>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudButton FullWidth OnClick="MakeSkillRoll">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
+                                            <img src="@MyIcon.Dice" width="22" height="22" alt="" />
+                                            <span>Make a roll</span>
+                                        </MudStack>
+                                    </MudButton>
+                                </MudItem>
                             }
-                            <MudItem xs="6"><MudButton FullWidth OnClick="AddExistingMob">Existing mobs</MudButton></MudItem>
-                            <MudItem xs="6"><MudButton FullWidth OnClick="MakeSkillRoll">Make a roll</MudButton></MudItem>
+                            else
+                            {
+                                <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
+                                <MudItem xs="12">
+                                    <MudButton FullWidth OnClick="MakeSkillRoll">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
+                                            <img src="@MyIcon.Dice" width="22" height="22" alt="" />
+                                            <span>Make a roll</span>
+                                        </MudStack>
+                                    </MudButton>
+                                </MudItem>
+                            }
+                            <MudItem xs="6">
+                                <MudButton FullWidth OnClick="AddExistingMob">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
+                                        <img src="@MyIcon.Goblin" width="22" height="22" alt="" />
+                                        <span>Existing mobs</span>
+                                    </MudStack>
+                                </MudButton>
+                            </MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
                         </MudGrid>
                     }
                     @if (IsLoadingCharacters)
@@ -168,29 +235,43 @@ else
                         {
                             @if (post.Character is not null)
                             {
-                                <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="150px">
-                                    <MudPaper Class="d-flex flex-column pa-2" Width="150px">
-                                        <MudText Align="Align.Center" Typo="Typo.h6">@(post.AlternativeName ?? post.Character.NPCName)</MudText>
-                                        <MudImage Src="@(post.AlternativeImageUrl ?? post.Character.ImageUrl)" Alt="Avatar" Elevation="25" Class="rounded-lg" Style="max-width:130px;" />
-                                        @if (CharacterAllParams.Any() && CharacterAllParams.ContainsKey(post.CharacterId) && CharacterAllParams[post.CharacterId] is not null)
-                                        {
-                                            <MudText Align="Align.Center" Class="pt-2" Typo="Typo.caption">Posts: @CharacterAllParams[post.CharacterId]!.Character.NumberOfPosts.ToString()</MudText>
-                                        }
-                                    </MudPaper>
-                                    <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
-                                        <MudStack Spacing="0" Row="true">
-                                            <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
-                                            @if (UserInfo?.SelectedCharacter is not null && (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true))
-                                            {
-                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
-                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeletePost(post))"></MudIconButton>
-                                            }
-                                        </MudStack>
+                                @if (IsBattleTurnPost(post))
+                                {
+                                    <MudPaper Class="d-flex flex-column pa-2 flex-grow-1" Width="100%">
                                         <div class="ql-editor" style="height:100%; overflow:auto;">
                                             @((MarkupString)(post.Content ?? string.Empty))
                                         </div>
                                     </MudPaper>
-                                </MudPaper>
+                                }
+                                else
+                                {
+                                    <MudPaper Class="d-flex flex-row pa-2" Width="100%" MinHeight="150px">
+                                        @if (IsPortraitHidden(post) == false)
+                                        {
+                                            <MudPaper Class="d-flex flex-column pa-2" Width="150px">
+                                                <MudText Align="Align.Center" Typo="Typo.h6">@(post.AlternativeName ?? post.Character.NPCName)</MudText>
+                                                <MudImage Src="@(post.AlternativeImageUrl ?? post.Character.ImageUrl)" Alt="Avatar" Elevation="25" Class="rounded-lg" Style="max-width:130px;" />
+                                                @if (CharacterAllParams.Any() && CharacterAllParams.ContainsKey(post.CharacterId) && CharacterAllParams[post.CharacterId] is not null)
+                                                {
+                                                    <MudText Align="Align.Center" Class="pt-2" Typo="Typo.caption">Posts: @CharacterAllParams[post.CharacterId]!.Character.NumberOfPosts.ToString()</MudText>
+                                                }
+                                            </MudPaper>
+                                        }
+                                        <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
+                                            <MudStack Spacing="0" Row="true">
+                                                <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+                                                @if (UserInfo?.SelectedCharacter is not null && (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true))
+                                                {
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeletePost(post))"></MudIconButton>
+                                                }
+                                            </MudStack>
+                                            <div class="ql-editor" style="height:100%; overflow:auto;">
+                                                @((MarkupString)(post.Content ?? string.Empty))
+                                            </div>
+                                        </MudPaper>
+                                    </MudPaper>
+                                }
                             }
                         }
                     }
@@ -211,22 +292,36 @@ else
                             {
                                 @if (post.Character is not null)
                                 {
-                                    <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
-                                        <MudStack Class="pb-1" Spacing="0" Row="true">
-                                            <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;">
-                                                <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@(post.AlternativeImageUrl ?? post.Character.ImageUrl)"></MudImage>
-                                            </MudAvatar>
-                                            <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@(post.AlternativeName ?? post.Character.NPCName)</MudText>
-                                            @if (UserInfo?.SelectedCharacter is not null && (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true))
-                                            {
-                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
-                                            }
-                                        </MudStack>
-                                        <div class="ql-editor" style="height:100%; overflow:auto;">
-                                            @((MarkupString)(post.Content ?? string.Empty))
-                                        </div>
-                                        <MudText Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
-                                    </MudPaper>
+                                    @if (IsBattleTurnPost(post))
+                                    {
+                                        <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
+                                            <div class="ql-editor" style="height:100%; overflow:auto;">
+                                                @((MarkupString)(post.Content ?? string.Empty))
+                                            </div>
+                                        </MudPaper>
+                                    }
+                                    else
+                                    {
+                                        <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
+                                            <MudStack Class="pb-1" Spacing="0" Row="true">
+                                                @if (IsPortraitHidden(post) == false)
+                                                {
+                                                    <MudAvatar Color="Color.Dark" Style="height:37px; width:37px;">
+                                                        <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@(post.AlternativeImageUrl ?? post.Character.ImageUrl)"></MudImage>
+                                                    </MudAvatar>
+                                                }
+                                                <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@(post.AlternativeName ?? post.Character.NPCName)</MudText>
+                                                @if (UserInfo?.SelectedCharacter is not null && (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true))
+                                                {
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                                }
+                                            </MudStack>
+                                            <div class="ql-editor" style="height:100%; overflow:auto;">
+                                                @((MarkupString)(post.Content ?? string.Empty))
+                                            </div>
+                                            <MudText Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+                                        </MudPaper>
+                                    }
                                 }
                             }
                         }
@@ -295,11 +390,17 @@ else
     [Parameter]
     public int Id { get; set; }
 
+    [SupplyParameterFromQuery(Name = "lastPage")]
+    public bool GoToLastPage { get; set; }
+
+    private int _loadedChapterId;
+
     private ChapterDTO? Chapter { get; set; } = null;
     private List<PostDTO> Posts { get; set; } = new List<PostDTO>();
     private IDictionary<int, AllParamsModel?> CharacterAllParams { get; set; } = new Dictionary<int, AllParamsModel?>();
     private ICollection<MobDTO> Mobs = new List<MobDTO>();
     private BattlePhaseDTO? BattlePhase = null;
+    private readonly List<BattleTurnEvent> _turnEvents = new();
     private List<RaceDTO> ApprovedRacesCache { get; set; } = new();
     public PostDTO NewPost { get; set; } = new();
     public UserInfo? UserInfo { get; set; }
@@ -338,7 +439,6 @@ else
         try
         {
             UserInfo = await _userService.GetUserInfo();
-            await LoadChapter();
             await InitializeSignalR();
         }
         catch (Exception ex)
@@ -350,6 +450,21 @@ else
 
         handler = async () => await LoadForSelectedCharacter();
         _callbackService.OnChange += handler;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedChapterId == Id && !GoToLastPage)
+            return;
+
+        if (_loadedChapterId == Id && GoToLastPage)
+        {
+            await LoadLastPage();
+            return;
+        }
+
+        _loadedChapterId = Id;
+        await LoadChapter();
     }
 
     private async Task InitializeSignalR()
@@ -469,7 +584,7 @@ else
         }
     }
 
-    private async Task LoadChapter()
+    private async Task LoadChapter(bool goToLastPage = false)
     {
         try
         {
@@ -483,7 +598,10 @@ else
             {
                 // Load posts
                 PageCount = await GetPageCount();
+                PageNum = goToLastPage || GoToLastPage ? PageCount : 1;
                 Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+                if (GoToLastPage)
+                    ClearLastPageQuery();
 
                 // Load characters with AllParams
                 CharacterAllParams.Clear();
@@ -740,6 +858,30 @@ else
         return postCount % PostsPerPage == 0 ? (postCount / PostsPerPage) : (postCount / PostsPerPage) + 1;
     }
 
+    private async Task LoadLastPage()
+    {
+        try
+        {
+            PageCount = await GetPageCount();
+            PageNum = PageCount;
+            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+            _scrollDown = true;
+            ClearLastPageQuery();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading last page for chapter {ChapterId}", Id);
+            SnackBar.Add("Error loading last page: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private void ClearLastPageQuery()
+    {
+        GoToLastPage = false;
+        _navigationManager.NavigateTo($"/chapter/{Id}", replace: true);
+    }
+
     private async Task SelectPage(int page = 1)
     {
         try
@@ -816,6 +958,7 @@ else
     private async Task StartBattlePhase()
     {
         if (Chapter is null) return;
+        _turnEvents.Clear();
         BattlePhase = new(CharacterAllParams, Mobs, Chapter.CampaignId, Id);
         OngoingBattle = true;
         BattleButton = "End Battle";
@@ -830,6 +973,9 @@ else
     {
         try
         {
+            if (BattlePhase is not null)
+                await PostTurnSummaryAsync(BattlePhase.CurrentTurn, BattlePhase.CurrentTurn + 1);
+
             foreach (var characterParams in CharacterAllParams.Values)
             {
                 if (characterParams?.TraitsTemporary is null || characterParams.TraitsTemporary.Any() == false) continue;
@@ -881,7 +1027,7 @@ else
                 BattlePhase.CurrentTurn++;
                 BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
                 await LoadMobs();
-                await LoadChapter();
+                await LoadChapter(goToLastPage: true);
                 SnackBar.Add($"Turn {BattlePhase.CurrentTurn} started", Severity.Info);
             }
         }
@@ -901,6 +1047,8 @@ else
         {
             return;
         }
+
+        _turnEvents.Clear();
 
         foreach (var characterParams in CharacterAllParams.Values)
         {
@@ -962,6 +1110,15 @@ else
             if (!string.IsNullOrEmpty(fightResult.AttackerName))
                 SnackBar.Add($"Fight sequence performed. {fightResult.AttackerName} attacks {fightResult.DefenderName}", Severity.Success);
 
+            if (UserInfo?.CharacterMG != true)
+            {
+                SnackBar.Add("Selected character is not Game Master — review the fight result before posting.", Severity.Warning, config =>
+                {
+                    config.VisibleStateDuration = 60_000;
+                    config.ShowCloseIcon = true;
+                });
+            }
+
             StateHasChanged();
         }
     }
@@ -1021,6 +1178,8 @@ else
                     defenderMob.States = FightSequenceModel.MergeMobStates(defenderMob.States, snapshot.DefenderNewStates);
                 await _mobRepository.Update(defenderMob);
             }
+
+            RecordFightPersistenceEvents(snapshot);
         }
         catch (Exception ex)
         {
@@ -1174,6 +1333,9 @@ else
 
         if (result is not null && !result.Canceled)
         {
+            if (result.Data is StatusAddedSnapshot status)
+                RecordStatusAddedEvent(status);
+
             IsLoadingCharacters = true;
             StateHasChanged();
             await LoadMobs();
@@ -1181,6 +1343,156 @@ else
             IsLoadingCharacters = false;
             StateHasChanged();
         }
+    }
+
+    private static bool IsPortraitHidden(PostDTO post) =>
+        post.AlternativeImageUrl == SD.PostNoPortrait;
+
+    private static bool IsBattleTurnPost(PostDTO post) =>
+        post.AlternativeName == "Battle turn";
+
+    private void RecordFightPersistenceEvents(FightPersistenceSnapshot snapshot)
+    {
+        var attacker = snapshot.SelectedAttacker;
+        var defender = snapshot.SelectedDefender;
+
+        foreach (var wound in snapshot.NewWounds)
+        {
+            var description = $"{wound.Severity} wound to {wound.Location.ToLower()}";
+            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, description));
+        }
+
+        if (snapshot.NewWounds.Count == 0 && string.IsNullOrEmpty(snapshot.WoundSeverity) == false)
+            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, $"{snapshot.WoundSeverity} wound"));
+
+        RecordStateEvents(snapshot.DefenderNewStates, defender, attacker);
+        RecordStateEvents(snapshot.AttackerNewStates, attacker, defender);
+    }
+
+    private void RecordStateEvents(string? states, string target, string? causedBy)
+    {
+        if (string.IsNullOrWhiteSpace(states))
+            return;
+
+        foreach (var part in states.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var segments = part.Split(':', 2);
+            var name = segments[0].Trim();
+            if (string.IsNullOrEmpty(name))
+                continue;
+
+            if (name is States.Names.NoTurn or States.Names.HalfTurn)
+                continue;
+
+            if (name == States.Names.Unconscious)
+                _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Unconscious, target, causedBy, name));
+            else if (name == States.Names.Dead)
+                _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Dead, target, causedBy, name));
+            else
+                _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.State, target, causedBy, $"{name} state"));
+        }
+    }
+
+    private void RecordStatusAddedEvent(StatusAddedSnapshot status)
+    {
+        if (status.StateName is States.Names.NoTurn or States.Names.HalfTurn)
+            return;
+
+        if (status.StateName == States.Names.Unconscious)
+            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Unconscious, status.TargetName, null, status.StateName));
+        else if (status.StateName == States.Names.Dead)
+            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Dead, status.TargetName, null, status.StateName));
+        else
+            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.State, status.TargetName, null, $"{status.StateName} state ({status.Duration} turns)"));
+    }
+
+    private static string BoldWoundDescription(string description)
+    {
+        var woundIdx = description.IndexOf(" wound", StringComparison.OrdinalIgnoreCase);
+        if (woundIdx <= 0)
+            return description;
+
+        return RichText.BoldText(description[..woundIdx]) + description[woundIdx..];
+    }
+
+    private static string BoldStateDescription(string description)
+    {
+        const string suffix = " state";
+        var stateIdx = description.IndexOf(suffix, StringComparison.OrdinalIgnoreCase);
+        if (stateIdx <= 0)
+            return RichText.BoldText(description);
+
+        return RichText.BoldText(description[..stateIdx]) + description[stateIdx..];
+    }
+
+    private static string FormatTurnEvent(BattleTurnEvent e)
+    {
+        var target = RichText.BoldText(e.TargetName);
+        var causedBy = string.IsNullOrEmpty(e.CausedBy) ? string.Empty : $" (by {RichText.BoldText(e.CausedBy)})";
+        return e.Kind switch
+        {
+            BattleTurnEventKind.Wound => $"{target} received {BoldWoundDescription(e.Description)}{causedBy}",
+            BattleTurnEventKind.Unconscious => $"{target} became {RichText.BoldText(States.Names.Unconscious)}{causedBy}",
+            BattleTurnEventKind.Dead => $"{target} died{causedBy}",
+            _ => $"{target} gained {BoldStateDescription(e.Description)}{causedBy}",
+        };
+    }
+
+    private string BuildTurnSummaryHtml(int endingTurn, int startingTurn)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<p>");
+        sb.Append($"<span style=\"font-size:1.3em;\">{RichText.BoldText($"Battle turn {startingTurn} begins")}</span>");
+        sb.Append("<br><br>");
+        sb.Append(RichText.BoldText($"Summary of turn {endingTurn}:"));
+        sb.Append("<br>");
+        if (_turnEvents.Count == 0)
+        {
+            sb.Append("Nothing notable happened.");
+        }
+        else
+        {
+            foreach (var e in _turnEvents)
+            {
+                sb.Append("&#8226; ");
+                sb.Append(FormatTurnEvent(e));
+                sb.Append("<br>");
+            }
+        }
+        sb.Append("</p>");
+        return sb.ToString();
+    }
+
+    private async Task PostTurnSummaryAsync(int endingTurn, int startingTurn)
+    {
+        if (Chapter is null || UserInfo?.SelectedCharacter is null)
+            return;
+
+        var content = BuildTurnSummaryHtml(endingTurn, startingTurn);
+        _turnEvents.Clear();
+
+        var post = new PostDTO
+        {
+            ChapterId = Id,
+            CreatedDate = DateTime.Now,
+            Content = content,
+            CharacterId = UserInfo.SelectedCharacter.Id,
+            Character = UserInfo.SelectedCharacter,
+            AlternativeName = "Battle turn",
+            AlternativeImageUrl = SD.PostNoPortrait,
+        };
+
+        var result = await _postRepository.Create(post);
+        if (result is null)
+            return;
+
+        PageCount = await GetPageCount();
+        PageNum = PageCount;
+        Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+        _scrollDown = true;
+
+        if (_hubConnection is not null)
+            await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
     }
 
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)

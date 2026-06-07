@@ -1,4 +1,4 @@
-﻿@page "/equipment/{id:int}"
+@page "/equipment/{id:int}"
 @using DA_Business.Services.Interfaces
 @using DA_DataAccess.CharacterClasses
 @implements IDisposable
@@ -35,8 +35,8 @@
         </div>
     </MudHidden>
 }
-<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="">
-    <div class="row justify-content-center">
+<MudContainer MaxWidth="MaxWidth.False" Class="px-2">
+    <div class="equipment-page-layout">
 
         @if (IsLoading == true)
         {
@@ -88,7 +88,9 @@
                         <EquipItemComponent @ref="EquipItemComp[EquippedItems.Ring2]" OnGearChange="GearChange" SlotType="@SD.SlotType.Ring2"> </EquipItemComponent>
                 </div>
             </div>
-            <BattleStatsComponent OnBattleStatsChange="BattleStatChange" @ref="BattleStatComp"></BattleStatsComponent>
+            <div class="battlestats-column">
+                <BattleStatsComponent OnBattleStatsChange="BattleStatChange" @ref="BattleStatComp"></BattleStatsComponent>
+            </div>
         </CascadingValue>
         }
     </div>

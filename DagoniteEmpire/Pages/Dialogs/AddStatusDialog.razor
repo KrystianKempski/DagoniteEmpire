@@ -1,5 +1,6 @@
 ﻿@using DA_DataAccess.CharacterClasses
 @using DA_Models
+@using DA_Models.ComponentModels
 @using MudBlazor
 @inject IFileUpload _fileUpload;
 @inject ISnackbar Snackbar
@@ -119,12 +120,17 @@
     {
         try
         {
-            MudDialog.Close();
             if (IsCharacter){
                 await AddCharacterState();
             }else{
                 await AddMobState();
             }
+            var snapshot = new StatusAddedSnapshot(
+                SelectedCharacterName,
+                SelectedTrait!.Name,
+                StateDuration,
+                !IsCharacter);
+            MudDialog.Close(DialogResult.Ok(snapshot));
             Snackbar.Add($"{SelectedTrait.Name} added to:{SelectedCharacterName}", Severity.Success);
         }
         catch(Exception ex)

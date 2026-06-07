@@ -1,4 +1,4 @@
-﻿
+
 @inject IJSRuntime _jsRuntime
 @inject ISnackbar _snackBar
 @inject NavigationManager _navigationManager;
@@ -130,7 +130,7 @@
                 if(postId > 0)
                 {
 
-                    string characterLink = $"/chapter/{postId}";
+                    string characterLink = $"/chapter/{postId}?lastPage=true";
                     await OnDrawerChanged.InvokeAsync();
                     _navigationManager.NavigateTo(characterLink);
                 }

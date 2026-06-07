@@ -1,14 +1,27 @@
-﻿::deep .characters-drawer-btn {
-    position: fixed !important;
+﻿.characters-drawer-btn-wrapper {
+    position: fixed;
     top: 72px;
     left: 8px;
     z-index: 1300;
-    background-color: #1a1a1a !important;
-    color: #f5f5f5 !important;
 }
 
-::deep .characters-drawer-btn:hover {
-    background-color: #333 !important;
+.characters-drawer-btn-wrapper ::deep .characters-drawer-btn,
+.characters-drawer-btn-wrapper ::deep .characters-drawer-btn:hover,
+.characters-drawer-btn-wrapper ::deep .characters-drawer-btn:focus,
+.characters-drawer-btn-wrapper ::deep .characters-drawer-btn:active {
+    opacity: 1 !important;
+    background-color: var(--mud-palette-surface) !important;
+    color: var(--mud-palette-text-primary) !important;
+    border: 1px solid var(--mud-palette-lines-default) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.characters-drawer-btn-wrapper ::deep .characters-drawer-btn:hover {
+    filter: brightness(1.08);
+}
+
+.characters-drawer-btn-wrapper ::deep .characters-drawer-btn::before {
+    opacity: 0 !important;
 }
 
 .character-panel {

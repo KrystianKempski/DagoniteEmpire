@@ -27,6 +27,7 @@ namespace DA_Common
 
         public const string GameMaster_NPCName = "Game Master";
         public const string GameMaster_Portrait = "../images/gm_avatar.webp";
+        public const string PostNoPortrait = "__no_portrait__";
 
         /// <summary>HttpOnly cookie so wiki static middleware can read the active hero (Blazor session storage is not available there).</summary>
         public const string WikiSelectedCharacterCookie = "dagonite_wiki_character_id";

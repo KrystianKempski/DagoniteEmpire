@@ -1,4 +1,4 @@
-﻿@using DA_DataAccess.CharacterClasses
+@using DA_DataAccess.CharacterClasses
 @inject ISnackbar Snackbar
 @inject IUserService _userService
 
@@ -56,19 +56,22 @@
                     </div>
                 </div>
                         
-                <label class="fw-bold pt-4">Bonuses and penalties</label>
             }
+            <label class="fw-bold pt-4">Bonuses and penalties</label>
             @if (NewTrait.Bonuses != null)
             {
                 @foreach (var obj in NewTrait.Bonuses)
                 {
                     <label class="bonus-cell">Bonus @obj.Index</label>
-                    <div class="bonuses-columns">
+                    <div class="bonuses-columns @(IsWeaponQualityMode ? "weapon-quality-mode" : "")">
+                        @if (IsWeaponQualityMode == false)
+                        {
                             <div class="bonus-cell">
-                            <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select a feature type" @bind-Value="@obj.FeatureType" Disabled="@(!IsNotWeaponQuality())" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@__ft</MudSelectItem> }
-                            </MudSelect>
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select a feature type" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
+                                    @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@__ft</MudSelectItem> }
+                                </MudSelect>
                             </div>
+                        }
                         @if (obj.FeatureType == SD.FeatureAttribute)
                         {
                             <div class="bonus-cell">
@@ -96,9 +99,12 @@
                         else if (obj.FeatureType == SD.FeatureWeaponQuality)
                         {
                             <div class="bonus-cell">
-                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select weapon quality" @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select weapon quality" @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
                                     @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@__w</MudSelectItem> }
                                 </MudSelect>
+                            </div>
+                            <div class="bonus-cell">
+                                <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Style="width:100%" T="int" @bind-Value="@obj.BonusValue"></MudNumericField>
                             </div>
                         }
                         else if(obj.FeatureType == SD.FeatureOther)
@@ -108,20 +114,11 @@
 
                             </div>
                         }
-                        @if (@obj.FeatureName != null && @obj.FeatureType != SD.FeatureOther)
+                        @if (@obj.FeatureName != null && @obj.FeatureType != SD.FeatureOther && obj.FeatureType != SD.FeatureWeaponQuality)
                         {
-                            if (obj.FeatureType == SD.FeatureWeaponQuality)
-                            {
-                                <div class="bonus-cell">
-                                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Style="width:100%" T="int" @bind-Value="@obj.BonusValue"></MudNumericField>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="bonus-cell">
-                                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Style="width:100%" T="int" @bind-Value="@obj.BonusValue"></MudNumericField>
-                                </div>
-                            }
+                            <div class="bonus-cell">
+                                <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Style="width:100%" T="int" @bind-Value="@obj.BonusValue"></MudNumericField>
+                            </div>
                         }
                     </div>
                 }
@@ -156,11 +153,6 @@
     private string IconSource = "";
     public UserInfo? UserInfo { get; set; }
 
-
-    private bool IsNotWeaponQuality()
-    {
-        return !IsWeaponQualityMode;
-    }
 
     private List<string> WeaponQualityList = new List<string>();
 
@@ -235,6 +227,7 @@
             bonus.FeatureType = SD.FeatureWeaponQuality;
         }
         NewTrait.Bonuses.Add(bonus);
+        StateHasChanged();
     }
 
     private void OnDeleteBonusBtnClick()
@@ -243,6 +236,7 @@
         if (NewTrait.Bonuses is not null && NewTrait.Bonuses.Count() > 0)
         {
             NewTrait.Bonuses.Remove(NewTrait.Bonuses.Last());
+            StateHasChanged();
         }
     }
 
