@@ -1,4 +1,5 @@
-﻿@inject ICharacterRepository _characterRepository
+﻿@using DA_Models
+@inject ICharacterRepository _characterRepository
 @inject IMobRepository _mobRepository
 @inject IAttributeRepository _attributeRepository
 @inject IBaseSkillRepository _baseSkillRepository
@@ -14,6 +15,7 @@
 @inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IUserService _userService
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 
 <MudPaper>
     @if (IsLoading)
@@ -60,6 +62,22 @@
                     </div>
                 </div>
             </MudButton>
+            @if (IsExpanded && ShowActionsPanel)
+            {
+                <MudPaper Elevation="1" Class="pa-1 mx-1 character-actions-panel">
+                    <MudText Class="p-1" Typo="Typo.button">ACTIONS</MudText>
+                    <MudTooltip Text="@FullDefenceTooltip">
+                        <span class="d-inline-block">
+                            <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Shield"
+                                           Color="@(CanDeclareFullDefence ? Color.Info : Color.Default)"
+                                           Disabled="!CanDeclareFullDefence"
+                                           Size="Size.Small"
+                                           aria-label="Declare full defence"
+                                           OnClick="ConfirmFullDefenceAsync" />
+                        </span>
+                    </MudTooltip>
+                </MudPaper>
+            }
             <MudCollapse Expanded="IsExpanded">
                 <MudPaper Elevation="0" Class="ma-1">
                     @if(BattleProperties is not null && ( UserInfo?.IsAdminOrMG == true || Relation == Relation.Teammate || Relation == Relation.Ally)){
@@ -316,6 +334,10 @@
     public int Id { get; set; } = 0;
     [Parameter]
     public bool IsMob { get; set; } = false;
+    [Parameter]
+    public bool OngoingBattle { get; set; }
+    [Parameter]
+    public EventCallback<int> OnFullDefenceApplied { get; set; }
 
     private bool IsExpanded = false;
     private bool IsLoading = false;
@@ -347,6 +369,44 @@
     private static string GetMobSignature(MobDTO mob) =>
         $"{mob.States}|{mob.CurrentWounds}|{mob.MaxWounds}";
 
+    private bool IsOwnCharacter =>
+        !IsMob
+        && AllParams?.Character is not null
+        && UserInfo?.SelectedCharacter?.Id == AllParams.Character.Id;
+
+    private bool ShowActionsPanel =>
+        OngoingBattle
+        && !IsMob
+        && AllParams?.Character is not null
+        && (IsOwnCharacter || UserInfo?.IsAdminOrMG == true);
+
+    private bool HasTemporaryState(string stateName) =>
+        AllParams?.TraitsTemporary?.Any(t => t.Name == stateName) == true;
+
+    private bool IsFullDefenceBlocked =>
+        HasTemporaryState(States.Names.NoTurn)
+        || HasTemporaryState(States.Names.Unconscious)
+        || HasTemporaryState(States.Names.Dead)
+        || HasTemporaryState(States.Names.FullDefence);
+
+    private bool CanDeclareFullDefence =>
+        ShowActionsPanel && !IsFullDefenceBlocked;
+
+    private string FullDefenceTooltip
+    {
+        get
+        {
+            if (HasTemporaryState(States.Names.Dead))
+                return "Full defence unavailable: character is dead.";
+            if (HasTemporaryState(States.Names.Unconscious))
+                return "Full defence unavailable: character is unconscious.";
+            if (HasTemporaryState(States.Names.NoTurn))
+                return "Full defence unavailable: no actions left this turn.";
+            if (HasTemporaryState(States.Names.FullDefence))
+                return "Full defence unavailable: already in full defence.";
+            return "Full defence: no attack this turn, +5 to defence next round. Uses your entire turn.";
+        }
+    }
 
     private void OnExpandCollapseClick()
     {
@@ -618,5 +678,42 @@
             cover = (int)(100.0 * Mob.CurrentWounds / Mob.MaxWounds);
 
         WoundLevel = cover <= 0 ? "0%" : cover > 100 ? "100%" : $"{cover}%";
+    }
+
+    private async Task ConfirmFullDefenceAsync()
+    {
+        if (!CanDeclareFullDefence || AllParams?.Character is null)
+            return;
+
+        var characterName = AllParams.Character.NPCName;
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Full defence",
+            $"Declare full defence for {characterName}? No attack this turn and no other actions. +5 to defence next round.",
+            yesText: "Declare",
+            cancelText: "Cancel");
+
+        if (result is not true)
+            return;
+
+        await ApplyFullDefenceAsync();
+    }
+
+    private async Task ApplyFullDefenceAsync()
+    {
+        if (AllParams?.Character is null)
+            return;
+
+        var halfTurn = AllParams.TraitsTemporary.FirstOrDefault(t => t.Name == States.Names.HalfTurn);
+        if (halfTurn is not null)
+        {
+            await _traitCharacterRepository.Delete(halfTurn.Id);
+            AllParams.TraitsTemporary.Remove(halfTurn);
+        }
+
+        await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.FullDefence, true, 1, Id));
+        await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.NoTurn, true, 1, Id));
+
+        Snackbar.Add("Full defence declared.", Severity.Success);
+        await OnFullDefenceApplied.InvokeAsync(Id);
     }
 }

@@ -114,14 +114,17 @@ else
                                 {
                                     <PanelCharacterComponent @key="@($"char-{charac.Id}-{_participantsRenderKey}")"
                                                              AllParams="CharacterAllParams[charac.Id]"
-                                                             Id="charac.Id"></PanelCharacterComponent>
+                                                             Id="charac.Id"
+                                                             OngoingBattle="OngoingBattle"
+                                                            OnFullDefenceApplied="OnFullDefenceAppliedAsync"></PanelCharacterComponent>
                                 }
                                 @foreach (var mob in Mobs)
                                 {
                                     <PanelCharacterComponent @key="@($"mob-{mob.Id}-{mob.States}-{mob.CurrentWounds}-{_participantsRenderKey}")"
                                                              Mob="mob"
                                                              Id="mob.Id"
-                                                             IsMob="true"></PanelCharacterComponent>
+                                                             IsMob="true"
+                                                             OngoingBattle="OngoingBattle"></PanelCharacterComponent>
                                 }
                             </MudStack>
                         </MudPaper>
@@ -195,14 +198,17 @@ else
                                 {
                                     <PanelCharacterComponent @key="@($"char-{charac.Id}-{_participantsRenderKey}")"
                                                              AllParams="CharacterAllParams[charac.Id]"
-                                                             Id="charac.Id"></PanelCharacterComponent>
+                                                             Id="charac.Id"
+                                                             OngoingBattle="OngoingBattle"
+                                                             OnFullDefenceApplied="OnFullDefenceAppliedAsync"></PanelCharacterComponent>
                                 }
                                 @foreach (var mob in Mobs)
                                 {
                                     <PanelCharacterComponent @key="@($"mob-{mob.Id}-{mob.States}-{mob.CurrentWounds}-{_participantsRenderKey}")"
                                                              Mob="mob"
                                                              Id="mob.Id"
-                                                             IsMob="true"></PanelCharacterComponent>
+                                                             IsMob="true"
+                                                             OngoingBattle="OngoingBattle"></PanelCharacterComponent>
                                 }
                             </MudStack>
                         </MudPaper>
@@ -1288,6 +1294,15 @@ else
             CharacterAllParams[charac.Id] = await LoadCharacter(charac.Id);
 
         _participantsRenderKey++;
+    }
+
+    private async Task OnFullDefenceAppliedAsync(int characterId)
+    {
+        if (CharacterAllParams.ContainsKey(characterId))
+            CharacterAllParams[characterId] = await LoadCharacter(characterId);
+
+        _participantsRenderKey++;
+        StateHasChanged();
     }
 
     private async Task AddExistingMob()
