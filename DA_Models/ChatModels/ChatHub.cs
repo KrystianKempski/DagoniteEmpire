@@ -24,7 +24,7 @@ namespace DA_Models.ChatModels
         /// </summary>
         public async Task NotifyNewPost(int chapterId, int postId)
         {
-            await Clients.All.SendAsync("NewPost", chapterId, postId);
+            await Clients.Others.SendAsync("NewPost", chapterId, postId);
         }
 
         /// <summary>
@@ -32,7 +32,15 @@ namespace DA_Models.ChatModels
         /// </summary>
         public async Task NotifyPostUpdated(int chapterId, int postId)
         {
-            await Clients.All.SendAsync("PostUpdated", chapterId, postId);
+            await Clients.Others.SendAsync("PostUpdated", chapterId, postId);
+        }
+
+        /// <summary>
+        /// Notify all clients about a deleted post
+        /// </summary>
+        public async Task NotifyPostDeleted(int chapterId, int postId)
+        {
+            await Clients.Others.SendAsync("PostDeleted", chapterId, postId);
         }
 
         public override Task OnConnectedAsync()

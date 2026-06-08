@@ -235,7 +235,7 @@ else
                         {
                             @if (post.Character is not null)
                             {
-                                @if (IsBattleTurnPost(post))
+                                @if (IsBattleSummaryPost(post))
                                 {
                                     <MudPaper Class="d-flex flex-column pa-2 flex-grow-1" Width="100%">
                                         <div class="ql-editor" style="height:100%; overflow:auto;">
@@ -292,7 +292,7 @@ else
                             {
                                 @if (post.Character is not null)
                                 {
-                                    @if (IsBattleTurnPost(post))
+                                    @if (IsBattleSummaryPost(post))
                                     {
                                         <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
                                             <div class="ql-editor" style="height:100%; overflow:auto;">
@@ -401,6 +401,7 @@ else
     private ICollection<MobDTO> Mobs = new List<MobDTO>();
     private BattlePhaseDTO? BattlePhase = null;
     private readonly List<BattleTurnEvent> _turnEvents = new();
+    private readonly List<BattleTurnEvent> _battleEvents = new();
     private List<RaceDTO> ApprovedRacesCache { get; set; } = new();
     public PostDTO NewPost { get; set; } = new();
     public UserInfo? UserInfo { get; set; }
@@ -478,8 +479,10 @@ else
 
             _hubConnection.On<int, int>("NewPost", OnNewPost);
             _hubConnection.On<int, int>("PostUpdated", OnPostUpdated);
+            _hubConnection.On<int, int>("PostDeleted", OnPostDeleted);
 
-            await _hubConnection.StartAsync();
+            if (_hubConnection.State == HubConnectionState.Disconnected)
+                await _hubConnection.StartAsync();
             Logger.LogInformation("SignalR connection established for chapter {ChapterId}", Id);
         }
         catch (Exception ex)
@@ -491,13 +494,13 @@ else
     private async Task OnNewPost(int chapterId, int postId)
     {
         if (chapterId != Id) return;
-        
+
         await InvokeAsync(async () =>
         {
-            // Refresh posts to get the new one
-            PageCount = await GetPageCount();
-            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-            _scrollDown = true;
+            if (Posts.Any(p => p.Id == postId))
+                return;
+
+            await LoadLastPagePostsAsync(scrollDown: true);
             StateHasChanged();
             SnackBar.Add("New post added!", Severity.Info);
         });
@@ -506,13 +509,58 @@ else
     private async Task OnPostUpdated(int chapterId, int postId)
     {
         if (chapterId != Id) return;
-        
+
         await InvokeAsync(async () =>
         {
-            // Refresh posts to get the updated one
-            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+            var updated = await _postRepository.GetById(postId);
+            if (updated.Id != postId)
+                return;
+
+            var index = Posts.FindIndex(p => p.Id == postId);
+            if (index >= 0)
+            {
+                Posts[index] = updated;
+                StateHasChanged();
+                return;
+            }
+
+            PageCount = await GetPageCount();
+            if (PageNum == PageCount)
+                Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+
             StateHasChanged();
         });
+    }
+
+    private async Task OnPostDeleted(int chapterId, int postId)
+    {
+        if (chapterId != Id) return;
+
+        await InvokeAsync(async () =>
+        {
+            Posts.RemoveAll(p => p.Id == postId);
+            PageCount = await GetPageCount();
+            if (PageCount < 1)
+                PageCount = 1;
+
+            if (PageNum > PageCount)
+            {
+                PageNum = PageCount;
+                Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+            }
+
+            StateHasChanged();
+            SnackBar.Add("A post was deleted.", Severity.Info);
+        });
+    }
+
+    private async Task LoadLastPagePostsAsync(bool scrollDown = false)
+    {
+        PageCount = await GetPageCount();
+        PageNum = PageCount;
+        Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+        if (scrollDown)
+            _scrollDown = true;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -726,6 +774,7 @@ else
 
             IsLoading = true;
             StateHasChanged();
+            var createdNewPost = false;
 
             if (IsEditMode)
             {
@@ -764,15 +813,10 @@ else
                 var result = await _postRepository.Create(NewPost);
                 if (result is not null)
                 {
-                    Posts.Add(NewPost);
-                    
-                    // Notify other clients about the new post
+                    createdNewPost = true;
                     if (_hubConnection is not null)
-                    {
                         await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
-                    }
-                    
-                    // Index the post in SCRIBE (fire and forget)
+
                     _ = Task.Run(async () =>
                     {
                         try
@@ -789,16 +833,10 @@ else
 
             NewPost = new();
             if (PostEditor is not null)
-            {
                 await PostEditor.LoadHTMLContent(string.Empty);
-            }
 
-            var newPageCount = await GetPageCount();
-            if (newPageCount != PageCount || PageNum != newPageCount)
-            {
-                PageNum = PageCount = newPageCount;
-                Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-            }
+            if (createdNewPost)
+                await LoadLastPagePostsAsync(scrollDown: true);
 
             IsLoading = false;
             StateHasChanged();
@@ -840,6 +878,19 @@ else
 
         Posts.Remove(post);
         await _postRepository.Delete(idToDelete);
+
+        if (_hubConnection is not null)
+            await _hubConnection.SendAsync("NotifyPostDeleted", Id, idToDelete);
+
+        PageCount = await GetPageCount();
+        if (PageCount < 1)
+            PageCount = 1;
+        if (PageNum > PageCount)
+        {
+            PageNum = PageCount;
+            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+        }
+
         IsLoading = false;
         StateHasChanged();
     }
@@ -959,6 +1010,7 @@ else
     {
         if (Chapter is null) return;
         _turnEvents.Clear();
+        _battleEvents.Clear();
         BattlePhase = new(CharacterAllParams, Mobs, Chapter.CampaignId, Id);
         OngoingBattle = true;
         BattleButton = "End Battle";
@@ -1074,11 +1126,14 @@ else
         BattleButton = "Start Battle";
         if (BattlePhase is not null)
         {
+            var rounds = BattlePhase.CurrentTurn;
+            await PostBattleSummaryAsync(rounds);
+
             BattlePhase.BattleOngoing = OngoingBattle = false;
             BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
             BattlePhase = null;
             await LoadMobs();
-            await LoadChapter();
+            await LoadChapter(goToLastPage: true);
             SnackBar.Add($"Battle Ended", Severity.Normal);
         }
     }
@@ -1348,8 +1403,15 @@ else
     private static bool IsPortraitHidden(PostDTO post) =>
         post.AlternativeImageUrl == SD.PostNoPortrait;
 
-    private static bool IsBattleTurnPost(PostDTO post) =>
-        post.AlternativeName == "Battle turn";
+    private static bool IsBattleSummaryPost(PostDTO post) =>
+        post.AlternativeName is "Battle turn" or "Battle ended";
+
+    private void AddTurnEvent(BattleTurnEvent e)
+    {
+        _turnEvents.Add(e);
+        if (e.Kind is BattleTurnEventKind.Wound or BattleTurnEventKind.Unconscious or BattleTurnEventKind.Dead)
+            _battleEvents.Add(e);
+    }
 
     private void RecordFightPersistenceEvents(FightPersistenceSnapshot snapshot)
     {
@@ -1359,11 +1421,11 @@ else
         foreach (var wound in snapshot.NewWounds)
         {
             var description = $"{wound.Severity} wound to {wound.Location.ToLower()}";
-            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, description));
+            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, description));
         }
 
         if (snapshot.NewWounds.Count == 0 && string.IsNullOrEmpty(snapshot.WoundSeverity) == false)
-            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, $"{snapshot.WoundSeverity} wound"));
+            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, $"{snapshot.WoundSeverity} wound"));
 
         RecordStateEvents(snapshot.DefenderNewStates, defender, attacker);
         RecordStateEvents(snapshot.AttackerNewStates, attacker, defender);
@@ -1385,9 +1447,9 @@ else
                 continue;
 
             if (name == States.Names.Unconscious)
-                _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Unconscious, target, causedBy, name));
+                AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, target, causedBy, name));
             else if (name == States.Names.Dead)
-                _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Dead, target, causedBy, name));
+                AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Dead, target, causedBy, name));
             else
                 _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.State, target, causedBy, $"{name} state"));
         }
@@ -1399,9 +1461,9 @@ else
             return;
 
         if (status.StateName == States.Names.Unconscious)
-            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Unconscious, status.TargetName, null, status.StateName));
+            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, status.TargetName, null, status.StateName));
         else if (status.StateName == States.Names.Dead)
-            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.Dead, status.TargetName, null, status.StateName));
+            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Dead, status.TargetName, null, status.StateName));
         else
             _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.State, status.TargetName, null, $"{status.StateName} state ({status.Duration} turns)"));
     }
@@ -1425,10 +1487,16 @@ else
         return RichText.BoldText(description[..stateIdx]) + description[stateIdx..];
     }
 
+    private static string FormatCausedBy(string? causedBy) =>
+        string.IsNullOrEmpty(causedBy) ? string.Empty : $" (by {RichText.BoldText(causedBy)})";
+
+    private static string FormatWoundLine(BattleTurnEvent e) =>
+        $"{BoldWoundDescription(e.Description)}{FormatCausedBy(e.CausedBy)}";
+
     private static string FormatTurnEvent(BattleTurnEvent e)
     {
         var target = RichText.BoldText(e.TargetName);
-        var causedBy = string.IsNullOrEmpty(e.CausedBy) ? string.Empty : $" (by {RichText.BoldText(e.CausedBy)})";
+        var causedBy = FormatCausedBy(e.CausedBy);
         return e.Kind switch
         {
             BattleTurnEventKind.Wound => $"{target} received {BoldWoundDescription(e.Description)}{causedBy}",
@@ -1436,6 +1504,66 @@ else
             BattleTurnEventKind.Dead => $"{target} died{causedBy}",
             _ => $"{target} gained {BoldStateDescription(e.Description)}{causedBy}",
         };
+    }
+
+    private static string FormatRoundCount(int rounds) =>
+        rounds == 1 ? "1 round" : $"{rounds} rounds";
+
+    private string BuildBattleEndSummaryHtml(int rounds)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<p>");
+        sb.Append($"<span style=\"font-size:1.3em;\">{RichText.BoldText("Battle ended")}</span>");
+        sb.Append("<br><br>");
+        sb.Append($"The battle lasted {RichText.BoldText(FormatRoundCount(rounds))}.");
+        sb.Append("<br><br>");
+
+        var casualties = _battleEvents
+            .Where(e => e.Kind is BattleTurnEventKind.Dead or BattleTurnEventKind.Unconscious)
+            .ToList();
+
+        if (casualties.Count > 0)
+        {
+            sb.Append(RichText.BoldText("Casualties:"));
+            sb.Append("<br>");
+            foreach (var e in casualties)
+            {
+                sb.Append("&#8226; ");
+                sb.Append(FormatTurnEvent(e));
+                sb.Append("<br>");
+            }
+            sb.Append("<br>");
+        }
+
+        var woundsByTarget = _battleEvents
+            .Where(e => e.Kind == BattleTurnEventKind.Wound)
+            .GroupBy(e => e.TargetName)
+            .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+
+        var hasWounds = woundsByTarget.Any();
+        if (hasWounds)
+        {
+            sb.Append(RichText.BoldText("Wounds:"));
+            sb.Append("<br>");
+            foreach (var group in woundsByTarget)
+            {
+                sb.Append(RichText.BoldText(group.Key));
+                sb.Append("<br>");
+                foreach (var wound in group)
+                {
+                    sb.Append("&#8226; ");
+                    sb.Append(FormatWoundLine(wound));
+                    sb.Append("<br>");
+                }
+                sb.Append("<br>");
+            }
+        }
+
+        if (casualties.Count == 0 && !hasWounds)
+            sb.Append("Nothing notable happened during the battle.");
+
+        sb.Append("</p>");
+        return sb.ToString();
     }
 
     private string BuildTurnSummaryHtml(int endingTurn, int startingTurn)
@@ -1486,13 +1614,39 @@ else
         if (result is null)
             return;
 
-        PageCount = await GetPageCount();
-        PageNum = PageCount;
-        Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-        _scrollDown = true;
+        if (_hubConnection is not null)
+            await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
+
+        await LoadLastPagePostsAsync(scrollDown: true);
+    }
+
+    private async Task PostBattleSummaryAsync(int rounds)
+    {
+        if (Chapter is null || UserInfo?.SelectedCharacter is null)
+            return;
+
+        var content = BuildBattleEndSummaryHtml(rounds);
+        _battleEvents.Clear();
+
+        var post = new PostDTO
+        {
+            ChapterId = Id,
+            CreatedDate = DateTime.Now,
+            Content = content,
+            CharacterId = UserInfo.SelectedCharacter.Id,
+            Character = UserInfo.SelectedCharacter,
+            AlternativeName = "Battle ended",
+            AlternativeImageUrl = SD.PostNoPortrait,
+        };
+
+        var result = await _postRepository.Create(post);
+        if (result is null)
+            return;
 
         if (_hubConnection is not null)
             await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
+
+        await LoadLastPagePostsAsync(scrollDown: true);
     }
 
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)
