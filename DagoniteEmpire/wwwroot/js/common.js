@@ -130,3 +130,23 @@ window.DownloadTextFile = (fileName, content) => {
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
 };
+
+window.uploadPortraitDataUrl = async (dataUrl, folder) => {
+    const blob = await fetch(dataUrl).then(response => response.blob());
+    const formData = new FormData();
+    formData.append('file', blob, 'portrait.webp');
+
+    const uploadResponse = await fetch(`/api/PortraitUpload?folder=${encodeURIComponent(folder)}`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+    });
+
+    if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        throw new Error(errorText || 'Portrait upload failed.');
+    }
+
+    const result = await uploadResponse.json();
+    return result.url;
+};

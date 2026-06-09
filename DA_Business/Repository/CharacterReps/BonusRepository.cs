@@ -50,14 +50,14 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             if (traitId == null || traitId < 1)
-                return _mapper.Map<IEnumerable<Bonus>, IEnumerable<BonusDTO>>(contex.Bonuses);
-           return _mapper.Map<IEnumerable<Bonus>, IEnumerable<BonusDTO>>(contex.Bonuses.Where(u => u.TraitId == traitId).OrderBy(u=>u.Index));
+                return _mapper.Map<IEnumerable<Bonus>, IEnumerable<BonusDTO>>(await contex.Bonuses.AsNoTracking().ToListAsync());
+           return _mapper.Map<IEnumerable<Bonus>, IEnumerable<BonusDTO>>(await contex.Bonuses.AsNoTracking().Where(u => u.TraitId == traitId).OrderBy(u=>u.Index).ToListAsync());
         }
 
         public async Task<BonusDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Bonuses.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.Bonuses.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Bonus, BonusDTO>(obj);

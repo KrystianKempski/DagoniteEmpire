@@ -1,5 +1,4 @@
 ﻿@using Cropper.Blazor.Components
-@inject IFileUpload _fileUpload;
 @inject IUserService _userService
 @inject IJSRuntime _jsRuntime
 @inject IDialogService DialogService
@@ -87,8 +86,7 @@
 
                     if (result?.Data is not null && !result.Canceled)
                     {
-                        var url = (string)result.Data;
-                        AllParams.Character.ImageUrl = await _fileUpload.UploadFile(url, SD.Portrait);
+                        AllParams.Character.ImageUrl = (string)result.Data;
                         await OnPortraitChange.InvokeAsync();
                     }
                 }

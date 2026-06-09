@@ -67,7 +67,7 @@ namespace DA_Business.Repository.ChatRepos
                 if (chapterId < 1)
                     return null;
 
-                var obj = contex.BattlePhases.FirstOrDefault(u => u.ChapterId == chapterId && u.BattleOngoing);
+                var obj = await contex.BattlePhases.AsNoTracking().FirstOrDefaultAsync(u => u.ChapterId == chapterId && u.BattleOngoing);
                 if (obj != null)
                     return _mapper.Map<BattlePhase, BattlePhaseDTO>(obj);
                 else
@@ -82,10 +82,10 @@ namespace DA_Business.Repository.ChatRepos
             {
                 using var contex = await _db.CreateDbContextAsync();
                 if (chapterId == null || chapterId < 1)
-                    return _mapper.Map<IEnumerable<BattlePhase>, IEnumerable<BattlePhaseDTO>>(contex.BattlePhases);
+                    return _mapper.Map<IEnumerable<BattlePhase>, IEnumerable<BattlePhaseDTO>>(await contex.BattlePhases.AsNoTracking().ToListAsync());
 
-                var obj = contex.BattlePhases.Where(u => u.ChapterId == chapterId);
-                if (obj != null && obj.Any())
+                var obj = await contex.BattlePhases.AsNoTracking().Where(u => u.ChapterId == chapterId).ToListAsync();
+                if (obj.Any())
                     return _mapper.Map<IEnumerable<BattlePhase>, IEnumerable<BattlePhaseDTO>>(obj);
             }
             catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
@@ -98,7 +98,7 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.BattlePhases.FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await contex.BattlePhases.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
                 if (obj != null)
                 {
                     return _mapper.Map<BattlePhase, BattlePhaseDTO>(obj);

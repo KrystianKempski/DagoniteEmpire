@@ -6,9 +6,6 @@ using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.Metrics;
-using System.Linq;
-using System.Net.NetworkInformation;
 
 namespace DA_Business.Repository.ChatRepos
 {
@@ -23,6 +20,30 @@ namespace DA_Business.Repository.ChatRepos
             _mapper = mapper;
         }
 
+        private static IQueryable<ChapterDTO> ProjectChapterList(IQueryable<Chapter> query) =>
+            query.AsNoTracking()
+                .OrderBy(c => c.CreatedDate)
+                .Select(c => new ChapterDTO
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    DateNumber = c.DateNumber,
+                    DayTime = c.DayTime,
+                    Place = c.Place,
+                    CreatedDate = c.CreatedDate,
+                    IsFinished = c.IsFinished,
+                    CampaignId = c.CampaignId,
+                    Posts = new List<PostDTO>(),
+                    Characters = c.Characters
+                        .Select(ch => new CharacterDTO
+                        {
+                            Id = ch.Id,
+                            NPCName = ch.NPCName,
+                            ImageUrl = ch.ImageUrl,
+                        })
+                        .ToList(),
+                });
 
         public async Task<ChapterDTO> Create(ChapterDTO objDTO)
         {
@@ -31,12 +52,11 @@ namespace DA_Business.Repository.ChatRepos
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<ChapterDTO, Chapter>(objDTO);
 
-                // Replace untracked character entities with tracked ones (only fetch needed IDs)
                 var characterIds = obj.Characters.Select(c => c.Id).ToList();
                 var trackedCharacters = await contex.Characters
                     .Where(c => characterIds.Contains(c.Id))
                     .ToDictionaryAsync(c => c.Id);
-                
+
                 var charactersToReplace = obj.Characters.Where(c => trackedCharacters.ContainsKey(c.Id)).ToList();
                 foreach (var untracked in charactersToReplace)
                 {
@@ -44,12 +64,11 @@ namespace DA_Business.Repository.ChatRepos
                     obj.Characters.Add(trackedCharacters[untracked.Id]);
                 }
 
-                // Replace untracked post entities with tracked ones
                 var postIds = obj.Posts.Select(p => p.Id).ToList();
                 var trackedPosts = await contex.Posts
                     .Where(p => postIds.Contains(p.Id))
                     .ToDictionaryAsync(p => p.Id);
-                
+
                 var postsToReplace = obj.Posts.Where(p => trackedPosts.ContainsKey(p.Id)).ToList();
                 foreach (var untracked in postsToReplace)
                 {
@@ -63,21 +82,16 @@ namespace DA_Business.Repository.ChatRepos
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
-
         }
 
         public async Task<bool> CheckIfChapterBelongToUser(string userName, int chapterId)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Chapters.Include(c => c.Characters).FirstOrDefaultAsync(i => i.Id == chapterId);
-
-            if (obj is null) return false;
-
-            var charac = obj.Characters.FirstOrDefault(c => c.UserName == userName);
-
-            return charac is not null;
+            return await contex.Chapters
+                .AsNoTracking()
+                .AnyAsync(c => c.Id == chapterId && c.Characters.Any(ch => ch.UserName == userName));
         }
 
         public async Task<int> Delete(int id)
@@ -90,7 +104,7 @@ namespace DA_Business.Repository.ChatRepos
                 {
                     if (obj.Posts != null && obj.Posts.Any())
                     {
-                        foreach(var post in obj.Posts) 
+                        foreach (var post in obj.Posts)
                         {
                             contex.Posts.Remove(post);
                         }
@@ -99,7 +113,7 @@ namespace DA_Business.Repository.ChatRepos
                     return contex.SaveChanges();
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);}
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex); }
             return 0;
         }
 
@@ -108,16 +122,15 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                if (campaignId == null || campaignId < 1)
-                    return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(contex.Chapters.Include(a => a.Characters).Include(a=>a.Posts));
-            
-                var obj = contex.Chapters.Include(a => a.Characters).Include(a => a.Posts).Where(u => u.CampaignId == campaignId).OrderBy(u => u.CreatedDate);
-                if (obj != null && obj.Any())
-                    return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(obj);
-            }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
+                var query = contex.Chapters.AsQueryable();
+                if (campaignId is > 0)
+                {
+                    query = query.Where(u => u.CampaignId == campaignId);
+                }
 
-            return new List<ChapterDTO>();
+                return await ProjectChapterList(query).ToListAsync();
+            }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex); }
         }
 
         public async Task<IEnumerable<ChapterDTO>> GetAllForUser(int characterId, int? campaignId = null)
@@ -125,16 +138,42 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                if (campaignId == null || campaignId < 1)
-                    return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(contex.Chapters.Include(a => a.Characters.Where(c=>c.Id==characterId)).Include(a => a.Posts));
+                var query = contex.Chapters.AsQueryable();
 
-                var obj = contex.Chapters.Include(a => a.Characters).Include(a => a.Posts).Where(u => u.CampaignId == campaignId && u.Characters.Any(c=>c.Id == characterId)).OrderBy(u => u.CreatedDate);
-                if (obj != null && obj.Any())
-                    return _mapper.Map<IEnumerable<Chapter>, IEnumerable<ChapterDTO>>(obj);
+                if (campaignId is null or < 1)
+                {
+                    return await query
+                        .AsNoTracking()
+                        .OrderBy(c => c.CreatedDate)
+                        .Select(c => new ChapterDTO
+                        {
+                            Id = c.Id,
+                            Name = c.Name,
+                            Description = c.Description,
+                            DateNumber = c.DateNumber,
+                            DayTime = c.DayTime,
+                            Place = c.Place,
+                            CreatedDate = c.CreatedDate,
+                            IsFinished = c.IsFinished,
+                            CampaignId = c.CampaignId,
+                            Posts = new List<PostDTO>(),
+                            Characters = c.Characters
+                                .Where(ch => ch.Id == characterId)
+                                .Select(ch => new CharacterDTO
+                                {
+                                    Id = ch.Id,
+                                    NPCName = ch.NPCName,
+                                    ImageUrl = ch.ImageUrl,
+                                })
+                                .ToList(),
+                        })
+                        .ToListAsync();
+                }
+
+                query = query.Where(u => u.CampaignId == campaignId && u.Characters.Any(c => c.Id == characterId));
+                return await ProjectChapterList(query).ToListAsync();
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
-
-            return new List<ChapterDTO>();
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex); }
         }
 
         public async Task<ChapterDTO> GetById(int id)
@@ -170,7 +209,7 @@ namespace DA_Business.Repository.ChatRepos
                     return obj;
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex); }
             return new ChapterDTO();
         }
 
@@ -184,10 +223,8 @@ namespace DA_Business.Repository.ChatRepos
                 {
                     var updatedChapter = _mapper.Map<ChapterDTO, Chapter>(objDTO);
 
-                    // Update parent
                     contex.Entry(obj).CurrentValues.SetValues(updatedChapter);
 
-                    // Delete characters
                     if (obj.Characters is not null)
                     {
                         foreach (var existingChild in obj.Characters)
@@ -195,22 +232,18 @@ namespace DA_Business.Repository.ChatRepos
                             if (!updatedChapter.Characters.Any(c => c.Id == existingChild.Id))
                             {
                                 obj.Characters.Remove(existingChild);
-
                             }
                         }
                     }
 
-                    // Update and Insert Characters
                     if (updatedChapter.Characters is not null)
                     {
                         foreach (var childChar in updatedChapter.Characters)
                         {
                             if (!obj.Characters.Any(c => c.Id == childChar.Id && c.Id != default(int)))
                             {
-
-                                //obj.Characters.Add(childChar);
                                 var existingChar = contex.Characters.Include(c => c.Chapters).FirstOrDefault(c => c.Id == childChar.Id);
-                                existingChar.Chapters.Add(obj);
+                                existingChar!.Chapters.Add(obj);
                                 contex.Characters.Update(existingChar);
                             }
                         }
@@ -222,12 +255,11 @@ namespace DA_Business.Repository.ChatRepos
                 {
                     obj = _mapper.Map<ChapterDTO, Chapter>(objDTO);
 
-                    // Replace untracked character entities with tracked ones (only fetch needed IDs)
                     var characterIds = obj.Characters.Select(c => c.Id).ToList();
                     var trackedCharacters = await contex.Characters
                         .Where(c => characterIds.Contains(c.Id))
                         .ToDictionaryAsync(c => c.Id);
-                    
+
                     var charactersToReplace = obj.Characters.Where(c => trackedCharacters.ContainsKey(c.Id)).ToList();
                     foreach (var untracked in charactersToReplace)
                     {
@@ -241,8 +273,9 @@ namespace DA_Business.Repository.ChatRepos
                     return _mapper.Map<Chapter, ChapterDTO>(addedObj.Entity);
                 }
             }
-            catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
         }
     }

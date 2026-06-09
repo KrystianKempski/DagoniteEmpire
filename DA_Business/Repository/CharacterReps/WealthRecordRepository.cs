@@ -68,20 +68,16 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<WealthRecordDTO>> GetAll(int? charId = null)
         {
             using var contex = await _db.CreateDbContextAsync();
-            if(contex.WealthRecords.Any() == false) 
-                return Enumerable.Empty<WealthRecordDTO>();
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<WealthRecord>, IEnumerable<WealthRecordDTO>>(contex.WealthRecords);
-            return _mapper.Map<IEnumerable<WealthRecord>, IEnumerable<WealthRecordDTO>>(contex.WealthRecords.Where(u => u.CharacterId == charId));
+                return _mapper.Map<IEnumerable<WealthRecord>, IEnumerable<WealthRecordDTO>>(await contex.WealthRecords.AsNoTracking().ToListAsync());
+            return _mapper.Map<IEnumerable<WealthRecord>, IEnumerable<WealthRecordDTO>>(await contex.WealthRecords.AsNoTracking().Where(u => u.CharacterId == charId).ToListAsync());
         }
 
 
         public async Task<WealthRecordDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            if (contex.WealthRecords.Any() == false)
-                return new WealthRecordDTO();
-            var obj = await contex.WealthRecords.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.WealthRecords.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<WealthRecord, WealthRecordDTO>(obj);

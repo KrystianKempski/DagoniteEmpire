@@ -161,7 +161,7 @@ public class Program
         builder.Services.AddServerSideBlazor()
             .AddHubOptions(options =>
             {
-                options.MaximumReceiveMessageSize = 320 * 1024 * 100;
+                options.MaximumReceiveMessageSize = 1024 * 1024;
             });
 
         builder.Services.AddControllersWithViews();

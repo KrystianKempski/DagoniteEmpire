@@ -2,6 +2,7 @@
 @using Cropper.Blazor.Components
 @using Cropper.Blazor.Extensions;
 @inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
 
 <MudDialog >
     <TitleContent>
@@ -55,7 +56,6 @@
     private readonly string _errorLoadImageSrc = "images/buttonFrame1.png";
     private bool IsErrorLoadImage { get; set; } = false;
     private bool IsAvailableInitCropper { get; set; } = true;
-    private (string base64ImageData, string mediaType) decodedImageData;
 
     private Cropper.Blazor.Models.Options options;
 
@@ -150,8 +150,16 @@
     private async Task SaveBtn()
     {
         await GetDecodedImageDataAsync();
-        decodedImageData = ImageUrl.Decode();
-        MudDialog.Close(DialogResult.Ok(decodedImageData.base64ImageData));
-        Snackbar.Add("Image added", Severity.Success);
+
+        try
+        {
+            var uploadedUrl = await JSRuntime.InvokeAsync<string>("uploadPortraitDataUrl", ImageUrl, SD.Portrait);
+            MudDialog.Close(DialogResult.Ok(uploadedUrl));
+            Snackbar.Add("Image added", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error! " + ex.Message, Severity.Error);
+        }
     }
 }

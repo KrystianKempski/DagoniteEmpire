@@ -19,8 +19,6 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         public Task<IEnumerable<CharacterDTO>> GetAll(int? id = null, bool fullIncludes = false);
         public Task<IEnumerable<CharacterDTO>> GetAllForUser(string userName, bool fullIncludes = false);
 
-        public Task<IEnumerable<CharacterDTO>> GetAllForCampaign(int campaignId, bool fullIncludes = false);
-
         public Task<IEnumerable<CharacterDTO>> GetAllApproved(string? userName = null, bool fullIncludes = false);
         public Task<string> GetPortraitUrl(int id);
         public Task<bool> CheckIfCharacterBelongToUser(string userName, int characterId);

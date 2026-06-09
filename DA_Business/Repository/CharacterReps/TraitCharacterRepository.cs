@@ -91,8 +91,8 @@ namespace DA_Business.Repository.CharacterReps
 
             using var contex = await _db.CreateDbContextAsync();
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(contex.TraitsCharacter.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(contex.TraitsCharacter.Include(u => u.Bonuses).Where(u => u.CharacterId == charId));
+                return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(await contex.TraitsCharacter.AsNoTracking().Include(u => u.Bonuses).AsSplitQuery().ToListAsync());
+           return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(await contex.TraitsCharacter.AsNoTracking().Include(u => u.Bonuses).Where(u => u.CharacterId == charId).AsSplitQuery().ToListAsync());
         }
 
         public async Task<IEnumerable<TraitCharacterDTO>> GetAllApproved(bool addUnique = false)
@@ -100,9 +100,9 @@ namespace DA_Business.Repository.CharacterReps
 
             using var contex = await _db.CreateDbContextAsync();
             if (addUnique)
-                return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(contex.TraitsCharacter.Include(u => u.Bonuses).Where(t => t.TraitApproved == true));
+                return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(await contex.TraitsCharacter.AsNoTracking().Include(u => u.Bonuses).Where(t => t.TraitApproved == true).AsSplitQuery().ToListAsync());
                     
-            return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(contex.TraitsCharacter.Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.IsUnique == false));
+            return _mapper.Map<IEnumerable<TraitCharacter>, IEnumerable<TraitCharacterDTO>>(await contex.TraitsCharacter.AsNoTracking().Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.IsUnique == false).AsSplitQuery().ToListAsync());
         }
 
 
@@ -110,7 +110,7 @@ namespace DA_Business.Repository.CharacterReps
         {
 
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.TraitsCharacter.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.TraitsCharacter.AsNoTracking().Include(u=>u.Bonuses).AsSplitQuery().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<TraitCharacter, TraitCharacterDTO>(obj);

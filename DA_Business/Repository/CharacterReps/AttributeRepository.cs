@@ -54,11 +54,11 @@ namespace DA_Business.Repository.CharacterReps
                 using var contex = await _db.CreateDbContextAsync();
                 if (charId == null || charId < 1)
                 {
-                    obj = contex.Attributes.ToList();
+                    obj = await contex.Attributes.AsNoTracking().ToListAsync();
                 }
                 else
                 {
-                    obj = contex.Attributes.Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToList();
+                    obj = await contex.Attributes.AsNoTracking().Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToListAsync();
                 }     
            
                 if (obj != null && obj.Any())
@@ -82,7 +82,7 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<AttributeDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Attributes/*.Include(u => u.TraitBonusRelated)*/.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.Attributes.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Attribute, AttributeDTO>(obj);

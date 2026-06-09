@@ -83,22 +83,22 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             if (raceId == null || raceId < 1)
-                return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(contex.TraitsRace.Include(u => u.Bonuses));
-           return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(contex.TraitsRace.Include(u => u.Bonuses).Where(u => u.Races.FirstOrDefault(r=>r.Id == raceId) != null));
+                return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(await contex.TraitsRace.AsNoTracking().Include(u => u.Bonuses).AsSplitQuery().ToListAsync());
+           return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(await contex.TraitsRace.AsNoTracking().Include(u => u.Bonuses).Where(u => u.Races.FirstOrDefault(r=>r.Id == raceId) != null).AsSplitQuery().ToListAsync());
         }
 
         public async Task<IEnumerable<TraitRaceDTO>> GetAllApproved(bool addUnique = false)
         {
             using var contex = await _db.CreateDbContextAsync();
             if (addUnique)
-                return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(contex.TraitsRace.Include(u => u.Bonuses).Where(t => t.TraitApproved == true));
-            return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(contex.TraitsRace.Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.IsUnique == false));
+                return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(await contex.TraitsRace.AsNoTracking().Include(u => u.Bonuses).Where(t => t.TraitApproved == true).AsSplitQuery().ToListAsync());
+            return _mapper.Map<IEnumerable<TraitRace>, IEnumerable<TraitRaceDTO>>(await contex.TraitsRace.AsNoTracking().Include(u => u.Bonuses).Where(t=>t.TraitApproved==true && t.IsUnique == false).AsSplitQuery().ToListAsync());
         }
 
         public async Task<TraitRaceDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.TraitsRace.Include(u=>u.Bonuses).FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.TraitsRace.AsNoTracking().Include(u=>u.Bonuses).AsSplitQuery().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<TraitRace, TraitRaceDTO>(obj);

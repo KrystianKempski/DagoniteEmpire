@@ -57,13 +57,11 @@ namespace DA_Business.Repository.ChatRepos
         public async Task<bool> CheckIfCampaignBelongToUser(string userName, int campaignId)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Campaigns.Include(c=>c.Characters).FirstOrDefaultAsync(i=>i.Id == campaignId);
-
-            if (obj is null) return false;
-
-            var charac = obj.Characters.FirstOrDefault(c => c.UserName == userName);
-
-            return charac is not null;
+            return await contex.Campaigns
+                .AsNoTracking()
+                .Where(i => i.Id == campaignId)
+                .SelectMany(c => c.Characters)
+                .AnyAsync(c => c.UserName == userName);
         }
 
         public async Task<int> Delete(int id)
@@ -72,14 +70,21 @@ namespace DA_Business.Repository.ChatRepos
             {
 
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Campaigns.FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await contex.Campaigns
+                    .Include(c => c.Chapters)
+                        .ThenInclude(ch => ch.Posts)
+                    .AsSplitQuery()
+                    .FirstOrDefaultAsync(u => u.Id == id);
+                if (obj is null)
+                    return 0;
+
                 if (obj.Chapters != null && obj.Chapters.Any())
                 {
-                    foreach (var chap in obj.Chapters)
+                    foreach (var chap in obj.Chapters.ToList())
                     {
                         if (chap.Posts != null && chap.Posts.Any())
                         {
-                            foreach (var mess in chap.Posts)
+                            foreach (var mess in chap.Posts.ToList())
                             {
                                 contex.Posts.Remove(mess);
                             }
@@ -87,11 +92,9 @@ namespace DA_Business.Repository.ChatRepos
                         contex.Chapters.Remove(chap);
                     }
                 }
-                if (obj != null)
-                {
-                    contex.Campaigns.Remove(obj);
-                    return await contex.SaveChangesAsync();
-                }
+
+                contex.Campaigns.Remove(obj);
+                return await contex.SaveChangesAsync();
             }
             catch (Exception ex) { 
                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
@@ -106,13 +109,17 @@ namespace DA_Business.Repository.ChatRepos
 
                 using var contex = await _db.CreateDbContextAsync();
                 if (characterId==null)
-                    return _mapper.Map<IEnumerable<Campaign>, IEnumerable<CampaignDTO>>(contex.Campaigns.Include(a => a.Characters));
+                    return _mapper.Map<IEnumerable<Campaign>, IEnumerable<CampaignDTO>>(
+                        await contex.Campaigns.AsNoTracking().Include(a => a.Characters).AsSplitQuery().ToListAsync());
 
-                var obj = contex.Campaigns.Include(a=>a.Characters).Where(u => u.Characters.FirstOrDefault(a=>a.Id==characterId)!=null).OrderBy(u => u.CreatedDate);
-                if (obj != null && obj.Any())
-                    return _mapper.Map<IEnumerable<Campaign>, IEnumerable<CampaignDTO>>(obj);
-                else
-                    return new List<CampaignDTO>();
+                var obj = await contex.Campaigns
+                    .AsNoTracking()
+                    .Include(a=>a.Characters)
+                    .Where(u => u.Characters.Any(a=>a.Id==characterId))
+                    .OrderBy(u => u.CreatedDate)
+                    .AsSplitQuery()
+                    .ToListAsync();
+                return _mapper.Map<IEnumerable<Campaign>, IEnumerable<CampaignDTO>>(obj);
                
 
             }
@@ -126,7 +133,7 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Campaigns.Include(a => a.Characters).FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await contex.Campaigns.AsNoTracking().Include(a => a.Characters).AsSplitQuery().FirstOrDefaultAsync(u => u.Id == id);
                 if (obj != null)
                 {
                     return _mapper.Map<Campaign, CampaignDTO>(obj);

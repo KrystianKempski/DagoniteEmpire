@@ -1,5 +1,4 @@
-﻿@inject IFileUpload _fileUpload;
-@inject ISnackbar Snackbar
+﻿@inject ISnackbar Snackbar
 @inject IMobRepository _mobRepository
 @inject ICampaignRepository _campaignRepository
 @inject IChapterRepository _chapterRepository
@@ -276,8 +275,7 @@
 
                     if (result?.Data is not null && !result.Canceled)
                     {
-                        var url = (string)result.Data;
-                        NewMob.ImageUrl = await _fileUpload.UploadFile(url, SD.Portrait);
+                        NewMob.ImageUrl = (string)result.Data;
                     }
                 }
                 StateHasChanged();

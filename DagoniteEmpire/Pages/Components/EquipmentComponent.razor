@@ -128,11 +128,11 @@
         UserInfo = await _userService.GetUserInfo();
         CalculateEquipWeightAndPrice();
 
-        var records = _wealthRecordRepository.GetAll(AllParams.Character.Id);
-        if(records.Result is not null)
+        if (AllParams.Character.Id > 0)
         {
+            var records = await _wealthRecordRepository.GetAll(AllParams.Character.Id);
             Gold = 0.0m;
-            foreach(var rec in records.Result)
+            foreach (var rec in records)
             {
                 Gold += rec.Value;
             }

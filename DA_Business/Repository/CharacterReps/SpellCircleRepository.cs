@@ -66,14 +66,14 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
 
-            return _mapper.Map<IEnumerable<SpellCircle>, IEnumerable<SpellCircleDTO>>(contex.SpellCircles.Where(u => u.ProfessionId == profId));
+            return _mapper.Map<IEnumerable<SpellCircle>, IEnumerable<SpellCircleDTO>>(await contex.SpellCircles.AsNoTracking().Where(u => u.ProfessionId == profId).ToListAsync());
     
         }
 
         public async Task<SpellCircleDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.SpellCircles.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.SpellCircles.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<SpellCircle, SpellCircleDTO>(obj);

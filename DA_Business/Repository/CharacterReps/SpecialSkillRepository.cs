@@ -54,11 +54,11 @@ namespace DA_Business.Repository.CharacterReps
                 using var contex = await _db.CreateDbContextAsync();
                 if (charId == null || charId < 1)
                 {
-                    obj = contex.SpecialSkills.ToList();
+                    obj = await contex.SpecialSkills.AsNoTracking().ToListAsync();
                 }
                 else
                 {
-                    obj = contex.SpecialSkills.Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToList();
+                    obj = await contex.SpecialSkills.AsNoTracking().Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToListAsync();
                 }
 
                 if (obj != null && obj.Any())
@@ -92,7 +92,7 @@ namespace DA_Business.Repository.CharacterReps
                 }
                 else
                 {
-                    obj = contex.SpecialSkills.Where(u => u.CharacterId == charId && u.RelatedBaseSkillName == baseSkillName).OrderBy(u => u.Index).ToList();
+                    obj = await contex.SpecialSkills.AsNoTracking().Where(u => u.CharacterId == charId && u.RelatedBaseSkillName == baseSkillName).OrderBy(u => u.Index).ToListAsync();
                     return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(obj);
                 }               
             }
@@ -105,7 +105,7 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<SpecialSkillDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.SpecialSkills.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.SpecialSkills.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<SpecialSkill, SpecialSkillDTO>(obj);

@@ -82,4 +82,9 @@ internal class TestDbContextFactory : IDbContextFactory<ApplicationDbContext>
     {
         return new ApplicationDbContext(_options);
     }
+
+    public Task<ApplicationDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(CreateDbContext());
+    }
 }

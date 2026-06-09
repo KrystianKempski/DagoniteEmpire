@@ -58,11 +58,9 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
 
-                if (contex.Wounds is null || contex.Wounds.Any() == false)
-                    return new List<WoundDTO>();
                 if (charId == null || charId < 1)
-                    return _mapper.Map<IEnumerable<Wound>, IEnumerable<WoundDTO>>(contex.Wounds).Where(u =>u.IsCondition == false);
-                return _mapper.Map<IEnumerable<Wound>, IEnumerable<WoundDTO>>(contex.Wounds.Where(u => u.CharacterId == charId && u.IsCondition == false));
+                    return _mapper.Map<IEnumerable<Wound>, IEnumerable<WoundDTO>>(await contex.Wounds.AsNoTracking().Where(u => u.IsCondition == false).ToListAsync());
+                return _mapper.Map<IEnumerable<Wound>, IEnumerable<WoundDTO>>(await contex.Wounds.AsNoTracking().Where(u => u.CharacterId == charId && u.IsCondition == false).ToListAsync());
             }
             catch (Exception ex)
             {
@@ -75,11 +73,9 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
 
-                if (contex.Wounds is null || contex.Wounds.Any() == false)
-                    return new List<ConditionDTO>();
                 if (charId == null || charId < 1)
-                    return _mapper.Map<IEnumerable<Wound>, IEnumerable<ConditionDTO>>(contex.Wounds).Where(u => u.IsCondition == false);
-                return _mapper.Map<IEnumerable<Wound>, IEnumerable<ConditionDTO>>(contex.Wounds.Where(u => u.CharacterId == charId && u.IsCondition == true));
+                    return _mapper.Map<IEnumerable<Wound>, IEnumerable<ConditionDTO>>(await contex.Wounds.AsNoTracking().Where(u => u.IsCondition == false).ToListAsync());
+                return _mapper.Map<IEnumerable<Wound>, IEnumerable<ConditionDTO>>(await contex.Wounds.AsNoTracking().Where(u => u.CharacterId == charId && u.IsCondition == true).ToListAsync());
             }
             catch (Exception ex)
             {
@@ -91,7 +87,7 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<WoundDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Wounds.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.Wounds.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Wound, WoundDTO>(obj);

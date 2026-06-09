@@ -1,13 +1,10 @@
 ﻿using AutoMapper;
 using DA_Business.Repository.CharacterReps.IRepository;
-using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.Metrics;
-using static MudBlazor.CategoryTypes;
 
 namespace DA_Business.Repository.ChatRepos
 {
@@ -22,23 +19,24 @@ namespace DA_Business.Repository.ChatRepos
             _mapper = mapper;
         }
 
+        private IQueryable<Post> ReadPostsWithCharacter(IQueryable<Post> query) =>
+            query.AsNoTracking().Include(u => u.Character);
+
         public async Task<PostDTO> Create(PostDTO objDTO)
         {
-            
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<PostDTO, Post>(objDTO);
-                // Navigation properties (Character, Chapter) are ignored by AutoMapper
                 var addedObj = contex.Posts.Add(obj);
 
                 await contex.SaveChangesAsync();
                 return _mapper.Map<Post, PostDTO>(addedObj.Entity);
             }
-            catch (Exception ex) { 
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
-            
         }
 
         public async Task<int> Delete(int id)
@@ -53,7 +51,7 @@ namespace DA_Business.Repository.ChatRepos
                     return contex.SaveChanges();
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);}
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex); }
             return 0;
         }
 
@@ -62,70 +60,76 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                if (chapterId == null || chapterId < 1)
-                    return _mapper.Map<IEnumerable<Post>, IEnumerable<PostDTO>>(contex.Posts.Include(u => u.Character));
-            
-                
-                var obj = contex.Posts.Include(u=>u.Character).Where(u => u.ChapterId  == chapterId).OrderBy(u => u.CreatedDate);
-                if (obj != null && obj.Any())
-                    return _mapper.Map<IEnumerable<Post>, IEnumerable<PostDTO>>(obj);
-            }
-            catch (Exception ex) {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
-            }
+                var query = contex.Posts.AsQueryable();
+                if (chapterId is > 0)
+                {
+                    query = query.Where(u => u.ChapterId == chapterId);
+                }
 
-            return new List<PostDTO>();
+                var posts = await ReadPostsWithCharacter(query.OrderBy(u => u.CreatedDate)).ToListAsync();
+                return _mapper.Map<IEnumerable<Post>, IEnumerable<PostDTO>>(posts);
+            }
+            catch (Exception ex)
+            {
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
+            }
         }
 
-        public async Task<IEnumerable<PostDTO>> GetPage(int chapterId, int postPerPage, int pageNum )
+        public async Task<IEnumerable<PostDTO>> GetPage(int chapterId, int postPerPage, int pageNum)
         {
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                if(chapterId == 0 || postPerPage <1) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                if (chapterId == 0 || postPerPage < 1) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
-                int skip = postPerPage * (pageNum-1);
-                var obj = contex.Posts.Include(u => u.Character).Where(u => u.ChapterId == chapterId).OrderBy(u => u.CreatedDate).Skip(skip).Take(postPerPage);
-                if (obj != null && obj.Any())
-                    return _mapper.Map<IEnumerable<Post>, IEnumerable<PostDTO>>(obj);
+                int skip = postPerPage * (pageNum - 1);
+                var posts = await ReadPostsWithCharacter(
+                        contex.Posts
+                            .Where(u => u.ChapterId == chapterId)
+                            .OrderBy(u => u.CreatedDate)
+                            .Skip(skip)
+                            .Take(postPerPage))
+                    .ToListAsync();
+
+                return _mapper.Map<IEnumerable<Post>, IEnumerable<PostDTO>>(posts);
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
-
-            return new List<PostDTO>();
         }
+
         public async Task<int> GetPostCount(int chapterId)
         {
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                if (chapterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                if (chapterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
-                int count = contex.Posts.Where(u => u.ChapterId == chapterId).Count();
-
-                return count;
+                return await contex.Posts
+                    .AsNoTracking()
+                    .CountAsync(u => u.ChapterId == chapterId);
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
         }
+
         public async Task<int> GetCharacterPostCount(int characterId)
         {
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
-                int count = contex.Posts.Where(u => u.CharacterId == characterId).Count();
-
-                return count;
+                return await contex.Posts
+                    .AsNoTracking()
+                    .CountAsync(u => u.CharacterId == characterId);
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
         }
 
@@ -134,19 +138,18 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
-                var posts = contex.Posts.Where(u => u.CharacterId == characterId);
-                if (posts is null || posts.Count() ==0)
-                    return DateTime.MinValue;
-
-                DateTime date = posts.Max(r => r.CreatedDate);
-
-                return date;
+                return await contex.Posts
+                    .AsNoTracking()
+                    .Where(u => u.CharacterId == characterId)
+                    .OrderByDescending(p => p.CreatedDate)
+                    .Select(p => p.CreatedDate)
+                    .FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
         }
 
@@ -155,21 +158,23 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
-                int count = 0;
-                if (From is null && To is null)
-                    count = contex.Posts.Where(u => u.CharacterId == characterId).Count();
-                else if (From is not null && To is null)
-                    count = contex.Posts.Where(u => u.CharacterId == characterId && u.CreatedDate >= From).Count();
-                else if(From is not null && To is not null)
+                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name);
+
+                var query = contex.Posts.AsNoTracking().Where(u => u.CharacterId == characterId);
+                if (From is not null && To is null)
                 {
-                    count = contex.Posts.Where(u => u.CharacterId == characterId && u.CreatedDate >= From && u.CreatedDate <= To).Count();
+                    query = query.Where(u => u.CreatedDate >= From);
                 }
-                return count;
+                else if (From is not null && To is not null)
+                {
+                    query = query.Where(u => u.CreatedDate >= From && u.CreatedDate <= To);
+                }
+
+                return await query.CountAsync();
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
         }
 
@@ -178,22 +183,18 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name);
+                if (characterId == 0) throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name);
 
-                IEnumerable<Post> posts = contex.Posts.Include(p=>p.Chapter).Where(u => u.CharacterId == characterId);
-                if (posts is null || posts.Count() == 0)
-                    return 0;
-
-                var latestPost = posts.MaxBy(r=>r.CreatedDate);
-
-                if(latestPost?.Chapter is null)
-                    return 0;
-
-                return latestPost.Chapter.Id;
+                return await contex.Posts
+                    .AsNoTracking()
+                    .Where(u => u.CharacterId == characterId)
+                    .OrderByDescending(p => p.CreatedDate)
+                    .Select(p => p.ChapterId)
+                    .FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
-                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex);
+                throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
         }
 
@@ -202,13 +203,14 @@ namespace DA_Business.Repository.ChatRepos
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.Posts.Include(u => u.Character).FirstOrDefaultAsync(u => u.Id == id);
+                var obj = await ReadPostsWithCharacter(contex.Posts.Where(u => u.Id == id))
+                    .FirstOrDefaultAsync();
                 if (obj != null)
                 {
                     return _mapper.Map<Post, PostDTO>(obj);
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex); }
             return new PostDTO();
         }
 
@@ -228,7 +230,7 @@ namespace DA_Business.Repository.ChatRepos
                     return _mapper.Map<Post, PostDTO>(obj);
                 }
             }
-            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex); }
+            catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex); }
             return objDTO;
         }
     }

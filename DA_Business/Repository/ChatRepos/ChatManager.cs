@@ -80,13 +80,47 @@ namespace DA_Business.Repository.CharacterReps
         }
         public async Task<List<ApplicationUser>> GetUsersAsync()
         {
-            using var contex = await _db.CreateDbContextAsync();
-            var user = (await _authState.GetAuthenticationStateAsync()).User;
+            var authUser = (await _authState.GetAuthenticationStateAsync()).User;
+            var userId = authUser.Claims
+                .Where(a => a.Type == ClaimTypes.NameIdentifier)
+                .Select(a => a.Value)
+                .FirstOrDefault();
 
-            var userId = user.Claims.Where(a => a.Type == ClaimTypes.NameIdentifier).Select(a => a.Value).FirstOrDefault();
-            var allUsers = _userManager.Users.Include(t=>t.ChatMessagesFromUsers).Include(t=>t.ChatMessagesToUsers).Where(user => user.Id != userId).ToListAsync();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return new List<ApplicationUser>();
+            }
 
-            return await allUsers;
+            using var context = await _db.CreateDbContextAsync();
+
+            var unreadCounts = await context.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.ToUserId == userId && !m.IsRead)
+                .GroupBy(m => m.FromUserId)
+                .Select(g => new { FromUserId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.FromUserId, x => x.Count);
+
+            var users = await _userManager.Users
+                .AsNoTracking()
+                .Where(u => u.Id != userId)
+                .Select(u => new ApplicationUser
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    Name = u.Name,
+                })
+                .ToListAsync();
+
+            foreach (var user in users)
+            {
+                if (unreadCounts.TryGetValue(user.Id, out var count) && count > 0)
+                {
+                    user.ShowBadge = true;
+                    user.BadgeContent = count;
+                }
+            }
+
+            return users;
         }
         public async Task SaveMessageAsync(ChatMessage message)
         {

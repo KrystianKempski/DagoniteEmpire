@@ -63,23 +63,23 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<MobDTO>> GetAll()
         {
             using var contex = await _db.CreateDbContextAsync();
-             return _mapper.Map<IEnumerable<Mob>, IEnumerable<MobDTO>>(contex.Mobs);
+             return _mapper.Map<IEnumerable<Mob>, IEnumerable<MobDTO>>(await contex.Mobs.AsNoTracking().ToListAsync());
         }
         public async Task<IEnumerable<MobDTO>> GetAllForCampaing(int campaignId)
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Mob>, IEnumerable<MobDTO>>(contex.Mobs.Where(m=>m.CampaignId == campaignId));
+            return _mapper.Map<IEnumerable<Mob>, IEnumerable<MobDTO>>(await contex.Mobs.AsNoTracking().Where(m=>m.CampaignId == campaignId).ToListAsync());
         }
         public async Task<IEnumerable<MobDTO>> GetAllForChapter(int chapterId)
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Mob>, IEnumerable<MobDTO>>(contex.Mobs.Where(m => m.ChapterId == chapterId));
+            return _mapper.Map<IEnumerable<Mob>, IEnumerable<MobDTO>>(await contex.Mobs.AsNoTracking().Where(m => m.ChapterId == chapterId).ToListAsync());
         }
 
         public async Task<MobDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.Mobs.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.Mobs.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<Mob, MobDTO>(obj); ;

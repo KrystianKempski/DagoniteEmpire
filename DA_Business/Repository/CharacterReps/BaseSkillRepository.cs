@@ -56,14 +56,14 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(contex.BaseSkills/*.Include(u => u.TraitBonusRelated)*/);
-            return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(contex.BaseSkills./*Include(u => u.TraitBonusRelated).*/Where(u => u.CharacterId == charId).OrderBy(u => u.Index));
+                return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(await contex.BaseSkills.AsNoTracking().ToListAsync());
+            return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(await contex.BaseSkills.AsNoTracking().Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToListAsync());
         }
 
         public async Task<BaseSkillDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.BaseSkills./*Include(u => u.TraitBonusRelated).*/FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.BaseSkills.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return _mapper.Map<BaseSkill, BaseSkillDTO>(obj);

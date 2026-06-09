@@ -70,13 +70,15 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<ProfessionDTO>> GetAll()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(p => p.SpellCircles));
+            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(
+                await contex.Professions.AsNoTracking().Include(p => p.SpellCircles).AsSplitQuery().ToListAsync());
         }
 
         public async Task<IEnumerable<ProfessionDTO>> GetAllApproved()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(contex.Professions.Include(p => p.SpellCircles).Where(t=>t.IsApproved == true));
+            return _mapper.Map<IEnumerable<Profession>, IEnumerable<ProfessionDTO>>(
+                await contex.Professions.AsNoTracking().Include(p => p.SpellCircles).Where(t=>t.IsApproved == true).AsSplitQuery().ToListAsync());
         }
 
         public async Task<ProfessionDTO> GetById(int id)

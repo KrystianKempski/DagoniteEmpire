@@ -61,14 +61,14 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             if (spellCircleId == null || spellCircleId < 1)
-                return contex.SpellSlots;
-           return contex.SpellSlots.Where(u => u.SpellCircleId== spellCircleId);
+                return await contex.SpellSlots.AsNoTracking().ToListAsync();
+           return await contex.SpellSlots.AsNoTracking().Where(u => u.SpellCircleId== spellCircleId).ToListAsync();
         }
 
         public async Task<SpellSlot> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
-            var obj = await contex.SpellSlots.FirstOrDefaultAsync(u => u.Id == id);
+            var obj = await contex.SpellSlots.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
                 return obj;
