@@ -54,7 +54,22 @@
 
 
     <script src="_framework/blazor.web.js"></script>
-    <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' },);</script>
+    <script>
+        // Legacy PWA service worker (Blazor WASM template) breaks Blazor Server on desktop:
+        // stale cached index.html / failed importScripts kill the SignalR circuit.
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then((regs) => {
+                for (const reg of regs) reg.unregister();
+            });
+            if ('caches' in window) {
+                caches.keys().then((keys) => {
+                    keys
+                        .filter((k) => k.startsWith('offline-cache-'))
+                        .forEach((k) => caches.delete(k));
+                });
+            }
+        }
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.1/dist/sweetalert2.all.min.js"></script>
