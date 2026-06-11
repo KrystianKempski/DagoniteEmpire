@@ -72,6 +72,8 @@ function ShowLeavePageModal() {
 
 function HideLeavePageModal() {
     $('#leavePageModal').modal('hide');
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open').css('overflow', '').css('padding-right', '');
 }
 
 function EditKeyDown(id) {

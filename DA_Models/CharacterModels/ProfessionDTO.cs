@@ -49,7 +49,6 @@ namespace DA_Models.CharacterModels
 
         public AttributeDTO? RelatedAttribute { get; set; }
 
-        private ICollection<string> TraitsInUse { get; set; } = new List<string>();
         public ICollection<TraitCharacterDTO> TraitsToAdd = new List<TraitCharacterDTO>();
         public ICollection<TraitDTO> TraitsToDelete = new List<TraitDTO>();
 
@@ -133,60 +132,115 @@ namespace DA_Models.CharacterModels
             }
         }
 
-        public void StartProfessionPage()
+        public void StartProfessionPage(AllParamsModel allParams)
         {
-            foreach (var activeTraits in Traits)
+            foreach (var skill in Traits.Where(u => u.IsActiveSkill))
             {
-                if (activeTraits.IsActiveSkill && activeTraits.IsInUse)
-                {
-                    TraitsInUse.Add(activeTraits.Name);
-                }
+                skill.UseCount = GetSkillUseCount(skill, allParams);
+                skill.IsInUse = skill.UseCount > 0;
             }
         }
 
-        private void UnCheckSkill(TraitProfessionDTO skill, AllParamsModel AllParams) 
+        public int GetSkillUseCount(TraitProfessionDTO skill, AllParamsModel allParams)
         {
-            var deleteSkill = AllParams.TraitsTemporary.FirstOrDefault(u => u.Name == skill.Name);
-            if (deleteSkill is not null)
-            {
-                if (TraitsToDelete.FirstOrDefault(u => u.Name == skill.Name) == null)
-                    TraitsToDelete.Add(deleteSkill);
-            }
-            TraitCharacterDTO? TempSkill = TraitsToAdd?.FirstOrDefault(t => t.Name == skill.Name);
-            if (TempSkill is not null)
-                TraitsToAdd?.Remove(TempSkill);
-            skill.IsInUse = false;
-            string name = TraitsInUse.FirstOrDefault(u => u.Equals(skill.Name));
-            if (string.IsNullOrEmpty(name) == false)
-            {
-                TraitsInUse.Remove(name);
-            }
-            else
-            {
-                CurrentFocusPoints += skill.Cost;
-            }
+            var pending = TraitsToAdd?.Count(t => t.Name == skill.Name) ?? 0;
+            var persisted = allParams.TraitsTemporary?.Count(t => t.Name == skill.Name) ?? 0;
+            return pending + persisted;
         }
-        public string GenerateTemporaryTraits(TraitProfessionDTO skill,AllParamsModel AllParams)
+
+        public int GetMaxSkillUseCount(TraitProfessionDTO skill, AllParamsModel allParams)
+        {
+            if (skill.Cost <= 0)
+            {
+                return GetSkillUseCount(skill, allParams);
+            }
+
+            var current = GetSkillUseCount(skill, allParams);
+            return current + (CurrentFocusPoints / skill.Cost);
+        }
+
+        public string SetSkillUseCount(TraitProfessionDTO skill, int newCount, AllParamsModel allParams)
         {
             if (string.IsNullOrEmpty(skill.Name))
-                return "";
-            if (skill.IsInUse)
             {
-                UnCheckSkill(skill, AllParams);
+                return "";
+            }
+
+            if (newCount < 0)
+            {
+                newCount = 0;
+            }
+
+            var current = GetSkillUseCount(skill, allParams);
+            if (newCount == current)
+            {
+                skill.UseCount = newCount;
+                skill.IsInUse = newCount > 0;
+                return "";
+            }
+
+            if (newCount > current)
+            {
+                var toAdd = newCount - current;
+                var costNeeded = toAdd * skill.Cost;
+                if (CurrentFocusPoints < costNeeded)
+                {
+                    return "Not enough focus points";
+                }
+
+                for (var i = 0; i < toAdd; i++)
+                {
+                    var tempSkill = new TraitCharacterDTO(skill, true)
+                    {
+                        IsRemovable = false
+                    };
+                    TraitsToAdd.Add(tempSkill);
+                }
+
+                CurrentFocusPoints -= costNeeded;
             }
             else
             {
-                if (CurrentFocusPoints < skill.Cost)
+                var toRemove = current - newCount;
+                for (var i = 0; i < toRemove; i++)
                 {
-                    return "Not enought focus points";
+                    RemoveOneSkillUse(skill, allParams);
                 }
-                TraitCharacterDTO TempSkill = new TraitCharacterDTO(skill, true);
-                TempSkill.IsRemovable = false;
-                TraitsToAdd.Add(TempSkill);
-                skill.IsInUse = true;
-                CurrentFocusPoints -= skill.Cost;
             }
+
+            skill.UseCount = newCount;
+            skill.IsInUse = newCount > 0;
             return "";
+        }
+
+        private void RemoveOneSkillUse(TraitProfessionDTO skill, AllParamsModel allParams)
+        {
+            var pending = TraitsToAdd?.FirstOrDefault(t => t.Name == skill.Name);
+            if (pending is not null)
+            {
+                TraitsToAdd.Remove(pending);
+                CurrentFocusPoints += skill.Cost;
+                return;
+            }
+
+            var deleteSkill = allParams.TraitsTemporary?.FirstOrDefault(u => u.Name == skill.Name);
+            if (deleteSkill is null)
+            {
+                return;
+            }
+
+            if (TraitsToDelete.FirstOrDefault(u => u.Id == deleteSkill.Id) is null)
+            {
+                TraitsToDelete.Add(deleteSkill);
+            }
+
+            allParams.TraitsTemporary.Remove(deleteSkill);
+            CurrentFocusPoints += skill.Cost;
+        }
+
+        private void UnCheckSkill(TraitProfessionDTO skill, AllParamsModel allParams)
+        {
+            SetSkillUseCount(skill, 0, allParams);
         }
 
         public string Rest(AllParamsModel AllParams)
@@ -216,7 +270,7 @@ namespace DA_Models.CharacterModels
                     }
                 }
             }
-            foreach(var skill in Traits.Where(u => u.IsActiveSkill == true))
+            foreach (var skill in Traits.Where(u => u.IsActiveSkill == true))
             {
                 UnCheckSkill(skill, AllParams);
             }

@@ -16,6 +16,19 @@
     right: 50px;
     bottom: 50px;
 }
+.prof-action-buttons {
+    flex-shrink: 0;
+    justify-content: flex-end;
+}
+
+.prof-action-buttons-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+}
+
 .main-table {
     display: flex;
     flex-direction: column;
@@ -159,6 +172,119 @@ td {
     border-radius: 4px;
 }
 
+.uses-cell {
+    font-size: 12px;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0;
+}
+
+.prof-skill-use {
+    justify-content: center;
+    margin: 0 auto;
+    width: 36px;
+    height: 22px;
+}
+
+.attr-control {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.prof-skill-use .attr-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid gray;
+    font-size: 10px;
+    line-height: 1;
+    border-radius: 3px;
+    width: 20px;
+    height: 20px;
+    margin-top: 0;
+    margin-right: 1px;
+}
+
+.prof-skill-use .arrows {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    margin-top: 1px;
+}
+
+.prof-skill-use .attr-carret {
+    padding: 0;
+    margin: 0;
+    height: 14px;
+    width: 14px;
+    font-size: 14px;
+    color: dimgray;
+    border: 0;
+    background-color: transparent;
+    text-align: start;
+    cursor: pointer;
+}
+
+.arrows {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    margin-top: 2px;
+}
+
+.attr-carret {
+    padding: 0;
+    margin: 0;
+    height: 18px;
+    width: 18px;
+    font-size: 18px;
+    color: dimgray;
+    border: 0 solid gray;
+    background-color: transparent;
+    text-align: start;
+    cursor: pointer;
+}
+
+.prof-header-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-end;
+    width: 100%;
+    gap: 4px;
+}
+
+.prof-name-cell {
+    flex: 1 1 0;
+    min-width: 120px;
+}
+
+.prof-header-fixed {
+    flex: 0 0 auto;
+}
+
+.prof-name-field-wrap {
+    width: 100%;
+}
+
+.prof-name-field-wrap .prof-variables {
+    width: 100% !important;
+    max-width: 100%;
+    display: block;
+    box-sizing: border-box;
+    text-align: left;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.prof-name-field-wrap input.prof-variables {
+    background-color: transparent;
+    overflow: visible;
+    text-overflow: clip;
+}
+
 .prof-variables {
     width: 100px;
     height: 32px;
@@ -231,6 +357,11 @@ td {
         font-weight: bold;
         text-align: center;
         vertical-align: middle;
+    }
+
+    .prof-name-field-wrap,
+    .prof-name-field-wrap .prof-variables {
+        width: 100% !important;
     }
 
     .column-section {

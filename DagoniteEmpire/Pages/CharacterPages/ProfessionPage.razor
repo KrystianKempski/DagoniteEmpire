@@ -38,12 +38,6 @@
     {
         @if (IsLeaveAllowed == false)
         {
-            <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
-
-                <div class="save-btn">
-                    <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
-                </div>
-            </MudHidden>
             <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
 
             <div class="save-btn down">
@@ -54,48 +48,74 @@
 
         <label class="warnign-message">@ErrorMessage</label>
         <div class="wide-screen-table">
-            <div class="d-flex ">
-                <div class="d-flex flex-column px-1 flex-grow-1">
+            <div class="w-100 prof-header-row">
+                <div class="d-flex flex-column px-1 prof-name-cell">
                     <label class="class-section py-1">Class name</label>
-                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value:after="SomeChange" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
+                    <div class="prof-name-field-wrap">
+                        @if (CanEditClassMetadata)
+                        {
+                            <input type="text" class="prof-variables" @bind="ProfessionDTO.Name" @bind:event="oninput" @bind:after="SomeChange" placeholder="Insert class name" />
+                        }
+                        else
+                        {
+                            <label class="prof-variables">@ProfessionDTO.Name</label>
+                        }
+                    </div>
                 </div>
-                <div class="d-flex flex-column px-1">
+                <div class="d-flex flex-column px-1 prof-header-fixed">
                     <label class="class-section py-1">Related attribute</label>
                     <label class="prof-variables" style="width: 150px;">@ProfessionDTO.RelatedAttributeName</label>
                 </div>
                 @if (UserInfo?.IsAdminOrMG == true)
                 {
-                    <div class="d-flex flex-column px-1">
+                    <div class="d-flex flex-column px-1 prof-header-fixed">
                         <label class="column-section py-1">Class Level</label>
                         <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:100px" HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
                     </div>
                 }
                 else
                 {
-                    <div class="d-flex flex-column px-1">
+                    <div class="d-flex flex-column px-1 prof-header-fixed">
                         <label class="column-section py-1">Class Level</label>
                         <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                     </div>
                 }
 
-                <div class="d-flex flex-column px-1">
+                <div class="d-flex flex-column px-1 prof-header-fixed">
                     <label class="column-section py-1">Skill roll</label>
                     <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                 </div>
-                <div class="d-flex flex-column px-1">
+                <div class="d-flex flex-column px-1 prof-header-fixed">
                     <label class="column-section py-1">Focus points</label>
                         <label class="prof-variables">@ProfessionDTO.CurrentFocusPoints</label>
                 </div>
 
-                <button class="btn btn-secondary mt-4" @onclick="Rest">Rest</button>
+                <div class="d-flex flex-column px-1 prof-action-buttons prof-header-fixed">
+                    <div class="prof-action-buttons-row gap-2">
+                        <button class="btn btn-secondary" @onclick="Rest">Rest</button>
+                        @if (IsLeaveAllowed == false)
+                        {
+                            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
         <div class="short-screen-table">
             <div class="d-flex flex-column ">
-                <div class="d-flex">
-                    <div class="d-flex flex-column px-1 flex-grow-1">
+                <div class="d-flex w-100">
+                    <div class="d-flex flex-column px-1 prof-name-cell w-100">
                         <label class="class-section py-1">Class name</label>
-                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value:after="SomeChange" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
+                        <div class="prof-name-field-wrap">
+                            @if (CanEditClassMetadata)
+                            {
+                                <input type="text" class="prof-variables" @bind="ProfessionDTO.Name" @bind:event="oninput" @bind:after="SomeChange" placeholder="Insert class name" />
+                            }
+                            else
+                            {
+                                <label class="prof-variables">@ProfessionDTO.Name</label>
+                            }
+                        </div>
                     </div>
                    @*  @if (UserInfo?.IsAdminOrMG == true)
                     {
@@ -172,7 +192,8 @@
                                 <th scope="col" class="number-row text-center">DC</th>
                                 <th scope="col" class="number-row text-center">Cost</th>
                                 <th scope="col" class="number-row text-center">Range</th>
-                                    <th scope="col" class="number-row text-center">Actions</th>
+                                <th scope="col" class="number-row text-center">Uses</th>
+                                <th scope="col" class="number-row text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -188,18 +209,25 @@
                                     <td><div class="short-row smaller-text text-center">@skill.DC</div></td>
                                     <td><div class="short-row smaller-text text-center">@skill.Cost</div></td>
                                     <td><div class="short-row smaller-text text-center">@skill.Range</div></td>
+                                    <td><div class="uses-cell text-center">
+                                            @if (ProfessionDTO.ClassLevel >= skill.Level)
+                                            {
+                                                <div class="attr-control prof-skill-use">
+                                                    <span class="attr-indicator">@GetSkillUseCount(skill)</span>
+                                                    <div class="arrows">
+                                                        <button type="button" @onclick="@(() => IncrSkillUse(skill))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                        <button type="button" @onclick="@(() => DecrSkillUse(skill))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <label class="short-row text-center">—</label>
+                                            }
+                                        </div>
+                                    </td>
                                     <td><div class="action-row text-center">
                                             <button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="px-2 fa-solid fa-pencil"></i></button>
-                                            @if(ProfessionDTO.ClassLevel >= skill.Level)
-                                            {
-                                            <MudToggleIconButton @bind-Toggled="skill.IsInUse"
-                                                                    Class="pa-2"
-                                                                    @onclick="@(()=>ActivateSkill(skill))"
-                                                                    Icon="@Icons.Material.Filled.RadioButtonUnchecked"
-                                                                    Color="@Color.Default"
-                                                                    ToggledIcon="@Icons.Material.Filled.RadioButtonChecked"
-                                                                    ToggledColor="@Color.Success" />
-                                            }
                                         </div>
                                     </td>
                                 </tr>
@@ -217,6 +245,7 @@
                                 <th scope="col" class="number-row text-center">DC</th>
                                 <th scope="col" class="number-row text-center">Cost</th>
                                 <th scope="col" class="number-row text-center"> Range</th>
+                                <th scope="col" class="number-row text-center">Uses</th>
                                 <th scope="col" class="number-row text-center">Actions</th>
                             </tr>
                         </thead>
@@ -232,23 +261,30 @@
                                     <td><div class="short-row text-center">@skill.DC</div></td>
                                     <td><div class="short-row text-center">@skill.Cost</div></td>
                                     <td><div class="short-row text-center">@skill.Range</div></td>
+                                    <td><div class="uses-cell text-center">
+                                            @if (ProfessionDTO.ClassLevel >= skill.Level)
+                                            {
+                                                <div class="attr-control prof-skill-use">
+                                                    <span class="attr-indicator">@GetSkillUseCount(skill)</span>
+                                                    <div class="arrows">
+                                                        <button type="button" @onclick="@(() => IncrSkillUse(skill))" class="attr-carret"><i class="fa-regular fa-square-caret-up align-top"></i></button>
+                                                        <button type="button" @onclick="@(() => DecrSkillUse(skill))" class="attr-carret"><i class="fa-regular fa-square-caret-down align-top"></i></button>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <label class="short-row text-center">—</label>
+                                            }
+                                        </div>
+                                    </td>
                                     <td><div class="short-row text-center">
                                         <button @onclick="@(()=>EditSkill(skill))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
-                                        @if(ProfessionDTO.ClassLevel >= skill.Level)
-                                        {
-                                                <MudToggleIconButton @bind-Toggled="skill.IsInUse"
-                                                                     Class="pa-2"
-                                                                     @onclick="@(()=>ActivateSkill(skill))"
-                                                                     Icon="@Icons.Material.Filled.RadioButtonUnchecked"
-                                                                     Color="@Color.Default"
-                                                                     ToggledIcon="@Icons.Material.Filled.RadioButtonChecked"
-                                                                     ToggledColor="@Color.Success" />
-                                        }
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td colspan="4">@skill.SummaryDescr</td>
+                                    <td colspan="5">@skill.SummaryDescr</td>
                                 </tr>
                             }
                         </tbody>
@@ -448,8 +484,51 @@
 
            
 <style>
+    .prof-header-row {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: flex-end;
+        width: 100%;
+        gap: 4px;
+    }
+
+    .prof-header-row .prof-name-cell {
+        flex: 1 1 0;
+        min-width: 120px;
+    }
+
+    .prof-header-row .prof-header-fixed {
+        flex: 0 0 auto;
+    }
+
+    .prof-action-buttons-row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .prof-header-row .prof-name-field-wrap {
+        width: 100%;
+    }
+
+    .prof-header-row .prof-name-field-wrap .prof-variables {
+        width: 100% !important;
+        max-width: 100%;
+        display: block;
+        box-sizing: border-box;
+        text-align: left;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
     .dense-numeric-field .mud-input-control-input-container .mud-input-underline {
         margin-top: 0px !important;
+    }
+    .dense-numeric-field {
+        max-width: 72px;
+        margin: 0 auto;
     }
     .mud-input-control {
         margin-top: 0px !important;
@@ -502,6 +581,9 @@
     private string TargetLocation { get; set; } = "";
     private System.Action handler;
 
+    private bool CanEditClassMetadata =>
+        UserInfo?.IsAdminOrMG == true || AllParams?.Character?.IsApproved == false;
+
     protected override async Task OnInitializedAsync()
     {        
         try
@@ -517,7 +599,7 @@
                 _navigationManager.NavigateTo($"/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
             }
             await LoadCharacter();
-            ProfessionDTO.StartProfessionPage();
+            ProfessionDTO.StartProfessionPage(AllParams);
 
             handler = async () => await ReloadPage();
             _callbackService.OnChange += handler;
@@ -857,21 +939,41 @@
         return new DialogOptions { MaxWidth = maxWidth, FullScreen = __isFs };
     }
 
-    private async Task ActivateSkill(TraitProfessionDTO skill)
+    private int GetSkillUseCount(TraitProfessionDTO skill) =>
+        ProfessionDTO.GetSkillUseCount(skill, AllParams);
+
+    private int GetMaxSkillUseCount(TraitProfessionDTO skill) =>
+        ProfessionDTO.GetMaxSkillUseCount(skill, AllParams);
+
+    private async Task IncrSkillUse(TraitProfessionDTO skill) =>
+        await ChangeSkillUseCount(skill, GetSkillUseCount(skill) + 1);
+
+    private async Task DecrSkillUse(TraitProfessionDTO skill) =>
+        await ChangeSkillUseCount(skill, GetSkillUseCount(skill) - 1);
+
+    private async Task ChangeSkillUseCount(TraitProfessionDTO skill, int newValue)
     {
         if (string.IsNullOrEmpty(skill.Name))
         {
             await _jsruntime.ToastrWarning("Define skill first");
             return;
         }
-        string res = "";
-        res = ProfessionDTO.GenerateTemporaryTraits(skill, AllParams);
-      
-        if (string.IsNullOrEmpty(res) == false)
-            await _jsruntime.ToastrWarning(res);
-        IsLeaveAllowed = false;
-    }
 
+        if (ProfessionDTO.ClassLevel < skill.Level)
+        {
+            return;
+        }
+
+        var res = ProfessionDTO.SetSkillUseCount(skill, newValue, AllParams);
+        if (string.IsNullOrEmpty(res) == false)
+        {
+            await _jsruntime.ToastrWarning(res);
+        }
+
+        skill.UseCount = ProfessionDTO.GetSkillUseCount(skill, AllParams);
+        IsLeaveAllowed = false;
+        StateHasChanged();
+    }
 
     public async Task ConfirmLeave_Click(bool isConfirmed)
     {
@@ -893,13 +995,8 @@
         if (!IsLeaveAllowed)
         {
             TargetLocation = context.TargetLocation;
-
             context.PreventNavigation();
             HandleLeavePage();
-          
-
-            IsLeaveAllowed = true;
-            _navigationManager.NavigateTo(TargetLocation);
         }
 
         return ValueTask.CompletedTask;

@@ -28,6 +28,8 @@ namespace DA_Models.CharacterModels
         public string Range { get; set; } = "";
         public bool IsActiveSkill { get; set; } = true;
         public bool IsInUse { get; set; } = false;
+        /// <summary>Active uses of this skill in the current session (UI state).</summary>
+        public int UseCount { get; set; } = 0;
         public override string TraitLabel { get => "skill"; }
     }
 }
