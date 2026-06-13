@@ -1,4 +1,4 @@
-﻿@using DA_Models
+@using DA_Models
 @inject ICharacterRepository _characterRepository
 @inject IMobRepository _mobRepository
 @inject IAttributeRepository _attributeRepository
@@ -67,13 +67,23 @@
                 <MudPaper Elevation="1" Class="pa-1 mx-1 character-actions-panel">
                     <MudText Class="p-1" Typo="Typo.button">ACTIONS</MudText>
                     <MudTooltip Text="@FullDefenceTooltip">
-                        <span class="d-inline-block">
+                        <span class="@GetActionWrapperClass(CanDeclareFullDefence)">
                             <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Shield"
                                            Color="@(CanDeclareFullDefence ? Color.Info : Color.Default)"
                                            Disabled="!CanDeclareFullDefence"
                                            Size="Size.Small"
                                            aria-label="Declare full defence"
                                            OnClick="ConfirmFullDefenceAsync" />
+                        </span>
+                    </MudTooltip>
+                    <MudTooltip Text="@HalfActionTooltip">
+                        <span class="@GetActionWrapperClass(CanDeclareHalfAction)">
+                            <MudIconButton Disabled="!CanDeclareHalfAction"
+                                           Size="Size.Small"
+                                           aria-label="Do half action"
+                                           OnClick="ConfirmHalfActionAsync">
+                                <img src="@MyIcon.HalfAction" class="character-action-icon" width="22" height="22" alt="" />
+                            </MudIconButton>
                         </span>
                     </MudTooltip>
                 </MudPaper>
@@ -385,12 +395,24 @@
 
     private bool IsFullDefenceBlocked =>
         HasTemporaryState(States.Names.NoTurn)
+        || HasTemporaryState(States.Names.HalfTurn)
         || HasTemporaryState(States.Names.Unconscious)
         || HasTemporaryState(States.Names.Dead)
         || HasTemporaryState(States.Names.FullDefence);
 
     private bool CanDeclareFullDefence =>
         ShowActionsPanel && !IsFullDefenceBlocked;
+
+    private bool HasHalfTurn => HasTemporaryState(States.Names.HalfTurn);
+
+    private bool IsHalfActionBlocked =>
+        HasTemporaryState(States.Names.Dead)
+        || HasTemporaryState(States.Names.Unconscious)
+        || HasTemporaryState(States.Names.FullDefence)
+        || (HasTemporaryState(States.Names.NoTurn) && !HasHalfTurn);
+
+    private bool CanDeclareHalfAction =>
+        ShowActionsPanel && !IsHalfActionBlocked;
 
     private string FullDefenceTooltip
     {
@@ -402,11 +424,34 @@
                 return "Full defence unavailable: character is unconscious.";
             if (HasTemporaryState(States.Names.NoTurn))
                 return "Full defence unavailable: no actions left this turn.";
+            if (HasHalfTurn)
+                return "Full defence unavailable: half action already used this turn.";
             if (HasTemporaryState(States.Names.FullDefence))
                 return "Full defence unavailable: already in full defence.";
             return "Full defence: no attack this turn, +5 to defence next round. Uses your entire turn.";
         }
     }
+
+    private string HalfActionTooltip
+    {
+        get
+        {
+            if (HasTemporaryState(States.Names.Dead))
+                return "Half action unavailable: character is dead.";
+            if (HasTemporaryState(States.Names.Unconscious))
+                return "Half action unavailable: character is unconscious.";
+            if (HasTemporaryState(States.Names.FullDefence))
+                return "Half action unavailable: character is in full defence.";
+            if (HasTemporaryState(States.Names.NoTurn) && !HasHalfTurn)
+                return "Half action unavailable: no actions left this turn.";
+            if (HasHalfTurn)
+                return "End turn: remove Half turn and gain No turn — no further actions this round.";
+            return "Do half action: gain Half turn. You may take one more half action, or use this again to end your turn.";
+        }
+    }
+
+    private static string GetActionWrapperClass(bool canUse) =>
+        canUse ? "character-action-wrapper" : "character-action-wrapper character-action-inactive-wrapper";
 
     private void OnExpandCollapseClick()
     {
@@ -649,17 +694,21 @@
             {
                 if (state == string.Empty ) continue;
                
-                var type = state.Split(":");
-                if (type[0] == States.Names.HalfTurn) continue;
-                if (type[0] == States.Names.NoTurn)
+                var type = state.Split(':', 2);
+                if (type.Length < 2)
+                    continue;
+
+                var stateName = type[0].Trim();
+                if (stateName == States.Names.HalfTurn) continue;
+                if (stateName == States.Names.NoTurn)
                 {
                     NoTurnLeftIcon = MyIcon.NoTurn;
                     continue;
                 }
-                if (string.IsNullOrEmpty(type[0]) == false)
-                    Icons.Add(new( type[0], States.GetIcon(type[0]), Int32.Parse(type[1])));
+                if (string.IsNullOrEmpty(stateName) == false && int.TryParse(type[1].Trim(), out var duration))
+                    Icons.Add(new(stateName, States.GetIcon(stateName), duration));
                 else
-                    throw new Exception(); // eerror
+                    throw new Exception();
             }
         }
         catch(Exception ex)
@@ -710,10 +759,67 @@
             AllParams.TraitsTemporary.Remove(halfTurn);
         }
 
-        await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.FullDefence, true, 1, Id));
-        await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.NoTurn, true, 1, Id));
+        await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.FullDefence, false, 1, Id));
+        await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.NoTurn, false, 1, Id));
 
         Snackbar.Add("Full defence declared.", Severity.Success);
+        await OnFullDefenceApplied.InvokeAsync(Id);
+    }
+
+    private async Task ConfirmHalfActionAsync()
+    {
+        if (!CanDeclareHalfAction || AllParams?.Character is null)
+            return;
+
+        var characterName = AllParams.Character.NPCName;
+        string title;
+        string message;
+        string yesText;
+
+        if (HasHalfTurn)
+        {
+            title = "End turn";
+            message = $"End turn for {characterName}? This removes Half turn and applies No turn — no further actions this round.";
+            yesText = "End turn";
+        }
+        else
+        {
+            title = "Do half action";
+            message = $"Use half action for {characterName}? This grants Half turn — one more half action remains this turn. Use this action again to end the turn instead.";
+            yesText = "Use half action";
+        }
+
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            title,
+            message,
+            yesText: yesText,
+            cancelText: "Cancel");
+
+        if (result is not true)
+            return;
+
+        await ApplyHalfActionAsync();
+    }
+
+    private async Task ApplyHalfActionAsync()
+    {
+        if (AllParams?.Character is null)
+            return;
+
+        var halfTurn = AllParams.TraitsTemporary.FirstOrDefault(t => t.Name == States.Names.HalfTurn);
+        if (halfTurn is not null)
+        {
+            await _traitCharacterRepository.Delete(halfTurn.Id);
+            AllParams.TraitsTemporary.Remove(halfTurn);
+            await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.NoTurn, false, 1, Id));
+            Snackbar.Add("Turn ended — no actions left.", Severity.Success);
+        }
+        else
+        {
+            await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.HalfTurn, false, 1, Id));
+            Snackbar.Add("Half action declared.", Severity.Success);
+        }
+
         await OnFullDefenceApplied.InvokeAsync(Id);
     }
 }

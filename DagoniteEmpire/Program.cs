@@ -159,6 +159,11 @@ public class Program
 
         builder.Services.AddCropper();
         builder.Services.AddServerSideBlazor()
+            .AddCircuitOptions(options =>
+            {
+                options.DetailedErrors = builder.Environment.IsDevelopment()
+                    || builder.Configuration.GetValue<bool>("DetailedErrors");
+            })
             .AddHubOptions(options =>
             {
                 options.MaximumReceiveMessageSize = 1024 * 1024;

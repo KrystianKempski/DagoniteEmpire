@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using MudBlazor;
 using MudBlazor.Charts;
 
@@ -584,6 +584,7 @@ namespace DA_Common
         public const string Unbalanced = "icons/unbalanced.svg";
         public const string Cautious = "icons/cautious.svg";
         public const string NoTurn = "icons/hourglass.svg";
+        public const string HalfAction = "icons/half-action.svg";
         public const string FullDefence = "icons/full-defence.svg";
         public const string Bleeding = "icons/bleeding.svg";
         public const string Unconscious = "icons/unconscious.svg";
@@ -890,6 +891,7 @@ namespace DA_Common
                 case Names.Unconscious: return MyIcon.Unconscious;
                 case Names.Dead: return MyIcon.Dead;
                 case Names.NoTurn: return MyIcon.NoTurn;
+                case Names.HalfTurn: return MyIcon.HalfAction;
                 default: return MyIcon.CustomIcon;
             }
         }
@@ -968,13 +970,13 @@ namespace DA_Common
             return content.ToString();
         }
 
-        /// <summary>Bold, parenthesized Quill HTML for pasting a saved roll batch into a thread post.</summary>
+        /// <summary>Italic, parenthesized Quill HTML for pasting a saved roll batch into a thread post.</summary>
         public static string ToThreadPostQuillHtml(string? richHtml)
         {
             var content = ExtractQuillParagraphContent(richHtml);
             return string.IsNullOrEmpty(content)
                 ? string.Empty
-                : $"<p><strong>({content})</strong></p>";
+                : $"<p><em>({content})</em></p>";
         }
 
         /// <summary>Italic Quill HTML for displaying a fight sequence in the roll dialog editor.</summary>

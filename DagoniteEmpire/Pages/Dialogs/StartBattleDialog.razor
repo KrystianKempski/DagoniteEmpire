@@ -1,0 +1,86 @@
+@using DA_Common
+@using DA_Models
+@using DA_Models.ComponentModels
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <img src="@MyIcon.Attack" width="40" height="40" class="pr-2" alt="" />
+            Rozpocznij bitwę
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body1" Class="mb-3">Kto bierze udział w walce?</MudText>
+        @if (Participants.Count == 0)
+        {
+            <MudText Typo="Typo.body2">Brak postaci w tym wątku.</MudText>
+        }
+        else
+        {
+            <MudStack Spacing="0">
+                @foreach (var participant in Participants)
+                {
+                    <MudCheckBox T="bool"
+                                 Label="@participant.Name"
+                                 Value="@IsSelected(participant.Key)"
+                                 ValueChanged="@(selected => SetSelected(participant.Key, selected))" />
+                }
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Error" Disabled="@(!HasSelection)" OnClick="Confirm">Rozpocznij bitwę</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ICollection<AllParamsModel?> CharacterAllParams { get; set; } = new List<AllParamsModel?>();
+    [Parameter] public IEnumerable<MobDTO> Mobs { get; set; } = new List<MobDTO>();
+
+    private readonly Dictionary<string, bool> _selected = new();
+    private List<BattleParticipantOption> Participants { get; set; } = new();
+
+    private bool HasSelection => _selected.Values.Any(selected => selected);
+
+    protected override void OnParametersSet()
+    {
+        Participants = CharacterAllParams
+            .Where(p => p?.Character is not null)
+            .Select(p => new BattleParticipantOption(
+                $"c-{p!.Character.Id}",
+                p.Character.NPCName ?? p.Character.UserName ?? $"Character #{p.Character.Id}",
+                p.Character.Relation))
+            .Concat(Mobs.Select(m => new BattleParticipantOption($"m-{m.Id}", m.Name, m.Relation)))
+            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var participant in Participants)
+        {
+            if (!_selected.ContainsKey(participant.Key))
+                _selected[participant.Key] = true;
+        }
+    }
+
+    private bool IsSelected(string key) =>
+        _selected.TryGetValue(key, out var selected) && selected;
+
+    private void SetSelected(string key, bool selected) =>
+        _selected[key] = selected;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Confirm()
+    {
+        var participants = Participants
+            .Where(p => IsSelected(p.Key))
+            .Select(p => new BattleParticipantSnapshot(p.Name, p.Relation))
+            .Where(p => string.IsNullOrWhiteSpace(p.Name) == false)
+            .ToList();
+
+        MudDialog.Close(DialogResult.Ok(participants));
+    }
+
+    private sealed record BattleParticipantOption(string Key, string Name, Relation Relation);
+}

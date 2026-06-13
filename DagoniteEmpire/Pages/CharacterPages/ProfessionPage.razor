@@ -34,6 +34,10 @@
     {
             <LoadingPage></LoadingPage>
     }
+    else if (!LoadSucceeded)
+    {
+        <label class="warnign-message">@ErrorMessage</label>
+    }
     else
     {
         @if (IsLeaveAllowed == false)
@@ -563,10 +567,12 @@
     [Parameter]
     public int Id { get; set; }
     public int AvalibleSpells { get; set; } = 0;
-    public ProfessionDTO ProfessionDTO { get; set; }
+    public ProfessionDTO ProfessionDTO { get; set; } = new();
     private AllParamsModel AllParams { get; set; } = new();
     private BlazoredTextEditor DescrEdit;
     private bool _descrEditorLoaded = false;
+    private int _descrEditorLoadAttempts = 0;
+    private const int MaxDescrEditorLoadAttempts = 5;
     private ICollection<SpellCircleDTO> SpellCircles = new List<SpellCircleDTO>();
     private MudTable<SpellCircleDTO> CircleTable;
     public string TraitType = SD.TraitType_Profession;
@@ -578,6 +584,7 @@
     private bool IsSpellTypeDisabled { get; set; } = true;
     private IDisposable? registration;
     private bool IsLeaveAllowed { get; set; } = true;
+    private bool LoadSucceeded { get; set; }
     private string TargetLocation { get; set; } = "";
     private System.Action handler;
 
@@ -597,12 +604,21 @@
             {
                 var uri = new Uri(_navigationManager.Uri);
                 _navigationManager.NavigateTo($"/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
+                return;
             }
-            await LoadCharacter();
+
+            if (!await LoadCharacter())
+            {
+                IsLoading = false;
+                LoadSucceeded = false;
+                return;
+            }
+
             ProfessionDTO.StartProfessionPage(AllParams);
 
             handler = async () => await ReloadPage();
             _callbackService.OnChange += handler;
+            LoadSucceeded = true;
             IsLoading = false;
             IsLeaveAllowed = true;
         }
@@ -637,19 +653,27 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_descrEditorLoaded && DescrEdit is not null && ProfessionDTO is not null && !string.IsNullOrEmpty(ProfessionDTO.Description))
+        if (_descrEditorLoadAttempts >= MaxDescrEditorLoadAttempts)
+        {
+            return;
+        }
+
+        if (!_descrEditorLoaded && DescrEdit is not null && LoadSucceeded && !string.IsNullOrEmpty(ProfessionDTO.Description))
         {
             try
             {
+                _descrEditorLoadAttempts++;
                 _descrEditorLoaded = true;
                 await DescrEdit.LoadHTMLContent(ProfessionDTO.Description);
             }
             catch (Exception)
             {
-                // Editor not yet ready, will retry on next render
                 _descrEditorLoaded = false;
-                await Task.Delay(50);
-                StateHasChanged();
+                if (_descrEditorLoadAttempts < MaxDescrEditorLoadAttempts)
+                {
+                    await Task.Delay(50);
+                    StateHasChanged();
+                }
             }
         }
     }
@@ -666,11 +690,17 @@
         _callbackService.OnChange -= handler;
     }
 
-    private async Task LoadCharacter()
+    private async Task<bool> LoadCharacter()
     {
         try{
 
             AllParams.Character = await _characterRepository.GetById(Id);
+            if (AllParams.Character is null)
+            {
+                ErrorMessage = "Character not found.";
+                return false;
+            }
+
             AllParams.Attributes.FillPropertiesContainer(await _attributeRepository.GetAll(Id));
             AllParams.BaseSkills = await _baseSkillRepository.GetAll(Id);
             AllParams.SpecialSkills.FillPropertiesContainer(await _specialSkillRepository.GetAll(Id));
@@ -678,7 +708,7 @@
             AllParams.TraitsCharacter = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == false).Cast<TraitDTO>().ToList();
             AllParams.TraitsTemporary = (await _traitCharacterRepository.GetAll(Id)).Where(u => u.IsTemporary == true).Cast<TraitDTO>().ToList();
 
-            ProfessionDTO = AllParams.Profession;
+            ProfessionDTO = AllParams.Profession ?? new ProfessionDTO();
             if(ProfessionDTO.SpellCircles is not null)
             {
                 SpellCircles = ProfessionDTO.SpellCircles;
@@ -687,17 +717,22 @@
             ProfessionDTO.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).ToList();
 
             if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
-                throw new Exception("No related class attribute");
+            {
+                ErrorMessage = "No related class attribute.";
+                return false;
+            }
 
             if (ProfessionDTO.CasterType != SpellcasterType.None)
                 IsSpellTypeDisabled = false;
 
             ProfessionDTO.CalculateClassParams(AllParams.Attributes.GetAll());
+            return true;
         }
         catch(Exception ex)
         {
-            IsLoading = false;
-            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+            ErrorMessage = "Error while initialize: " + ex.Message;
+            await _jsruntime.ToastrError(ErrorMessage);
+            return false;
         }
     }
 

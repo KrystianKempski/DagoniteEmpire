@@ -19,3 +19,5 @@ public sealed record StatusAddedSnapshot(
     string StateName,
     int Duration,
     bool IsMob);
+
+public sealed record BattleParticipantSnapshot(string Name, DA_Common.Relation Relation);

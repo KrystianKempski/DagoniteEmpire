@@ -23,7 +23,7 @@ public class RichTextTests
     }
 
     [Fact]
-    public void ToThreadPostQuillHtml_WrapsContentInBoldParentheses()
+    public void ToThreadPostQuillHtml_WrapsContentInItalicParentheses()
     {
         var rich = new RichText();
         rich += "Hero rolls";
@@ -33,8 +33,8 @@ public class RichTextTests
 
         var thread = RichText.ToThreadPostQuillHtml(rich.AllText);
 
-        Assert.StartsWith("<p><strong>(", thread);
-        Assert.EndsWith(")</strong></p>", thread);
+        Assert.StartsWith("<p><em>(", thread);
+        Assert.EndsWith(")</em></p>", thread);
         Assert.Contains("Hero rolls Success!", thread);
         Assert.DoesNotContain("<br>", thread);
         Assert.DoesNotContain("<blockquote>", thread);

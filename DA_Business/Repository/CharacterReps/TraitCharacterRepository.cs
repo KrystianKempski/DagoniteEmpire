@@ -1,4 +1,4 @@
-﻿using Abp.Collections.Extensions;
+using Abp.Collections.Extensions;
 using AutoMapper;
 using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
@@ -72,7 +72,8 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                var obj = await contex.TraitsCharacter.Include(t=>t.Bonuses).FirstOrDefaultAsync(u => u.Id == id && u.TraitApproved == false);
+                var obj = await contex.TraitsCharacter.Include(t=>t.Bonuses)
+                    .FirstOrDefaultAsync(u => u.Id == id && (u.TraitApproved == false || u.IsTemporary));
                 if (obj != null)
                 {
                     contex.TraitsCharacter.Remove(obj);

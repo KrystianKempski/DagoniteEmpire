@@ -1,4 +1,4 @@
-﻿@page "/chapter/{Id:int}"
+@page "/chapter/{Id:int}"
 @using DA_Business.Services.Interfaces
 @using DA_Scribe.Services.Interfaces
 @using Microsoft.AspNetCore.SignalR.Client
@@ -342,7 +342,8 @@ else
         }
         
         <div id="bottom-container">
-            <MudPaper Width="100%" Height="300px" Square="true" Class="d-flex flex-column my-2 pa-2">
+            <MudPaper Width="100%" Square="true" Class="post-editor-panel d-flex flex-column my-2 pa-2">
+                <div class="post-editor flex-grow-1">
                 <BlazoredTextEditor @ref="@PostEditor" ReadOnly="@(!SendPostEnabled)">
                     <ToolbarContent>
                         <select class="ql-header">
@@ -370,7 +371,8 @@ else
                     </ToolbarContent>
                     <EditorContent></EditorContent>
                 </BlazoredTextEditor>
-                <div class="d-flex flex-row">
+                </div>
+                <div class="d-flex flex-row flex-shrink-0">
                     <MudButton Disabled="@(!SendPostEnabled)" Class="mt-2 py-0" OnClick="CreatePost">@SendButtonText</MudButton>
                     @if (IsEditMode)
                     {
@@ -1015,6 +1017,28 @@ else
     private async Task StartBattlePhase()
     {
         if (Chapter is null) return;
+
+        var parameters = new DialogParameters<StartBattleDialog>
+        {
+            { x => x.CharacterAllParams, CharacterAllParams.Values },
+            { x => x.Mobs, Mobs },
+        };
+
+        var dialog = await DialogService.ShowAsync<StartBattleDialog>(
+            "Rozpocznij bitwę",
+            parameters,
+            await SetDialogOptions(MaxWidth.Small));
+        var result = await dialog.Result;
+
+        if (result is null || result.Canceled)
+            return;
+
+        if (result.Data is not IReadOnlyList<BattleParticipantSnapshot> participants || participants.Count == 0)
+        {
+            SnackBar.Add("Wybierz co najmniej jedną postać.", Severity.Warning);
+            return;
+        }
+
         _turnEvents.Clear();
         _battleEvents.Clear();
         BattlePhase = new(CharacterAllParams, Mobs, Chapter.CampaignId, Id);
@@ -1024,74 +1048,105 @@ else
             BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
         else
             return;
+
+        await PostBattleStartSummaryAsync(participants);
         SnackBar.Add("Battle started!", Severity.Error);
     }
 
     private async Task NextTurn()
     {
+        var currentTurn = BattlePhase?.CurrentTurn ?? 0;
+        var nextTurn = currentTurn + 1;
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            "Next turn",
+            currentTurn > 0
+                ? $"End turn {currentTurn} and start turn {nextTurn}? Temporary states will lose 1 turn of duration."
+                : "Advance to the next battle turn? Temporary states will lose 1 turn of duration.",
+            yesText: "Next turn",
+            cancelText: "Cancel");
+        if (confirmed is not true)
+            return;
+
         try
         {
             if (BattlePhase is not null)
-                await PostTurnSummaryAsync(BattlePhase.CurrentTurn, BattlePhase.CurrentTurn + 1);
-
-            foreach (var characterParams in CharacterAllParams.Values)
             {
-                if (characterParams?.TraitsTemporary is null || characterParams.TraitsTemporary.Any() == false) continue;
-                var traitsToDelete = new List<TraitDTO>();
-                foreach (var state in characterParams.TraitsTemporary)
+                try
                 {
-                    if (--state.TraitValue <= 0)
-                    {
-                        traitsToDelete.Add(state);
-                    }
-                    else
-                    {
-                        await _traitCharacterRepository.Update((TraitCharacterDTO)state);
-                    }
+                    await PostTurnSummaryAsync(BattlePhase.CurrentTurn, BattlePhase.CurrentTurn + 1);
                 }
-                foreach (var trait in traitsToDelete)
+                catch (Exception ex)
                 {
-                    await _traitCharacterRepository.Delete(trait.Id);
-                    characterParams.TraitsTemporary.Remove(trait);
+                    Logger.LogWarning(ex, "Failed to post turn summary for chapter {ChapterId}", Id);
+                    SnackBar.Add("Turn summary post failed, but turn states were still advanced.", Severity.Warning);
                 }
             }
 
-            List<string> newStates = new List<string>();
-            foreach (var mob in Mobs)
-            {
-                newStates = new List<string>();
-                var states = mob.States.Split(", ");
-                foreach (var state in states)
-                {
-                    if (state == string.Empty) continue;
-                    var statesParams = state.Split(":");
-                    var name = statesParams[0];
-                    var duration = Int32.Parse(statesParams[1]);
-                    if (--duration > 0)
-                    {
-                        newStates.Add($"{name}:{duration}");
-                    }
-                }
-                mob.States = string.Empty;
-                foreach (var newState in newStates)
-                {
-                    mob.States += $"{newState}, ";
-                }
-                await _mobRepository.Update(mob);
-            }
+            await AdvanceTurnStatesAsync();
 
             if (BattlePhase is not null)
             {
                 BattlePhase.CurrentTurn++;
                 BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
-                await LoadMobs();
-                await LoadChapter(goToLastPage: true);
                 SnackBar.Add($"Turn {BattlePhase.CurrentTurn} started", Severity.Info);
             }
+
+            await RefreshBattleParticipantsAsync();
+            StateHasChanged();
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error in Next turn action for chapter {ChapterId}", Id);
             SnackBar.Add($"Error in Next turn action: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AdvanceTurnStatesAsync()
+    {
+        if (Chapter is not null)
+        {
+            foreach (var charac in Chapter.Characters)
+            {
+                var temporaryTraits = (await _traitCharacterRepository.GetAll(charac.Id))
+                    .Where(t => t.IsTemporary)
+                    .ToList();
+
+                var traitsToDelete = new List<TraitCharacterDTO>();
+                foreach (var trait in temporaryTraits)
+                {
+                    if (--trait.TraitValue <= 0)
+                        traitsToDelete.Add(trait);
+                    else
+                        await _traitCharacterRepository.Update(trait);
+                }
+
+                foreach (var trait in traitsToDelete)
+                    await _traitCharacterRepository.Delete(trait.Id);
+            }
+        }
+
+        foreach (var mob in Mobs)
+        {
+            var newStates = new List<string>();
+            foreach (var state in mob.States.Split(", ", StringSplitOptions.RemoveEmptyEntries))
+            {
+                var statesParams = state.Split(':', 2);
+                if (statesParams.Length < 2)
+                    continue;
+
+                var name = statesParams[0].Trim();
+                if (string.IsNullOrEmpty(name) || !int.TryParse(statesParams[1].Trim(), out var duration))
+                    continue;
+
+                if (--duration > 0)
+                    newStates.Add($"{name}:{duration}");
+            }
+
+            mob.States = newStates.Count == 0
+                ? string.Empty
+                : string.Join(", ", newStates) + ", ";
+
+            await _mobRepository.Update(mob);
         }
     }
 
@@ -1419,7 +1474,7 @@ else
         post.AlternativeImageUrl == SD.PostNoPortrait;
 
     private static bool IsBattleSummaryPost(PostDTO post) =>
-        post.AlternativeName is "Battle turn" or "Battle ended";
+        post.AlternativeName is "Battle turn" or "Battle ended" or "Battle started";
 
     private void AddTurnEvent(BattleTurnEvent e)
     {
@@ -1581,6 +1636,56 @@ else
         return sb.ToString();
     }
 
+    private static bool IsHeroSide(Relation relation) =>
+        relation is Relation.Teammate or Relation.Ally or Relation.Neutral;
+
+    private static void AppendParticipantList(System.Text.StringBuilder sb, IReadOnlyList<BattleParticipantSnapshot> participants)
+    {
+        if (participants.Count == 0)
+        {
+            sb.Append("—");
+            return;
+        }
+
+        foreach (var participant in participants)
+        {
+            sb.Append("&#8226; ");
+            sb.Append(RichText.BoldText(participant.Name));
+            sb.Append("<br>");
+        }
+    }
+
+    private static string BuildBattleStartSummaryHtml(IReadOnlyList<BattleParticipantSnapshot> participants)
+    {
+        var heroes = participants
+            .Where(p => IsHeroSide(p.Relation))
+            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var opponents = participants
+            .Where(p => p.Relation == Relation.Enemy)
+            .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<p>");
+        sb.Append($"<span style=\"font-size:1.3em;\">{RichText.BoldText("Battle begins")}</span>");
+        sb.Append("<br><br>");
+        sb.Append("<table style=\"width:100%; border-collapse:collapse;\"><tr>");
+        sb.Append("<td style=\"width:50%; vertical-align:top; padding-right:12px;\">");
+        sb.Append(RichText.BoldText("Bohaterowie"));
+        sb.Append("<br>");
+        AppendParticipantList(sb, heroes);
+        sb.Append("</td>");
+        sb.Append("<td style=\"width:50%; vertical-align:top; padding-left:12px;\">");
+        sb.Append(RichText.BoldText("Przeciwnicy"));
+        sb.Append("<br>");
+        AppendParticipantList(sb, opponents);
+        sb.Append("</td>");
+        sb.Append("</tr></table>");
+        sb.Append("</p>");
+        return sb.ToString();
+    }
+
     private string BuildTurnSummaryHtml(int endingTurn, int startingTurn)
     {
         var sb = new System.Text.StringBuilder();
@@ -1604,6 +1709,34 @@ else
         }
         sb.Append("</p>");
         return sb.ToString();
+    }
+
+    private async Task PostBattleStartSummaryAsync(IReadOnlyList<BattleParticipantSnapshot> participants)
+    {
+        if (Chapter is null || UserInfo?.SelectedCharacter is null)
+            return;
+
+        var content = BuildBattleStartSummaryHtml(participants);
+
+        var post = new PostDTO
+        {
+            ChapterId = Id,
+            CreatedDate = DateTime.Now,
+            Content = content,
+            CharacterId = UserInfo.SelectedCharacter.Id,
+            Character = UserInfo.SelectedCharacter,
+            AlternativeName = "Battle started",
+            AlternativeImageUrl = SD.PostNoPortrait,
+        };
+
+        var result = await _postRepository.Create(post);
+        if (result is null)
+            return;
+
+        if (_hubConnection is not null)
+            await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
+
+        await LoadLastPagePostsAsync(scrollDown: true);
     }
 
     private async Task PostTurnSummaryAsync(int endingTurn, int startingTurn)
@@ -1630,7 +1763,16 @@ else
             return;
 
         if (_hubConnection is not null)
-            await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
+        {
+            try
+            {
+                await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to notify clients about turn summary post {PostId}", result.Id);
+            }
+        }
 
         await LoadLastPagePostsAsync(scrollDown: true);
     }

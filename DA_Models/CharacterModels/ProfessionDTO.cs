@@ -134,6 +134,11 @@ namespace DA_Models.CharacterModels
 
         public void StartProfessionPage(AllParamsModel allParams)
         {
+            if (Traits is null || allParams is null)
+            {
+                return;
+            }
+
             foreach (var skill in Traits.Where(u => u.IsActiveSkill))
             {
                 skill.UseCount = GetSkillUseCount(skill, allParams);
@@ -234,7 +239,7 @@ namespace DA_Models.CharacterModels
                 TraitsToDelete.Add(deleteSkill);
             }
 
-            allParams.TraitsTemporary.Remove(deleteSkill);
+            allParams.TraitsTemporary?.Remove(deleteSkill);
             CurrentFocusPoints += skill.Cost;
         }
 
