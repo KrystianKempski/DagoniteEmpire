@@ -36,8 +36,16 @@
                         @if (NoTurnLeftIcon != string.Empty)
                         {
                             <div class="image-Icon"> 
-                                <MudTooltip Placement="MudBlazor.Placement.Top" Text="No actions left"> 
-                                    <img src="@NoTurnLeftIcon" width="30" height="30" />
+                                <MudTooltip Placement="Placement.Right" TooltipClass="character-status-tooltip">
+                                    <ChildContent>
+                                        <img src="@NoTurnLeftIcon" width="30" height="30" alt="" />
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        <span class="character-status-tooltip-text">
+                                            <span class="character-status-tooltip-name">No turn</span>
+                                            <span class="character-status-tooltip-duration">No actions</span>
+                                        </span>
+                                    </TooltipContent>
                                 </MudTooltip> 
                             </div>
                         }
@@ -48,12 +56,19 @@
                         {
                             <MudText Typo="Typo.subtitle1">@ProfessionName | @RaceName</MudText>
                         }
-                        <MudText>
+                        <MudText Class="character-status-icons">
                             @foreach(var icon in Icons)
                             {
-                                string textTooltip = $"{icon.Item1} for {icon.Item3} turn(s)";
-                                <MudTooltip Placement="MudBlazor.Placement.Top" Text="@textTooltip">
-                                    <img src="@icon.Item2" width="25" height="25" class="pr-1" />
+                                <MudTooltip Placement="Placement.Right" TooltipClass="character-status-tooltip">
+                                    <ChildContent>
+                                        <img src="@icon.Item2" width="25" height="25" class="pr-1" alt="" />
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        <span class="character-status-tooltip-text">
+                                            <span class="character-status-tooltip-name">@icon.Item1</span>
+                                            <span class="character-status-tooltip-duration">@FormatStateDuration(icon.Item3)</span>
+                                        </span>
+                                    </TooltipContent>
                                 </MudTooltip>
 
                             }
@@ -66,7 +81,8 @@
             {
                 <MudPaper Elevation="1" Class="pa-1 mx-1 character-actions-panel">
                     <MudText Class="p-1" Typo="Typo.button">ACTIONS</MudText>
-                    <MudTooltip Text="@FullDefenceTooltip">
+                    <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
+                        <ChildContent>
                         <span class="@GetActionWrapperClass(CanDeclareFullDefence)">
                             <MudIconButton Icon="@MudBlazor.Icons.Material.Filled.Shield"
                                            Color="@(CanDeclareFullDefence ? Color.Info : Color.Default)"
@@ -75,8 +91,16 @@
                                            aria-label="Declare full defence"
                                            OnClick="ConfirmFullDefenceAsync" />
                         </span>
+                        </ChildContent>
+                        <TooltipContent>
+                            <span class="character-status-tooltip-text">
+                                <span class="character-status-tooltip-name">@FullDefenceTooltipLines.Title</span>
+                                <span class="character-status-tooltip-duration">@FullDefenceTooltipLines.Detail</span>
+                            </span>
+                        </TooltipContent>
                     </MudTooltip>
-                    <MudTooltip Text="@HalfActionTooltip">
+                    <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
+                        <ChildContent>
                         <span class="@GetActionWrapperClass(CanDeclareHalfAction)">
                             <MudIconButton Disabled="!CanDeclareHalfAction"
                                            Size="Size.Small"
@@ -85,6 +109,13 @@
                                 <img src="@MyIcon.HalfAction" class="character-action-icon" width="22" height="22" alt="" />
                             </MudIconButton>
                         </span>
+                        </ChildContent>
+                        <TooltipContent>
+                            <span class="character-status-tooltip-text">
+                                <span class="character-status-tooltip-name">@HalfActionTooltipLines.Title</span>
+                                <span class="character-status-tooltip-duration">@HalfActionTooltipLines.Detail</span>
+                            </span>
+                        </TooltipContent>
                     </MudTooltip>
                 </MudPaper>
             }
@@ -414,44 +445,47 @@
     private bool CanDeclareHalfAction =>
         ShowActionsPanel && !IsHalfActionBlocked;
 
-    private string FullDefenceTooltip
+    private (string Title, string Detail) FullDefenceTooltipLines
     {
         get
         {
             if (HasTemporaryState(States.Names.Dead))
-                return "Full defence unavailable: character is dead.";
+                return ("Full defence", "Blocked: dead");
             if (HasTemporaryState(States.Names.Unconscious))
-                return "Full defence unavailable: character is unconscious.";
+                return ("Full defence", "Blocked: unconscious");
             if (HasTemporaryState(States.Names.NoTurn))
-                return "Full defence unavailable: no actions left this turn.";
+                return ("Full defence", "Blocked: no actions");
             if (HasHalfTurn)
-                return "Full defence unavailable: half action already used this turn.";
+                return ("Full defence", "Blocked: half action used");
             if (HasTemporaryState(States.Names.FullDefence))
-                return "Full defence unavailable: already in full defence.";
-            return "Full defence: no attack this turn, +5 to defence next round. Uses your entire turn.";
+                return ("Full defence", "Already active");
+            return ("Full defence", "No attack; +5 DEF next round");
         }
     }
 
-    private string HalfActionTooltip
+    private (string Title, string Detail) HalfActionTooltipLines
     {
         get
         {
             if (HasTemporaryState(States.Names.Dead))
-                return "Half action unavailable: character is dead.";
+                return ("Half action", "Blocked: dead");
             if (HasTemporaryState(States.Names.Unconscious))
-                return "Half action unavailable: character is unconscious.";
+                return ("Half action", "Blocked: unconscious");
             if (HasTemporaryState(States.Names.FullDefence))
-                return "Half action unavailable: character is in full defence.";
+                return ("Half action", "Blocked: full defence");
             if (HasTemporaryState(States.Names.NoTurn) && !HasHalfTurn)
-                return "Half action unavailable: no actions left this turn.";
+                return ("Half action", "Blocked: no actions");
             if (HasHalfTurn)
-                return "End turn: remove Half turn and gain No turn — no further actions this round.";
-            return "Do half action: gain Half turn. You may take one more half action, or use this again to end your turn.";
+                return ("End turn", "Half turn → No turn");
+            return ("Half action", "Gain Half turn; click again to end");
         }
     }
 
     private static string GetActionWrapperClass(bool canUse) =>
         canUse ? "character-action-wrapper" : "character-action-wrapper character-action-inactive-wrapper";
+
+    private static string FormatStateDuration(int turns) =>
+        turns == 1 ? "1 turn left" : $"{turns} turns left";
 
     private void OnExpandCollapseClick()
     {
@@ -735,11 +769,12 @@
             return;
 
         var characterName = AllParams.Character.NPCName;
-        bool? result = await DialogService.ShowMessageBoxAsync(
+        bool? result = await DialogMessageBox.ShowCompactAsync(
+            DialogService,
             "Full defence",
-            $"Declare full defence for {characterName}? No attack this turn and no other actions. +5 to defence next round.",
-            yesText: "Declare",
-            cancelText: "Cancel");
+            $"Declare for {characterName}?",
+            "No attack; +5 DEF next round",
+            yesText: "Declare");
 
         if (result is not true)
             return;
@@ -773,27 +808,31 @@
 
         var characterName = AllParams.Character.NPCName;
         string title;
-        string message;
+        string line1;
+        string line2;
         string yesText;
 
         if (HasHalfTurn)
         {
             title = "End turn";
-            message = $"End turn for {characterName}? This removes Half turn and applies No turn — no further actions this round.";
+            line1 = $"End turn for {characterName}?";
+            line2 = "Half turn → No turn";
             yesText = "End turn";
         }
         else
         {
-            title = "Do half action";
-            message = $"Use half action for {characterName}? This grants Half turn — one more half action remains this turn. Use this action again to end the turn instead.";
+            title = "Half action";
+            line1 = $"Half action for {characterName}?";
+            line2 = "Grants Half turn; click again to end";
             yesText = "Use half action";
         }
 
-        bool? result = await DialogService.ShowMessageBoxAsync(
+        bool? result = await DialogMessageBox.ShowCompactAsync(
+            DialogService,
             title,
-            message,
-            yesText: yesText,
-            cancelText: "Cancel");
+            line1,
+            line2,
+            yesText: yesText);
 
         if (result is not true)
             return;

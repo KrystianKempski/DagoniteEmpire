@@ -58,3 +58,42 @@
     filter: grayscale(1) brightness(0.85);
     opacity: 0.45;
 }
+
+.character-status-icons {
+    line-height: 1;
+}
+
+:global(.character-status-tooltip) {
+    max-width: 5.75rem;
+    padding: 4px 6px !important;
+    text-align: center;
+}
+
+:global(.character-action-tooltip) {
+    max-width: 8.5rem;
+    padding: 4px 6px !important;
+    text-align: center;
+}
+
+:global(.character-status-tooltip) .character-status-tooltip-text,
+:global(.character-action-tooltip) .character-status-tooltip-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    line-height: 1.15;
+    white-space: normal;
+    word-break: break-word;
+}
+
+:global(.character-status-tooltip) .character-status-tooltip-name,
+:global(.character-action-tooltip) .character-status-tooltip-name {
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+:global(.character-status-tooltip) .character-status-tooltip-duration,
+:global(.character-action-tooltip) .character-status-tooltip-duration {
+    font-size: 0.65rem;
+    opacity: 0.85;
+}

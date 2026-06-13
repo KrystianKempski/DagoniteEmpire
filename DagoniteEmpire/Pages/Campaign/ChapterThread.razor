@@ -1057,13 +1057,14 @@ else
     {
         var currentTurn = BattlePhase?.CurrentTurn ?? 0;
         var nextTurn = currentTurn + 1;
-        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+        bool? confirmed = await DialogMessageBox.ShowCompactAsync(
+            DialogService,
             "Next turn",
             currentTurn > 0
-                ? $"End turn {currentTurn} and start turn {nextTurn}? Temporary states will lose 1 turn of duration."
-                : "Advance to the next battle turn? Temporary states will lose 1 turn of duration.",
-            yesText: "Next turn",
-            cancelText: "Cancel");
+                ? $"End turn {currentTurn}, start turn {nextTurn}?"
+                : "Advance to next battle turn?",
+            "Temporary states lose 1 turn",
+            yesText: "Next turn");
         if (confirmed is not true)
             return;
 
@@ -1152,10 +1153,13 @@ else
 
     private async Task EndBattlePhase()
     {
-        bool? result = await DialogService.ShowMessageBoxAsync(
-            "Warning",
-            "Are you sure you want to end battle?",
-            yesText: "Yes", cancelText: "No");
+        bool? result = await DialogMessageBox.ShowCompactAsync(
+            DialogService,
+            "End battle",
+            "End battle now?",
+            "All temporary states will be cleared",
+            yesText: "Yes",
+            cancelText: "No");
         if (result is null || result == false)
         {
             return;
