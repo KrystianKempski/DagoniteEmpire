@@ -268,27 +268,7 @@
     private bool IsSurrounded
     {
         get => _isSurrounded;
-        set
-        {
-            _isSurrounded = value;
-            if (FightSequence is null) return;
-            if (_isSurrounded == true )
-            {
-                var trait = StateSeeder.GetStateDTO(States.Names.Surrounded, false, SurroundedValue);
-                FightSequence?.Defender.States?.Add(trait);
-                StateHasChanged();
-            }
-            else
-            {
-                var trait = FightSequence?.Defender.States?.FirstOrDefault(u => u.Name == States.Names.Surrounded);
-                if(trait is not null)
-                {
-                    FightSequence?.Defender.States?.Remove(trait);
-                    StateHasChanged();
-                }
-            }
-
-        }
+        set => _isSurrounded = value;
     }
     private BlazoredTextEditor ResultEditor;
 
@@ -456,18 +436,15 @@
     private async Task MakeAttackRoll()
     {
         if (SelectedAttacker == string.Empty || SelectedDefender == string.Empty || FightSequence is null || FightSequence.AttackAction == string.Empty ||
-           (_isTargeted == true && FightSequence.AttackLocation == string.Empty) || FightSequence.DefenceType == string.Empty)
+           (_isTargeted == true && FightSequence.AttackLocation == string.Empty))
         {
             Snackbar.Add("Some component is missing", Severity.Warning);
             return;
         }
 
-        if (IsSurrounded)
-        {
-            var trait = FightSequence?.Defender.States?.FirstOrDefault(u => u.Name == States.Names.Surrounded);
-            if(trait is not null)
-                trait.TraitValue = SurroundedValue;
-        }
+        FightSequence.SurroundedAttackerCount = IsSurrounded ? SurroundedValue : 0;
+        FightSequence.UpdateDefenceFlags();
+        FightSequence.EnsureDefenceType();
 
         var result = FightSequence?.CalculateAndWriteAttack();
         if (string.IsNullOrEmpty(result) == false)

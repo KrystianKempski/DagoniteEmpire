@@ -49,6 +49,9 @@ namespace DA_Models.ComponentModels
         public string AttackLocation { get; set; } = string.Empty;
         public string DefenceType { get; set; } = string.Empty;
 
+        /// <summary>Number of attackers vs defender this roll (0 = not surrounded). Set from fight dialog only.</summary>
+        public int SurroundedAttackerCount { get; set; } = 0;
+
 
         // private variables
         private bool IsHit { get; set; } = false;
@@ -197,13 +200,33 @@ namespace DA_Models.ComponentModels
             IsShieldDefenceAllowed = Defender.Props.ShieldUsed is not null;
         }
 
+        /// <summary>
+        /// Resolves DefenceType when unset (e.g. MudSelect not touched). Uses SelectBestDefence, then Dodge.
+        /// </summary>
+        public void EnsureDefenceType()
+        {
+            if (!string.IsNullOrEmpty(DefenceType))
+                return;
+
+            if (Defender.Props is null)
+            {
+                DefenceType = SD.DefenceType.Dodge;
+                return;
+            }
+
+            UpdateDefenceFlags();
+            var best = SelectBestDefence();
+            DefenceType = string.IsNullOrEmpty(best) ? SD.DefenceType.Dodge : best;
+        }
+
        
         public string CalculateAndWriteAttack()
         {
             try
             {
 
-                ClearRoll();           
+                ClearRoll();
+                EnsureDefenceType();
                 /// Get bonus from states
                 WriteBonusesFromStates();
                 /// Get bonus from attack type
@@ -316,6 +339,9 @@ namespace DA_Models.ComponentModels
             string woundString = string.Empty;
             int weaponCurrValue = 0;
             string attackString = string.Empty;
+
+            ApplySurroundedDefencePenalty();
+
             switch (DefenceType)
             {
                 default:
@@ -422,6 +448,35 @@ namespace DA_Models.ComponentModels
             ResultStringMG += $"{RichText.BoldText(Attacker.Name)} {attackerStatesString} attacks {RichText.BoldText(AttackAction)} {attackString} {weaponString}, {RichText.BoldText(Defender.Name)} {defenderStatesString} tries to {defenceString}.";
         }
 
+        public static int GetSurroundedDefencePenalty(string defenceType, int attackerCount)
+        {
+            var extraAttackers = Math.Max(0, attackerCount - 1);
+            if (extraAttackers == 0)
+                return 0;
+
+            var penaltyPerExtra = string.Equals(defenceType, SD.DefenceType.Armor, StringComparison.Ordinal)
+                ? 1
+                : (int)States.Level.Surrounded;
+            return penaltyPerExtra * extraAttackers;
+        }
+
+        private void ApplySurroundedDefencePenalty()
+        {
+            if (SurroundedAttackerCount <= 1)
+                return;
+
+            var defenceType = DefenceType;
+            if (string.IsNullOrEmpty(defenceType))
+                defenceType = SD.DefenceType.Dodge;
+
+            var penalty = GetSurroundedDefencePenalty(defenceType, SurroundedAttackerCount);
+            if (penalty <= 0)
+                return;
+
+            DefenceValue -= penalty;
+            Defender.OldStates += $"Surrounded {SD.BonusText(-penalty)}, ";
+        }
+
         public void WriteBonusesFromStates()
         {
             int AttackCurrValue = 0;
@@ -507,7 +562,6 @@ namespace DA_Models.ComponentModels
                             DefenceCurrValue += (int)States.Level.FullDefence;
                             break;
                         case States.Names.Surrounded:
-                            DefenceCurrValue -= (int)States.Level.Surrounded * (state.TraitValue-1);
                             break;
                         case States.Names.Disarmed:
                             IsParryDefenceAllowed = false;
