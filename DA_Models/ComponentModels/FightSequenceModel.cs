@@ -696,7 +696,7 @@ namespace DA_Models.ComponentModels
                         case States.Names.Stumbled:
                             DC = Attacker.Props.Get(SD.WeaponQuality.Stumbling).SumBonus + DamageDelt;
                             result = SD.MakeRollTestForFight(DC, Math.Max(Defender.Balance, Defender.Lifting));
-                            duration = 99;
+                            duration = 99;  // until standing up
                             break;
                         case States.Names.Stunned:
                             DC = Attacker.Props.Get(SD.WeaponQuality.Stunning).SumBonus + DamageDelt;
@@ -706,15 +706,15 @@ namespace DA_Models.ComponentModels
                         case States.Names.Snatched:
                             DC = Attacker.Props.Get(SD.WeaponQuality.Snatching).SumBonus + DamageDelt;
                             result = SD.MakeRollTestForFight(DC, Math.Max(Defender.Balance, Defender.Lifting));
-                            duration = 99;
+                            duration = 99; // until release from grabbed
                             break;
                         case States.Names.Bleeding:
-                            DC = HitValue;
+                            DC = HitValue + 8;
                             result = SD.MakeRollTestForFight(DC, Defender.PainResistance);
-                            duration = 99;
+                            duration = 99; // until stop bleeding
                             break;
                         case States.Names.Blinded:
-                            DC = HitValue;
+                            DC = HitValue + 8;
                             result = SD.MakeRollTestForFight(DC, Defender.PainResistance);
                             duration = Math.Max(1, DC / 10);
                             break;

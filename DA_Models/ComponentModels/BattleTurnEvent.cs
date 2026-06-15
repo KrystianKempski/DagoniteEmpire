@@ -5,7 +5,8 @@ public enum BattleTurnEventKind
     Wound,
     Unconscious,
     Dead,
-    State
+    State,
+    BleedingPainTest,
 }
 
 public sealed record BattleTurnEvent(

@@ -28,6 +28,7 @@
 @inject IBrowserViewportService _viewportService
 @inject IJSRuntime _jsRuntime
 @inject CallbackService _callbackService
+@inject IWikiLinkService _wikiLinkService
 @inject ILogger<ChapterThread> Logger
 @implements IAsyncDisposable
 
@@ -219,7 +220,20 @@ else
 
         @if (OngoingBattle)
         {
-            <MudAlert Elevation="12" Severity="Severity.Error" Variant="Variant.Filled">Battle in progress!</MudAlert>
+            <MudAlert Elevation="12" Severity="Severity.Error" Variant="Variant.Filled">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="flex-wrap">
+                    <span>Battle in progress!</span>
+                    @if (_wikiDeployed)
+                    {
+                        <MudLink OnClick="OpenCombatRulesWiki"
+                                 Underline="Underline.Always"
+                                 Color="Color.Inherit"
+                                 Class="battle-rules-wiki-link">
+                            Zasady walki
+                        </MudLink>
+                    }
+                </MudStack>
+            </MudAlert>
         }
 
         <MudBreadcrumbs Class="px-0 py-2" Items="_items"></MudBreadcrumbs>
@@ -436,6 +450,9 @@ else
     private bool _scrollDown = true;
     private bool _afterRenderInProgress = false;
     
+    private bool _wikiDeployed;
+    private const string CombatRulesWikiPath = "/wiki/świat-i-zasady/zasady-walki";
+
     private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
     {
         new BreadcrumbItem("Home", href: "/"),
@@ -448,6 +465,7 @@ else
         try
         {
             UserInfo = await _userService.GetUserInfo();
+            _wikiDeployed = _wikiLinkService.IsWikiDeployed();
             await InitializeSignalR();
         }
         catch (Exception ex)
@@ -1053,6 +1071,9 @@ else
         SnackBar.Add("Battle started!", Severity.Error);
     }
 
+    private void OpenCombatRulesWiki() =>
+        _navigationManager.NavigateTo(CombatRulesWikiPath, forceLoad: true);
+
     private async Task NextTurn()
     {
         var currentTurn = BattlePhase?.CurrentTurn ?? 0;
@@ -1074,6 +1095,7 @@ else
             {
                 try
                 {
+                    await ProcessBleedingTurnTestsAsync();
                     await PostTurnSummaryAsync(BattlePhase.CurrentTurn, BattlePhase.CurrentTurn + 1);
                 }
                 catch (Exception ex)
@@ -1100,6 +1122,65 @@ else
             Logger.LogError(ex, "Error in Next turn action for chapter {ChapterId}", Id);
             SnackBar.Add($"Error in Next turn action: " + ex.Message, Severity.Error);
         }
+    }
+
+    private async Task ProcessBleedingTurnTestsAsync()
+    {
+        if (Chapter is null)
+            return;
+
+        foreach (var charac in Chapter.Characters)
+        {
+            var traits = (await _traitCharacterRepository.GetAll(charac.Id)).ToList();
+            var bleeding = traits.FirstOrDefault(t => t.IsTemporary && t.Name == States.Names.Bleeding);
+            if (bleeding is null || bleeding.TraitValue <= 0)
+                continue;
+
+            if (traits.Any(t => t.IsTemporary && t.Name is States.Names.Unconscious or States.Names.Dead))
+                continue;
+
+            var painResistance = CharacterAllParams.TryGetValue(charac.Id, out var allParams) && allParams is not null
+                ? allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.PainResistance).SumBonus
+                : (await LoadCharacter(charac.Id)).SpecialSkills.Get(SD.SpecialSkills.Athletics.PainResistance).SumBonus;
+
+            var test = BleedingTurnModel.RunPainTest(bleeding.TraitValue, painResistance);
+            RecordBleedingPainTestEvent(charac.NPCName, test);
+
+            if (test.Passed)
+                continue;
+
+            await AddFightStatesAsync($"{States.Names.Unconscious}:{test.UnconsciousDuration}, ", charac.Id);
+            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, charac.NPCName, null, States.Names.Unconscious));
+        }
+
+        foreach (var mob in Mobs)
+        {
+            if (!BleedingTurnModel.TryParseMobStateDuration(mob.States, States.Names.Bleeding, out var turnsRemaining)
+                || turnsRemaining <= 0)
+                continue;
+
+            if (BleedingTurnModel.MobHasState(mob.States, States.Names.Unconscious)
+                || BleedingTurnModel.MobHasState(mob.States, States.Names.Dead))
+                continue;
+
+            var test = BleedingTurnModel.RunPainTest(turnsRemaining, mob.PainResSkillValue);
+            RecordBleedingPainTestEvent(mob.Name, test);
+
+            if (test.Passed)
+                continue;
+
+            mob.States = FightSequenceModel.MergeMobStates(
+                mob.States,
+                $"{States.Names.Unconscious}:{test.UnconsciousDuration}, ");
+            await _mobRepository.Update(mob);
+            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, mob.Name, null, States.Names.Unconscious));
+        }
+    }
+
+    private void RecordBleedingPainTestEvent(string targetName, BleedingPainTestResult test)
+    {
+        var description = $"DC {test.Dc}: {test.ResultText}";
+        _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.BleedingPainTest, targetName, null, description));
     }
 
     private async Task AdvanceTurnStatesAsync()
@@ -1576,6 +1657,8 @@ else
             BattleTurnEventKind.Wound => $"{target} received {BoldWoundDescription(e.Description)}{causedBy}",
             BattleTurnEventKind.Unconscious => $"{target} became {RichText.BoldText(States.Names.Unconscious)}{causedBy}",
             BattleTurnEventKind.Dead => $"{target} died{causedBy}",
+            BattleTurnEventKind.BleedingPainTest =>
+                $"{target} — pain resistance test ({RichText.BoldText(States.Names.Bleeding)}): {e.Description}",
             _ => $"{target} gained {BoldStateDescription(e.Description)}{causedBy}",
         };
     }
