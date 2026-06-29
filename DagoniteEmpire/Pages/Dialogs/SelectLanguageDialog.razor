@@ -1,0 +1,60 @@
+@using DA_Models.CharacterModels
+
+<MudDialog ContentClass="p-1 m-0" Class="language-select-dialog h-100 w-100 p-0 m-0">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Select language</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" />
+    </TitleContent>
+    <DialogContent>
+        <MudDataGrid T="LanguageDTO" Items="@SelectableLanguages" Filterable="true" QuickFilter="@_quickFilter"
+                     FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                     SortMode="SortMode.None" Elevation="0" Class="language-dialog-grid p-1 m-0" RowClick="@OnRowClick">
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="Language" />
+                <PropertyColumn Property="x => x.Category" Title="Category" />
+                <PropertyColumn Property="x => x.Script" Title="Script" />
+                <PropertyColumn Property="x => x.Description" Title="Typical speakers" />
+            </Columns>
+        </MudDataGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public ICollection<LanguageDTO> KnownLanguages { get; set; } = new List<LanguageDTO>();
+
+    [Parameter]
+    public IEnumerable<LanguageDTO> AvailableLanguages { get; set; } = Enumerable.Empty<LanguageDTO>();
+
+    private IEnumerable<LanguageDTO> SelectableLanguages =>
+        AvailableLanguages
+            .Where(l => KnownLanguages.All(k => k.Id != l.Id))
+            .OrderBy(l => l.Index)
+            .ThenBy(l => l.Name);
+
+    private string _searchString = string.Empty;
+
+    private Func<LanguageDTO, bool> _quickFilter => language =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        return language.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+            || language.Category.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+            || language.Script.Contains(_searchString, StringComparison.OrdinalIgnoreCase)
+            || language.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+    };
+
+    private void OnRowClick(DataGridRowClickEventArgs<LanguageDTO> args) =>
+        MudDialog.Close(DialogResult.Ok(args.Item));
+
+    private void Cancel() => MudDialog.Cancel();
+}

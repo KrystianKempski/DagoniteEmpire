@@ -11,6 +11,7 @@
 @inject ITraitRepository<TraitProfessionDTO> _traitProfessionRepository
 @inject IWoundRepository _woundRepository
 @inject IRaceRepository _raceRepository
+@inject ILanguageRepository _languageRepository
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IEquipmentRepository _equipmentRepository
@@ -151,6 +152,15 @@
                                 <div class="equipment p-2">
                                     <MudPaper Class="p-2 m-0 w-100 h-100">
                                         <EquipmentComponent OnTraitsChange="TraitsChange" PageMode=true></EquipmentComponent>
+                                    </MudPaper>
+                                </div>
+
+                                <div class="traits p-2">
+                                    <MudPaper Class="p-2 m-0 w-100 h-100">
+                                        <h3 class="p-3 m-0 text-center">LANGUAGES</h3>
+                                        <div class="trait-container">
+                                            <LanguagesComponent OnLanguagesChange="LanguagesChange"></LanguagesComponent>
+                                        </div>
                                     </MudPaper>
                                 </div>
 
@@ -304,6 +314,8 @@
                 AllParams.CurrentRace = new();
                 AllParams.Profession = new();
                 AllParams.EquipmentSlots = new List<EquipmentSlotDTO>();
+                AllParams.Languages = new List<LanguageDTO>();
+                AllParams.AvailableLanguages = await _languageRepository.GetAllApproved();
                 AllParams.Character.UserName = UserInfo?.UserName;
                 IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer || UserInfo?.IsAdminOrMG == true);
 
@@ -320,6 +332,7 @@
                 await LoadCharacter();
             }
             IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer);
+            AllParams.IsAdminOrMG = UserInfo?.IsAdminOrMG == true;
             AllParams.SpecialSkills.AddRelatedParametes();
             CurrentDate = new DateModel(AllParams.Character.CurrentDate);
             AllParams.AllTraitsChange();
@@ -400,6 +413,8 @@
         AllParams.Profession.Traits = (await _traitProfessionRepository.GetAll(AllParams.Character.ProfessionId)).ToList();
         AllParams.EquipmentSlots = (await _equipmentSlotRepository.GetAll(Id)).ToList();
         AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
+        AllParams.Languages = (await _languageRepository.GetForCharacter(Id)).ToList();
+        AllParams.AvailableLanguages = await _languageRepository.GetAllApproved();
         ICollection<WoundDTO> wounds = (await _woundRepository.GetAll(Id)).ToList();
         ICollection<WoundDTO> conds = (await _woundRepository.GetAllCond(Id)).Cast<WoundDTO>().ToList();
         wounds = wounds.Concat(conds).ToList();
@@ -494,6 +509,12 @@
                     obj.CharacterId = charac.Id;
                     await _specialSkillRepository.Create(obj);
                 }
+                if (await TrySaveCharacterLanguagesAsync(charac.Id) == false)
+                {
+                    IsLoading = false;
+                    StateHasChanged();
+                    return;
+                }
                 Id = charac.Id;
             }
             else
@@ -578,6 +599,12 @@
                 {
                     obj.CharacterId = Id;
                     await _specialSkillRepository.Update(obj);
+                }
+                if (await TrySaveCharacterLanguagesAsync(Id) == false)
+                {
+                    IsLoading = false;
+                    StateHasChanged();
+                    return;
                 }
             }
             // delete any removed special skills from database
@@ -757,6 +784,42 @@
     {
         IsLeaveAllowed = false;
         StateHasChanged();
+    }
+
+    private void LanguagesChange()
+    {
+        IsLeaveAllowed = false;
+        StateHasChanged();
+    }
+
+    private async Task<bool> TrySaveCharacterLanguagesAsync(int characterId)
+    {
+        UserInfo = await _userService.GetUserInfo();
+        var canChangeLanguages = AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true;
+        if (canChangeLanguages)
+        {
+            await _languageRepository.SetCharacterLanguages(
+                characterId,
+                AllParams.Languages.Select(l => l.Id),
+                AllParams.GetMaxLanguageSlots());
+            return true;
+        }
+
+        var savedLanguageIds = (await _languageRepository.GetForCharacter(characterId))
+            .Select(l => l.Id)
+            .OrderBy(id => id)
+            .ToList();
+        var currentLanguageIds = AllParams.Languages
+            .Select(l => l.Id)
+            .OrderBy(id => id)
+            .ToList();
+
+        if (savedLanguageIds.SequenceEqual(currentLanguageIds))
+            return true;
+
+        await _jsRuntime.ToastrWarning("You cannot change languages on a finished character.");
+        AllParams.Languages = (await _languageRepository.GetForCharacter(characterId)).ToList();
+        return false;
     }
 
 }

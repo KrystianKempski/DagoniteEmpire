@@ -81,30 +81,30 @@
             </tbody>
         </table>
     </div>
-    <div class="row">
-        @if (AllParams?.Character is not null && AllParams?.Character.Id > 0)
-        {            
-            <MudStack Row>
-            <MudSpacer></MudSpacer>
-                <img src="@MyIcon.Imperial" width="30" height="30" />
-            <MudText Typo="Typo.h6">@Gold.ToString("F4")</MudText>
-
-               
-                @* <MudButton Variant="Variant.Outlined" OnClick="GoToRecords">Records</MudButton> *@
-                <button @onclick="GoToRecords" class="add-trait">Purse</button>
-            </MudStack>
-        }
-
-
-        <div class="buttons-row">
-            <button @onclick="@(()=>AddCustomEquipment())" class="add-trait">Add new</button>
-            <button @onclick="@(()=>AddExistingEquipment())" class="add-trait">Existing items</button>
+    <MudStack Row="true"
+              AlignItems="AlignItems.End"
+              Justify="Justify.SpaceBetween"
+              Class="equipment-actions"
+              Style="width:100%; flex-wrap:nowrap !important;">
+        <MudStack Row="true" Spacing="1" Style="flex-wrap:nowrap !important; flex-shrink:1; min-width:0;">
+            <button @onclick="@(()=>AddCustomEquipment())" class="add-trait equipment-action-btn">Add new</button>
+            <button @onclick="@(()=>AddExistingEquipment())" class="add-trait equipment-action-btn">Existing items</button>
             @if (AllParams.Character.IsApproved == true && PageMode == false)
             {
-                <button @onclick="@(()=>GoToItemPage())" class="add-trait">Details</button>
+                <button @onclick="@(()=>GoToItemPage())" class="add-trait equipment-action-btn">Details</button>
             }
-        </div>
-    </div>
+        </MudStack>
+        @if (AllParams?.Character is not null && AllParams?.Character.Id > 0)
+        {
+            <MudStack AlignItems="AlignItems.Center" Spacing="0" Style="flex-shrink:0;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="purse-value">
+                    <img src="@MyIcon.Imperial" width="22" height="22" alt="" />
+                    <span>@Gold.ToString("F4")</span>
+                </MudStack>
+                <button @onclick="GoToRecords" class="add-trait equipment-action-btn">Purse</button>
+            </MudStack>
+        }
+    </MudStack>
 
 </div>
 

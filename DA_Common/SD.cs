@@ -541,7 +541,16 @@ namespace DA_Common
             res += value >= 0 ? $"+{value.ToString()}" : value.ToString();
             res += ")";
             return res;
-        }   
+        }
+
+        public static class Languages
+        {
+            public const string CategoryHuman = "Human languages";
+            public const string CategoryRacial = "Racial";
+            public const string CategoryExotic = "Exotic";
+
+            public static int GetMaxSlots(int linguisticsValue) => 1 + linguisticsValue / 3;
+        }
     }
     public class Pair<T, U>
     {
@@ -761,6 +770,24 @@ namespace DA_Common
             else
                 return "";
         }
+
+        /// <summary>
+        /// Wounds at Light severity or higher are included in battle turn summaries.
+        /// Scars, "no" wound, and empty severity are omitted.
+        /// </summary>
+        public static bool IsReportableInTurnSummary(string? severity)
+        {
+            if (string.IsNullOrWhiteSpace(severity))
+                return false;
+
+            var normalized = severity.Trim();
+            if (string.Equals(normalized, "no", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return normalized is Severity.Light or Severity.Moderate or Severity.Heavy
+                or Severity.Critical or Severity.Deadly;
+        }
+
         public static int DCFromSeverity(string value)
         {
             switch (value)

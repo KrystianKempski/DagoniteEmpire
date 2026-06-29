@@ -1,0 +1,129 @@
+@inject IDialogService DialogService
+@inject IJSRuntime _jsRuntime
+@inject IUserService _userService
+@using DagoniteEmpire.Pages.Dialogs
+
+<div class="languages">
+    <div class="languages-summary">
+        <span>Known: @AllParams.Languages.Count / @AllParams.GetMaxLanguageSlots()</span>
+    </div>
+    <div class="table-container">
+        <table class="table align-middle languages-table">
+            <thead>
+                <tr>
+                    <th scope="col" class="name-row">Name</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Script</th>
+                    <th scope="col">Typical speakers</th>
+                    @if (CanDelete)
+                    {
+                        <th scope="col" class="languages-actions-col"></th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (AllParams.Languages.Any() == false)
+                {
+                    <tr>
+                        <td colspan="@(CanDelete ? 5 : 4)" class="text-center languages-empty">No languages selected.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var language in AllParams.Languages.OrderBy(l => l.Index).ThenBy(l => l.Name))
+                    {
+                        <tr>
+                            <td><label class="name-label">@language.Name</label></td>
+                            <td><label class="name-label">@language.Category</label></td>
+                            <td><label class="name-label">@language.Script</label></td>
+                            <td><label class="name-label">@language.Description</label></td>
+                            @if (CanDelete)
+                            {
+                                <td class="languages-actions-col">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                   Class="languages-delete-btn"
+                                                   OnClick="@(() => RemoveLanguage(language))" />
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (CanAdd && CanAddMore)
+    {
+        <div class="buttons-row">
+            <button @onclick="OpenAddLanguageDialog" class="add-trait">Add language</button>
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    public AllParamsModel AllParams { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback OnLanguagesChange { get; set; }
+
+    public UserInfo? UserInfo { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserInfo = await _userService.GetUserInfo();
+    }
+
+    private bool CanDelete =>
+        UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false;
+
+    private bool CanAdd =>
+        UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false;
+
+    private bool CanAddMore =>
+        AllParams.Languages.Count < AllParams.GetMaxLanguageSlots();
+
+    private async Task OpenAddLanguageDialog()
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true
+        };
+
+        var parameters = new DialogParameters
+        {
+            { nameof(SelectLanguageDialog.KnownLanguages), AllParams.Languages },
+            { nameof(SelectLanguageDialog.AvailableLanguages), AllParams.AvailableLanguages }
+        };
+
+        var dialog = await DialogService.ShowAsync<SelectLanguageDialog>("Select language", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not LanguageDTO selected)
+            return;
+
+        if (AllParams.Languages.Any(l => l.Id == selected.Id))
+            return;
+
+        if (AllParams.Languages.Count >= AllParams.GetMaxLanguageSlots())
+        {
+            await _jsRuntime.ToastrWarning("No free language slots available.");
+            return;
+        }
+
+        AllParams.Languages.Add(selected);
+        await OnLanguagesChange.InvokeAsync();
+    }
+
+    private async Task RemoveLanguage(LanguageDTO language)
+    {
+        if (!CanDelete)
+        {
+            await _jsRuntime.ToastrWarning("You cannot remove languages from a finished character.");
+            return;
+        }
+
+        AllParams.Languages.Remove(language);
+        await OnLanguagesChange.InvokeAsync();
+    }
+}

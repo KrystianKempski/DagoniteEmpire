@@ -1,0 +1,214 @@
+@inject IEquipmentRepository _equipmentRepository
+@inject IEquipmentSlotRepository _equipmentSlotRepository
+@inject ICharacterRepository _characterRepository
+@inject IDialogService _dialogService
+@inject IBrowserViewportService _viewportService
+@inject ISnackbar _snackBar
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+        <MudIcon Icon="@Icons.Material.Filled.Inventory2" Class="mr-1" />
+        <MudText Typo="Typo.h6">Zatwierdzone przedmioty</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Secondary"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   Disabled="@IsLoadingEquipment"
+                   OnClick="LoadEquipmentAsync">
+            Odśwież
+        </MudButton>
+    </MudStack>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pb-3">
+        Edycja wszystkich zatwierdzonych przedmiotów w bazie — zarówno z seeda, jak i dodanych później. Zmiany dotyczą wszystkich postaci, które dany przedmiot posiadają.
+    </MudText>
+
+    @if (IsLoadingEquipment)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-2" />
+    }
+
+    <MudTextField @bind-Value="_searchString"
+                  Placeholder="Szukaj po nazwie, typie lub posiadaczu"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Immediate="true"
+                  Variant="Variant.Outlined"
+                  Dense="true"
+                  Class="mb-3" />
+
+    <MudDataGrid T="GmApprovedEquipmentRow"
+                 Items="@FilteredRows"
+                 Dense="true"
+                 Hover="true"
+                 Bordered="true"
+                 Filterable="false"
+                 SortMode="SortMode.Multiple"
+                 QuickFilter="@_quickFilter"
+                 FixedHeader="true"
+                 Height="420px">
+        <Columns>
+            <PropertyColumn Property="x => x.Equipment.Name" Title="Nazwa" />
+            <PropertyColumn Property="x => x.Equipment.EquipmentType" Title="Typ" />
+            <PropertyColumn Property="x => x.Equipment.Price" Title="Cena [Imp]" Format="F3" />
+            <PropertyColumn Property="x => x.Equipment.Weight" Title="Waga [St]" Format="F1" />
+            <TemplateColumn Title="Posiadacze" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.OwnerSummary == string.Empty)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">—</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2">@context.Item.OwnerSummary</MudText>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Akcje" Sortable="false" CellClass="text-center">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Title="Edytuj przedmiot"
+                                   OnClick="@(() => EditEquipmentAsync(context.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Brak zatwierdzonych przedmiotów.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private sealed class GmApprovedEquipmentRow
+    {
+        public EquipmentDTO Equipment { get; init; } = new();
+        public string OwnerSummary { get; init; } = string.Empty;
+    }
+
+    private List<GmApprovedEquipmentRow> EquipmentRows { get; set; } = new();
+    private IEnumerable<GmApprovedEquipmentRow> FilteredRows => EquipmentRows;
+    private bool IsLoadingEquipment { get; set; }
+    private string _searchString = string.Empty;
+    private readonly AllParamsModel _allParams = new() { IsAdminOrMG = true };
+
+    private Func<GmApprovedEquipmentRow, bool> _quickFilter => row =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (row.Equipment.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (row.Equipment.EquipmentType.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (row.OwnerSummary.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEquipmentAsync();
+    }
+
+    public async Task LoadEquipmentAsync()
+    {
+        IsLoadingEquipment = true;
+        try
+        {
+            var equipment = (await _equipmentRepository.GetAllApproved())
+                .OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var slots = (await _equipmentSlotRepository.GetAll())
+                .Where(s => s.EquipmentID > 0 || s.Equipment?.Id > 0)
+                .ToList();
+
+            var characters = (await _characterRepository.GetAllApproved())
+                .ToDictionary(c => c.Id, c => c.NPCName ?? c.UserName ?? $"#{c.Id}");
+
+            EquipmentRows = equipment.Select(eq =>
+            {
+                var owners = slots
+                    .Where(s => s.EquipmentID == eq.Id || s.Equipment?.Id == eq.Id)
+                    .Where(s => s.CharacterID > 0)
+                    .GroupBy(s => s.CharacterID)
+                    .Select(g =>
+                    {
+                        var name = characters.GetValueOrDefault(g.Key, $"#{g.Key}");
+                        var count = g.Sum(s => s.Count);
+                        return count > 1 ? $"{name} (×{count})" : name;
+                    })
+                    .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                return new GmApprovedEquipmentRow
+                {
+                    Equipment = eq,
+                    OwnerSummary = string.Join(", ", owners)
+                };
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Błąd ładowania przedmiotów: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            IsLoadingEquipment = false;
+        }
+    }
+
+    private async Task EditEquipmentAsync(GmApprovedEquipmentRow row)
+    {
+        try
+        {
+            var equipment = await _equipmentRepository.GetById(row.Equipment.Id);
+            if (equipment.Id == 0)
+            {
+                _snackBar.Add("Nie znaleziono przedmiotu.", Severity.Warning);
+                return;
+            }
+
+            var slot = new EquipmentSlotDTO(equipment)
+            {
+                EquipmentID = equipment.Id
+            };
+
+            var parameters = new DialogParameters<CreateEquipmentSlotDialog>
+            {
+                { x => x.NewSlot, slot },
+                { x => x.IsInfoMode, false },
+                { x => x.IsEditMode, true },
+                { x => x.AllParams, _allParams }
+            };
+
+            var dialog = await _dialogService.ShowAsync<CreateEquipmentSlotDialog>(
+                "Edytuj przedmiot",
+                parameters,
+                await SetDialogOptions());
+
+            var result = await dialog.Result;
+            if (result is null || result.Canceled || result.Data is not EquipmentSlotDTO updatedSlot)
+                return;
+
+            await _equipmentRepository.Update(updatedSlot.Equipment);
+            _snackBar.Add($"Zaktualizowano przedmiot: {updatedSlot.Equipment.Name}", Severity.Success);
+            await LoadEquipmentAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Błąd edycji przedmiotu: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Large)
+    {
+        var isFullScreen = await _viewportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
+        return new DialogOptions { MaxWidth = maxWidth, FullScreen = isFullScreen };
+    }
+}

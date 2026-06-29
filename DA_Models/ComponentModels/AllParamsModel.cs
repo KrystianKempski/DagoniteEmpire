@@ -34,6 +34,8 @@ namespace DA_Models.ComponentModels
         public ICollection<TraitDTO> TraitsTemporary { get; set; } = new List<TraitDTO>();
         public ICollection<TraitDTO> TraitsProfession { get; set; } = new List<TraitDTO>();
         public ICollection<RaceDTO> Races { get; set; } = new List<RaceDTO>();
+        public ICollection<LanguageDTO> Languages { get; set; } = new List<LanguageDTO>();
+        public IEnumerable<LanguageDTO> AvailableLanguages { get; set; } = Enumerable.Empty<LanguageDTO>();
         public ICollection<EquipmentSlotDTO> EquipmentSlots { get; set; } = new List<EquipmentSlotDTO>();
         public BattlePropertyModel BattleProperties { get; set; }
         public HealthModel Health { get; set; }
@@ -53,6 +55,12 @@ namespace DA_Models.ComponentModels
 
 
     public bool IsAdminOrMG { get; set; } = false;
+
+        public int GetMaxLanguageSlots()
+        {
+            var linguistics = SpecialSkills.Get("Linguistics");
+            return SD.Languages.GetMaxSlots(linguistics?.SumBonus ?? 0);
+        }
 
         public void AllTraitsChange()
         {

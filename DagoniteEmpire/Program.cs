@@ -126,6 +126,7 @@ public class Program
         builder.Services.AddScoped<ITraitRepository<TraitProfessionDTO>, TraitProfessionRepository>();
         builder.Services.AddScoped<IBonusRepository, BonusRepository>();
         builder.Services.AddScoped<IRaceRepository, RaceRepository>();
+        builder.Services.AddScoped<ILanguageRepository, LanguageRepository>();
         builder.Services.AddScoped<IWoundRepository, WoundRepository>();
         builder.Services.AddScoped<IProfessionRepository, ProfessionRepository>();
         builder.Services.AddScoped<IEquipmentRepository, EquipmentRepository>();

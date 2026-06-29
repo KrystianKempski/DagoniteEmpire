@@ -2261,6 +2261,75 @@ namespace DagoniteEmpire.Service
                     contex.SaveChanges();
                 }
 
+                foreach (var seed in LanguageSeeder.GetAll())
+                {
+                    var existing = contex.Languages.FirstOrDefault(l => l.Name == seed.Name);
+                    if (existing is null)
+                    {
+                        contex.Languages.Add(new Language
+                        {
+                            Name = seed.Name,
+                            Description = seed.Description,
+                            Category = seed.Category,
+                            Script = seed.Script,
+                            Index = seed.Index,
+                            IsApproved = seed.IsApproved
+                        });
+                    }
+                    else
+                    {
+                        existing.Description = seed.Description;
+                        existing.Category = seed.Category;
+                        existing.Script = seed.Script;
+                        existing.Index = seed.Index;
+                        existing.IsApproved = seed.IsApproved;
+                    }
+                }
+
+                var renamedLanguages = new Dictionary<string, string>
+                {
+                    ["Imperial (Taledin)"] = "taledin",
+                    ["Solimian"] = "Solime",
+                    ["Old Vorgoweld Speech"] = "stara mowa Vorgoweldów",
+                    ["Dalyjan Dialect"] = "dialekt dalyjczyków",
+                    ["Felvgardic"] = "felvgardzki",
+                    ["Suochian"] = "suochiański",
+                    ["Bingdonian"] = "bingdoński",
+                    ["Classical Gu-ilanian"] = "klasyczny Gu-ilański",
+                    ["Nindu"] = "nindu",
+                    ["Rashi"] = "rashi",
+                };
+
+                foreach (var (oldName, newName) in renamedLanguages)
+                {
+                    var oldLanguage = contex.Languages.FirstOrDefault(l => l.Name == oldName);
+                    if (oldLanguage is null)
+                        continue;
+
+                    var replacement = contex.Languages.FirstOrDefault(l => l.Name == newName);
+                    if (replacement is not null && replacement.Id != oldLanguage.Id)
+                    {
+                        foreach (var character in contex.Characters.Include(c => c.Languages)
+                                     .Where(c => c.Languages != null && c.Languages.Any(l => l.Id == oldLanguage.Id)))
+                        {
+                            character.Languages!.Remove(oldLanguage);
+                            if (character.Languages.All(l => l.Id != replacement.Id))
+                                character.Languages.Add(replacement);
+                        }
+
+                        contex.Languages.Remove(oldLanguage);
+                    }
+                    else
+                    {
+                        oldLanguage.Name = newName;
+                    }
+                }
+
+                foreach (var language in contex.Languages.Where(l => l.Category == "Imperial").ToList())
+                    language.Category = SD.Languages.CategoryHuman;
+
+                contex.SaveChanges();
+
                
             }
             catch (Exception ex)

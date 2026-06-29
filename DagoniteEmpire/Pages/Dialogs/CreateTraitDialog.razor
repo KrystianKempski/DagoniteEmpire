@@ -99,13 +99,16 @@
                         else if (obj.FeatureType == SD.FeatureWeaponQuality)
                         {
                             <div class="bonus-cell">
-                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select weapon quality" @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select weapon quality" Value="obj.FeatureName" ValueChanged="@(v => OnWeaponQualityChanged(obj, v))" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
                                     @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@__w</MudSelectItem> }
                                 </MudSelect>
                             </div>
-                            <div class="bonus-cell">
-                                <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Style="width:100%" T="int" @bind-Value="@obj.BonusValue"></MudNumericField>
-                            </div>
+                            @if (!IsBinaryWeaponQuality(obj.FeatureName))
+                            {
+                                <div class="bonus-cell">
+                                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Style="width:100%" T="int" @bind-Value="@obj.BonusValue"></MudNumericField>
+                                </div>
+                            }
                         }
                         else if(obj.FeatureType == SD.FeatureOther)
                         {
@@ -191,6 +194,7 @@
         }
         foreach (var bonus in NewTrait.Bonuses)
         {
+            NormalizeBinaryWeaponQualityValue(bonus);
             if (bonus.BonusValue == 0 && bonus.Description == string.Empty)
             {
                 ErrorMessage = $"Please fill all input fiels in bonus";
@@ -240,6 +244,21 @@
         }
     }
 
+    private static bool IsBinaryWeaponQuality(string? featureName)
+        => featureName == SD.WeaponQuality.Light;
+
+    private static void NormalizeBinaryWeaponQualityValue(BonusDTO bonus)
+    {
+        if (IsBinaryWeaponQuality(bonus.FeatureName))
+            bonus.BonusValue = 1;
+    }
+
+    private void OnWeaponQualityChanged(BonusDTO bonus, string? featureName)
+    {
+        bonus.FeatureName = featureName;
+        NormalizeBinaryWeaponQualityValue(bonus);
+    }
+
     protected override async Task OnInitializedAsync()
     {
         UserInfo = await _userService.GetUserInfo();
@@ -280,6 +299,10 @@
                 case SD.TraitType_Temporary: IconSource = MyIcon.Stunned; break;
 
             }
+        }
+        foreach (var bonus in NewTrait.Bonuses ?? [])
+        {
+            NormalizeBinaryWeaponQualityValue(bonus);
         }
         MudDialog.StateHasChanged();
     }

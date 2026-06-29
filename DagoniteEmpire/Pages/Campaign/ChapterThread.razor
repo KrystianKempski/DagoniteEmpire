@@ -258,6 +258,15 @@ else
                                 @if (IsBattleSummaryPost(post))
                                 {
                                     <MudPaper Class="d-flex flex-column pa-2 flex-grow-1" Width="100%">
+                                        @if (CanEditBattleSummaryPost(post))
+                                        {
+                                            <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center" Class="pb-1">
+                                                <MudText Typo="Typo.subtitle2">@post.AlternativeName</MudText>
+                                                <MudSpacer />
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete turn summary" OnClick="@(() => DeletePost(post))" />
+                                            </MudStack>
+                                        }
                                         <div class="ql-editor" style="height:100%; overflow:auto;">
                                             @((MarkupString)(post.Content ?? string.Empty))
                                         </div>
@@ -315,6 +324,14 @@ else
                                     @if (IsBattleSummaryPost(post))
                                     {
                                         <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
+                                            @if (CanEditBattleSummaryPost(post))
+                                            {
+                                                <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center" Class="pb-1">
+                                                    <MudText Typo="Typo.subtitle2">@post.AlternativeName</MudText>
+                                                    <MudSpacer />
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
+                                                </MudStack>
+                                            }
                                             <div class="ql-editor" style="height:100%; overflow:auto;">
                                                 @((MarkupString)(post.Content ?? string.Empty))
                                             </div>
@@ -642,7 +659,8 @@ else
             }
 
             if (Chapter?.Characters.FirstOrDefault(c => c.Id == charId) is null
-               && UserInfo?.CharacterMG == false)
+               && UserInfo?.CharacterMG != true
+               && UserInfo?.IsAdminOrMG != true)
             {
                 SendPostEnabled = false;
             }
@@ -881,7 +899,7 @@ else
         await _jsRuntime.ScrollToElement("bottom-container");
         NewPost = post;
         IsEditMode = true;
-        SendButtonText = "Edit Post";
+        SendButtonText = IsBattleSummaryPost(post) ? "Save battle summary" : "Edit Post";
         if (PostEditor is not null)
         {
             await PostEditor.LoadHTMLContent(NewPost.Content ?? string.Empty);
@@ -1246,7 +1264,17 @@ else
             return;
         }
 
-        _turnEvents.Clear();
+        if (_turnEvents.Count > 0 && BattlePhase is not null)
+        {
+            try
+            {
+                await PostTurnSummaryAsync(BattlePhase.CurrentTurn, BattlePhase.CurrentTurn, battleEnding: true);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to post final turn summary for chapter {ChapterId}", Id);
+            }
+        }
 
         foreach (var characterParams in CharacterAllParams.Values)
         {
@@ -1561,6 +1589,9 @@ else
     private static bool IsBattleSummaryPost(PostDTO post) =>
         post.AlternativeName is "Battle turn" or "Battle ended" or "Battle started";
 
+    private bool CanEditBattleSummaryPost(PostDTO post) =>
+        UserInfo?.IsAdminOrMG == true && IsBattleSummaryPost(post);
+
     private void AddTurnEvent(BattleTurnEvent e)
     {
         _turnEvents.Add(e);
@@ -1575,12 +1606,18 @@ else
 
         foreach (var wound in snapshot.NewWounds)
         {
+            if (!Wounds.IsReportableInTurnSummary(wound.Severity))
+                continue;
+
             var description = $"{wound.Severity} wound to {wound.Location.ToLower()}";
             AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, description));
         }
 
-        if (snapshot.NewWounds.Count == 0 && string.IsNullOrEmpty(snapshot.WoundSeverity) == false)
+        if (snapshot.NewWounds.Count == 0
+            && Wounds.IsReportableInTurnSummary(snapshot.WoundSeverity))
+        {
             AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, $"{snapshot.WoundSeverity} wound"));
+        }
 
         RecordStateEvents(snapshot.DefenderNewStates, defender, attacker);
         RecordStateEvents(snapshot.AttackerNewStates, attacker, defender);
@@ -1773,12 +1810,15 @@ else
         return sb.ToString();
     }
 
-    private string BuildTurnSummaryHtml(int endingTurn, int startingTurn)
+    private string BuildTurnSummaryHtml(int endingTurn, int startingTurn, bool battleEnding = false)
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
-        sb.Append($"<span style=\"font-size:1.3em;\">{RichText.BoldText($"Battle turn {startingTurn} begins")}</span>");
-        sb.Append("<br><br>");
+        if (!battleEnding)
+        {
+            sb.Append($"<span style=\"font-size:1.3em;\">{RichText.BoldText($"Battle turn {startingTurn} begins")}</span>");
+            sb.Append("<br><br>");
+        }
         sb.Append(RichText.BoldText($"Summary of turn {endingTurn}:"));
         sb.Append("<br>");
         if (_turnEvents.Count == 0)
@@ -1826,13 +1866,12 @@ else
         await LoadLastPagePostsAsync(scrollDown: true);
     }
 
-    private async Task PostTurnSummaryAsync(int endingTurn, int startingTurn)
+    private async Task PostTurnSummaryAsync(int endingTurn, int startingTurn, bool battleEnding = false)
     {
         if (Chapter is null || UserInfo?.SelectedCharacter is null)
             return;
 
-        var content = BuildTurnSummaryHtml(endingTurn, startingTurn);
-        _turnEvents.Clear();
+        var content = BuildTurnSummaryHtml(endingTurn, startingTurn, battleEnding);
 
         var post = new PostDTO
         {
@@ -1848,6 +1887,8 @@ else
         var result = await _postRepository.Create(post);
         if (result is null)
             return;
+
+        _turnEvents.Clear();
 
         if (_hubConnection is not null)
         {
@@ -1870,7 +1911,6 @@ else
             return;
 
         var content = BuildBattleEndSummaryHtml(rounds);
-        _battleEvents.Clear();
 
         var post = new PostDTO
         {
@@ -1886,6 +1926,8 @@ else
         var result = await _postRepository.Create(post);
         if (result is null)
             return;
+
+        _battleEvents.Clear();
 
         if (_hubConnection is not null)
             await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);

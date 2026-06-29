@@ -61,5 +61,7 @@ namespace DA_DataAccess.CharacterClasses
 
         public ICollection<WealthRecord>? WealthLog { get; set; }
 
+        public ICollection<Language>? Languages { get; set; }
+
     }
 }
