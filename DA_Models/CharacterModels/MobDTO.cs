@@ -41,6 +41,9 @@ namespace DA_Models.CharacterModels
         public int PainResSkillValue { get; set; } = 10;
         public int LiftingSkillValue { get; set; } = 10;
         public int WrestlingSkillValue { get; set; } = 10;
+        public int PerceptionSkillValue { get; set; } = 10;
+        public int WillpowerSkillValue { get; set; } = 10;
+        public int CharismaSkillValue { get; set; } = 10;
 
         // wounds
         public int MaxWounds { get; set; } = 12;

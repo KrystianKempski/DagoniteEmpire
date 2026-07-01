@@ -58,14 +58,14 @@ namespace DagoniteEmpire.Service
                 // characters
                 if (_configuration.GetConnectionString("GameMasterEmail").IsNullOrEmpty() == true || _configuration.GetConnectionString("GameMasterPassword").IsNullOrEmpty() == true)
                 {
-                    throw new Exception("Could not get email or passwword from appisetting.json");
+                    throw new Exception("Could not get email or password from appsettings.json");
                 }
                 if (await _userManager.FindByEmailAsync(_configuration.GetConnectionString("GameMasterEmail")) is null)
                 {
                     var email = _configuration.GetConnectionString("GameMasterEmail");
                     if (email.IsNullOrEmpty())
                     {
-                        throw new Exception("Could not get email from appisetting.json");
+                        throw new Exception("Could not get email from appsettings.json");
                     }
 
                     ApplicationUser user = new()
@@ -78,7 +78,7 @@ namespace DagoniteEmpire.Service
                     var pass = _configuration.GetConnectionString("GameMasterPassword");
                     if (pass.IsNullOrEmpty())
                     {
-                        throw new Exception("Could not get password from appisetting.json");
+                        throw new Exception("Could not get password from appsettings.json");
                     }
                     var res1 = await _userManager.CreateAsync(user, pass);
                     if (res1.Errors.Any())
@@ -173,7 +173,7 @@ namespace DagoniteEmpire.Service
                     Race raceHuman = new Race()
                     {
                         Name = "Human",
-                        Description = "Humans are universal.Their strength lies in their diversity and adaptability",
+                        Description = "Humans are universal. Their strength lies in their diversity and adaptability",
                         RaceApproved = true,
                         Traits = new List<TraitRace>()
                         {
@@ -243,7 +243,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Hardy",
-                                Descr = "Dwarf are hard to overpower, and proficient in armor",
+                                Descr = "Dwarves are hard to overpower, and proficient in armor",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -260,8 +260,8 @@ namespace DagoniteEmpire.Service
                             },
                             new TraitRace()
                             {
-                                Name="Excelent craftsment",
-                                Descr = "All dwarves have natural talent with craftsmenship",
+                                Name="Excellent craftsman",
+                                Descr = "All dwarves have natural talent with craftsmanship",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -399,7 +399,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Elven Magic",
-                                Descr =  "This ancient race have better connection to winds of magic",
+                                Descr =  "This ancient race has a better connection to winds of magic",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -410,7 +410,7 @@ namespace DagoniteEmpire.Service
                                     {
                                         FeatureType = SD.FeatureOther,
                                         FeatureName = "Elven Magic",
-                                        Description = "Elves gets bonus +2 to all spell-related rolls and defences."
+                                        Description = "Elves get a +2 bonus to all spell-related rolls and defences."
                                     },
                                 }
                             },
@@ -556,7 +556,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Ugly",
-                        Descr = "This character is not pleasant to eyes",
+                        Descr = "This character is not pleasant to the eye",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -585,7 +585,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Wrathful",
-                        Descr =  "This character's outbursts of anger are frequent and violent (somethimes makes will checks)",
+                        Descr =  "This character's outbursts of anger are frequent and violent (sometimes makes will checks)",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -675,12 +675,6 @@ namespace DagoniteEmpire.Service
                     contex.TraitsCharacter.Add(trait);
                     contex.SaveChanges();
                 }
-                if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Flanking) == null)
-                {
-                    trait = StateSeeder.GetState(States.Names.Flanking, true);
-                    contex.TraitsCharacter.Add(trait);
-                    contex.SaveChanges();
-                }
                 if (contex.TraitsCharacter.FirstOrDefault(u => u.Name == States.Names.Surrounded) == null)
                 {
                     trait = StateSeeder.GetState(States.Names.Surrounded, true);
@@ -746,7 +740,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.WizardMagic + " 2",
-                        Descr = "Able to cast magic with wizard pool for spells of 2st and 3nd circle",
+                        Descr = "Able to cast magic with wizard pool for spells of 2nd and 3rd circle",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 2,
@@ -845,7 +839,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.SorcererMagic + " 2",
-                        Descr = "Able to cast magic with sorcerer pool for spells of 2st and 3nd circle",
+                        Descr = "Able to cast magic with sorcerer pool for spells of 2nd and 3rd circle",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 2,
@@ -930,7 +924,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.DoubleWeaponFighting,
-                        Descr = "Allow character to figtht with two weapons without penalties, if the second weapon is light",
+                        Descr = "Allows character to fight with two weapons without penalties, if the second weapon is light",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 1,
@@ -944,7 +938,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.GreaterDoubleWeaponFighting,
-                        Descr = "Allow character to figth with two weapons without penalties. Requires 14 strength",
+                        Descr = "Allows character to fight with two weapons without penalties. Requires 14 strength",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 3,
@@ -958,7 +952,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.MightyGrip,
-                        Descr = "Allow character to wield two-handed weapon with one hand. Requires 20 strength",
+                        Descr = "Allows character to wield two-handed weapon with one hand. Requires 20 strength",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 2,
@@ -994,8 +988,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Wound balm",
                         EquipmentType = SD.EquipmentType.Other,
-                        Description = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 Dose for ligth and medium wounds, 2 for heavy, and 4 for critical",
-                        ShortDescr = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 Dose for ligth and medium wounds, 2 for heavy, and 4 for critical",
+                        Description = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 dose for light and medium wounds, 2 for heavy, and 4 for critical",
+                        ShortDescr = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 dose for light and medium wounds, 2 for heavy, and 4 for critical",
                         Weight = 1.0m,
                         Price = 0.1m,
                         IsApproved = true,
@@ -1010,8 +1004,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Rope",
                         EquipmentType = SD.EquipmentType.Other,
-                        Description = "20 feat of strong rope",
-                        ShortDescr = "20 feat of strong rope",
+                        Description = "20 feet of strong rope",
+                        ShortDescr = "20 feet of strong rope",
 
                         Weight = 5.0m,
                         Price = 0.1m,
@@ -1108,11 +1102,11 @@ namespace DagoniteEmpire.Service
                     contex.Equipment.Add(item);
                     contex.SaveChanges();
                 }
-                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.StealScaleArmor) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.SteelScaleArmor) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = SD.BasicArmors.StealScaleArmor,
+                        Name = SD.BasicArmors.SteelScaleArmor,
                         EquipmentType = SD.EquipmentType.Body,
                         Description = "Offers good protection and mobility",
                         ShortDescr = "Offers good protection and mobility",
@@ -1156,8 +1150,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicArmors.HalfPlate,
                         EquipmentType = SD.EquipmentType.Body,
-                        Description = "Good protection of solid steal",
-                        ShortDescr = "Good protection of solid steal",
+                        Description = "Good protection of solid steel",
+                        ShortDescr = "Good protection of solid steel",
                         Weight = 30.0m,
                         Price = 50.0m,
                         IsApproved = true,
@@ -1392,8 +1386,8 @@ namespace DagoniteEmpire.Service
                         Name = SD.BasicShields.BigWoodenShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
-                        Description = "Biger for better protection",
-                        ShortDescr = "Biger for better protectiond",
+                        Description = "Bigger for better protection",
+                        ShortDescr = "Bigger for better protection",
                         Weight = 10.0m,
                         Price = 2.0m,
                         IsApproved = true,
@@ -1430,8 +1424,8 @@ namespace DagoniteEmpire.Service
                         Name = SD.BasicShields.BigMetalShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
-                        Description = "Biger for better protection",
-                        ShortDescr = "Biger for better protectiond",
+                        Description = "Bigger for better protection",
+                        ShortDescr = "Bigger for better protection",
                         Weight = 10.0m,
                         Price = 9.0m,
                         IsApproved = true,
@@ -1688,14 +1682,14 @@ namespace DagoniteEmpire.Service
                     contex.Equipment.Add(item);
                     contex.SaveChanges();
                 }
-                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Fists) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Unarmed) == null)
                 {
                     item = new Equipment()
                     {
-                        Name = SD.BasicWeaponsMelee.Fists,
+                        Name = SD.BasicWeaponsMelee.Unarmed,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Just your fists and feets",
-                        ShortDescr = "Just your fists and feets",
+                        Description = "Punches, kicks, bites, and other unarmed attacks",
+                        ShortDescr = "Punches, kicks, bites, and other unarmed attacks",
                         RelatedSkill = SD.SpecialSkills.Melee.Unarmed,
                         IsTwoHanded = true,
                         Weight = 0.0m,
@@ -2091,8 +2085,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsShooting.CrossbowHeavy,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
-                        Description = "Powerfull but slow",
-                        ShortDescr = "Powerfull but slow",
+                        Description = "Powerful but slow",
+                        ShortDescr = "Powerful but slow",
                         RelatedSkill = SD.SpecialSkills.Shooting.Crossbows,
                         Weight = 6.0m,
                         Price = 10.0m,
@@ -2188,8 +2182,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsShooting.Longbow,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
-                        Description = "Military archers primary weapon",
-                        ShortDescr = "Military archers primary weapon",
+                        Description = "Military archers' primary weapon",
+                        ShortDescr = "Military archers' primary weapon",
                         RelatedSkill = SD.SpecialSkills.Shooting.Bows,
                         Weight = 3.0m,
                         Price = 1.0m,
@@ -2259,6 +2253,42 @@ namespace DagoniteEmpire.Service
                     };
                     contex.Equipment.Add(item);
                     contex.SaveChanges();
+                }
+
+                var renamedEquipment = new Dictionary<string, string>
+                {
+                    ["Steal scale armor"] = SD.BasicArmors.SteelScaleArmor,
+                    ["Fists"] = SD.BasicWeaponsMelee.Unarmed,
+                };
+
+                foreach (var (oldName, newName) in renamedEquipment)
+                {
+                    var equipment = contex.Equipment.FirstOrDefault(e => e.Name == oldName);
+                    if (equipment is not null)
+                        equipment.Name = newName;
+                }
+
+                var correctedEquipmentDescriptions = new Dictionary<string, (string Description, string ShortDescr)>
+                {
+                    [SD.BasicArmors.HalfPlate] = ("Good protection of solid steel", "Good protection of solid steel"),
+                    ["Wound balm"] = (
+                        "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 dose for light and medium wounds, 2 for heavy, and 4 for critical",
+                        "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 dose for light and medium wounds, 2 for heavy, and 4 for critical"),
+                    ["Rope"] = ("20 feet of strong rope", "20 feet of strong rope"),
+                    [SD.BasicShields.BigWoodenShield] = ("Bigger for better protection", "Bigger for better protection"),
+                    [SD.BasicShields.BigMetalShield] = ("Bigger for better protection", "Bigger for better protection"),
+                    [SD.BasicWeaponsMelee.Unarmed] = ("Punches, kicks, bites, and other unarmed attacks", "Punches, kicks, bites, and other unarmed attacks"),
+                    [SD.BasicWeaponsShooting.CrossbowHeavy] = ("Powerful but slow", "Powerful but slow"),
+                };
+
+                foreach (var (name, descriptions) in correctedEquipmentDescriptions)
+                {
+                    var equipment = contex.Equipment.FirstOrDefault(e => e.Name == name);
+                    if (equipment is null)
+                        continue;
+
+                    equipment.Description = descriptions.Description;
+                    equipment.ShortDescr = descriptions.ShortDescr;
                 }
 
                 foreach (var seed in LanguageSeeder.GetAll())

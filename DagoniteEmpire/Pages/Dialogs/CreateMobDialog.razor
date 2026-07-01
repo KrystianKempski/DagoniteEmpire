@@ -64,6 +64,15 @@
                 <MudItem xs="3">
                     <MudNumericField Required="true" @bind-Value="@NewMob.WrestlingSkillValue" Label="Wrestling" />
                 </MudItem>
+                <MudItem xs="3">
+                    <MudNumericField Required="true" @bind-Value="@NewMob.PerceptionSkillValue" Label="Perception" />
+                </MudItem>
+                <MudItem xs="3">
+                    <MudNumericField Required="true" @bind-Value="@NewMob.WillpowerSkillValue" Label="Willpower" />
+                </MudItem>
+                <MudItem xs="3">
+                    <MudNumericField Required="true" @bind-Value="@NewMob.CharismaSkillValue" Label="Charisma" />
+                </MudItem>
 
             </MudGrid>
 
@@ -234,7 +243,7 @@
 
     private void AddState(string newStatus)
     {
-        NewMob.States += $"{newStatus}:{StateDuration}, ";
+        NewMob.States = CombatStateString.Add(NewMob.States, newStatus, StateDuration);
     }
     private void ClearStates()
     {

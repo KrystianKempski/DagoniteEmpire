@@ -257,18 +257,19 @@ else
                             {
                                 @if (IsBattleSummaryPost(post))
                                 {
-                                    <MudPaper Class="d-flex flex-column pa-2 flex-grow-1" Width="100%">
-                                        @if (CanEditBattleSummaryPost(post))
-                                        {
-                                            <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center" Class="pb-1">
-                                                <MudText Typo="Typo.subtitle2">@post.AlternativeName</MudText>
-                                                <MudSpacer />
+                                    <MudPaper Class="battle-summary-post d-flex flex-column pa-2 flex-grow-1" Width="100%">
+                                        <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center" Class="battle-summary-toolbar pb-1">
+                                            <MudText Typo="Typo.h6" Class="battle-summary-title flex-grow-1 mb-0">@GetBattleSummaryHeader(post)</MudText>
+                                            @if (CanEditBattleSummaryPost(post))
+                                            {
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete turn summary" OnClick="@(() => DeletePost(post))" />
-                                            </MudStack>
-                                        }
-                                        <div class="ql-editor" style="height:100%; overflow:auto;">
-                                            @((MarkupString)(post.Content ?? string.Empty))
+                                            }
+                                        </MudStack>
+                                        <div class="ql-snow ql-content" style="border-width:0">
+                                            <div class="ql-editor" style="height:100%; overflow:auto;">
+                                                @((MarkupString)GetBattleSummaryContent(post))
+                                            </div>
                                         </div>
                                     </MudPaper>
                                 }
@@ -295,8 +296,10 @@ else
                                                     <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeletePost(post))"></MudIconButton>
                                                 }
                                             </MudStack>
-                                            <div class="ql-editor" style="height:100%; overflow:auto;">
-                                                @((MarkupString)(post.Content ?? string.Empty))
+                                            <div class="ql-snow ql-content" style="border-width:0">
+                                                <div class="ql-editor" style="height:100%; overflow:auto;">
+                                                    @((MarkupString)(post.Content ?? string.Empty))
+                                                </div>
                                             </div>
                                         </MudPaper>
                                     </MudPaper>
@@ -323,17 +326,19 @@ else
                                 {
                                     @if (IsBattleSummaryPost(post))
                                     {
-                                        <MudPaper Width="100%" Class="d-flex flex-column pa-2 flex-grow-1">
-                                            @if (CanEditBattleSummaryPost(post))
-                                            {
-                                                <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center" Class="pb-1">
-                                                    <MudText Typo="Typo.subtitle2">@post.AlternativeName</MudText>
-                                                    <MudSpacer />
+                                        <MudPaper Width="100%" Class="battle-summary-post d-flex flex-column pa-2 flex-grow-1">
+                                            <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center" Class="battle-summary-toolbar pb-1">
+                                                <MudText Typo="Typo.h6" Class="battle-summary-title flex-grow-1 mb-0">@GetBattleSummaryHeader(post)</MudText>
+                                                @if (CanEditBattleSummaryPost(post))
+                                                {
                                                     <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
-                                                </MudStack>
-                                            }
-                                            <div class="ql-editor" style="height:100%; overflow:auto;">
-                                                @((MarkupString)(post.Content ?? string.Empty))
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete turn summary" OnClick="@(() => DeletePost(post))" />
+                                                }
+                                            </MudStack>
+                                            <div class="ql-snow ql-content" style="border-width:0">
+                                                <div class="ql-editor" style="height:100%; overflow:auto;">
+                                                    @((MarkupString)GetBattleSummaryContent(post))
+                                                </div>
                                             </div>
                                         </MudPaper>
                                     }
@@ -353,8 +358,10 @@ else
                                                     <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                                 }
                                             </MudStack>
-                                            <div class="ql-editor" style="height:100%; overflow:auto;">
-                                                @((MarkupString)(post.Content ?? string.Empty))
+                                            <div class="ql-snow ql-content" style="border-width:0">
+                                                <div class="ql-editor" style="height:100%; overflow:auto;">
+                                                    @((MarkupString)(post.Content ?? string.Empty))
+                                                </div>
                                             </div>
                                             <MudText Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
                                         </MudPaper>
@@ -374,7 +381,7 @@ else
         
         <div id="bottom-container">
             <MudPaper Width="100%" Square="true" Class="post-editor-panel d-flex flex-column my-2 pa-2">
-                <div class="post-editor flex-grow-1">
+                <div id="chapter-post-editor" class="post-editor flex-grow-1">
                 <BlazoredTextEditor @ref="@PostEditor" ReadOnly="@(!SendPostEnabled)">
                     <ToolbarContent>
                         <select class="ql-header">
@@ -466,6 +473,18 @@ else
     private System.Action? handler;
     private bool _scrollDown = true;
     private bool _afterRenderInProgress = false;
+    private bool _shouldLoadPostEditor;
+    private bool _pendingPostEditorQuote;
+    private bool _pendingPostEditorAppend;
+    private string? _pendingPostEditorHtml;
+    private const string PostEditorHostId = "chapter-post-editor";
+
+    private sealed record BleedingParticipantSnapshot(
+        int? CharacterId,
+        MobDTO? Mob,
+        string DisplayName,
+        int BleedingTurnsRemaining,
+        int PainResistance);
     
     private bool _wikiDeployed;
     private const string CombatRulesWikiPath = "/wiki/świat-i-zasady/zasady-walki";
@@ -626,6 +645,9 @@ else
                 await Task.Delay(200);
                 await _jsRuntime.ScrollToElement("bottom-container");
             }
+
+            if (_shouldLoadPostEditor)
+                await TryLoadPendingPostEditorAsync();
         }
         catch (Exception ex)
         {
@@ -1077,7 +1099,7 @@ else
 
         _turnEvents.Clear();
         _battleEvents.Clear();
-        BattlePhase = new(CharacterAllParams, Mobs, Chapter.CampaignId, Id);
+        BattlePhase = new(Chapter.CampaignId, Id);
         OngoingBattle = true;
         BattleButton = "End Battle";
         if (BattlePhase is not null)
@@ -1109,11 +1131,17 @@ else
 
         try
         {
+            IReadOnlyList<BleedingParticipantSnapshot> bleedingParticipants = Array.Empty<BleedingParticipantSnapshot>();
+            if (BattlePhase is not null)
+                bleedingParticipants = await CaptureBleedingParticipantsAsync();
+
+            await AdvanceTurnStatesAsync();
+
             if (BattlePhase is not null)
             {
                 try
                 {
-                    await ProcessBleedingTurnTestsAsync();
+                    await ProcessBleedingTurnTestsAsync(bleedingParticipants);
                     await PostTurnSummaryAsync(BattlePhase.CurrentTurn, BattlePhase.CurrentTurn + 1);
                 }
                 catch (Exception ex)
@@ -1122,8 +1150,6 @@ else
                     SnackBar.Add("Turn summary post failed, but turn states were still advanced.", Severity.Warning);
                 }
             }
-
-            await AdvanceTurnStatesAsync();
 
             if (BattlePhase is not null)
             {
@@ -1142,10 +1168,12 @@ else
         }
     }
 
-    private async Task ProcessBleedingTurnTestsAsync()
+    private async Task<IReadOnlyList<BleedingParticipantSnapshot>> CaptureBleedingParticipantsAsync()
     {
         if (Chapter is null)
-            return;
+            return Array.Empty<BleedingParticipantSnapshot>();
+
+        var snapshots = new List<BleedingParticipantSnapshot>();
 
         foreach (var charac in Chapter.Characters)
         {
@@ -1161,14 +1189,12 @@ else
                 ? allParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.PainResistance).SumBonus
                 : (await LoadCharacter(charac.Id)).SpecialSkills.Get(SD.SpecialSkills.Athletics.PainResistance).SumBonus;
 
-            var test = BleedingTurnModel.RunPainTest(bleeding.TraitValue, painResistance);
-            RecordBleedingPainTestEvent(charac.NPCName, test);
-
-            if (test.Passed)
-                continue;
-
-            await AddFightStatesAsync($"{States.Names.Unconscious}:{test.UnconsciousDuration}, ", charac.Id);
-            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, charac.NPCName, null, States.Names.Unconscious));
+            snapshots.Add(new BleedingParticipantSnapshot(
+                charac.Id,
+                null,
+                ResolveCharacterDisplayName(charac.Id, charac),
+                bleeding.TraitValue,
+                painResistance));
         }
 
         foreach (var mob in Mobs)
@@ -1181,17 +1207,40 @@ else
                 || BleedingTurnModel.MobHasState(mob.States, States.Names.Dead))
                 continue;
 
-            var test = BleedingTurnModel.RunPainTest(turnsRemaining, mob.PainResSkillValue);
-            RecordBleedingPainTestEvent(mob.Name, test);
+            snapshots.Add(new BleedingParticipantSnapshot(
+                null,
+                mob,
+                mob.Name,
+                turnsRemaining,
+                mob.PainResSkillValue));
+        }
+
+        return snapshots;
+    }
+
+    private async Task ProcessBleedingTurnTestsAsync(IReadOnlyList<BleedingParticipantSnapshot> participants)
+    {
+        foreach (var participant in participants)
+        {
+            var test = BleedingTurnModel.RunPainTest(participant.BleedingTurnsRemaining, participant.PainResistance);
+            RecordBleedingPainTestEvent(participant.DisplayName, test);
 
             if (test.Passed)
                 continue;
 
-            mob.States = FightSequenceModel.MergeMobStates(
-                mob.States,
-                $"{States.Names.Unconscious}:{test.UnconsciousDuration}, ");
-            await _mobRepository.Update(mob);
-            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, mob.Name, null, States.Names.Unconscious));
+            if (participant.CharacterId is int charId)
+            {
+                await AddFightStatesAsync($"{States.Names.Unconscious}:{test.UnconsciousDuration}, ", charId);
+                AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, participant.DisplayName, null, States.Names.Unconscious));
+            }
+            else if (participant.Mob is not null)
+            {
+                participant.Mob.States = FightSequenceModel.MergeMobStates(
+                    participant.Mob.States,
+                    $"{States.Names.Unconscious}:{test.UnconsciousDuration}, ");
+                await _mobRepository.Update(participant.Mob);
+                AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, participant.DisplayName, null, States.Names.Unconscious));
+            }
         }
     }
 
@@ -1214,7 +1263,8 @@ else
                 var traitsToDelete = new List<TraitCharacterDTO>();
                 foreach (var trait in temporaryTraits)
                 {
-                    if (--trait.TraitValue <= 0)
+                    trait.TraitValue = BattleTurnService.DecrementDuration(trait.TraitValue);
+                    if (BattleTurnService.IsExpired(trait.TraitValue))
                         traitsToDelete.Add(trait);
                     else
                         await _traitCharacterRepository.Update(trait);
@@ -1227,25 +1277,7 @@ else
 
         foreach (var mob in Mobs)
         {
-            var newStates = new List<string>();
-            foreach (var state in mob.States.Split(", ", StringSplitOptions.RemoveEmptyEntries))
-            {
-                var statesParams = state.Split(':', 2);
-                if (statesParams.Length < 2)
-                    continue;
-
-                var name = statesParams[0].Trim();
-                if (string.IsNullOrEmpty(name) || !int.TryParse(statesParams[1].Trim(), out var duration))
-                    continue;
-
-                if (--duration > 0)
-                    newStates.Add($"{name}:{duration}");
-            }
-
-            mob.States = newStates.Count == 0
-                ? string.Empty
-                : string.Join(", ", newStates) + ", ";
-
+            mob.States = BattleTurnService.AdvanceMobStates(mob.States);
             await _mobRepository.Update(mob);
         }
     }
@@ -1281,7 +1313,7 @@ else
             if (characterParams?.TraitsTemporary is null || characterParams.TraitsTemporary.Any() == false) continue;
             foreach (var trait in characterParams.TraitsTemporary)
             {
-                if (trait.Name == States.Names.Dead || trait.Name == States.Names.Unconscious) continue;
+                if (BattleTurnService.PersistsAfterBattle(trait.Name)) continue;
                 await _traitCharacterRepository.Delete(trait.Id);
             }
             characterParams.TraitsTemporary = new List<TraitDTO>();
@@ -1289,12 +1321,7 @@ else
 
         foreach (var mob in Mobs)
         {
-            if (mob.States.Contains(States.Names.Dead))
-                mob.States = $"{States.Names.Dead}:99";
-            else if (mob.States.Contains(States.Names.Unconscious))
-                mob.States = $"{States.Names.Unconscious}:99";
-            else
-                mob.States = string.Empty;
+            mob.States = BattleTurnService.ResolveEndOfBattleMobStates(mob.States);
             await _mobRepository.Update(mob);
         }
         BattleButton = "Start Battle";
@@ -1326,15 +1353,14 @@ else
         var dialog = await DialogService.ShowAsync<CreateFightSequenceDialog>("Fight sequence", parameters, await SetFightDialogOptions());
         var result = await dialog.Result;
 
-        _open = false;
-
         if (result is not null && !result.Canceled && result.Data is FightSequenceDialogResult fightResult)
         {
             if (fightResult.Persistence is not null)
                 await PersistFightAsync(fightResult.Persistence);
 
-            await AppendRollToPostEditorAsync(fightResult.RichHtml, fightResult.WrapForThread, fightFormat: true);
+            _open = false;
             await RefreshBattleParticipantsAsync();
+            await AppendRollToPostEditorAsync(fightResult.RichHtml, fightResult.WrapForThread, fightFormat: true);
 
             if (!string.IsNullOrEmpty(fightResult.AttackerName))
                 SnackBar.Add($"Fight sequence performed. {fightResult.AttackerName} attacks {fightResult.DefenderName}", Severity.Success);
@@ -1421,16 +1447,8 @@ else
         if (string.IsNullOrEmpty(stateString))
             return;
 
-        foreach (var state in stateString.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        foreach (var (name, duration) in CombatStateString.Parse(stateString))
         {
-            var stateArray = state.Split(':', 2);
-            if (stateArray.Length < 2)
-                continue;
-
-            var name = stateArray[0].Trim();
-            if (string.IsNullOrEmpty(name) || !int.TryParse(stateArray[1].Trim(), out var duration))
-                continue;
-
             var traits = (await _traitCharacterRepository.GetAll(charId)).ToList();
             if (name == States.Names.NoTurn)
             {
@@ -1500,40 +1518,112 @@ else
         string.IsNullOrWhiteSpace(html)
         || html.Trim() is "<p><br></p>" or "<p></p>";
 
+    private static string TrimTrailingEmptyParagraph(string html)
+    {
+        var trimmed = html.Trim();
+        if (trimmed.EndsWith("<p><br></p>", StringComparison.Ordinal))
+            return trimmed[..^11];
+        if (trimmed.EndsWith("<p></p>", StringComparison.Ordinal))
+            return trimmed[..^7];
+        return trimmed;
+    }
+
+    private static string WrapAsQuoteBlock(string innerHtml) =>
+        $"<blockquote class=\"{RichText.QuoteBlockClass}\">{innerHtml}</blockquote>";
+
     private async Task AppendRollToPostEditorAsync(string rollRichHtml, bool wrapForThread = false, bool fightFormat = false)
     {
         if (string.IsNullOrEmpty(rollRichHtml))
             return;
 
-        var rollQuillHtml = fightFormat && wrapForThread
-            ? RichText.ToThreadFightPostQuillHtml(rollRichHtml)
-            : wrapForThread
-                ? RichText.ToThreadPostQuillHtml(rollRichHtml)
-                : RichText.ToQuillHtml(rollRichHtml);
+        var loadHtml = fightFormat
+            ? RichText.ToFightEditorHtml(rollRichHtml)
+            : RichText.ToPlainEditorHtml(rollRichHtml);
 
-        if (string.IsNullOrEmpty(rollQuillHtml))
-            rollQuillHtml = fightFormat
-                ? RichText.ToFightQuillHtml(rollRichHtml)
-                : RichText.ToQuillHtml(rollRichHtml);
+        if (string.IsNullOrEmpty(loadHtml))
+            loadHtml = RichText.ToPlainEditorHtml(rollRichHtml);
 
-        if (string.IsNullOrEmpty(rollQuillHtml))
+        if (string.IsNullOrEmpty(loadHtml))
             return;
 
-        if (PostEditor is not null)
+        if (wrapForThread)
+            loadHtml = RichText.CollapseToSingleParagraph(loadHtml);
+
+        var existingHtml = PostEditor is not null
+            ? await PostEditor.GetHTML()
+            : NewPost.Content;
+
+        var append = !IsEmptyEditorHtml(existingHtml);
+        var applyQuote = wrapForThread;
+
+        if (append)
         {
-            var existingHtml = await PostEditor.GetHTML();
-            var editorHtml = IsEmptyEditorHtml(existingHtml)
-                ? rollQuillHtml
-                : existingHtml + rollQuillHtml;
-            await PostEditor.LoadHTMLContent(editorHtml);
-            NewPost.Content = await PostEditor.GetHTML();
-        }
-        else
-        {
-            NewPost.Content += rollRichHtml;
+            var rollBlock = applyQuote ? WrapAsQuoteBlock(loadHtml) : loadHtml;
+            loadHtml = TrimTrailingEmptyParagraph(existingHtml) + rollBlock + "<p><br></p>";
+            applyQuote = false;
         }
 
+        _pendingPostEditorHtml = loadHtml;
+        _pendingPostEditorQuote = applyQuote;
+        _pendingPostEditorAppend = false;
+        _shouldLoadPostEditor = PostEditor is null;
+
+        if (PostEditor is not null)
+            await LoadRollIntoPostEditorAsync(loadHtml, applyQuote, append: false);
+
         await _jsRuntime.ScrollToElement("bottom-container");
+    }
+
+    private async Task LoadRollIntoPostEditorAsync(string html, bool applyQuote, bool append)
+    {
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync(
+                "QuillPostEditor.loadRollContent",
+                PostEditorHostId,
+                html,
+                applyQuote,
+                append);
+
+            await Task.Delay(50);
+            await SyncPostEditorContentFromDomAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load roll into post editor");
+        }
+    }
+
+    private async Task SyncPostEditorContentFromDomAsync()
+    {
+        try
+        {
+            var synced = await _jsRuntime.InvokeAsync<string>("QuillPostEditor.getHtml", PostEditorHostId);
+            if (!IsEmptyEditorHtml(synced))
+                NewPost.Content = synced;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to sync post editor HTML");
+        }
+    }
+
+    private async Task TryLoadPendingPostEditorAsync()
+    {
+        if (!_shouldLoadPostEditor || string.IsNullOrEmpty(_pendingPostEditorHtml) || PostEditor is null)
+            return;
+
+        try
+        {
+            await LoadRollIntoPostEditorAsync(
+                _pendingPostEditorHtml,
+                _pendingPostEditorQuote,
+                _pendingPostEditorAppend);
+        }
+        finally
+        {
+            _shouldLoadPostEditor = false;
+        }
     }
 
     private async Task MakeSkillRoll()
@@ -1587,7 +1677,65 @@ else
         post.AlternativeImageUrl == SD.PostNoPortrait;
 
     private static bool IsBattleSummaryPost(PostDTO post) =>
-        post.AlternativeName is "Battle turn" or "Battle ended" or "Battle started";
+        post.AlternativeName is "Battle turn" or "Battle ended" or "Battle started"
+        || (post.AlternativeName?.StartsWith("Battle turn ", StringComparison.Ordinal) ?? false);
+
+    private static string GetBattleSummaryHeader(PostDTO post)
+    {
+        if (post.AlternativeName?.StartsWith("Battle turn ", StringComparison.Ordinal) == true)
+            return $"{post.AlternativeName.Trim()} begins";
+
+        if (post.AlternativeName is "Battle turn")
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                post.Content ?? string.Empty,
+                @"Battle turn (\d+) begins",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success)
+                return $"Battle turn {match.Groups[1].Value} begins";
+
+            return "Battle turn";
+        }
+
+        return post.AlternativeName switch
+        {
+            "Battle started" => "Battle begins",
+            "Battle ended" => "Battle ended",
+            _ => post.AlternativeName ?? "Battle"
+        };
+    }
+
+    private static string GetBattleSummaryContent(PostDTO post)
+    {
+        var content = post.Content ?? string.Empty;
+        if (string.IsNullOrEmpty(content))
+            return content;
+
+        content = System.Text.RegularExpressions.Regex.Replace(
+            content,
+            @"<span[^>]*font-size:\s*1\.3em[^>]*>.*?</span>\s*",
+            string.Empty,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        var headline = GetBattleSummaryHeader(post);
+        if (!string.IsNullOrEmpty(headline))
+        {
+            var escaped = System.Text.RegularExpressions.Regex.Escape(headline);
+            content = System.Text.RegularExpressions.Regex.Replace(
+                content,
+                $@"<p>\s*<strong>\s*{escaped}\s*</strong>\s*(<br\s*/?>\s*)*",
+                "<p>",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+
+        content = System.Text.RegularExpressions.Regex.Replace(
+            content,
+            @"<p>\s*(<br\s*/?>\s*)+",
+            "<p>",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        return content;
+    }
 
     private bool CanEditBattleSummaryPost(PostDTO post) =>
         UserInfo?.IsAdminOrMG == true && IsBattleSummaryPost(post);
@@ -1628,13 +1776,8 @@ else
         if (string.IsNullOrWhiteSpace(states))
             return;
 
-        foreach (var part in states.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        foreach (var (name, _) in CombatStateString.Parse(states))
         {
-            var segments = part.Split(':', 2);
-            var name = segments[0].Trim();
-            if (string.IsNullOrEmpty(name))
-                continue;
-
             if (name is States.Names.NoTurn or States.Names.HalfTurn)
                 continue;
 
@@ -1685,9 +1828,31 @@ else
     private static string FormatWoundLine(BattleTurnEvent e) =>
         $"{BoldWoundDescription(e.Description)}{FormatCausedBy(e.CausedBy)}";
 
+    private static string GetCharacterDisplayName(CharacterDTO character) =>
+        !string.IsNullOrWhiteSpace(character.NPCName) ? character.NPCName.Trim()
+        : !string.IsNullOrWhiteSpace(character.UserName) ? character.UserName.Trim()
+        : $"Character #{character.Id}";
+
+    private string ResolveCharacterDisplayName(int characterId, CharacterDTO? chapterCharacter = null)
+    {
+        if (CharacterAllParams.TryGetValue(characterId, out var allParams) && allParams?.Character is not null)
+            return GetCharacterDisplayName(allParams.Character);
+
+        if (chapterCharacter is not null)
+            return GetCharacterDisplayName(chapterCharacter);
+
+        chapterCharacter = Chapter?.Characters.FirstOrDefault(c => c.Id == characterId);
+        return chapterCharacter is not null
+            ? GetCharacterDisplayName(chapterCharacter)
+            : $"Character #{characterId}";
+    }
+
+    private static string GetEventTargetName(string? targetName) =>
+        string.IsNullOrWhiteSpace(targetName) ? "Unknown" : targetName.Trim();
+
     private static string FormatTurnEvent(BattleTurnEvent e)
     {
-        var target = RichText.BoldText(e.TargetName);
+        var target = RichText.BoldText(GetEventTargetName(e.TargetName));
         var causedBy = FormatCausedBy(e.CausedBy);
         return e.Kind switch
         {
@@ -1707,8 +1872,6 @@ else
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
-        sb.Append($"<span style=\"font-size:1.3em;\">{RichText.BoldText("Battle ended")}</span>");
-        sb.Append("<br><br>");
         sb.Append($"The battle lasted {RichText.BoldText(FormatRoundCount(rounds))}.");
         sb.Append("<br><br>");
 
@@ -1779,7 +1942,16 @@ else
         }
     }
 
-    private static string BuildBattleStartSummaryHtml(IReadOnlyList<BattleParticipantSnapshot> participants)
+    private void AppendCombatRulesWikiLink(System.Text.StringBuilder sb)
+    {
+        if (!_wikiDeployed)
+            return;
+
+        sb.Append("<br><br>");
+        sb.Append($"<a href=\"{CombatRulesWikiPath}\">Zasady walki</a>");
+    }
+
+    private string BuildBattleStartSummaryHtml(IReadOnlyList<BattleParticipantSnapshot> participants)
     {
         var heroes = participants
             .Where(p => IsHeroSide(p.Relation))
@@ -1792,8 +1964,6 @@ else
 
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
-        sb.Append($"<span style=\"font-size:1.3em;\">{RichText.BoldText("Battle begins")}</span>");
-        sb.Append("<br><br>");
         sb.Append("<table style=\"width:100%; border-collapse:collapse;\"><tr>");
         sb.Append("<td style=\"width:50%; vertical-align:top; padding-right:12px;\">");
         sb.Append(RichText.BoldText("Bohaterowie"));
@@ -1806,6 +1976,7 @@ else
         AppendParticipantList(sb, opponents);
         sb.Append("</td>");
         sb.Append("</tr></table>");
+        AppendCombatRulesWikiLink(sb);
         sb.Append("</p>");
         return sb.ToString();
     }
@@ -1814,11 +1985,6 @@ else
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
-        if (!battleEnding)
-        {
-            sb.Append($"<span style=\"font-size:1.3em;\">{RichText.BoldText($"Battle turn {startingTurn} begins")}</span>");
-            sb.Append("<br><br>");
-        }
         sb.Append(RichText.BoldText($"Summary of turn {endingTurn}:"));
         sb.Append("<br>");
         if (_turnEvents.Count == 0)
@@ -1834,6 +2000,10 @@ else
                 sb.Append("<br>");
             }
         }
+
+        if (!battleEnding)
+            AppendCombatRulesWikiLink(sb);
+
         sb.Append("</p>");
         return sb.ToString();
     }
@@ -1880,7 +2050,7 @@ else
             Content = content,
             CharacterId = UserInfo.SelectedCharacter.Id,
             Character = UserInfo.SelectedCharacter,
-            AlternativeName = "Battle turn",
+            AlternativeName = $"Battle turn {startingTurn}",
             AlternativeImageUrl = SD.PostNoPortrait,
         };
 

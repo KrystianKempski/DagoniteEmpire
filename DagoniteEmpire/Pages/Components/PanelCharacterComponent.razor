@@ -721,28 +721,17 @@
     {
         try{
             Icons = new List<Tuple<string, string, int>>();
-            if (StatesString == string.Empty) return;
-            var states = StatesString.Split(", ");
             NoTurnLeftIcon = string.Empty;
-            foreach (var state in states)
+            foreach (var (stateName, duration) in CombatStateString.Parse(StatesString))
             {
-                if (state == string.Empty ) continue;
-               
-                var type = state.Split(':', 2);
-                if (type.Length < 2)
-                    continue;
-
-                var stateName = type[0].Trim();
                 if (stateName == States.Names.HalfTurn) continue;
                 if (stateName == States.Names.NoTurn)
                 {
                     NoTurnLeftIcon = MyIcon.NoTurn;
                     continue;
                 }
-                if (string.IsNullOrEmpty(stateName) == false && int.TryParse(type[1].Trim(), out var duration))
-                    Icons.Add(new(stateName, States.GetIcon(stateName), duration));
-                else
-                    throw new Exception();
+
+                Icons.Add(new(stateName, States.GetIcon(stateName), duration));
             }
         }
         catch(Exception ex)

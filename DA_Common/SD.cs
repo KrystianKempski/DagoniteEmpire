@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using MudBlazor;
 using MudBlazor.Charts;
 
@@ -100,6 +101,35 @@ namespace DA_Common
             public const string Targeted = "Targeted";
             public const string Charge = "Charge";
             public static readonly string[] All = { Normal, Cautious, Raging, Strong, Targeted, Charge };
+        }
+
+        public readonly struct FightModifiers
+        {
+            /// <summary>+3 attack from behind (fight dialog checkbox). Part of full flanking (+5 with Surrounded 2v1). Not a persisted state.</summary>
+            public const int FlankingAttackBonus = 3;
+
+            /// <summary>Defence penalty per extra attacker (fight dialog Surrounded). Not a persisted state.</summary>
+            public const int SurroundedDefencePenaltyPerExtra = 2;
+
+            public const int SurroundedArmorPenaltyPerExtra = 1;
+
+            /// <summary>Extra damage added to a confirmed critical hit.</summary>
+            public const int CriticalHitDamageBonus = 8;
+
+            /// <summary>Defence penalty applied to a Dead or Unconscious defender.</summary>
+            public const int IncapacitatedDefencePenalty = 20;
+
+            /// <summary>Added to the hit margin to form the DC of Bleeding / Blinded checks.</summary>
+            public const int WoundConditionCheckOffset = 8;
+
+            /// <summary>Base DC (before wound overflow) of the on-hit Unconscious check.</summary>
+            public const int UnconsciousCheckBaseDc = 20;
+
+            /// <summary>Base DC (before wound overflow) of the on-hit Dead check.</summary>
+            public const int DeadCheckBaseDc = 30;
+
+            /// <summary>DC points per turn of resulting state duration: duration = max(1, DC / this).</summary>
+            public const int StateDurationDcTier = 10;
         }
 
         public readonly struct DefenceType
@@ -248,7 +278,7 @@ namespace DA_Common
 
         public readonly struct BasicWeaponsMelee
         {
-            public const string Fists = "Fists";
+            public const string Unarmed = "Unarmed";
             public const string Dagger = "Dagger";
             public const string LongSword = "Long sword";
             public const string BattleAxe = "Battle axe";
@@ -262,7 +292,7 @@ namespace DA_Common
             public const string Greataxe = "Greataxe";
             public const string Poleaxe = "Poleaxe";
             public const string Sarissa = "Sarissa";
-            public static readonly string[] All = { Fists, Dagger, LongSword, BattleAxe, Pickaxe, Mace, Morningstar, ShorSpear, Rapier, TwoHandedFlail, Warhammer, Greataxe, Poleaxe, Sarissa };
+            public static readonly string[] All = { Unarmed, Dagger, LongSword, BattleAxe, Pickaxe, Mace, Morningstar, ShorSpear, Rapier, TwoHandedFlail, Warhammer, Greataxe, Poleaxe, Sarissa };
         }
         public readonly struct BasicWeaponsShooting
         {
@@ -291,11 +321,11 @@ namespace DA_Common
         {
             public const string LightLeatherArmor = "Light leather armor";
             public const string LeatherScaleArmor = "Leather scale armor";
-            public const string StealScaleArmor = "Steal scale armor";
+            public const string SteelScaleArmor = "Steel scale armor";
             public const string HalfPlate = "Half plate";
             public const string FullPlate = "Full plate";
 
-            public static readonly string[] All = { LightLeatherArmor, LeatherScaleArmor, StealScaleArmor, HalfPlate, FullPlate };
+            public static readonly string[] All = { LightLeatherArmor, LeatherScaleArmor, SteelScaleArmor, HalfPlate, FullPlate };
         }
 
 
@@ -588,7 +618,6 @@ namespace DA_Common
         public const string Stumbled = "icons/stumbled.svg";
         public const string Blinded = "icons/blinded.svg";
         public const string Invisible = "icons/invisible.svg";
-        public const string Flanking = "icons/flanking.svg";
         public const string Surrounded = "icons/surrounded.svg";
         public const string Unbalanced = "icons/unbalanced.svg";
         public const string Cautious = "icons/cautious.svg";
@@ -718,7 +747,7 @@ namespace DA_Common
             public const string RightLeg = "Right Leg";
             public const string Face = "Face";
             public const string Body = "Body";
-            public static readonly string[] All = { Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, Body, RightLeg, Face, Body };
+            public static readonly string[] All = { Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, RightLeg, Face, Body };
         }
         public enum LocationEnum
         {
@@ -841,7 +870,6 @@ namespace DA_Common
             Blinded = 8,
             Unaware = 10,
             Invisible = 5,
-            Flanking = 3,
             Surrounded = 2,
             Unbalanced = 7,
             Cautious = 2,
@@ -852,6 +880,23 @@ namespace DA_Common
             NoTurn = 0,
             HalfTurn = 0,
         }
+
+        /// <summary>Canonical turn-count durations for combat states (kept here so fight code and the seeder agree).</summary>
+        public readonly struct Duration
+        {
+            /// <summary>Lasts a single round.</summary>
+            public const int SingleTurn = 1;
+
+            /// <summary>Persists until the fighter acts it off (stands up, is released, bleeding is tended, ...).</summary>
+            public const int UntilResolved = 99;
+
+            /// <summary>Effectively permanent (death).</summary>
+            public const int Permanent = 999;
+
+            /// <summary>Default bleeding window when no explicit duration is given.</summary>
+            public const int BleedingDefault = 10;
+        }
+
         public readonly struct Names
         {
             public const string Stunned = "Stunned";
@@ -861,7 +906,6 @@ namespace DA_Common
             public const string Blinded = "Blinded";
             public const string Unaware = "Unaware";
             public const string Invisible = "Invisible";
-            public const string Flanking = "Flanking";
             public const string Surrounded = "Surrounded";
             public const string Unbalanced = "Unbalanced";
             public const string Cautious = "Cautious";
@@ -871,7 +915,7 @@ namespace DA_Common
             public const string Dead = "Dead";
             public const string NoTurn = "No turn";
             public const string HalfTurn = "Half turn";
-            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Flanking, Surrounded, Unbalanced, Cautious, FullDefence, Bleeding, Unconscious, NoTurn ,HalfTurn};
+            public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Surrounded, Unbalanced, Cautious, FullDefence, Bleeding, Unconscious, Dead, NoTurn ,HalfTurn};
         }
         public static int GetLevel(string name)
         {
@@ -884,7 +928,6 @@ namespace DA_Common
                 case States.Names.Blinded: return (int)Level.Blinded;
                 case Names.Unaware: return (int)Level.Unaware;
                 case Names.Invisible: return (int)Level.Invisible;
-                case Names.Flanking: return (int)Level.Flanking;
                 case Names.Surrounded: return (int)Level.Surrounded;
                 case Names.Unbalanced: return (int)Level.Unbalanced;
                 case Names.Cautious: return (int)Level.Cautious;
@@ -909,7 +952,6 @@ namespace DA_Common
                 case Names.Blinded: return MyIcon.Blinded;
                 case Names.Unaware: return MyIcon.Unaware;
                 case Names.Invisible: return MyIcon.Invisible;
-                case Names.Flanking: return MyIcon.Flanking;
                 case Names.Surrounded: return MyIcon.Surrounded;
                 case Names.Unbalanced: return MyIcon.Unbalanced;
                 case Names.Cautious: return MyIcon.Cautious;
@@ -927,6 +969,10 @@ namespace DA_Common
 
     public class RichText
     {
+        public const string QuoteBlockClass = "rich-text-quote";
+        public const string QuoteBlockOpenTag = $"<blockquote class=\"{QuoteBlockClass}\"><p>";
+        public const string QuoteBlockCloseTag = "</p></blockquote>";
+
         public string AllText { get => _allText; set => _allText = value; }
         private string _allText;
         private string backgroundColor = "#eaeaea";
@@ -942,7 +988,7 @@ namespace DA_Common
             _allText += "</p></blockquote></div><br>";
         }
 
-        /// <summary>Converts RichText blocks to plain paragraph HTML that Quill editors can display.</summary>
+        /// <summary>Converts RichText blocks to Quill-compatible blockquote HTML.</summary>
         public string ToQuillHtml() => ToQuillHtml(_allText);
 
         public static string ToQuillHtml(string? richHtml)
@@ -954,6 +1000,7 @@ namespace DA_Common
             const string suffix = "</p></blockquote></div><br>";
             var result = new StringBuilder();
             var remaining = richHtml;
+            var converted = false;
 
             while (true)
             {
@@ -965,22 +1012,78 @@ namespace DA_Common
                 if (end < 0)
                     break;
 
+                if (start > 0)
+                    result.Append(remaining[..start]);
+
                 var inner = remaining.Substring(start + prefix.Length, end - start - prefix.Length);
-                result.Append("<p>").Append(inner).Append("</p>");
+                result.Append(QuoteBlockOpenTag).Append(inner).Append(QuoteBlockCloseTag);
                 remaining = remaining.Substring(end + suffix.Length);
+                converted = true;
             }
 
-            return result.Length > 0 ? result.ToString() : richHtml;
+            if (!converted)
+                return richHtml;
+
+            result.Append(remaining);
+            return result.ToString();
         }
 
-        private static string ExtractQuillParagraphContent(string? richHtml)
+        private static string WrapInQuoteBlock(string? html)
         {
-            var inner = ToQuillHtml(richHtml);
-            if (string.IsNullOrEmpty(inner))
+            if (string.IsNullOrEmpty(html))
                 return string.Empty;
 
-            var content = new StringBuilder();
-            var remaining = inner;
+            if (html.Contains(QuoteBlockClass, StringComparison.Ordinal)
+                || html.Contains("<blockquote", StringComparison.OrdinalIgnoreCase))
+                return html;
+
+            return $"<blockquote class=\"{QuoteBlockClass}\">{html}</blockquote>";
+        }
+
+        /// <summary>Quote block HTML for pasting a saved roll batch into a thread post.</summary>
+        public static string ToThreadPostQuillHtml(string? richHtml) =>
+            WrapInQuoteBlock(ToQuillHtml(richHtml));
+
+        /// <summary>Italic Quill HTML for displaying a fight sequence in the roll dialog editor.</summary>
+        public static string ToFightQuillHtml(string? richHtml) => WrapQuillParagraphs(richHtml, wrapInner: static c => $"<em>{c}</em>");
+
+        /// <summary>Paragraph HTML for Quill load + format-as-quote (no blockquote wrapper).</summary>
+        public static string ToPlainEditorHtml(string? richHtml)
+        {
+            var html = ToQuillHtml(richHtml);
+            if (string.IsNullOrEmpty(html))
+                return string.Empty;
+
+            return html
+                .Replace($"<blockquote class=\"{QuoteBlockClass}\">", string.Empty, StringComparison.Ordinal)
+                .Replace("</blockquote>", string.Empty, StringComparison.Ordinal);
+        }
+
+        /// <summary>Italic paragraph HTML for in-dialog Quill editors (no blockquote; Quill drops blockquotes on load).</summary>
+        public static string ToFightEditorHtml(string? richHtml)
+        {
+            var html = ToFightQuillHtml(richHtml);
+            if (string.IsNullOrEmpty(html))
+                return string.Empty;
+
+            return html
+                .Replace($"<blockquote class=\"{QuoteBlockClass}\">", string.Empty, StringComparison.Ordinal)
+                .Replace("</blockquote>", string.Empty, StringComparison.Ordinal);
+        }
+
+        /// <summary>Italic fight sequence in a quote block for pasting into a thread post.</summary>
+        public static string ToThreadFightPostQuillHtml(string? richHtml) =>
+            WrapInQuoteBlock(ToFightQuillHtml(richHtml));
+
+        /// <summary>Merges multiple &lt;p&gt; blocks into one continuous line for a single blockquote.</summary>
+        public static string CollapseToSingleParagraph(string? html)
+        {
+            if (string.IsNullOrEmpty(html))
+                return string.Empty;
+
+            var parts = new List<string>();
+            var remaining = html;
+
             while (remaining.Contains("<p>", StringComparison.Ordinal))
             {
                 var start = remaining.IndexOf("<p>", StringComparison.Ordinal);
@@ -988,34 +1091,35 @@ namespace DA_Common
                 if (end < 0)
                     break;
 
-                if (content.Length > 0)
-                    content.Append(' ');
-                content.Append(remaining.Substring(start + 3, end - start - 3));
+                var inner = StripEmWrapper(remaining.Substring(start + 3, end - start - 3).Trim());
+                if (inner.Length > 0)
+                    parts.Add(inner);
+
                 remaining = remaining.Substring(end + 4);
             }
 
-            return content.ToString();
+            if (parts.Count == 0)
+                return html;
+
+            var merged = string.Join(" ", parts);
+            merged = Regex.Replace(merged, @"\s+", " ");
+
+            var wrapInEm = html.Contains("<em>", StringComparison.OrdinalIgnoreCase);
+            return wrapInEm ? $"<p><em>{merged}</em></p>" : $"<p>{merged}</p>";
         }
 
-        /// <summary>Italic, parenthesized Quill HTML for pasting a saved roll batch into a thread post.</summary>
-        public static string ToThreadPostQuillHtml(string? richHtml)
+        private static string StripEmWrapper(string inner)
         {
-            var content = ExtractQuillParagraphContent(richHtml);
-            return string.IsNullOrEmpty(content)
-                ? string.Empty
-                : $"<p><em>({content})</em></p>";
-        }
+            const string open = "<em>";
+            const string close = "</em>";
+            var trimmed = inner.Trim();
+            if (trimmed.StartsWith(open, StringComparison.OrdinalIgnoreCase)
+                && trimmed.EndsWith(close, StringComparison.OrdinalIgnoreCase))
+            {
+                return trimmed[open.Length..^close.Length].Trim();
+            }
 
-        /// <summary>Italic Quill HTML for displaying a fight sequence in the roll dialog editor.</summary>
-        public static string ToFightQuillHtml(string? richHtml) => WrapQuillParagraphs(richHtml, wrapInner: static c => $"<em>{c}</em>");
-
-        /// <summary>Italic, parenthesized Quill HTML for pasting a fight sequence into a thread post.</summary>
-        public static string ToThreadFightPostQuillHtml(string? richHtml)
-        {
-            var content = ExtractQuillParagraphContent(richHtml);
-            return string.IsNullOrEmpty(content)
-                ? string.Empty
-                : $"<p><em>({content})</em></p>";
+            return trimmed;
         }
 
         private static string WrapQuillParagraphs(string? richHtml, Func<string, string> wrapInner)
@@ -1026,6 +1130,8 @@ namespace DA_Common
 
             var result = new StringBuilder();
             var remaining = inner;
+            var wrappedAny = false;
+
             while (remaining.Contains("<p>", StringComparison.Ordinal))
             {
                 var start = remaining.IndexOf("<p>", StringComparison.Ordinal);
@@ -1033,12 +1139,22 @@ namespace DA_Common
                 if (end < 0)
                     break;
 
+                if (!wrappedAny && start > 0)
+                    result.Append(remaining[..start]);
+
                 var paragraph = remaining.Substring(start + 3, end - start - 3);
                 result.Append("<p>").Append(wrapInner(paragraph)).Append("</p>");
                 remaining = remaining.Substring(end + 4);
+                wrappedAny = true;
             }
 
-            return result.Length > 0 ? result.ToString() : inner;
+            if (!wrappedAny)
+                return inner;
+
+            if (remaining.Length > 0)
+                result.Append(remaining);
+
+            return result.ToString();
         }
 
         public void NewLine()

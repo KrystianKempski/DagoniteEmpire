@@ -45,16 +45,16 @@ public sealed class CharacterCreationTestHelper
         EquipmentSlotRepository = new EquipmentSlotRepository(db, mapper);
     }
 
-    public static void SeedFistsEquipment(ApplicationDbContext context)
+    public static void SeedUnarmedEquipment(ApplicationDbContext context)
     {
-        if (context.Equipment.Any(e => e.Name == SD.BasicWeaponsMelee.Fists))
+        if (context.Equipment.Any(e => e.Name == SD.BasicWeaponsMelee.Unarmed))
             return;
 
         context.Equipment.Add(new Equipment
         {
-            Name = SD.BasicWeaponsMelee.Fists,
+            Name = SD.BasicWeaponsMelee.Unarmed,
             Description = "Unarmed",
-            ShortDescr = "Fists",
+            ShortDescr = "Unarmed",
             IsApproved = true,
             EquipmentType = "melee",
         });
@@ -93,10 +93,10 @@ public sealed class CharacterCreationTestHelper
             }
         }
 
-        var fists = await EquipmentRepository.GetByName(SD.BasicWeaponsMelee.Fists);
-        Assert.True(fists.Id > 0, "Fists equipment must be seeded before character creation tests.");
+        var unarmed = await EquipmentRepository.GetByName(SD.BasicWeaponsMelee.Unarmed);
+        Assert.True(unarmed.Id > 0, "Unarmed equipment must be seeded before character creation tests.");
 
-        var equipmentSlots = new List<EquipmentSlotDTO> { new(fists) };
+        var equipmentSlots = new List<EquipmentSlotDTO> { new(unarmed) };
 
         var characterDto = new CharacterDTO
         {

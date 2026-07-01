@@ -198,7 +198,10 @@ namespace DA_Business.Repository.ChatRepos
                         Characters = c.Characters
                             .Select(ch => new CharacterDTO
                             {
-                                Id = ch.Id
+                                Id = ch.Id,
+                                NPCName = ch.NPCName,
+                                UserName = ch.UserName,
+                                ImageUrl = ch.ImageUrl,
                             })
                             .ToList(),
                         Posts = new List<PostDTO>()

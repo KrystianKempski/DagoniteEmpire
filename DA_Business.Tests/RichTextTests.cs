@@ -15,15 +15,15 @@ public class RichTextTests
 
         var quill = rich.ToQuillHtml();
 
-        Assert.Contains("<p>", quill);
+        Assert.Contains("<blockquote", quill);
+        Assert.Contains(RichText.QuoteBlockClass, quill);
         Assert.Contains("<strong>Hero</strong>", quill);
         Assert.Contains("skill value: 5", quill);
-        Assert.DoesNotContain("<blockquote>", quill);
-        Assert.DoesNotContain("background-color", quill);
+        Assert.DoesNotContain("background-color: #eaeaea", quill);
     }
 
     [Fact]
-    public void ToThreadPostQuillHtml_WrapsContentInItalicParentheses()
+    public void ToThreadPostQuillHtml_PreservesQuoteBlock()
     {
         var rich = new RichText();
         rich += "Hero rolls";
@@ -33,11 +33,36 @@ public class RichTextTests
 
         var thread = RichText.ToThreadPostQuillHtml(rich.AllText);
 
-        Assert.StartsWith("<p><em>(", thread);
-        Assert.EndsWith(")</em></p>", thread);
-        Assert.Contains("Hero rolls Success!", thread);
+        Assert.Contains(RichText.QuoteBlockClass, thread);
+        Assert.Contains("<blockquote", thread);
+        Assert.Contains("Hero rolls", thread);
+        Assert.Contains("Success!", thread);
         Assert.DoesNotContain("<br>", thread);
-        Assert.DoesNotContain("<blockquote>", thread);
+    }
+
+    [Fact]
+    public void CollapseToSingleParagraph_MergesMultipleParagraphs()
+    {
+        var html = "<p><em>line one</em></p><p><em>line two</em></p>";
+
+        var collapsed = RichText.CollapseToSingleParagraph(html);
+
+        Assert.Equal("<p><em>line one line two</em></p>", collapsed);
+        Assert.DoesNotContain("<br>", collapsed);
+        Assert.DoesNotContain("</p><p>", collapsed);
+    }
+
+    [Fact]
+    public void ToPlainEditorHtml_OmitsBlockquoteWrapper()
+    {
+        var rich = new RichText();
+        rich += "Hero rolls";
+        rich.EndText();
+
+        var editor = RichText.ToPlainEditorHtml(rich.AllText);
+
+        Assert.DoesNotContain("<blockquote", editor);
+        Assert.Contains("Hero rolls", editor);
     }
 
     [Fact]
@@ -53,11 +78,28 @@ public class RichTextTests
 
         Assert.Contains("<p><em>", quill);
         Assert.Contains("<strong>Hero</strong>", quill);
-        Assert.DoesNotContain("<blockquote>", quill);
+        Assert.Contains(RichText.QuoteBlockClass, RichText.ToQuillHtml(rich.AllText));
     }
 
     [Fact]
-    public void ToThreadFightPostQuillHtml_WrapsContentInItalicParentheses()
+    public void ToFightEditorHtml_UsesParagraphsWithoutBlockquote()
+    {
+        var rich = new RichText();
+        rich += $"{RichText.BoldText("Hero")} attacks";
+        rich.NewLine();
+        rich += "Hit!";
+        rich.EndText();
+
+        var editor = RichText.ToFightEditorHtml(rich.AllText);
+
+        Assert.DoesNotContain("<blockquote", editor);
+        Assert.Contains("<p><em>", editor);
+        Assert.Contains("<strong>Hero</strong>", editor);
+        Assert.Contains("Hit!", editor);
+    }
+
+    [Fact]
+    public void ToThreadFightPostQuillHtml_WrapsContentInQuoteBlockWithItalic()
     {
         var rich = new RichText();
         rich += $"{RichText.BoldText("Hero")} attacks";
@@ -65,10 +107,10 @@ public class RichTextTests
 
         var thread = RichText.ToThreadFightPostQuillHtml(rich.AllText);
 
-        Assert.StartsWith("<p><em>(", thread);
-        Assert.EndsWith(")</em></p>", thread);
+        Assert.Contains(RichText.QuoteBlockClass, thread);
+        Assert.Contains("<blockquote", thread);
+        Assert.Contains("<em>", thread);
         Assert.Contains("<strong>Hero</strong>", thread);
-        Assert.DoesNotContain("<blockquote>", thread);
     }
 
     [Fact]

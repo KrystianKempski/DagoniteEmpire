@@ -28,17 +28,20 @@ namespace DA_DataAccess.CharacterClasses
         public string ProfessionName { get; set; } = string.Empty;
         //battle properties
 
-        public int AttackSkillValue { get; set; } = 0;
-        public int DodgeSkillValue { get; set; } = 0;
-        public int ShieldSkillValue { get; set; } = 0;
-        public int ArmorSkillValue { get; set; } = 0;
-        public int ParrySkillValue { get; set; } = 0;
-        public int PainResSkillValue { get; set; } = 0;
-        public int LiftingSkillValue { get; set; } = 0;
-        public int WrestlingSkillValue { get; set; } = 0;
+        public int AttackSkillValue { get; set; } = 10;
+        public int DodgeSkillValue { get; set; } = 10;
+        public int ShieldSkillValue { get; set; } = 10;
+        public int ArmorSkillValue { get; set; } = 10;
+        public int ParrySkillValue { get; set; } = 10;
+        public int PainResSkillValue { get; set; } = 10;
+        public int LiftingSkillValue { get; set; } = 10;
+        public int WrestlingSkillValue { get; set; } = 10;
+        public int PerceptionSkillValue { get; set; } = 10;
+        public int WillpowerSkillValue { get; set; } = 10;
+        public int CharismaSkillValue { get; set; } = 10;
 
         // wounds
-        public int MaxWounds { get; set; } = 0;
+        public int MaxWounds { get; set; } = 12;
         public int CurrentWounds { get; set; } = 0;
 
         public string States { get; set; } = string.Empty;

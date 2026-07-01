@@ -27,18 +27,18 @@
                 <MudPaper Elevation="1" Class="pa-2 h-100">
 
                     <MudSelect Value="@Roller" T="string" Required="true" ValueChanged="SelectCharacterRolling" Label="Select Rolling character">
-                        <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
+                        <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                         @foreach(var attacker in CharacterAllParams) {
                             @if (attacker is not null )
                             {                            
-                                <MudSelectItem Value="attacker.Character.NPCName">@attacker.Character.NPCName</MudSelectItem>
+                                <MudSelectItem Value="@attacker.Character.NPCName">@attacker.Character.NPCName</MudSelectItem>
                             }
                         }
                         @foreach (var attacker in Mobs)
                         {
                             @if (attacker is not null)
                             {
-                                <MudSelectItem Value="attacker.Name">@attacker.Name</MudSelectItem>
+                                <MudSelectItem Value="@attacker.Name">@attacker.Name</MudSelectItem>
                             }
                         }
                     </MudSelect>
@@ -57,7 +57,7 @@
                         <MudSelect ReadOnly="SelectedCharacterRolling is null" T="string" Required="true" @bind-Value="@BaseSkillRollName" Label="Select base skill">
                             @foreach (var baseSkill in SD.BaseSkills.All)
                             {
-                                <MudSelectItem Value="baseSkill">@baseSkill</MudSelectItem>
+                                <MudSelectItem Value="@baseSkill">@baseSkill</MudSelectItem>
                             }
                         </MudSelect>
 
@@ -66,7 +66,7 @@
                             {
                                 @foreach (var baseSkill in SelectedCharacterRolling.SpecialSkills.GetAllSection(BaseSkillRollName))
                                 {
-                                    <MudSelectItem Value="baseSkill">@baseSkill.Name</MudSelectItem>
+                                    <MudSelectItem Value="@baseSkill">@baseSkill.Name</MudSelectItem>
                                 }
                             }
                         </MudSelect>
@@ -96,7 +96,7 @@
                         <MudSelect T="int" Required="true" @bind-Value="DifficultyValue" Label="Select difficulty">
                             @foreach (var defender in SD.DifficultyLevel.ToList())
                             {
-                                <MudSelectItem Value="defender.Value">@defender.Key</MudSelectItem>
+                                <MudSelectItem Value="@defender.Value">@defender.Key</MudSelectItem>
                             }     
                         </MudSelect>
                         <MudNumericField Margin="0" Class="dense-numeric-field" Min="2" @bind-Value="DifficultyValue" ></MudNumericField>
@@ -107,19 +107,19 @@
                     @* DEFENDER *@                
                     <MudPaper Elevation="1" Class="pa-2 h-100">
                         <MudSelect Value="@Defender" T="string" Required="true" ValueChanged="SelectDefender" Label="Select Defender">
-                            <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
+                            <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                             @foreach (var defender in CharacterAllParams)
                             {
                                 @if (defender is not null && defender.Character.NPCName != Roller)
                                 {
-                                    <MudSelectItem Value="defender.Character.NPCName">@defender.Character.NPCName</MudSelectItem>
+                                    <MudSelectItem Value="@defender.Character.NPCName">@defender.Character.NPCName</MudSelectItem>
                                 }
                             }                            
                             @foreach (var defender in Mobs)
                             {
                                 @if (defender.Name != Roller)
                                 {
-                                    <MudSelectItem Value="defender.Name">@defender.Name</MudSelectItem>
+                                    <MudSelectItem Value="@defender.Name">@defender.Name</MudSelectItem>
                                 }
                             }
                         </MudSelect>
@@ -138,7 +138,7 @@
                             <MudSelect ReadOnly="SelectedCharacterDefending is null" T="string" Required="true" @bind-Value="@BaseSkillDefenceName" Label="Select base skill">
                                 @foreach (var baseSkill in SD.BaseSkills.All)
                                 {
-                                    <MudSelectItem Value="baseSkill">@baseSkill</MudSelectItem>
+                                    <MudSelectItem Value="@baseSkill">@baseSkill</MudSelectItem>
                                 }
                             </MudSelect> 
 
@@ -147,7 +147,7 @@
                                 {
                                     @foreach (var baseSkill in SelectedCharacterDefending.SpecialSkills.GetAllSection(BaseSkillDefenceName))
                                     {
-                                        <MudSelectItem Value="baseSkill">@baseSkill.Name</MudSelectItem>
+                                        <MudSelectItem Value="@baseSkill">@baseSkill.Name</MudSelectItem>
                                     }
                                 }
                             </MudSelect>
@@ -247,6 +247,10 @@
     private BlazoredTextEditor? RollEditor;
     private bool _shouldLoadRollContent;
 
+    private static bool IsEmptyEditorHtml(string? html) =>
+        string.IsNullOrWhiteSpace(html)
+        || html.Trim() is "<p><br></p>" or "<p></p>";
+
     private string RollerName =>
         SelectedCharacterRolling?.Character?.NPCName ?? SelectedMobRolling?.Name ?? string.Empty;
 
@@ -263,6 +267,9 @@
         new("pain-resistance", "Pain resistance", mob.PainResSkillValue),
         new("lifting", "Lifting", mob.LiftingSkillValue),
         new("wrestling", "Wrestling", mob.WrestlingSkillValue),
+        new("perception", "Perception", mob.PerceptionSkillValue),
+        new("willpower", "Willpower", mob.WillpowerSkillValue),
+        new("charisma", "Charisma", mob.CharismaSkillValue),
     ];
 
     private static bool TryGetMobSkill(IReadOnlyList<MobSkillEntry> skills, string key, out MobSkillEntry entry)
@@ -304,16 +311,8 @@
         return (SpecialSkillDefence?.Name ?? string.Empty, SpecialSkillDefence?.SumBonus ?? 0);
     }
 
-    private async Task Cancel()
-    {
-        if(RollResultString == string.Empty)
-            MudDialog.Cancel();
-        else
-        {
-            MudDialog.Close(DialogResult.Ok(new SkillRollDialogResult(RollResultString, WrapForThread: false)));
-            Snackbar.Add("Roll added", Severity.Success);
-        }
-    }
+    // Exit always cancels without inserting anything (matches CreateFightSequenceDialog).
+    private void Cancel() => MudDialog.Cancel();
 
     private void AddAttackerBonus() => AdditionalAttackerBonuses.Add(new Pair<string, int>("", 0));
 
@@ -432,12 +431,32 @@
 
     private async Task<bool> TryLoadRollResultIntoEditorAsync()
     {
-        if (RollEditor is null || string.IsNullOrEmpty(RollResultString))
+        if (string.IsNullOrEmpty(RollResultString))
             return true;
+
+        if (RollEditor is null)
+        {
+            _shouldLoadRollContent = true;
+            return false;
+        }
 
         try
         {
-            await RollEditor.LoadHTMLContent(RichText.ToQuillHtml(RollResultString));
+            var editorHtml = RichText.ToPlainEditorHtml(RollResultString);
+            if (string.IsNullOrEmpty(editorHtml))
+            {
+                _shouldLoadRollContent = true;
+                return false;
+            }
+
+            await RollEditor.LoadHTMLContent(editorHtml);
+            var loadedHtml = await RollEditor.GetHTML();
+            if (IsEmptyEditorHtml(loadedHtml))
+            {
+                _shouldLoadRollContent = true;
+                return false;
+            }
+
             _shouldLoadRollContent = false;
             return true;
         }
@@ -521,7 +540,7 @@
 
         ResultStringMG += result.Item2;
         ResultStringMG.EndText();
-        RollResultString += ResultStringMG.AllText;
+        RollResultString = ResultStringMG.AllText;
 
         _shouldLoadRollContent = true;
         await TryLoadRollResultIntoEditorAsync();
@@ -533,10 +552,16 @@
         }
     }
 
-    private async Task SaveSequenceBtn()
+    private void SaveSequenceBtn()
     {
         try
         {
+            if (string.IsNullOrEmpty(RollResultString))
+            {
+                Snackbar.Add("Make a roll first", Severity.Warning);
+                return;
+            }
+
             MudDialog.Close(DialogResult.Ok(new SkillRollDialogResult(RollResultString, WrapForThread: true)));
             Snackbar.Add("Roll added", Severity.Success);
         }

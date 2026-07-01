@@ -19,7 +19,7 @@ public class CharacterCreationFlowTests : IClassFixture<DatabaseFixture>
         _helper = new CharacterCreationTestHelper(_fixture.DbContextFactory, _fixture.Mapper);
 
         using var context = _fixture.CreateContext();
-        CharacterCreationTestHelper.SeedFistsEquipment(context);
+        CharacterCreationTestHelper.SeedUnarmedEquipment(context);
     }
 
     [Fact]
@@ -60,14 +60,14 @@ public class CharacterCreationFlowTests : IClassFixture<DatabaseFixture>
     }
 
     [Fact]
-    public async Task CreateCharacter_PersistsProfessionTraitsAndFistsEquipmentSlot()
+    public async Task CreateCharacter_PersistsProfessionTraitsAndUnarmedEquipmentSlot()
     {
         var characterId = await _helper.CreateCharacterAsync();
 
         var snapshot = await _helper.LoadCharacterSnapshotAsync(characterId);
 
         Assert.NotEmpty(snapshot.ProfessionTraits);
-        Assert.Contains(snapshot.EquipmentSlots, s => s.Equipment.Name == SD.BasicWeaponsMelee.Fists);
+        Assert.Contains(snapshot.EquipmentSlots, s => s.Equipment.Name == SD.BasicWeaponsMelee.Unarmed);
 
         using var context = _fixture.CreateContext();
         var slotCount = await context.EquipmentSlots.CountAsync(s => s.CharacterID == characterId);

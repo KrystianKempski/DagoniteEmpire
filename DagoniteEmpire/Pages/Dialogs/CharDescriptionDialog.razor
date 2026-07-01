@@ -7,8 +7,10 @@
     </div>
     <h3 class="my-3 ml-3 text-center">DESCRIPTION</h3>
     <div class="descr-container">
-        <div class="description-richtext ql-editor" style="height:100%; overflow:auto;">
-            @((MarkupString)(SavedDescription ?? "<p>Here write a description of your character</p>"))
+        <div class="ql-snow ql-content description-richtext" style="border-width:0">
+            <div class="ql-editor" style="height:100%; overflow:auto;">
+                @((MarkupString)(SavedDescription ?? "<p>Here write a description of your character</p>"))
+            </div>
         </div>
         <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>
     </div>

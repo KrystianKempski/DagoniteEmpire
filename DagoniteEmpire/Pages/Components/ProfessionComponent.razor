@@ -49,8 +49,10 @@
     </table>
 
     <label class="prof-descr-label">Class description</label>
-    <div class="richtext-conteiner ql-editor" style="height:100%; overflow:auto;">
-        @((MarkupString)(Profession?.Description ?? string.Empty))
+    <div class="ql-snow ql-content richtext-conteiner" style="border-width:0">
+        <div class="ql-editor" style="height:100%; overflow:auto;">
+            @((MarkupString)(Profession?.Description ?? string.Empty))
+        </div>
     </div>
     <div class="buttons">
         <button @onclick="@(()=>EditProfession())" class="add-trait">Edit class</button>

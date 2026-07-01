@@ -104,3 +104,55 @@ char-title {
 .mud-dialog-width-sm .mud-message-box .mud-button-group {
     justify-content: center;
 }
+
+/* Quill HTML rendered outside the editor (thread posts, descriptions). */
+.ql-content.ql-snow {
+    border: none;
+}
+
+.ql-content.ql-snow .ql-editor {
+    padding: 0;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+}
+
+.ql-content.ql-snow .ql-editor blockquote,
+.ql-editor blockquote {
+    display: block;
+    border-left: 4px solid #bbb;
+    margin: 0.5em 0;
+    padding: 0.5em 0.75em;
+    background-color: #eaeaea;
+    color: #000;
+}
+
+.mud-theme-dark .ql-content.ql-snow .ql-editor blockquote,
+.mud-theme-dark .ql-editor blockquote {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--mud-palette-text-primary);
+    border-left-color: rgba(255, 255, 255, 0.35);
+}
+
+.ql-content.ql-snow .ql-editor blockquote.rich-text-quote,
+.ql-editor blockquote.rich-text-quote,
+.ql-content.ql-snow .ql-editor div[style*="background-color: #eaeaea"] blockquote,
+.ql-editor div[style*="background-color: #eaeaea"] blockquote {
+    background-color: #eaeaea;
+    color: #000;
+    border-left-color: #bbb;
+    padding: 0.5em 0.75em;
+}
+
+.mud-theme-dark .ql-content.ql-snow .ql-editor blockquote.rich-text-quote,
+.mud-theme-dark .ql-editor blockquote.rich-text-quote,
+.mud-theme-dark .ql-content.ql-snow .ql-editor div[style*="background-color: #eaeaea"],
+.mud-theme-dark .ql-editor div[style*="background-color: #eaeaea"] {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: var(--mud-palette-text-primary) !important;
+}
+
+.mud-theme-dark .ql-content.ql-snow .ql-editor blockquote.rich-text-quote,
+.mud-theme-dark .ql-editor blockquote.rich-text-quote {
+    border-left-color: rgba(255, 255, 255, 0.35);
+}

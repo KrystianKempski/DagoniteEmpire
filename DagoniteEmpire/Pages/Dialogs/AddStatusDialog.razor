@@ -25,19 +25,19 @@
 
                     @* Select Rolling character *@
                     <MudSelect Value="@SelectedCharacterName" T="string" Required="true" ValueChanged="SelectCharacter" Label="Select Rolling character">
-                        <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
+                        <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                         @foreach(var attacker in CharacterAllParams)
                         {
                             @if (attacker is not null )
                             {                            
-                                <MudSelectItem Value="attacker.Character.NPCName">@attacker.Character.NPCName</MudSelectItem>
+                                <MudSelectItem Value="@attacker.Character.NPCName">@attacker.Character.NPCName</MudSelectItem>
                             }
                         }
                         @foreach (var attacker in Mobs)
                         {
                             @if (attacker is not null)
                             {
-                                <MudSelectItem Value="attacker.Name">@attacker.Name</MudSelectItem>
+                                <MudSelectItem Value="@attacker.Name">@attacker.Name</MudSelectItem>
                             }
                         }
                     </MudSelect>                
@@ -47,7 +47,7 @@
                         {
                             @foreach (TraitDTO trait in Traits)
                             {
-                                <MudSelectItem Value="trait">@trait.Name</MudSelectItem>
+                                <MudSelectItem Value="@trait">@trait.Name</MudSelectItem>
                             }
                         }
 
@@ -154,7 +154,7 @@
         if (SelectedMob is null || string.IsNullOrEmpty(SelectedTrait?.Name))
             throw new Exception("No Mob or state selected");
 
-        SelectedMob.States += $"{SelectedTrait.Name}:{StateDuration}, ";
+        SelectedMob.States = CombatStateString.Add(SelectedMob.States, SelectedTrait.Name, StateDuration);
         await _mobRepository.Update(SelectedMob);
     }
 }

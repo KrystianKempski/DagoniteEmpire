@@ -58,7 +58,7 @@ namespace DA_Models
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
                         Level = (int)States.Level.NoTurn,
-                        TraitValue = 1,
+                        TraitValue = States.Duration.SingleTurn,
                         CharacterId = characterId,
                     };
                     break;
@@ -71,7 +71,7 @@ namespace DA_Models
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
                         Level = (int)States.Level.HalfTurn,
-                        TraitValue = 1,
+                        TraitValue = States.Duration.SingleTurn,
                         CharacterId = characterId,
                     };
                     break;
@@ -84,7 +84,7 @@ namespace DA_Models
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
                         Level = (int)States.Level.Dead,
-                        TraitValue = duration > 0 ? duration : 999,
+                        TraitValue = duration > 0 ? duration : States.Duration.Permanent,
                         CharacterId = characterId,
                     };
                     break;
@@ -97,7 +97,7 @@ namespace DA_Models
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
                         Level = (int)States.Level.Unconscious,
-                        TraitValue = duration > 0 ? duration : 99,
+                        TraitValue = duration > 0 ? duration : States.Duration.UntilResolved,
                         CharacterId = characterId,
                     };
                     break;
@@ -110,7 +110,7 @@ namespace DA_Models
                             IsUnique = false,
                             Level = (int)States.Level.Stunned,
                             TraitType = SD.TraitType_Temporary,
-                            TraitValue = duration > 0 ? duration : 99,
+                            TraitValue = duration > 0 ? duration : States.Duration.UntilResolved,
                             CharacterId = characterId,
                     };
                     break;
@@ -123,7 +123,7 @@ namespace DA_Models
                             IsUnique = false,
                             TraitType = SD.TraitType_Temporary,
                             Level = (int)States.Level.Stumbled,
-                            TraitValue = duration > 0 ? duration : 99,
+                            TraitValue = duration > 0 ? duration : States.Duration.UntilResolved,
                             CharacterId = characterId,
                     };
                     break;
@@ -136,7 +136,7 @@ namespace DA_Models
                             IsUnique = false,
                             Level = (int)States.Level.Snatched,
                             TraitType = SD.TraitType_Temporary,
-                            TraitValue = duration > 0 ? duration : 99,
+                            TraitValue = duration > 0 ? duration : States.Duration.UntilResolved,
                             CharacterId = characterId,
                         };
                     break;
@@ -149,7 +149,7 @@ namespace DA_Models
                             IsUnique = false,
                             TraitType = SD.TraitType_Temporary,
                             Level = (int)States.Level.Disarmed,
-                            TraitValue = duration > 0 ? duration : 99,
+                            TraitValue = duration > 0 ? duration : States.Duration.UntilResolved,
                             CharacterId = characterId,
                         };
                         break;
@@ -162,7 +162,7 @@ namespace DA_Models
                             IsUnique = false,
                             Level = (int)States.Level.Blinded,
                             TraitType = SD.TraitType_Temporary,
-                            TraitValue = duration > 0 ? duration : 99,
+                            TraitValue = duration > 0 ? duration : States.Duration.UntilResolved,
                             CharacterId = characterId,
                         };
                         break;
@@ -175,7 +175,7 @@ namespace DA_Models
                         IsUnique = false,
                         TraitType = SD.TraitType_Temporary,
                         Level = (int)States.Level.Unaware,
-                        TraitValue = duration > 0 ? duration : 1,
+                        TraitValue = duration > 0 ? duration : States.Duration.SingleTurn,
                         CharacterId = characterId,
                     };
                     break;
@@ -188,20 +188,7 @@ namespace DA_Models
                     IsUnique = false,
                     TraitType = SD.TraitType_Temporary,
                     Level = (int)States.Level.Invisible,
-                    TraitValue = duration > 0 ? duration : 99,
-                    CharacterId = characterId,
-                };
-                    break;
-                case States.Names.Flanking:
-                trait = new TraitCharacter(true)
-                {
-                    Name = States.Names.Flanking,
-                    Descr = "This character attack someone from the back, when they are busy fighting with someone else. This gives bonus to attack equal to 3, and opponent cannot use shield",
-                    TraitApproved = approved,
-                    IsUnique = false,
-                    TraitType = SD.TraitType_Temporary,
-                    Level = (int)States.Level.Flanking,
-                    TraitValue = duration > 0 ? duration : 99,
+                    TraitValue = duration > 0 ? duration : States.Duration.UntilResolved,
                     CharacterId = characterId,
                 };
                     break;
@@ -214,7 +201,7 @@ namespace DA_Models
                     IsUnique = false,
                     TraitType = SD.TraitType_Temporary,
                     Level = (int)States.Level.Surrounded,
-                    TraitValue = duration > 0 ? duration : 1,
+                    TraitValue = duration > 0 ? duration : States.Duration.SingleTurn,
                     CharacterId = characterId,
                 };
                     break;
@@ -227,7 +214,7 @@ namespace DA_Models
                     IsUnique = false,
                     TraitType = SD.TraitType_Temporary,
                     Level = (int)States.Level.Unbalanced,
-                    TraitValue = duration > 0 ? duration : 1,
+                    TraitValue = duration > 0 ? duration : States.Duration.SingleTurn,
                     CharacterId = characterId,
                 };
                     break;
@@ -240,7 +227,7 @@ namespace DA_Models
                     IsUnique = false,
                     TraitType = SD.TraitType_Temporary,
                     Level = (int)States.Level.Cautious,
-                    TraitValue = duration > 0 ? duration : 1,
+                    TraitValue = duration > 0 ? duration : States.Duration.SingleTurn,
                     CharacterId = characterId,
                 };
                     break;
@@ -253,7 +240,7 @@ namespace DA_Models
                     IsUnique = false,
                     TraitType = SD.TraitType_Temporary,
                     Level = (int)States.Level.FullDefence,
-                    TraitValue = duration > 0 ? duration : 1,
+                    TraitValue = duration > 0 ? duration : States.Duration.SingleTurn,
                     CharacterId = characterId,
                 };
                     break;
@@ -266,7 +253,7 @@ namespace DA_Models
                     IsUnique = false,
                     TraitType = SD.TraitType_Temporary,
                     Level = (int)States.Level.Bleeding,
-                    TraitValue = duration > 0 ? duration : 10,
+                    TraitValue = duration > 0 ? duration : States.Duration.BleedingDefault,
                     CharacterId = characterId,
                 };
                     break;

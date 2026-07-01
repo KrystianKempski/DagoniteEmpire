@@ -23,25 +23,9 @@ public static class BleedingTurnModel
         return new BleedingPainTestResult(dc, roll.Item1, roll.Item2, unconsciousDuration);
     }
 
-    public static bool TryParseMobStateDuration(string? states, string stateName, out int duration)
-    {
-        duration = 0;
-        if (string.IsNullOrWhiteSpace(states))
-            return false;
-
-        foreach (var state in states.Split(',', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var parts = state.Split(':', 2);
-            if (parts.Length < 2 || !string.Equals(parts[0].Trim(), stateName, StringComparison.Ordinal))
-                continue;
-
-            if (int.TryParse(parts[1].Trim(), out duration))
-                return true;
-        }
-
-        return false;
-    }
+    public static bool TryParseMobStateDuration(string? states, string stateName, out int duration) =>
+        CombatStateString.TryGetDuration(states, stateName, out duration);
 
     public static bool MobHasState(string? states, string stateName) =>
-        TryParseMobStateDuration(states, stateName, out _);
+        CombatStateString.HasState(states, stateName);
 }

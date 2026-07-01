@@ -21,19 +21,19 @@
                     <MudPaper Elevation="1" Class="pa-2 h-100">
 
                         @* Select Attacker *@
-                        <MudSelect Value="SelectedAttacker" T="string" Required="true" ValueChanged="SelectAttacker" Label="Select Attacker">
-                            <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
+                        <MudSelect Value="@SelectedAttacker" T="string" Required="true" ValueChanged="SelectAttacker" Label="Select Attacker">
+                            <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                             @foreach(var attacker in CharacterAllParams) {
                                 @if (attacker is not null && attacker.Character?.NPCName != SelectedDefender && CanSelectCharacterAsAttacker(attacker))
                                 {                            
-                                    <MudSelectItem Value="attacker.Character.NPCName">@attacker.Character.NPCName</MudSelectItem>
+                                    <MudSelectItem Value="@attacker.Character.NPCName">@attacker.Character.NPCName</MudSelectItem>
                                 }
                             }
                             @foreach (var attacker in Mobs)
                             {
                                 @if (attacker is not null && attacker.Name != SelectedDefender && CanSelectMobAsAttacker(attacker))
                                 {
-                                    <MudSelectItem Value="attacker.Name">@attacker.Name</MudSelectItem>
+                                    <MudSelectItem Value="@attacker.Name">@attacker.Name</MudSelectItem>
                                 }
                             }
                         </MudSelect>                
@@ -42,7 +42,7 @@
                             @foreach (var defType in SD.AttackAction.All)
                             {
                                 if (defType == SD.AttackAction.Targeted) continue;
-                                <MudSelectItem Value="defType">@defType</MudSelectItem>
+                                <MudSelectItem Value="@defType">@defType</MudSelectItem>
                             }
                         </MudSelect>
                         @* Select if targeted and  location *@
@@ -51,11 +51,11 @@
                             <MudSelect T="string" Disabled="@(IsTargeted == false)" Required="true" @bind-Value="@FightSequence.AttackLocation" Label="Select location">
                                 @foreach (var location in Wounds.Location.All)
                                 {
-                                    <MudSelectItem Value="location">@location</MudSelectItem>
+                                    <MudSelectItem Value="@location">@location</MudSelectItem>
                                 }
                             </MudSelect>
                         </MudStack>                    
-                        <MudCheckBox @bind-Value="@IsFlanking" Label="Flanking?"></MudCheckBox>                    
+                        <MudCheckBox @bind-Value="@IsFlanking" Label="Flanking"></MudCheckBox>                    
                         @* Attacker states *@
                         @if (FightSequence?.Attacker?.States is not null && FightSequence.Attacker.States.Any())
                         {
@@ -92,20 +92,20 @@
                 <MudItem xs="6">
                     <MudPaper Elevation="1" Class="pa-2 h-100">
                         @* Select Defender *@
-                        <MudSelect Value="SelectedDefender" T="string" Required="true" ValueChanged="SelectDefender" Label="Select Defender">
-                            <MudSelectItem Value="string.Empty">@string.Empty</MudSelectItem>
+                        <MudSelect Value="@SelectedDefender" T="string" Required="true" ValueChanged="SelectDefender" Label="Select Defender">
+                            <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                             @foreach (var defender in CharacterAllParams)
                             {
                                 @if (defender is not null && defender.Character?.NPCName != SelectedAttacker)
                                 {
-                                    <MudSelectItem Value="defender.Character.NPCName">@defender.Character.NPCName</MudSelectItem>
+                                    <MudSelectItem Value="@defender.Character.NPCName">@defender.Character.NPCName</MudSelectItem>
                                 }
                             }                            
                             @foreach (var defender in Mobs)
                             {
                                 @if (defender.Name != SelectedAttacker)
                                 {
-                                    <MudSelectItem Value="defender.Name">@defender.Name</MudSelectItem>
+                                    <MudSelectItem Value="@defender.Name">@defender.Name</MudSelectItem>
                                 }
                             }
                         </MudSelect>
@@ -121,14 +121,14 @@
                                         if (defType == SD.DefenceType.Shield && (FightSequence?.Defender.Props?.ShieldUsed is null || FightSequence.IsShieldDefenceAllowed == false)) continue;
                                         if (defType == SD.DefenceType.Armor && FightSequence?.Defender.Props?.ArmorUsed is null) continue;
                                         if (defType == SD.DefenceType.Parry && FightSequence?.IsParryDefenceAllowed == false) continue;
-                                        <MudSelectItem Value="defType">@defType</MudSelectItem>
+                                        <MudSelectItem Value="@defType">@defType</MudSelectItem>
                                     }
                                 }
                             </MudSelect>
                         </MudStack>
                         <MudStack Spacing="1" Row>
                             <MudCheckBox @bind-Value="@IsSurrounded" Label="Surrounded?"></MudCheckBox>
-                            <MudNumericField Disabled="@(IsSurrounded == false)" @bind-Value="@SurroundedValue" Label="How many?"> </MudNumericField>
+                            <MudNumericField Disabled="@(IsSurrounded == false)" @bind-Value="@SurroundedValue" Min="2" Label="Attackers (total)"> </MudNumericField>
                         </MudStack>
                         @* Defender states *@
                         @if (FightSequence.Defender.States is not null && FightSequence.Defender.States.Any())
@@ -240,29 +240,10 @@
         }
     } 
     private bool _isFlanking = false;
-    private bool IsFlanking 
+    private bool IsFlanking
     {
         get => _isFlanking;
-        set
-        {
-            _isFlanking = value;
-            if (FightSequence is null) return;
-            if (_isFlanking == true)
-            {
-                var trait = StateSeeder.GetStateDTO(States.Names.Flanking, false, 1);
-                FightSequence?.Attacker.States?.Add(trait);
-                StateHasChanged();
-            }
-            else
-            {
-                var trait = FightSequence?.Attacker.States?.FirstOrDefault(u => u.Name == States.Names.Flanking);
-                if (trait is not null)
-                {
-                    FightSequence?.Attacker.States?.Remove(trait);
-                    StateHasChanged();
-                }
-            }
-        }
+        set => _isFlanking = value;
     }
     private bool _isSurrounded = false;
     private bool IsSurrounded
@@ -271,6 +252,11 @@
         set => _isSurrounded = value;
     }
     private BlazoredTextEditor ResultEditor;
+    private bool _shouldLoadFightResult;
+
+    private static bool IsEmptyEditorHtml(string? html) =>
+        string.IsNullOrWhiteSpace(html)
+        || html.Trim() is "<p><br></p>" or "<p></p>";
 
     private static bool HasBlockedAttackerState(IEnumerable<string> stateNames) =>
         stateNames.Any(name => AttackerBlockedStates.Contains(name));
@@ -279,20 +265,8 @@
         attacker.TraitsTemporary is null
         || !HasBlockedAttackerState(attacker.TraitsTemporary.Select(t => t.Name));
 
-    private static bool CanSelectMobAsAttacker(MobDTO mob)
-    {
-        if (string.IsNullOrWhiteSpace(mob.States))
-            return true;
-
-        foreach (var state in mob.States.Split(", ", StringSplitOptions.RemoveEmptyEntries))
-        {
-            var stateName = state.Split(':', 2)[0].Trim();
-            if (AttackerBlockedStates.Contains(stateName))
-                return false;
-        }
-
-        return true;
-    }
+    private static bool CanSelectMobAsAttacker(MobDTO mob) =>
+        !CombatStateString.Parse(mob.States).Any(state => AttackerBlockedStates.Contains(state.Name));
 
     private FightSequenceModel CreateFightSequence() => new(Date)
     {
@@ -312,6 +286,7 @@
         _isSurrounded = false;
         SurroundedValue = 2;
         FightSequence = CreateFightSequence();
+        _shouldLoadFightResult = false;
 
         if (ResultEditor is not null)
             await ResultEditor.LoadHTMLContent(string.Empty);
@@ -322,6 +297,57 @@
     protected override async Task OnInitializedAsync()
     {
         FightSequence = CreateFightSequence();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldLoadFightResult && ResultEditor is not null && !string.IsNullOrEmpty(FightResult))
+        {
+            var loaded = await TryLoadFightResultIntoEditorAsync();
+            if (!loaded)
+            {
+                await Task.Delay(50);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task<bool> TryLoadFightResultIntoEditorAsync()
+    {
+        if (string.IsNullOrEmpty(FightResult))
+            return true;
+
+        if (ResultEditor is null)
+        {
+            _shouldLoadFightResult = true;
+            return false;
+        }
+
+        try
+        {
+            var editorHtml = RichText.ToFightEditorHtml(FightResult);
+            if (string.IsNullOrEmpty(editorHtml))
+            {
+                _shouldLoadFightResult = true;
+                return false;
+            }
+
+            await ResultEditor.LoadHTMLContent(editorHtml);
+            var loadedHtml = await ResultEditor.GetHTML();
+            if (IsEmptyEditorHtml(loadedHtml))
+            {
+                _shouldLoadFightResult = true;
+                return false;
+            }
+
+            _shouldLoadFightResult = false;
+            return true;
+        }
+        catch
+        {
+            _shouldLoadFightResult = true;
+            return false;
+        }
     }
 
     private void SelectAttacker(string attackerName)
@@ -435,32 +461,39 @@
 
     private async Task MakeAttackRoll()
     {
-        if (SelectedAttacker == string.Empty || SelectedDefender == string.Empty || FightSequence is null || FightSequence.AttackAction == string.Empty ||
-           (_isTargeted == true && FightSequence.AttackLocation == string.Empty))
+        try
         {
-            Snackbar.Add("Some component is missing", Severity.Warning);
-            return;
+            if (SelectedAttacker == string.Empty || SelectedDefender == string.Empty || FightSequence is null || FightSequence.AttackAction == string.Empty ||
+               (_isTargeted == true && FightSequence.AttackLocation == string.Empty))
+            {
+                Snackbar.Add("Some component is missing", Severity.Warning);
+                return;
+            }
+
+            FightSequence.SurroundedAttackerCount = IsSurrounded ? SurroundedValue : 0;
+            FightSequence.IsAttackerFlanking = IsFlanking;
+            FightSequence.UpdateDefenceFlags();
+            FightSequence.EnsureDefenceType();
+
+            var result = FightSequence.CalculateAndWriteAttack();
+            if (string.IsNullOrEmpty(result) == false)
+            {
+                Snackbar.Add("Error: " + result, Severity.Warning);
+                return;
+            }
+
+            if (FightSequence.ResultStringMG is not null)
+            {
+                FightResult = FightSequence.ResultStringMG.AllText;
+                _shouldLoadFightResult = true;
+            }
+
+            StateHasChanged();
         }
-
-        FightSequence.SurroundedAttackerCount = IsSurrounded ? SurroundedValue : 0;
-        FightSequence.UpdateDefenceFlags();
-        FightSequence.EnsureDefenceType();
-
-        var result = FightSequence?.CalculateAndWriteAttack();
-        if (string.IsNullOrEmpty(result) == false)
+        catch (Exception ex)
         {
-            Snackbar.Add("Error: " + result, Severity.Warning);
-            return;
+            Snackbar.Add("Error while rolling: " + ex.Message, Severity.Error);
         }
-
-        if (FightSequence?.ResultStringMG is not null)
-        {
-            FightResult = FightSequence.ResultStringMG.AllText;
-            if (ResultEditor is not null)
-                await ResultEditor.LoadHTMLContent(RichText.ToFightQuillHtml(FightResult));
-        }
-
-        StateHasChanged();
     }
 
     private async Task AddAttackerBonus()
@@ -511,6 +544,12 @@
                 && !string.IsNullOrWhiteSpace(FightSequence?.ResultStringMG?.AllText))
             {
                 FightResult = FightSequence!.ResultStringMG.AllText;
+            }
+
+            if (string.IsNullOrWhiteSpace(FightResult))
+            {
+                Snackbar.Add("Roll first before saving", Severity.Warning);
+                return;
             }
 
             var snapshot = CapturePersistenceSnapshot();

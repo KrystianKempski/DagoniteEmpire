@@ -458,8 +458,8 @@
 
                 // create equipment (in character)
                 //add fist secretly
-                var fists = await _equipmentRepository.GetByName(SD.BasicWeaponsMelee.Fists);
-                var slot = new EquipmentSlotDTO(fists);
+                var unarmed = await _equipmentRepository.GetByName(SD.BasicWeaponsMelee.Unarmed);
+                var slot = new EquipmentSlotDTO(unarmed);
                 AllParams.EquipmentSlots.Add(slot);
                 AllParams.Character.EquipmentSlots = AllParams.EquipmentSlots;
 

@@ -102,7 +102,7 @@ namespace DA_Business.Repository.CharacterReps
             return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(
                 await contex.Equipment
                     .AsNoTracking()
-                    .Where(t => t.IsApproved == true && t.Name != SD.BasicWeaponsMelee.Fists)
+                    .Where(t => t.IsApproved == true && t.Name != SD.BasicWeaponsMelee.Unarmed)
                     .Include(u => u.Traits)
                         .ThenInclude(b => b.Bonuses)
                     .AsSplitQuery()

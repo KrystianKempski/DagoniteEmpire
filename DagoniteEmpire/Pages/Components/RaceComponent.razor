@@ -29,8 +29,10 @@
     }
     
     <label class="race-descr-label">Description</label>
-    <div class="richtext-conteiner ql-editor" style="height:100%; overflow:auto;">
-        @((MarkupString)(AllParams.CurrentRace?.Description ?? string.Empty))
+    <div class="ql-snow ql-content richtext-conteiner" style="border-width:0">
+        <div class="ql-editor" style="height:100%; overflow:auto;">
+            @((MarkupString)(AllParams.CurrentRace?.Description ?? string.Empty))
+        </div>
     </div>
     <label class="race-traits-label">Traits</label>
     <div class="flex-conteiner">

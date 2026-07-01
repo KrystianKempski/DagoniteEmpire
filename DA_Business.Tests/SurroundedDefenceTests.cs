@@ -9,6 +9,7 @@ public class SurroundedDefenceTests
     [InlineData(SD.DefenceType.Armor, 2, 1)]
     [InlineData(SD.DefenceType.Armor, 4, 3)]
     [InlineData(SD.DefenceType.Dodge, 2, 2)]
+    [InlineData(SD.DefenceType.Dodge, 3, 4)]
     [InlineData(SD.DefenceType.Dodge, 4, 6)]
     [InlineData(SD.DefenceType.Shield, 3, 4)]
     public void GetSurroundedDefencePenalty_ScalesWithDefenceTypeAndAttackerCount(

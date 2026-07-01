@@ -42,16 +42,8 @@ namespace DA_Models.ComponentModels
         public ICollection<TraitDTO> TraitsToDelete { get; set; } = new List<TraitDTO>();
         public ICollection<EquipmentSlotDTO> EquipmentSlotsToDelete { get; set; } = new List<EquipmentSlotDTO>();
         public ICollection<SpecialSkillDTO> SpecialSkillsToDelete { get; set; } = new List<SpecialSkillDTO>();
-        public string States { get
-            {
-                string res = string.Empty;
-                foreach(var state in TraitsTemporary)
-                {
-                    res += $"{state.Name}:{state.TraitValue}, "; 
-                }
-                return res;
-            } 
-        }
+        public string States =>
+            CombatStateString.Format(TraitsTemporary.Select(t => new CombatStateEntry(t.Name, t.TraitValue)));
 
 
     public bool IsAdminOrMG { get; set; } = false;
