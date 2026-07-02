@@ -54,22 +54,7 @@ namespace DA_Models.CharacterModels
                     return "";
             }
         }
-        public virtual int Penalty { get
-            {
-                if (Value > 0 && Value < 3)
-                    return IsIgnored || IsIgnored ? 0 : 1;
-                else if (Value >= 3 && Value < 9)
-                    return IsIgnored || IsIgnored ? 1 : 3;
-                else if (Value >= 9 && Value < 18)
-                    return IsIgnored || IsIgnored ? 3 : 7;
-                else if (Value >= 18 && Value < 25)
-                    return IsIgnored || IsIgnored ? 5 : 12;
-                else if (Value >= 25)
-                    return IsIgnored || IsIgnored ? 20 : 20;
-                else
-                    return 0;
-            }
-        }
+        public virtual int Penalty => Wounds.GetPenaltyFromValue(Value, IsIgnored);
        
         public virtual ICollection<string> GetAttributeNamesFromLocation()
         {

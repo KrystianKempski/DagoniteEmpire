@@ -16,6 +16,7 @@
 @inject IUserService _userService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject NavigationManager _navigationManager
 
 <MudPaper>
     @if (IsLoading)
@@ -77,10 +78,12 @@
                     </div>
                 </div>
             </MudButton>
-            @if (IsExpanded && ShowActionsPanel)
+            @if (IsExpanded && (ShowActionsPanel || ShowMobTurnPanel || ShowClassButton))
             {
                 <MudPaper Elevation="1" Class="pa-1 mx-1 character-actions-panel">
                     <MudText Class="p-1" Typo="Typo.button">ACTIONS</MudText>
+                    @if (ShowActionsPanel)
+                    {
                     <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
                         <ChildContent>
                         <span class="@GetActionWrapperClass(CanDeclareFullDefence)">
@@ -99,6 +102,9 @@
                             </span>
                         </TooltipContent>
                     </MudTooltip>
+                    }
+                    @if (ShowActionsPanel || ShowMobTurnPanel)
+                    {
                     <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
                         <ChildContent>
                         <span class="@GetActionWrapperClass(CanDeclareHalfAction)">
@@ -117,6 +123,25 @@
                             </span>
                         </TooltipContent>
                     </MudTooltip>
+                    }
+                    @if (ShowClassButton)
+                    {
+                    <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
+                        <ChildContent>
+                            <MudIconButton Size="Size.Small"
+                                           aria-label="Open class"
+                                           OnClick="OpenClassAsync">
+                                <img src="@MyIcon.Anvil" class="character-action-icon" width="22" height="22" alt="" />
+                            </MudIconButton>
+                        </ChildContent>
+                        <TooltipContent>
+                            <span class="character-status-tooltip-text">
+                                <span class="character-status-tooltip-name">Open class</span>
+                                <span class="character-status-tooltip-duration">@ProfessionName</span>
+                            </span>
+                        </TooltipContent>
+                    </MudTooltip>
+                    }
                 </MudPaper>
             }
             <MudCollapse Expanded="IsExpanded">
@@ -379,6 +404,8 @@
     public bool OngoingBattle { get; set; }
     [Parameter]
     public EventCallback<int> OnFullDefenceApplied { get; set; }
+    [Parameter]
+    public EventCallback<int> OnMobActionApplied { get; set; }
 
     private bool IsExpanded = false;
     private bool IsLoading = false;
@@ -421,8 +448,21 @@
         && AllParams?.Character is not null
         && (IsOwnCharacter || UserInfo?.IsAdminOrMG == true);
 
+    private bool ShowMobTurnPanel =>
+        OngoingBattle
+        && IsMob
+        && Mob is not null
+        && UserInfo?.IsAdminOrMG == true;
+
+    private bool ShowClassButton =>
+        !IsMob
+        && AllParams?.Character is not null
+        && (IsOwnCharacter || UserInfo?.IsAdminOrMG == true);
+
     private bool HasTemporaryState(string stateName) =>
-        AllParams?.TraitsTemporary?.Any(t => t.Name == stateName) == true;
+        IsMob
+            ? Mob is not null && CombatStateString.HasState(Mob.States, stateName)
+            : AllParams?.TraitsTemporary?.Any(t => t.Name == stateName) == true;
 
     private bool IsFullDefenceBlocked =>
         HasTemporaryState(States.Names.NoTurn)
@@ -443,7 +483,7 @@
         || (HasTemporaryState(States.Names.NoTurn) && !HasHalfTurn);
 
     private bool CanDeclareHalfAction =>
-        ShowActionsPanel && !IsHalfActionBlocked;
+        (ShowActionsPanel || ShowMobTurnPanel) && !IsHalfActionBlocked;
 
     private (string Title, string Detail) FullDefenceTooltipLines
     {
@@ -490,6 +530,39 @@
     private void OnExpandCollapseClick()
     {
         IsExpanded = !IsExpanded;
+    }
+
+    private async Task OpenClassAsync()
+    {
+        if (!ShowClassButton || AllParams?.Character is null)
+            return;
+
+        try
+        {
+            UserInfo = await _userService.GetUserInfo();
+
+            if (UserInfo?.IsAdminOrMG != true)
+            {
+                if (string.IsNullOrEmpty(UserInfo?.UserName))
+                    return;
+
+                var ownsCharacter = await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id);
+                if (!ownsCharacter)
+                {
+                    Snackbar.Add("You can only open class for your own character.", Severity.Warning);
+                    return;
+                }
+
+                if (UserInfo.SelectedCharacter?.Id != Id)
+                    await _userService.SetSelectedCharId(Id);
+            }
+
+            _navigationManager.NavigateTo($"/profession/{Id}");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error opening class: " + ex.Message, Severity.Warning);
+        }
     }
 
     protected override async Task OnInitializedAsync()
@@ -792,10 +865,15 @@
 
     private async Task ConfirmHalfActionAsync()
     {
-        if (!CanDeclareHalfAction || AllParams?.Character is null)
+        if (!CanDeclareHalfAction)
             return;
 
-        var characterName = AllParams.Character.NPCName;
+        if (!IsMob && AllParams?.Character is null)
+            return;
+        if (IsMob && Mob is null)
+            return;
+
+        var participantName = IsMob ? Mob!.Name : AllParams!.Character.NPCName;
         string title;
         string line1;
         string line2;
@@ -804,14 +882,14 @@
         if (HasHalfTurn)
         {
             title = "End turn";
-            line1 = $"End turn for {characterName}?";
+            line1 = $"End turn for {participantName}?";
             line2 = "Half turn → No turn";
             yesText = "End turn";
         }
         else
         {
             title = "Half action";
-            line1 = $"Half action for {characterName}?";
+            line1 = $"Half action for {participantName}?";
             line2 = "Grants Half turn; click again to end";
             yesText = "Use half action";
         }
@@ -831,6 +909,29 @@
 
     private async Task ApplyHalfActionAsync()
     {
+        if (IsMob)
+        {
+            if (Mob is null)
+                return;
+
+            if (CombatStateString.HasState(Mob.States, States.Names.HalfTurn))
+            {
+                Mob.States = CombatStateString.Add(Mob.States, States.Names.NoTurn, States.Duration.SingleTurn);
+                Snackbar.Add("Turn ended — no actions left.", Severity.Success);
+            }
+            else
+            {
+                Mob.States = CombatStateString.Add(Mob.States, States.Names.HalfTurn, States.Duration.SingleTurn);
+                Snackbar.Add("Half action declared.", Severity.Success);
+            }
+
+            await _mobRepository.Update(Mob);
+            await ApplyMobDisplayAsync(Mob);
+            _trackedMobSignature = GetMobSignature(Mob);
+            await OnMobActionApplied.InvokeAsync(Id);
+            return;
+        }
+
         if (AllParams?.Character is null)
             return;
 

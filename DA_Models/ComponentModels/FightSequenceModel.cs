@@ -71,6 +71,7 @@ namespace DA_Models.ComponentModels
         private int AdditionalDamage { get; set; } = 0;
         private int DamageDelt { get; set; } = 0;
         private string TestConditionIfHit { get; set; } = string.Empty;
+        private MobWoundOverflowResult _pendingMobOverflow = MobWoundOverflowResult.None;
 
         // public variables
 
@@ -152,6 +153,39 @@ namespace DA_Models.ComponentModels
         public static string MergeMobStates(string? existingStates, string? newStates) =>
             CombatStateString.Merge(existingStates, newStates);
 
+        /// <summary>Outcome of applying wound overflow rules to a mob defender.</summary>
+        public readonly record struct MobWoundOverflowResult(bool IsDead, bool IsUnconscious, string NewStates)
+        {
+            public static MobWoundOverflowResult None => new(false, false, string.Empty);
+        }
+
+        /// <summary>
+        /// Mobs automatically lose consciousness when wounds exceed max health, and die when wounds
+        /// reach max health + <see cref="FightModifiers.MobDeathOverflowThreshold"/> or more.
+        /// </summary>
+        public static MobWoundOverflowResult EvaluateMobWoundOverflow(int projectedWounds, int maxWounds)
+        {
+            if (projectedWounds >= maxWounds + FightModifiers.MobDeathOverflowThreshold)
+            {
+                return new MobWoundOverflowResult(
+                    true,
+                    false,
+                    CombatStateString.Add(null, States.Names.Dead, States.Duration.Permanent));
+            }
+
+            if (projectedWounds > maxWounds)
+            {
+                return new MobWoundOverflowResult(
+                    false,
+                    true,
+                    CombatStateString.Add(null, States.Names.Unconscious, States.Duration.UntilResolved));
+            }
+
+            return MobWoundOverflowResult.None;
+        }
+
+        private bool IsMobDefender() => Defender.Health is MobHealthModel;
+
         public void UpdateDefenceFlags()
         {
             if (Defender.Props is null)
@@ -226,6 +260,7 @@ namespace DA_Models.ComponentModels
             AdditionalDamage = 0;
             DamageDelt = 0;
             TestConditionIfHit = string.Empty;
+            _pendingMobOverflow = MobWoundOverflowResult.None;
             HitValue = 0;
             IsHit = false;
             IsCriticalHit = false;
@@ -704,6 +739,14 @@ namespace DA_Models.ComponentModels
             newWound.Value = Wounds.GetValueFromSeverity(WoundSeverity);
             NewWounds.Add(newWound);
 
+            if (IsMobDefender())
+            {
+                var woundPenalty = Wounds.GetPenaltyFromValue(newWound.Value, newWound.IsIgnored);
+                var projectedWounds = Defender.Health.CurrentWounds + woundPenalty;
+                _pendingMobOverflow = EvaluateMobWoundOverflow(projectedWounds, Defender.Health.MaxWounds);
+                return;
+            }
+
             if ((painResRoll.Item1 == false && WoundSeverity == Wounds.Severity.Critical)  ||
                 Defender.Health.CurrentWounds >= Defender.Health.MaxWounds && WoundSeverity != Wounds.Severity.Deadly)
             {
@@ -716,6 +759,17 @@ namespace DA_Models.ComponentModels
         }
         public void WriteAndCalculatePossibleStates()
         {
+            if (_pendingMobOverflow.IsDead && IsMobDefender())
+            {
+                Defender.NewStates = _pendingMobOverflow.NewStates;
+                Defender.States = new List<TraitDTO>();
+                ResultStringMG.NewLine();
+                ResultStringMG += "Mob is dead — wounds exceed maximum health by 8 or more.";
+                _pendingMobOverflow = MobWoundOverflowResult.None;
+                WriteNewStatesSummary();
+                ResultStringMG.EndText();
+                return;
+            }
 
             if(Defender.NewStates.Contains(States.Names.Unconscious) == false)
             {
@@ -792,6 +846,16 @@ namespace DA_Models.ComponentModels
                     }
                 }
             }
+
+            if (_pendingMobOverflow.IsUnconscious && IsMobDefender()
+                && CombatStateString.HasState(Defender.NewStates, States.Names.Unconscious) == false)
+            {
+                Defender.NewStates = CombatStateString.Merge(Defender.NewStates, _pendingMobOverflow.NewStates);
+                ResultStringMG.NewLine();
+                ResultStringMG += "Mob loses consciousness — wounds exceed maximum health.";
+                _pendingMobOverflow = MobWoundOverflowResult.None;
+            }
+
             WriteNewStatesSummary();
             ResultStringMG.EndText();
         }

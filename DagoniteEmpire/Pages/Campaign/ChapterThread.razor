@@ -125,7 +125,8 @@ else
                                                              Mob="mob"
                                                              Id="mob.Id"
                                                              IsMob="true"
-                                                             OngoingBattle="OngoingBattle"></PanelCharacterComponent>
+                                                             OngoingBattle="OngoingBattle"
+                                                             OnMobActionApplied="OnMobActionAppliedAsync"></PanelCharacterComponent>
                                 }
                             </MudStack>
                         </MudPaper>
@@ -209,7 +210,8 @@ else
                                                              Mob="mob"
                                                              Id="mob.Id"
                                                              IsMob="true"
-                                                             OngoingBattle="OngoingBattle"></PanelCharacterComponent>
+                                                             OngoingBattle="OngoingBattle"
+                                                             OnMobActionApplied="OnMobActionAppliedAsync"></PanelCharacterComponent>
                                 }
                             </MudStack>
                         </MudPaper>
@@ -461,7 +463,7 @@ else
     private bool _open = false;
     private int _participantsRenderKey;
     private bool _showDrawerPanelLayout = true;
-    private int PostsPerPage { get; set; } = 10;
+    private int PostsPerPage { get; set; } = 20;
     private int PageNum { get; set; } = 1;
     private int PageCount { get; set; } = 1;
     private bool SendPostEnabled = true;
@@ -961,11 +963,20 @@ else
         StateHasChanged();
     }
 
-    private void CancelEdit()
+    private async Task CancelEdit()
     {
         NewPost = new();
         IsEditMode = false;
         SendButtonText = "Send Post";
+        _shouldLoadPostEditor = false;
+        _pendingPostEditorHtml = null;
+        _pendingPostEditorQuote = false;
+        _pendingPostEditorAppend = false;
+
+        if (PostEditor is not null)
+            await PostEditor.LoadHTMLContent(string.Empty);
+
+        StateHasChanged();
     }
 
     private async Task<int> GetPageCount()
@@ -1428,9 +1439,30 @@ else
 
             if (defenderMob is not null)
             {
-                defenderMob.CurrentWounds += Wounds.GetValueFromSeverity(snapshot.WoundSeverity);
-                if (string.IsNullOrEmpty(snapshot.DefenderNewStates) == false)
-                    defenderMob.States = FightSequenceModel.MergeMobStates(defenderMob.States, snapshot.DefenderNewStates);
+                var woundAdded = snapshot.NewWounds.Any()
+                    ? snapshot.NewWounds.Sum(w => Wounds.GetPenaltyFromValue(w.Value, w.IsIgnored))
+                    : Wounds.GetPenaltyFromSeverity(snapshot.WoundSeverity, isIgnored: false);
+                defenderMob.CurrentWounds += woundAdded;
+                var overflow = FightSequenceModel.EvaluateMobWoundOverflow(
+                    defenderMob.CurrentWounds,
+                    defenderMob.MaxWounds);
+
+                if (overflow.IsDead)
+                {
+                    defenderMob.States = overflow.NewStates;
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(snapshot.DefenderNewStates) == false)
+                        defenderMob.States = FightSequenceModel.MergeMobStates(defenderMob.States, snapshot.DefenderNewStates);
+
+                    if (overflow.IsUnconscious
+                        && CombatStateString.HasState(defenderMob.States, States.Names.Unconscious) == false)
+                    {
+                        defenderMob.States = FightSequenceModel.MergeMobStates(defenderMob.States, overflow.NewStates);
+                    }
+                }
+
                 await _mobRepository.Update(defenderMob);
             }
 
@@ -1487,6 +1519,13 @@ else
         if (CharacterAllParams.ContainsKey(characterId))
             CharacterAllParams[characterId] = await LoadCharacter(characterId);
 
+        _participantsRenderKey++;
+        StateHasChanged();
+    }
+
+    private async Task OnMobActionAppliedAsync(int mobId)
+    {
+        await LoadMobs();
         _participantsRenderKey++;
         StateHasChanged();
     }

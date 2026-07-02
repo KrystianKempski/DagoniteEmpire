@@ -129,6 +129,11 @@ namespace DA_Common
             /// <summary>Base DC (before wound overflow) of the on-hit Dead check.</summary>
             public const int DeadCheckBaseDc = 30;
 
+            /// <summary>
+            /// When a mob's total wounds reach MaxWounds + this value (or more), the mob dies automatically.
+            /// </summary>
+            public const int MobDeathOverflowThreshold = 8;
+
             /// <summary>DC points per turn of resulting state duration: duration = max(1, DC / this).</summary>
             public const int StateDurationDcTier = 10;
         }
@@ -848,6 +853,29 @@ namespace DA_Common
                 default: return 0;
             }
         }
+
+        /// <summary>
+        /// Effective wound penalty applied to a health pool. A successful pain-resistance test
+        /// (<paramref name="isIgnored"/> = true) reduces the penalty — same rules as <c>WoundDTO.Penalty</c>.
+        /// </summary>
+        public static int GetPenaltyFromValue(int value, bool isIgnored)
+        {
+            if (value > 0 && value < 3)
+                return isIgnored ? 0 : 1;
+            if (value >= 3 && value < 9)
+                return isIgnored ? 1 : 3;
+            if (value >= 9 && value < 18)
+                return isIgnored ? 3 : 7;
+            if (value >= 18 && value < 25)
+                return isIgnored ? 5 : 12;
+            if (value >= 25)
+                return 20;
+
+            return 0;
+        }
+
+        public static int GetPenaltyFromSeverity(string severity, bool isIgnored) =>
+            GetPenaltyFromValue(GetValueFromSeverity(severity), isIgnored);
         public static string GetIcon(bool isTended)
         {
             return isTended ? MyIcon.TendedWound : MyIcon.FreshWound;

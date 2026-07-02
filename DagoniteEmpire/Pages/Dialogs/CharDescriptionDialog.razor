@@ -8,7 +8,7 @@
     <h3 class="my-3 ml-3 text-center">DESCRIPTION</h3>
     <div class="descr-container">
         <div class="ql-snow ql-content description-richtext" style="border-width:0">
-            <div class="ql-editor" style="height:100%; overflow:auto;">
+            <div class="ql-editor description-preview-editor">
                 @((MarkupString)(SavedDescription ?? "<p>Here write a description of your character</p>"))
             </div>
         </div>
@@ -18,6 +18,7 @@
     <MudDialog @bind-Visible="@IsDescrDialVisible" Options="@(new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large })">
         <TitleContent>Write character description</TitleContent>
         <DialogContent>
+            <div class="character-description-editor">
             <BlazoredTextEditor @ref="@DescrEditor">
                 <ToolbarContent>
                     <select class="ql-header">
@@ -48,6 +49,7 @@
                 </ToolbarContent>
                 <EditorContent></EditorContent>
             </BlazoredTextEditor>
+            </div>
         </DialogContent>
         <DialogActions>
             <MudButton OnClick="@OnCancelBtnClick">Cancel</MudButton>
@@ -77,33 +79,78 @@
     public string SavedDescription { get; set; } = "<p>Here write a description of your character</p>";
 
     private bool IsDescrDialVisible = false;
-    private BlazoredTextEditor DescrEditor;
-    private bool _shouldLoadContent = false;
+    private BlazoredTextEditor? DescrEditor;
+    private bool _shouldLoadContent;
+    private int _descrEditorLoadAttempts;
+    private const int MaxDescrEditorLoadAttempts = 10;
+    private string? _pendingDescriptionHtml;
 
-    private void OnStartDescriptionDialog()
+    private async Task OnStartDescriptionDialog()
     {
         IsDescrDialVisible = true;
         _shouldLoadContent = true;
+        _descrEditorLoadAttempts = 0;
+        _pendingDescriptionHtml = SavedDescription ?? string.Empty;
+        StateHasChanged();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_shouldLoadContent && DescrEditor is not null)
+        if (!_shouldLoadContent || _descrEditorLoadAttempts >= MaxDescrEditorLoadAttempts)
+            return;
+
+        if (DescrEditor is null)
         {
-            _shouldLoadContent = false;
-            try
-            {
-                await DescrEditor.LoadHTMLContent(SavedDescription ?? string.Empty);
-            }
-            catch (Exception)
-            {
-                // Editor not yet ready, will retry on next render
-                _shouldLoadContent = true;
-                await Task.Delay(50);
-                StateHasChanged();
-            }
+            _descrEditorLoadAttempts++;
+            await Task.Delay(50);
+            StateHasChanged();
+            return;
+        }
+
+        var loaded = await TryLoadDescriptionIntoEditorAsync();
+        if (!loaded)
+        {
+            await Task.Delay(50);
+            StateHasChanged();
         }
     }
+
+    private async Task<bool> TryLoadDescriptionIntoEditorAsync()
+    {
+        if (DescrEditor is null)
+            return false;
+
+        try
+        {
+            var html = _pendingDescriptionHtml ?? SavedDescription ?? string.Empty;
+            await DescrEditor.LoadHTMLContent(html);
+
+            if (string.IsNullOrWhiteSpace(html) || IsEmptyEditorHtml(html))
+            {
+                _shouldLoadContent = false;
+                return true;
+            }
+
+            var loadedHtml = await DescrEditor.GetHTML();
+            if (IsEmptyEditorHtml(loadedHtml))
+            {
+                _descrEditorLoadAttempts++;
+                return false;
+            }
+
+            _shouldLoadContent = false;
+            return true;
+        }
+        catch
+        {
+            _descrEditorLoadAttempts++;
+            return false;
+        }
+    }
+
+    private static bool IsEmptyEditorHtml(string? html) =>
+        string.IsNullOrWhiteSpace(html)
+        || html.Trim() is "<p><br></p>" or "<p></p>";
 
     private async Task OnSaveDescrBtnClick()
     {
@@ -112,11 +159,16 @@
             SavedDescription = await DescrEditor.GetHTML();
         }
         IsDescrDialVisible = false;
+        _shouldLoadContent = false;
+        _descrEditorLoadAttempts = 0;
         await DescriptionConfirmation.InvokeAsync(SavedDescription);
     }
+
     private void OnCancelBtnClick()
     {
         IsDescrDialVisible = false;
+        _shouldLoadContent = false;
+        _descrEditorLoadAttempts = 0;
     }
 
     protected override async Task OnInitializedAsync()

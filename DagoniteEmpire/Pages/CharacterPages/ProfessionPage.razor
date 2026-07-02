@@ -74,7 +74,7 @@
                 {
                     <div class="d-flex flex-column px-1 prof-header-fixed">
                         <label class="column-section py-1">Class Level</label>
-                        <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:100px" HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
+                        <input type="number" class="prof-variables" @bind="ProfessionDTO.ClassLevel" @bind:event="oninput" @bind:after="ChangeProfLevel" />
                     </div>
                 }
                 else
@@ -140,7 +140,7 @@
                     {
                         <div class="d-flex flex-column px-1 variables">
                             <label class="column-section py-1">Class Level</label>
-                            <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
+                            <input type="number" class="prof-variables" @bind="ProfessionDTO.ClassLevel" @bind:event="oninput" @bind:after="ChangeProfLevel" />
                         </div>
                     }
                     else
@@ -680,6 +680,9 @@
     public async Task ReloadPage()
     {
         UserInfo = await _userService.GetUserInfo();
+        if (UserInfo?.IsAdminOrMG == true)
+            return;
+
         if (UserInfo?.SelectedCharacter?.Id is not null && Id != UserInfo.SelectedCharacter.Id){
             _callbackService.OnChange -= handler;
             _navigationManager.NavigateTo($"/profession/{UserInfo.SelectedCharacter.Id}", true);
