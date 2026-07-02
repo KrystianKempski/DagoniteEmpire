@@ -1102,7 +1102,7 @@ namespace DagoniteEmpire.Service
                     contex.Equipment.Add(item);
                     contex.SaveChanges();
                 }
-                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.SteelScaleArmor) == null)
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicArmors.SteelScaleArmor || u.Name == "Steal scale armor") == null)
                 {
                     item = new Equipment()
                     {
@@ -1451,6 +1451,48 @@ namespace DagoniteEmpire.Service
                             }
                         },
 
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicShields.Pavise) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicShields.Pavise,
+                        EquipmentType = SD.EquipmentType.Shield,
+                        RelatedSkill = SD.SpecialSkills.Melee.Shields,
+                        Description = "Large stationary shield. −2 to fight tests; can provide full cover in some situations",
+                        ShortDescr = "Large stationary shield",
+                        Weight = 18.0m,
+                        Price = 15.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{
+                                        BonusValue = 7,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        FeatureName = SD.WeaponQuality.ShieldDefenceBonus,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 8,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        FeatureName = SD.WeaponQuality.ArmorPenalty,
+                                    },
+                                    new Bonus{
+                                        BonusValue = 50,
+                                        FeatureType = SD.FeatureWeaponQuality,
+                                        FeatureName = SD.WeaponQuality.Durability,
+                                    },
+                                }
+                            }
+                        },
                     };
                     contex.Equipment.Add(item);
                     contex.SaveChanges();
@@ -2254,6 +2296,407 @@ namespace DagoniteEmpire.Service
                     contex.Equipment.Add(item);
                     contex.SaveChanges();
                 }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Khopesh) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.Khopesh,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Curved exotic blade",
+                        ShortDescr = "Curved exotic blade",
+                        RelatedSkill = SD.SpecialSkills.Melee.Swords,
+                        Weight = 3.0m,
+                        Price = 4.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Fast },
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Parrying },
+                                    new Bonus{ BonusValue = 5, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Disarming },
+                                    new Bonus{ BonusValue = 5, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Stumbling },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Whip) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.Whip,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Flexible reach weapon",
+                        ShortDescr = "Flexible reach weapon",
+                        RelatedSkill = SD.SpecialSkills.Melee.Light,
+                        Weight = 1.0m,
+                        Price = 2.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Range },
+                                    new Bonus{ BonusValue = 4, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Fast },
+                                    new Bonus{ BonusValue = 5, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Snatching },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.WarClub) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.WarClub,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Heavy bludgeoning weapon",
+                        ShortDescr = "Heavy bludgeoning weapon",
+                        RelatedSkill = SD.SpecialSkills.Melee.Heavy,
+                        Weight = 3.0m,
+                        Price = 2.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 5, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Stunning },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Devastating },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Bardiche) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.Bardiche,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Heavy pole axe with long reach",
+                        ShortDescr = "Heavy pole axe with long reach",
+                        RelatedSkill = SD.SpecialSkills.Melee.Heavy,
+                        Weight = 8.0m,
+                        Price = 8.0m,
+                        IsTwoHanded = true,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 4, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Heavy },
+                                    new Bonus{ BonusValue = 4, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Slow },
+                                    new Bonus{ BonusValue = 6, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.ShieldDestructive },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Range },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.LanceCavalry) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.LanceCavalry,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Lance designed for mounted combat",
+                        ShortDescr = "Lance designed for mounted combat",
+                        RelatedSkill = SD.SpecialSkills.Melee.Polearms,
+                        Weight = 6.0m,
+                        Price = 5.0m,
+                        IsTwoHanded = true,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Long },
+                                    new Bonus{ BonusValue = 5, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.ArmorPiercing },
+                                    new Bonus{ BonusValue = 8, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Stumbling },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.LanceInfantry) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.LanceInfantry,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Heavy infantry lance",
+                        ShortDescr = "Heavy infantry lance",
+                        RelatedSkill = SD.SpecialSkills.Melee.Polearms,
+                        Weight = 10.0m,
+                        Price = 4.0m,
+                        IsTwoHanded = true,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Heavy },
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Slow },
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.ArmorPiercing },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Greatsword) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.Greatsword,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Large two-handed sword",
+                        ShortDescr = "Large two-handed sword",
+                        RelatedSkill = SD.SpecialSkills.Melee.Swords,
+                        Weight = 6.0m,
+                        Price = 12.0m,
+                        IsTwoHanded = true,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Heavy },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Slow },
+                                    new Bonus{ BonusValue = 4, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Devastating },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Parrying },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Halberd) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.Halberd,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Versatile polearm with axe blade",
+                        ShortDescr = "Versatile polearm with axe blade",
+                        RelatedSkill = SD.SpecialSkills.Melee.Polearms,
+                        Weight = 10.0m,
+                        Price = 9.0m,
+                        IsTwoHanded = true,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Heavy },
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Slow },
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Devastating },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.ShieldDestructive },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Stumbling },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Long },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Billhook) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.Billhook,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Hooked polearm for pulling and tripping",
+                        ShortDescr = "Hooked polearm for pulling and tripping",
+                        RelatedSkill = SD.SpecialSkills.Melee.Polearms,
+                        Weight = 7.0m,
+                        Price = 5.0m,
+                        IsTwoHanded = true,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Long },
+                                    new Bonus{ BonusValue = 4, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Snatching },
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Stumbling },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.MainGauche) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.MainGauche,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Parrying dagger for off-hand use",
+                        ShortDescr = "Parrying dagger for off-hand use",
+                        RelatedSkill = SD.SpecialSkills.Melee.Fencing,
+                        Weight = 1.0m,
+                        Price = 3.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 0, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Light },
+                                    new Bonus{ BonusValue = 4, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Parrying },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsMelee.Staff) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsMelee.Staff,
+                        EquipmentType = SD.EquipmentType.WeaponMelee,
+                        Description = "Simple wooden staff",
+                        ShortDescr = "Simple wooden staff",
+                        RelatedSkill = SD.SpecialSkills.Melee.Polearms,
+                        Weight = 3.0m,
+                        Price = 0.5m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Parrying },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Long },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Weak },
+                                    new Bonus{ BonusValue = 3, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Stunning },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.Musket) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsShooting.Musket,
+                        EquipmentType = SD.EquipmentType.WeaponRanged,
+                        Description = "Black powder firearm",
+                        ShortDescr = "Black powder firearm",
+                        RelatedSkill = SD.SpecialSkills.Shooting.Firearms,
+                        Weight = 8.0m,
+                        Price = 25.0m,
+                        IsTwoHanded = true,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 5, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Devastating },
+                                    new Bonus{ BonusValue = 5, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Fast },
+                                    new Bonus{ BonusValue = 4, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Reload },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
+                if (contex.Equipment.FirstOrDefault(u => u.Name == SD.BasicWeaponsShooting.Javelin) == null)
+                {
+                    item = new Equipment()
+                    {
+                        Name = SD.BasicWeaponsShooting.Javelin,
+                        EquipmentType = SD.EquipmentType.WeaponRanged,
+                        Description = "Thrown spear",
+                        ShortDescr = "Thrown spear",
+                        RelatedSkill = SD.SpecialSkills.Shooting.Javelins,
+                        Weight = 2.0m,
+                        Price = 1.0m,
+                        IsApproved = true,
+                        Traits = new List<TraitEquipment>()
+                        {
+                            new TraitEquipment(){
+                                Descr = "",
+                                Name = SD.WeaponParametersDescr,
+                                TraitType = SD.TraitType_Gear,
+                                Bonuses = new List<Bonus>()
+                                {
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.ArmorPiercing },
+                                    new Bonus{ BonusValue = 2, FeatureType = SD.FeatureWeaponQuality, FeatureName = SD.WeaponQuality.Devastating },
+                                }
+                            }
+                        },
+                    };
+                    contex.Equipment.Add(item);
+                    contex.SaveChanges();
+                }
 
                 var renamedEquipment = new Dictionary<string, string>
                 {
@@ -2264,8 +2707,30 @@ namespace DagoniteEmpire.Service
                 foreach (var (oldName, newName) in renamedEquipment)
                 {
                     var equipment = contex.Equipment.FirstOrDefault(e => e.Name == oldName);
-                    if (equipment is not null)
+                    if (equipment is null)
+                        continue;
+
+                    var existingWithNewName = contex.Equipment.FirstOrDefault(e => e.Name == newName && e.Id != equipment.Id);
+                    if (existingWithNewName is not null)
+                        contex.Equipment.Remove(equipment);
+                    else
                         equipment.Name = newName;
+                }
+
+                foreach (var name in SD.BasicEquipment.All)
+                {
+                    var items = contex.Equipment.Where(e => e.Name == name).OrderBy(e => e.Id).ToList();
+                    if (items.Count <= 1)
+                        continue;
+
+                    var keeper = items[0];
+                    foreach (var duplicate in items.Skip(1))
+                    {
+                        foreach (var slot in contex.EquipmentSlots.Where(s => s.EquipmentID == duplicate.Id))
+                            slot.EquipmentID = keeper.Id;
+
+                        contex.Equipment.Remove(duplicate);
+                    }
                 }
 
                 var correctedEquipmentDescriptions = new Dictionary<string, (string Description, string ShortDescr)>

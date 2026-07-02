@@ -5,6 +5,8 @@
 @inject ISnackbar Snackbar
 @inject IUserService _userService
 @inject ISpecialSkillRepository _specialSkillRepository
+@inject IDialogService DialogService
+@inject IBrowserViewportService _viewportService
 
 <MudDialog>
     <TitleContent>
@@ -171,7 +173,7 @@
                 {
                     <div class="traits">
                         <CascadingValue Value="@AllParams">
-                            <TraitsComponent IsInfoMode="IsInfoMode" @bind-Traits="@Traits" TraitType="@TraitType" WeaponQualityAvalible="@WeaponQualityAvalible()"></TraitsComponent>
+                            <TraitsComponent IsInfoMode="IsInfoMode" @bind-Traits="@Traits" TraitType="@TraitType" WeaponQualityAvalible="@WeaponQualityAvalible()" ShowFromTemplate="@(!IsEditMode && !IsInfoMode)" OnFromTemplate="FromTemplateAsync"></TraitsComponent>
                         </CascadingValue>
                     </div>
                 }
@@ -270,6 +272,89 @@
     private void OnCancelBtnClick()
     {
         MudDialog.Close(DialogResult.Cancel());
+    }
+
+    private bool HasUnsavedChanges()
+    {
+        var eq = NewSlot.Equipment;
+        if (!string.IsNullOrWhiteSpace(eq.Name)) return true;
+        if (!string.IsNullOrWhiteSpace(eq.Description)) return true;
+        if (eq.Weight != 0) return true;
+        if (eq.Price != 0) return true;
+        if (eq.IsTwoHanded) return true;
+        if (!string.IsNullOrWhiteSpace(eq.RelatedSkill)) return true;
+        if (eq.EquipmentType != SD.EquipmentType.Other) return true;
+        if (Traits != null && Traits.Any()) return true;
+        return false;
+    }
+
+    private async Task FromTemplateAsync()
+    {
+        if (HasUnsavedChanges())
+        {
+            bool? confirmed = await DialogService.ShowMessageBoxAsync(
+                "Warning",
+                "Current changes will be overwritten. Do you want to continue?",
+                yesText: "Yes",
+                cancelText: "No");
+            if (confirmed != true)
+                return;
+        }
+
+        var isFullScreen = await _viewportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
+        var dialog = await DialogService.ShowAsync<EquipmentTemplateSelectDialog>(
+            "Select template",
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullScreen = isFullScreen });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not EquipmentDTO template)
+            return;
+
+        ApplyTemplate(template);
+        ErrorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    private void ApplyTemplate(EquipmentDTO template)
+    {
+        NewSlot.Equipment = CloneEquipmentAsCustom(template);
+        Traits = NewSlot.Equipment.Traits?.Cast<TraitDTO>().ToList() ?? new List<TraitDTO>();
+    }
+
+    private static EquipmentDTO CloneEquipmentAsCustom(EquipmentDTO source)
+    {
+        var equipment = new EquipmentDTO
+        {
+            Id = 0,
+            Name = $"custom {source.Name.ToLowerInvariant()}",
+            Description = source.Description,
+            ShortDescr = source.ShortDescr,
+            Price = source.Price,
+            Weight = source.Weight,
+            IsApproved = false,
+            EquipmentType = source.EquipmentType,
+            RelatedSkill = source.RelatedSkill,
+            IsTwoHanded = source.IsTwoHanded,
+            Traits = new List<TraitEquipmentDTO>()
+        };
+
+        if (source.Traits is null)
+            return equipment;
+
+        foreach (var trait in source.Traits)
+        {
+            equipment.Traits.Add(new TraitEquipmentDTO
+            {
+                Id = 0,
+                Name = trait.Name,
+                Descr = trait.Descr,
+                TraitType = trait.TraitType,
+                TraitApproved = false,
+                IsRemovable = true,
+                Bonuses = trait.Bonuses?.Select(b => new BonusDTO(b)).ToList() ?? new List<BonusDTO>()
+            });
+        }
+
+        return equipment;
     }
 
     protected override async Task OnInitializedAsync()

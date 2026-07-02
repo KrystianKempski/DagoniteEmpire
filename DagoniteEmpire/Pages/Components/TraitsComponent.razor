@@ -73,6 +73,10 @@
             @if (IsInfoMode == false && (  UserInfo?.IsAdminOrMG == true || AllParams?.Character.IsApproved == false || TraitType != SD.TraitType_Character))
             {
                 <div class="buttons-row">
+                    @if (ShowFromTemplate)
+                    {
+                        <button @onclick="OnFromTemplateClick" class="add-trait">From Template</button>
+                    }
                     <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add @TraitName</button>
                     @if (TraitType == SD.TraitType_Gear && WeaponQualityAvalible)
                     {
@@ -104,6 +108,10 @@
     public UserInfo? UserInfo { get; set; }   
     [Parameter]
     public bool IsInfoMode {get; set;} = false;
+    [Parameter]
+    public bool ShowFromTemplate { get; set; } = false;
+    [Parameter]
+    public EventCallback OnFromTemplate { get; set; }
     private string TraitName { get; set; } = "trait";
     private TraitDTO NewTrait;
 
@@ -236,5 +244,10 @@
         await TraitsChanged.InvokeAsync(Traits);
         await OnTraitsChange.InvokeAsync(TraitType);
         StateHasChanged();
+    }
+
+    private async Task OnFromTemplateClick()
+    {
+        await OnFromTemplate.InvokeAsync();
     }
 }

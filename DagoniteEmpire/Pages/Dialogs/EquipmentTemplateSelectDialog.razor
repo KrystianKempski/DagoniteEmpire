@@ -1,0 +1,171 @@
+@inject IEquipmentRepository _equipmentRepository
+
+<MudDialog ContentClass="p-1 m-0 equipment-template-dialog" Class="h-100 w-100 p-0 m-0">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <img src="@MyIcon.Anvil" width="40" height="40" class="pr-2" />
+            Select base item template
+        </MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </TitleContent>
+    <DialogContent>
+        <MudDataGrid T="EquipmentDTO" Items="@Equipment" ReadOnly="true" Filterable="true" QuickFilter="@_quickFilter"
+                     FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                     FilterMode="DataGridFilterMode.ColumnFilterRow"
+                     SortMode="SortMode.Multiple"
+                     Elevation="2" ColumnResizeMode="ResizeMode.Container"
+                     SelectOnRowClick="true"
+                     SelectedItem="@SelectedItem" SelectedItemChanged="@OnSelectedItemChanged"
+                     RowClassFunc="@GetRowClass"
+                     Style="overscroll-behavior-y: contain;" Class="p-1 m-0 h-100 equipment-template-grid">
+            <Columns>
+                <TemplateColumn Title="" Sortable="false" Filterable="false" CellClass="template-select-cell">
+                    <CellTemplate>
+                        <MudIcon Icon="@(IsSelected(context.Item) ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)"
+                                 Color="@(IsSelected(context.Item) ? Color.Primary : Color.Default)"
+                                 Size="Size.Medium" />
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Filterable="false" Property="x => x.Name" Title="Name" />
+                <PropertyColumn Property="x => x.EquipmentType" Title="Type">
+                    <FilterTemplate>
+                        <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
+                        <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
+                        <MudPopover Open="@_filterOpen" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter"
+                                    Style="width:180px">
+                            <MudStack Spacing="0">
+                                <MudCheckBox T="bool" Label="Select all" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
+                                <MudStack Spacing="0" Style="overflow-y:auto;max-height:250px">
+                                    @foreach (var itemType in SD.BasicEquipment.TemplateTypes)
+                                    {
+                                        <MudCheckBox T="bool" Label="@itemType" Size="@Size.Small"
+                                                     Value="@_selectedTypes.Contains(itemType)"
+                                                     ValueChanged="@(value => SelectedTypeChanged(value, itemType))" />
+                                    }
+                                </MudStack>
+                                <MudStack Row="true">
+                                    <MudButton OnClick="@(() => ClearFilterAsync(context))">Clear</MudButton>
+                                    <MudButton Color="@Color.Primary" OnClick="@(() => ApplyFilterAsync(context))">Filter</MudButton>
+                                </MudStack>
+                            </MudStack>
+                        </MudPopover>
+                    </FilterTemplate>
+                </PropertyColumn>
+                <PropertyColumn Filterable="false" Property="x => x.Description" Title="Description" />
+            </Columns>
+        </MudDataGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
+        <MudButton Color="Color.Error" Disabled="@(SelectedItem is null)" OnClick="OnSelectBtnClick">Select</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private IEnumerable<EquipmentDTO> Equipment { get; set; } = new List<EquipmentDTO>();
+    private EquipmentDTO? SelectedItem { get; set; }
+    private string _searchString = string.Empty;
+
+    private HashSet<string> _selectedTypes = new(SD.BasicEquipment.TemplateTypes, StringComparer.Ordinal);
+    private HashSet<string> _filterTypes = new(SD.BasicEquipment.TemplateTypes, StringComparer.Ordinal);
+    private FilterDefinition<EquipmentDTO> _filterDefinition = new();
+    private bool _selectAll = true;
+    private string _icon = Icons.Material.Outlined.FilterAlt;
+    private bool _filterOpen;
+
+    private Func<EquipmentDTO, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.EquipmentType.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Equipment = await _equipmentRepository.GetAllBaseTemplates();
+        _filterDefinition = new FilterDefinition<EquipmentDTO>
+        {
+            FilterFunction = x => _filterTypes.Contains(x.EquipmentType)
+        };
+    }
+
+    private bool IsSelected(EquipmentDTO item) => SelectedItem?.Id == item.Id;
+
+    private void OnSelectedItemChanged(EquipmentDTO? item)
+    {
+        SelectedItem = item;
+    }
+
+    private string GetRowClass(EquipmentDTO item, int rowIndex)
+        => IsSelected(item) ? "template-row-selected" : string.Empty;
+
+    private void OnSelectBtnClick()
+    {
+        if (SelectedItem is null)
+            return;
+
+        MudDialog.Close(DialogResult.Ok(SelectedItem));
+    }
+
+    private void OnCancelBtnClick()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void OpenFilter()
+    {
+        _filterOpen = true;
+    }
+
+    private void SelectedTypeChanged(bool value, string itemType)
+    {
+        if (value)
+            _selectedTypes.Add(itemType);
+        else
+            _selectedTypes.Remove(itemType);
+
+        _selectAll = _selectedTypes.Count == SD.BasicEquipment.TemplateTypes.Length;
+    }
+
+    private void SelectAll(bool value)
+    {
+        _selectAll = value;
+        _selectedTypes = value
+            ? new HashSet<string>(SD.BasicEquipment.TemplateTypes, StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
+    }
+
+    private async Task ClearFilterAsync(FilterContext<EquipmentDTO> context)
+    {
+        _selectedTypes = new HashSet<string>(SD.BasicEquipment.TemplateTypes, StringComparer.Ordinal);
+        _filterTypes = new HashSet<string>(SD.BasicEquipment.TemplateTypes, StringComparer.Ordinal);
+        _icon = Icons.Material.Outlined.FilterAlt;
+        _selectAll = true;
+        await context.Actions.ClearFilterAsync(_filterDefinition);
+        _filterOpen = false;
+    }
+
+    private async Task ApplyFilterAsync(FilterContext<EquipmentDTO> context)
+    {
+        _filterTypes = _selectedTypes.ToHashSet(StringComparer.Ordinal);
+        _icon = _filterTypes.Count == SD.BasicEquipment.TemplateTypes.Length
+            ? Icons.Material.Outlined.FilterAlt
+            : Icons.Material.Filled.FilterAlt;
+        await context.Actions.ApplyFilterAsync(_filterDefinition);
+        _filterOpen = false;
+    }
+}

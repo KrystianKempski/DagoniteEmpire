@@ -20,5 +20,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         public Task<IEnumerable<EquipmentDTO>> GetAll();
 
         public Task<IEnumerable<EquipmentDTO>> GetAllApproved();
+
+        public Task<IEnumerable<EquipmentDTO>> GetAllBaseTemplates();
     }
 }

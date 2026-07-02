@@ -298,7 +298,18 @@ namespace DA_Common
             public const string Greataxe = "Greataxe";
             public const string Poleaxe = "Poleaxe";
             public const string Sarissa = "Sarissa";
-            public static readonly string[] All = { Unarmed, Dagger, LongSword, BattleAxe, Pickaxe, Mace, Morningstar, ShorSpear, Rapier, TwoHandedFlail, Warhammer, Greataxe, Poleaxe, Sarissa };
+            public const string Khopesh = "Khopesh";
+            public const string Whip = "Whip";
+            public const string WarClub = "War club";
+            public const string Bardiche = "Bardiche";
+            public const string LanceCavalry = "Lance, cavalry";
+            public const string LanceInfantry = "Lance, infantry";
+            public const string Greatsword = "Greatsword";
+            public const string Halberd = "Halberd";
+            public const string Billhook = "Billhook";
+            public const string MainGauche = "Main gauche";
+            public const string Staff = "Staff";
+            public static readonly string[] All = { Unarmed, Dagger, LongSword, BattleAxe, Pickaxe, Mace, Morningstar, ShorSpear, Rapier, TwoHandedFlail, Warhammer, Greataxe, Poleaxe, Sarissa, Khopesh, Whip, WarClub, Bardiche, LanceCavalry, LanceInfantry, Greatsword, Halberd, Billhook, MainGauche, Staff };
         }
         public readonly struct BasicWeaponsShooting
         {
@@ -307,8 +318,10 @@ namespace DA_Common
             public const string BowSimple = "Bow, simple";
             public const string Longbow = "Longbow";
             public const string Slingshot = "Slingshot";
+            public const string Musket = "Musket";
+            public const string Javelin = "Javelin";
 
-            public static readonly string[] All = { CrossbowLight, CrossbowHeavy, BowSimple, Longbow, Slingshot };
+            public static readonly string[] All = { CrossbowLight, CrossbowHeavy, BowSimple, Longbow, Slingshot, Musket, Javelin };
         }
 
         public readonly struct BasicShields
@@ -319,8 +332,9 @@ namespace DA_Common
             public const string MetalShield = "Metal shield";
             public const string BigWoodenShield = "Big wooden shield";
             public const string BigMetalShield = "Big metal shield";
+            public const string Pavise = "Pavise";
 
-            public static readonly string[] All = { WoodenBuckler, MetalBuckler, WoodenShield, MetalShield, BigWoodenShield, BigMetalShield };
+            public static readonly string[] All = { WoodenBuckler, MetalBuckler, WoodenShield, MetalShield, BigWoodenShield, BigMetalShield, Pavise };
         }
 
         public readonly struct BasicArmors
@@ -332,6 +346,35 @@ namespace DA_Common
             public const string FullPlate = "Full plate";
 
             public static readonly string[] All = { LightLeatherArmor, LeatherScaleArmor, SteelScaleArmor, HalfPlate, FullPlate };
+        }
+
+        /// <summary>Items seeded by DbInitializer — used as templates when creating custom equipment.</summary>
+        public readonly struct BasicEquipment
+        {
+            public static readonly string[] All =
+            {
+                BasicArmors.LightLeatherArmor, BasicArmors.LeatherScaleArmor, BasicArmors.SteelScaleArmor,
+                BasicArmors.HalfPlate, BasicArmors.FullPlate,
+                BasicShields.WoodenBuckler, BasicShields.MetalBuckler, BasicShields.WoodenShield,
+                BasicShields.MetalShield, BasicShields.BigWoodenShield, BasicShields.BigMetalShield,
+                BasicWeaponsMelee.Dagger, BasicWeaponsMelee.LongSword, BasicWeaponsMelee.BattleAxe,
+                BasicWeaponsMelee.Pickaxe, BasicWeaponsMelee.Mace, BasicWeaponsMelee.Morningstar,
+                BasicWeaponsMelee.ShorSpear, BasicWeaponsMelee.Rapier, BasicWeaponsMelee.TwoHandedFlail,
+                BasicWeaponsMelee.Warhammer, BasicWeaponsMelee.Greataxe, BasicWeaponsMelee.Poleaxe,
+                BasicWeaponsMelee.Sarissa, BasicWeaponsMelee.Khopesh, BasicWeaponsMelee.Whip,
+                BasicWeaponsMelee.WarClub, BasicWeaponsMelee.Bardiche, BasicWeaponsMelee.LanceCavalry,
+                BasicWeaponsMelee.LanceInfantry, BasicWeaponsMelee.Greatsword, BasicWeaponsMelee.Halberd,
+                BasicWeaponsMelee.Billhook, BasicWeaponsMelee.MainGauche, BasicWeaponsMelee.Staff,
+                BasicWeaponsShooting.CrossbowLight, BasicWeaponsShooting.CrossbowHeavy,
+                BasicWeaponsShooting.BowSimple, BasicWeaponsShooting.Longbow, BasicWeaponsShooting.Slingshot,
+                BasicWeaponsShooting.Musket, BasicWeaponsShooting.Javelin,
+                BasicShields.Pavise,
+            };
+
+            public static readonly string[] TemplateTypes =
+            {
+                EquipmentType.WeaponMelee, EquipmentType.WeaponRanged, EquipmentType.Shield, EquipmentType.Body,
+            };
         }
 
 

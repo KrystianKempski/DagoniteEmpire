@@ -109,6 +109,29 @@ namespace DA_Business.Repository.CharacterReps
                     .ToListAsync());
         }
 
+        public async Task<IEnumerable<EquipmentDTO>> GetAllBaseTemplates()
+        {
+            using var contex = await _db.CreateDbContextAsync();
+            var equipment = await contex.Equipment
+                .AsNoTracking()
+                .Where(t => t.IsApproved
+                    && SD.BasicEquipment.All.Contains(t.Name)
+                    && t.EquipmentType != SD.EquipmentType.Other)
+                .Include(u => u.Traits)
+                    .ThenInclude(b => b.Bonuses)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            var deduped = equipment
+                .GroupBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.OrderBy(t => t.Id).First())
+                .OrderBy(t => t.EquipmentType)
+                .ThenBy(t => t.Name)
+                .ToList();
+
+            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(deduped);
+        }
+
         public async Task<EquipmentDTO> GetById(int id)
         {
             using var contex = await _db.CreateDbContextAsync();
