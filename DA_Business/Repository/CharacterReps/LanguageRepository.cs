@@ -1,4 +1,5 @@
 using AutoMapper;
+using DA_Common;
 using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
@@ -47,11 +48,9 @@ namespace DA_Business.Repository.CharacterReps
                 character.Languages.OrderBy(l => l.Index).ThenBy(l => l.Name));
         }
 
-        public async Task SetCharacterLanguages(int characterId, IEnumerable<int> languageIds, int maxSlots)
+        public async Task SetCharacterLanguages(int characterId, IEnumerable<int> languageIds, int maxSlots, bool bypassSlotLimit = false)
         {
             var ids = languageIds.Distinct().ToList();
-            if (ids.Count > maxSlots)
-                throw new RepositoryErrorException($"Character can know at most {maxSlots} languages.");
 
             try
             {
@@ -69,6 +68,17 @@ namespace DA_Business.Repository.CharacterReps
 
                 if (languages.Count != ids.Count)
                     throw new RepositoryErrorException("One or more selected languages are invalid.");
+
+                // Every character knows the common language ("wspólny") for free; make sure it is always saved.
+                var commonLanguage = await context.Languages
+                    .FirstOrDefaultAsync(l => l.Name == SD.Languages.CommonLanguageName);
+                if (commonLanguage is not null && languages.All(l => l.Id != commonLanguage.Id))
+                    languages.Add(commonLanguage);
+
+                // The common language does not count toward the rule-based slot pool.
+                var usedSlots = languages.Count(l => !SD.Languages.IsCommon(l.Name));
+                if (!bypassSlotLimit && usedSlots > maxSlots)
+                    throw new RepositoryErrorException($"Character can know at most {maxSlots} languages.");
 
                 character.Languages ??= new List<Language>();
                 character.Languages.Clear();

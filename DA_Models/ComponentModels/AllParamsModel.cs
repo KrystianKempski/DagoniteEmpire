@@ -50,8 +50,25 @@ namespace DA_Models.ComponentModels
 
         public int GetMaxLanguageSlots()
         {
+            // Language slots use only the permanent ("stałe") value of Linguistics.
+            // SumAbsolute excludes temporary states (TempBonuses) and wounds (HealthBonus).
             var linguistics = SpecialSkills.Get("Linguistics");
-            return SD.Languages.GetMaxSlots(linguistics?.SumBonus ?? 0);
+            return SD.Languages.GetMaxSlots(linguistics?.SumAbsolute ?? 0);
+        }
+
+        // The common language is known for free and does not consume a language slot.
+        public int GetUsedLanguageSlots() =>
+            Languages.Count(l => !SD.Languages.IsCommon(l.Name));
+
+        // Ensures every character knows the common language ("wspólny").
+        public void EnsureCommonLanguage()
+        {
+            if (Languages.Any(l => SD.Languages.IsCommon(l.Name)))
+                return;
+
+            var common = AvailableLanguages.FirstOrDefault(l => SD.Languages.IsCommon(l.Name));
+            if (common is not null)
+                Languages.Add(common);
         }
 
         public void AllTraitsChange()

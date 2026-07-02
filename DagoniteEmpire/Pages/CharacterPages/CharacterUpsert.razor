@@ -316,6 +316,7 @@
                 AllParams.EquipmentSlots = new List<EquipmentSlotDTO>();
                 AllParams.Languages = new List<LanguageDTO>();
                 AllParams.AvailableLanguages = await _languageRepository.GetAllApproved();
+                AllParams.EnsureCommonLanguage();
                 AllParams.Character.UserName = UserInfo?.UserName;
                 IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer || UserInfo?.IsAdminOrMG == true);
 
@@ -415,6 +416,7 @@
         AllParams.Races = (await _raceRepository.GetAllApproved()).ToList();
         AllParams.Languages = (await _languageRepository.GetForCharacter(Id)).ToList();
         AllParams.AvailableLanguages = await _languageRepository.GetAllApproved();
+        AllParams.EnsureCommonLanguage();
         ICollection<WoundDTO> wounds = (await _woundRepository.GetAll(Id)).ToList();
         ICollection<WoundDTO> conds = (await _woundRepository.GetAllCond(Id)).Cast<WoundDTO>().ToList();
         wounds = wounds.Concat(conds).ToList();
@@ -795,13 +797,15 @@
     private async Task<bool> TrySaveCharacterLanguagesAsync(int characterId)
     {
         UserInfo = await _userService.GetUserInfo();
-        var canChangeLanguages = AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true;
+        var isGameMaster = UserInfo?.IsAdminOrMG == true;
+        var canChangeLanguages = AllParams.Character.IsApproved == false || isGameMaster;
         if (canChangeLanguages)
         {
             await _languageRepository.SetCharacterLanguages(
                 characterId,
                 AllParams.Languages.Select(l => l.Id),
-                AllParams.GetMaxLanguageSlots());
+                AllParams.GetMaxLanguageSlots(),
+                bypassSlotLimit: isGameMaster);
             return true;
         }
 

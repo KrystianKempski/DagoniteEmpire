@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using System.Text.RegularExpressions;
 using MudBlazor;
@@ -579,7 +580,14 @@ namespace DA_Common
             public const string CategoryRacial = "Racial";
             public const string CategoryExotic = "Exotic";
 
-            public static int GetMaxSlots(int linguisticsValue) => 1 + linguisticsValue / 3;
+            // Every character knows the common language for free; it does not count toward the language slot pool.
+            public const string CommonLanguageName = "wspólny";
+
+            // A character always knows at least one language, so the pool can never drop below 1.
+            public static int GetMaxSlots(int linguisticsValue) => Math.Max(1, 1 + linguisticsValue / 3);
+
+            public static bool IsCommon(string? name) =>
+                string.Equals(name, CommonLanguageName, StringComparison.OrdinalIgnoreCase);
         }
     }
     public class Pair<T, U>

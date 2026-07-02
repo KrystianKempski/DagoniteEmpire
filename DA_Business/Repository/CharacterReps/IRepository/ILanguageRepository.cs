@@ -6,6 +6,6 @@ namespace DA_Business.Repository.CharacterReps.IRepository
     {
         Task<IEnumerable<LanguageDTO>> GetAllApproved();
         Task<IEnumerable<LanguageDTO>> GetForCharacter(int characterId);
-        Task SetCharacterLanguages(int characterId, IEnumerable<int> languageIds, int maxSlots);
+        Task SetCharacterLanguages(int characterId, IEnumerable<int> languageIds, int maxSlots, bool bypassSlotLimit = false);
     }
 }

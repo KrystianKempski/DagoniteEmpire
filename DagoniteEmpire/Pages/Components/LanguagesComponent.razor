@@ -5,7 +5,7 @@
 
 <div class="languages">
     <div class="languages-summary">
-        <span>Known: @AllParams.Languages.Count / @AllParams.GetMaxLanguageSlots()</span>
+        <span>Known: @AllParams.GetUsedLanguageSlots() / @AllParams.GetMaxLanguageSlots()</span>
     </div>
     <div class="table-container">
         <table class="table align-middle languages-table">
@@ -33,16 +33,25 @@
                     @foreach (var language in AllParams.Languages.OrderBy(l => l.Index).ThenBy(l => l.Name))
                     {
                         <tr>
-                            <td><label class="name-label">@language.Name</label></td>
+                            <td>
+                                <label class="name-label">@language.Name</label>
+                                @if (SD.Languages.IsCommon(language.Name))
+                                {
+                                    <span class="language-free-badge">free</span>
+                                }
+                            </td>
                             <td><label class="name-label">@language.Category</label></td>
                             <td><label class="name-label">@language.Script</label></td>
                             <td><label class="name-label">@language.Description</label></td>
                             @if (CanDelete)
                             {
                                 <td class="languages-actions-col">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                                                   Class="languages-delete-btn"
-                                                   OnClick="@(() => RemoveLanguage(language))" />
+                                    @if (!SD.Languages.IsCommon(language.Name))
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                       Class="languages-delete-btn"
+                                                       OnClick="@(() => RemoveLanguage(language))" />
+                                    }
                                 </td>
                             }
                         </tr>
@@ -79,8 +88,9 @@
     private bool CanAdd =>
         UserInfo?.IsAdminOrMG == true || AllParams.Character.IsApproved == false;
 
+    // The game master can grant extra languages even when the rule-based slots are full.
     private bool CanAddMore =>
-        AllParams.Languages.Count < AllParams.GetMaxLanguageSlots();
+        UserInfo?.IsAdminOrMG == true || AllParams.GetUsedLanguageSlots() < AllParams.GetMaxLanguageSlots();
 
     private async Task OpenAddLanguageDialog()
     {
@@ -105,7 +115,7 @@
         if (AllParams.Languages.Any(l => l.Id == selected.Id))
             return;
 
-        if (AllParams.Languages.Count >= AllParams.GetMaxLanguageSlots())
+        if (UserInfo?.IsAdminOrMG != true && AllParams.GetUsedLanguageSlots() >= AllParams.GetMaxLanguageSlots())
         {
             await _jsRuntime.ToastrWarning("No free language slots available.");
             return;
@@ -117,6 +127,9 @@
 
     private async Task RemoveLanguage(LanguageDTO language)
     {
+        if (SD.Languages.IsCommon(language.Name))
+            return;
+
         if (!CanDelete)
         {
             await _jsRuntime.ToastrWarning("You cannot remove languages from a finished character.");
