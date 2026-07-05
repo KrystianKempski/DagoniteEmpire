@@ -1,4 +1,4 @@
-﻿using DA_DataAccess.Chat;
+using DA_DataAccess.Chat;
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
@@ -41,6 +41,14 @@ namespace DA_Models.ChatModels
         public async Task NotifyPostDeleted(int chapterId, int postId)
         {
             await Clients.Others.SendAsync("PostDeleted", chapterId, postId);
+        }
+
+        /// <summary>
+        /// Notify all clients that the tactical battle map for a chapter changed
+        /// </summary>
+        public async Task NotifyBattleMapUpdated(int chapterId)
+        {
+            await Clients.Others.SendAsync("BattleMapUpdated", chapterId);
         }
 
         public override Task OnConnectedAsync()

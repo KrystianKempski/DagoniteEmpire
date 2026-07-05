@@ -1,0 +1,814 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IBattleMapRepository _battleMapRepository
+@inject NavigationManager _navigationManager
+@inject ISnackbar SnackBar
+@inject ILogger<BattleMapComponent> Logger
+@implements IAsyncDisposable
+
+@if (Map is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <div class="battle-map-root">
+        @if (CanEdit)
+        {
+            <MudPaper Class="battle-map-toolbar pa-2 mb-2" Elevation="1">
+                <MudStack Spacing="2">
+                    <MudToggleGroup T="string" @bind-Value="_tool" @bind-Value:after="OnToolChanged" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
+                        <MudToggleItem Value="@("tiles")" Text="Tiles" />
+                        <MudToggleItem Value="@("text")" Text="Text" />
+                        <MudToggleItem Value="@("token")" Text="Token" />
+                        <MudToggleItem Value="@("erase")" Text="Eraser" />
+                    </MudToggleGroup>
+
+                    @if (_tool == "tiles")
+                    {
+                        <MudToggleGroup T="string" @bind-Value="_tileBrush" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
+                            <MudToggleItem Value="@("color")" Text="Color" />
+                            <MudToggleItem Value="@("difficult")" Text="Difficult" />
+                            <MudToggleItem Value="@("impassable")" Text="Impassable" />
+                            <MudToggleItem Value="@("normal")" Text="Clear terrain" />
+                        </MudToggleGroup>
+
+                        @if (_tileBrush == "color")
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="flex-wrap battle-map-color-row">
+                                @foreach (var swatch in Swatches)
+                                {
+                                    <button type="button"
+                                            class="battle-map-swatch @(swatch == _currentColor ? "selected" : string.Empty)"
+                                            style="background:@swatch"
+                                            title="@swatch"
+                                            aria-label="@($"Color {swatch}")"
+                                            @onclick="@(() => SelectColor(swatch))"></button>
+                                }
+                                <label class="battle-map-custom-color" title="Custom color">
+                                    <input type="color"
+                                           class="battle-map-color-input"
+                                           value="@_currentColor"
+                                           @onchange="OnCustomColorChanged" />
+                                </label>
+                            </MudStack>
+                        }
+                    }
+
+                    @if (_tool == "text" && _selectedCell is not null)
+                    {
+                        <MudTextField T="string"
+                                      Label="@($"Text for cell ({_selectedCell.X + 1}, {_selectedCell.Y + 1})")"
+                                      Value="@GetCellText(_selectedCell.X, _selectedCell.Y)"
+                                      ValueChanged="@(v => OnCellTextChanged(v))"
+                                      Immediate="false"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" />
+                    }
+
+                    @if (_tool == "token")
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="flex-wrap">
+                            @if (AvailableParticipants.Any())
+                            {
+                                <MudSelect T="string" @bind-Value="_newTokenLabel" Label="Participant" Dense="true" Style="max-width:260px" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    @foreach (var participant in AvailableParticipants)
+                                    {
+                                        <MudSelectItem Value="@participant.Label">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                @if (!participant.IsMob && !string.IsNullOrEmpty(participant.IconUrl))
+                                                {
+                                                    <img class="battle-map-participant-icon" src="@participant.IconUrl" alt="" />
+                                                }
+                                                else if (participant.IsMob)
+                                                {
+                                                    <span class="battle-map-participant-mob-dot" aria-hidden="true"></span>
+                                                }
+                                                <span>@participant.Label</span>
+                                            </MudStack>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption">All participants are on the map.</MudText>
+                            }
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.AddCircle"
+                                       Disabled="@(AvailableParticipants.Any() == false)"
+                                       OnClick="AddToken">Add token</MudButton>
+                            @if (_selectedTokenId is not null)
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Delete" OnClick="RemoveSelectedToken">Remove token</MudButton>
+                            }
+                        </MudStack>
+                    }
+
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Class="flex-wrap">
+                        <div style="min-width:180px">
+                            <MudText Typo="Typo.caption">Width: @Map.Width</MudText>
+                            <MudSlider T="int" Min="5" Max="20" Step="1" Value="Map.Width" ValueChanged="@(v => OnSizeChanged(v, Map.Height))" />
+                        </div>
+                        <div style="min-width:180px">
+                            <MudText Typo="Typo.caption">Height: @Map.Height</MudText>
+                            <MudSlider T="int" Min="5" Max="20" Step="1" Value="Map.Height" ValueChanged="@(v => OnSizeChanged(Map.Width, v))" />
+                        </div>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Clear" OnClick="ClearMap">Clear map</MudButton>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        }
+
+        @{
+            var rangeCells = GetRangeCells();
+        }
+        <div class="battle-map-scroll" @onmouseleave="OnMapMouseLeave">
+            <div class="battle-map-labeled-grid" style="--row-label-width:@GetRowLabelWidth()">
+                <div class="battle-map-corner" aria-hidden="true"></div>
+                <div class="battle-map-col-labels" style="grid-template-columns:repeat(@Map.Width, var(--cell-size));">
+                    @for (int x = 0; x < Map.Width; x++)
+                    {
+                        <span class="battle-map-axis-label col">@GetColumnLetter(x)</span>
+                    }
+                </div>
+                <div class="battle-map-row-labels">
+                    @for (int y = 0; y < Map.Height; y++)
+                    {
+                        <div class="battle-map-axis-label row">@(y + 1)</div>
+                    }
+                </div>
+                <div class="battle-map-grid" style="grid-template-columns:repeat(@Map.Width, var(--cell-size));">
+                @for (int y = 0; y < Map.Height; y++)
+                {
+                    for (int x = 0; x < Map.Width; x++)
+                    {
+                        var cx = x;
+                        var cy = y;
+                        var cell = GetCell(cx, cy);
+                        var token = GetTokenAt(cx, cy);
+                        var isSelected = _selectedCell is not null && _selectedCell.X == cx && _selectedCell.Y == cy;
+                        var isTokenSelected = token is not null && token.Id == _selectedTokenId;
+                        var hasMobToken = token?.IsMob == true;
+                        var inRange = rangeCells.Contains((cx, cy));
+                        var terrainClass = GetTerrainClass(cell);
+                        <div class="battle-map-cell @(CanEdit ? "editable" : string.Empty) @(isSelected ? "selected" : string.Empty) @(hasMobToken ? "has-mob-token" : string.Empty) @terrainClass"
+                             style="background-color:@(cell?.Color ?? "transparent")"
+                             @onclick="@(() => OnCellClick(cx, cy))"
+                             @onmouseenter="@(() => OnCellMouseEnter(cx, cy))">
+                            @if (inRange)
+                            {
+                                <div class="battle-map-range-overlay"></div>
+                            }
+                            @if (cell?.Terrain == "difficult")
+                            {
+                                <div class="battle-map-terrain difficult">
+                                    <MudIcon Icon="@Icons.Material.Filled.Terrain" />
+                                </div>
+                            }
+                            else if (cell?.Terrain == "impassable")
+                            {
+                                <div class="battle-map-terrain impassable">
+                                    <MudIcon Icon="@Icons.Material.Filled.Block" />
+                                </div>
+                            }
+                            @if (token is not null)
+                            {
+                                @if (HasPortraitToken(token))
+                                {
+                                    <div class="battle-map-token portrait @(isTokenSelected ? "selected" : string.Empty)"
+                                         style="border-color:@token.Color"
+                                         title="@token.Label">
+                                        <img class="battle-map-token-portrait" src="@token.IconUrl" alt="@token.Label" />
+                                    </div>
+                                }
+                                else if (token.IsMob)
+                                {
+                                    <div class="battle-map-token mob @(isTokenSelected ? "selected" : string.Empty)"
+                                         title="@token.Label">
+                                        <div class="battle-map-mob-circle" style="background:@token.Color"></div>
+                                        <span class="battle-map-mob-label">@token.Label</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="battle-map-token @(isTokenSelected ? "selected" : string.Empty)"
+                                         style="background:@token.Color"
+                                         title="@token.Label">
+                                        @TokenInitials(token.Label)
+                                    </div>
+                                }
+                            }
+                            @if (!string.IsNullOrWhiteSpace(cell?.Text))
+                            {
+                                <span class="battle-map-cell-text" style="color:@(cell!.TextColor ?? "#212121")">@cell.Text</span>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            </div>
+            @if (_hoverCell is not null)
+            {
+                <div class="battle-map-cursor-pos">@FormatCellCoordinate(_hoverCell.Value.X, _hoverCell.Value.Y)</div>
+            }
+        </div>
+
+        <div class="battle-map-legend">
+            <span class="battle-map-legend-item">
+                <span class="battle-map-legend-range"></span>
+                Movement range
+            </span>
+            <span class="battle-map-legend-item">
+                <MudIcon Icon="@Icons.Material.Filled.Terrain" Class="battle-map-legend-icon difficult" />
+                Difficult terrain (×2 move)
+            </span>
+            <span class="battle-map-legend-item">
+                <MudIcon Icon="@Icons.Material.Filled.Block" Class="battle-map-legend-icon impassable" />
+                Impassable
+            </span>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int ChapterId { get; set; }
+    [Parameter] public int CampaignId { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public IEnumerable<BattleMapParticipantDTO> Participants { get; set; } = Array.Empty<BattleMapParticipantDTO>();
+
+    private BattleMapDTO? Map;
+    private HubConnection? _hubConnection;
+    private List<BattleMapParticipantDTO> _participantsList = new();
+
+    private string _tool = "tiles";
+    private string _tileBrush = "color";
+    private string _currentColor = "#ef5350";
+    private BattleMapCellDTO? _selectedCell;
+    private string? _selectedTokenId;
+    private string _newTokenLabel = string.Empty;
+    private (int X, int Y)? _hoverCell;
+
+    private static readonly string[] Swatches =
+    {
+        "#ef5350", "#ff9800", "#ffeb3b", "#66bb6a",
+        "#26a69a", "#42a5f5", "#5c6bc0", "#ab47bc",
+        "#8d6e63", "#78909c", "#ffffff", "#212121",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _participantsList = Participants.ToList();
+
+        try
+        {
+            Map = await _battleMapRepository.GetOrCreateForChapter(ChapterId, CampaignId);
+            EnrichTokensFromParticipants();
+            EnsureParticipantSelection();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading battle map for chapter {ChapterId}", ChapterId);
+            Map = new BattleMapDTO(CampaignId, ChapterId);
+            EnsureParticipantSelection();
+        }
+
+        await InitializeSignalR();
+    }
+
+    protected override void OnParametersSet()
+    {
+        _participantsList = Participants.ToList();
+        EnrichTokensFromParticipants();
+        EnsureParticipantSelection();
+    }
+
+    private IEnumerable<BattleMapParticipantDTO> AvailableParticipants =>
+        _participantsList.Where(p => !IsParticipantOnMap(p.Label));
+
+    private bool IsParticipantOnMap(string label) =>
+        Map?.Tokens.Any(t => t.Label.Equals(label, StringComparison.OrdinalIgnoreCase)) ?? false;
+
+    private void EnsureParticipantSelection()
+    {
+        if (string.IsNullOrWhiteSpace(_newTokenLabel) || IsParticipantOnMap(_newTokenLabel))
+            SelectNextAvailableParticipant();
+    }
+
+    private void SelectNextAvailableParticipant()
+    {
+        _newTokenLabel = AvailableParticipants.FirstOrDefault()?.Label ?? string.Empty;
+    }
+
+    private void OnToolChanged()
+    {
+        if (_tool == "token")
+            EnsureParticipantSelection();
+    }
+
+    private async Task InitializeSignalR()
+    {
+        try
+        {
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
+                .WithAutomaticReconnect()
+                .Build();
+
+            _hubConnection.On<int>("BattleMapUpdated", OnBattleMapUpdated);
+
+            if (_hubConnection.State == HubConnectionState.Disconnected)
+                await _hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing SignalR for battle map");
+        }
+    }
+
+    private async Task OnBattleMapUpdated(int chapterId)
+    {
+        if (chapterId != ChapterId)
+            return;
+
+        await InvokeAsync(async () =>
+        {
+            try
+            {
+                Map = await _battleMapRepository.GetOrCreateForChapter(ChapterId, CampaignId);
+                EnrichTokensFromParticipants();
+                EnsureParticipantSelection();
+                if (_selectedTokenId is not null && Map.Tokens.All(t => t.Id != _selectedTokenId))
+                    _selectedTokenId = null;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error refreshing battle map");
+            }
+        });
+    }
+
+    private BattleMapCellDTO? GetCell(int x, int y) =>
+        Map?.Cells.FirstOrDefault(c => c.X == x && c.Y == y);
+
+    private BattleMapTokenDTO? GetTokenAt(int x, int y) =>
+        Map?.Tokens.FirstOrDefault(t => t.X == x && t.Y == y);
+
+    private string GetCellText(int x, int y) => GetCell(x, y)?.Text ?? string.Empty;
+
+    private BattleMapCellDTO GetOrAddCell(int x, int y)
+    {
+        var cell = GetCell(x, y);
+        if (cell is null)
+        {
+            cell = new BattleMapCellDTO { X = x, Y = y };
+            Map!.Cells.Add(cell);
+        }
+        return cell;
+    }
+
+    private void CleanupCell(BattleMapCellDTO cell)
+    {
+        if (string.IsNullOrWhiteSpace(cell.Color)
+            && string.IsNullOrWhiteSpace(cell.Text)
+            && string.IsNullOrWhiteSpace(cell.TextColor)
+            && string.IsNullOrWhiteSpace(cell.Terrain))
+            Map!.Cells.Remove(cell);
+    }
+
+    private async Task SelectColor(string color)
+    {
+        _currentColor = color;
+        await UpdateSelectedCellTextColorAsync();
+    }
+
+    private async Task OnCustomColorChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            _currentColor = value;
+            await UpdateSelectedCellTextColorAsync();
+        }
+    }
+
+    private async Task UpdateSelectedCellTextColorAsync()
+    {
+        if (_tool != "text" || _selectedCell is null || Map is null)
+            return;
+
+        var cell = GetCell(_selectedCell.X, _selectedCell.Y);
+        if (cell is null || string.IsNullOrWhiteSpace(cell.Text))
+            return;
+
+        cell.TextColor = _currentColor;
+        await SaveAsync();
+    }
+
+    private async Task OnCellClick(int x, int y)
+    {
+        if (Map is null)
+            return;
+
+        // View-only users (players) can click a token to toggle its range overlay.
+        if (!CanEdit)
+        {
+            var viewToken = GetTokenAt(x, y);
+            _selectedTokenId = (viewToken is not null && viewToken.Id != _selectedTokenId)
+                ? viewToken.Id
+                : null;
+            return;
+        }
+
+        switch (_tool)
+        {
+            case "tiles":
+                var tileCell = GetOrAddCell(x, y);
+                switch (_tileBrush)
+                {
+                    case "difficult":
+                        tileCell.Terrain = "difficult";
+                        break;
+                    case "impassable":
+                        tileCell.Terrain = "impassable";
+                        break;
+                    case "normal":
+                        tileCell.Terrain = null;
+                        CleanupCell(tileCell);
+                        break;
+                    default:
+                        tileCell.Color = _currentColor;
+                        break;
+                }
+                await SaveAsync();
+                break;
+
+            case "text":
+                _selectedCell = new BattleMapCellDTO { X = x, Y = y };
+                var textCell = GetOrAddCell(x, y);
+                textCell.TextColor = _currentColor;
+                if (!string.IsNullOrWhiteSpace(textCell.Text))
+                    await SaveAsync();
+                break;
+
+            case "token":
+                await HandleTokenClick(x, y);
+                break;
+
+            case "erase":
+                var cell = GetCell(x, y);
+                if (cell is not null)
+                    Map.Cells.Remove(cell);
+                var token = GetTokenAt(x, y);
+                if (token is not null)
+                    Map.Tokens.Remove(token);
+                await SaveAsync();
+                EnsureParticipantSelection();
+                break;
+        }
+    }
+
+    private async Task HandleTokenClick(int x, int y)
+    {
+        if (Map is null)
+            return;
+
+        var tokenHere = GetTokenAt(x, y);
+
+        if (_selectedTokenId is not null)
+        {
+            var selected = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
+            if (selected is not null && (tokenHere is null || tokenHere.Id == selected.Id))
+            {
+                selected.X = x;
+                selected.Y = y;
+                _selectedTokenId = null;
+                await SaveAsync();
+                return;
+            }
+        }
+
+        if (tokenHere is not null)
+        {
+            _selectedTokenId = tokenHere.Id == _selectedTokenId ? null : tokenHere.Id;
+        }
+    }
+
+    private async Task OnCellTextChanged(string value)
+    {
+        if (_selectedCell is null || Map is null)
+            return;
+
+        var cell = GetOrAddCell(_selectedCell.X, _selectedCell.Y);
+        cell.Text = value;
+        cell.TextColor = _currentColor;
+        CleanupCell(cell);
+        await SaveAsync();
+    }
+
+    private async Task AddToken()
+    {
+        if (Map is null || string.IsNullOrWhiteSpace(_newTokenLabel))
+        {
+            SnackBar.Add("Select a participant from the list", Severity.Warning);
+            return;
+        }
+
+        var participant = FindParticipant(_newTokenLabel);
+        if (participant is null)
+        {
+            SnackBar.Add("Select a participant from the list", Severity.Warning);
+            return;
+        }
+
+        if (IsParticipantOnMap(participant.Label))
+        {
+            SnackBar.Add("This participant is already on the map", Severity.Warning);
+            SelectNextAvailableParticipant();
+            return;
+        }
+
+        var spot = FindFreeCell();
+        var token = new BattleMapTokenDTO
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Label = participant.Label,
+            Color = _currentColor,
+            IconUrl = participant.IsMob ? null : participant.IconUrl,
+            IsMob = participant.IsMob,
+            X = spot.x,
+            Y = spot.y,
+        };
+        Map.Tokens.Add(token);
+        _selectedTokenId = token.Id;
+        if (await SaveAsync())
+        {
+            SnackBar.Add("Click a cell to move the selected token.", Severity.Info);
+            SelectNextAvailableParticipant();
+        }
+    }
+
+    private (int x, int y) FindFreeCell()
+    {
+        for (int y = 0; y < Map!.Height; y++)
+            for (int x = 0; x < Map.Width; x++)
+                if (GetTokenAt(x, y) is null)
+                    return (x, y);
+        return (0, 0);
+    }
+
+    private async Task RemoveSelectedToken()
+    {
+        if (Map is null || _selectedTokenId is null)
+            return;
+
+        var token = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
+        if (token is not null)
+            Map.Tokens.Remove(token);
+        _selectedTokenId = null;
+        await SaveAsync();
+        EnsureParticipantSelection();
+    }
+
+    private async Task OnSizeChanged(int width, int height)
+    {
+        if (Map is null)
+            return;
+
+        Map.Width = Math.Clamp(width, 5, 20);
+        Map.Height = Math.Clamp(height, 5, 20);
+
+        Map.Cells.RemoveAll(c => c.X >= Map.Width || c.Y >= Map.Height);
+        foreach (var token in Map.Tokens)
+        {
+            token.X = Math.Clamp(token.X, 0, Map.Width - 1);
+            token.Y = Math.Clamp(token.Y, 0, Map.Height - 1);
+        }
+
+        await SaveAsync();
+    }
+
+    private async Task ClearMap()
+    {
+        if (Map is null)
+            return;
+
+        Map.Cells.Clear();
+        Map.Tokens.Clear();
+        _selectedCell = null;
+        _selectedTokenId = null;
+        await SaveAsync();
+        EnsureParticipantSelection();
+    }
+
+    private async Task<bool> SaveAsync()
+    {
+        if (Map is null)
+            return false;
+
+        try
+        {
+            Map = await _battleMapRepository.Update(Map);
+            if (_hubConnection is not null && _hubConnection.State == HubConnectionState.Connected)
+                await _hubConnection.SendAsync("NotifyBattleMapUpdated", ChapterId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving battle map");
+            SnackBar.Add("Failed to save map", Severity.Error);
+            return false;
+        }
+    }
+
+    private static bool HasPortraitToken(BattleMapTokenDTO token) =>
+        !token.IsMob && !string.IsNullOrWhiteSpace(token.IconUrl);
+
+    private BattleMapParticipantDTO? FindParticipant(string label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+            return null;
+
+        return _participantsList.FirstOrDefault(p =>
+            p.Label.Equals(label.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void EnrichTokensFromParticipants()
+    {
+        if (Map is null || _participantsList.Count == 0)
+            return;
+
+        foreach (var token in Map.Tokens)
+        {
+            var participant = FindParticipant(token.Label);
+            if (participant is null)
+                continue;
+
+            token.IsMob = participant.IsMob;
+            token.Range = participant.Range;
+            token.IsAlly = participant.IsAlly;
+            if (participant.IsMob)
+                token.IconUrl = null;
+            else
+                token.IconUrl = participant.IconUrl;
+        }
+    }
+
+    // A viewer may see a token's movement range if they are the MG,
+    // the token is a player character, or the token is an Ally mob.
+    private bool CanSeeRange(BattleMapTokenDTO token) =>
+        CanEdit || !token.IsMob || token.IsAlly;
+
+    private HashSet<(int X, int Y)> GetRangeCells()
+    {
+        var empty = new HashSet<(int, int)>();
+        if (Map is null || _selectedTokenId is null)
+            return empty;
+
+        var token = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
+        if (token is null || token.Range <= 0 || !CanSeeRange(token))
+            return empty;
+
+        return ComputeReachable(token);
+    }
+
+    private void OnCellMouseEnter(int x, int y) => _hoverCell = (x, y);
+
+    private void OnMapMouseLeave() => _hoverCell = null;
+
+    private static char GetColumnLetter(int x) => (char)('A' + x);
+
+    private string GetRowLabelWidth()
+    {
+        var digits = Map!.Height.ToString().Length;
+        var rem = digits * 0.65 + 0.25;
+        return $"{rem.ToString(System.Globalization.CultureInfo.InvariantCulture)}rem";
+    }
+
+    private string FormatCellCoordinate(int x, int y) => $"{GetColumnLetter(x)}{y + 1}";
+
+    private static string GetTerrainClass(BattleMapCellDTO? cell) => cell?.Terrain switch
+    {
+        "difficult" => "terrain-difficult",
+        "impassable" => "terrain-impassable",
+        _ => string.Empty
+    };
+
+    // A cell blocks the moving token if it is impassable terrain or occupied by a
+    // token from the opposing side (allies are treated as passable / empty).
+    private bool IsBlockedFor(BattleMapTokenDTO mover, int x, int y)
+    {
+        if (GetCell(x, y)?.Terrain == "impassable")
+            return true;
+
+        var occupant = GetTokenAt(x, y);
+        if (occupant is not null && occupant.Id != mover.Id && occupant.IsAlly != mover.IsAlly)
+            return true;
+
+        return false;
+    }
+
+    // Dijkstra over the grid. Costs are stored in "half units": orthogonal = 2,
+    // diagonal = 3, doubled on difficult terrain. A cell is reachable when
+    // floor(dist / 2) <= range, matching the rule: diagonal costs 1.5, floored on
+    // an odd number of diagonals.
+    private HashSet<(int X, int Y)> ComputeReachable(BattleMapTokenDTO mover)
+    {
+        var result = new HashSet<(int, int)>();
+        if (Map is null)
+            return result;
+
+        int startX = mover.X;
+        int startY = mover.Y;
+        int range = mover.Range;
+        int budget = range * 2 + 1;
+        int w = Map.Width;
+        int h = Map.Height;
+
+        var dist = new int[w, h];
+        for (int i = 0; i < w; i++)
+            for (int j = 0; j < h; j++)
+                dist[i, j] = int.MaxValue;
+
+        dist[startX, startY] = 0;
+        var queue = new PriorityQueue<(int X, int Y), int>();
+        queue.Enqueue((startX, startY), 0);
+
+        while (queue.Count > 0)
+        {
+            var (cx, cy) = queue.Dequeue();
+            int baseCost = dist[cx, cy];
+
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    if (dx == 0 && dy == 0)
+                        continue;
+
+                    int nx = cx + dx;
+                    int ny = cy + dy;
+                    if (nx < 0 || ny < 0 || nx >= w || ny >= h)
+                        continue;
+
+                    if (IsBlockedFor(mover, nx, ny))
+                        continue;
+
+                    int stepCost = (dx != 0 && dy != 0) ? 3 : 2;
+                    if (GetCell(nx, ny)?.Terrain == "difficult")
+                        stepCost *= 2;
+
+                    int newCost = baseCost + stepCost;
+                    if (newCost > budget)
+                        continue;
+
+                    if (newCost < dist[nx, ny])
+                    {
+                        dist[nx, ny] = newCost;
+                        queue.Enqueue((nx, ny), newCost);
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < w; i++)
+        {
+            for (int j = 0; j < h; j++)
+            {
+                if (i == startX && j == startY)
+                    continue;
+                if (dist[i, j] == int.MaxValue)
+                    continue;
+                if (dist[i, j] / 2 > range)
+                    continue;
+                // Cannot stop on a cell occupied by another token.
+                if (GetTokenAt(i, j) is not null)
+                    continue;
+                result.Add((i, j));
+            }
+        }
+
+        return result;
+    }
+
+    private static string TokenInitials(string label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+            return "?";
+        var parts = label.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+            return string.Concat(parts[0][0], parts[1][0]).ToUpperInvariant();
+        return label.Trim()[..Math.Min(3, label.Trim().Length)].ToUpperInvariant();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            try { await _hubConnection.DisposeAsync(); }
+            catch { /* ignore */ }
+        }
+    }
+}

@@ -22,6 +22,7 @@ namespace DA_DataAccess.CharacterClasses
         public string? Description { get; set; }
         public int Age { get; set; }
         public string? ImageUrl { get; set; }
+        public string? IconUrl { get; set; }
 
         public string? NPCType { get; set; } = SD.NPCType.Hero;
         public int AttributePoints { get; set; }

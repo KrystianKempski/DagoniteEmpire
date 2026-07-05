@@ -152,3 +152,43 @@ window.uploadPortraitDataUrl = async (dataUrl, folder) => {
     const result = await uploadResponse.json();
     return result.url;
 };
+
+window.getEllipseImage = (sourceCanvas) => {
+    const newCanvas = document.createElement('canvas');
+    const ctxCanvas = newCanvas.getContext('2d');
+    const widthCanvas = sourceCanvas.width;
+    const heightCanvas = sourceCanvas.height;
+
+    newCanvas.width = widthCanvas;
+    newCanvas.height = heightCanvas;
+    ctxCanvas.imageSmoothingEnabled = true;
+
+    ctxCanvas.drawImage(sourceCanvas, 0, 0, widthCanvas, heightCanvas);
+
+    ctxCanvas.globalCompositeOperation = 'destination-in';
+    ctxCanvas.beginPath();
+    ctxCanvas.ellipse(
+        widthCanvas / 2,
+        heightCanvas / 2,
+        widthCanvas / 2,
+        heightCanvas / 2,
+        0,
+        0,
+        2 * Math.PI,
+        true
+    );
+    ctxCanvas.fill();
+
+    return newCanvas.toDataURL('image/png', 1);
+};
+
+// Keep image processing in the browser so large data URLs never cross the Blazor circuit.
+window.uploadCroppedPortrait = async (sourceCanvas, folder) => {
+    const dataUrl = sourceCanvas.toDataURL('image/webp', 0.9);
+    return await window.uploadPortraitDataUrl(dataUrl, folder);
+};
+
+window.uploadEllipseIcon = async (sourceCanvas, folder) => {
+    const dataUrl = window.getEllipseImage(sourceCanvas);
+    return await window.uploadPortraitDataUrl(dataUrl, folder);
+};

@@ -11,11 +11,13 @@ public class PortraitUploadController : ControllerBase
 {
     private const int MaxUploadBytes = 15 * 1024 * 1024;
     private const int MaxImageDimension = 2048;
+    private const int MaxIconDimension = 256;
     private const int WebpQuality = 90;
 
     private static readonly HashSet<string> AllowedFolders = new(StringComparer.OrdinalIgnoreCase)
     {
         "portraits",
+        "icons",
     };
 
     private readonly IWebHostEnvironment _environment;
@@ -59,9 +61,12 @@ public class PortraitUploadController : ControllerBase
             {
                 image.Format = MagickFormat.WebP;
                 image.Quality = WebpQuality;
-                if (image.Width > MaxImageDimension || image.Height > MaxImageDimension)
+                var maxDimension = string.Equals(folder, "icons", StringComparison.OrdinalIgnoreCase)
+                    ? MaxIconDimension
+                    : MaxImageDimension;
+                if (image.Width > maxDimension || image.Height > maxDimension)
                 {
-                    image.Resize(MaxImageDimension, MaxImageDimension);
+                    image.Resize((uint)maxDimension, (uint)maxDimension);
                 }
 
                 await image.WriteAsync(filePath);

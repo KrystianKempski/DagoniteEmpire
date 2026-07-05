@@ -54,7 +54,13 @@ else
         </MudHidden>
 
             <MudDrawer Width="320px" @bind-Open="@_open" Elevation="1" Variant="DrawerVariant.Temporary" ClipMode="DrawerClipMode.Always">
-                <div class="px-1 py-2">
+                <div class="pa-1">
+                    @if (OngoingBattle)
+                    {
+                        <BattleDrawerPanel WikiDeployed="_wikiDeployed"
+                                           OnOpenCombatRules="OpenCombatRulesWiki"
+                                           OnOpenBattleMap="OpenBattleMap" />
+                    }
                     @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <MudGrid Justify="Justify.Center" Spacing="1">
@@ -140,6 +146,12 @@ else
         {
             <MudHidden Breakpoint="Breakpoint.XlAndUp" Invert="true">
                 <div class="character-panel">
+                    @if (OngoingBattle)
+                    {
+                        <BattleDrawerPanel WikiDeployed="_wikiDeployed"
+                                           OnOpenCombatRules="OpenCombatRulesWiki"
+                                           OnOpenBattleMap="OpenBattleMap" />
+                    }
                     @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <MudGrid Justify="Justify.Center" Spacing="1">
@@ -222,19 +234,8 @@ else
 
         @if (OngoingBattle)
         {
-            <MudAlert Elevation="12" Severity="Severity.Error" Variant="Variant.Filled">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="flex-wrap">
-                    <span>Battle in progress!</span>
-                    @if (_wikiDeployed)
-                    {
-                        <MudLink OnClick="OpenCombatRulesWiki"
-                                 Underline="Underline.Always"
-                                 Color="Color.Inherit"
-                                 Class="battle-rules-wiki-link">
-                            Zasady walki
-                        </MudLink>
-                    }
-                </MudStack>
+            <MudAlert Elevation="12" Severity="Severity.Error" Variant="Variant.Filled" Class="mb-2">
+                Battle in progress!
             </MudAlert>
         }
 
@@ -1710,6 +1711,60 @@ else
             IsLoadingCharacters = false;
             StateHasChanged();
         }
+    }
+
+    private async Task OpenBattleMap()
+    {
+        if (Chapter is null) return;
+
+        var participants = Chapter.Characters
+            .Where(c => string.IsNullOrWhiteSpace(c.NPCName) == false)
+            .Select(c => new BattleMapParticipantDTO
+            {
+                Label = c.NPCName!,
+                IconUrl = !string.IsNullOrEmpty(c.IconUrl) ? c.IconUrl : c.ImageUrl,
+                IsMob = false,
+                Range = GetCharacterMapRange(c.Id),
+                IsAlly = true
+            })
+            .Concat(Mobs
+                .Where(m => string.IsNullOrWhiteSpace(m.Name) == false)
+                .Select(m => new BattleMapParticipantDTO
+                {
+                    Label = m.Name,
+                    IsMob = true,
+                    Range = m.Speed,
+                    IsAlly = m.Relation == Relation.Ally
+                }))
+            .OrderBy(p => p.Label, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var parameters = new DialogParameters<BattleMapDialog>
+        {
+            { x => x.ChapterId, Id },
+            { x => x.CampaignId, Chapter.CampaignId },
+            { x => x.CanEdit, UserInfo?.IsAdminOrMG == true },
+            { x => x.Participants, participants }
+        };
+
+        var isFs = await _viewportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.False,
+            FullWidth = isFs,
+            FullScreen = isFs,
+            CloseButton = true
+        };
+        await DialogService.ShowAsync<BattleMapDialog>("Tactical Map", parameters, options);
+    }
+
+    // Tactical map movement range for a character: 5 + floor(sum of Running / 4).
+    private int GetCharacterMapRange(int characterId)
+    {
+        var runningSum = CharacterAllParams.TryGetValue(characterId, out var allParams) && allParams is not null
+            ? allParams.SpecialSkills.Get(SD.SpecialSkills.Acrobatics.Running).SumBonus
+            : 0;
+        return 5 + (int)Math.Floor(runningSum / 4.0);
     }
 
     private static bool IsPortraitHidden(PostDTO post) =>

@@ -44,6 +44,9 @@ namespace DA_DataAccess.CharacterClasses
         public int MaxWounds { get; set; } = 12;
         public int CurrentWounds { get; set; } = 0;
 
+        // tactical map movement range (cells per turn)
+        public int Speed { get; set; } = 6;
+
         public string States { get; set; } = string.Empty;
 
 

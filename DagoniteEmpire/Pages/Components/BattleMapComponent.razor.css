@@ -1,0 +1,404 @@
+.battle-map-root {
+    --cell-size: 46px;
+    width: fit-content;
+    max-width: 98vw;
+}
+
+.battle-map-scroll {
+    position: relative;
+    width: fit-content;
+    max-width: 98vw;
+    max-height: calc(85vh - 12rem);
+    overflow: auto;
+}
+
+@media (max-width: 960px) {
+    .battle-map-root {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .battle-map-scroll {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100dvh - 9rem);
+    }
+}
+
+.battle-map-labeled-grid {
+    display: grid;
+    grid-template-areas:
+        "corner cols"
+        "rows map";
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    column-gap: 0;
+    width: fit-content;
+}
+
+.battle-map-corner {
+    grid-area: corner;
+    width: var(--row-label-width, 1rem);
+    min-width: var(--row-label-width, 1rem);
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 4;
+    background: var(--mud-palette-background, #fff);
+}
+
+.battle-map-col-labels {
+    grid-area: cols;
+    display: grid;
+    gap: 1px;
+    align-items: end;
+    padding-bottom: 2px;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--mud-palette-background, #fff);
+}
+
+.battle-map-row-labels {
+    grid-area: rows;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: var(--row-label-width, 1rem);
+    min-width: var(--row-label-width, 1rem);
+    max-width: var(--row-label-width, 1rem);
+    box-sizing: border-box;
+    align-items: stretch;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--mud-palette-background, #fff);
+}
+
+.battle-map-axis-label {
+    font-size: 0.7rem;
+    line-height: 1;
+    font-weight: 600;
+    color: var(--mud-palette-text-secondary, #666);
+    user-select: none;
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+}
+
+.battle-map-axis-label.col {
+    width: var(--cell-size);
+    text-align: center;
+}
+
+.battle-map-axis-label.row {
+    flex: 0 0 var(--cell-size);
+    height: var(--cell-size);
+    width: 100%;
+    text-align: right;
+    line-height: var(--cell-size);
+}
+
+.battle-map-grid {
+    grid-area: map;
+    display: grid;
+    gap: 1px;
+    background: var(--mud-palette-lines-default, #555);
+    box-shadow: inset 0 0 0 1px var(--mud-palette-lines-default, #555);
+    width: max-content;
+    box-sizing: border-box;
+}
+
+.battle-map-cell {
+    position: relative;
+    width: var(--cell-size);
+    height: var(--cell-size);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--mud-palette-surface, #fff);
+    user-select: none;
+    overflow: hidden;
+}
+
+.battle-map-cell.editable {
+    cursor: pointer;
+}
+
+.battle-map-cell.editable:hover {
+    outline: 2px solid var(--mud-palette-primary, #1976d2);
+    outline-offset: -2px;
+}
+
+.battle-map-cell.selected {
+    outline: 3px solid var(--mud-palette-warning, #ff9800);
+    outline-offset: -3px;
+}
+
+.battle-map-cell-text {
+    position: relative;
+    z-index: 2;
+    font-size: 0.7rem;
+    line-height: 1;
+    text-align: center;
+    font-weight: 600;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.9);
+    padding: 1px;
+    word-break: break-word;
+}
+
+.battle-map-token {
+    position: absolute;
+    z-index: 1;
+    width: 78%;
+    height: 78%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.battle-map-token.selected {
+    border-color: var(--mud-palette-warning, #ff9800);
+    box-shadow: 0 0 0 2px var(--mud-palette-warning, #ff9800);
+}
+
+.battle-map-cell.has-mob-token {
+    overflow: hidden;
+}
+
+.battle-map-range-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: rgba(33, 150, 243, 0.35);
+    box-shadow: inset 0 0 0 1px rgba(33, 150, 243, 0.65);
+    pointer-events: none;
+}
+
+.battle-map-terrain {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.battle-map-terrain ::deep .mud-icon-root {
+    width: 30%;
+    height: 30%;
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.battle-map-cursor-pos {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    z-index: 5;
+    pointer-events: none;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-family: monospace;
+}
+
+.battle-map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--mud-palette-text-secondary, #666);
+}
+
+.battle-map-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.battle-map-legend-range {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    background: rgba(33, 150, 243, 0.35);
+    box-shadow: inset 0 0 0 1px rgba(33, 150, 243, 0.65);
+}
+
+.battle-map-legend ::deep .battle-map-legend-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.battle-map-legend ::deep .battle-map-legend-icon.difficult {
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.battle-map-legend ::deep .battle-map-legend-icon.impassable {
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.battle-map-participant-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: block;
+}
+
+.battle-map-participant-mob-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--mud-palette-lines-default, #9e9e9e);
+    border: 1px solid var(--mud-palette-lines-default, #757575);
+}
+
+.battle-map-token.portrait {
+    padding: 0;
+    overflow: hidden;
+    background: var(--mud-palette-surface, #fff);
+}
+
+.battle-map-token-portrait {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 50%;
+}
+
+.battle-map-token.mob {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    font-size: inherit;
+    font-weight: inherit;
+    text-shadow: none;
+}
+
+.battle-map-mob-circle {
+    position: absolute;
+    width: 78%;
+    height: 78%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.battle-map-mob-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    font-size: 0.6rem;
+    line-height: 1.05;
+    font-weight: 700;
+    text-align: center;
+    word-break: break-word;
+    overflow: hidden;
+    color: #fff;
+    text-shadow:
+        -1px -1px 0 rgba(0, 0, 0, 0.8),
+        1px -1px 0 rgba(0, 0, 0, 0.8),
+        -1px 1px 0 rgba(0, 0, 0, 0.8),
+        1px 1px 0 rgba(0, 0, 0, 0.8);
+    z-index: 2;
+    pointer-events: none;
+}
+
+.battle-map-token.mob.selected .battle-map-mob-circle {
+    border-color: var(--mud-palette-warning, #ff9800);
+    box-shadow: 0 0 0 2px var(--mud-palette-warning, #ff9800);
+}
+
+.battle-map-color-row {
+    align-items: center;
+}
+
+.battle-map-swatch,
+.battle-map-custom-color {
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.battle-map-swatch {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.battle-map-swatch.selected {
+    border-color: var(--mud-palette-primary, #1976d2);
+    transform: scale(1.15);
+}
+
+.battle-map-custom-color {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    border: 2px dashed var(--mud-palette-lines-default, #999);
+    border-radius: 3px;
+    cursor: pointer;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+.battle-map-color-input {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: block;
+}
+
+.battle-map-color-input::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.battle-map-color-input::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
+}
+
+.battle-map-color-input::-moz-color-swatch {
+    border: none;
+    border-radius: 2px;
+}

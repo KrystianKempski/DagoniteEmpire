@@ -284,6 +284,11 @@
                 _ = _jsRuntime.ToastrWarning("You must finish name and description to approve character");
                 return;
             }
+            if (string.IsNullOrEmpty(AllParams.Character.IconUrl))
+            {
+                _ = _jsRuntime.ToastrWarning("You must create a character icon to approve character");
+                return;
+            }
             AllParams.Character.IsApproved = value;
             IsLeaveAllowed = false;
         }

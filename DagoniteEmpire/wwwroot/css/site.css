@@ -156,3 +156,29 @@ char-title {
 .mud-theme-dark .ql-editor blockquote.rich-text-quote {
     border-left-color: rgba(255, 255, 255, 0.35);
 }
+
+/* Battle map dialog — global styles (ContentClass is not scoped to component CSS) */
+.mud-dialog.battle-map-dialog .mud-dialog-content.battle-map-dialog-content {
+    padding: 8px 4px !important;
+}
+
+.mud-dialog-container .mud-dialog.battle-map-dialog:not(.mud-dialog-fullscreen):has(.battle-map-dialog-content) {
+    width: fit-content !important;
+    max-width: 98vw !important;
+}
+
+.mud-dialog.battle-map-dialog.mud-dialog-fullscreen,
+.mud-dialog.battle-map-dialog.mud-dialog-fullscreen.mud-dialog-width-false {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+}
+
+.mud-dialog.battle-map-dialog.mud-dialog-fullscreen .mud-dialog-content.battle-map-dialog-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 8px 4px !important;
+}

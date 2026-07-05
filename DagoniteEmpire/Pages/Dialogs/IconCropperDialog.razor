@@ -1,0 +1,120 @@
+@using Cropper.Blazor.Models
+@using Cropper.Blazor.Components
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            Make an icon
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-2">
+            Select a circular area from the portrait. Resize the selection to fit the face or part of the silhouette.
+        </MudText>
+        <div class="icon-cropper-container img-container">
+            <CropperComponent Class="big-img"
+                              @ref="cropperComponent"
+                              Src="@PortraitUrl"
+                              ErrorLoadImageSrc="@_errorLoadImageSrc"
+                              ErrorLoadImageClass="cropper-error-load center"
+                              IsAvailableInitCropper="@IsAvailableInitCropper"
+                              IsErrorLoadImage="@IsErrorLoadImage"
+                              OnErrorLoadImageEvent="OnErrorLoadImageEvent"
+                              Options="@options" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SaveBtn">Create icon</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .img-container {
+        max-height: 60vh;
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    .cropper-error-load {
+        max-height: inherit;
+        max-width: 100%;
+    }
+
+    .big-img {
+        max-height: 100%;
+        max-width: 100%;
+    }
+
+    .icon-cropper-container .cropper-view-box {
+        border-radius: 50%;
+        outline: none;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.75);
+    }
+
+    .icon-cropper-container .cropper-face {
+        border-radius: 50%;
+        background-color: transparent;
+    }
+</style>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public string PortraitUrl { get; set; } = string.Empty;
+
+    private CropperComponent? cropperComponent = null!;
+    private readonly string _errorLoadImageSrc = "images/buttonFrame1.png";
+    private bool IsErrorLoadImage { get; set; }
+    private bool IsAvailableInitCropper { get; set; } = true;
+    private Options options = null!;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override void OnInitialized()
+    {
+        options = new Options
+        {
+            AspectRatio = 1m,
+            ViewMode = ViewMode.Vm2,
+            AutoCropArea = 0.8m,
+        };
+    }
+
+    public void OnErrorLoadImageEvent(ErrorEventArgs errorEventArgs)
+    {
+        IsErrorLoadImage = true;
+        Destroy();
+        StateHasChanged();
+    }
+
+    private void Destroy()
+    {
+        cropperComponent?.Destroy();
+    }
+
+    private async Task SaveBtn()
+    {
+        try
+        {
+            var getCroppedCanvasOptions = new GetCroppedCanvasOptions
+            {
+                Width = 128,
+                Height = 128,
+                ImageSmoothingEnabled = true,
+                ImageSmoothingQuality = "high",
+                FillColor = "transparent",
+            };
+
+            var croppedCanvas = await cropperComponent!.GetCroppedCanvasAsync(getCroppedCanvasOptions);
+            var uploadedUrl = await JSRuntime.InvokeAsync<string>("uploadEllipseIcon", croppedCanvas.JSRuntimeObjectRef, SD.Icon);
+            MudDialog.Close(DialogResult.Ok(uploadedUrl));
+            Snackbar.Add("Icon created", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error! " + ex.Message, Severity.Error);
+        }
+    }
+}

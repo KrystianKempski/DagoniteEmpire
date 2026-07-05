@@ -48,6 +48,10 @@ namespace DA_Models.CharacterModels
         // wounds
         public int MaxWounds { get; set; } = 12;
         public int CurrentWounds { get; set; } = 0;
+
+        // tactical map movement range (cells per turn)
+        public int Speed { get; set; } = 6;
+
         public string States { get; set; } = string.Empty;
 
         public MobBattlePropertyModel BattleProperties { get; set; }

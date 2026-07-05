@@ -39,7 +39,7 @@
                         <MudMenuItem OnClick="@(e => SelectCharacter(character))">
                             <div class="d-flex flex-row">
                                 <MudAvatar>
-                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@character.ImageUrl"></MudImage>
+                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@GetCharacterIconUrl(character)"></MudImage>
                                 </MudAvatar>
                                 <MudText Class="align-content-center ps-1">
                                     @character.NPCName
@@ -121,9 +121,9 @@
             UserInfo = await _userService.GetUserInfo();
         }
 
-        if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
+        if (UserInfo?.SelectedCharacter is not null)
         {
-            PortraitUrl = UserInfo.SelectedCharacter.ImageUrl;
+            PortraitUrl = GetCharacterIconUrl(UserInfo.SelectedCharacter);
         }
 
         if (UserInfo?.SelectedCharacter is not null)
@@ -144,13 +144,13 @@
             UserInfo = await _userService.GetUserInfo();
 
 
-            if (UserInfo?.SelectedCharacter?.ImageUrl is not null)
+            if (UserInfo?.SelectedCharacter is not null)
             {
-                PortraitUrl = UserInfo.SelectedCharacter.ImageUrl;
+                PortraitUrl = GetCharacterIconUrl(UserInfo.SelectedCharacter);
             }
             else
             {
-                PortraitUrl = "/images/def-char-img.webp";
+                PortraitUrl = SD.DefaultCharacterImage;
             }
             callbackService.SetSelectedChar((int)UserInfo?.SelectedCharacter?.Id);
         }
@@ -177,4 +177,9 @@
             Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
         }     
     }
+
+    private static string GetCharacterIconUrl(CharacterDTO character) =>
+        !string.IsNullOrEmpty(character.IconUrl)
+            ? character.IconUrl
+            : character.ImageUrl ?? SD.DefaultCharacterImage;
 }

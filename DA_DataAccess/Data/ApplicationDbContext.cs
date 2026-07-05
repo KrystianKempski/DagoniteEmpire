@@ -1,4 +1,4 @@
-﻿using Abp.Domain.Entities;
+using Abp.Domain.Entities;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Scribe;
@@ -44,6 +44,7 @@ namespace DA_DataAccess.Data
         public DbSet<Chapter> Chapters { get; set; }
         public DbSet<Campaign> Campaigns { get; set; }
         public DbSet<BattlePhase> BattlePhases { get; set; }
+        public DbSet<BattleMap> BattleMaps { get; set; }
         public DbSet<WealthRecord> WealthRecords { get; set; }
 
         // SCRIBE - AI Memory System

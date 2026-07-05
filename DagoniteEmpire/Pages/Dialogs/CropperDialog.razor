@@ -149,11 +149,18 @@
 
     private async Task SaveBtn()
     {
-        await GetDecodedImageDataAsync();
-
         try
         {
-            var uploadedUrl = await JSRuntime.InvokeAsync<string>("uploadPortraitDataUrl", ImageUrl, SD.Portrait);
+            var getCroppedCanvasOptions = new GetCroppedCanvasOptions
+            {
+                MaxWidth = 2048,
+                MaxHeight = 2048,
+                ImageSmoothingEnabled = true,
+                ImageSmoothingQuality = "high",
+            };
+
+            var croppedCanvas = await cropperComponent!.GetCroppedCanvasAsync(getCroppedCanvasOptions);
+            var uploadedUrl = await JSRuntime.InvokeAsync<string>("uploadCroppedPortrait", croppedCanvas.JSRuntimeObjectRef, SD.Portrait);
             MudDialog.Close(DialogResult.Ok(uploadedUrl));
             Snackbar.Add("Image added", Severity.Success);
         }

@@ -10,7 +10,7 @@ DOTNET_PID_FILE="/tmp/dagonite-dotnet.pid"
 PORT=5093
 LAUNCH_PROFILE="http"
 APP_URL="http://localhost:${PORT}"
-STARTUP_TIMEOUT_SEC=180
+STARTUP_TIMEOUT_SEC=30
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-postgres-pgvector}"
 
 log() {
@@ -32,7 +32,7 @@ ensure_postgres() {
   fi
 
   local i
-  for i in $(seq 1 30); do
+  for i in $(seq 1 15); do
     if docker exec "$POSTGRES_CONTAINER" pg_isready -U dagonite -d DagoniteEmpire -q 2>/dev/null; then
       return 0
     fi
@@ -115,7 +115,7 @@ free_port() {
 }
 
 wait_for_port_free() {
-  for _ in $(seq 1 20); do
+  for _ in $(seq 1 10); do
     if command -v ss >/dev/null 2>&1; then
       ss -tln | grep -q ":${PORT} " || return 0
     elif command -v lsof >/dev/null 2>&1; then
@@ -142,7 +142,7 @@ start_watchdog() {
   fi
   disown 2>/dev/null || true
 
-  for _ in $(seq 1 20); do
+  for _ in $(seq 1 12); do
     if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
       log "Watchdog running (pid $(cat "$PID_FILE"))"
       return 0
@@ -164,8 +164,8 @@ wait_for_app() {
       return 0
     fi
 
-    sleep 2
-    elapsed=$((elapsed + 2))
+    sleep 1
+    elapsed=$((elapsed + 1))
   done
 
   log "App did not become ready in time."

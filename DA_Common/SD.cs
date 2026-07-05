@@ -35,7 +35,9 @@ namespace DA_Common
         public const string WikiSelectedCharacterCookie = "dagonite_wiki_character_id";
 
         public static string Portrait = "portraits";
+        public static string Icon = "icons";
         public static string PostImage = "postImages";
+        public const string DefaultCharacterImage = "/images/def-char-img.webp";
         public readonly struct NPCType
         {
             public const string Hero = "Hero";
@@ -667,6 +669,7 @@ namespace DA_Common
         public const string Chest = "icons/chest.svg";
         public const string Goblin = "icons/goblin.svg";
         public const string Attack = "icons/sword-clash.svg";
+        public const string AttackWhite = "icons/sword-clash-white.svg";
         public const string Unaware = "icons/unaware.svg";
         public const string Stunned = "icons/stunned.svg";
         public const string Snatched = "icons/snatched.svg";

@@ -139,6 +139,7 @@ public class Program
         builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
         builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
         builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
+        builder.Services.AddScoped<IBattleMapRepository, BattleMapRepository>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<ICampaignSummaryService, CampaignSummaryService>();
         builder.Services.AddScoped<CallbackService>();

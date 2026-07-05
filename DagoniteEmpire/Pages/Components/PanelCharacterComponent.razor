@@ -39,7 +39,7 @@
                             <div class="image-Icon"> 
                                 <MudTooltip Placement="Placement.Right" TooltipClass="character-status-tooltip">
                                     <ChildContent>
-                                        <img src="@NoTurnLeftIcon" width="30" height="30" alt="" />
+                                        <img src="@NoTurnLeftIcon" class="character-status-no-turn-icon" width="30" height="30" alt="" />
                                     </ChildContent>
                                     <TooltipContent>
                                         <span class="character-status-tooltip-text">
@@ -78,7 +78,7 @@
                     </div>
                 </div>
             </MudButton>
-            @if (IsExpanded && (ShowActionsPanel || ShowMobTurnPanel || ShowClassButton))
+            @if (IsExpanded && (ShowActionsPanel || ShowMobTurnPanel || ShowClassButton || ShowGrantExtraActionButton))
             {
                 <MudPaper Elevation="1" Class="pa-1 mx-1 character-actions-panel">
                     <MudText Class="p-1" Typo="Typo.button">ACTIONS</MudText>
@@ -120,6 +120,28 @@
                             <span class="character-status-tooltip-text">
                                 <span class="character-status-tooltip-name">@HalfActionTooltipLines.Title</span>
                                 <span class="character-status-tooltip-duration">@HalfActionTooltipLines.Detail</span>
+                            </span>
+                        </TooltipContent>
+                    </MudTooltip>
+                    }
+                    @if (ShowGrantExtraActionButton)
+                    {
+                    <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
+                        <ChildContent>
+                        <span class="@GetActionWrapperClass(HasUsedAtLeastOneAction)">
+                            <MudIconButton Disabled="!CanGrantExtraAction"
+                                           Color="@(HasUsedAtLeastOneAction ? Color.Info : Color.Default)"
+                                           Size="Size.Small"
+                                           aria-label="Grant extra action"
+                                           OnClick="GrantExtraActionAsync">
+                                <img src="@MyIcon.NoTurn" class="character-action-icon" width="22" height="22" alt="" />
+                            </MudIconButton>
+                        </span>
+                        </ChildContent>
+                        <TooltipContent>
+                            <span class="character-status-tooltip-text">
+                                <span class="character-status-tooltip-name">@GrantExtraActionTooltipLines.Title</span>
+                                <span class="character-status-tooltip-duration">@GrantExtraActionTooltipLines.Detail</span>
                             </span>
                         </TooltipContent>
                     </MudTooltip>
@@ -459,6 +481,17 @@
         && AllParams?.Character is not null
         && (IsOwnCharacter || UserInfo?.IsAdminOrMG == true);
 
+    private bool ShowGrantExtraActionButton =>
+        OngoingBattle
+        && UserInfo?.IsAdminOrMG == true
+        && ((IsMob && Mob is not null) || (!IsMob && AllParams?.Character is not null));
+
+    private bool HasUsedAtLeastOneAction =>
+        HasTemporaryState(States.Names.HalfTurn) || HasTemporaryState(States.Names.NoTurn);
+
+    private bool CanGrantExtraAction =>
+        ShowGrantExtraActionButton && HasUsedAtLeastOneAction;
+
     private bool HasTemporaryState(string stateName) =>
         IsMob
             ? Mob is not null && CombatStateString.HasState(Mob.States, stateName)
@@ -518,6 +551,20 @@
             if (HasHalfTurn)
                 return ("End turn", "Half turn → No turn");
             return ("Half action", "Gain Half turn; click again to end");
+        }
+    }
+
+    private (string Title, string Detail) GrantExtraActionTooltipLines
+    {
+        get
+        {
+            if (!HasUsedAtLeastOneAction)
+                return ("Dodaj kolejną akcję", "Wymaga wykorzystanej akcji");
+            if (HasTemporaryState(States.Names.NoTurn))
+                return ("Dodaj kolejną akcję", "No turn → Half turn");
+            if (HasTemporaryState(States.Names.HalfTurn))
+                return ("Dodaj kolejną akcję", "Usuwa Half turn");
+            return ("Dodaj kolejną akcję", "Wymaga wykorzystanej akcji");
         }
     }
 
@@ -950,5 +997,72 @@
         }
 
         await OnFullDefenceApplied.InvokeAsync(Id);
+    }
+
+    private async Task GrantExtraActionAsync()
+    {
+        if (!CanGrantExtraAction)
+            return;
+
+        if (IsMob)
+        {
+            if (Mob is null)
+                return;
+
+            if (CombatStateString.HasState(Mob.States, States.Names.NoTurn))
+            {
+                Mob.States = RemoveMobState(Mob.States, States.Names.NoTurn);
+                Mob.States = CombatStateString.Add(Mob.States, States.Names.HalfTurn, States.Duration.SingleTurn);
+                Snackbar.Add("Przyznano half turn.", Severity.Success);
+            }
+            else if (CombatStateString.HasState(Mob.States, States.Names.HalfTurn))
+            {
+                Mob.States = RemoveMobState(Mob.States, States.Names.HalfTurn);
+                Snackbar.Add("Usunięto half turn — pełna tura przywrócona.", Severity.Success);
+            }
+
+            await _mobRepository.Update(Mob);
+            await ApplyMobDisplayAsync(Mob);
+            _trackedMobSignature = GetMobSignature(Mob);
+            await OnMobActionApplied.InvokeAsync(Id);
+            return;
+        }
+
+        if (AllParams?.Character is null)
+            return;
+
+        if (HasTemporaryState(States.Names.NoTurn))
+        {
+            var noTurn = AllParams.TraitsTemporary.FirstOrDefault(t => t.Name == States.Names.NoTurn);
+            if (noTurn is not null)
+            {
+                await _traitCharacterRepository.Delete(noTurn.Id);
+                AllParams.TraitsTemporary.Remove(noTurn);
+            }
+
+            await _traitCharacterRepository.Create(
+                StateSeeder.GetStateDTO(States.Names.HalfTurn, false, States.Duration.SingleTurn, Id));
+            Snackbar.Add("Przyznano half turn.", Severity.Success);
+        }
+        else if (HasTemporaryState(States.Names.HalfTurn))
+        {
+            var halfTurn = AllParams.TraitsTemporary.FirstOrDefault(t => t.Name == States.Names.HalfTurn);
+            if (halfTurn is not null)
+            {
+                await _traitCharacterRepository.Delete(halfTurn.Id);
+                AllParams.TraitsTemporary.Remove(halfTurn);
+            }
+
+            Snackbar.Add("Usunięto half turn — pełna tura przywrócona.", Severity.Success);
+        }
+
+        await OnFullDefenceApplied.InvokeAsync(Id);
+    }
+
+    private static string RemoveMobState(string? states, string stateName)
+    {
+        var survivors = CombatStateString.Parse(states)
+            .Where(e => !string.Equals(e.Name, stateName, StringComparison.Ordinal));
+        return CombatStateString.Format(survivors);
     }
 }
