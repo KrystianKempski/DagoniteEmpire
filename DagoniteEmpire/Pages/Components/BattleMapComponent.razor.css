@@ -174,6 +174,60 @@
     overflow: hidden;
 }
 
+/* A large token is anchored in its top-left cell but stretches across its whole
+   NxN footprint. The anchor cell must let it overflow and paint above its neighbours. */
+.battle-map-cell.has-large-token {
+    overflow: visible;
+    z-index: 3;
+}
+
+.battle-map-token.large {
+    top: calc(var(--bm-footprint) * 0.08);
+    left: calc(var(--bm-footprint) * 0.08);
+    width: calc(var(--bm-footprint) * 0.84);
+    height: calc(var(--bm-footprint) * 0.84);
+    font-size: 0.9rem;
+}
+
+.battle-map-token.mob.large {
+    top: 0;
+    left: 0;
+    width: var(--bm-footprint);
+    height: var(--bm-footprint);
+}
+
+.battle-map-token.mob.large .battle-map-mob-label {
+    font-size: 0.8rem;
+}
+
+/* Downed tokens (Dead / Unconscious): greyed and dimmed, with a state badge.
+   Grayscale is applied to the whole token; the badge icons are dark monochrome on a
+   white disc, so they stay clearly readable. Only the "living" visual is dimmed. */
+.battle-map-token.downed {
+    filter: grayscale(100%);
+}
+
+.battle-map-token.downed .battle-map-token-portrait,
+.battle-map-token.downed .battle-map-mob-circle,
+.battle-map-token.downed .battle-map-mob-label {
+    opacity: 0.5;
+}
+
+.battle-map-token-condition {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: calc(var(--cell-size) * 0.42);
+    height: calc(var(--cell-size) * 0.42);
+    padding: calc(var(--cell-size) * 0.05);
+    box-sizing: border-box;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
+    pointer-events: none;
+    z-index: 3;
+}
+
 .battle-map-range-overlay {
     position: absolute;
     inset: 0;
@@ -271,7 +325,8 @@
 
 .battle-map-token.portrait {
     padding: 0;
-    overflow: hidden;
+    /* No overflow clipping: the portrait image is already round (border-radius: 50%),
+       and clipping here would cut off the condition badge that sits at the corner. */
     background: var(--mud-palette-surface, #fff);
 }
 

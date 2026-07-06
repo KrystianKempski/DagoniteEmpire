@@ -52,6 +52,18 @@ namespace DA_Models.ChatModels
 
         /// <summary>Whether this token is an ally (player character or Ally mob).</summary>
         public bool IsAlly { get; set; }
+
+        /// <summary>
+        /// Footprint of the token in cells. 1 = 1x1 (Medium), 2 = 2x2 (Large), 3 = 3x3 (Huge).
+        /// <see cref="X"/>/<see cref="Y"/> mark the top-left cell of the footprint.
+        /// </summary>
+        public int Size { get; set; } = 1;
+
+        /// <summary>
+        /// Incapacitating state used to grey out the token: "Dead", "Unconscious" or null/empty.
+        /// Enriched from the participant snapshot.
+        /// </summary>
+        public string? Condition { get; set; }
     }
 
     public class BattleMapParticipantDTO
@@ -65,5 +77,11 @@ namespace DA_Models.ChatModels
 
         /// <summary>Whether this participant is an ally (player character or Ally mob).</summary>
         public bool IsAlly { get; set; }
+
+        /// <summary>Default footprint in cells (1 = Medium, 2 = Large, 3 = Huge). 0/1 both mean 1x1.</summary>
+        public int Size { get; set; } = 1;
+
+        /// <summary>Incapacitating state ("Dead", "Unconscious" or null) used to grey out the token.</summary>
+        public string? Condition { get; set; }
     }
 }

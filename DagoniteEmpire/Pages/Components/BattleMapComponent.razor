@@ -104,6 +104,18 @@ else
                                 <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Delete" OnClick="RemoveSelectedToken">Remove token</MudButton>
                             }
                         </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="flex-wrap">
+                            <MudText Typo="Typo.caption">Size:</MudText>
+                            <MudToggleGroup T="int" Value="_newTokenSize" ValueChanged="OnTokenSizeChanged" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
+                                <MudToggleItem Value="1" Text="1×1" />
+                                <MudToggleItem Value="2" Text="2×2" />
+                                <MudToggleItem Value="3" Text="3×3" />
+                            </MudToggleGroup>
+                            @if (_selectedTokenId is null)
+                            {
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">for new tokens</MudText>
+                            }
+                        </MudStack>
                     }
 
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Class="flex-wrap">
@@ -147,13 +159,15 @@ else
                         var cx = x;
                         var cy = y;
                         var cell = GetCell(cx, cy);
-                        var token = GetTokenAt(cx, cy);
+                        var occupant = GetTokenAt(cx, cy);
+                        var token = AnchoredTokenAt(cx, cy);
                         var isSelected = _selectedCell is not null && _selectedCell.X == cx && _selectedCell.Y == cy;
-                        var isTokenSelected = token is not null && token.Id == _selectedTokenId;
-                        var hasMobToken = token?.IsMob == true;
+                        var isTokenSelected = occupant is not null && occupant.Id == _selectedTokenId;
+                        var hasMobToken = occupant?.IsMob == true;
+                        var isLargeAnchor = token is not null && TokenSize(token) > 1;
                         var inRange = rangeCells.Contains((cx, cy));
                         var terrainClass = GetTerrainClass(cell);
-                        <div class="battle-map-cell @(CanEdit ? "editable" : string.Empty) @(isSelected ? "selected" : string.Empty) @(hasMobToken ? "has-mob-token" : string.Empty) @terrainClass"
+                        <div class="battle-map-cell @(CanEdit ? "editable" : string.Empty) @(isSelected ? "selected" : string.Empty) @(hasMobToken ? "has-mob-token" : string.Empty) @(isLargeAnchor ? "has-large-token" : string.Empty) @terrainClass"
                              style="background-color:@(cell?.Color ?? "transparent")"
                              @onclick="@(() => OnCellClick(cx, cy))"
                              @onmouseenter="@(() => OnCellMouseEnter(cx, cy))">
@@ -175,28 +189,45 @@ else
                             }
                             @if (token is not null)
                             {
+                                var largeClass = isLargeAnchor ? "large" : string.Empty;
+                                var downedClass = IsDowned(token) ? "downed" : string.Empty;
+                                var footprintStyle = TokenFootprintStyle(token);
+                                var conditionIcon = ConditionIcon(token);
                                 @if (HasPortraitToken(token))
                                 {
-                                    <div class="battle-map-token portrait @(isTokenSelected ? "selected" : string.Empty)"
-                                         style="border-color:@token.Color"
+                                    <div class="battle-map-token portrait @largeClass @downedClass @(isTokenSelected ? "selected" : string.Empty)"
+                                         style="border-color:@token.Color;@footprintStyle"
                                          title="@token.Label">
                                         <img class="battle-map-token-portrait" src="@token.IconUrl" alt="@token.Label" />
+                                        @if (conditionIcon is not null)
+                                        {
+                                            <img class="battle-map-token-condition" src="@conditionIcon" alt="@token.Condition" title="@token.Condition" />
+                                        }
                                     </div>
                                 }
                                 else if (token.IsMob)
                                 {
-                                    <div class="battle-map-token mob @(isTokenSelected ? "selected" : string.Empty)"
+                                    <div class="battle-map-token mob @largeClass @downedClass @(isTokenSelected ? "selected" : string.Empty)"
+                                         style="@footprintStyle"
                                          title="@token.Label">
                                         <div class="battle-map-mob-circle" style="background:@token.Color"></div>
                                         <span class="battle-map-mob-label">@token.Label</span>
+                                        @if (conditionIcon is not null)
+                                        {
+                                            <img class="battle-map-token-condition" src="@conditionIcon" alt="@token.Condition" title="@token.Condition" />
+                                        }
                                     </div>
                                 }
                                 else
                                 {
-                                    <div class="battle-map-token @(isTokenSelected ? "selected" : string.Empty)"
-                                         style="background:@token.Color"
+                                    <div class="battle-map-token @largeClass @downedClass @(isTokenSelected ? "selected" : string.Empty)"
+                                         style="background:@token.Color;@footprintStyle"
                                          title="@token.Label">
                                         @TokenInitials(token.Label)
+                                        @if (conditionIcon is not null)
+                                        {
+                                            <img class="battle-map-token-condition" src="@conditionIcon" alt="@token.Condition" title="@token.Condition" />
+                                        }
                                     </div>
                                 }
                             }
@@ -248,6 +279,7 @@ else
     private BattleMapCellDTO? _selectedCell;
     private string? _selectedTokenId;
     private string _newTokenLabel = string.Empty;
+    private int _newTokenSize = 1;
     private (int X, int Y)? _hoverCell;
 
     private static readonly string[] Swatches =
@@ -353,8 +385,51 @@ else
     private BattleMapCellDTO? GetCell(int x, int y) =>
         Map?.Cells.FirstOrDefault(c => c.X == x && c.Y == y);
 
+    // Normalized footprint size in cells (1 = 1x1, 2 = 2x2, 3 = 3x3).
+    private static int TokenSize(BattleMapTokenDTO token) => Math.Clamp(token.Size <= 0 ? 1 : token.Size, 1, 3);
+
+    // Any token whose footprint covers this cell (footprint-aware occupancy).
     private BattleMapTokenDTO? GetTokenAt(int x, int y) =>
+        Map?.Tokens.FirstOrDefault(t => Covers(t, x, y));
+
+    // The token anchored (top-left) at this exact cell — the cell that renders its visual.
+    private BattleMapTokenDTO? AnchoredTokenAt(int x, int y) =>
         Map?.Tokens.FirstOrDefault(t => t.X == x && t.Y == y);
+
+    private static bool Covers(BattleMapTokenDTO token, int x, int y)
+    {
+        int size = TokenSize(token);
+        return x >= token.X && x < token.X + size && y >= token.Y && y < token.Y + size;
+    }
+
+    // Whether a token of the given size can be anchored at (x, y): footprint in bounds
+    // and not overlapping any other token (the token being moved is ignored).
+    private bool CanPlace(int x, int y, int size, string? ignoreTokenId = null)
+    {
+        if (Map is null || x < 0 || y < 0 || x + size > Map.Width || y + size > Map.Height)
+            return false;
+
+        foreach (var other in Map.Tokens)
+        {
+            if (other.Id == ignoreTokenId)
+                continue;
+            int os = TokenSize(other);
+            bool overlaps = x < other.X + os && x + size > other.X
+                         && y < other.Y + os && y + size > other.Y;
+            if (overlaps)
+                return false;
+        }
+        return true;
+    }
+
+    // Inline style that stretches a large token across its NxN footprint (incl. 1px grid gaps).
+    private static string TokenFootprintStyle(BattleMapTokenDTO token)
+    {
+        int size = TokenSize(token);
+        if (size <= 1)
+            return string.Empty;
+        return $"--bm-footprint:calc(var(--cell-size) * {size} + {size - 1}px);";
+    }
 
     private string GetCellText(int x, int y) => GetCell(x, y)?.Text ?? string.Empty;
 
@@ -480,19 +555,28 @@ else
         if (_selectedTokenId is not null)
         {
             var selected = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
-            if (selected is not null && (tokenHere is null || tokenHere.Id == selected.Id))
+            if (selected is not null)
             {
-                selected.X = x;
-                selected.Y = y;
-                _selectedTokenId = null;
-                await SaveAsync();
-                return;
+                int size = TokenSize(selected);
+                // Anchor the footprint so the clicked cell is its top-left, clamped to the grid.
+                int nx = Math.Clamp(x, 0, Map.Width - size);
+                int ny = Math.Clamp(y, 0, Map.Height - size);
+                if (CanPlace(nx, ny, size, selected.Id))
+                {
+                    selected.X = nx;
+                    selected.Y = ny;
+                    _selectedTokenId = null;
+                    await SaveAsync();
+                    return;
+                }
             }
         }
 
         if (tokenHere is not null)
         {
             _selectedTokenId = tokenHere.Id == _selectedTokenId ? null : tokenHere.Id;
+            if (_selectedTokenId is not null)
+                _newTokenSize = TokenSize(tokenHere);
         }
     }
 
@@ -530,7 +614,8 @@ else
             return;
         }
 
-        var spot = FindFreeCell();
+        var size = Math.Clamp(_newTokenSize, 1, 3);
+        var spot = FindFreeCell(size);
         var token = new BattleMapTokenDTO
         {
             Id = Guid.NewGuid().ToString("N"),
@@ -538,6 +623,7 @@ else
             Color = _currentColor,
             IconUrl = participant.IsMob ? null : participant.IconUrl,
             IsMob = participant.IsMob,
+            Size = size,
             X = spot.x,
             Y = spot.y,
         };
@@ -550,13 +636,41 @@ else
         }
     }
 
-    private (int x, int y) FindFreeCell()
+    private (int x, int y) FindFreeCell(int size = 1)
     {
-        for (int y = 0; y < Map!.Height; y++)
-            for (int x = 0; x < Map.Width; x++)
-                if (GetTokenAt(x, y) is null)
+        for (int y = 0; y + size <= Map!.Height; y++)
+            for (int x = 0; x + size <= Map.Width; x++)
+                if (CanPlace(x, y, size))
                     return (x, y);
         return (0, 0);
+    }
+
+    // Sets the size for newly-added tokens and, if a token is selected, resizes it in place.
+    private async Task OnTokenSizeChanged(int size)
+    {
+        _newTokenSize = Math.Clamp(size, 1, 3);
+
+        if (Map is null || _selectedTokenId is null)
+            return;
+
+        var token = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
+        if (token is null || TokenSize(token) == _newTokenSize)
+            return;
+
+        // Keep the footprint inside the grid, then nudge it until it fits without overlap.
+        int nx = Math.Clamp(token.X, 0, Math.Max(0, Map.Width - _newTokenSize));
+        int ny = Math.Clamp(token.Y, 0, Math.Max(0, Map.Height - _newTokenSize));
+        if (!CanPlace(nx, ny, _newTokenSize, token.Id))
+        {
+            var spot = FindFreeCell(_newTokenSize);
+            nx = spot.x;
+            ny = spot.y;
+        }
+
+        token.Size = _newTokenSize;
+        token.X = nx;
+        token.Y = ny;
+        await SaveAsync();
     }
 
     private async Task RemoveSelectedToken()
@@ -583,8 +697,9 @@ else
         Map.Cells.RemoveAll(c => c.X >= Map.Width || c.Y >= Map.Height);
         foreach (var token in Map.Tokens)
         {
-            token.X = Math.Clamp(token.X, 0, Map.Width - 1);
-            token.Y = Math.Clamp(token.Y, 0, Map.Height - 1);
+            int size = TokenSize(token);
+            token.X = Math.Clamp(token.X, 0, Math.Max(0, Map.Width - size));
+            token.Y = Math.Clamp(token.Y, 0, Math.Max(0, Map.Height - size));
         }
 
         await SaveAsync();
@@ -626,6 +741,17 @@ else
     private static bool HasPortraitToken(BattleMapTokenDTO token) =>
         !token.IsMob && !string.IsNullOrWhiteSpace(token.IconUrl);
 
+    // A downed token (Dead / Unconscious) is greyed out and shows a state badge.
+    private static bool IsDowned(BattleMapTokenDTO token) =>
+        token.Condition is States.Names.Dead or States.Names.Unconscious;
+
+    private static string? ConditionIcon(BattleMapTokenDTO token) => token.Condition switch
+    {
+        States.Names.Dead => MyIcon.Dead,
+        States.Names.Unconscious => MyIcon.Unconscious,
+        _ => null
+    };
+
     private BattleMapParticipantDTO? FindParticipant(string label)
     {
         if (string.IsNullOrWhiteSpace(label))
@@ -649,6 +775,7 @@ else
             token.IsMob = participant.IsMob;
             token.Range = participant.Range;
             token.IsAlly = participant.IsAlly;
+            token.Condition = participant.Condition;
             if (participant.IsMob)
                 token.IconUrl = null;
             else
@@ -668,7 +795,7 @@ else
             return empty;
 
         var token = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
-        if (token is null || token.Range <= 0 || !CanSeeRange(token))
+        if (token is null || token.Range <= 0 || !CanSeeRange(token) || IsDowned(token))
             return empty;
 
         return ComputeReachable(token);
@@ -696,7 +823,7 @@ else
         _ => string.Empty
     };
 
-    // A cell blocks the moving token if it is impassable terrain or occupied by a
+    // A single cell blocks the moving token if it is impassable terrain or occupied by a
     // token from the opposing side (allies are treated as passable / empty).
     private bool IsBlockedFor(BattleMapTokenDTO mover, int x, int y)
     {
@@ -710,16 +837,52 @@ else
         return false;
     }
 
-    // Dijkstra over the grid. Costs are stored in "half units": orthogonal = 2,
-    // diagonal = 3, doubled on difficult terrain. A cell is reachable when
-    // floor(dist / 2) <= range, matching the rule: diagonal costs 1.5, floored on
-    // an odd number of diagonals.
+    // The mover's SxS footprint anchored at (ax, ay) cannot be entered if it leaves the
+    // grid or any covered cell is blocked (impassable / enemy-occupied).
+    private bool IsFootprintBlocked(BattleMapTokenDTO mover, int ax, int ay, int size)
+    {
+        if (Map is null || ax < 0 || ay < 0 || ax + size > Map.Width || ay + size > Map.Height)
+            return true;
+
+        for (int dx = 0; dx < size; dx++)
+            for (int dy = 0; dy < size; dy++)
+                if (IsBlockedFor(mover, ax + dx, ay + dy))
+                    return true;
+
+        return false;
+    }
+
+    // Difficult-terrain cost applies when the footprint's leading edge (the cells newly
+    // entered on this step) includes difficult terrain.
+    private bool FootprintEntersDifficult(int oldX, int oldY, int newX, int newY, int size)
+    {
+        for (int dx = 0; dx < size; dx++)
+        {
+            for (int dy = 0; dy < size; dy++)
+            {
+                int cx = newX + dx;
+                int cy = newY + dy;
+                bool wasInside = cx >= oldX && cx < oldX + size && cy >= oldY && cy < oldY + size;
+                if (!wasInside && GetCell(cx, cy)?.Terrain == "difficult")
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    // Dijkstra over anchor (top-left) positions of the mover's footprint. Costs are stored
+    // in "half units": orthogonal = 2, diagonal = 3, doubled when the leading edge enters
+    // difficult terrain. A position is reachable when floor(dist / 2) <= range, matching the
+    // rule that diagonals cost 1.5 (floored on an odd number of diagonals). Large creatures
+    // move as a unit — distance is measured by the footprint's displacement (its leading
+    // side), exactly as in the tabletop rules.
     private HashSet<(int X, int Y)> ComputeReachable(BattleMapTokenDTO mover)
     {
         var result = new HashSet<(int, int)>();
         if (Map is null)
             return result;
 
+        int size = TokenSize(mover);
         int startX = mover.X;
         int startY = mover.Y;
         int range = mover.Range;
@@ -750,14 +913,12 @@ else
 
                     int nx = cx + dx;
                     int ny = cy + dy;
-                    if (nx < 0 || ny < 0 || nx >= w || ny >= h)
-                        continue;
 
-                    if (IsBlockedFor(mover, nx, ny))
+                    if (IsFootprintBlocked(mover, nx, ny, size))
                         continue;
 
                     int stepCost = (dx != 0 && dy != 0) ? 3 : 2;
-                    if (GetCell(nx, ny)?.Terrain == "difficult")
+                    if (FootprintEntersDifficult(cx, cy, nx, ny, size))
                         stepCost *= 2;
 
                     int newCost = baseCost + stepCost;
@@ -777,18 +938,24 @@ else
         {
             for (int j = 0; j < h; j++)
             {
-                if (i == startX && j == startY)
-                    continue;
                 if (dist[i, j] == int.MaxValue)
                     continue;
                 if (dist[i, j] / 2 > range)
                     continue;
-                // Cannot stop on a cell occupied by another token.
-                if (GetTokenAt(i, j) is not null)
+                // The footprint can only stop where it fully fits without overlapping another token.
+                if (!CanPlace(i, j, size, mover.Id))
                     continue;
-                result.Add((i, j));
+
+                for (int dx = 0; dx < size; dx++)
+                    for (int dy = 0; dy < size; dy++)
+                        result.Add((i + dx, j + dy));
             }
         }
+
+        // Do not highlight the cells the token already occupies.
+        for (int dx = 0; dx < size; dx++)
+            for (int dy = 0; dy < size; dy++)
+                result.Remove((startX + dx, startY + dy));
 
         return result;
     }
