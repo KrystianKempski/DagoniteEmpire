@@ -6,6 +6,7 @@
 @inject IUserService _userService
 @inject ISnackbar _snackBar
 @inject NavigationManager _navigationManager
+@inject IDialogService _dialogService
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster)]
 
 <PageTitle>Dagonite Empire | Panel Mistrza Gry</PageTitle>
@@ -76,7 +77,20 @@
                         Pobierz plik .txt
                     </MudButton>
                 }
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.History"
+                           Disabled="@(SelectedChapter is null)"
+                           OnClick="OpenBattleLogs">
+                    Archiwum bitew
+                </MudButton>
             </MudStack>
+            @if (SelectedCampaign is not null && SelectedChapter is null)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                    Wybierz rozdział, aby przeglądać archiwum bitew.
+                </MudText>
+            }
 
             @if (SummaryResult is not null)
             {
@@ -202,6 +216,23 @@
         {
             IsGenerating = false;
         }
+    }
+
+    private async Task OpenBattleLogs()
+    {
+        if (SelectedChapter is null)
+            return;
+
+        var parameters = new DialogParameters<BattleLogDialog>
+        {
+            { x => x.ChapterId, SelectedChapter.Id },
+            { x => x.ShowHistory, true },
+        };
+
+        await _dialogService.ShowAsync<BattleLogDialog>(
+            "Battle log",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true });
     }
 
     private void DownloadSummary()

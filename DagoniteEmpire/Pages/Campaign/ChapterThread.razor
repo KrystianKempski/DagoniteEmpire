@@ -127,7 +127,6 @@ else
                                 </MudButton>
                             </MudItem>
                             <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
-                            <MudItem xs="12"><MudButton FullWidth StartIcon="@Icons.Material.Filled.History" OnClick="OpenBattleLogHistory">Battle logs</MudButton></MudItem>
                         </MudGrid>
                     }
                     @if (IsLoadingCharacters)
@@ -220,7 +219,6 @@ else
                                 </MudButton>
                             </MudItem>
                             <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
-                            <MudItem xs="12"><MudButton FullWidth StartIcon="@Icons.Material.Filled.History" OnClick="OpenBattleLogHistory">Battle logs</MudButton></MudItem>
                         </MudGrid>
                     }
                     @if (IsLoadingCharacters)
@@ -272,6 +270,28 @@ else
             </MudStack>
             <MudText Class="py-2 flex-grow-1" Typo="Typo.h6">@Chapter.Date, @Chapter.DayTime, @Chapter.Place</MudText>
             <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+
+            @if (_showBackToEnd)
+            {
+                <div class="back-to-latest-wrapper">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                               OnClick="ScrollToLatest"
+                               Class="back-to-latest-btn">
+                        Back to latest
+                    </MudButton>
+                </div>
+            }
+
+            <div id="posts-top-sentinel"></div>
+            @if (_loadingOlder)
+            {
+                <div class="posts-loading-older">
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                </div>
+            }
 
             <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
                 <MudStack>
@@ -341,7 +361,6 @@ else
                     {
                         <MudText>No posts yet</MudText>
                     }
-                    <MudPagination @ref="@Pagination" Count="@PageCount" Selected="@PageNum" SelectedChanged="SelectPage"></MudPagination>
                 </MudStack>
             </MudHidden>
             
@@ -407,61 +426,88 @@ else
                         {
                             <MudText>No posts yet</MudText>
                         }
-                        <MudPagination Count="@PageCount" Selected="@PageNum" SelectedChanged="SelectPage"></MudPagination>
                     </MudStack>
                 </div>
             </MudHidden>
         }
         
-        <div id="bottom-container">
-            <MudPaper Width="100%" Square="true" Class="post-editor-panel d-flex flex-column my-2 pa-2">
-                <div id="chapter-post-editor" class="post-editor flex-grow-1">
-                <BlazoredTextEditor @ref="@PostEditor" ReadOnly="@(!SendPostEnabled)">
-                    <ToolbarContent>
-                        <select class="ql-header">
-                            <option selected=""></option>
-                            <option value="1"></option>
-                            <option value="2"></option>
-                        </select>
-                        <span class="ql-formats">
-                            <button class="ql-bold"></button>
-                            <button class="ql-italic"></button>
-                            <button class="ql-underline"></button>
-                            <button class="ql-strike"></button>
-                        </span>
-                        <span class="ql-formats">
-                            <select class="ql-color"></select>
-                            <select class="ql-background"></select>
-                        </span>
-                        <span class="ql-formats">
-                            <button class="ql-list" value="ordered"></button>
-                            <button class="ql-blockquote"></button>
-                        </span>
-                        <span class="ql-formats">
-                            <button class="ql-link"></button>
-                        </span>
-                    </ToolbarContent>
-                    <EditorContent></EditorContent>
-                </BlazoredTextEditor>
+        <div id="bottom-container" class="post-dock @(_editorExpanded ? "post-dock--expanded" : "post-dock--collapsed") @(_toolbarExpanded ? "post-dock--toolbar" : null) @(_editorFullScreen ? "post-dock--fullscreen" : null)">
+            <div class="post-editor-panel d-flex flex-column">
+                <div class="post-dock__collapsed" role="button" tabindex="0" @onclick="ExpandEditor">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="post-dock__collapsed-icon" Size="Size.Small" />
+                    <span class="post-dock__collapsed-hint">@CollapsedHint</span>
+                    <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowUp" Class="post-dock__collapsed-chevron" Size="Size.Small" />
                 </div>
-                <div class="d-flex flex-row flex-shrink-0">
-                    <MudButton Disabled="@(!SendPostEnabled)" Class="mt-2 py-0" OnClick="CreatePost">@SendButtonText</MudButton>
-                    @if (IsEditMode)
-                    {
-                        <MudButton Class="mt-2 py-0" OnClick="CancelEdit">Cancel Edit</MudButton>
-                    }
-                    @if (UserInfo?.IsAdminOrMG == true)
-                    {
-                        <MudSelect @bind-Value="GmAsMob" T="MobDTO" Label="Select Mob">
-                            <MudSelectItem Value="GmMobOption">GM</MudSelectItem>
-                            @foreach (var mob in Mobs)
-                            {
-                                <MudSelectItem Value="mob">@mob.Name</MudSelectItem>
-                            }
-                        </MudSelect>
-                    }
+
+                <div class="post-dock__expanded">
+                    <div class="post-dock__controls">
+                        <MudIconButton Icon="@Icons.Material.Filled.TextFormat"
+                                       Size="Size.Small"
+                                       Color="@(_toolbarExpanded ? Color.Primary : Color.Default)"
+                                       OnClick="ToggleToolbar"
+                                       Title="@(_toolbarExpanded ? "Ukryj formatowanie" : "Pokaż formatowanie")" />
+                        <MudIconButton Icon="@(_editorFullScreen ? Icons.Material.Filled.FullscreenExit : Icons.Material.Filled.Fullscreen)"
+                                       Size="Size.Small"
+                                       OnClick="ToggleFullScreen"
+                                       Title="@(_editorFullScreen ? "Zamknij pełny ekran" : "Pełny ekran")" />
+                    </div>
+                    <div id="chapter-post-editor" class="post-editor flex-grow-1">
+                    <BlazoredTextEditor @ref="@PostEditor" ReadOnly="@(!SendPostEnabled)">
+                        <ToolbarContent>
+                            <select class="ql-header">
+                                <option selected=""></option>
+                                <option value="1"></option>
+                                <option value="2"></option>
+                            </select>
+                            <span class="ql-formats">
+                                <button class="ql-bold"></button>
+                                <button class="ql-italic"></button>
+                                <button class="ql-underline"></button>
+                                <button class="ql-strike"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <select class="ql-color"></select>
+                                <select class="ql-background"></select>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-list" value="ordered"></button>
+                                <button class="ql-blockquote"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-link"></button>
+                            </span>
+                        </ToolbarContent>
+                        <EditorContent></EditorContent>
+                    </BlazoredTextEditor>
+                    </div>
+                    <div class="d-flex flex-row flex-shrink-0 align-center post-dock__actions">
+                        <MudTooltip Text="@SendButtonText">
+                            <MudIconButton Icon="@SendButtonIcon"
+                                           Disabled="@(!SendPostEnabled)"
+                                           Variant="Variant.Filled"
+                                           Color="Color.Default"
+                                           Size="Size.Small"
+                                           Class="post-dock__send-btn"
+                                           OnClick="CreatePost"
+                                           aria-label="@SendButtonText" />
+                        </MudTooltip>
+                        @if (IsEditMode)
+                        {
+                            <MudButton Variant="Variant.Text" OnClick="CancelEdit">Anuluj</MudButton>
+                        }
+                        @if (UserInfo?.IsAdminOrMG == true)
+                        {
+                            <MudSelect @bind-Value="GmAsMob" T="MobDTO" Label="Select Mob" Class="post-dock__mob-select">
+                                <MudSelectItem Value="GmMobOption">GM</MudSelectItem>
+                                @foreach (var mob in Mobs)
+                                {
+                                    <MudSelectItem Value="mob">@mob.Name</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                    </div>
                 </div>
-            </MudPaper>
+            </div>
         </div>
     </div>
 }
@@ -494,12 +540,9 @@ else
     private int _participantsRenderKey;
     private bool _showDrawerPanelLayout = true;
     private int PostsPerPage { get; set; } = 20;
-    private int PageNum { get; set; } = 1;
-    private int PageCount { get; set; } = 1;
     private bool SendPostEnabled = true;
     private static readonly MobDTO GmMobOption = new MobDTO { Id = 0, Name = string.Empty };
     private MobDTO GmAsMob = GmMobOption;
-    private MudPagination? Pagination;
     private BlazoredTextEditor? PostEditor;
     private HubConnection? _hubConnection;
     private System.Action? handler;
@@ -510,6 +553,115 @@ else
     private bool _pendingPostEditorAppend;
     private string? _pendingPostEditorHtml;
     private const string PostEditorHostId = "chapter-post-editor";
+    private bool _editorExpanded;
+    private bool _toolbarExpanded;
+    private bool _editorFullScreen;
+    private bool _outsideCollapseRegistered;
+    private DotNetObjectReference<ChapterThread>? _dotNetRef;
+    private const string PostDockId = "bottom-container";
+    private const string PostsTopSentinelId = "posts-top-sentinel";
+
+    // Lazy-load (chat-style) state: accumulate pages from newest downwards.
+    private int _oldestLoadedPage = 1;
+    private bool _hasMoreOlder;
+    private bool _loadingOlder;
+    private bool _showBackToEnd;
+    private bool _lazyLoadInitialized;
+    private bool _initialScrolled;
+    private double? _pendingRestoreHeight;
+
+    private string CollapsedHint => IsEditMode
+        ? "Kliknij, aby kontynuować edycję posta..."
+        : "Kliknij, aby napisać post...";
+
+    private string SendButtonIcon => IsEditMode
+        ? Icons.Material.Filled.Check
+        : Icons.Material.Filled.Send;
+
+    private async Task ExpandEditor()
+    {
+        if (_editorExpanded)
+            return;
+
+        _editorExpanded = true;
+        StateHasChanged();
+        await FocusPostEditorAsync();
+        await SyncOutsideCollapseListenerAsync();
+    }
+
+    private void CollapseEditor()
+    {
+        _editorExpanded = false;
+        _editorFullScreen = false;
+    }
+
+    private void ToggleToolbar()
+    {
+        _toolbarExpanded = !_toolbarExpanded;
+    }
+
+    private async Task ToggleFullScreen()
+    {
+        _editorFullScreen = !_editorFullScreen;
+        if (_editorFullScreen && !_editorExpanded)
+            _editorExpanded = true;
+
+        StateHasChanged();
+        await SyncOutsideCollapseListenerAsync();
+    }
+
+    [JSInvokable]
+    public Task CollapseEditorFromJs()
+    {
+        if (!_editorExpanded)
+            return Task.CompletedTask;
+
+        // Never auto-collapse while the editor is maximised.
+        if (_editorFullScreen)
+            return Task.CompletedTask;
+
+        _editorExpanded = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task FocusPostEditorAsync()
+    {
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("QuillPostEditor.focus", PostEditorHostId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to focus post editor");
+        }
+    }
+
+    private async Task SyncOutsideCollapseListenerAsync()
+    {
+        try
+        {
+            if (_editorExpanded && !_outsideCollapseRegistered)
+            {
+                _dotNetRef ??= DotNetObjectReference.Create(this);
+                await _jsRuntime.InvokeVoidAsync(
+                    "QuillPostEditor.enableOutsideClickCollapse",
+                    PostDockId,
+                    _dotNetRef,
+                    nameof(CollapseEditorFromJs));
+                _outsideCollapseRegistered = true;
+            }
+            else if (!_editorExpanded && _outsideCollapseRegistered)
+            {
+                await _jsRuntime.InvokeVoidAsync("QuillPostEditor.disableOutsideClickCollapse", PostDockId);
+                _outsideCollapseRegistered = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to sync outside-click collapse listener");
+        }
+    }
 
     private sealed record BleedingParticipantSnapshot(
         int? CharacterId,
@@ -594,7 +746,7 @@ else
             if (Posts.Any(p => p.Id == postId))
                 return;
 
-            await LoadLastPagePostsAsync(scrollDown: true);
+            await AppendPostByIdAsync(postId, forceScrollDown: false);
             StateHasChanged();
             SnackBar.Add("New post added!", Severity.Info);
         });
@@ -615,14 +767,7 @@ else
             {
                 Posts[index] = updated;
                 StateHasChanged();
-                return;
             }
-
-            PageCount = await GetPageCount();
-            if (PageNum == PageCount)
-                Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-
-            StateHasChanged();
         });
     }
 
@@ -630,31 +775,113 @@ else
     {
         if (chapterId != Id) return;
 
-        await InvokeAsync(async () =>
+        await InvokeAsync(() =>
         {
             Posts.RemoveAll(p => p.Id == postId);
-            PageCount = await GetPageCount();
-            if (PageCount < 1)
-                PageCount = 1;
-
-            if (PageNum > PageCount)
-            {
-                PageNum = PageCount;
-                Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-            }
-
             StateHasChanged();
             SnackBar.Add("A post was deleted.", Severity.Info);
         });
     }
 
-    private async Task LoadLastPagePostsAsync(bool scrollDown = false)
+    private async Task LoadInitialPostsAsync()
     {
-        PageCount = await GetPageCount();
-        PageNum = PageCount;
-        Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-        if (scrollDown)
+        var totalPages = await GetPageCount();
+        _oldestLoadedPage = totalPages;
+        Posts = (await _postRepository.GetPage(Id, PostsPerPage, _oldestLoadedPage)).ToList();
+        _hasMoreOlder = _oldestLoadedPage > 1;
+        _showBackToEnd = false;
+        _scrollDown = true;
+    }
+
+    [JSInvokable]
+    public async Task LoadOlderPostsAsync()
+    {
+        // Ignore observer hits until the initial scroll-to-bottom has settled,
+        // otherwise we prepend older pages while still scrolling and the view
+        // jumps to the middle.
+        if (!_initialScrolled || _loadingOlder || !_hasMoreOlder)
+            return;
+
+        _loadingOlder = true;
+        try
+        {
+            _pendingRestoreHeight = await _jsRuntime.InvokeAsync<double>("PostsLazyLoad.getScrollHeight");
+
+            var nextPage = _oldestLoadedPage - 1;
+            var older = (await _postRepository.GetPage(Id, PostsPerPage, nextPage)).ToList();
+            _oldestLoadedPage = nextPage;
+            _hasMoreOlder = _oldestLoadedPage > 1;
+
+            if (older.Count > 0)
+                Posts.InsertRange(0, older);
+
+            // _loadingOlder is cleared in OnAfterRenderAsync after scroll is restored.
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load older posts");
+            _pendingRestoreHeight = null;
+            _loadingOlder = false;
+        }
+    }
+
+    [JSInvokable]
+    public void SetShowBackToEnd(bool show)
+    {
+        if (_showBackToEnd == show)
+            return;
+
+        _showBackToEnd = show;
+        StateHasChanged();
+    }
+
+    private async Task ScrollToLatest()
+    {
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("PostsLazyLoad.scrollToBottom", true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to scroll to latest posts");
+        }
+
+        _showBackToEnd = false;
+    }
+
+    // Appends a newly created post (own or via SignalR) to the end without
+    // discarding the already-loaded older posts.
+    private async Task AppendPostByIdAsync(int postId, bool forceScrollDown)
+    {
+        if (Posts.Any(p => p.Id == postId))
+            return;
+
+        var post = await _postRepository.GetById(postId);
+        if (post is null || post.Id != postId)
+            return;
+
+        Posts.Add(post);
+
+        if (forceScrollDown || !_showBackToEnd)
             _scrollDown = true;
+    }
+
+    private async Task EnsureLazyLoadInitializedAsync()
+    {
+        if (_lazyLoadInitialized || IsLoading || Chapter is null)
+            return;
+
+        _dotNetRef ??= DotNetObjectReference.Create(this);
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("PostsLazyLoad.init", _dotNetRef, PostsTopSentinelId, PostDockId, 800);
+            _lazyLoadInitialized = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to initialize PostsLazyLoad");
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -671,15 +898,41 @@ else
                 StateHasChanged();
             }
 
+            if (_pendingRestoreHeight is not null)
+            {
+                var prevHeight = _pendingRestoreHeight.Value;
+                _pendingRestoreHeight = null;
+                try
+                {
+                    await _jsRuntime.InvokeVoidAsync("PostsLazyLoad.restoreScroll", prevHeight);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to restore scroll after loading older posts");
+                }
+                _loadingOlder = false;
+            }
+
             if (_scrollDown && !IsLoading)
             {
                 _scrollDown = false;
                 await Task.Delay(200);
-                await _jsRuntime.ScrollToElement("bottom-container");
+                // Snap to the bottom reliably. On initial load use the "settled"
+                // variant so late layout shifts (images, Quill HTML) still land us
+                // on the last post; afterwards a single instant scroll is enough.
+                if (!_initialScrolled)
+                    await _jsRuntime.InvokeVoidAsync("PostsLazyLoad.scrollToBottomSettled");
+                else
+                    await _jsRuntime.InvokeVoidAsync("PostsLazyLoad.scrollToBottom", false);
+                _initialScrolled = true;
             }
 
             if (_shouldLoadPostEditor)
                 await TryLoadPendingPostEditorAsync();
+
+            await SyncOutsideCollapseListenerAsync();
+
+            await EnsureLazyLoadInitializedAsync();
         }
         catch (Exception ex)
         {
@@ -742,10 +995,8 @@ else
 
             if (Chapter is not null)
             {
-                // Load posts
-                PageCount = await GetPageCount();
-                PageNum = goToLastPage || GoToLastPage ? PageCount : 1;
-                Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
+                // Load posts (chat-style: newest page first, older loaded lazily)
+                await LoadInitialPostsAsync();
                 if (GoToLastPage)
                     ClearLastPageQuery();
 
@@ -873,6 +1124,7 @@ else
             IsLoading = true;
             StateHasChanged();
             var createdNewPost = false;
+            int? _createdPostId = null;
 
             if (IsEditMode)
             {
@@ -912,6 +1164,7 @@ else
                 if (result is not null)
                 {
                     createdNewPost = true;
+                    _createdPostId = result.Id;
                     if (_hubConnection is not null)
                         await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
 
@@ -930,11 +1183,13 @@ else
             }
 
             NewPost = new();
+            _editorExpanded = false;
+            _editorFullScreen = false;
             if (PostEditor is not null)
                 await PostEditor.LoadHTMLContent(string.Empty);
 
-            if (createdNewPost)
-                await LoadLastPagePostsAsync(scrollDown: true);
+            if (createdNewPost && _createdPostId is not null)
+                await AppendPostByIdAsync(_createdPostId.Value, forceScrollDown: true);
 
             IsLoading = false;
             StateHasChanged();
@@ -953,6 +1208,7 @@ else
         await _jsRuntime.ScrollToElement("bottom-container");
         NewPost = post;
         IsEditMode = true;
+        _editorExpanded = true;
         SendButtonText = IsBattleSummaryPost(post) ? "Save battle summary" : "Edit Post";
         if (PostEditor is not null)
         {
@@ -980,15 +1236,6 @@ else
         if (_hubConnection is not null)
             await _hubConnection.SendAsync("NotifyPostDeleted", Id, idToDelete);
 
-        PageCount = await GetPageCount();
-        if (PageCount < 1)
-            PageCount = 1;
-        if (PageNum > PageCount)
-        {
-            PageNum = PageCount;
-            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-        }
-
         IsLoading = false;
         StateHasChanged();
     }
@@ -997,6 +1244,8 @@ else
     {
         NewPost = new();
         IsEditMode = false;
+        _editorExpanded = false;
+        _editorFullScreen = false;
         SendButtonText = "Send Post";
         _shouldLoadPostEditor = false;
         _pendingPostEditorHtml = null;
@@ -1020,10 +1269,7 @@ else
     {
         try
         {
-            PageCount = await GetPageCount();
-            PageNum = PageCount;
-            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-            _scrollDown = true;
+            await LoadInitialPostsAsync();
             ClearLastPageQuery();
             StateHasChanged();
         }
@@ -1038,22 +1284,6 @@ else
     {
         GoToLastPage = false;
         _navigationManager.NavigateTo($"/chapter/{Id}", replace: true);
-    }
-
-    private async Task SelectPage(int page = 1)
-    {
-        try
-        {
-            PageNum = page;
-            PageCount = await GetPageCount();
-            Posts = (await _postRepository.GetPage(Id, PostsPerPage, PageNum)).ToList();
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error selecting page {PageNum}", page);
-            SnackBar.Add("Error changing page: " + ex.Message, Severity.Error);
-        }
     }
 
     private void ToggleDrawer()
@@ -1097,7 +1327,36 @@ else
     public async ValueTask DisposeAsync()
     {
         _callbackService.OnChange -= handler;
-        
+
+        if (_outsideCollapseRegistered)
+        {
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("QuillPostEditor.disableOutsideClickCollapse", PostDockId);
+            }
+            catch
+            {
+                // Ignore – circuit may already be gone during disposal.
+            }
+            _outsideCollapseRegistered = false;
+        }
+
+        if (_lazyLoadInitialized)
+        {
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("PostsLazyLoad.dispose");
+            }
+            catch
+            {
+                // Ignore – circuit may already be gone during disposal.
+            }
+            _lazyLoadInitialized = false;
+        }
+
+        _dotNetRef?.Dispose();
+        _dotNetRef = null;
+
         if (_hubConnection is not null)
         {
             await _hubConnection.DisposeAsync();
@@ -1179,17 +1438,6 @@ else
         await ShowBattleLogDialogAsync(new DialogParameters<BattleLogDialog>
         {
             { x => x.BattlePhaseId, phaseId },
-        });
-    }
-
-    // MG entry point: browse the logs of every battle recorded in this chapter.
-    private async Task OpenBattleLogHistory()
-    {
-        await ShowBattleLogDialogAsync(new DialogParameters<BattleLogDialog>
-        {
-            { x => x.ChapterId, Id },
-            { x => x.ShowHistory, true },
-            { x => x.BattlePhaseId, BattlePhase?.Id ?? 0 },
         });
     }
 
@@ -1649,6 +1897,8 @@ else
     {
         if (string.IsNullOrEmpty(rollRichHtml))
             return;
+
+        _editorExpanded = true;
 
         var loadHtml = fightFormat
             ? RichText.ToFightEditorHtml(rollRichHtml)
@@ -2316,7 +2566,8 @@ else
         if (_hubConnection is not null)
             await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
 
-        await LoadLastPagePostsAsync(scrollDown: true);
+        await AppendPostByIdAsync(result.Id, forceScrollDown: true);
+        StateHasChanged();
     }
 
     private async Task PostTurnSummaryAsync(int endingTurn, int startingTurn, bool battleEnding = false)
@@ -2354,7 +2605,8 @@ else
             }
         }
 
-        await LoadLastPagePostsAsync(scrollDown: true);
+        await AppendPostByIdAsync(result.Id, forceScrollDown: true);
+        StateHasChanged();
     }
 
     private async Task PostBattleSummaryAsync(int rounds)
@@ -2384,7 +2636,8 @@ else
         if (_hubConnection is not null)
             await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);
 
-        await LoadLastPagePostsAsync(scrollDown: true);
+        await AppendPostByIdAsync(result.Id, forceScrollDown: true);
+        StateHasChanged();
     }
 
     private async Task<DialogOptions> SetDialogOptions(MaxWidth maxWidth = MaxWidth.Medium)

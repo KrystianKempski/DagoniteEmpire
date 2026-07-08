@@ -80,6 +80,61 @@
             return quill ? quill.root.innerHTML : '';
         },
 
+        focus: function (containerId) {
+            var quill = this.getQuill(containerId);
+            if (quill) {
+                quill.focus();
+            }
+        },
+
+        _outsideClickHandlers: {},
+
+        enableOutsideClickCollapse: function (containerId, dotNetRef, methodName) {
+            var self = this;
+            this.disableOutsideClickCollapse(containerId);
+
+            var handler = function (event) {
+                var container = document.getElementById(containerId);
+                if (!container) {
+                    return;
+                }
+
+                var target = event.target;
+                if (!target || typeof target.closest !== 'function') {
+                    return;
+                }
+
+                // Click inside the editor dock itself – keep it open.
+                if (container.contains(target)) {
+                    return;
+                }
+
+                // MudBlazor renders popovers/overlays/dialogs outside the dock
+                // (mob select, dialogs, snackbars). Ignore those so the editor
+                // does not collapse while the user interacts with them.
+                if (target.closest('.mud-popover, .mud-overlay, .mud-dialog, .mud-menu, .mud-list, .mud-snackbar, .ql-tooltip')) {
+                    return;
+                }
+
+                dotNetRef.invokeMethodAsync(methodName);
+            };
+
+            this._outsideClickHandlers[containerId] = handler;
+            // Defer to the next tick so the click that opened the editor
+            // does not immediately trigger a collapse.
+            setTimeout(function () {
+                document.addEventListener('mousedown', handler, true);
+            }, 0);
+        },
+
+        disableOutsideClickCollapse: function (containerId) {
+            var handler = this._outsideClickHandlers[containerId];
+            if (handler) {
+                document.removeEventListener('mousedown', handler, true);
+                delete this._outsideClickHandlers[containerId];
+            }
+        },
+
         trimTrailingEmptyParagraph: function (html) {
             var current = (html || '').trim();
             if (current.endsWith('<p><br></p>')) {
