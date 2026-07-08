@@ -435,6 +435,8 @@
         IsLoading = true;
         //update date
         AllParams.Character.CurrentDate = CurrentDate;
+        // Remove trailing whitespace from character name to avoid mismatches (e.g. battle map tokens)
+        AllParams.Character.NPCName = AllParams.Character.NPCName?.TrimEnd();
         StateHasChanged();
         if (AllParams.CurrentRace.Description is null) AllParams.CurrentRace.Description = string.Empty;
         if (AllParams.Profession.Description is null) AllParams.Profession.Description = string.Empty;

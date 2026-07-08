@@ -2,6 +2,7 @@ using Abp.Domain.Entities;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Scribe;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -9,7 +10,7 @@ using Attribute = DA_DataAccess.CharacterClasses.Attribute;
 
 namespace DA_DataAccess.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext, IDataProtectionKeyContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
@@ -26,6 +27,7 @@ namespace DA_DataAccess.Data
         public DbSet<Language> Languages { get; set; }
         public DbSet<ImageFile> ImageFiles { get; set; }
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
         public DbSet<Equipment> Equipment { get; set; }
         public DbSet<EquipmentSlot> EquipmentSlots { get; set; }
         public DbSet<TraitCharacter> TraitsCharacter { get; set; }
@@ -45,6 +47,7 @@ namespace DA_DataAccess.Data
         public DbSet<Campaign> Campaigns { get; set; }
         public DbSet<BattlePhase> BattlePhases { get; set; }
         public DbSet<BattleMap> BattleMaps { get; set; }
+        public DbSet<BattleEvent> BattleEvents { get; set; }
         public DbSet<WealthRecord> WealthRecords { get; set; }
 
         // SCRIBE - AI Memory System

@@ -31,6 +31,7 @@ using System.Text;
 using DA_Models;
 using MimeKit;
 using DA_Scribe.Extensions;
+using Microsoft.AspNetCore.DataProtection;
 
 
 public class Program
@@ -105,6 +106,11 @@ public class Program
             .AddDefaultTokenProviders()
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
+        // Persist Data Protection keys in PostgreSQL so auth cookies stay valid
+        // across restarts/redeploys and are shared between instances.
+        builder.Services.AddDataProtection()
+            .PersistKeysToDbContext<ApplicationDbContext>()
+            .SetApplicationName("DagoniteEmpire");
 
 
         builder.Services.AddHealthChecks().AddDbContextCheck<ApplicationDbContext>();
@@ -140,6 +146,7 @@ public class Program
         builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
         builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
         builder.Services.AddScoped<IBattleMapRepository, BattleMapRepository>();
+        builder.Services.AddScoped<IBattleEventRepository, BattleEventRepository>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<ICampaignSummaryService, CampaignSummaryService>();
         builder.Services.AddScoped<CallbackService>();

@@ -9,6 +9,17 @@ public enum BattleTurnEventKind
     BleedingPainTest,
 }
 
+/// <summary>
+/// How significant a battle event is. <see cref="Minor"/> events show up only in the
+/// per-turn report; <see cref="Major"/> events are the ones important enough to also
+/// appear in the end-of-battle summary (and are bolded in the battle log).
+/// </summary>
+public enum BattleEventImportance
+{
+    Minor = 0,
+    Major = 1,
+}
+
 public sealed record BattleTurnEvent(
     BattleTurnEventKind Kind,
     string TargetName,

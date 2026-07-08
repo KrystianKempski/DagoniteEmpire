@@ -19,6 +19,7 @@
 @inject IWoundRepository _woundRepository
 @inject IMobRepository _mobRepository
 @inject IBattlePhaseRepository _battlePhaseRepository
+@inject IBattleEventRepository _battleEventRepository
 @inject IEquipmentRepository _equipmentRepository
 @inject IUserService _userService
 @inject IScribeService _scribeService
@@ -42,7 +43,13 @@ else
 {
     @if (OngoingBattle)
     {
-        <div class="battle-map-fab-wrapper">
+        <div class="battle-map-fab-wrapper" style="display:flex; flex-direction:column; gap:12px; align-items:center;">
+            <MudFab Color="Color.Error"
+                    StartIcon="@Icons.Material.Filled.MenuBook"
+                    Size="Size.Large"
+                    OnClick="OpenBattleLog"
+                    Title="Battle log"
+                    aria-label="Open battle log" />
             <MudFab Color="Color.Error"
                     StartIcon="@Icons.Material.Filled.GridOn"
                     Size="Size.Large"
@@ -71,7 +78,8 @@ else
                     {
                         <BattleDrawerPanel WikiDeployed="_wikiDeployed"
                                            OnOpenCombatRules="OpenCombatRulesWiki"
-                                           OnOpenBattleMap="OpenBattleMap" />
+                                           OnOpenBattleMap="OpenBattleMap"
+                                           OnOpenBattleLog="OpenBattleLog" />
                     }
                     @if (UserInfo?.IsAdminOrMG == true)
                     {
@@ -119,6 +127,7 @@ else
                                 </MudButton>
                             </MudItem>
                             <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
+                            <MudItem xs="12"><MudButton FullWidth StartIcon="@Icons.Material.Filled.History" OnClick="OpenBattleLogHistory">Battle logs</MudButton></MudItem>
                         </MudGrid>
                     }
                     @if (IsLoadingCharacters)
@@ -162,7 +171,8 @@ else
                     {
                         <BattleDrawerPanel WikiDeployed="_wikiDeployed"
                                            OnOpenCombatRules="OpenCombatRulesWiki"
-                                           OnOpenBattleMap="OpenBattleMap" />
+                                           OnOpenBattleMap="OpenBattleMap"
+                                           OnOpenBattleLog="OpenBattleLog" />
                     }
                     @if (UserInfo?.IsAdminOrMG == true)
                     {
@@ -210,6 +220,7 @@ else
                                 </MudButton>
                             </MudItem>
                             <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
+                            <MudItem xs="12"><MudButton FullWidth StartIcon="@Icons.Material.Filled.History" OnClick="OpenBattleLogHistory">Battle logs</MudButton></MudItem>
                         </MudGrid>
                     }
                     @if (IsLoadingCharacters)
@@ -275,6 +286,10 @@ else
                                     <MudPaper Class="battle-summary-post d-flex flex-column pa-2 flex-grow-1" Width="100%">
                                         <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center" Class="battle-summary-toolbar pb-1">
                                             <MudText Typo="Typo.h6" Class="battle-summary-title flex-grow-1 mb-0">@GetBattleSummaryHeader(post)</MudText>
+                                            @if (IsBattleEndedPost(post) && TryGetBattlePhaseIdFromPost(post, out var _))
+                                            {
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="battle log" Title="Open battle log" OnClick="@(() => OpenBattleLogForPost(post))" />
+                                            }
                                             @if (CanEditBattleSummaryPost(post))
                                             {
                                                 <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
@@ -344,6 +359,10 @@ else
                                         <MudPaper Width="100%" Class="battle-summary-post d-flex flex-column pa-2 flex-grow-1">
                                             <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center" Class="battle-summary-toolbar pb-1">
                                                 <MudText Typo="Typo.h6" Class="battle-summary-title flex-grow-1 mb-0">@GetBattleSummaryHeader(post)</MudText>
+                                                @if (IsBattleEndedPost(post) && TryGetBattlePhaseIdFromPost(post, out var _))
+                                                {
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="battle log" Title="Open battle log" OnClick="@(() => OpenBattleLogForPost(post))" />
+                                                }
                                                 @if (CanEditBattleSummaryPost(post))
                                                 {
                                                     <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
@@ -461,8 +480,6 @@ else
     private IDictionary<int, AllParamsModel?> CharacterAllParams { get; set; } = new Dictionary<int, AllParamsModel?>();
     private ICollection<MobDTO> Mobs = new List<MobDTO>();
     private BattlePhaseDTO? BattlePhase = null;
-    private readonly List<BattleTurnEvent> _turnEvents = new();
-    private readonly List<BattleTurnEvent> _battleEvents = new();
     private List<RaceDTO> ApprovedRacesCache { get; set; } = new();
     public PostDTO NewPost { get; set; } = new();
     public UserInfo? UserInfo { get; set; }
@@ -1121,8 +1138,6 @@ else
             return;
         }
 
-        _turnEvents.Clear();
-        _battleEvents.Clear();
         BattlePhase = new(Chapter.CampaignId, Id);
         OngoingBattle = true;
         BattleButton = "End Battle";
@@ -1137,6 +1152,49 @@ else
 
     private void OpenCombatRulesWiki() =>
         _navigationManager.NavigateTo(CombatRulesWikiPath, forceLoad: true);
+
+    private async Task OpenBattleLog()
+    {
+        if (BattlePhase is null || BattlePhase.Id < 1)
+        {
+            SnackBar.Add("No ongoing battle.", Severity.Warning);
+            return;
+        }
+
+        await ShowBattleLogDialogAsync(new DialogParameters<BattleLogDialog>
+        {
+            { x => x.BattlePhaseId, BattlePhase.Id },
+        });
+    }
+
+    // Opens the log for the specific battle referenced by a "Battle ended" summary post.
+    private async Task OpenBattleLogForPost(PostDTO post)
+    {
+        if (!TryGetBattlePhaseIdFromPost(post, out var phaseId))
+        {
+            SnackBar.Add("Battle log is not available for this battle.", Severity.Warning);
+            return;
+        }
+
+        await ShowBattleLogDialogAsync(new DialogParameters<BattleLogDialog>
+        {
+            { x => x.BattlePhaseId, phaseId },
+        });
+    }
+
+    // MG entry point: browse the logs of every battle recorded in this chapter.
+    private async Task OpenBattleLogHistory()
+    {
+        await ShowBattleLogDialogAsync(new DialogParameters<BattleLogDialog>
+        {
+            { x => x.ChapterId, Id },
+            { x => x.ShowHistory, true },
+            { x => x.BattlePhaseId, BattlePhase?.Id ?? 0 },
+        });
+    }
+
+    private async Task ShowBattleLogDialogAsync(DialogParameters<BattleLogDialog> parameters) =>
+        await DialogService.ShowAsync<BattleLogDialog>("Battle log", parameters, await SetDialogOptions(MaxWidth.Medium));
 
     private async Task NextTurn()
     {
@@ -1247,7 +1305,7 @@ else
         foreach (var participant in participants)
         {
             var test = BleedingTurnModel.RunPainTest(participant.BleedingTurnsRemaining, participant.PainResistance);
-            RecordBleedingPainTestEvent(participant.DisplayName, test);
+            await RecordBleedingPainTestEvent(participant.DisplayName, test);
 
             if (test.Passed)
                 continue;
@@ -1255,7 +1313,7 @@ else
             if (participant.CharacterId is int charId)
             {
                 await AddFightStatesAsync($"{States.Names.Unconscious}:{test.UnconsciousDuration}, ", charId);
-                AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, participant.DisplayName, null, States.Names.Unconscious));
+                await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, participant.DisplayName, null, States.Names.Unconscious));
             }
             else if (participant.Mob is not null)
             {
@@ -1263,15 +1321,15 @@ else
                     participant.Mob.States,
                     $"{States.Names.Unconscious}:{test.UnconsciousDuration}, ");
                 await _mobRepository.Update(participant.Mob);
-                AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, participant.DisplayName, null, States.Names.Unconscious));
+                await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, participant.DisplayName, null, States.Names.Unconscious));
             }
         }
     }
 
-    private void RecordBleedingPainTestEvent(string targetName, BleedingPainTestResult test)
+    private async Task RecordBleedingPainTestEvent(string targetName, BleedingPainTestResult test)
     {
         var description = $"DC {test.Dc}: {test.ResultText}";
-        _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.BleedingPainTest, targetName, null, description));
+        await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.BleedingPainTest, targetName, null, description));
     }
 
     private async Task AdvanceTurnStatesAsync()
@@ -1320,15 +1378,19 @@ else
             return;
         }
 
-        if (_turnEvents.Count > 0 && BattlePhase is not null)
+        if (BattlePhase is not null)
         {
-            try
+            var finalTurnEvents = await LoadBattleEventsAsync(BattlePhase.CurrentTurn);
+            if (finalTurnEvents.Count > 0)
             {
-                await PostTurnSummaryAsync(BattlePhase.CurrentTurn, BattlePhase.CurrentTurn, battleEnding: true);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning(ex, "Failed to post final turn summary for chapter {ChapterId}", Id);
+                try
+                {
+                    await PostTurnSummaryAsync(BattlePhase.CurrentTurn, BattlePhase.CurrentTurn, battleEnding: true);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to post final turn summary for chapter {ChapterId}", Id);
+                }
             }
         }
 
@@ -1479,7 +1541,7 @@ else
                 await _mobRepository.Update(defenderMob);
             }
 
-            RecordFightPersistenceEvents(snapshot);
+            await RecordFightPersistenceEvents(snapshot);
         }
         catch (Exception ex)
         {
@@ -1714,7 +1776,7 @@ else
         if (result is not null && !result.Canceled)
         {
             if (result.Data is StatusAddedSnapshot status)
-                RecordStatusAddedEvent(status);
+                await RecordStatusAddedEvent(status);
 
             IsLoadingCharacters = true;
             StateHasChanged();
@@ -1808,12 +1870,31 @@ else
 
     private static bool IsBattleSummaryPost(PostDTO post) =>
         post.AlternativeName is "Battle turn" or "Battle ended" or "Battle started"
-        || (post.AlternativeName?.StartsWith("Battle turn ", StringComparison.Ordinal) ?? false);
+        || (post.AlternativeName?.StartsWith("Battle turn ", StringComparison.Ordinal) ?? false)
+        || (post.AlternativeName?.StartsWith("Battle ended ", StringComparison.Ordinal) ?? false);
+
+    private static bool IsBattleEndedPost(PostDTO post) =>
+        post.AlternativeName is "Battle ended"
+        || (post.AlternativeName?.StartsWith("Battle ended ", StringComparison.Ordinal) ?? false);
+
+    // "Battle ended {phaseId}" posts carry the id of the battle whose log they summarize.
+    private static bool TryGetBattlePhaseIdFromPost(PostDTO post, out int phaseId)
+    {
+        phaseId = 0;
+        const string prefix = "Battle ended ";
+        if (post.AlternativeName?.StartsWith(prefix, StringComparison.Ordinal) != true)
+            return false;
+
+        return int.TryParse(post.AlternativeName.AsSpan(prefix.Length).Trim(), out phaseId) && phaseId > 0;
+    }
 
     private static string GetBattleSummaryHeader(PostDTO post)
     {
         if (post.AlternativeName?.StartsWith("Battle turn ", StringComparison.Ordinal) == true)
             return $"{post.AlternativeName.Trim()} begins";
+
+        if (IsBattleEndedPost(post))
+            return "Battle ended";
 
         if (post.AlternativeName is "Battle turn")
         {
@@ -1870,14 +1951,85 @@ else
     private bool CanEditBattleSummaryPost(PostDTO post) =>
         UserInfo?.IsAdminOrMG == true && IsBattleSummaryPost(post);
 
-    private void AddTurnEvent(BattleTurnEvent e)
+    // Single entry point for recording an event. It only persists to the DB now; every summary
+    // (turn and battle) reads back from the DB, so there is no in-memory event buffer to keep in sync.
+    private async Task AddTurnEvent(BattleTurnEvent e) => await PersistBattleEventAsync(e);
+
+    // Deciding what is worth surfacing in the end-of-battle report:
+    // - kills and knock-outs are always Major (that is the outcome of the fight),
+    // - wounds are Major only when a player character takes them; mob wounds stay per-turn only,
+    // - everything else (states, bleeding pain tests) is Minor.
+    private static BattleEventImportance GetEventImportance(BattleTurnEventKind kind, bool targetIsCharacter) => kind switch
     {
-        _turnEvents.Add(e);
-        if (e.Kind is BattleTurnEventKind.Wound or BattleTurnEventKind.Unconscious or BattleTurnEventKind.Dead)
-            _battleEvents.Add(e);
+        BattleTurnEventKind.Dead or BattleTurnEventKind.Unconscious => BattleEventImportance.Major,
+        BattleTurnEventKind.Wound => targetIsCharacter ? BattleEventImportance.Major : BattleEventImportance.Minor,
+        _ => BattleEventImportance.Minor,
+    };
+
+    // A battle target is a "player character" when its name matches one of the chapter's characters.
+    // Mobs (and anything else) are treated as non-character targets.
+    private bool IsCharacterTarget(string? targetName)
+    {
+        if (string.IsNullOrWhiteSpace(targetName) || Chapter is null)
+            return false;
+
+        var name = targetName.Trim();
+        return Chapter.Characters.Any(c =>
+            !string.IsNullOrWhiteSpace(c.NPCName)
+            && string.Equals(c.NPCName!.Trim(), name, StringComparison.OrdinalIgnoreCase));
     }
 
-    private void RecordFightPersistenceEvents(FightPersistenceSnapshot snapshot)
+    private async Task PersistBattleEventAsync(BattleTurnEvent e)
+    {
+        if (BattlePhase is null || BattlePhase.Id < 1)
+            return;
+
+        try
+        {
+            var dto = new BattleEventDTO
+            {
+                BattlePhaseId = BattlePhase.Id,
+                ChapterId = Id,
+                CampaignId = Chapter?.CampaignId ?? BattlePhase.CampaignId,
+                TurnNumber = BattlePhase.CurrentTurn,
+                Kind = e.Kind,
+                Importance = GetEventImportance(e.Kind, IsCharacterTarget(e.TargetName)),
+                TargetName = GetEventTargetName(e.TargetName),
+                CausedBy = e.CausedBy,
+                Description = e.Description,
+                CreatedDate = DateTime.Now,
+            };
+            await _battleEventRepository.Create(dto);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to persist battle event for chapter {ChapterId}", Id);
+        }
+    }
+
+    // Authoritative source for summaries: reads events straight from the DB for the current battle.
+    // Pass a turn number to get just that turn's events, or null for the whole battle.
+    private async Task<List<BattleTurnEvent>> LoadBattleEventsAsync(int? turnNumber = null)
+    {
+        if (BattlePhase is null || BattlePhase.Id < 1)
+            return new List<BattleTurnEvent>();
+
+        try
+        {
+            var events = await _battleEventRepository.GetByBattlePhase(BattlePhase.Id);
+            return events
+                .Where(ev => turnNumber is null || ev.TurnNumber == turnNumber)
+                .Select(ev => new BattleTurnEvent(ev.Kind, ev.TargetName, ev.CausedBy, ev.Description))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load battle events for chapter {ChapterId}", Id);
+            return new List<BattleTurnEvent>();
+        }
+    }
+
+    private async Task RecordFightPersistenceEvents(FightPersistenceSnapshot snapshot)
     {
         var attacker = snapshot.SelectedAttacker;
         var defender = snapshot.SelectedDefender;
@@ -1888,20 +2040,20 @@ else
                 continue;
 
             var description = $"{wound.Severity} wound to {wound.Location.ToLower()}";
-            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, description));
+            await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, description));
         }
 
         if (snapshot.NewWounds.Count == 0
             && Wounds.IsReportableInTurnSummary(snapshot.WoundSeverity))
         {
-            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, $"{snapshot.WoundSeverity} wound"));
+            await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, $"{snapshot.WoundSeverity} wound"));
         }
 
-        RecordStateEvents(snapshot.DefenderNewStates, defender, attacker);
-        RecordStateEvents(snapshot.AttackerNewStates, attacker, defender);
+        await RecordStateEvents(snapshot.DefenderNewStates, defender, attacker);
+        await RecordStateEvents(snapshot.AttackerNewStates, attacker, defender);
     }
 
-    private void RecordStateEvents(string? states, string target, string? causedBy)
+    private async Task RecordStateEvents(string? states, string target, string? causedBy)
     {
         if (string.IsNullOrWhiteSpace(states))
             return;
@@ -1912,25 +2064,25 @@ else
                 continue;
 
             if (name == States.Names.Unconscious)
-                AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, target, causedBy, name));
+                await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, target, causedBy, name));
             else if (name == States.Names.Dead)
-                AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Dead, target, causedBy, name));
+                await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Dead, target, causedBy, name));
             else
-                _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.State, target, causedBy, $"{name} state"));
+                await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.State, target, causedBy, $"{name} state"));
         }
     }
 
-    private void RecordStatusAddedEvent(StatusAddedSnapshot status)
+    private async Task RecordStatusAddedEvent(StatusAddedSnapshot status)
     {
         if (status.StateName is States.Names.NoTurn or States.Names.HalfTurn)
             return;
 
         if (status.StateName == States.Names.Unconscious)
-            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, status.TargetName, null, status.StateName));
+            await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Unconscious, status.TargetName, null, status.StateName));
         else if (status.StateName == States.Names.Dead)
-            AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Dead, status.TargetName, null, status.StateName));
+            await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Dead, status.TargetName, null, status.StateName));
         else
-            _turnEvents.Add(new BattleTurnEvent(BattleTurnEventKind.State, status.TargetName, null, $"{status.StateName} state ({status.Duration} turns)"));
+            await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.State, status.TargetName, null, $"{status.StateName} state ({status.Duration} turns)"));
     }
 
     private static string BoldWoundDescription(string description)
@@ -1998,14 +2150,14 @@ else
     private static string FormatRoundCount(int rounds) =>
         rounds == 1 ? "1 round" : $"{rounds} rounds";
 
-    private string BuildBattleEndSummaryHtml(int rounds)
+    private string BuildBattleEndSummaryHtml(int rounds, IReadOnlyList<BattleTurnEvent> events)
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
         sb.Append($"The battle lasted {RichText.BoldText(FormatRoundCount(rounds))}.");
         sb.Append("<br><br>");
 
-        var casualties = _battleEvents
+        var casualties = events
             .Where(e => e.Kind is BattleTurnEventKind.Dead or BattleTurnEventKind.Unconscious)
             .ToList();
 
@@ -2022,8 +2174,9 @@ else
             sb.Append("<br>");
         }
 
-        var woundsByTarget = _battleEvents
-            .Where(e => e.Kind == BattleTurnEventKind.Wound)
+        // Only wounds taken by player characters are notable enough for the end-of-battle report.
+        var woundsByTarget = events
+            .Where(e => e.Kind == BattleTurnEventKind.Wound && IsCharacterTarget(e.TargetName))
             .GroupBy(e => e.TargetName)
             .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
 
@@ -2111,19 +2264,19 @@ else
         return sb.ToString();
     }
 
-    private string BuildTurnSummaryHtml(int endingTurn, int startingTurn, bool battleEnding = false)
+    private string BuildTurnSummaryHtml(int endingTurn, IReadOnlyList<BattleTurnEvent> events, bool battleEnding = false)
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
         sb.Append(RichText.BoldText($"Summary of turn {endingTurn}:"));
         sb.Append("<br>");
-        if (_turnEvents.Count == 0)
+        if (events.Count == 0)
         {
             sb.Append("Nothing notable happened.");
         }
         else
         {
-            foreach (var e in _turnEvents)
+            foreach (var e in events)
             {
                 sb.Append("&#8226; ");
                 sb.Append(FormatTurnEvent(e));
@@ -2171,7 +2324,8 @@ else
         if (Chapter is null || UserInfo?.SelectedCharacter is null)
             return;
 
-        var content = BuildTurnSummaryHtml(endingTurn, startingTurn, battleEnding);
+        var events = await LoadBattleEventsAsync(endingTurn);
+        var content = BuildTurnSummaryHtml(endingTurn, events, battleEnding);
 
         var post = new PostDTO
         {
@@ -2187,8 +2341,6 @@ else
         var result = await _postRepository.Create(post);
         if (result is null)
             return;
-
-        _turnEvents.Clear();
 
         if (_hubConnection is not null)
         {
@@ -2210,7 +2362,8 @@ else
         if (Chapter is null || UserInfo?.SelectedCharacter is null)
             return;
 
-        var content = BuildBattleEndSummaryHtml(rounds);
+        var events = await LoadBattleEventsAsync();
+        var content = BuildBattleEndSummaryHtml(rounds, events);
 
         var post = new PostDTO
         {
@@ -2219,15 +2372,14 @@ else
             Content = content,
             CharacterId = UserInfo.SelectedCharacter.Id,
             Character = UserInfo.SelectedCharacter,
-            AlternativeName = "Battle ended",
+            // Embed the battle id so the post can later link back to that battle's log.
+            AlternativeName = BattlePhase is not null ? $"Battle ended {BattlePhase.Id}" : "Battle ended",
             AlternativeImageUrl = SD.PostNoPortrait,
         };
 
         var result = await _postRepository.Create(post);
         if (result is null)
             return;
-
-        _battleEvents.Clear();
 
         if (_hubConnection is not null)
             await _hubConnection.SendAsync("NotifyNewPost", Id, result.Id);

@@ -24,6 +24,15 @@
                 <span>Map</span>
             </MudStack>
         </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Error"
+                   Size="Size.Small"
+                   OnClick="OnOpenBattleLog">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" />
+                <span>Log</span>
+            </MudStack>
+        </MudButton>
     </MudStack>
 </div>
 
@@ -31,4 +40,5 @@
     [Parameter] public bool WikiDeployed { get; set; }
     [Parameter] public EventCallback OnOpenCombatRules { get; set; }
     [Parameter] public EventCallback OnOpenBattleMap { get; set; }
+    [Parameter] public EventCallback OnOpenBattleLog { get; set; }
 }

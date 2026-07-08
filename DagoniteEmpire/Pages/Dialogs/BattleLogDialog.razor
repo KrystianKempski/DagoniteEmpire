@@ -1,0 +1,160 @@
+@using DA_Models.ChatModels
+@using DA_Models.ComponentModels
+@inject IBattleEventRepository _battleEventRepository
+@inject IBattlePhaseRepository _battlePhaseRepository
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.MenuBook" Class="mr-2" />
+            Battle log
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (ShowHistory && _battles.Count > 0)
+        {
+            <MudSelect T="int" Label="Battle" Value="_selectedPhaseId" ValueChanged="OnBattleChanged"
+                       Dense="true" Variant="Variant.Outlined" Class="mb-3">
+                @foreach (var b in _battles)
+                {
+                    <MudSelectItem T="int" Value="b.Id">@b.Label</MudSelectItem>
+                }
+            </MudSelect>
+        }
+
+        @if (_loading)
+        {
+            <div class="d-flex justify-center pa-4">
+                <MudProgressCircular Indeterminate="true" />
+            </div>
+        }
+        else if (ShowHistory && _battles.Count == 0)
+        {
+            <MudText Class="pa-2">No battles have been recorded in this chapter yet.</MudText>
+        }
+        else if (_eventsByTurn.Count == 0)
+        {
+            <MudText Class="pa-2">No events have been recorded in this battle.</MudText>
+        }
+        else
+        {
+            <MudStack Spacing="4" Class="battle-log-content pa-1">
+                @foreach (var turn in _eventsByTurn)
+                {
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Color="Color.Error"><strong>Turn @turn.Key</strong></MudText>
+                        <MudDivider Class="mb-1" />
+                        @foreach (var ev in turn.Value)
+                        {
+                            <div class="battle-log-line">
+                                @((MarkupString)FormatEvent(ev))
+                            </div>
+                        }
+                    </div>
+                }
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    // The battle to show. In history mode this is the initially selected battle.
+    [Parameter] public int BattlePhaseId { get; set; }
+
+    // Used in history mode to list every battle recorded for the chapter.
+    [Parameter] public int ChapterId { get; set; }
+
+    // When true, shows a selector to browse logs of past battles in the chapter.
+    [Parameter] public bool ShowHistory { get; set; }
+
+    private bool _loading = true;
+    private int _selectedPhaseId;
+    private List<BattleOption> _battles = new();
+    private List<KeyValuePair<int, List<BattleEventDTO>>> _eventsByTurn = new();
+
+    private sealed record BattleOption(int Id, string Label);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ShowHistory && ChapterId > 0)
+        {
+            var phases = (await _battlePhaseRepository.GetAllForChapter(ChapterId)).ToList();
+            _battles = phases
+                .OrderBy(p => p.Id)
+                .Select((p, i) => new BattleOption(p.Id, BuildBattleLabel(i + 1, p)))
+                .OrderByDescending(b => b.Id)
+                .ToList();
+
+            _selectedPhaseId = BattlePhaseId > 0 && _battles.Any(b => b.Id == BattlePhaseId)
+                ? BattlePhaseId
+                : (_battles.FirstOrDefault()?.Id ?? 0);
+        }
+        else
+        {
+            _selectedPhaseId = BattlePhaseId;
+        }
+
+        await LoadEventsAsync();
+    }
+
+    private static string BuildBattleLabel(int ordinal, BattlePhaseDTO p)
+    {
+        var turns = p.CurrentTurn == 1 ? "1 turn" : $"{p.CurrentTurn} turns";
+        return p.BattleOngoing ? $"Battle #{ordinal} (ongoing, {turns})" : $"Battle #{ordinal} ({turns})";
+    }
+
+    private async Task OnBattleChanged(int phaseId)
+    {
+        _selectedPhaseId = phaseId;
+        await LoadEventsAsync();
+    }
+
+    private async Task LoadEventsAsync()
+    {
+        _loading = true;
+        try
+        {
+            var events = _selectedPhaseId > 0
+                ? (await _battleEventRepository.GetByBattlePhase(_selectedPhaseId)).ToList()
+                : new List<BattleEventDTO>();
+
+            _eventsByTurn = events
+                .GroupBy(e => e.TurnNumber)
+                .OrderBy(g => g.Key)
+                .Select(g => new KeyValuePair<int, List<BattleEventDTO>>(g.Key, g.ToList()))
+                .ToList();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    // Major events are shown in bold so they stand out; Minor events use the normal font.
+    private static string FormatEvent(BattleEventDTO e)
+    {
+        var target = Encode(string.IsNullOrWhiteSpace(e.TargetName) ? "Unknown" : e.TargetName.Trim());
+        var description = Encode(e.Description);
+        var causedBy = string.IsNullOrEmpty(e.CausedBy) ? string.Empty : $" (by {Encode(e.CausedBy)})";
+        var text = e.Kind switch
+        {
+            BattleTurnEventKind.Wound => $"{target} received {description}{causedBy}",
+            BattleTurnEventKind.Unconscious => $"{target} became unconscious{causedBy}",
+            BattleTurnEventKind.Dead => $"{target} died{causedBy}",
+            BattleTurnEventKind.BleedingPainTest => $"{target} — pain resistance test (Bleeding): {description}",
+            _ => $"{target} gained {description}{causedBy}",
+        };
+
+        var line = "&#8226; " + text;
+        return e.Importance == BattleEventImportance.Major ? $"<strong>{line}</strong>" : line;
+    }
+
+    private static string Encode(string? value) => System.Net.WebUtility.HtmlEncode(value ?? string.Empty);
+
+    private void Close() => MudDialog.Close();
+}

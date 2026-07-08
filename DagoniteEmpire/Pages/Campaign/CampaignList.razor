@@ -10,6 +10,7 @@
 @inject ICampaignRepository _campaignRepository
 @inject IChapterRepository _chapterRepository
 @inject IUserService _userService
+@inject IPostRepository _postRepository
 @inject CallbackService callbackService
 @implements IDisposable
 
@@ -59,9 +60,17 @@
                             <div class="campaign-overlay">
                                 <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center">
                                     <MudText Class="flex-grow-1 campaign-title" Typo="Typo.h5">@camp.Name</MudText>
-                                    <span @onclick:stopPropagation="true">
-                                        <WikiNavLink CampaignName="@camp.Name" Label="Wiki" Variant="Variant.Text" Color="Color.Inherit" Class="pa-0" />
+                                    <span @onclick:stopPropagation="true" @onmousedown:stopPropagation="true">
+                                        <WikiNavLink CampaignName="@camp.Name" Label="Wiki" Variant="Variant.Text" Color="Color.Info" Class="pa-0 campaign-action-link" />
                                     </span>
+                                    <MudButton Class="campaign-action-icon"
+                                               Variant="Variant.Text"
+                                               OnClick="@(() => GoToLastPost(camp))"
+                                               OnClickStopPropagation="true"
+                                               aria-label="last post"
+                                               Title="Last post">
+                                        <img src="@MyIcon.ScrollWhite" alt="Last post" width="20" height="20" />
+                                    </MudButton>
                                     @if (UserInfo?.IsAdminOrMG == true)
                                     {
                                         <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>
@@ -262,6 +271,48 @@
     {
         UserInfo = await _userService.GetUserInfo();
         _navigationManager.NavigateTo($"/campaign/{campaign.Id}");
+    }
+
+    private async Task GoToLastPost(CampaignDTO campaign)
+    {
+        try
+        {
+            var chapters = (await _chapterRepository.GetAll(campaign.Id)).ToList();
+            if (!chapters.Any())
+            {
+                _snackBar.Add("This campaign does not have any chapters yet.", Severity.Info);
+                return;
+            }
+
+            var chapterLastPosts = new List<(int ChapterId, DateTime CreatedDate)>();
+            foreach (var chapter in chapters)
+            {
+                var lastPost = (await _postRepository.GetAll(chapter.Id))
+                    .OrderByDescending(post => post.CreatedDate)
+                    .FirstOrDefault();
+
+                if (lastPost is not null)
+                {
+                    chapterLastPosts.Add((chapter.Id, lastPost.CreatedDate));
+                }
+            }
+
+            var latestChapter = chapterLastPosts
+                .OrderByDescending(x => x.CreatedDate)
+                .FirstOrDefault();
+
+            if (latestChapter.ChapterId == 0)
+            {
+                _snackBar.Add("No posts have been written in this campaign yet.", Severity.Info);
+                return;
+            }
+
+            _navigationManager.NavigateTo($"/chapter/{latestChapter.ChapterId}?lastPage=true");
+        }
+        catch (Exception e)
+        {
+            _snackBar.Add("Error while going to latest post: " + e.Message, Severity.Error);
+        }
     }
 
 

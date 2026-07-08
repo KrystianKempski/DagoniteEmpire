@@ -59,6 +59,7 @@ namespace DA_Business.Mapper
 
             CreateMap<Campaign, CampaignDTO>().ReverseMap();
             CreateMap<BattlePhase, BattlePhaseDTO>().ReverseMap();
+            CreateMap<BattleEvent, BattleEventDTO>().ReverseMap();
             CreateMap<SpellCircle, SpellCircleDTO>().ReverseMap();
             
             // Wound: ignore navigation property when mapping DTO -> Entity

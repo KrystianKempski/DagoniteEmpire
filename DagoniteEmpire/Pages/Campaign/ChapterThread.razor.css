@@ -5,12 +5,17 @@
     z-index: 1300;
 }
 
-/* Floating shortcut to the tactical map, shown only while a battle is ongoing. */
+/* Floating shortcuts (battle log + tactical map) shown only while a battle is ongoing.
+   Stacked vertically so the log sits just above the map. */
 .battle-map-fab-wrapper {
     position: fixed;
     right: 24px;
     bottom: 24px;
     z-index: 1300;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
 }
 
 @media (max-width: 960px) {
