@@ -1,0 +1,30 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="@Title">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        @if (RowList.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">Brak wpisów w tej sekcji.</MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <PpbTable Rows="@RowList" Summary="@AdditiveSum" SummaryLabel="Σ addytywne sekcji" TableClass="@TableClass" />
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public IEnumerable<PpbModifierRow>? Rows { get; set; }
+    [Parameter] public string TableClass { get; set; } = "ppb-table--zebra";
+
+    private List<PpbModifierRow> RowList => Rows?.ToList() ?? new List<PpbModifierRow>();
+
+    private PpbVector Glance => BaronyCalc.SectionGlance(RowList);
+    private PpbVector AdditiveSum => BaronyCalc.SumAdditive(RowList);
+}

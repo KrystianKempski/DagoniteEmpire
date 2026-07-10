@@ -1,0 +1,30 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="ppb-chips">
+    @foreach (var info in PpbCatalog.All)
+    {
+        var v = Vector?[info.Key] ?? 0m;
+        if (v == 0m && HideZero)
+        {
+            continue;
+        }
+        <span class="ppb-chip @(v > 0 ? "ppb-chip--pos" : v < 0 ? "ppb-chip--neg" : "")" title="@info.NamePl">
+            <span class="ppb-chip__label">@info.ShortPl</span>
+            <span class="ppb-chip__value">@Fmt(v)</span>
+        </span>
+    }
+</div>
+
+@code {
+    [Parameter] public PpbVector? Vector { get; set; }
+    [Parameter] public bool HideZero { get; set; } = true;
+
+    private static string Fmt(decimal v)
+    {
+        var rounded = decimal.Round(v, 2);
+        var text = rounded == decimal.Truncate(rounded)
+            ? ((long)rounded).ToString()
+            : rounded.ToString("0.##");
+        return rounded > 0 ? "+" + text : text;
+    }
+}

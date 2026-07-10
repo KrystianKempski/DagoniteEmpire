@@ -1,0 +1,101 @@
+@page "/barony/style-lab"
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+
+<PageTitle>Dagonite Empire | Laboratorium stylów baronii</PageTitle>
+
+<div class="barony-scope">
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-0">
+        <h1 class="barony-page-title">Laboratorium stylów baronii</h1>
+        <MudText Class="mb-4" Style="color:var(--barony-muted);">
+            Warianty tabel PPB oraz generyczna Karta Baronii. Po wyborze utrwalimy jeden wariant jako domyślny.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Wariant A — zebra</div>
+                    <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--zebra" />
+                </div>
+            </MudItem>
+
+            <MudItem xs="12">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Wariant B — linie + hover</div>
+                    <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--lined" />
+                </div>
+            </MudItem>
+
+            <MudItem xs="12">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Wariant C — kompaktowy</div>
+                    <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--compact" />
+                </div>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Sekcja rozwijana (podgląd)</div>
+                    <CascadingValue Value="@_viewOptions">
+                        <MudSwitch T="bool" @bind-Value="_defaultExpanded" Color="Color.Default" Label="Domyślnie rozwinięte" Class="mb-2" />
+                        <BaronySection Title="Miasto i budynki">
+                            <Summary>
+                                <PpbSummaryChips Vector="@_summary" />
+                            </Summary>
+                            <ChildContent>
+                                <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--zebra" />
+                            </ChildContent>
+                        </BaronySection>
+                    </CascadingValue>
+                </div>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Karta Baronii — przykład</div>
+                    <div class="barony-stat"><span class="barony-stat__label">Rok / Sezon</span><span class="barony-stat__value">627 / Lato</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Tura</span><span class="barony-stat__value">7</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Złoto w skarbcu</span><span class="barony-stat__value">1 240</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Niepokój</span><span class="barony-stat__value">3</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Rozmiar baronii</span><span class="barony-stat__value">18 pól</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Przyrost żywności</span><span class="barony-stat__value">+12</span></div>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</div>
+
+@code {
+    private readonly BaronyViewOptions _viewOptions = new();
+    private bool _defaultExpanded = true;
+
+    private List<PpbModifierRow> _rows = new();
+    private PpbVector _summary = new();
+
+    protected override void OnParametersSet()
+    {
+        _viewOptions.DefaultExpanded = _defaultExpanded;
+    }
+
+    protected override void OnInitialized()
+    {
+        var ratusz = new PpbModifierRow { Label = "Ratusz", Formula = "Bazowy budynek administracyjny" };
+        ratusz.Additive[Ppb.Loyalty] = 2;
+        ratusz.Additive[Ppb.Law] = 1;
+        ratusz.Additive[Ppb.Treasury] = -5;
+
+        var targ = new PpbModifierRow { Label = "Targowisko" };
+        targ.Additive[Ppb.Economy] = 3;
+        targ.Percent[Ppb.Treasury] = 10;
+        targ.Additive[Ppb.Culture] = -1;
+
+        var swiatynia = new PpbModifierRow { Label = "Świątynia" };
+        swiatynia.Additive[Ppb.Stability] = 2;
+        swiatynia.Additive[Ppb.Culture] = 2;
+        swiatynia.Additive[Ppb.Corruption] = -1;
+
+        _rows = new List<PpbModifierRow> { ratusz, targ, swiatynia };
+
+        _summary = PpbVector.Sum(_rows.Select(r => r.Additive));
+        _summary.AddInPlace(PpbVector.Sum(_rows.Select(r => r.Percent)));
+    }
+}

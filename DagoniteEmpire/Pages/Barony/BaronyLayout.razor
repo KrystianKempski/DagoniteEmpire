@@ -1,0 +1,34 @@
+@namespace DagoniteEmpire.Pages.Barony
+@inherits LayoutComponentBase
+@layout DagoniteEmpire.Shared.MainLayout
+
+<div class="barony-scope">
+    <div class="d-flex align-center justify-space-between flex-wrap mb-2" style="gap:8px;">
+        <MudText Class="barony-title" Typo="Typo.h6">Zarządzanie Baronią</MudText>
+        <MudTooltip Text="Domyślny stan sekcji: rozwinięte / zwinięte (możesz i tak klikać sekcje ręcznie).">
+            <MudSwitch T="bool"
+                       Value="_viewOptions.DefaultExpanded"
+                       ValueChanged="OnDefaultExpandedChanged"
+                       Color="Color.Default"
+                       Label="Sekcje domyślnie rozwinięte" />
+        </MudTooltip>
+    </div>
+
+    <CascadingValue Value="@_viewOptions">
+        @Body
+    </CascadingValue>
+
+    <AuthorizeView Roles="@BaronRoles">
+        <Authorized>
+            <BaronyCardTabs />
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private const string BaronRoles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer;
+
+    private readonly BaronyViewOptions _viewOptions = new();
+
+    private void OnDefaultExpandedChanged(bool value) => _viewOptions.DefaultExpanded = value;
+}

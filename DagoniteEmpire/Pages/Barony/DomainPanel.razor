@@ -1,0 +1,170 @@
+@page "/barony"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+
+<PageTitle>Dagonite Empire | Panel Domeny</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie baronii...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (_overview is not null)
+{
+    <div class="d-flex align-center justify-space-between flex-wrap mb-3" style="gap:8px;">
+        <h1 class="barony-page-title mb-0">@_overview.Barony.Name</h1>
+        <MudChip T="string" Color="Color.Default" Variant="Variant.Outlined">
+            @($"Rok {_overview.Barony.Year} · {SeasonPl(_overview.Barony.Season)} · Tura {_overview.Barony.TurnNumber}")
+        </MudChip>
+    </div>
+
+    @* --- Sekcja 1: Ogólny / informacyjny --- *@
+    <BaronySection Title="Panel ogólny / informacyjny">
+        <Summary>
+            <span style="color:var(--barony-muted);">Złoto: <b>@Num(_overview.Barony.TreasuryGold)</b> · Niepokój: <b>@_overview.Barony.Unrest</b> · Rozmiar: <b>@_overview.Barony.Size</b></span>
+        </Summary>
+        <ChildContent>
+            <div class="barony-info-grid">
+                @foreach (var item in InfoItems())
+                {
+                    <div class="barony-stat">
+                        <span class="barony-stat__label">@item.Label</span>
+                        <span class="barony-stat__value">@item.Value</span>
+                    </div>
+                }
+            </div>
+        </ChildContent>
+    </BaronySection>
+
+    @* --- Sekcje modyfikatorów (tabele PPB) --- *@
+    <SectionTable Title="Baron i doradcy" Rows="@_advisorRows" />
+    <SectionTable Title="Miasto i budynki" Rows="@_buildingRows" />
+    <SectionTable Title="Relacje z grupami społecznymi" Rows="@_socialRows" />
+    <SectionTable Title="Ulepszenia terenu" Rows="@_improvementRows" />
+    <SectionTable Title="Dekrety i technologie" Rows="@_decreeRows" />
+    <SectionTable Title="Wydarzenia" Rows="@_eventRows" />
+    <SectionTable Title="Kary i bonusy społeczności" Rows="@_communityRows" />
+
+    @* --- Sekcja podsumowania --- *@
+    <div class="barony-card mt-3">
+        <div class="barony-card__title">Podsumowanie PPB baronii</div>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+            Wstępny wzór: (baza + Σ addytywne) × (1 + Σ procent). Dokładne formuły zostaną dostarczone w kolejnym kroku.
+        </MudText>
+        <div style="overflow-x:auto;">
+            <PpbTable Rows="@_totalBreakdown" Summary="@_grandTotal" SummaryLabel="Wartość końcowa" RowHeader="Składnik" TableClass="ppb-table--lined" />
+        </div>
+    </div>
+}
+
+@code {
+    private BaronyOverviewDTO? _overview;
+
+    private List<PpbModifierRow> _advisorRows = new();
+    private List<PpbModifierRow> _buildingRows = new();
+    private List<PpbModifierRow> _socialRows = new();
+    private List<PpbModifierRow> _improvementRows = new();
+    private List<PpbModifierRow> _decreeRows = new();
+    private List<PpbModifierRow> _eventRows = new();
+    private List<PpbModifierRow> _communityRows = new();
+
+    private List<PpbModifierRow> _totalBreakdown = new();
+    private PpbVector _grandTotal = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        _overview = await _baronyRepo.GetOverview(Barony.Id);
+        if (_overview is null)
+            return;
+
+        _advisorRows = BaronyCalc.AdvisorRows(_overview.Advisors);
+        _buildingRows = BaronyCalc.BuildingRows(_overview.Buildings);
+        _socialRows = BaronyCalc.SocialRows(_overview.SocialRelations);
+        _improvementRows = BaronyCalc.ImprovementRows(_overview.Improvements);
+        _decreeRows = BaronyCalc.DecreeRows(_overview.Decrees);
+        _eventRows = BaronyCalc.EventRows(_overview.Events);
+        _communityRows = BaronyCalc.CommunityRows(_overview.CommunityModifiers);
+
+        BuildTotals();
+    }
+
+    private void BuildTotals()
+    {
+        if (_overview is null)
+            return;
+
+        var allRows = new List<PpbModifierRow>();
+        allRows.AddRange(_advisorRows);
+        allRows.AddRange(_buildingRows);
+        allRows.AddRange(_socialRows);
+        allRows.AddRange(_improvementRows);
+        allRows.AddRange(_decreeRows);
+        allRows.AddRange(_eventRows);
+        allRows.AddRange(_communityRows);
+
+        var additive = BaronyCalc.SumAdditive(allRows);
+        var percent = BaronyCalc.SumPercent(allRows);
+
+        _totalBreakdown = new List<PpbModifierRow>
+        {
+            new() { Label = "Baza PPB", Additive = _overview.Barony.BaseParameters },
+            new() { Label = "Σ addytywne (wszystkie sekcje)", Additive = additive },
+            new() { Label = "Σ procentowe (wszystkie sekcje)", Percent = percent },
+        };
+
+        _grandTotal = PpbMath.Summarize(_overview.Barony.BaseParameters, additive, percent);
+    }
+
+    private IEnumerable<(string Label, string Value)> InfoItems()
+    {
+        var b = _overview!.Barony;
+        yield return ("Rok", b.Year.ToString());
+        yield return ("Miesiąc", MonthPl(b.Month));
+        yield return ("Sezon", SeasonPl(b.Season));
+        yield return ("Tura", b.TurnNumber.ToString());
+        yield return ("Złoto w skarbcu", Num(b.TreasuryGold));
+        yield return ("Kiesa barona", Num(b.BaronPurseGold));
+        yield return ("Niepokój", b.Unrest.ToString());
+        yield return ("Rozmiar baronii", $"{b.Size} pól");
+        yield return ("Żywność w spichlerzach", Num(b.FoodInGranaries));
+        yield return ("Produkcja w turze", Num(_grandTotal[Ppb.Production]));
+        yield return ("Wyżywienie w turze", Num(_grandTotal[Ppb.Food]));
+        yield return ("Lojalność", Num(_grandTotal[Ppb.Loyalty]));
+        yield return ("Stabilność", Num(_grandTotal[Ppb.Stability]));
+        yield return ("Ekonomia", Num(_grandTotal[Ppb.Economy]));
+        yield return ("DC Kontroli baronii", DcControl().ToString());
+    }
+
+    private int DcControl()
+    {
+        // Wstępnie: bazowe DC zależne od rozmiaru baronii. Dokładna formuła [DO UZUPEŁNIENIA].
+        var b = _overview!.Barony;
+        return 10 + b.Size + b.Unrest;
+    }
+
+    private static string Num(decimal v)
+    {
+        var r = decimal.Round(v, 2);
+        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+    }
+
+    private static string SeasonPl(string season) => season switch
+    {
+        "Winter" => "Zima",
+        "Spring" => "Wiosna",
+        "Summer" => "Lato",
+        "Fall" => "Jesień",
+        _ => season,
+    };
+
+    private static string MonthPl(int month)
+        => month >= 1 && month <= SD.Calendar.Months.Length ? SD.Calendar.Months[month - 1].Name : month.ToString();
+}

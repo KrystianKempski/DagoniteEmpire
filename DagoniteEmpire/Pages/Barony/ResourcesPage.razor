@@ -1,0 +1,150 @@
+@page "/barony/resources"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+
+<PageTitle>Dagonite Empire | Zasoby baronii</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (_overview is not null)
+{
+    <h1 class="barony-page-title">Zasoby</h1>
+    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
+        Przychody i wydatki PPB oraz aktualny stan zasobów. Formuły szczegółowe — [DO UZUPEŁNIENIA].
+    </MudText>
+
+    <div class="barony-card mb-3">
+        <div class="barony-card__title">Stan akumulatorów</div>
+        <div class="barony-info-grid">
+            <div class="barony-stat"><span class="barony-stat__label">Żywność w spichlerzach</span><span class="barony-stat__value">@Num(_overview.Barony.FoodInGranaries)</span></div>
+            <div class="barony-stat"><span class="barony-stat__label">Złoto w skarbcu</span><span class="barony-stat__value">@Num(_overview.Barony.TreasuryGold)</span></div>
+            <div class="barony-stat"><span class="barony-stat__label">Kiesa barona</span><span class="barony-stat__value">@Num(_overview.Barony.BaronPurseGold)</span></div>
+        </div>
+    </div>
+
+    <SectionTable Title="Dochody z tury (PPB)" Rows="@_incomeRows" TableClass="ppb-table--lined" />
+    <SectionTable Title="Wydatki z tury (PPB)" Rows="@_expenseRows" TableClass="ppb-table--lined" />
+
+    <div class="barony-card mt-3">
+        <div class="barony-card__title">Bilans zasobów PPB (wstępny)</div>
+        <div style="overflow-x:auto;">
+            <PpbTable Rows="@_balanceRows" Summary="@_netBalance" SummaryLabel="Stan netto" TableClass="ppb-table--zebra" />
+        </div>
+    </div>
+}
+
+@code {
+    private BaronyOverviewDTO? _overview;
+    private List<PpbModifierRow> _incomeRows = new();
+    private List<PpbModifierRow> _expenseRows = new();
+    private List<PpbModifierRow> _balanceRows = new();
+    private PpbVector _netBalance = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        _overview = await _baronyRepo.GetOverview(Barony.Id);
+        if (_overview is null)
+            return;
+
+        var total = BaronyCalc.GrandTotal(_overview);
+
+        _incomeRows = new List<PpbModifierRow>
+        {
+            BaronyCalc.Row("Produkcja w turze", Vec(Ppb.Production, total[Ppb.Production]), new(), "Σ modyfikatorów → Produkcja"),
+            BaronyCalc.Row("Wyżywienie w turze", Vec(Ppb.Food, total[Ppb.Food]), new(), "Σ modyfikatorów → Wyżywienie"),
+            BaronyCalc.Row("Ekonomia w turze", Vec(Ppb.Economy, total[Ppb.Economy]), new(), "Σ modyfikatorów → Ekonomia"),
+            BaronyCalc.Row("Projekty (rezultaty)", SumProjectResults(), new(), "Suma rezultatów zakończonych / w toku"),
+            BaronyCalc.Row("Wydarzenia (przychody)", SumEventIncome(), new()),
+            BaronyCalc.Row("Inne przychody", new(), new(), "[DO UZUPEŁNIENIA]"),
+        };
+
+        _expenseRows = new List<PpbModifierRow>
+        {
+            BaronyCalc.Row("Utrzymanie doradców", Vec(Ppb.Treasury, -SumAdvisorUpkeep()), new()),
+            BaronyCalc.Row("Budynki (koszty utrzymania)", SumBuildingCosts(), new()),
+            BaronyCalc.Row("Projekty (koszty)", SumProjectCosts(), new()),
+            BaronyCalc.Row("Inne wydatki", new(), new(), "[DO UZUPEŁNIENIA]"),
+        };
+
+        var incomeSum = BaronyCalc.SumAdditive(_incomeRows);
+        var expenseSum = BaronyCalc.SumAdditive(_expenseRows);
+
+        _balanceRows = new List<PpbModifierRow>
+        {
+            new() { Label = "Poprzednie zapasy", Additive = PreviousStores() },
+            new() { Label = "Σ dochody z tury", Additive = incomeSum },
+            new() { Label = "Σ wydatki z tury", Additive = expenseSum },
+        };
+
+        _netBalance = PreviousStores();
+        _netBalance.AddInPlace(incomeSum);
+        _netBalance.AddInPlace(expenseSum);
+    }
+
+    private PpbVector PreviousStores()
+    {
+        var v = new PpbVector();
+        v[Ppb.Food] = _overview!.Barony.FoodInGranaries;
+        v[Ppb.Treasury] = _overview.Barony.TreasuryGold;
+        return v;
+    }
+
+    private PpbVector SumProjectResults()
+    {
+        var v = new PpbVector();
+        foreach (var p in _overview!.Projects.Where(x => x.Status != ProjectStatus.Cancelled))
+            v.AddInPlace(p.Result);
+        return v;
+    }
+
+    private PpbVector SumProjectCosts()
+    {
+        var v = new PpbVector();
+        foreach (var p in _overview!.Projects.Where(x => x.Status == ProjectStatus.InProgress))
+            v.AddInPlace(p.Cost);
+        return v;
+    }
+
+    private PpbVector SumEventIncome()
+    {
+        var v = new PpbVector();
+        foreach (var e in _overview!.Events.Where(x => x.IsActive))
+            v.AddInPlace(e.Additive);
+        return v;
+    }
+
+    private PpbVector SumBuildingCosts()
+    {
+        var v = new PpbVector();
+        foreach (var b in _overview!.Buildings)
+            if (b.Additive[Ppb.Treasury] < 0)
+                v.AddInPlace(Vec(Ppb.Treasury, b.Additive[Ppb.Treasury]));
+        return v;
+    }
+
+    private decimal SumAdvisorUpkeep() => _overview!.Advisors.Sum(a => a.UpkeepGold);
+
+    private static PpbVector Vec(Ppb p, decimal val)
+    {
+        var v = new PpbVector();
+        v[p] = val;
+        return v;
+    }
+
+    private static string Num(decimal v)
+    {
+        var r = decimal.Round(v, 2);
+        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+    }
+}

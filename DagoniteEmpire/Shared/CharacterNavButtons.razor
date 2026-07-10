@@ -39,6 +39,13 @@
         <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.MenuBook" aria-label="Wiki"></MudIcon>
         Wiki
     </MudButton>
+    @if (UserInfo?.Role == SD.Role_DukePlayer || UserInfo?.IsAdminOrMG == true)
+    {
+        <MudButton FullWidth="@(IsRow==false)" OnClick="GoToBarony" Style="@($" color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
+            <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.Castle" aria-label="Baronia"></MudIcon>
+            Baronia
+        </MudButton>
+    }
     @if (UserInfo?.IsAdminOrMG == true)
     {
         <MudButton FullWidth="@(IsRow==false)" OnClick="GoToGmPanel" Style="@($" color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
@@ -68,6 +75,19 @@
         catch
         {
             // Ignore — auth state may not be ready during prerender.
+        }
+    }
+
+    private async Task GoToBarony()
+    {
+        try
+        {
+            await OnDrawerChanged.InvokeAsync();
+            _navigationManager.NavigateTo("/barony");
+        }
+        catch (Exception e)
+        {
+            _snackBar.Add("Błąd przejścia do Baronii: " + e.Message, Severity.Error);
         }
     }
 

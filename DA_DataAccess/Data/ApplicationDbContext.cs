@@ -1,4 +1,5 @@
 using Abp.Domain.Entities;
+using DA_DataAccess.BaronyData;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Scribe;
@@ -55,6 +56,20 @@ namespace DA_DataAccess.Data
         public DbSet<ScribeChunk> ScribeChunks { get; set; }
         public DbSet<ScribeConversation> ScribeConversations { get; set; }
         public DbSet<ScribeMessage> ScribeMessages { get; set; }
+
+        // BARONIA - warstwa zarządzania baronią
+        public DbSet<Barony> Baronies { get; set; }
+        public DbSet<Advisor> Advisors { get; set; }
+        public DbSet<BaronyBuilding> BaronyBuildings { get; set; }
+        public DbSet<SocialGroupRelation> SocialGroupRelations { get; set; }
+        public DbSet<Decree> Decrees { get; set; }
+        public DbSet<BaronyEvent> BaronyEvents { get; set; }
+        public DbSet<CommunityModifier> CommunityModifiers { get; set; }
+        public DbSet<Fief> Fiefs { get; set; }
+        public DbSet<TerrainTile> TerrainTiles { get; set; }
+        public DbSet<TerrainImprovement> TerrainImprovements { get; set; }
+        public DbSet<BaronyProject> BaronyProjects { get; set; }
+        public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

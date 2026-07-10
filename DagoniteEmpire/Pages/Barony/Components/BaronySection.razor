@@ -1,0 +1,72 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@implements IDisposable
+
+<div class="barony-section @(IsOpen ? "barony-section--open" : "")">
+    <div class="barony-section__header" @onclick="Toggle">
+        <MudIcon Class="barony-section__chevron" Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
+        <span class="barony-section__title">@Title</span>
+        @if (!IsOpen && Summary is not null)
+        {
+            <div class="barony-section__summary">
+                @Summary
+            </div>
+        }
+    </div>
+    @if (IsOpen)
+    {
+        <div class="barony-section__body">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public BaronyViewOptions? ViewOptions { get; set; }
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Podsumowanie pokazywane w nagłówku, gdy sekcja jest zwinięta.</summary>
+    [Parameter] public RenderFragment? Summary { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // null = brak ręcznego nadpisania (podąża za globalnym domyślnym stanem).
+    private bool? _userOverride;
+    private int _seenVersion = -1;
+
+    private bool IsOpen => _userOverride ?? (ViewOptions?.DefaultExpanded ?? true);
+
+    protected override void OnInitialized()
+    {
+        if (ViewOptions is not null)
+        {
+            ViewOptions.Changed += OnViewOptionsChanged;
+            _seenVersion = ViewOptions.Version;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Gdy zmienił się globalny domyślny stan, kasujemy ręczne nadpisanie.
+        if (ViewOptions is not null && ViewOptions.Version != _seenVersion)
+        {
+            _userOverride = null;
+            _seenVersion = ViewOptions.Version;
+        }
+    }
+
+    private void Toggle() => _userOverride = !IsOpen;
+
+    private void OnViewOptionsChanged()
+    {
+        _userOverride = null;
+        _seenVersion = ViewOptions?.Version ?? _seenVersion;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (ViewOptions is not null)
+            ViewOptions.Changed -= OnViewOptionsChanged;
+    }
+}

@@ -1,0 +1,35 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="ppb-editor">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <MudText Typo="Typo.subtitle2" Class="mb-1">@Title</MudText>
+    }
+    <div class="ppb-editor-grid">
+        @foreach (var info in PpbCatalog.All)
+        {
+            var key = info.Key;
+            <MudNumericField T="decimal"
+                             Label="@(info.NamePl + (Percent ? " %" : ""))"
+                             Value="@Value.Get(key)"
+                             ValueChanged="@(v => OnChanged(key, v))"
+                             Variant="Variant.Text"
+                             Margin="Margin.Dense"
+                             HideSpinButtons="true"
+                             Step="1" />
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public PpbVector Value { get; set; } = new();
+    [Parameter] public EventCallback<PpbVector> ValueChanged { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public bool Percent { get; set; }
+
+    private async Task OnChanged(Ppb key, decimal v)
+    {
+        Value.Set(key, v);
+        await ValueChanged.InvokeAsync(Value);
+    }
+}

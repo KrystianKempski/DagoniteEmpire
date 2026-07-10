@@ -1,0 +1,52 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@implements IDisposable
+@inject NavigationManager _navigationManager
+
+<nav class="barony-tabbar" aria-label="Karty Baronii">
+    @foreach (var tab in Tabs)
+    {
+        <a href="@tab.Href"
+           class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "")">
+            <MudIcon Icon="@tab.Icon" Size="Size.Small" />
+            @tab.Label
+        </a>
+    }
+</nav>
+
+@code {
+    private sealed record TabItem(string Label, string Href, string Icon);
+
+    private static readonly TabItem[] Tabs =
+    {
+        new("Panel Domeny", "/barony", Icons.Material.Filled.Dashboard),
+        new("Zasoby", "/barony/resources", Icons.Material.Filled.Inventory2),
+        new("Budżet", "/barony/budget", Icons.Material.Filled.Paid),
+        new("Projekty", "/barony/projects", Icons.Material.Filled.Engineering),
+        new("Budynki", "/barony/buildings", Icons.Material.Filled.Foundation),
+        new("Urzędy", "/barony/offices", Icons.Material.Filled.Groups),
+        new("Tereny", "/barony/terrain", Icons.Material.Filled.Map),
+        new("Karta Barona", "/barony/character-card", Icons.Material.Filled.Shield),
+    };
+
+    protected override void OnInitialized()
+    {
+        _navigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private bool IsActive(string href)
+    {
+        var current = "/" + _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
+        var path = current.Split('?')[0].TrimEnd('/');
+        if (path.Length == 0)
+            path = "/";
+
+        if (href == "/barony")
+            return path == "/barony";
+
+        return path == href;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => _navigationManager.LocationChanged -= OnLocationChanged;
+}

@@ -1,0 +1,290 @@
+/*
+ * Styl warstwy Zarządzania Baronią.
+ * Wszystkie reguły są ograniczone (scope) do .barony-scope, żeby nie zmieniać
+ * wyglądu istniejących stron aplikacji. Paleta stonowana: pergamin / łupek /
+ * przygaszony złoty akcent. Bez fioletów i pstrokacizny.
+ */
+
+.barony-scope {
+    --barony-bg: #f4efe3;
+    --barony-surface: #fbf8f1;
+    --barony-surface-2: #f0ead9;
+    --barony-ink: #2f2a24;
+    --barony-muted: #6f6656;
+    --barony-border: #d9cfb8;
+    --barony-border-strong: #c3b696;
+    --barony-accent: #9c7a33;
+    --barony-accent-soft: #ece0c4;
+    --barony-pos: #4f7a4d;
+    --barony-neg: #a5503f;
+
+    color: var(--barony-ink);
+    background: var(--barony-bg);
+    min-height: calc(100vh - 64px);
+    padding: 12px 12px 96px 12px;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.barony-scope h1,
+.barony-scope h2,
+.barony-scope h3,
+.barony-scope .barony-title {
+    font-family: 'Eagle Lake', serif;
+    color: var(--barony-ink);
+    letter-spacing: 0.3px;
+}
+
+.barony-scope .barony-page-title {
+    font-size: 1.6rem;
+    margin: 4px 0 16px 0;
+    border-bottom: 2px solid var(--barony-border-strong);
+    padding-bottom: 8px;
+}
+
+/* ---- Sekcja rozwijana ---- */
+.barony-section {
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(47, 42, 36, 0.06);
+}
+
+.barony-section__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    background: linear-gradient(180deg, var(--barony-surface) 0%, var(--barony-surface-2) 100%);
+    border-bottom: 1px solid transparent;
+}
+
+.barony-section--open .barony-section__header {
+    border-bottom: 1px solid var(--barony-border);
+}
+
+.barony-section__header:hover {
+    background: var(--barony-accent-soft);
+}
+
+.barony-section__title {
+    font-family: 'Eagle Lake', serif;
+    font-size: 1.02rem;
+    flex: 0 0 auto;
+    margin-right: 8px;
+}
+
+.barony-section__summary {
+    flex: 1 1 auto;
+    overflow-x: auto;
+}
+
+.barony-section__chevron {
+    transition: transform 0.15s ease;
+    color: var(--barony-muted);
+}
+
+.barony-section--open .barony-section__chevron {
+    transform: rotate(180deg);
+}
+
+.barony-section__body {
+    padding: 8px 14px 14px 14px;
+    overflow-x: auto;
+}
+
+/* ---- Tabele PPB ---- */
+.ppb-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.82rem;
+}
+
+.ppb-table th,
+.ppb-table td {
+    padding: 4px 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.ppb-table thead th {
+    color: var(--barony-muted);
+    font-weight: 600;
+    border-bottom: 2px solid var(--barony-border-strong);
+    position: sticky;
+    top: 0;
+    background: var(--barony-surface);
+}
+
+.ppb-table td.ppb-row-label,
+.ppb-table th.ppb-row-label {
+    text-align: left;
+    font-weight: 600;
+    color: var(--barony-ink);
+    position: sticky;
+    left: 0;
+    background: var(--barony-surface);
+    min-width: 160px;
+}
+
+.ppb-cell-pos { color: var(--barony-pos); }
+.ppb-cell-neg { color: var(--barony-neg); }
+.ppb-cell-zero { color: #b8ae98; }
+
+.ppb-summary-row td {
+    border-top: 2px solid var(--barony-border-strong);
+    font-weight: 700;
+}
+
+/* Styl A: zebra */
+.ppb-table--zebra tbody tr:nth-child(odd) { background: var(--barony-surface); }
+.ppb-table--zebra tbody tr:nth-child(even) { background: var(--barony-surface-2); }
+
+/* Styl B: linie */
+.ppb-table--lined tbody td { border-bottom: 1px solid var(--barony-border); }
+.ppb-table--lined tbody tr:hover { background: var(--barony-accent-soft); }
+
+/* Styl C: karty/kompakt */
+.ppb-table--compact th,
+.ppb-table--compact td { padding: 2px 6px; font-size: 0.78rem; }
+.ppb-table--compact tbody tr { border-bottom: 1px dashed var(--barony-border); }
+
+/* Kompaktowe podsumowanie PPB w nagłówku sekcji (chipy) */
+.ppb-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.ppb-chip {
+    display: inline-flex;
+    gap: 4px;
+    align-items: baseline;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: var(--barony-surface-2);
+    border: 1px solid var(--barony-border);
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+.ppb-chip__label { color: var(--barony-muted); }
+.ppb-chip__value { font-weight: 700; }
+.ppb-chip--pos .ppb-chip__value { color: var(--barony-pos); }
+.ppb-chip--neg .ppb-chip__value { color: var(--barony-neg); }
+
+/* ---- Karta Baronii (generyczny kontener) ---- */
+.barony-card {
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 6px rgba(47, 42, 36, 0.08);
+}
+
+.barony-card__title {
+    font-family: 'Eagle Lake', serif;
+    font-size: 1.05rem;
+    margin-bottom: 8px;
+    color: var(--barony-accent);
+    border-bottom: 1px solid var(--barony-border);
+    padding-bottom: 6px;
+}
+
+.barony-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    border-bottom: 1px dotted var(--barony-border);
+}
+
+.barony-stat__label { color: var(--barony-muted); }
+.barony-stat__value { font-weight: 700; }
+
+.barony-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 2px 24px;
+}
+
+.ppb-editor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 4px 10px;
+}
+
+/* ---- Dolny pasek "Karty Baronii" (jak zakładki Excela) ---- */
+.barony-tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1500;
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    padding: 0 8px;
+    height: 40px;
+    background: var(--barony-surface-2);
+    border-top: 2px solid var(--barony-border-strong);
+    overflow-x: auto;
+    box-shadow: 0 -2px 6px rgba(47, 42, 36, 0.12);
+}
+
+.barony-tabbar__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    margin-top: 4px;
+    border: 1px solid var(--barony-border);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    background: var(--barony-surface);
+    color: var(--barony-ink);
+    font-size: 0.82rem;
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.barony-tabbar__tab:hover {
+    background: var(--barony-accent-soft);
+    color: var(--barony-ink);
+    text-decoration: none;
+}
+
+.barony-tabbar__tab--active {
+    background: var(--barony-surface);
+    border-color: var(--barony-border-strong);
+    border-bottom: 3px solid var(--barony-accent);
+    font-weight: 700;
+    margin-top: 0;
+}
+
+.barony-terrain-grid {
+    display: grid;
+    gap: 2px;
+}
+
+.barony-terrain-cell {
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: var(--barony-ink);
+    background: var(--barony-surface);
+}
+
+.barony-terrain-cell--selected {
+    outline: 3px solid var(--barony-accent);
+    outline-offset: -3px;
+}
