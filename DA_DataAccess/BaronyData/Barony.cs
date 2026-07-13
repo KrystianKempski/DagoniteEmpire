@@ -38,6 +38,10 @@ namespace DA_DataAccess.BaronyData
 
         public int Unrest { get; set; }
 
+        public int Prestige { get; set; }
+        public int Honor { get; set; }
+        public int Fear { get; set; }
+
         /// <summary>Bazowe wartości PPB (przed modyfikatorami) — JSON PpbVector.</summary>
         public string BaseParametersJson { get; set; } = "{}";
 

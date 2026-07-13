@@ -3,11 +3,11 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 
-<PageTitle>Dagonite Empire | Budżet baronii</PageTitle>
+<PageTitle>Dagonite Empire | Barony Budget</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
 }
 else if (LoadError is not null)
 {
@@ -15,28 +15,28 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <h1 class="barony-page-title">Budżet</h1>
+    <BaronyPageHeader Title="Budget" />
     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-        Przychody i wydatki złota wg źródeł. Modyfikatory procentowe stosowane do wartości dodanej, nie do bilansu.
+        Gold income and expenses by source. Percent modifiers apply to added values, not the final balance.
     </MudText>
 
     <MudGrid Class="mb-3">
         <MudItem xs="12" md="4">
             <div class="barony-card">
-                <div class="barony-card__title">Skarbiec baronii</div>
-                <div class="barony-stat"><span class="barony-stat__label">Stan</span><span class="barony-stat__value">@Num(_overview.Barony.TreasuryGold)</span></div>
+                <div class="barony-card__title">Barony Treasury</div>
+                <div class="barony-stat"><span class="barony-stat__label">Current</span><span class="barony-stat__value">@Num(_overview.Barony.TreasuryGold)</span></div>
             </div>
         </MudItem>
         <MudItem xs="12" md="4">
             <div class="barony-card">
-                <div class="barony-card__title">Kiesa barona</div>
-                <div class="barony-stat"><span class="barony-stat__label">Stan</span><span class="barony-stat__value">@Num(_overview.Barony.BaronPurseGold)</span></div>
+                <div class="barony-card__title">Baron Purse</div>
+                <div class="barony-stat"><span class="barony-stat__label">Current</span><span class="barony-stat__value">@Num(_overview.Barony.BaronPurseGold)</span></div>
             </div>
         </MudItem>
         <MudItem xs="12" md="4">
             <div class="barony-card">
-                <div class="barony-card__title">Bilans tury</div>
-                <div class="barony-stat"><span class="barony-stat__label">Przychody − wydatki</span><span class="barony-stat__value" style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</span></div>
+                <div class="barony-card__title">Turn Balance</div>
+                <div class="barony-stat"><span class="barony-stat__label">Income - expenses</span><span class="barony-stat__value" style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</span></div>
             </div>
         </MudItem>
     </MudGrid>
@@ -44,11 +44,11 @@ else if (_overview is not null)
     @if (CanEdit)
     {
         <div class="barony-card mb-3">
-            <div class="barony-card__title">Przelew między skarbcem a kiesą</div>
+            <div class="barony-card__title">Transfer Between Treasury and Purse</div>
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.End" Wrap="Wrap.Wrap">
-                <MudNumericField T="decimal" @bind-Value="_transferAmount" Label="Kwota" Min="0" HideSpinButtons="true" Style="max-width:140px;" />
-                <MudButton Variant="Variant.Outlined" OnClick="TransferToPurse">Skarbiec → Kiesa</MudButton>
-                <MudButton Variant="Variant.Outlined" OnClick="TransferToTreasury">Kiesa → Skarbiec</MudButton>
+                <MudNumericField T="decimal" @bind-Value="_transferAmount" Label="Amount" Min="0" HideSpinButtons="true" Style="max-width:140px;" />
+                <MudButton Variant="Variant.Outlined" OnClick="TransferToPurse">Treasury -> Purse</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="TransferToTreasury">Purse -> Treasury</MudButton>
             </MudStack>
         </div>
     }
@@ -56,9 +56,9 @@ else if (_overview is not null)
     <MudGrid>
         <MudItem xs="12" md="6">
             <div class="barony-card">
-                <div class="barony-card__title">Przychody</div>
+                <div class="barony-card__title">Income</div>
                 <table class="ppb-table ppb-table--lined">
-                    <thead><tr><th class="ppb-row-label">Źródło</th><th>Złoto</th><th>%</th><th>Po modyfikatorze</th></tr></thead>
+                    <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th><th>%</th><th>After Modifier</th></tr></thead>
                     <tbody>
                         @foreach (var line in _incomeLines)
                         {
@@ -70,7 +70,7 @@ else if (_overview is not null)
                             </tr>
                         }
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label">Σ przychody</td>
+                            <td class="ppb-row-label">Σ income</td>
                             <td colspan="2"></td>
                             <td class="ppb-cell-pos"><b>@Fmt(_totalIncome)</b></td>
                         </tr>
@@ -80,9 +80,9 @@ else if (_overview is not null)
         </MudItem>
         <MudItem xs="12" md="6">
             <div class="barony-card">
-                <div class="barony-card__title">Wydatki</div>
+                <div class="barony-card__title">Expenses</div>
                 <table class="ppb-table ppb-table--lined">
-                    <thead><tr><th class="ppb-row-label">Źródło</th><th>Złoto</th><th>%</th><th>Po modyfikatorze</th></tr></thead>
+                    <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th><th>%</th><th>After Modifier</th></tr></thead>
                     <tbody>
                         @foreach (var line in _expenseLines)
                         {
@@ -94,7 +94,7 @@ else if (_overview is not null)
                             </tr>
                         }
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label">Σ wydatki</td>
+                            <td class="ppb-row-label">Σ expenses</td>
                             <td colspan="2"></td>
                             <td class="ppb-cell-neg"><b>@Fmt(_totalExpense)</b></td>
                         </tr>
@@ -139,23 +139,23 @@ else if (_overview is not null)
 
         _incomeLines = new List<BudgetLine>
         {
-            new(BudgetSource.Economy, economyIncome, baronIncomeMod, Adj(economyIncome, baronIncomeMod), "Ekonomia PPB → dochód w turze"),
-            new(BudgetSource.Fief, 0, 0, 0, "[DO UZUPEŁNIENIA] Dochody od lenników"),
-            new(BudgetSource.Buildings, SumGold(_overview.Buildings.Select(b => b.Additive)), 0, SumGold(_overview.Buildings.Select(b => b.Additive)), "Budynki dodające złoto"),
-            new(BudgetSource.Improvements, SumGold(_overview.Improvements.Select(i => i.Additive)), 0, SumGold(_overview.Improvements.Select(i => i.Additive)), "Ulepszenia dodające złoto"),
+            new(BudgetSource.Economy, economyIncome, baronIncomeMod, Adj(economyIncome, baronIncomeMod), "PPB Economy -> turn income"),
+            new(BudgetSource.Fief, 0, 0, 0, "[TO BE COMPLETED] Income from vassals"),
+            new(BudgetSource.Buildings, SumGold(_overview.Buildings.Select(b => b.Additive)), 0, SumGold(_overview.Buildings.Select(b => b.Additive)), "Buildings adding gold"),
+            new(BudgetSource.Improvements, SumGold(_overview.Improvements.Select(i => i.Additive)), 0, SumGold(_overview.Improvements.Select(i => i.Additive)), "Improvements adding gold"),
             new(BudgetSource.Decrees, SumGold(_overview.Decrees.Select(d => d.Additive)), 0, SumGold(_overview.Decrees.Select(d => d.Additive)), null),
             new(BudgetSource.Events, SumGold(_overview.Events.Where(e => e.IsActive).Select(e => e.Additive)), 0, SumGold(_overview.Events.Where(e => e.IsActive).Select(e => e.Additive)), null),
-            new(BudgetSource.Other, 0, 0, 0, "[DO UZUPEŁNIENIA]"),
+            new(BudgetSource.Other, 0, 0, 0, "[TO BE COMPLETED]"),
         };
 
         _expenseLines = new List<BudgetLine>
         {
-            new(BudgetSource.Advisors, _overview.Advisors.Sum(a => a.UpkeepGold), 0, _overview.Advisors.Sum(a => a.UpkeepGold), "Koszt utrzymania urzędów"),
-            new(BudgetSource.Buildings, SumGoldNeg(_overview.Buildings.Select(b => b.Additive)), 0, SumGoldNeg(_overview.Buildings.Select(b => b.Additive)), "Budynki odejmujące złoto"),
+            new(BudgetSource.Advisors, _overview.Advisors.Sum(a => a.UpkeepGold), 0, _overview.Advisors.Sum(a => a.UpkeepGold), "Office upkeep cost"),
+            new(BudgetSource.Buildings, SumGoldNeg(_overview.Buildings.Select(b => b.Additive)), 0, SumGoldNeg(_overview.Buildings.Select(b => b.Additive)), "Buildings subtracting gold"),
             new(BudgetSource.Improvements, SumGoldNeg(_overview.Improvements.Select(i => i.Additive)), 0, SumGoldNeg(_overview.Improvements.Select(i => i.Additive)), null),
             new(BudgetSource.Decrees, SumGoldNeg(_overview.Decrees.Select(d => d.Additive)), 0, SumGoldNeg(_overview.Decrees.Select(d => d.Additive)), null),
             new(BudgetSource.Events, SumGoldNeg(_overview.Events.Where(e => e.IsActive).Select(e => e.Additive)), 0, SumGoldNeg(_overview.Events.Where(e => e.IsActive).Select(e => e.Additive)), null),
-            new(BudgetSource.Other, 0, 0, 0, "[DO UZUPEŁNIENIA]"),
+            new(BudgetSource.Other, 0, 0, 0, "[TO BE COMPLETED]"),
         };
 
         _totalIncome = _incomeLines.Sum(l => l.Adjusted);
@@ -176,14 +176,14 @@ else if (_overview is not null)
         var amount = Math.Min(_transferAmount, _overview.Barony.TreasuryGold);
         if (amount <= 0)
         {
-            _snackBar.Add("Brak środków w skarbcu.", Severity.Warning);
+            _snackBar.Add("Not enough funds in treasury.", Severity.Warning);
             return;
         }
         _overview.Barony.TreasuryGold -= amount;
         _overview.Barony.BaronPurseGold += amount;
         await _baronyRepo.UpdateBarony(_overview.Barony);
         _transferAmount = 0;
-        _snackBar.Add($"Przelano {Num(amount)} do kiesy barona.", Severity.Success);
+        _snackBar.Add($"Transferred {Num(amount)} to baron purse.", Severity.Success);
         StateHasChanged();
     }
 
@@ -194,14 +194,14 @@ else if (_overview is not null)
         var amount = Math.Min(_transferAmount, _overview.Barony.BaronPurseGold);
         if (amount <= 0)
         {
-            _snackBar.Add("Brak środków w kiesie.", Severity.Warning);
+            _snackBar.Add("Not enough funds in purse.", Severity.Warning);
             return;
         }
         _overview.Barony.BaronPurseGold -= amount;
         _overview.Barony.TreasuryGold += amount;
         await _baronyRepo.UpdateBarony(_overview.Barony);
         _transferAmount = 0;
-        _snackBar.Add($"Przelano {Num(amount)} do skarbca.", Severity.Success);
+        _snackBar.Add($"Transferred {Num(amount)} to treasury.", Severity.Success);
         StateHasChanged();
     }
 

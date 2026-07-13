@@ -1,8 +1,7 @@
 /*
- * Styl warstwy Zarządzania Baronią.
- * Wszystkie reguły są ograniczone (scope) do .barony-scope, żeby nie zmieniać
- * wyglądu istniejących stron aplikacji. Paleta stonowana: pergamin / łupek /
- * przygaszony złoty akcent. Bez fioletów i pstrokacizny.
+ * Styling for the Barony Management layer.
+ * All rules are scoped to .barony-scope so existing pages remain unaffected.
+ * Palette is muted: parchment / slate / subdued golden accent.
  */
 
 .barony-scope {
@@ -41,7 +40,177 @@
     padding-bottom: 8px;
 }
 
-/* ---- Sekcja rozwijana ---- */
+.barony-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 16px 0;
+    border-bottom: 2px solid var(--barony-border-strong);
+    padding-bottom: 8px;
+}
+
+.barony-page-header .barony-page-title {
+    margin: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.barony-page-header__lead {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+}
+
+.barony-page-header__summary {
+    display: flex;
+    align-items: center;
+}
+
+.offices-cost-total {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 12px;
+    background: var(--barony-surface-2);
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.offices-cost-total__label {
+    color: var(--barony-muted);
+    font-weight: 600;
+}
+
+.offices-cost-total__value {
+    color: var(--barony-neg);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.offices-cost-total__value::after {
+    content: " gold / turn";
+    color: var(--barony-muted);
+    font-weight: 500;
+    font-size: 0.78rem;
+}
+
+/* ---- Top fixed resource bar ---- */
+.barony-resource-bar {
+    position: fixed;
+    top: 70px;
+    left: 12px;
+    right: 12px;
+    z-index: 1400;
+    background: #1f1b16;
+    color: #f5f0e4;
+    border-radius: 999px;
+    padding: 6px 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.barony-scope--domain-panel .barony-page-header {
+    margin-top: 46px;
+}
+
+.barony-resource-bar__name {
+    font-family: 'Eagle Lake', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding-right: 10px;
+    border-right: 1px solid rgba(245, 240, 228, 0.2);
+    white-space: nowrap;
+}
+
+.barony-resource-bar__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    font-size: 0.8rem;
+}
+
+.barony-resource-bar__items span {
+    white-space: nowrap;
+    color: rgba(245, 240, 228, 0.85);
+}
+
+.barony-resource-bar__items span b {
+    color: #ffeb99;
+    font-weight: 700;
+}
+
+.ppb-table--advisors .advisor-col-role {
+    min-width: 130px;
+}
+
+.ppb-table--advisors .advisor-col-name {
+    min-width: 120px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--barony-ink);
+    position: sticky;
+    left: 130px;
+    background: var(--barony-surface);
+}
+
+.ppb-table--advisors .ppb-subcol {
+    font-size: 0.68rem;
+    color: var(--barony-muted);
+    font-weight: 700;
+    padding: 2px 5px;
+    min-width: 34px;
+}
+
+.ppb-table--advisors .ppb-subcol--add {
+    background: rgba(79, 122, 77, 0.08);
+}
+
+.ppb-table--advisors .ppb-subcol--pct {
+    background: rgba(156, 122, 51, 0.12);
+}
+
+.ppb-table--advisors .advisor-row--baron .advisor-col-role {
+    color: var(--barony-accent);
+    font-weight: 700;
+}
+
+.ppb-table--advisors tbody tr:hover .advisor-col-name {
+    background: var(--barony-accent-soft);
+}
+
+.ppb-table--source .source-col {
+    min-width: 200px;
+}
+
+.ppb-table--source .source-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: space-between;
+}
+
+.ppb-table--source .source-cell__actions {
+    display: inline-flex;
+    gap: 0;
+    opacity: 0.7;
+}
+
+.ppb-table--source tbody tr:hover .source-cell__actions {
+    opacity: 1;
+}
+
+.ppb-table--source .source-row--system .source-col {
+    color: var(--barony-muted);
+    font-style: italic;
+}
+
 .barony-section {
     background: var(--barony-surface);
     border: 1px solid var(--barony-border);
@@ -96,7 +265,7 @@
     overflow-x: auto;
 }
 
-/* ---- Tabele PPB ---- */
+/* ---- PPB tables ---- */
 .ppb-table {
     border-collapse: collapse;
     width: 100%;
@@ -139,20 +308,20 @@
     font-weight: 700;
 }
 
-/* Styl A: zebra */
+/* Style A: zebra */
 .ppb-table--zebra tbody tr:nth-child(odd) { background: var(--barony-surface); }
 .ppb-table--zebra tbody tr:nth-child(even) { background: var(--barony-surface-2); }
 
-/* Styl B: linie */
+/* Style B: lines */
 .ppb-table--lined tbody td { border-bottom: 1px solid var(--barony-border); }
 .ppb-table--lined tbody tr:hover { background: var(--barony-accent-soft); }
 
-/* Styl C: karty/kompakt */
+/* Style C: compact */
 .ppb-table--compact th,
 .ppb-table--compact td { padding: 2px 6px; font-size: 0.78rem; }
 .ppb-table--compact tbody tr { border-bottom: 1px dashed var(--barony-border); }
 
-/* Kompaktowe podsumowanie PPB w nagłówku sekcji (chipy) */
+/* Compact PPB summary chips in section headers */
 .ppb-chips {
     display: flex;
     flex-wrap: wrap;
@@ -177,7 +346,7 @@
 .ppb-chip--pos .ppb-chip__value { color: var(--barony-pos); }
 .ppb-chip--neg .ppb-chip__value { color: var(--barony-neg); }
 
-/* ---- Karta Baronii (generyczny kontener) ---- */
+/* ---- Barony Card (generic container) ---- */
 .barony-card {
     background: var(--barony-surface);
     border: 1px solid var(--barony-border-strong);
@@ -217,7 +386,211 @@
     gap: 4px 10px;
 }
 
-/* ---- Dolny pasek "Karty Baronii" (jak zakładki Excela) ---- */
+.ppb-editor-grid--compact {
+    display: grid;
+    grid-template-columns: repeat(13, 45px);
+    gap: 12px 16px;
+    width: max-content;
+    max-width: 100%;
+}
+
+.ppb-editor-grid--compact-12 {
+    display: grid;
+    grid-template-columns: repeat(12, 45px);
+    gap: 12px 16px;
+    width: max-content;
+    max-width: 100%;
+}
+
+/* ---- Baron influence edit dialog (rendered outside .barony-scope) ---- */
+
+.barony-dialog-theme {
+    --barony-bg: #f4efe3;
+    --barony-surface: #fbf8f1;
+    --barony-surface-2: #f0ead9;
+    --barony-ink: #2f2a24;
+    --barony-muted: #6f6656;
+    --barony-border: #d9cfb8;
+    --barony-border-strong: #c3b696;
+    --barony-accent: #9c7a33;
+    --barony-accent-soft: #ece0c4;
+
+    color: var(--barony-ink);
+    font-family: 'Open Sans', sans-serif;
+}
+
+.mud-dialog-container .mud-dialog.baron-influence-dialog:not(.mud-dialog-fullscreen):has(.baron-influence-dialog-content) {
+    width: fit-content !important;
+    max-width: min(96vw, 860px) !important;
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 8px 28px rgba(47, 42, 36, 0.18);
+}
+
+.mud-dialog.baron-influence-dialog .mud-dialog-title {
+    background: linear-gradient(180deg, #fbf8f1 0%, #f0ead9 100%);
+    border-bottom: 1px solid #d9cfb8;
+    color: #2f2a24;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    padding: 12px 16px;
+}
+
+.mud-dialog.baron-influence-dialog .mud-dialog-content.baron-influence-dialog-content {
+    background: #fbf8f1;
+    color: #2f2a24;
+    padding: 16px !important;
+}
+
+.mud-dialog.baron-influence-dialog .mud-dialog-actions.baron-influence-dialog-actions {
+    background: #f0ead9;
+    border-top: 1px solid #d9cfb8;
+    padding: 10px 16px !important;
+    gap: 8px;
+}
+
+.baron-influence-dialog .ppb-editor .mud-typography {
+    color: #6f6656;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+}
+
+.baron-influence-edit-dialog {
+    width: max-content;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.baron-influence-field {
+    width: 100%;
+}
+
+.baron-influence-dialog .baron-influence-field .mud-input-label {
+    color: #6f6656;
+}
+
+.baron-influence-dialog .baron-influence-field .mud-input-outlined-border {
+    border-color: #d9cfb8 !important;
+}
+
+.baron-influence-dialog .baron-influence-field .mud-input-outlined:hover .mud-input-outlined-border {
+    border-color: #c3b696 !important;
+}
+
+.baron-influence-dialog .baron-influence-field.mud-input-control:focus-within .mud-input-outlined-border {
+    border-color: #9c7a33 !important;
+}
+
+.baron-influence-dialog .baron-influence-field input,
+.baron-influence-dialog .baron-influence-field textarea {
+    color: #2f2a24;
+}
+
+.baron-influence-dialog .mud-input-helper-text {
+    color: #6f6656;
+}
+
+.baron-influence-dialog .ppb-compact-numeric .mud-input-label {
+    color: #6f6656;
+}
+
+.baron-influence-dialog .ppb-compact-numeric .mud-input-root {
+    color: #2f2a24;
+}
+
+.baron-influence-dialog .ppb-compact-numeric .mud-input-underline:before {
+    border-bottom-color: #d9cfb8;
+}
+
+.baron-influence-dialog .ppb-compact-numeric.mud-input-control:focus-within .mud-input-underline:after {
+    border-bottom-color: #9c7a33;
+}
+
+.baron-influence-dialog .mud-button-outlined {
+    border-color: #c3b696 !important;
+    color: #2f2a24 !important;
+}
+
+.baron-influence-dialog .mud-button-outlined:hover {
+    background: #ece0c4 !important;
+}
+
+.baron-influence-dialog .baron-influence-save-btn {
+    background: #9c7a33 !important;
+    color: #fbf8f1 !important;
+}
+
+.baron-influence-dialog .baron-influence-save-btn:hover {
+    background: #866828 !important;
+}
+
+.ppb-compact-numeric.mud-input-control {
+    margin-top: 0;
+    margin-bottom: 0;
+    max-width: 45px;
+    width: 45px;
+}
+
+.ppb-compact-numeric .mud-input-label {
+    font-size: 0.62rem;
+    max-width: 45px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ppb-compact-numeric .mud-input-root {
+    font-size: 0.78rem;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.ppb-compact-numeric input {
+    text-align: center;
+    padding: 2px 0;
+    min-width: 0;
+}
+
+.ppb-compact-numeric .mud-input-control-input-container {
+    max-width: 45px;
+}
+
+/* ---- Offices tab ---- */
+.advisor-office-header {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--barony-border);
+}
+
+.advisor-office-header__row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.advisor-office-name {
+    font-weight: 700;
+    color: var(--barony-ink);
+}
+
+.advisor-office-description {
+    margin-top: 4px;
+    color: var(--barony-muted);
+    white-space: pre-wrap;
+}
+
+.ppb-table--office .office-cost-col {
+    text-align: center;
+    min-width: 52px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Bottom "Barony Tabs" bar (Excel-like tabs) ---- */
 .barony-tabbar {
     position: fixed;
     left: 0;

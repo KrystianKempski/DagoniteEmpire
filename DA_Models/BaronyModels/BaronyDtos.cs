@@ -19,6 +19,10 @@ namespace DA_Models.BaronyModels
         public decimal FoodInGranaries { get; set; }
         public int Unrest { get; set; }
 
+        public int Prestige { get; set; }
+        public int Honor { get; set; }
+        public int Fear { get; set; }
+
         public PpbVector BaseParameters { get; set; } = new();
 
         public string? Notes { get; set; }
@@ -32,8 +36,6 @@ namespace DA_Models.BaronyModels
         public string Title { get; set; } = string.Empty;
         public string PersonName { get; set; } = string.Empty;
         public bool IsBaron { get; set; }
-        public bool HasAssistant { get; set; }
-        public int AssistantBonus { get; set; }
         public PpbVector Skills { get; set; } = new();
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();

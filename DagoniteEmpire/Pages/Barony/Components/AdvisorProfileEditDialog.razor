@@ -1,0 +1,80 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_personName"
+                          Label="Advisor name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field" />
+            @if (AllowTitleEdit)
+            {
+                <MudTextField @bind-Value="_title"
+                              Label="Office title"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="baron-influence-field"
+                              Required="true" />
+            }
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="3"
+                          Class="baron-influence-field" />
+            <MudNumericField T="decimal"
+                             @bind-Value="_upkeepGold"
+                             Label="Upkeep cost (gold / turn)"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public AdvisorDTO Advisor { get; set; } = new();
+    [Parameter] public bool AllowTitleEdit { get; set; }
+
+    private string _personName = string.Empty;
+    private string _title = string.Empty;
+    private string? _description;
+    private decimal _upkeepGold;
+
+    protected override void OnInitialized()
+    {
+        _personName = Advisor.PersonName;
+        _title = Advisor.Title;
+        _description = Advisor.Description;
+        _upkeepGold = Advisor.UpkeepGold;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (AllowTitleEdit && string.IsNullOrWhiteSpace(_title))
+        {
+            _snackBar.Add("Office title is required.", Severity.Warning);
+            return;
+        }
+
+        Advisor.PersonName = _personName.Trim();
+        if (AllowTitleEdit)
+            Advisor.Title = _title.Trim();
+        Advisor.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        Advisor.UpkeepGold = _upkeepGold;
+        MudDialog.Close(DialogResult.Ok(Advisor));
+    }
+}

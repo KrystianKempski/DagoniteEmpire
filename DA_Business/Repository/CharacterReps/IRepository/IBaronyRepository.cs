@@ -41,6 +41,16 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<CommunityModifierDTO> SaveCommunityModifier(CommunityModifierDTO dto);
         Task<int> DeleteCommunityModifier(int id);
 
+        // --- Baron Card influence ---
+        Task<List<BaronInfluenceModifierDTO>> GetBaronInfluenceModifiers(int baronyId);
+        Task<BaronInfluenceModifierDTO> SaveBaronInfluenceModifier(BaronInfluenceModifierDTO dto);
+        Task<int> DeleteBaronInfluenceModifier(int id);
+
+        // --- Offices influence ---
+        Task<List<AdvisorInfluenceModifierDTO>> GetAdvisorInfluenceModifiers(int baronyId);
+        Task<AdvisorInfluenceModifierDTO> SaveAdvisorInfluenceModifier(AdvisorInfluenceModifierDTO dto);
+        Task<int> DeleteAdvisorInfluenceModifier(int id);
+
         // --- Lenna ---
         Task<List<FiefDTO>> GetFiefs(int baronyId);
         Task<FiefDTO> SaveFief(FiefDTO dto);

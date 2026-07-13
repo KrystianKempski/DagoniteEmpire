@@ -1,0 +1,37 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="barony-page-header">
+    <div class="barony-page-header__lead">
+        <h1 class="barony-page-title mb-0">@Title</h1>
+        @if (Summary is not null)
+        {
+            <div class="barony-page-header__summary">
+                @Summary
+            </div>
+        }
+    </div>
+    @if (ShowSectionToggle && ViewOptions is not null)
+    {
+        <MudTooltip Text="Default section state: expanded / collapsed (you can still toggle each section manually).">
+            <MudSwitch T="bool"
+                       Value="ViewOptions.DefaultExpanded"
+                       ValueChanged="OnDefaultExpandedChanged"
+                       Color="Color.Default"
+                       Label="Sections expanded by default" />
+        </MudTooltip>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public BaronyViewOptions? ViewOptions { get; set; }
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? Summary { get; set; }
+    [Parameter] public bool ShowSectionToggle { get; set; } = true;
+
+    private void OnDefaultExpandedChanged(bool value)
+    {
+        if (ViewOptions is not null)
+            ViewOptions.DefaultExpanded = value;
+    }
+}

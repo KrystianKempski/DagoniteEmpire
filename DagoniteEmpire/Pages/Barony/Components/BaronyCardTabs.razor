@@ -2,7 +2,7 @@
 @implements IDisposable
 @inject NavigationManager _navigationManager
 
-<nav class="barony-tabbar" aria-label="Karty Baronii">
+<nav class="barony-tabbar" aria-label="Barony tabs">
     @foreach (var tab in Tabs)
     {
         <a href="@tab.Href"
@@ -18,14 +18,14 @@
 
     private static readonly TabItem[] Tabs =
     {
-        new("Panel Domeny", "/barony", Icons.Material.Filled.Dashboard),
-        new("Zasoby", "/barony/resources", Icons.Material.Filled.Inventory2),
-        new("Budżet", "/barony/budget", Icons.Material.Filled.Paid),
-        new("Projekty", "/barony/projects", Icons.Material.Filled.Engineering),
-        new("Budynki", "/barony/buildings", Icons.Material.Filled.Foundation),
-        new("Urzędy", "/barony/offices", Icons.Material.Filled.Groups),
-        new("Tereny", "/barony/terrain", Icons.Material.Filled.Map),
-        new("Karta Barona", "/barony/character-card", Icons.Material.Filled.Shield),
+        new("Domain Panel", "/barony", Icons.Material.Filled.Dashboard),
+        new("Resources", "/barony/resources", Icons.Material.Filled.Inventory2),
+        new("Budget", "/barony/budget", Icons.Material.Filled.Paid),
+        new("Projects", "/barony/projects", Icons.Material.Filled.Engineering),
+        new("Buildings", "/barony/buildings", Icons.Material.Filled.Foundation),
+        new("Offices", "/barony/offices", Icons.Material.Filled.Groups),
+        new("Terrain", "/barony/terrain", Icons.Material.Filled.Map),
+        new("Baron Card", "/barony/character-card", Icons.Material.Filled.Shield),
     };
 
     protected override void OnInitialized()

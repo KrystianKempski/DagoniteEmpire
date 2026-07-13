@@ -9,8 +9,8 @@ using MudBlazor;
 namespace DagoniteEmpire.Pages.Barony
 {
     /// <summary>
-    /// Wspólna baza stron baronii: rozwiązuje aktualną baronię z kontekstu użytkownika
-    /// (wybrana postać barona), obsługuje stany ładowania i uprawnienia edycji.
+    /// Shared base for barony pages: resolves current barony from user context
+    /// (selected baron character), handles loading states and edit permissions.
     /// </summary>
     public abstract class BaronyPageBase : ComponentBase
     {
@@ -27,7 +27,7 @@ namespace DagoniteEmpire.Pages.Barony
         protected string? LoadError { get; set; }
         protected bool CanEdit { get; set; }
 
-        /// <summary>Ładuje kontekst i (opcjonalnie) tworzy baronię, jeśli nie istnieje.</summary>
+        /// <summary>Loads context and optionally creates a barony if missing.</summary>
         protected async Task LoadBaronyAsync(bool createIfMissing = true)
         {
             IsLoading = true;
@@ -41,14 +41,14 @@ namespace DagoniteEmpire.Pages.Barony
 
                 if (!isAdminOrMg && !isBaron)
                 {
-                    LoadError = "Warstwa baronii jest dostępna dla graczy Baronów oraz Mistrza Gry.";
+                    LoadError = "Barony layer is available to Baron players and Game Masters.";
                     return;
                 }
 
                 var characterId = UserInfo?.SelectedCharacter?.Id ?? 0;
                 if (characterId <= 0)
                 {
-                    LoadError = "Wybierz najpierw postać barona (menu postaci w prawym górnym rogu).";
+                    LoadError = "Select a baron character first (character menu in the top-right corner).";
                     return;
                 }
 
@@ -56,15 +56,15 @@ namespace DagoniteEmpire.Pages.Barony
                 if (Barony is null && createIfMissing)
                 {
                     var name = string.IsNullOrWhiteSpace(UserInfo?.SelectedCharacter?.NPCName)
-                        ? "Baronia"
-                        : $"Baronia — {UserInfo!.SelectedCharacter!.NPCName}";
+                        ? "Barony"
+                        : $"Barony - {UserInfo!.SelectedCharacter!.NPCName}";
                     Barony = await _baronyRepo.CreateForCharacter(characterId, name);
-                    _snackBar.Add("Utworzono nową baronię.", Severity.Success);
+                    _snackBar.Add("Created a new barony.", Severity.Success);
                 }
 
                 if (Barony is null)
                 {
-                    LoadError = "Ta postać nie ma jeszcze baronii.";
+                    LoadError = "This character does not have a barony yet.";
                     return;
                 }
 
@@ -72,7 +72,7 @@ namespace DagoniteEmpire.Pages.Barony
             }
             catch (System.Exception ex)
             {
-                LoadError = "Błąd ładowania baronii: " + ex.Message;
+                LoadError = "Barony loading error: " + ex.Message;
             }
             finally
             {

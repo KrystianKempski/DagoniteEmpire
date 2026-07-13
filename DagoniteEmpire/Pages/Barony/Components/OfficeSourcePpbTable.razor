@@ -1,0 +1,134 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<table class="ppb-table ppb-table--source ppb-table--office ppb-table--lined">
+    <thead>
+        <tr>
+            <th class="ppb-row-label source-col">Source</th>
+            @foreach (var info in SkillColumns)
+            {
+                <th title="@info.Code">@PpbShort(info.Key)</th>
+            }
+            <th class="office-cost-col">Cost</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr class="@(row.IsSystem ? "source-row--system" : "")">
+                <td class="ppb-row-label source-col">
+                    <div class="source-cell">
+                        @if (!string.IsNullOrWhiteSpace(row.Description))
+                        {
+                            <MudTooltip Text="@row.Description">
+                                <span class="source-cell__name">@row.Source</span>
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            <span class="source-cell__name" title="@RowTitle(row)">@row.Source</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(row.Formula))
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Style="vertical-align:text-bottom;opacity:.6;" />
+                        }
+                        @if (CanEdit)
+                        {
+                            <span class="source-cell__actions">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OnEdit.InvokeAsync(row))" />
+                                @if (!row.IsSystem)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => OnDelete.InvokeAsync(row))" />
+                                }
+                            </span>
+                        }
+                    </div>
+                </td>
+                @foreach (var info in SkillColumns)
+                {
+                    <td class="@ValueClass(row.Values[info.Key])">@Fmt(row.Values[info.Key])</td>
+                }
+                <td class="office-cost-col @CostClass(row.Cost)">@FmtCost(row.Cost)</td>
+            </tr>
+        }
+        @if (Summary is not null)
+        {
+            <tr class="ppb-summary-row">
+                <td class="ppb-row-label">@SummaryLabel</td>
+                @foreach (var info in SkillColumns)
+                {
+                    var v = Summary[info.Key];
+                    <td class="@ValueClass(v)"><b>@Fmt(v)</b></td>
+                }
+                <td class="office-cost-col @CostClass(SummaryCost)"><b>@FmtCost(SummaryCost)</b></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public IEnumerable<AdvisorInfluenceRow> Rows { get; set; } = Array.Empty<AdvisorInfluenceRow>();
+    [Parameter] public PpbVector? Summary { get; set; }
+    [Parameter] public decimal SummaryCost { get; set; }
+    [Parameter] public string SummaryLabel { get; set; } = "Σ total";
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback<AdvisorInfluenceRow> OnEdit { get; set; }
+    [Parameter] public EventCallback<AdvisorInfluenceRow> OnDelete { get; set; }
+
+    private static IEnumerable<PpbInfo> SkillColumns
+        => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);
+
+    private static string RowTitle(AdvisorInfluenceRow row)
+    {
+        if (string.IsNullOrWhiteSpace(row.Formula))
+            return row.Source;
+        return $"{row.Source} | {row.Formula}";
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        _ => p.ToString(),
+    };
+
+    private static string Fmt(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        var rounded = decimal.Round(v, 2);
+        var text = rounded == decimal.Truncate(rounded)
+            ? ((long)rounded).ToString()
+            : rounded.ToString("0.##");
+        return rounded > 0 ? "+" + text : text;
+    }
+
+    private static string FmtCost(decimal cost)
+    {
+        if (cost == 0m)
+            return "·";
+        var rounded = decimal.Round(cost, 2);
+        return rounded == decimal.Truncate(rounded)
+            ? ((long)rounded).ToString()
+            : rounded.ToString("0.##");
+    }
+
+    private static string ValueClass(decimal v)
+    {
+        if (v > 0m) return "ppb-cell-pos";
+        if (v < 0m) return "ppb-cell-neg";
+        return "ppb-cell-zero";
+    }
+
+    private static string CostClass(decimal cost)
+        => cost > 0m ? "ppb-cell-neg" : "ppb-cell-zero";
+}

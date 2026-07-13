@@ -3,6 +3,7 @@ using System;
 using DA_DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pgvector;
@@ -12,9 +13,11 @@ using Pgvector;
 namespace DA_DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260713115532_AddBaronCardInfluence")]
+    partial class AddBaronCardInfluence
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,6 +84,9 @@ namespace DA_DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("AssistantBonus")
+                        .HasColumnType("integer");
+
                     b.Property<int>("BaronyId")
                         .HasColumnType("integer");
 
@@ -89,6 +95,9 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<string>("FormulaText")
                         .HasColumnType("text");
+
+                    b.Property<bool>("HasAssistant")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsBaron")
                         .HasColumnType("boolean");
@@ -119,39 +128,6 @@ namespace DA_DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Advisors");
-                });
-
-            modelBuilder.Entity("DA_DataAccess.BaronyData.AdvisorInfluenceModifier", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AdditiveJson")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("AdvisorId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("CostGold")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<string>("FormulaText")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AdvisorInfluenceModifiers");
                 });
 
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronInfluenceModifier", b =>

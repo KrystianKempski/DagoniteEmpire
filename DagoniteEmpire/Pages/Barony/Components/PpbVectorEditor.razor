@@ -1,22 +1,26 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<div class="ppb-editor">
+<div class="ppb-editor @(Compact ? "ppb-editor--compact" : "")">
     @if (!string.IsNullOrEmpty(Title))
     {
         <MudText Typo="Typo.subtitle2" Class="mb-1">@Title</MudText>
     }
-    <div class="ppb-editor-grid">
-        @foreach (var info in PpbCatalog.All)
+    <div class="ppb-editor-grid @(Compact ? CompactGridClass : "")">
+        @foreach (var info in VisibleColumns)
         {
             var key = info.Key;
             <MudNumericField T="decimal"
-                             Label="@(info.NamePl + (Percent ? " %" : ""))"
+                             Label="@FieldLabel(info)"
                              Value="@Value.Get(key)"
                              ValueChanged="@(v => OnChanged(key, v))"
                              Variant="Variant.Text"
                              Margin="Margin.Dense"
-                             HideSpinButtons="true"
-                             Step="1" />
+                             ShrinkLabel="@Compact"
+                             IconSize="Size.Small"
+                             Step="@StepSize"
+                             Format="0.##"
+                             Class="@(Compact ? "ppb-compact-numeric" : null)"
+                             title="@(Compact ? info.NamePl : null)" />
         }
     </div>
 </div>
@@ -26,10 +30,41 @@
     [Parameter] public EventCallback<PpbVector> ValueChanged { get; set; }
     [Parameter] public string? Title { get; set; }
     [Parameter] public bool Percent { get; set; }
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public bool ExcludeTreasury { get; set; }
+
+    private decimal StepSize => Percent ? 0.1m : 1m;
+
+    private IEnumerable<PpbInfo> VisibleColumns =>
+        ExcludeTreasury ? PpbCatalog.All.Where(p => p.Key != Ppb.Treasury) : PpbCatalog.All;
+
+    private string CompactGridClass =>
+        ExcludeTreasury ? "ppb-editor-grid--compact-12" : "ppb-editor-grid--compact";
+
+    private string FieldLabel(PpbInfo info) =>
+        Compact ? PpbShort(info.Key) : info.NamePl + (Percent ? " %" : "");
 
     private async Task OnChanged(Ppb key, decimal v)
     {
         Value.Set(key, v);
         await ValueChanged.InvokeAsync(Value);
     }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
 }

@@ -28,18 +28,18 @@ Trzynaście parametrów. Kolumny wszystkich tabel na "Panelu Domeny" to właśni
 
 | # | Nazwa (PL) | Klucz (kod) | Kumuluje się między turami? |
 |---|------------|-------------|------------------------------|
-| 1 | Wyżywienie | Food | nie (przeliczane co turę) |
+| 1 | Wyżywienie | Food | **tak** (akumulator) |
 | 2 | Ekonomia | Economy | nie |
-| 3 | Produkcja | Production | nie |
+| 3 | Produkcja | Production | **tak** (akumulator) |
 | 4 | Lojalność | Loyalty | nie |
 | 5 | Stabilność | Stability | nie |
 | 6 | Prawo | Law | nie |
 | 7 | Korupcja | Corruption | nie |
-| 8 | Nauka | Science | nie |
-| 9 | Magia | Magic | nie |
-| 10 | Kultura | Culture | nie |
-| 11 | Wywiad | Intelligence | nie |
-| 12 | Obrona | Defense | nie |
+| 8 | Nauka | Science | **tak** (akumulator) |
+| 9 | Magia | Magic | **tak** (akumulator) |
+| 10 | Kultura | Culture | **tak** (akumulator) |
+| 11 | Wywiad | Intelligence | **tak** (akumulator) |
+| 12 | Obrona | Defense | **tak** (akumulator) |
 | 13 | Skarb / Złoto | Treasury | **tak** (akumulator) |
 
 > Uwaga: Żywność w spichlerzach oraz Złoto w skarbcu to **akumulatory** — przenoszą

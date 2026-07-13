@@ -1,0 +1,109 @@
+@page "/barony/offices"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject IDialogService _dialogService
+
+<PageTitle>Dagonite Empire | Offices</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading offices...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (Barony is not null)
+{
+    <BaronyPageHeader Title="Offices">
+        <Summary>
+            <div class="offices-cost-total" title="Combined upkeep of all offices per turn">
+                <span class="offices-cost-total__label">Σ advisor upkeep</span>
+                <span class="offices-cost-total__value">@FmtUpkeep(_totalUpkeep)</span>
+            </div>
+        </Summary>
+    </BaronyPageHeader>
+
+    @foreach (var advisor in _offices)
+    {
+        <AdvisorOfficeSection Advisor="@advisor"
+                            CustomModifiers="@ModifiersFor(advisor.Id)"
+                            CanEdit="@CanEdit"
+                            OnChanged="ReloadAsync" />
+    }
+
+    @if (CanEdit)
+    {
+        <MudButton Variant="Variant.Outlined"
+                   Class="mt-2"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="AddOfficeAsync">
+            Add Office
+        </MudButton>
+    }
+}
+
+@code {
+    private List<AdvisorDTO> _offices = new();
+    private List<AdvisorInfluenceModifierDTO> _modifiers = new();
+    private decimal _totalUpkeep;
+
+    private static string FmtUpkeep(decimal value)
+    {
+        if (value == 0m)
+            return "0";
+        var rounded = decimal.Round(value, 2);
+        return rounded == decimal.Truncate(rounded)
+            ? ((long)rounded).ToString()
+            : rounded.ToString("0.##");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+
+        var advisors = await _baronyRepo.GetAdvisors(Barony.Id);
+        _offices = BaronyCalc.OrderOffices(advisors);
+        _totalUpkeep = BaronyCalc.SumOfficeUpkeep(advisors, _modifiers);
+        _modifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        StateHasChanged();
+    }
+
+    private List<AdvisorInfluenceModifierDTO> ModifiersFor(int advisorId)
+        => _modifiers.Where(m => m.AdvisorId == advisorId).ToList();
+
+    private async Task AddOfficeAsync()
+    {
+        if (Barony is null)
+            return;
+
+        var parameters = new DialogParameters<AddOfficeDialog>
+        {
+            { x => x.BaronyId, Barony.Id },
+        };
+
+        var dialog = await _dialogService.ShowAsync<AddOfficeDialog>(
+            "Add Office",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not AdvisorDTO draft)
+            return;
+
+        await _baronyRepo.SaveAdvisor(draft);
+        _snackBar.Add("Office created.", Severity.Success);
+        await ReloadAsync();
+    }
+}

@@ -1,0 +1,132 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="Baron and Advisors">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        @if (AdvisorList.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No baron or advisors assigned yet.</MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--advisors ppb-table--lined">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="ppb-row-label advisor-col-role">Role</th>
+                            <th rowspan="2" class="ppb-row-label advisor-col-name">Name</th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                            }
+                        </tr>
+                        <tr>
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <th class="ppb-subcol ppb-subcol--add">+</th>
+                                <th class="ppb-subcol ppb-subcol--pct">%</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var advisor in AdvisorList)
+                        {
+                            <tr class="@(advisor.IsBaron ? "advisor-row--baron" : "")">
+                                <td class="ppb-row-label advisor-col-role" title="@RoleTitle(advisor)">
+                                    @BaronyCalc.AdvisorRoleLabel(advisor)
+                                    @if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
+                                    }
+                                </td>
+                                <td class="advisor-col-name">@DisplayName(advisor)</td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@ValueClass(advisor.Additive[info.Key])">@FmtAdd(advisor.Additive[info.Key])</td>
+                                    <td class="@ValueClass(advisor.Percent[info.Key])">@FmtPct(advisor.Percent[info.Key])</td>
+                                }
+                            </tr>
+                        }
+                        <tr class="ppb-summary-row">
+                            <td class="ppb-row-label" colspan="2">Σ section</td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                                <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public IEnumerable<AdvisorDTO>? Advisors { get; set; }
+
+    private List<AdvisorDTO> AdvisorList => BaronyCalc.OrderAdvisors(Advisors);
+    private PpbVector AdditiveSum => BaronyCalc.SumAdvisorAdditive(AdvisorList);
+    private PpbVector PercentSum => BaronyCalc.SumAdvisorPercent(AdvisorList);
+    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.AdvisorRows(AdvisorList));
+
+    private static string DisplayName(AdvisorDTO advisor)
+        => string.IsNullOrWhiteSpace(advisor.PersonName) ? "Unassigned" : advisor.PersonName;
+
+    private static string RoleTitle(AdvisorDTO advisor)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(advisor.Description))
+            parts.Add(advisor.Description);
+        if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
+            parts.Add(advisor.FormulaText);
+        return parts.Count == 0 ? string.Empty : string.Join(" | ", parts);
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v);
+    }
+
+    private static string FmtPct(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v) + "%";
+    }
+
+    private static string Num(decimal v)
+    {
+        var r = decimal.Round(v, 2);
+        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+    }
+
+    private static string ValueClass(decimal v)
+    {
+        if (v > 0m) return "ppb-cell-pos";
+        if (v < 0m) return "ppb-cell-neg";
+        return "ppb-cell-zero";
+    }
+}

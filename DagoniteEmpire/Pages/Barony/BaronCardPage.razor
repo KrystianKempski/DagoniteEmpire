@@ -1,0 +1,51 @@
+@page "/barony/character-card"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject ICharacterRepository _characterRepo
+
+<PageTitle>Dagonite Empire | Baron Card</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading baron card...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (Barony is not null)
+{
+    <BaronyPageHeader Title="Baron Card" />
+
+    <BaronInfluenceSection Barony="@Barony"
+                           Character="@_character"
+                           CustomModifiers="@_customModifiers"
+                           CanEdit="@CanEdit"
+                           OnChanged="ReloadAsync" />
+}
+
+@code {
+    private CharacterDTO? _character;
+    private List<BaronInfluenceModifierDTO> _customModifiers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+        Barony = await _baronyRepo.GetById(Barony.Id) ?? Barony;
+        _customModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+        StateHasChanged();
+    }
+}

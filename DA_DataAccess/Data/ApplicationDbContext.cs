@@ -65,6 +65,8 @@ namespace DA_DataAccess.Data
         public DbSet<Decree> Decrees { get; set; }
         public DbSet<BaronyEvent> BaronyEvents { get; set; }
         public DbSet<CommunityModifier> CommunityModifiers { get; set; }
+        public DbSet<BaronInfluenceModifier> BaronInfluenceModifiers { get; set; }
+        public DbSet<AdvisorInfluenceModifier> AdvisorInfluenceModifiers { get; set; }
         public DbSet<Fief> Fiefs { get; set; }
         public DbSet<TerrainTile> TerrainTiles { get; set; }
         public DbSet<TerrainImprovement> TerrainImprovements { get; set; }

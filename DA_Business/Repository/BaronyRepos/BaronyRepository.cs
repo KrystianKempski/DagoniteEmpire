@@ -2,6 +2,7 @@ using System.Text.Json;
 using DA_Business.Repository.CharacterReps.IRepository;
 using DA_Common.Barony;
 using DA_DataAccess.BaronyData;
+using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.BaronyModels;
 using DagoniteEmpire.Exceptions;
@@ -89,6 +90,11 @@ namespace DA_Business.Repository.BaronyRepos
                 };
                 var added = await ctx.Baronies.AddAsync(entity);
                 await ctx.SaveChangesAsync();
+
+                var character = await ctx.Characters.AsNoTracking().FirstOrDefaultAsync(c => c.Id == characterId);
+                SeedDefaultAdvisors(ctx, added.Entity.Id, character?.NPCName ?? "Baron");
+                await ctx.SaveChangesAsync();
+
                 return ToDTO(added.Entity);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(CreateForCharacter)); }
@@ -268,6 +274,65 @@ namespace DA_Business.Repository.BaronyRepos
 
         public Task<int> DeleteCommunityModifier(int id) => Delete(ctx => ctx.CommunityModifiers, id, nameof(DeleteCommunityModifier));
 
+        // ---------------- Baron Card influence ----------------
+        public async Task<List<BaronInfluenceModifierDTO>> GetBaronInfluenceModifiers(int baronyId) =>
+            await GetList(ctx => ctx.BaronInfluenceModifiers, baronyId, ToDTO, nameof(GetBaronInfluenceModifiers));
+
+        public async Task<BaronInfluenceModifierDTO> SaveBaronInfluenceModifier(BaronInfluenceModifierDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0 ? await ctx.BaronInfluenceModifiers.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                if (e is null) { e = ToEntity(dto); ctx.BaronInfluenceModifiers.Add(e); }
+                else { ApplyBaronInfluence(e, dto); }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveBaronInfluenceModifier)); }
+        }
+
+        public Task<int> DeleteBaronInfluenceModifier(int id) =>
+            Delete(ctx => ctx.BaronInfluenceModifiers, id, nameof(DeleteBaronInfluenceModifier));
+
+        // ---------------- Offices influence ----------------
+        public async Task<List<AdvisorInfluenceModifierDTO>> GetAdvisorInfluenceModifiers(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var advisorIds = await ctx.Advisors.AsNoTracking()
+                    .Where(x => x.BaronyId == baronyId)
+                    .Select(x => x.Id)
+                    .ToListAsync();
+                if (advisorIds.Count == 0)
+                    return new List<AdvisorInfluenceModifierDTO>();
+
+                var rows = await ctx.AdvisorInfluenceModifiers.AsNoTracking()
+                    .Where(x => advisorIds.Contains(x.AdvisorId))
+                    .ToListAsync();
+                return rows.Select(ToDTO).ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetAdvisorInfluenceModifiers)); }
+        }
+
+        public async Task<AdvisorInfluenceModifierDTO> SaveAdvisorInfluenceModifier(AdvisorInfluenceModifierDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0 ? await ctx.AdvisorInfluenceModifiers.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                if (e is null) { e = ToEntity(dto); ctx.AdvisorInfluenceModifiers.Add(e); }
+                else { ApplyAdvisorInfluence(e, dto); }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveAdvisorInfluenceModifier)); }
+        }
+
+        public Task<int> DeleteAdvisorInfluenceModifier(int id) =>
+            Delete(ctx => ctx.AdvisorInfluenceModifiers, id, nameof(DeleteAdvisorInfluenceModifier));
+
         // ---------------- Fiefs ----------------
         public async Task<List<FiefDTO>> GetFiefs(int baronyId) =>
             await GetList(ctx => ctx.Fiefs, baronyId, ToDTO, nameof(GetFiefs));
@@ -421,6 +486,94 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) { throw Err(ex, method); }
         }
 
+        private static void SeedDefaultAdvisors(ApplicationDbContext ctx, int baronyId, string baronName)
+        {
+            var baronAdd = new PpbVector();
+            baronAdd[Ppb.Loyalty] = 2;
+            baronAdd[Ppb.Stability] = 1;
+
+            var baronPct = new PpbVector();
+            baronPct[Ppb.Culture] = 5;
+
+            var chancellorAdd = new PpbVector();
+            var chancellorPct = new PpbVector();
+            var captainAdd = new PpbVector();
+            var captainPct = new PpbVector();
+            var stewardAdd = new PpbVector();
+            var stewardPct = new PpbVector();
+
+            var chancellorSkills = new PpbVector();
+            var captainSkills = new PpbVector();
+            var stewardSkills = new PpbVector();
+
+            const string chancellorDescription =
+                "One of the barony's most important offices. The chancellor manages relations between the ruler " +
+                "and both vassals and liege lords, reads the loyalty and mood of subjects toward the government, " +
+                "and shapes opinion by many means. The office also oversees cultural development. A chancellor may " +
+                "rule through love—easing conflicts and appealing to reason—through fear, threats, and harsh " +
+                "punishment for disobedience, or through a blend of both approaches.";
+
+            const string guardCaptainDescription =
+                "The Guard Captain is essential in the smallest administrative units. Keeper of the law, " +
+                "commander, and guardian of the baron's person and lands. Later, most of these duties pass to " +
+                "the general, border warden, chief judge, and others—but until the barony grows into a " +
+                "principality, the Guard Captain alone can handle them.";
+
+            const string stewardDescription =
+                "The Steward oversees everything tied to revenue, construction, provisions, and tax collection. " +
+                "From harvests and storehouses to new works and the flow of coin into the treasury, this office " +
+                "keeps the barony fed, built, and solvent.";
+
+            ctx.Advisors.AddRange(
+                new Advisor
+                {
+                    BaronyId = baronyId,
+                    OfficeType = OfficeType.Baron,
+                    Title = "Baron",
+                    PersonName = baronName,
+                    IsBaron = true,
+                    AdditiveJson = Ser(baronAdd),
+                    PercentJson = Ser(baronPct),
+                    FormulaText = "Extrapolated from baron character skills [TO BE COMPLETED]",
+                },
+                new Advisor
+                {
+                    BaronyId = baronyId,
+                    OfficeType = OfficeType.Chancellor,
+                    Title = "Chancellor",
+                    PersonName = "Unassigned",
+                    SkillsJson = Ser(chancellorSkills),
+                    AdditiveJson = Ser(chancellorAdd),
+                    PercentJson = Ser(chancellorPct),
+                    UpkeepGold = 15,
+                    Description = chancellorDescription,
+                },
+                new Advisor
+                {
+                    BaronyId = baronyId,
+                    OfficeType = OfficeType.GuardCaptain,
+                    Title = "Guard Captain",
+                    PersonName = "Unassigned",
+                    SkillsJson = Ser(captainSkills),
+                    AdditiveJson = Ser(captainAdd),
+                    PercentJson = Ser(captainPct),
+                    UpkeepGold = 12,
+                    Description = guardCaptainDescription,
+                },
+                new Advisor
+                {
+                    BaronyId = baronyId,
+                    OfficeType = OfficeType.Steward,
+                    Title = "Steward",
+                    PersonName = "Unassigned",
+                    SkillsJson = Ser(stewardSkills),
+                    AdditiveJson = Ser(stewardAdd),
+                    PercentJson = Ser(stewardPct),
+                    UpkeepGold = 12,
+                    Description = stewardDescription,
+                });
+        }
+
         // ---------------- Mapping: Barony ----------------
         private static BaronyDTO ToDTO(Barony e) => new()
         {
@@ -436,6 +589,9 @@ namespace DA_Business.Repository.BaronyRepos
             BaronPurseGold = e.BaronPurseGold,
             FoodInGranaries = e.FoodInGranaries,
             Unrest = e.Unrest,
+            Prestige = e.Prestige,
+            Honor = e.Honor,
+            Fear = e.Fear,
             BaseParameters = De(e.BaseParametersJson),
             Notes = e.Notes,
         };
@@ -461,6 +617,9 @@ namespace DA_Business.Repository.BaronyRepos
             e.BaronPurseGold = d.BaronPurseGold;
             e.FoodInGranaries = d.FoodInGranaries;
             e.Unrest = d.Unrest;
+            e.Prestige = d.Prestige;
+            e.Honor = d.Honor;
+            e.Fear = d.Fear;
             e.BaseParametersJson = Ser(d.BaseParameters);
             e.Notes = d.Notes;
         }
@@ -469,8 +628,8 @@ namespace DA_Business.Repository.BaronyRepos
         private static AdvisorDTO ToDTO(Advisor e) => new()
         {
             Id = e.Id, BaronyId = e.BaronyId, OfficeType = e.OfficeType, Title = e.Title,
-            PersonName = e.PersonName, IsBaron = e.IsBaron, HasAssistant = e.HasAssistant,
-            AssistantBonus = e.AssistantBonus, Skills = De(e.SkillsJson), Additive = De(e.AdditiveJson),
+            PersonName = e.PersonName, IsBaron = e.IsBaron,
+            Skills = De(e.SkillsJson), Additive = De(e.AdditiveJson),
             Percent = De(e.PercentJson), FormulaText = e.FormulaText, Description = e.Description, UpkeepGold = e.UpkeepGold,
         };
 
@@ -479,7 +638,7 @@ namespace DA_Business.Repository.BaronyRepos
         private static void ApplyAdvisor(Advisor e, AdvisorDTO d)
         {
             e.BaronyId = d.BaronyId; e.OfficeType = d.OfficeType; e.Title = d.Title; e.PersonName = d.PersonName;
-            e.IsBaron = d.IsBaron; e.HasAssistant = d.HasAssistant; e.AssistantBonus = d.AssistantBonus;
+            e.IsBaron = d.IsBaron;
             e.SkillsJson = Ser(d.Skills); e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent);
             e.FormulaText = d.FormulaText; e.Description = d.Description; e.UpkeepGold = d.UpkeepGold;
         }
@@ -557,6 +716,64 @@ namespace DA_Business.Repository.BaronyRepos
         {
             e.BaronyId = d.BaronyId; e.Source = d.Source; e.AdditiveJson = Ser(d.Additive);
             e.PercentJson = Ser(d.Percent); e.FormulaText = d.FormulaText;
+        }
+
+        // ---------------- Mapping: Baron influence ----------------
+        private static BaronInfluenceModifierDTO ToDTO(BaronInfluenceModifier e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Source = e.Source,
+            Additive = De(e.AdditiveJson),
+            FormulaText = e.FormulaText,
+            Description = e.Description,
+        };
+
+        private static BaronInfluenceModifier ToEntity(BaronInfluenceModifierDTO d)
+        {
+            var e = new BaronInfluenceModifier();
+            ApplyBaronInfluence(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyBaronInfluence(BaronInfluenceModifier e, BaronInfluenceModifierDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Source = d.Source;
+            e.AdditiveJson = Ser(d.Additive);
+            e.FormulaText = d.FormulaText;
+            e.Description = d.Description;
+        }
+
+        // ---------------- Mapping: Advisor influence ----------------
+        private static AdvisorInfluenceModifierDTO ToDTO(AdvisorInfluenceModifier e) => new()
+        {
+            Id = e.Id,
+            AdvisorId = e.AdvisorId,
+            Source = e.Source,
+            Additive = De(e.AdditiveJson),
+            FormulaText = e.FormulaText,
+            Description = e.Description,
+            CostGold = e.CostGold,
+        };
+
+        private static AdvisorInfluenceModifier ToEntity(AdvisorInfluenceModifierDTO d)
+        {
+            var e = new AdvisorInfluenceModifier();
+            ApplyAdvisorInfluence(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyAdvisorInfluence(AdvisorInfluenceModifier e, AdvisorInfluenceModifierDTO d)
+        {
+            e.AdvisorId = d.AdvisorId;
+            e.Source = d.Source;
+            e.AdditiveJson = Ser(d.Additive);
+            e.FormulaText = d.FormulaText;
+            e.Description = d.Description;
+            e.CostGold = d.CostGold;
         }
 
         // ---------------- Mapping: Fief ----------------

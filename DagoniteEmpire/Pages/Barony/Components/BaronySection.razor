@@ -25,12 +25,12 @@
 
     [Parameter] public string Title { get; set; } = string.Empty;
 
-    /// <summary>Podsumowanie pokazywane w nagłówku, gdy sekcja jest zwinięta.</summary>
+    /// <summary>Summary shown in header when the section is collapsed.</summary>
     [Parameter] public RenderFragment? Summary { get; set; }
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    // null = brak ręcznego nadpisania (podąża za globalnym domyślnym stanem).
+    // null = no manual override (follows global default state).
     private bool? _userOverride;
     private int _seenVersion = -1;
 
@@ -47,7 +47,7 @@
 
     protected override void OnParametersSet()
     {
-        // Gdy zmienił się globalny domyślny stan, kasujemy ręczne nadpisanie.
+        // Reset manual override when global default state changes.
         if (ViewOptions is not null && ViewOptions.Version != _seenVersion)
         {
             _userOverride = null;

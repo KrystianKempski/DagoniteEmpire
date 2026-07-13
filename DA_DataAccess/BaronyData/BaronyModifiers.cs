@@ -21,9 +21,6 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Czy ten wiersz reprezentuje samego barona.</summary>
         public bool IsBaron { get; set; }
 
-        public bool HasAssistant { get; set; }
-        public int AssistantBonus { get; set; }
-
         /// <summary>Umiejętności zarządcze (12 PPB umiejętnościowych) — JSON PpbVector.</summary>
         public string SkillsJson { get; set; } = "{}";
 
@@ -125,5 +122,38 @@ namespace DA_DataAccess.BaronyData
         public string PercentJson { get; set; } = "{}";
 
         public string? FormulaText { get; set; }
+    }
+
+    /// <summary>Custom baron influence bonus row (Baron Card section).</summary>
+    public class BaronInfluenceModifier
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        public string Source { get; set; } = string.Empty;
+
+        public string AdditiveJson { get; set; } = "{}";
+
+        public string? FormulaText { get; set; }
+        public string? Description { get; set; }
+    }
+
+    /// <summary>Custom advisor influence bonus row (Offices tab).</summary>
+    public class AdvisorInfluenceModifier
+    {
+        [Key]
+        public int Id { get; set; }
+        public int AdvisorId { get; set; }
+
+        public string Source { get; set; } = string.Empty;
+
+        public string AdditiveJson { get; set; } = "{}";
+
+        public string? FormulaText { get; set; }
+        public string? Description { get; set; }
+
+        /// <summary>Additional gold upkeep per turn from this bonus source.</summary>
+        public decimal CostGold { get; set; }
     }
 }
