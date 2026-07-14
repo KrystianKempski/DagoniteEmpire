@@ -1,0 +1,93 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject IUserService _userService
+@inject NavigationManager _navigationManager
+@inject ISnackbar _snackBar
+
+@if (_visible)
+{
+    <div class="barony-switcher">
+        <MudIcon Icon="@Icons.Material.Filled.Castle" Size="Size.Small" Class="barony-switcher__icon" />
+        <MudSelect T="BaronyListItemDTO?"
+                   Label="Barony"
+                   Value="@_selected"
+                   ValueChanged="OnBaronyChangedAsync"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true"
+                   Class="barony-switcher__select"
+                   Disabled="@(_baronies.Count == 0)">
+            @if (_baronies.Count == 0)
+            {
+                <MudSelectItem Value="@((BaronyListItemDTO?)null)">No baronies — create in Panel MG</MudSelectItem>
+            }
+            else
+            {
+                @foreach (var barony in _baronies)
+                {
+                    <MudSelectItem Value="@barony">@($"{barony.Name} — {barony.BaronName}")</MudSelectItem>
+                }
+            }
+        </MudSelect>
+    </div>
+}
+
+@code {
+    private bool _visible;
+    private List<BaronyListItemDTO> _baronies = new();
+    private BaronyListItemDTO? _selected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userInfo = await _userService.GetUserInfo();
+        _visible = userInfo?.IsAdminOrMG == true;
+        if (!_visible)
+            return;
+
+        await ReloadAsync(userInfo?.SelectedCharacter?.Id);
+
+        if (_baronies.Count > 0)
+        {
+            var charId = userInfo?.SelectedCharacter?.Id ?? 0;
+            var hasValidSelection = charId > 0 && _baronies.Any(b => b.CharacterId == charId);
+            if (!hasValidSelection)
+            {
+                _selected = _baronies[0];
+                await _userService.SetSelectedCharId(_selected.CharacterId);
+            }
+        }
+    }
+
+    private async Task ReloadAsync(int? selectedCharacterId)
+    {
+        try
+        {
+            _baronies = await _baronyRepo.GetAllSummaries();
+            _selected = selectedCharacterId is > 0
+                ? _baronies.FirstOrDefault(b => b.CharacterId == selectedCharacterId)
+                : _baronies.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Failed to load baronies: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OnBaronyChangedAsync(BaronyListItemDTO? barony)
+    {
+        if (barony is null)
+            return;
+
+        _selected = barony;
+        try
+        {
+            await _userService.SetSelectedCharId(barony.CharacterId);
+            var uri = _navigationManager.Uri;
+            _navigationManager.NavigateTo(uri, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Failed to switch barony: " + ex.Message, Severity.Error);
+        }
+    }
+}

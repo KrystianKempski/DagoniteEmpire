@@ -117,6 +117,88 @@ namespace DagoniteEmpire.Pages.Barony
         public static List<PpbModifierRow> BuildingRows(IEnumerable<BaronyBuildingDTO> buildings)
             => buildings.Select(b => Row(b.Name, b.Additive, b.Percent, null, b.Description)).ToList();
 
+        /// <summary>Fixed city buildings present in every barony (not stored in DB).</summary>
+        public static IReadOnlyList<BaronyBuildingDTO> CoreCityBuildings(int baronyId)
+        {
+            static PpbVector A(
+                decimal? food = null, decimal? economy = null, decimal? production = null,
+                decimal? loyalty = null, decimal? stability = null, decimal? law = null,
+                decimal? corruption = null, decimal? science = null, decimal? magic = null,
+                decimal? culture = null, decimal? intelligence = null, decimal? defense = null,
+                decimal? treasury = null)
+            {
+                var v = new PpbVector();
+                if (food.HasValue) v[Ppb.Food] = food.Value;
+                if (economy.HasValue) v[Ppb.Economy] = economy.Value;
+                if (production.HasValue) v[Ppb.Production] = production.Value;
+                if (loyalty.HasValue) v[Ppb.Loyalty] = loyalty.Value;
+                if (stability.HasValue) v[Ppb.Stability] = stability.Value;
+                if (law.HasValue) v[Ppb.Law] = law.Value;
+                if (corruption.HasValue) v[Ppb.Corruption] = corruption.Value;
+                if (science.HasValue) v[Ppb.Science] = science.Value;
+                if (magic.HasValue) v[Ppb.Magic] = magic.Value;
+                if (culture.HasValue) v[Ppb.Culture] = culture.Value;
+                if (intelligence.HasValue) v[Ppb.Intelligence] = intelligence.Value;
+                if (defense.HasValue) v[Ppb.Defense] = defense.Value;
+                if (treasury.HasValue) v[Ppb.Treasury] = treasury.Value;
+                return v;
+            }
+
+            return new[]
+            {
+                new BaronyBuildingDTO
+                {
+                    BaronyId = baronyId,
+                    Name = "Steward's Building",
+                    Kind = BuildingKind.Building,
+                    Additive = A(production: 2, loyalty: 2, stability: 3, law: 1, corruption: 1,
+                        science: 1, culture: 1, intelligence: 1, defense: 1, treasury: 15),
+                    Description = "Upkeep: -15 gold per turn.",
+                },
+                new BaronyBuildingDTO
+                {
+                    BaronyId = baronyId,
+                    Name = "Inn and Lodging",
+                    Kind = BuildingKind.Building,
+                    Additive = A(treasury: 1),
+                    Description = "Roadside inn and lodgings for travelers.",
+                },
+                new BaronyBuildingDTO
+                {
+                    BaronyId = baronyId,
+                    Name = "Ruler's Seat",
+                    Kind = BuildingKind.Building,
+                    Additive = A(food: 1, economy: -0.5m, production: 1, loyalty: 1, stability: 2, law: 2,
+                        corruption: 2, science: 1, culture: 1, defense: 2, treasury: 5),
+                    Description = "Upkeep: -30 gold per turn. Treasury income about +4–5.",
+                },
+            };
+        }
+
+        /// <summary>Core buildings plus catalog instances saved for the barony.</summary>
+        public static List<PpbModifierRow> CityBuildingSectionRows(int baronyId, IEnumerable<BaronyBuildingDTO> saved)
+        {
+            var rows = CoreCityBuildings(baronyId)
+                .Select(b => Row(b.Name, b.Additive, b.Percent, null, b.Description))
+                .ToList();
+            rows.AddRange(BuildingRows(saved));
+            return rows;
+        }
+
+        public static PpbVector SumCityBuildings(int baronyId, IEnumerable<BaronyBuildingDTO> saved)
+        {
+            var vectors = CoreCityBuildings(baronyId).Select(b => b.Additive)
+                .Concat(saved.Select(b => b.Additive));
+            return PpbVector.Sum(vectors);
+        }
+
+        public static PpbVector SumCityBuildingsPercent(int baronyId, IEnumerable<BaronyBuildingDTO> saved)
+        {
+            var vectors = CoreCityBuildings(baronyId).Select(b => b.Percent)
+                .Concat(saved.Select(b => b.Percent));
+            return PpbVector.Sum(vectors);
+        }
+
         public static List<PpbModifierRow> SocialRows(IEnumerable<SocialGroupRelationDTO> relations)
             => relations.Select(r => Row(
                     $"{r.Group} ({RelationLevel.Name(r.RelationLevel)})",
@@ -343,6 +425,13 @@ namespace DagoniteEmpire.Pages.Barony
         public static bool IsCoreOffice(AdvisorDTO advisor)
             => !advisor.IsBaron && OfficeType.Core.Contains(advisor.OfficeType);
 
+        public static IReadOnlyList<Ppb> EffectiveSignificantSkills(AdvisorDTO advisor)
+        {
+            if (advisor.SignificantSkills.Count > 0)
+                return advisor.SignificantSkills;
+            return AdvisorSignificantSkills.DefaultForOffice(advisor.OfficeType);
+        }
+
         public static List<AdvisorInfluenceRow> BuildAdvisorInfluenceRows(
             AdvisorDTO advisor,
             IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
@@ -376,17 +465,25 @@ namespace DagoniteEmpire.Pages.Barony
             return rows;
         }
 
-        public static PpbVector SumAdvisorInfluenceRows(IEnumerable<AdvisorInfluenceRow> rows)
+        public static PpbVector SumAdvisorInfluenceRows(
+            IEnumerable<AdvisorInfluenceRow> rows,
+            IEnumerable<Ppb>? significantSkills = null)
         {
             var sum = new PpbVector();
             foreach (var row in rows)
-                sum.AddInPlace(row.Values);
+            {
+                if (row.SystemKind == AdvisorInfluenceSystemKind.Skills && significantSkills is not null)
+                    sum.AddInPlace(AdvisorSignificantSkills.MaskToSignificant(row.Values, significantSkills));
+                else
+                    sum.AddInPlace(row.Values);
+            }
             return sum;
         }
 
         public static void SyncAdvisorAdditive(AdvisorDTO advisor, IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
         {
-            var total = advisor.Skills.Clone();
+            var significant = EffectiveSignificantSkills(advisor);
+            var total = AdvisorSignificantSkills.MaskToSignificant(advisor.Skills, significant);
             foreach (var modifier in customModifiers ?? Enumerable.Empty<AdvisorInfluenceModifierDTO>())
                 total.AddInPlace(modifier.Additive);
             advisor.Additive = total;

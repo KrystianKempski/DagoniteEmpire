@@ -1,0 +1,283 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+
+<BaronySection Title="City and Buildings">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        <div style="overflow-x:auto;">
+            <table class="ppb-table ppb-table--advisors ppb-table--city-buildings ppb-table--lined">
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                        @foreach (var info in PpbCatalog.All)
+                        {
+                            <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                        }
+                        @if (CanEdit)
+                        {
+                            <th rowspan="2" class="city-building-col-actions"></th>
+                        }
+                    </tr>
+                    <tr>
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <th class="ppb-subcol ppb-subcol--add">+</th>
+                            <th class="ppb-subcol ppb-subcol--pct">%</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var core in CoreBuildings)
+                    {
+                        <tr class="city-building-row--core">
+                            <td class="city-building-col-name">
+                                @if (!string.IsNullOrWhiteSpace(core.Description))
+                                {
+                                    <MudTooltip Text="@core.Description" Placement="Placement.Top" Arrow="true">
+                                        <span>@core.Name</span>
+                                    </MudTooltip>
+                                }
+                                else
+                                {
+                                    @core.Name
+                                }
+                            </td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@ValueClass(core.Additive[info.Key])">@FmtAdd(core.Additive[info.Key])</td>
+                                <td class="@ValueClass(core.Percent[info.Key])">@FmtPct(core.Percent[info.Key])</td>
+                            }
+                            @if (CanEdit)
+                            {
+                                <td class="city-building-col-actions"></td>
+                            }
+                        </tr>
+                    }
+
+                    @foreach (var building in SavedBuildings)
+                    {
+                        <tr>
+                            <td class="city-building-col-name">
+                                @if (CanEdit)
+                                {
+                                    @if (!string.IsNullOrWhiteSpace(building.Description))
+                                    {
+                                        <MudTooltip Text="@building.Description" Placement="Placement.Top" Arrow="true">
+                                            <div class="city-building-select-wrap">
+                                                <MudSelect T="int?"
+                                                           Value="@building.TemplateId"
+                                                           ValueChanged="@(id => OnTemplateSelectedAsync(building, id))"
+                                                           Dense="true"
+                                                           Margin="Margin.Dense"
+                                                           Variant="Variant.Outlined"
+                                                           Placeholder="Select building…"
+                                                           Class="city-building-select">
+                                                    @foreach (var template in Catalog)
+                                                    {
+                                                        <MudSelectItem T="int?" Value="@template.Id">@template.Name</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+                                            </div>
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <div class="city-building-select-wrap">
+                                            <MudSelect T="int?"
+                                                       Value="@building.TemplateId"
+                                                       ValueChanged="@(id => OnTemplateSelectedAsync(building, id))"
+                                                       Dense="true"
+                                                       Margin="Margin.Dense"
+                                                       Variant="Variant.Outlined"
+                                                       Placeholder="Select building…"
+                                                       Class="city-building-select">
+                                                @foreach (var template in Catalog)
+                                                {
+                                                    <MudSelectItem T="int?" Value="@template.Id">@template.Name</MudSelectItem>
+                                                }
+                                            </MudSelect>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    @if (!string.IsNullOrWhiteSpace(building.Description))
+                                    {
+                                        <MudTooltip Text="@building.Description" Placement="Placement.Top" Arrow="true">
+                                            <span>@(string.IsNullOrWhiteSpace(building.Name) ? "—" : building.Name)</span>
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <span>@(string.IsNullOrWhiteSpace(building.Name) ? "—" : building.Name)</span>
+                                    }
+                                }
+                            </td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@ValueClass(building.Additive[info.Key])">@FmtAdd(building.Additive[info.Key])</td>
+                                <td class="@ValueClass(building.Percent[info.Key])">@FmtPct(building.Percent[info.Key])</td>
+                            }
+                            @if (CanEdit)
+                            {
+                                <td class="city-building-col-actions">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   title="Remove building"
+                                                   OnClick="@(() => DeleteBuildingAsync(building))" />
+                                </td>
+                            }
+                        </tr>
+                    }
+
+                    <tr class="ppb-summary-row">
+                        <td class="ppb-row-label">Σ section</td>
+                        @foreach (var info in PpbCatalog.All)
+                        {
+                            <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                            <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                        }
+                        @if (CanEdit)
+                        {
+                            <td class="city-building-col-actions"></td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        @if (CanEdit)
+        {
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddBuildingAsync">
+                    Add Building
+                </MudButton>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public List<BaronyBuildingDTO> SavedBuildings { get; set; } = new();
+    [Parameter] public List<BuildingTemplateDTO> Catalog { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private IReadOnlyList<BaronyBuildingDTO> CoreBuildings => BaronyCalc.CoreCityBuildings(BaronyId);
+
+    private PpbVector AdditiveSum => BaronyCalc.SumCityBuildings(BaronyId, SavedBuildings);
+    private PpbVector PercentSum => BaronyCalc.SumCityBuildingsPercent(BaronyId, SavedBuildings);
+    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.CityBuildingSectionRows(BaronyId, SavedBuildings));
+
+    private async Task AddBuildingAsync()
+    {
+        try
+        {
+            await _baronyRepo.SaveBuilding(new BaronyBuildingDTO
+            {
+                BaronyId = BaronyId,
+                Kind = BuildingKind.Building,
+            });
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not add building: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OnTemplateSelectedAsync(BaronyBuildingDTO building, int? templateId)
+    {
+        if (templateId is null or <= 0)
+            return;
+
+        var template = Catalog.FirstOrDefault(t => t.Id == templateId);
+        if (template is null)
+            return;
+
+        building.TemplateId = template.Id;
+        building.Name = template.Name;
+        building.Kind = template.Kind;
+        building.Additive = template.EffectAdditive.Clone();
+        building.Percent = template.EffectPercent.Clone();
+        building.Description = template.Description;
+
+        try
+        {
+            await _baronyRepo.SaveBuilding(building);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save building: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteBuildingAsync(BaronyBuildingDTO building)
+    {
+        if (building.Id <= 0)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteBuilding(building.Id);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not remove building: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v);
+    }
+
+    private static string FmtPct(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v) + "%";
+    }
+
+    private static string Num(decimal v)
+    {
+        var r = decimal.Round(v, 2);
+        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+    }
+
+    private static string ValueClass(decimal v)
+    {
+        if (v > 0m) return "ppb-cell-pos";
+        if (v < 0m) return "ppb-cell-neg";
+        return "ppb-cell-zero";
+    }
+}

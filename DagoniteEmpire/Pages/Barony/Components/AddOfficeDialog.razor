@@ -30,6 +30,7 @@
                              Margin="Margin.Dense"
                              Min="0"
                              Class="baron-influence-field" />
+            <SignificantSkillsPicker @bind-Selected="_significantSkills" />
         </div>
     </DialogContent>
     <DialogActions>
@@ -47,6 +48,7 @@
     private string _personName = "Unassigned";
     private string? _description;
     private decimal _upkeepGold;
+    private List<Ppb> _significantSkills = new();
 
     private void Cancel() => MudDialog.Cancel();
 
@@ -58,6 +60,12 @@
             return;
         }
 
+        if (_significantSkills.Count == 0)
+        {
+            _snackBar.Add("Select at least one significant skill.", Severity.Warning);
+            return;
+        }
+
         MudDialog.Close(DialogResult.Ok(new AdvisorDTO
         {
             BaronyId = BaronyId,
@@ -66,6 +74,7 @@
             PersonName = string.IsNullOrWhiteSpace(_personName) ? "Unassigned" : _personName.Trim(),
             Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
             UpkeepGold = _upkeepGold,
+            SignificantSkills = _significantSkills.ToList(),
         }));
     }
 }

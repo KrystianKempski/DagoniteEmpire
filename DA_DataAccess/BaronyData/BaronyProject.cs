@@ -41,6 +41,9 @@ namespace DA_DataAccess.BaronyData
 
         public string Name { get; set; } = string.Empty;
 
+        /// <summary>Minimalny wymagany poziom władzy lordowskiej.</summary>
+        public int RequiredLordshipLevel { get; set; }
+
         /// <summary>Rodzaj (BuildingKind: Budynek / Ulepszenie).</summary>
         public string Kind { get; set; } = DA_Common.Barony.BuildingKind.Building;
 

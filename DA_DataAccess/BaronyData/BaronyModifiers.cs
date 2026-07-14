@@ -24,6 +24,9 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Umiejętności zarządcze (12 PPB umiejętnościowych) — JSON PpbVector.</summary>
         public string SkillsJson { get; set; } = "{}";
 
+        /// <summary>Które umiejętności mają wpływ na baronię — JSON lista nazw <see cref="Ppb"/> (max 4).</summary>
+        public string SignificantSkillsJson { get; set; } = "[]";
+
         /// <summary>Wpływ addytywny na PPB — JSON PpbVector.</summary>
         public string AdditiveJson { get; set; } = "{}";
 

@@ -4,6 +4,15 @@
 @inject NavigationManager NavigationManager
 
 <div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "")">
+    <AuthorizeView Roles="@BaronRoles">
+        <Authorized Context="baronyAuth">
+            @if (baronyAuth.User.IsInRole(SD.Role_Admin) || baronyAuth.User.IsInRole(SD.Role_GameMaster))
+            {
+                <BaronySwitcher />
+            }
+        </Authorized>
+    </AuthorizeView>
+
     <CascadingValue Value="@_viewOptions">
         @Body
     </CascadingValue>

@@ -6,7 +6,8 @@
             <th class="ppb-row-label source-col">Source</th>
             @foreach (var info in SkillColumns)
             {
-                <th title="@info.Code">@PpbShort(info.Key)</th>
+                var inactive = IsColumnInactive(info.Key);
+                <th class="@HeaderClass(inactive)" title="@HeaderTitle(info, inactive)">@PpbShort(info.Key)</th>
             }
             <th class="office-cost-col">Cost</th>
         </tr>
@@ -45,7 +46,8 @@
                 </td>
                 @foreach (var info in SkillColumns)
                 {
-                    <td class="@ValueClass(row.Values[info.Key])">@Fmt(row.Values[info.Key])</td>
+                    var inactive = IsSkillsCellInactive(row, info.Key);
+                    <td class="@CellClass(row.Values[info.Key], inactive)">@Fmt(row.Values[info.Key])</td>
                 }
                 <td class="office-cost-col @CostClass(row.Cost)">@FmtCost(row.Cost)</td>
             </tr>
@@ -70,6 +72,7 @@
     [Parameter] public PpbVector? Summary { get; set; }
     [Parameter] public decimal SummaryCost { get; set; }
     [Parameter] public string SummaryLabel { get; set; } = "Σ total";
+    [Parameter] public IReadOnlySet<Ppb>? SignificantSkills { get; set; }
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public EventCallback<AdvisorInfluenceRow> OnEdit { get; set; }
     [Parameter] public EventCallback<AdvisorInfluenceRow> OnDelete { get; set; }
@@ -128,6 +131,24 @@
         if (v < 0m) return "ppb-cell-neg";
         return "ppb-cell-zero";
     }
+
+    private bool IsColumnInactive(Ppb key)
+        => SignificantSkills is { Count: > 0 } && !SignificantSkills.Contains(key);
+
+    private bool IsSkillsCellInactive(AdvisorInfluenceRow row, Ppb key)
+        => row.SystemKind == AdvisorInfluenceSystemKind.Skills && IsColumnInactive(key);
+
+    private static string CellClass(decimal v, bool inactive)
+    {
+        var valueClass = ValueClass(v);
+        return inactive ? $"{valueClass} ppb-cell-inactive" : valueClass;
+    }
+
+    private static string HeaderClass(bool inactive)
+        => inactive ? "ppb-col-inactive" : string.Empty;
+
+    private static string? HeaderTitle(PpbInfo info, bool inactive)
+        => inactive ? $"{info.NamePl} — not significant for this office" : info.Code;
 
     private static string CostClass(decimal cost)
         => cost > 0m ? "ppb-cell-neg" : "ppb-cell-zero";

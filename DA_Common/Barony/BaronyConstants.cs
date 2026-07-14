@@ -71,11 +71,11 @@ namespace DA_Common.Barony
         public static readonly string[] All = { Forest, Coast, River, Wasteland, Swamp };
     }
 
-    /// <summary>Rodzaj wpisu katalogu budowy.</summary>
+    /// <summary>Catalog entry type (BuildingKind).</summary>
     public readonly struct BuildingKind
     {
-        public const string Building = "Budynek";
-        public const string Improvement = "Ulepszenie";
+        public const string Building = "Building";
+        public const string Improvement = "Improvement";
 
         public static readonly string[] All = { Building, Improvement };
     }

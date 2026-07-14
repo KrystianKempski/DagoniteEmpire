@@ -28,6 +28,16 @@ namespace DA_Models.BaronyModels
         public string? Notes { get; set; }
     }
 
+    /// <summary>Lightweight barony row for MG list / selector.</summary>
+    public class BaronyListItemDTO
+    {
+        public int Id { get; set; }
+        public int CharacterId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string BaronName { get; set; } = string.Empty;
+        public string? Notes { get; set; }
+    }
+
     public class AdvisorDTO
     {
         public int Id { get; set; }
@@ -37,6 +47,8 @@ namespace DA_Models.BaronyModels
         public string PersonName { get; set; } = string.Empty;
         public bool IsBaron { get; set; }
         public PpbVector Skills { get; set; } = new();
+        /// <summary>Administrative skills that affect barony parameters (up to 4).</summary>
+        public List<Ppb> SignificantSkills { get; set; } = new();
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();
         public string? FormulaText { get; set; }
@@ -180,6 +192,7 @@ namespace DA_Models.BaronyModels
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public int RequiredLordshipLevel { get; set; }
         public string Kind { get; set; } = DA_Common.Barony.BuildingKind.Building;
         public decimal GoldCost { get; set; }
         public decimal ProductionCost { get; set; }

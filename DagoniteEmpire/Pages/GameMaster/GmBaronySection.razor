@@ -1,0 +1,127 @@
+@inject IBaronyRepository _baronyRepo
+@inject IUserService _userService
+@inject IDialogService _dialogService
+@inject NavigationManager _navigationManager
+@inject ISnackbar _snackBar
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+        <MudIcon Icon="@Icons.Material.Filled.Castle" Class="mr-1" />
+        <MudText Typo="Typo.h6">Baronies</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Secondary"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   Disabled="@IsLoading"
+                   OnClick="LoadAsync">
+            Refresh
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenCreateDialogAsync">
+            Create barony
+        </MudButton>
+    </MudStack>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pb-3">
+        Create baronies for Duke characters and open them in the barony layer. Each barony is tied to one baron character (1:1).
+    </MudText>
+
+    @if (IsLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-2" />
+    }
+
+    <MudTable Items="@Baronies" Dense="true" Hover="true" Bordered="true" Elevation="0">
+        <HeaderContent>
+            <MudTh>Barony</MudTh>
+            <MudTh>Baron</MudTh>
+            <MudTh>Description</MudTh>
+            <MudTh Style="width:120px">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Barony">@context.Name</MudTd>
+            <MudTd DataLabel="Baron">@context.BaronName</MudTd>
+            <MudTd DataLabel="Description">
+                @if (string.IsNullOrWhiteSpace(context.Notes))
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">—</MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">@Truncate(context.Notes, 120)</MudText>
+                }
+            </MudTd>
+            <MudTd DataLabel="Actions">
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.OpenInNew"
+                           OnClick="@(() => OpenBaronyAsync(context))">
+                    Open
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No baronies yet. Create the first one.</MudText>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private List<BaronyListItemDTO> Baronies { get; set; } = new();
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            Baronies = await _baronyRepo.GetAllSummaries();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Failed to load baronies: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task OpenCreateDialogAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<CreateBaronyDialog>(
+            "Create barony",
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled)
+            return;
+
+        await LoadAsync();
+    }
+
+    private async Task OpenBaronyAsync(BaronyListItemDTO barony)
+    {
+        try
+        {
+            await _userService.SetSelectedCharId(barony.CharacterId);
+            _navigationManager.NavigateTo("/barony", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Failed to open barony: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static string Truncate(string text, int maxLength)
+    {
+        if (text.Length <= maxLength)
+            return text;
+        return text[..(maxLength - 1)].TrimEnd() + "…";
+    }
+}

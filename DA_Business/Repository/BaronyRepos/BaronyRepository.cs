@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DA_Business.Repository.CharacterReps.IRepository;
+using DA_Common;
 using DA_Common.Barony;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.CharacterClasses;
@@ -73,30 +74,65 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) { throw Err(ex, nameof(GetById)); }
         }
 
-        public async Task<BaronyDTO> CreateForCharacter(int characterId, string name)
+        public async Task<List<BaronyListItemDTO>> GetAllSummaries()
         {
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
+                return await ctx.Baronies.AsNoTracking()
+                    .Join(
+                        ctx.Characters.AsNoTracking(),
+                        b => b.CharacterId,
+                        c => c.Id,
+                        (b, c) => new BaronyListItemDTO
+                        {
+                            Id = b.Id,
+                            CharacterId = b.CharacterId,
+                            Name = b.Name,
+                            BaronName = c.NPCName ?? string.Empty,
+                            Notes = b.Notes,
+                        })
+                    .OrderBy(b => b.Name)
+                    .ToListAsync();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetAllSummaries)); }
+        }
+
+        public async Task<BaronyDTO> CreateForCharacter(int characterId, string name, string? notes = null)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+
+                var character = await ctx.Characters.AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == characterId);
+                if (character is null)
+                    throw new RepositoryErrorException("Character not found.");
+                if (character.NPCType != SD.NPCType.Duke)
+                    throw new RepositoryErrorException("Only Duke-type characters can be assigned as baron.");
+                if (!character.IsApproved)
+                    throw new RepositoryErrorException("Character must be approved before becoming a baron.");
+
                 var existing = await ctx.Baronies.FirstOrDefaultAsync(b => b.CharacterId == characterId);
                 if (existing is not null)
-                    return ToDTO(existing);
+                    throw new RepositoryErrorException("This character already has a barony.");
 
                 var entity = new Barony
                 {
                     CharacterId = characterId,
-                    Name = string.IsNullOrWhiteSpace(name) ? "Nowa Baronia" : name,
+                    Name = string.IsNullOrWhiteSpace(name) ? "Nowa Baronia" : name.Trim(),
+                    Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
                     BaseParametersJson = Ser(new PpbVector()),
                 };
                 var added = await ctx.Baronies.AddAsync(entity);
                 await ctx.SaveChangesAsync();
 
-                var character = await ctx.Characters.AsNoTracking().FirstOrDefaultAsync(c => c.Id == characterId);
-                SeedDefaultAdvisors(ctx, added.Entity.Id, character?.NPCName ?? "Baron");
+                SeedDefaultAdvisors(ctx, added.Entity.Id, character.NPCName ?? "Baron");
                 await ctx.SaveChangesAsync();
 
                 return ToDTO(added.Entity);
             }
+            catch (RepositoryErrorException) { throw; }
             catch (System.Exception ex) { throw Err(ex, nameof(CreateForCharacter)); }
         }
 
@@ -524,6 +560,10 @@ namespace DA_Business.Repository.BaronyRepos
                 "From harvests and storehouses to new works and the flow of coin into the treasury, this office " +
                 "keeps the barony fed, built, and solvent.";
 
+            var chancellorSignificant = AdvisorSignificantSkills.DefaultForOffice(OfficeType.Chancellor);
+            var captainSignificant = AdvisorSignificantSkills.DefaultForOffice(OfficeType.GuardCaptain);
+            var stewardSignificant = AdvisorSignificantSkills.DefaultForOffice(OfficeType.Steward);
+
             ctx.Advisors.AddRange(
                 new Advisor
                 {
@@ -543,6 +583,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Title = "Chancellor",
                     PersonName = "Unassigned",
                     SkillsJson = Ser(chancellorSkills),
+                    SignificantSkillsJson = AdvisorSignificantSkills.Serialize(chancellorSignificant),
                     AdditiveJson = Ser(chancellorAdd),
                     PercentJson = Ser(chancellorPct),
                     UpkeepGold = 15,
@@ -555,6 +596,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Title = "Guard Captain",
                     PersonName = "Unassigned",
                     SkillsJson = Ser(captainSkills),
+                    SignificantSkillsJson = AdvisorSignificantSkills.Serialize(captainSignificant),
                     AdditiveJson = Ser(captainAdd),
                     PercentJson = Ser(captainPct),
                     UpkeepGold = 12,
@@ -567,6 +609,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Title = "Steward",
                     PersonName = "Unassigned",
                     SkillsJson = Ser(stewardSkills),
+                    SignificantSkillsJson = AdvisorSignificantSkills.Serialize(stewardSignificant),
                     AdditiveJson = Ser(stewardAdd),
                     PercentJson = Ser(stewardPct),
                     UpkeepGold = 12,
@@ -629,7 +672,8 @@ namespace DA_Business.Repository.BaronyRepos
         {
             Id = e.Id, BaronyId = e.BaronyId, OfficeType = e.OfficeType, Title = e.Title,
             PersonName = e.PersonName, IsBaron = e.IsBaron,
-            Skills = De(e.SkillsJson), Additive = De(e.AdditiveJson),
+            Skills = De(e.SkillsJson), SignificantSkills = AdvisorSignificantSkills.Deserialize(e.SignificantSkillsJson),
+            Additive = De(e.AdditiveJson),
             Percent = De(e.PercentJson), FormulaText = e.FormulaText, Description = e.Description, UpkeepGold = e.UpkeepGold,
         };
 
@@ -639,7 +683,9 @@ namespace DA_Business.Repository.BaronyRepos
         {
             e.BaronyId = d.BaronyId; e.OfficeType = d.OfficeType; e.Title = d.Title; e.PersonName = d.PersonName;
             e.IsBaron = d.IsBaron;
-            e.SkillsJson = Ser(d.Skills); e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent);
+            e.SkillsJson = Ser(d.Skills);
+            e.SignificantSkillsJson = AdvisorSignificantSkills.Serialize(d.SignificantSkills);
+            e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent);
             e.FormulaText = d.FormulaText; e.Description = d.Description; e.UpkeepGold = d.UpkeepGold;
         }
 
@@ -843,7 +889,8 @@ namespace DA_Business.Repository.BaronyRepos
         // ---------------- Mapping: Template ----------------
         private static BuildingTemplateDTO ToDTO(BuildingTemplate e) => new()
         {
-            Id = e.Id, Name = e.Name, Kind = e.Kind, GoldCost = e.GoldCost, ProductionCost = e.ProductionCost,
+            Id = e.Id, Name = e.Name, RequiredLordshipLevel = e.RequiredLordshipLevel, Kind = e.Kind,
+            GoldCost = e.GoldCost, ProductionCost = e.ProductionCost,
             EffectAdditive = De(e.EffectAdditiveJson), EffectPercent = De(e.EffectPercentJson),
             Description = e.Description, TerrainRequirement = e.TerrainRequirement,
         };
@@ -852,7 +899,8 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static void ApplyTemplate(BuildingTemplate e, BuildingTemplateDTO d)
         {
-            e.Name = d.Name; e.Kind = d.Kind; e.GoldCost = d.GoldCost; e.ProductionCost = d.ProductionCost;
+            e.Name = d.Name; e.RequiredLordshipLevel = d.RequiredLordshipLevel; e.Kind = d.Kind;
+            e.GoldCost = d.GoldCost; e.ProductionCost = d.ProductionCost;
             e.EffectAdditiveJson = Ser(d.EffectAdditive); e.EffectPercentJson = Ser(d.EffectPercent);
             e.Description = d.Description; e.TerrainRequirement = d.TerrainRequirement;
         }

@@ -40,7 +40,11 @@ else if (_overview is not null)
 
     @* --- Modifier sections (PPB tables) --- *@
     <AdvisorSection Advisors="@_advisorsForSection" />
-    <SectionTable Title="City and Buildings" Rows="@_buildingRows" />
+    <CityBuildingsSection BaronyId="@BaronyId"
+                          SavedBuildings="@_savedBuildings"
+                          Catalog="@_buildingCatalog"
+                          CanEdit="@CanEdit"
+                          OnChanged="ReloadOverviewAsync" />
     <SectionTable Title="Social Group Relations" Rows="@_socialRows" />
     <SectionTable Title="Terrain Improvements" Rows="@_improvementRows" />
     <SectionTable Title="Decrees and Technologies" Rows="@_decreeRows" />
@@ -65,6 +69,8 @@ else if (_overview is not null)
 
     private List<PpbModifierRow> _advisorRows = new();
     private List<PpbModifierRow> _buildingRows = new();
+    private List<BaronyBuildingDTO> _savedBuildings = new();
+    private List<BuildingTemplateDTO> _buildingCatalog = new();
     private List<PpbModifierRow> _socialRows = new();
     private List<PpbModifierRow> _improvementRows = new();
     private List<PpbModifierRow> _decreeRows = new();
@@ -90,7 +96,12 @@ else if (_overview is not null)
             _overview.Advisors, _overview.Barony, character, baronModifiers);
 
         _advisorRows = BaronyCalc.AdvisorRows(_advisorsForSection);
-        _buildingRows = BaronyCalc.BuildingRows(_overview.Buildings);
+        _savedBuildings = _overview.Buildings;
+        _buildingCatalog = (await _baronyRepo.GetBuildingTemplates())
+            .Where(t => t.Kind == BuildingKind.Building)
+            .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        _buildingRows = BaronyCalc.CityBuildingSectionRows(Barony!.Id, _savedBuildings);
         _socialRows = BaronyCalc.SocialRows(_overview.SocialRelations);
         _improvementRows = BaronyCalc.ImprovementRows(_overview.Improvements);
         _decreeRows = BaronyCalc.DecreeRows(_overview.Decrees);
@@ -98,6 +109,21 @@ else if (_overview is not null)
         _communityRows = BaronyCalc.CommunityRows(_overview.CommunityModifiers);
 
         BuildTotals();
+    }
+
+    private async Task ReloadOverviewAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _overview = await _baronyRepo.GetOverview(Barony.Id);
+        if (_overview is null)
+            return;
+
+        _savedBuildings = _overview.Buildings;
+        _buildingRows = BaronyCalc.CityBuildingSectionRows(Barony.Id, _savedBuildings);
+        BuildTotals();
+        StateHasChanged();
     }
 
     private void BuildTotals()

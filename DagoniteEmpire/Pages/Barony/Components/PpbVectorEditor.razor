@@ -9,6 +9,7 @@
         @foreach (var info in VisibleColumns)
         {
             var key = info.Key;
+            var significant = IsSignificant(key);
             <MudNumericField T="decimal"
                              Label="@FieldLabel(info)"
                              Value="@Value.Get(key)"
@@ -19,8 +20,8 @@
                              IconSize="Size.Small"
                              Step="@StepSize"
                              Format="0.##"
-                             Class="@(Compact ? "ppb-compact-numeric" : null)"
-                             title="@(Compact ? info.NamePl : null)" />
+                             Class="@FieldClass(significant)"
+                             title="@FieldTitle(info, significant)" />
         }
     </div>
 </div>
@@ -32,11 +33,34 @@
     [Parameter] public bool Percent { get; set; }
     [Parameter] public bool Compact { get; set; }
     [Parameter] public bool ExcludeTreasury { get; set; }
+    [Parameter] public IReadOnlySet<Ppb>? SignificantKeys { get; set; }
 
     private decimal StepSize => Percent ? 0.1m : 1m;
 
     private IEnumerable<PpbInfo> VisibleColumns =>
         ExcludeTreasury ? PpbCatalog.All.Where(p => p.Key != Ppb.Treasury) : PpbCatalog.All;
+
+    private bool IsSignificant(Ppb key)
+        => SignificantKeys is { Count: > 0 } && SignificantKeys.Contains(key);
+
+    private string? FieldClass(bool significant)
+    {
+        var parts = new List<string>();
+        if (Compact)
+            parts.Add("ppb-compact-numeric");
+        if (significant)
+            parts.Add("ppb-field-significant");
+        return parts.Count == 0 ? null : string.Join(' ', parts);
+    }
+
+    private string? FieldTitle(PpbInfo info, bool significant)
+    {
+        if (significant)
+            return $"{info.NamePl} — significant for this office";
+        if (SignificantKeys is { Count: > 0 })
+            return $"{info.NamePl} — stored; influence rules coming later";
+        return Compact ? info.NamePl : null;
+    }
 
     private string CompactGridClass =>
         ExcludeTreasury ? "ppb-editor-grid--compact-12" : "ppb-editor-grid--compact";

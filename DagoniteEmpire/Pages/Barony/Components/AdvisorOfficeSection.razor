@@ -30,6 +30,7 @@
                                     Summary="@_total"
                                     SummaryCost="@_totalCost"
                                     SummaryLabel="Σ total influence"
+                                    SignificantSkills="@_significantSkills"
                                     CanEdit="@CanEdit"
                                     OnEdit="EditRowAsync"
                                     OnDelete="DeleteRowAsync" />
@@ -67,13 +68,15 @@
     private List<AdvisorInfluenceRow> _rows = new();
     private PpbVector _total = new();
     private decimal _totalCost;
+    private HashSet<Ppb> _significantSkills = new();
 
     protected override void OnParametersSet() => RebuildRows();
 
     private void RebuildRows()
     {
+        _significantSkills = BaronyCalc.EffectiveSignificantSkills(Advisor).ToHashSet();
         _rows = BaronyCalc.BuildAdvisorInfluenceRows(Advisor, CustomModifiers);
-        _total = BaronyCalc.SumAdvisorInfluenceRows(_rows);
+        _total = BaronyCalc.SumAdvisorInfluenceRows(_rows, _significantSkills);
         _totalCost = BaronyCalc.TotalOfficeCost(Advisor, CustomModifiers);
     }
 
@@ -130,6 +133,7 @@
         var parameters = new DialogParameters<AdvisorSkillsEditDialog>
         {
             { x => x.Skills, Advisor.Skills.Clone() },
+            { x => x.SignificantKeys, _significantSkills },
         };
 
         var dialog = await _dialogService.ShowAsync<AdvisorSkillsEditDialog>(
@@ -236,6 +240,7 @@
         UpkeepGold = Advisor.UpkeepGold,
         IsBaron = Advisor.IsBaron,
         Skills = Advisor.Skills.Clone(),
+        SignificantSkills = Advisor.SignificantSkills.ToList(),
         Additive = Advisor.Additive.Clone(),
         Percent = Advisor.Percent.Clone(),
     };

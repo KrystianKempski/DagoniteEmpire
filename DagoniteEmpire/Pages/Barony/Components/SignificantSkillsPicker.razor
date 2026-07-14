@@ -1,0 +1,49 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudText Typo="Typo.subtitle2" Class="mb-1">Significant skills (up to @AdvisorSignificantSkills.MaxCount)</MudText>
+<MudText Typo="Typo.caption" Class="mb-2 significant-skills-hint">
+    Only selected skills affect barony parameters for this office.
+</MudText>
+<div class="significant-skills-grid">
+    @foreach (var info in AdvisorSignificantSkills.SelectableSkills)
+    {
+        var key = info.Key;
+        var selected = _selected.Contains(key);
+        var disabled = !selected && _selected.Count >= AdvisorSignificantSkills.MaxCount;
+        <MudCheckBox T="bool"
+                     Value="@selected"
+                     ValueChanged="@(v => Toggle(key, v))"
+                     Disabled="@disabled"
+                     Dense="true"
+                     Color="Color.Primary">
+            <span class="@(selected ? "significant-skill--active" : "")">@info.NamePl</span>
+        </MudCheckBox>
+    }
+</div>
+
+@code {
+    [Parameter] public List<Ppb> Selected { get; set; } = new();
+    [Parameter] public EventCallback<List<Ppb>> SelectedChanged { get; set; }
+
+    private HashSet<Ppb> _selected = new();
+
+    protected override void OnParametersSet()
+        => _selected = Selected.ToHashSet();
+
+    private async Task Toggle(Ppb key, bool isChecked)
+    {
+        if (isChecked)
+        {
+            if (_selected.Count >= AdvisorSignificantSkills.MaxCount)
+                return;
+            _selected.Add(key);
+        }
+        else
+        {
+            _selected.Remove(key);
+        }
+
+        Selected = _selected.OrderBy(p => (int)p).ToList();
+        await SelectedChanged.InvokeAsync(Selected);
+    }
+}

@@ -185,6 +185,44 @@
     background: var(--barony-accent-soft);
 }
 
+.ppb-table--city-buildings .city-building-col-name {
+    min-width: 250px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--barony-ink);
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--barony-surface);
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+}
+
+.ppb-table--city-buildings thead .city-building-col-name {
+    z-index: 3;
+}
+
+.ppb-table--city-buildings tbody tr:hover .city-building-col-name {
+    background: var(--barony-accent-soft);
+}
+
+.ppb-table--city-buildings .city-building-row--core .city-building-col-name {
+    color: var(--barony-accent);
+}
+
+.ppb-table--city-buildings .city-building-col-actions {
+    min-width: 44px;
+    width: 44px;
+    padding: 2px 4px;
+}
+
+.ppb-table--city-buildings .city-building-select-wrap {
+    min-width: 220px;
+}
+
+.ppb-table--city-buildings .city-building-select {
+    width: 100%;
+}
+
 .ppb-table--source .source-col {
     min-width: 200px;
 }
@@ -302,6 +340,25 @@
 .ppb-cell-pos { color: var(--barony-pos); }
 .ppb-cell-neg { color: var(--barony-neg); }
 .ppb-cell-zero { color: #b8ae98; }
+.ppb-cell-inactive,
+.ppb-col-inactive {
+    opacity: 0.38;
+}
+.ppb-col-inactive {
+    font-weight: normal;
+}
+.significant-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.15rem 1rem;
+    margin-top: 0.5rem;
+}
+.significant-skills-hint {
+    opacity: 0.75;
+}
+.significant-skill--active {
+    font-weight: 600;
+}
 
 .ppb-summary-row td {
     border-top: 2px solid var(--barony-border-strong);
@@ -591,6 +648,28 @@
 }
 
 /* ---- Bottom "Barony Tabs" bar (Excel-like tabs) ---- */
+.barony-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 420px;
+    margin: 0 0 12px 0;
+    padding: 8px 12px;
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border);
+    border-radius: 8px;
+}
+
+.barony-switcher__icon {
+    color: var(--barony-accent);
+    flex-shrink: 0;
+}
+
+.barony-switcher__select {
+    flex: 1;
+    min-width: 0;
+}
+
 .barony-tabbar {
     position: fixed;
     left: 0;
@@ -660,4 +739,96 @@
 .barony-terrain-cell--selected {
     outline: 3px solid var(--barony-accent);
     outline-offset: -3px;
+}
+
+/* ---- Buildings catalog ---- */
+.buildings-catalog-count {
+    font-size: 0.85rem;
+    color: var(--barony-muted);
+}
+
+.buildings-catalog-scroll {
+    overflow-x: auto;
+    max-width: 100%;
+    border: 1px solid var(--barony-border);
+    border-radius: 8px;
+    background: var(--barony-surface);
+}
+
+.ppb-table--catalog .catalog-col-name {
+    min-width: 140px;
+    text-align: left;
+}
+
+.ppb-table--catalog .catalog-cell-name {
+    font-weight: 600;
+    text-align: left;
+}
+
+.ppb-table--catalog .catalog-col-lordship {
+    min-width: 72px;
+}
+
+.ppb-table--catalog .catalog-col-kind {
+    min-width: 96px;
+}
+
+.ppb-table--catalog .catalog-col-cost {
+    min-width: 56px;
+}
+
+.ppb-table--catalog .catalog-col-desc {
+    min-width: 200px;
+    max-width: 320px;
+    white-space: normal;
+    text-align: left;
+}
+
+.ppb-table--catalog thead th:first-child,
+.ppb-table--catalog tbody td.catalog-col-name {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--barony-surface);
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+}
+
+.ppb-table--catalog thead th:first-child {
+    z-index: 3;
+}
+
+.buildings-catalog-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+
+.buildings-catalog-filters__name {
+    flex: 1 1 220px;
+    max-width: 360px;
+}
+
+.buildings-catalog-filters__kind {
+    flex: 0 1 180px;
+    min-width: 160px;
+}
+
+.ppb-table--catalog .catalog-th--sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.ppb-table--catalog .catalog-th--sortable:hover {
+    background: var(--barony-accent-soft);
+}
+
+.ppb-table--catalog .catalog-th--sorted {
+    color: var(--barony-accent);
+}
+
+.ppb-table--catalog .catalog-sort-indicator {
+    font-size: 0.65rem;
+    opacity: 0.85;
 }

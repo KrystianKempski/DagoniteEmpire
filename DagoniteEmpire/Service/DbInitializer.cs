@@ -13,6 +13,7 @@ using MudBlazor;
 using Abp.Collections.Extensions;
 using Microsoft.JSInterop;
 using DagoniteEmpire.Helper;
+using DA_DataAccess.BaronyData;
 
 namespace DagoniteEmpire.Service
 {
@@ -138,7 +139,21 @@ namespace DagoniteEmpire.Service
                         await _userManager.CreateAsync(user, "Guest123*");
                         await _userManager.AddToRoleAsync(user, SD.Role_GameMaster);
                     }
+
+                    if (await _userManager.FindByEmailAsync("duke@duke.com") is null)
+                    {
+                        ApplicationUser user = new()
+                        {
+                            UserName = "Dukemaster",
+                            Email = "duke@duke.com",
+                            EmailConfirmed = true,
+                        };
+                        await _userManager.CreateAsync(user, "Guest123!");
+                        await _userManager.AddToRoleAsync(user, SD.Role_DukePlayer);
+                    }
                 }
+
+                await SyncBuildingTemplateCatalogAsync(contex);
 
                 if (contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName) == null)
                 {
@@ -2831,6 +2846,27 @@ namespace DagoniteEmpire.Service
             {
                 throw new Exception(ex.Message);
             }
+        }
+
+        /// <summary>Reseed catalog when empty or still using legacy Polish seed data.</summary>
+        private static async Task SyncBuildingTemplateCatalogAsync(ApplicationDbContext ctx)
+        {
+            var needsReseed = !await ctx.BuildingTemplates.AnyAsync()
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Kind == "Budynek"
+                    || t.Kind == "Ulepszenie"
+                    || t.Name == "Akademia Wojskowa"
+                    || t.Name == "Cmentarzysko");
+
+            if (!needsReseed)
+                return;
+
+            foreach (var building in await ctx.BaronyBuildings.Where(b => b.TemplateId != null).ToListAsync())
+                building.TemplateId = null;
+
+            ctx.BuildingTemplates.RemoveRange(await ctx.BuildingTemplates.ToListAsync());
+            ctx.BuildingTemplates.AddRange(BuildingTemplateSeeder.CreateAll());
+            await ctx.SaveChangesAsync();
         }
     }
 }

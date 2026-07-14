@@ -27,8 +27,8 @@ namespace DagoniteEmpire.Pages.Barony
         protected string? LoadError { get; set; }
         protected bool CanEdit { get; set; }
 
-        /// <summary>Loads context and optionally creates a barony if missing.</summary>
-        protected async Task LoadBaronyAsync(bool createIfMissing = true)
+        /// <summary>Loads barony for the currently selected baron character. Baronies are created by MG only.</summary>
+        protected async Task LoadBaronyAsync()
         {
             IsLoading = true;
             LoadError = null;
@@ -46,25 +46,20 @@ namespace DagoniteEmpire.Pages.Barony
                 }
 
                 var characterId = UserInfo?.SelectedCharacter?.Id ?? 0;
-                if (characterId <= 0)
+                if (characterId <= 0 || characterId == -1)
                 {
-                    LoadError = "Select a baron character first (character menu in the top-right corner).";
+                    LoadError = isAdminOrMg
+                        ? "Select a barony from the selector above, or create one in Panel MG."
+                        : "Select your baron character first (character menu in the top-right corner).";
                     return;
                 }
 
                 Barony = await _baronyRepo.GetByCharacterId(characterId);
-                if (Barony is null && createIfMissing)
-                {
-                    var name = string.IsNullOrWhiteSpace(UserInfo?.SelectedCharacter?.NPCName)
-                        ? "Barony"
-                        : $"Barony - {UserInfo!.SelectedCharacter!.NPCName}";
-                    Barony = await _baronyRepo.CreateForCharacter(characterId, name);
-                    _snackBar.Add("Created a new barony.", Severity.Success);
-                }
-
                 if (Barony is null)
                 {
-                    LoadError = "This character does not have a barony yet.";
+                    LoadError = isAdminOrMg
+                        ? "This character does not have a barony yet. Create one in Panel MG."
+                        : "Your barony has not been set up yet. Ask the Game Master.";
                     return;
                 }
 

@@ -87,7 +87,7 @@
 
                                 <div class="form-group col-8 col-md-3 px-1">
                                     <label>Character Type</label>
-                                    @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
+                                    @if (CanEditCharacterType)
                                     {
                                         <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
                                             <option selected="selected" value="@SD.NPCType.Hero">
@@ -240,6 +240,9 @@
     public bool IsLoading { get; set; } = true;
     private bool IsLeaveAllowed { get; set; } = true;
     private bool IsDukeAllowed { get; set; } = false;
+    /// <summary>Only the owning player (not MG) may pick character type while the sheet is unfinished.</summary>
+    private bool CanEditCharacterType =>
+        UserInfo?.IsAdminOrMG != true && AllParams?.Character.IsApproved == false;
     private string TargetLocation { get; set; } = "";
     public UserInfo? UserInfo { get; set; }
     private DateModel CurrentDate = new DateModel(1,1);
@@ -323,12 +326,10 @@
                 AllParams.AvailableLanguages = await _languageRepository.GetAllApproved();
                 AllParams.EnsureCommonLanguage();
                 AllParams.Character.UserName = UserInfo?.UserName;
-                IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer || UserInfo?.IsAdminOrMG == true);
-
-                if (IsDukeAllowed == false)
-                    AllParams.Character.NPCType = SD.NPCType.Hero;
-                else
-                    AllParams.Character.NPCType = SD.NPCType.Duke;
+                RefreshDukePermissions();
+                AllParams.Character.NPCType = UserInfo?.Role == SD.Role_DukePlayer
+                    ? SD.NPCType.Duke
+                    : SD.NPCType.Hero;
                 CharacterTypeHandle();
             }
             else
@@ -337,7 +338,7 @@
                 Title = "Edit";
                 await LoadCharacter();
             }
-            IsDukeAllowed = (UserInfo?.Role == SD.Role_DukePlayer);
+            RefreshDukePermissions();
             AllParams.IsAdminOrMG = UserInfo?.IsAdminOrMG == true;
             AllParams.SpecialSkills.AddRelatedParametes();
             CurrentDate = new DateModel(AllParams.Character.CurrentDate);
@@ -433,6 +434,16 @@
         RaceDTO? raceDTO;
         ProfessionDTO? professionDTO;
         IsLoading = true;
+        RefreshDukePermissions();
+        if (AllParams.Character.NPCType == SD.NPCType.Duke
+            && !IsDukeAllowed
+            && UserInfo?.IsAdminOrMG != true)
+        {
+            IsLoading = false;
+            await _jsRuntime.ToastrWarning("Character type Duke is not available for your account.");
+            StateHasChanged();
+            return;
+        }
         //update date
         AllParams.Character.CurrentDate = CurrentDate;
         // Remove trailing whitespace from character name to avoid mismatches (e.g. battle map tokens)
@@ -694,6 +705,9 @@
             await _jsRuntime.ToastrError("Error while deleting: " + ex.ToString());
         }
     }
+
+    private void RefreshDukePermissions()
+        => IsDukeAllowed = UserInfo?.Role == SD.Role_DukePlayer;
 
     private void CharacterTypeHandle()
     {
