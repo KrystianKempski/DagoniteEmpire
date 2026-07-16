@@ -199,11 +199,72 @@ namespace DagoniteEmpire.Pages.Barony
             return PpbVector.Sum(vectors);
         }
 
-        public static List<PpbModifierRow> SocialRows(IEnumerable<SocialGroupRelationDTO> relations)
-            => relations.Select(r => Row(
-                    $"{r.Group} ({RelationLevel.Name(r.RelationLevel)})",
-                    r.Additive, r.Percent, r.FormulaText))
+        public static List<PpbModifierRow> SocialRows(int baronyId, IEnumerable<SocialGroupRelationDTO> relations)
+            => SocialGroupSectionRows(baronyId, relations)
+                .Where(r => r.IsActive)
+                .Select(r => Row(
+                    $"{r.Group} ({r.RelationDisplay})",
+                    r.Additive,
+                    r.Percent))
                 .ToList();
+
+        /// <summary>Fixed social groups merged with saved relation data.</summary>
+        public static IReadOnlyList<SocialGroupRow> SocialGroupSectionRows(int baronyId, IEnumerable<SocialGroupRelationDTO> saved)
+        {
+            var byGroup = new Dictionary<string, SocialGroupRelationDTO>(StringComparer.OrdinalIgnoreCase);
+            foreach (var relation in saved)
+            {
+                var key = SocialGroup.NormalizeKey(relation.Group);
+                byGroup.TryAdd(key, relation);
+            }
+
+            return SocialGroup.All.Select(group =>
+            {
+                byGroup.TryGetValue(group, out var db);
+                var relationScore = db?.RelationLevel ?? 0;
+                return new SocialGroupRow
+                {
+                    Id = db?.Id ?? 0,
+                    BaronyId = baronyId,
+                    Group = group,
+                    InfluencePercent = db?.InfluencePercent ?? SocialGroup.DefaultInfluence(group),
+                    IsActive = db?.IsActive ?? SocialGroup.DefaultIsActive(group),
+                    RelationScore = relationScore,
+                    Additive = SocialGroupPpbFormulas.ComputeAdditive(group, relationScore),
+                    Percent = SocialGroupPpbFormulas.ComputePercent(group, relationScore),
+                };
+            }).ToList();
+        }
+
+        public static void ApplyComputedPpb(SocialGroupRelationDTO dto)
+        {
+            dto.Additive = SocialGroupPpbFormulas.ComputeAdditive(dto.Group, dto.RelationLevel);
+            dto.Percent = SocialGroupPpbFormulas.ComputePercent(dto.Group, dto.RelationLevel);
+        }
+
+        public static SocialGroupRelationDTO ToRelationDto(SocialGroupRow row)
+        {
+            var dto = new SocialGroupRelationDTO
+            {
+                Id = row.Id,
+                BaronyId = row.BaronyId,
+                Group = row.Group,
+                RelationLevel = row.RelationScore,
+                InfluencePercent = row.InfluencePercent,
+                IsActive = row.IsActive,
+            };
+            ApplyComputedPpb(dto);
+            return dto;
+        }
+
+        public static PpbVector SumSocialGroupsAdditive(int baronyId, IEnumerable<SocialGroupRelationDTO> saved)
+            => PpbVector.Sum(SocialGroupSectionRows(baronyId, saved).Where(r => r.IsActive).Select(r => r.Additive));
+
+        public static PpbVector SumSocialGroupsPercent(int baronyId, IEnumerable<SocialGroupRelationDTO> saved)
+            => PpbVector.Sum(SocialGroupSectionRows(baronyId, saved).Where(r => r.IsActive).Select(r => r.Percent));
+
+        public static int SumSocialInfluencePercent(int baronyId, IEnumerable<SocialGroupRelationDTO> saved)
+            => SocialGroupSectionRows(baronyId, saved).Where(r => r.IsActive).Sum(r => r.InfluencePercent);
 
         public static List<PpbModifierRow> ImprovementRows(IEnumerable<TerrainImprovementDTO> improvements)
             => improvements.Select(i => Row(i.Name, i.Additive, i.Percent, i.FormulaText, i.Description)).ToList();
@@ -243,7 +304,7 @@ namespace DagoniteEmpire.Pages.Barony
             var allRows = new List<PpbModifierRow>();
             allRows.AddRange(AdvisorRows(ov.Advisors));
             allRows.AddRange(BuildingRows(ov.Buildings));
-            allRows.AddRange(SocialRows(ov.SocialRelations));
+            allRows.AddRange(SocialRows(ov.Barony.Id, ov.SocialRelations));
             allRows.AddRange(ImprovementRows(ov.Improvements));
             allRows.AddRange(DecreeRows(ov.Decrees));
             allRows.AddRange(EventRows(ov.Events));

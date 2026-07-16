@@ -13,17 +13,61 @@ namespace DA_Common.Barony
         public static readonly string[] All = { Baron, Chancellor, GuardCaptain, Steward, Custom };
     }
 
-    /// <summary>Grupy społeczne, których relacje wpływają na PPB.</summary>
+    /// <summary>Social groups whose relations affect PPB.</summary>
     public readonly struct SocialGroup
     {
-        public const string Nobility = "Szlachta";
-        public const string Burghers = "Mieszczaństwo";
-        public const string Peasants = "Chłopi";
+        public const string Nobility = "Nobility";
+        public const string Burghers = "Burghers";
+        public const string Peasants = "Peasants";
+        public const string Clergy = "Clergy";
+        public const string Magnates = "Magnates";
 
-        public static readonly string[] All = { Nobility, Burghers, Peasants };
+        public static readonly string[] Active = { Nobility, Burghers, Peasants };
+        public static readonly string[] All = { Nobility, Burghers, Peasants, Clergy, Magnates };
+
+        public static int DefaultInfluence(string group) => group switch
+        {
+            Nobility => 60,
+            Burghers => 30,
+            Peasants => 10,
+            _ => 0,
+        };
+
+        public static bool DefaultIsActive(string group) => group switch
+        {
+            Nobility or Burghers or Peasants => true,
+            _ => false,
+        };
+
+        /// <summary>Maps legacy Polish group names stored in older rows.</summary>
+        public static string NormalizeKey(string group) => group switch
+        {
+            "Szlachta" => Nobility,
+            "Mieszczaństwo" => Burghers,
+            "Chłopi" => Peasants,
+            "Duchowieństwo" => Clergy,
+            "Magnaci" => Magnates,
+            _ => group,
+        };
     }
 
-    /// <summary>Poziomy relacji z grupą społeczną. 0 = obojętność.</summary>
+    /// <summary>Social relation score label (Excel scale).</summary>
+    public readonly struct SocialRelation
+    {
+        public static string Label(int score) => score switch
+        {
+            <= -60 => "Rebellion",
+            <= -30 => "Discontent",
+            <= -10 => "Hostile",
+            <= 20 => "Indifferent",
+            <= 40 => "Satisfied",
+            <= 70 => "Friendly",
+            < 100 => "Adored",
+            _ => "Error",
+        };
+    }
+
+    /// <summary>Legacy discrete relation steps (-3..+3). Prefer <see cref="SocialRelation"/> for display.</summary>
     public readonly struct RelationLevel
     {
         public const int Hostile = -3;
@@ -49,26 +93,267 @@ namespace DA_Common.Barony
     /// <summary>Bazowy rodzaj terenu pola baronii.</summary>
     public readonly struct TerrainBaseType
     {
+        public const string Water = "Woda";
         public const string Plains = "Równiny";
         public const string Hills = "Wzgórza";
         public const string Mountains = "Góry";
 
-        public static readonly string[] All = { Plains, Hills, Mountains };
+        public static readonly string[] All = { Water, Plains, Hills, Mountains };
 
         public static bool SupportsFertility(string? baseType) =>
             baseType == Plains || baseType == Hills;
+
+        public static bool IsKnown(string? baseType) =>
+            baseType == Water || baseType == Plains || baseType == Hills || baseType == Mountains;
+
+        public static string DisplayName(string? baseType) => baseType switch
+        {
+            Water => "Water",
+            Plains => "Plains",
+            Hills => "Hills",
+            Mountains => "Mountains",
+            _ => baseType ?? "Plains",
+        };
     }
 
-    /// <summary>Dodatki terenu (mogą się łączyć).</summary>
+    /// <summary>Soil fertility on a terrain tile (0–5, or unknown).</summary>
+    public readonly struct TerrainFertility
+    {
+        public const int Unknown = -1;
+        public const int Min = 0;
+        public const int Max = 5;
+
+        public static bool IsKnown(int fertility) => fertility >= Min && fertility <= Max;
+
+        /// <summary>Short label (0 wasteland … 5 exceptionally fertile).</summary>
+        public static string DisplayName(int fertility) => fertility switch
+        {
+            0 => "Wasteland",
+            1 => "Very poorly fertile",
+            2 => "Poorly fertile",
+            3 => "Fertile",
+            4 => "Very fertile",
+            5 => "Exceptionally fertile",
+            _ => "Unknown fertility",
+        };
+
+        /// <summary>Phrase used in tile descriptions, e.g. "very good fertility".</summary>
+        public static string Phrase(int fertility) => fertility switch
+        {
+            0 => "wasteland",
+            1 => "very poor fertility",
+            2 => "poor fertility",
+            3 => "good fertility",
+            4 => "very good fertility",
+            5 => "exceptional fertility",
+            _ => "unknown fertility",
+        };
+    }
+
+    /// <summary>Terrain feature add-ons (combinable bit flags).</summary>
     public readonly struct TerrainFeature
     {
-        public const string Forest = "Las";
-        public const string Coast = "Wybrzeże";
-        public const string River = "Rzeka";
-        public const string Wasteland = "Pustkowie";
-        public const string Swamp = "Bagna";
+        public const int None = 0;
+        public const int Forest = 1 << 0;  // 1
+        public const int Coast = 1 << 1;   // 2
+        public const int River = 1 << 2;   // 4
+        public const int Swamp = 1 << 3;   // 8
+        public const int Wasteland = 1 << 4; // 16 (legacy / future)
+        public const int DenseForest = 1 << 5; // 32
 
-        public static readonly string[] All = { Forest, Coast, River, Wasteland, Swamp };
+        public static readonly int[] Paintable = { Forest, DenseForest, Coast, River, Swamp };
+
+        public static bool Has(int mask, int flag) => (mask & flag) != 0;
+
+        public static int Toggle(int mask, int flag) => mask ^ flag;
+
+        public static int Set(int mask, int flag, bool enabled) =>
+            enabled ? mask | flag : mask & ~flag;
+
+        /// <summary>Applies feature paint; Forest and DenseForest are mutually exclusive.</summary>
+        public static int ApplyPaintToggle(int mask, int flag)
+        {
+            var next = Toggle(mask, flag);
+            if (!Has(next, flag))
+                return next;
+
+            if (flag == Forest)
+                next = Set(next, DenseForest, false);
+            else if (flag == DenseForest)
+                next = Set(next, Forest, false);
+
+            return next;
+        }
+
+        public static string DisplayName(int flag) => flag switch
+        {
+            Forest => "Forest",
+            DenseForest => "Dense forest",
+            Coast => "Coast",
+            River => "River",
+            Swamp => "Swamp",
+            Wasteland => "Wasteland",
+            _ => flag.ToString(),
+        };
+
+        public static string? LegacyName(int flag) => flag switch
+        {
+            Forest => "Las",
+            DenseForest => "Gęsty las",
+            Coast => "Wybrzeże",
+            River => "Rzeka",
+            Swamp => "Bagna",
+            Wasteland => "Pustkowie",
+            _ => null,
+        };
+
+        public static int FromLegacyCsv(string? csv)
+        {
+            if (string.IsNullOrWhiteSpace(csv))
+                return None;
+
+            var mask = None;
+            foreach (var part in csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                mask |= part switch
+                {
+                    "Las" or "Forest" => Forest,
+                    "Gęsty las" or "Dense forest" or "DenseForest" => DenseForest,
+                    "Wybrzeże" or "Coast" => Coast,
+                    "Rzeka" or "River" => River,
+                    "Bagna" or "Swamp" => Swamp,
+                    "Pustkowie" or "Wasteland" => Wasteland,
+                    _ => None,
+                };
+            }
+            return mask;
+        }
+    }
+
+    /// <summary>Natural deposit on a terrain tile (stored as string key on TerrainTile.Resource).</summary>
+    public readonly struct TerrainResource
+    {
+        public const string SoftMetals = "Soft metals";
+        public const string Iron = "Iron";
+        public const string Silver = "Silver";
+        public const string Gold = "Gold";
+        public const string Dagoferryt = "Dagoferryt";
+        public const string Fishery = "Fishery";
+        public const string Stone = "Stone";
+        public const string Granite = "Granite";
+        public const string Tarnit = "Tarnit";
+        public const string Clay = "Clay";
+        public const string Ironwood = "Ironwood";
+        public const string ElvenAlder = "Elven alder";
+        public const string Salt = "Salt";
+        public const string Gemstones = "Gemstones";
+
+        public static readonly string[] All =
+        {
+            SoftMetals, Iron, Silver, Gold, Dagoferryt,
+            Fishery,
+            Stone, Granite, Tarnit,
+            Clay, Ironwood, ElvenAlder, Salt, Gemstones,
+        };
+
+        public static bool IsKnown(string? key) =>
+            !string.IsNullOrWhiteSpace(key) && All.Contains(key);
+
+        public static string DisplayName(string? key) => key switch
+        {
+            SoftMetals => "Soft metals",
+            Iron => "Iron",
+            Silver => "Silver",
+            Gold => "Gold",
+            Dagoferryt => "Dagoferryt",
+            Fishery => "Fishery",
+            Stone => "Stone",
+            Granite => "Granite",
+            Tarnit => "Tarnit",
+            Clay => "Clay",
+            Ironwood => "Ironwood",
+            ElvenAlder => "Elven alder",
+            Salt => "Salt",
+            Gemstones => "Gemstones",
+            _ => key ?? "None",
+        };
+
+        public static string IconUrl(string? key) => key switch
+        {
+            SoftMetals or Iron or Silver or Gold or Dagoferryt => "/icons/metal-bar.svg",
+            Fishery => "/icons/fishing.svg",
+            Stone or Granite or Tarnit => "/icons/stone-block.svg",
+            Clay or Salt => "/icons/coal-pile.svg",
+            Ironwood or ElvenAlder => "/icons/wood-pile.svg",
+            Gemstones => "/icons/crystal-growth.svg",
+            _ => "/icons/metal-bar.svg",
+        };
+
+        public static string ColorHex(string? key) => key switch
+        {
+            SoftMetals => "#e67e22",
+            Iron => "#2e86c1",
+            Silver => "#c0c7ce",
+            Gold => "#d4af37",
+            Dagoferryt => "#8e44ad",
+            Fishery => "#1a9bb5",
+            Stone => "#f4f1ea",
+            Granite => "#7f8c8d",
+            Tarnit => "#9b59b6",
+            Clay => "#c4783a",
+            Ironwood => "#2471a3",
+            ElvenAlder => "#d4af37",
+            Salt => "#f8f8ff",
+            Gemstones => "#9b59b6",
+            _ => "#888888",
+        };
+    }
+
+    /// <summary>Map-placed terrain improvements (stored as TerrainImprovement.Name).</summary>
+    public readonly struct MapImprovement
+    {
+        public const string Town = "Town";
+        public const string Village = "Village";
+        public const string HuntersLodge = "Hunter's lodge";
+        public const string FishingHarbor = "Fishing harbor";
+        public const string Mine = "Mine";
+        public const string Sawmill = "Sawmill";
+        public const string Farm = "Farm";
+
+        public static readonly string[] All =
+        {
+            Town, Village, HuntersLodge, FishingHarbor, Mine, Sawmill, Farm,
+        };
+
+        public static bool IsKnown(string? key) =>
+            !string.IsNullOrWhiteSpace(key) && All.Contains(key);
+
+        public static string DisplayName(string? key) => key switch
+        {
+            Town => "Town",
+            Village => "Village",
+            HuntersLodge => "Hunter's lodge",
+            FishingHarbor => "Fishing harbor",
+            Mine => "Mine",
+            Sawmill => "Sawmill",
+            Farm => "Farm",
+            _ => key ?? "None",
+        };
+
+        public static string IconUrl(string? key) => key switch
+        {
+            Town => "/icons/medieval-village-01.svg",
+            Village => "/icons/wood-cabin.svg",
+            HuntersLodge => "/icons/hunting-horn.svg",
+            FishingHarbor => "/icons/fishing-net.svg",
+            Mine => "/icons/mine-wagon.svg",
+            Sawmill => "/icons/axe-in-stump.svg",
+            Farm => "/icons/windmill.svg",
+            _ => "/icons/wood-cabin.svg",
+        };
+
+        public static bool RequiresPlaceName(string? key) =>
+            key is Town or Village;
     }
 
     /// <summary>Catalog entry type (BuildingKind).</summary>
@@ -117,5 +402,12 @@ namespace DA_Common.Barony
         public const string Unrest = "Niepokój";
 
         public static readonly string[] All = { Society, Hunger, Crime, Corruption, Unrest };
+    }
+
+    /// <summary>Fixed terrain map dimensions (one grid per barony).</summary>
+    public readonly struct TerrainMapGrid
+    {
+        public const int Size = 15;
+        public const int CellCount = Size * Size;
     }
 }

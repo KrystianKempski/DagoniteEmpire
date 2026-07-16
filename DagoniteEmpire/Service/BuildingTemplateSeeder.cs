@@ -74,15 +74,18 @@ namespace DagoniteEmpire.Service
             Add("Physician's House", 1, B, 15, 30,
                 "Where the poor can receive care—costly, but it earns the gratitude of the populace.",
                 Fx(loyalty: 4, stability: 3, treasury: -10));
-            Add("Poor Farms", 1, I, 40, 20,
-                "Peasant fields and huts on poor soil, yielding meager crops with little labor. Distance from the city, flammability, and exposure make them vulnerable.",
+            Add("Farm - very poor", 1, I, 40, 20,
+                "Peasant fields and huts on very poor soil, yielding meager crops with little labor. Distance from the city, flammability, and exposure make them vulnerable.",
                 Fx(food: 0.8m, production: 0.5m, treasury: -1));
-            Add("Common Farms", 1, I, 40, 20,
-                "Peasant fields and huts on moderately fertile land, giving adequate yields and some labor. Distance from the city, flammability, and exposure make them vulnerable.",
+            Add("Farm - poor", 1, I, 40, 20,
+                "Peasant fields and huts on poorly fertile land, giving adequate yields and some labor. Distance from the city, flammability, and exposure make them vulnerable.",
                 Fx(food: 1.5m, economy: 0.5m, production: 1, treasury: -1));
-            Add("Fertile Farms", 1, I, 40, 20,
-                "Peasant fields and huts on rich soil, giving strong yields and labor. Distance from the city, flammability, and exposure make them vulnerable.",
+            Add("Farm - fertile", 1, I, 40, 20,
+                "Peasant fields and huts on fertile soil, giving strong yields and labor. Distance from the city, flammability, and exposure make them vulnerable.",
                 Fx(food: 2, economy: 1, production: 1, treasury: -1));
+            Add("Farm - exceptionally fertile", 1, I, 40, 20,
+                "Peasant fields and huts on exceptionally fertile soil, giving outstanding yields and labor. Distance from the city, flammability, and exposure make them vulnerable.",
+                Fx(food: 3, economy: 1, production: 1, defense: -1, treasury: 20));
             Add("City Moat", 1, B, 200, 80,
                 "A moat improves defense but may stink when used as an open sewer.",
                 Fx(stability: 1, defense: 5, treasury: -1));
@@ -92,17 +95,21 @@ namespace DagoniteEmpire.Service
             Add("Town Garrison", 1, B, 80, 100,
                 "A large town guard post that keeps order and defends the city in war; employs 50 guards (their upkeep is included in the build cost). Guards handle criminals in a small town easily, though they sometimes take harmless bribes. Upkeep: -25.",
                 Fx(production: -1, loyalty: 2, stability: 6, law: 4, corruption: 1, defense: 5, treasury: 50));
-            Add("Granite Quarry", 1, I, 100, 50,
+            Add("Quarry - Granite", 1, I, 100, 50,
                 "Extracts granite—excellent for fortifications.",
                 Fx(food: -0.3m, economy: 1, production: 6, stability: -3, law: -2, defense: 4, treasury: 20),
                 terrainRequirement: "Quarry");
-            Add("Common Quarry", 1, I, 80, 40,
+            Add("Quarry - common stone", 1, I, 80, 40,
                 "Extracts common local stone—not as hard as granite, but good for castles.",
                 Fx(food: -0.3m, economy: 1, production: 4, stability: -3, law: -2, defense: 2, treasury: 10),
                 terrainRequirement: "Quarry");
-            Add("Obsidian Quarry", 1, I, 100, 70,
+            Add("Quarry - Obsidian", 1, I, 100, 70,
                 "Extracts obsidian, useful for certain tools and weapons.",
                 Fx(food: -0.3m, economy: 2, production: 4, stability: -3, law: -2, defense: 4, treasury: 50),
+                terrainRequirement: "Quarry");
+            Add("Quarry - Tarnit", 1, I, 200, 100,
+                "Very heavy; extraction takes great effort. The best (and most expensive) building material for fortresses.",
+                Fx(food: -0.5m, economy: 2, production: 10, stability: -5, law: -2, defense: 8, treasury: 40),
                 terrainRequirement: "Quarry");
             Add("Shrine", 1, B, 30, 60,
                 "A place of worship; bonuses depend on the god honored.",
@@ -110,43 +117,47 @@ namespace DagoniteEmpire.Service
             Add("Tavern", 1, B, 40, 80,
                 "A small inn where travelers can sleep and everyone can drink and eat.",
                 Fx(economy: 2, loyalty: 3, stability: 3, law: -1, science: 1, defense: 4, corruption: 3, treasury: 7));
-            Add("Dagonite Mine", 1, I, 0, 0,
+            Add("Mine - Dagonite", 1, I, 0, 0,
                 "Only the Emperor may mine dagonite; each deposit is seized by the Inquisition, which builds a fort around it. The baron whose lands hold the deposit receives substantial compensation.",
                 Fx(food: -1, economy: 5, stability: -3, law: -10, defense: 2, treasury: 200),
                 terrainRequirement: "Dagonite");
-            Add("Precious Gem Mine (Luxury)", 3, I, 120, 120,
+            Add("Mine - precious gems (luxury)", 3, I, 120, 120,
                 "Mines extremely valuable gemstones.",
                 Fx(food: -0.3m, economy: 7, production: 1, stability: -3, law: -7, corruption: -4, science: 4, defense: 3, treasury: 300),
                 terrainRequirement: "Quarry");
-            Add("Precious Gem Mine (Common)", 2, I, 120, 100,
+            Add("Mine - precious gems (common)", 2, I, 120, 100,
                 "Mines valuable gemstones.",
                 Fx(food: -0.3m, economy: 5, production: 1, stability: -3, law: -5, corruption: -2, science: 2, defense: 2, treasury: 150),
                 terrainRequirement: "Quarry");
-            Add("Luxury Metal Mine", 2, I, 120, 100,
-                "Mines metals such as iron, dagoferrite, tarnite, and enethrill. Strong income and luxury metals for the city, but greed and legal trouble follow. Income: 50–100.",
+            Add("Mine - luxury metals", 2, I, 120, 100,
+                "Mines luxury metals. Strong income and materials for the city, but greed and legal trouble follow. Income: 50–100.",
                 Fx(food: -0.3m, economy: 3, production: 3, stability: -3, law: -4, corruption: -1, science: 1, defense: 1, treasury: 75),
                 terrainRequirement: "Mine");
-            Add("Soft Metal Mine", 1, I, 100, 50,
+            Add("Mine - soft metals", 1, I, 100, 50,
                 "Mines soft metals—copper, lead, tin, and the like. Provides income and materials essential for construction.",
                 Fx(food: -0.3m, economy: 2, production: 4, stability: -3, law: -2, defense: 1, treasury: 30),
                 terrainRequirement: "Mine");
-            Add("Silver Mine", 2, I, 120, 120,
+            Add("Mine - Silver", 2, I, 120, 120,
                 "Mines silver and related ores. Good income, but greed and legal problems follow.",
                 Fx(food: -0.3m, economy: 4, production: 2, stability: -2, law: -1, corruption: 1, culture: 1, defense: 1, treasury: 100),
                 terrainRequirement: "Mine");
-            Add("Hard Metal Mine", 1, I, 120, 60,
+            Add("Mine - hard metals", 1, I, 120, 60,
                 "Mines both soft and hard metals, including iron. Supplies construction materials and supports the army.",
                 Fx(food: -0.3m, economy: 2, production: 5, stability: -2, law: -2, defense: 2, treasury: 40),
                 terrainRequirement: "Mine");
-            Add("Copper Mine", 1, I, 120, 80,
+            Add("Mine - Copper", 1, I, 120, 80,
                 additive: Fx(food: -0.3m, economy: 4, production: 4, stability: -3, law: -2, defense: 1, treasury: 60),
                 terrainRequirement: "Mine");
-            Add("Gold Mine", 3, I, 120, 100,
+            Add("Mine - Gold", 3, I, 120, 100,
                 "A gold mine. Excellent income, but greed and legal trouble follow.",
                 Fx(food: -0.3m, economy: 6, production: 3, stability: -3, law: -6, corruption: -3, science: 3, culture: 2, treasury: 200),
                 terrainRequirement: "Mine");
-            Add("Iron Mine", 1, I, 150, 80,
+            Add("Mine - Iron", 1, I, 150, 80,
                 additive: Fx(food: -0.3m, economy: 3, production: 6, stability: -3, law: -1, defense: 5, treasury: 50),
+                terrainRequirement: "Mine");
+            Add("Mine - Dagoferryt", 1, I, 200, 120,
+                "The best metal for forging weapons and armor.",
+                Fx(food: -0.3m, economy: 4, production: 8, stability: -3, law: -3, defense: 8, treasury: 80),
                 terrainRequirement: "Mine");
             Add("Small Arena", 1, B, 100, 40,
                 "A small fighting ring with stands—entertainment that also stokes aggression.",

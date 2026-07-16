@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 64" width="128" height="64" aria-label="Wzgorza">
+  <defs>
+    <!-- Strome ksztalty jak elipsa scieta powyzej srodka -->
+    <path id="hill-big" d="M14 56 A40 30 0 0 1 94 56 L14 56 Z" />
+    <path id="hill-small" d="M58 56 A28 22 0 0 1 114 56 L58 56 Z" />
+
+    <!-- Maska: pokazuje mniejsze polkole, ale wycina miejsce przeciecia z wiekszym -->
+    <mask id="cut-overlap" maskUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="128" height="64" fill="black" />
+      <use href="#hill-small" fill="white" />
+      <use href="#hill-big" fill="black" />
+    </mask>
+  </defs>
+
+  <use href="#hill-big" fill="black" />
+  <use href="#hill-small" fill="black" mask="url(#cut-overlap)" />
+</svg>

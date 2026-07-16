@@ -74,6 +74,8 @@ namespace DA_Models.BaronyModels
         public int BaronyId { get; set; }
         public string Group { get; set; } = string.Empty;
         public int RelationLevel { get; set; }
+        public int? InfluencePercent { get; set; }
+        public bool? IsActive { get; set; }
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();
         public string? FormulaText { get; set; }
@@ -119,6 +121,9 @@ namespace DA_Models.BaronyModels
         public string Name { get; set; } = string.Empty;
         public string LiegeName { get; set; } = string.Empty;
         public bool IsBaronDemesne { get; set; }
+        public bool IsDomainDefault { get; set; }
+        public int? SeniorDomainId { get; set; }
+        public string ColorHex { get; set; } = "#4d7ea8";
         public decimal BonusMultiplier { get; set; } = 1.0m;
     }
 
@@ -126,19 +131,30 @@ namespace DA_Models.BaronyModels
     {
         public int Id { get; set; }
         public int BaronyId { get; set; }
+        public int MapId { get; set; } = 1;
         public int X { get; set; }
         public int Y { get; set; }
         public string BaseType { get; set; } = DA_Common.Barony.TerrainBaseType.Plains;
-        public string FeaturesCsv { get; set; } = string.Empty;
+        /// <summary>Feature bit flags (TerrainFeature).</summary>
+        public int FeaturesMask { get; set; }
         public int Fertility { get; set; }
         public string? Resource { get; set; }
         public int? FiefId { get; set; }
+        public int? MapDomainId { get; set; }
         public string? Comment { get; set; }
 
-        public List<string> Features =>
-            string.IsNullOrWhiteSpace(FeaturesCsv)
-                ? new List<string>()
-                : FeaturesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        public bool HasFeature(int flag) => DA_Common.Barony.TerrainFeature.Has(FeaturesMask, flag);
+    }
+
+    public class TerrainMapDomainDTO
+    {
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string LordName { get; set; } = string.Empty;
+        public string ColorHex { get; set; } = "#888888";
+        public bool IsPrimary { get; set; }
+        public int SortOrder { get; set; }
     }
 
     public class TerrainImprovementDTO

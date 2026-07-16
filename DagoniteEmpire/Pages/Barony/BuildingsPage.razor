@@ -15,60 +15,64 @@ else if (LoadError is not null)
 }
 else
 {
-    <BaronyPageHeader Title="Buildings">
-        <Summary>
-            <span class="buildings-catalog-count">@FilteredCount of @_templates.Count entries</span>
-        </Summary>
-    </BaronyPageHeader>
+    <div class="buildings-page">
+        <BaronyPageHeader Title="Buildings" ShowSectionToggle="false">
+            <Summary>
+                <span class="buildings-catalog-count">@FilteredCount of @_templates.Count entries</span>
+            </Summary>
+        </BaronyPageHeader>
 
-    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-        Catalog of buildings and terrain improvements available to construct. PPB columns show additive and percent effects. Click column headers to sort.
-    </MudText>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="buildings-page__intro">
+            Catalog of buildings and terrain improvements. PPB columns use separate additive (+) and percent (%) subcolumns. Click headers to sort.
+        </MudText>
 
-    @if (_templates.Count == 0)
-    {
-        <MudAlert Severity="Severity.Info" Dense="true">
-            The building catalog is empty. Game Master can populate templates in a future editor.
-        </MudAlert>
-    }
-    else
-    {
-        <div class="buildings-catalog-filters">
-            <MudTextField @bind-Value="_nameFilter"
-                          Placeholder="Filter by name…"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Immediate="true"
-                          Clearable="true"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          Class="buildings-catalog-filters__name" />
-            <MudSelect T="string"
-                       Label="Type"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Clearable="true"
-                       Dense="true"
-                       Class="buildings-catalog-filters__kind"
-                       @bind-Value="_kindFilter">
-                <MudSelectItem Value="@BuildingKind.Building">Building</MudSelectItem>
-                <MudSelectItem Value="@BuildingKind.Improvement">Improvement</MudSelectItem>
-            </MudSelect>
-        </div>
-
-        @if (FilteredCount == 0)
+        @if (_templates.Count == 0)
         {
-            <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
-                No buildings match the current filters.
+            <MudAlert Severity="Severity.Info" Dense="true">
+                The building catalog is empty. Game Master can populate templates in a future editor.
             </MudAlert>
         }
         else
         {
-            <div class="buildings-catalog-scroll">
-                <BuildingCatalogTable Items="@FilteredTemplates" />
+            <div class="buildings-catalog-filters">
+                <MudTextField @bind-Value="_nameFilter"
+                              Placeholder="Filter by name…"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Immediate="true"
+                              Clearable="true"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Class="buildings-catalog-filters__name" />
+                <MudSelect T="string"
+                           Label="Type"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Dense="true"
+                           Class="buildings-catalog-filters__kind"
+                           @bind-Value="_kindFilter">
+                    <MudSelectItem Value="@BuildingKind.Building">Building</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Improvement">Improvement</MudSelectItem>
+                </MudSelect>
             </div>
+
+            @if (FilteredCount == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
+                    No buildings match the current filters.
+                </MudAlert>
+            }
+            else
+            {
+                <div class="buildings-page__table-area">
+                    <div class="buildings-catalog-scroll">
+                        <BuildingCatalogTable Items="@FilteredTemplates" />
+                    </div>
+                </div>
+            }
         }
-    }
+    </div>
 }
 
 @code {

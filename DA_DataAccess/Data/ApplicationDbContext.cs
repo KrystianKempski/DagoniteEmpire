@@ -69,6 +69,7 @@ namespace DA_DataAccess.Data
         public DbSet<AdvisorInfluenceModifier> AdvisorInfluenceModifiers { get; set; }
         public DbSet<Fief> Fiefs { get; set; }
         public DbSet<TerrainTile> TerrainTiles { get; set; }
+        public DbSet<TerrainMapDomain> TerrainMapDomains { get; set; }
         public DbSet<TerrainImprovement> TerrainImprovements { get; set; }
         public DbSet<BaronyProject> BaronyProjects { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
@@ -117,6 +118,11 @@ namespace DA_DataAccess.Data
             {
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.CampaignId);
+            });
+
+            modelBuilder.Entity<TerrainTile>(entity =>
+            {
+                entity.HasIndex(e => new { e.BaronyId, e.X, e.Y }).IsUnique();
             });
 
             //modelBuilder.Entity<ProfessionSkill>()

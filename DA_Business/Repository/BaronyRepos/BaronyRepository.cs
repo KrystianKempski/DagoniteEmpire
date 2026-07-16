@@ -128,6 +128,9 @@ namespace DA_Business.Repository.BaronyRepos
                 await ctx.SaveChangesAsync();
 
                 SeedDefaultAdvisors(ctx, added.Entity.Id, character.NPCName ?? "Baron");
+                SeedTerrainGrid(ctx, added.Entity.Id);
+                SeedPrimaryMapDomain(ctx, added.Entity.Id, added.Entity.Name, character.NPCName ?? "Baron");
+                SeedPrimaryFief(ctx, added.Entity.Id, character.NPCName ?? "Baron");
                 await ctx.SaveChangesAsync();
 
                 return ToDTO(added.Entity);
@@ -393,12 +396,57 @@ namespace DA_Business.Repository.BaronyRepos
         public async Task<List<TerrainTileDTO>> GetTiles(int baronyId) =>
             await GetList(ctx => ctx.TerrainTiles, baronyId, ToDTO, nameof(GetTiles));
 
+        public async Task<List<TerrainTileDTO>> EnsureTerrainGrid(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var existing = await ctx.TerrainTiles
+                    .Where(x => x.BaronyId == baronyId)
+                    .ToListAsync();
+                var existingCoords = existing.Select(t => (t.X, t.Y)).ToHashSet();
+                var added = false;
+
+                for (var y = 0; y < TerrainMapGrid.Size; y++)
+                {
+                    for (var x = 0; x < TerrainMapGrid.Size; x++)
+                    {
+                        if (existingCoords.Contains((x, y)))
+                            continue;
+
+                        ctx.TerrainTiles.Add(new TerrainTile
+                        {
+                            BaronyId = baronyId,
+                            X = x,
+                            Y = y,
+                            BaseType = TerrainBaseType.Plains,
+                            FeaturesMask = 0,
+                            Fertility = TerrainFertility.Unknown,
+                        });
+                        added = true;
+                    }
+                }
+
+                if (added)
+                    await ctx.SaveChangesAsync();
+
+                return await ctx.TerrainTiles.AsNoTracking()
+                    .Where(x => x.BaronyId == baronyId)
+                    .Select(x => ToDTO(x))
+                    .ToListAsync();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(EnsureTerrainGrid)); }
+        }
+
         public async Task<TerrainTileDTO> SaveTile(TerrainTileDTO dto)
         {
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
-                var e = dto.Id > 0 ? await ctx.TerrainTiles.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var e = dto.Id > 0
+                    ? await ctx.TerrainTiles.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                    : await ctx.TerrainTiles.FirstOrDefaultAsync(x =>
+                        x.BaronyId == dto.BaronyId && x.X == dto.X && x.Y == dto.Y);
                 if (e is null) { e = ToEntity(dto); ctx.TerrainTiles.Add(e); }
                 else { ApplyTile(e, dto); }
                 await ctx.SaveChangesAsync();
@@ -408,6 +456,42 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         public Task<int> DeleteTile(int id) => Delete(ctx => ctx.TerrainTiles, id, nameof(DeleteTile));
+
+        // ---------------- Map domains ----------------
+        public async Task<List<TerrainMapDomainDTO>> GetMapDomains(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                return await ctx.TerrainMapDomains.AsNoTracking()
+                    .Where(x => x.BaronyId == baronyId)
+                    .OrderBy(x => x.IsPrimary ? 0 : 1)
+                    .ThenBy(x => x.SortOrder)
+                    .ThenBy(x => x.Name)
+                    .Select(x => ToDTO(x))
+                    .ToListAsync();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetMapDomains)); }
+        }
+
+        public async Task<TerrainMapDomainDTO> SaveMapDomain(TerrainMapDomainDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0
+                    ? await ctx.TerrainMapDomains.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                    : null;
+                if (e is null) { e = ToEntity(dto); ctx.TerrainMapDomains.Add(e); }
+                else { ApplyMapDomain(e, dto); }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveMapDomain)); }
+        }
+
+        public Task<int> DeleteMapDomain(int id) =>
+            Delete(ctx => ctx.TerrainMapDomains, id, nameof(DeleteMapDomain));
 
         // ---------------- Improvements ----------------
         public async Task<List<TerrainImprovementDTO>> GetImprovements(int baronyId) =>
@@ -617,6 +701,51 @@ namespace DA_Business.Repository.BaronyRepos
                 });
         }
 
+        private static void SeedTerrainGrid(ApplicationDbContext ctx, int baronyId)
+        {
+            for (var y = 0; y < TerrainMapGrid.Size; y++)
+            {
+                for (var x = 0; x < TerrainMapGrid.Size; x++)
+                {
+                    ctx.TerrainTiles.Add(new TerrainTile
+                    {
+                        BaronyId = baronyId,
+                        X = x,
+                        Y = y,
+                        BaseType = TerrainBaseType.Plains,
+                        FeaturesMask = 0,
+                        Fertility = TerrainFertility.Unknown,
+                    });
+                }
+            }
+        }
+
+        private static void SeedPrimaryMapDomain(ApplicationDbContext ctx, int baronyId, string baronyName, string lordName)
+        {
+            ctx.TerrainMapDomains.Add(new TerrainMapDomain
+            {
+                BaronyId = baronyId,
+                Name = baronyName,
+                LordName = lordName,
+                ColorHex = "#9c7a33",
+                IsPrimary = true,
+                SortOrder = 0,
+            });
+        }
+
+        private static void SeedPrimaryFief(ApplicationDbContext ctx, int baronyId, string baronName)
+        {
+            ctx.Fiefs.Add(new Fief
+            {
+                BaronyId = baronyId,
+                Name = $"Lord {baronName}",
+                LiegeName = baronName,
+                IsBaronDemesne = true,
+                ColorHex = "#4d7ea8",
+                BonusMultiplier = 1.0m,
+            });
+        }
+
         // ---------------- Mapping: Barony ----------------
         private static BaronyDTO ToDTO(Barony e) => new()
         {
@@ -708,6 +837,7 @@ namespace DA_Business.Repository.BaronyRepos
         private static SocialGroupRelationDTO ToDTO(SocialGroupRelation e) => new()
         {
             Id = e.Id, BaronyId = e.BaronyId, Group = e.Group, RelationLevel = e.RelationLevel,
+            InfluencePercent = e.InfluencePercent, IsActive = e.IsActive,
             Additive = De(e.AdditiveJson), Percent = De(e.PercentJson), FormulaText = e.FormulaText,
         };
 
@@ -715,8 +845,16 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static void ApplySocial(SocialGroupRelation e, SocialGroupRelationDTO d)
         {
-            e.BaronyId = d.BaronyId; e.Group = d.Group; e.RelationLevel = d.RelationLevel;
-            e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent); e.FormulaText = d.FormulaText;
+            e.BaronyId = d.BaronyId;
+            e.Group = SocialGroup.NormalizeKey(d.Group);
+            e.RelationLevel = d.RelationLevel;
+            e.InfluencePercent = d.InfluencePercent;
+            e.IsActive = d.IsActive;
+            var additive = SocialGroupPpbFormulas.ComputeAdditive(e.Group, e.RelationLevel);
+            var percent = SocialGroupPpbFormulas.ComputePercent(e.Group, e.RelationLevel);
+            e.AdditiveJson = Ser(additive);
+            e.PercentJson = Ser(percent);
+            e.FormulaText = d.FormulaText;
         }
 
         // ---------------- Mapping: Decree ----------------
@@ -826,7 +964,9 @@ namespace DA_Business.Repository.BaronyRepos
         private static FiefDTO ToDTO(Fief e) => new()
         {
             Id = e.Id, BaronyId = e.BaronyId, Name = e.Name, LiegeName = e.LiegeName,
-            IsBaronDemesne = e.IsBaronDemesne, BonusMultiplier = e.BonusMultiplier,
+            IsBaronDemesne = e.IsBaronDemesne, IsDomainDefault = e.IsDomainDefault,
+            SeniorDomainId = e.SeniorDomainId,
+            ColorHex = e.ColorHex, BonusMultiplier = e.BonusMultiplier,
         };
 
         private static Fief ToEntity(FiefDTO d) { var e = new Fief(); ApplyFief(e, d); e.Id = d.Id; return e; }
@@ -834,24 +974,48 @@ namespace DA_Business.Repository.BaronyRepos
         private static void ApplyFief(Fief e, FiefDTO d)
         {
             e.BaronyId = d.BaronyId; e.Name = d.Name; e.LiegeName = d.LiegeName;
-            e.IsBaronDemesne = d.IsBaronDemesne; e.BonusMultiplier = d.BonusMultiplier;
+            e.IsBaronDemesne = d.IsBaronDemesne; e.IsDomainDefault = d.IsDomainDefault;
+            e.SeniorDomainId = d.SeniorDomainId;
+            e.ColorHex = string.IsNullOrWhiteSpace(d.ColorHex) ? "#4d7ea8" : d.ColorHex;
+            e.BonusMultiplier = d.BonusMultiplier;
         }
 
         // ---------------- Mapping: Tile ----------------
         private static TerrainTileDTO ToDTO(TerrainTile e) => new()
         {
-            Id = e.Id, BaronyId = e.BaronyId, X = e.X, Y = e.Y, BaseType = e.BaseType,
-            FeaturesCsv = e.FeaturesCsv, Fertility = e.Fertility, Resource = e.Resource,
-            FiefId = e.FiefId, Comment = e.Comment,
+            Id = e.Id, BaronyId = e.BaronyId, MapId = e.MapId, X = e.X, Y = e.Y, BaseType = e.BaseType,
+            FeaturesMask = e.FeaturesMask, Fertility = e.Fertility, Resource = e.Resource,
+            FiefId = e.FiefId, MapDomainId = e.MapDomainId, Comment = e.Comment,
         };
 
         private static TerrainTile ToEntity(TerrainTileDTO d) { var e = new TerrainTile(); ApplyTile(e, d); e.Id = d.Id; return e; }
 
         private static void ApplyTile(TerrainTile e, TerrainTileDTO d)
         {
-            e.BaronyId = d.BaronyId; e.X = d.X; e.Y = d.Y; e.BaseType = d.BaseType;
-            e.FeaturesCsv = d.FeaturesCsv; e.Fertility = d.Fertility; e.Resource = d.Resource;
-            e.FiefId = d.FiefId; e.Comment = d.Comment;
+            e.BaronyId = d.BaronyId; e.MapId = d.MapId; e.X = d.X; e.Y = d.Y; e.BaseType = d.BaseType;
+            e.FeaturesMask = d.FeaturesMask; e.Fertility = d.Fertility; e.Resource = d.Resource;
+            e.FiefId = d.FiefId; e.MapDomainId = d.MapDomainId; e.Comment = d.Comment;
+        }
+
+        // ---------------- Mapping: Map domain ----------------
+        private static TerrainMapDomainDTO ToDTO(TerrainMapDomain e) => new()
+        {
+            Id = e.Id, BaronyId = e.BaronyId, Name = e.Name, LordName = e.LordName, ColorHex = e.ColorHex,
+            IsPrimary = e.IsPrimary, SortOrder = e.SortOrder,
+        };
+
+        private static TerrainMapDomain ToEntity(TerrainMapDomainDTO d)
+        {
+            var e = new TerrainMapDomain();
+            ApplyMapDomain(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyMapDomain(TerrainMapDomain e, TerrainMapDomainDTO d)
+        {
+            e.BaronyId = d.BaronyId; e.Name = d.Name; e.LordName = d.LordName; e.ColorHex = d.ColorHex;
+            e.IsPrimary = d.IsPrimary; e.SortOrder = d.SortOrder;
         }
 
         // ---------------- Mapping: Improvement ----------------

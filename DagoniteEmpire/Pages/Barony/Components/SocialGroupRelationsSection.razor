@@ -1,0 +1,190 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<BaronySection Title="Social Group Relations">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        <div style="overflow-x:auto;">
+            <table class="ppb-table ppb-table--advisors ppb-table--social-groups ppb-table--lined">
+                <colgroup>
+                    <col class="social-group-col-name" />
+                    <col class="social-group-col-influence" />
+                    <col class="social-group-col-relation" />
+                    @foreach (var _ in PpbCatalog.All)
+                    {
+                        <col class="social-group-ppb-col" />
+                        <col class="social-group-ppb-col" />
+                    }
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="ppb-row-label social-group-col-name">Group</th>
+                        <th rowspan="2" class="social-group-col-influence" title="Share of society">Influence</th>
+                        <th rowspan="2" class="social-group-col-relation">Relation</th>
+                        @foreach (var info in PpbCatalog.All)
+                        {
+                            <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                        }
+                    </tr>
+                    <tr>
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <th class="ppb-subcol ppb-subcol--add">+</th>
+                            <th class="ppb-subcol ppb-subcol--pct">%</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Rows)
+                    {
+                        <tr class="@RowClass(row)">
+                            <td class="social-group-col-name">
+                                <div class="city-building-name-cell">
+                                    <span class="city-building-name-text">@row.Group</span>
+                                    @if (CanManage)
+                                    {
+                                        <span class="city-building-name-actions">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Size="Size.Small"
+                                                           title="Edit social group"
+                                                           OnClick="@(() => EditGroupAsync(row))" />
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="social-group-col-influence">@FmtInfluence(row.InfluencePercent)</td>
+                            <td class="social-group-col-relation">
+                                <span class="social-group-relation-score">@row.RelationScore</span>
+                                <span class="social-group-relation-label">@row.RelationLabel</span>
+                            </td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@CellClass(row, row.Additive[info.Key])">@FmtAdd(row.Additive[info.Key])</td>
+                                <td class="@CellClass(row, row.Percent[info.Key])">@FmtPct(row.Percent[info.Key])</td>
+                            }
+                        </tr>
+                    }
+
+                    <tr class="ppb-summary-row">
+                        <td class="ppb-row-label social-group-col-name">Σ section</td>
+                        <td class="social-group-col-influence"><b>@FmtInfluence(InfluenceSum)</b></td>
+                        <td class="social-group-col-relation"></td>
+                        @foreach (var info in PpbCatalog.All)
+                        {
+                            <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                            <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public List<SocialGroupRelationDTO> Relations { get; set; } = new();
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private IReadOnlyList<SocialGroupRow> Rows => BaronyCalc.SocialGroupSectionRows(BaronyId, Relations);
+    private PpbVector AdditiveSum => BaronyCalc.SumSocialGroupsAdditive(BaronyId, Relations);
+    private PpbVector PercentSum => BaronyCalc.SumSocialGroupsPercent(BaronyId, Relations);
+    private int InfluenceSum => BaronyCalc.SumSocialInfluencePercent(BaronyId, Relations);
+    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.SocialRows(BaronyId, Relations));
+
+    private async Task EditGroupAsync(SocialGroupRow row)
+    {
+        var draft = BaronyCalc.ToRelationDto(row);
+        var parameters = new DialogParameters<SocialGroupRelationEditDialog>
+        {
+            { x => x.Relation, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<SocialGroupRelationEditDialog>(
+            $"Edit {row.Group}",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.False, FullWidth = false, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not SocialGroupRelationDTO saved)
+            return;
+
+        saved.BaronyId = BaronyId;
+        saved.Group = row.Group;
+        BaronyCalc.ApplyComputedPpb(saved);
+
+        try
+        {
+            await _baronyRepo.SaveSocialRelation(saved);
+            _snackBar.Add("Social group updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save social group: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static string RowClass(SocialGroupRow row)
+        => row.IsActive ? "" : "social-group-row--inactive";
+
+    private static string CellClass(SocialGroupRow row, decimal v)
+    {
+        if (!row.IsActive)
+            return "ppb-cell-inactive";
+        return ValueClass(v);
+    }
+
+    private static string FmtInfluence(int pct)
+        => pct <= 0 ? "·" : $"{pct}%";
+
+    private static string FmtAdd(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v);
+    }
+
+    private static string FmtPct(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v) + "%";
+    }
+
+    private static string Num(decimal v)
+    {
+        var r = decimal.Round(v, 2);
+        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+    }
+
+    private static string ValueClass(decimal v)
+    {
+        if (v > 0m) return "ppb-cell-pos";
+        if (v < 0m) return "ppb-cell-neg";
+        return "ppb-cell-zero";
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+}

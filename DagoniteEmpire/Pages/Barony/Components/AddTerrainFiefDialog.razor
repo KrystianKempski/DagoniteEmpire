@@ -1,0 +1,115 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsEdit ? "Edit fief" : "Add fief")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_lordName"
+                          Label="Lord name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+
+            <MudSelect T="int?"
+                       @bind-Value="_seniorDomainId"
+                       Label="Senior domain"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                @foreach (var domain in Domains)
+                {
+                    <MudSelectItem T="int?" Value="@domain.Id">@domain.Name (@domain.LordName)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Fief color</MudText>
+            <div class="terrain-domain-color-row">
+                @foreach (var swatch in Swatches)
+                {
+                    <button type="button"
+                            class="terrain-fertility-swatch @(swatch == _colorHex ? "terrain-fertility-swatch--selected" : "")"
+                            style="background-color: @swatch"
+                            title="@swatch"
+                            aria-label="@($"Color {swatch}")"
+                            @onclick="() => _colorHex = swatch"></button>
+                }
+                <label class="terrain-domain-custom-color" title="Custom color">
+                    <input type="color"
+                           class="terrain-domain-color-input"
+                           value="@_colorHex"
+                           @onchange="OnCustomColorChanged" />
+                </label>
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@(IsEdit ? "Save" : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public IReadOnlyList<TerrainMapDomainDTO> Domains { get; set; } = Array.Empty<TerrainMapDomainDTO>();
+    [Parameter] public FiefDTO? EditFief { get; set; }
+
+    private bool IsEdit => EditFief is not null;
+    private int? _seniorDomainId;
+    private string _lordName = string.Empty;
+    private string _colorHex = "#5dade2";
+
+    protected override void OnParametersSet()
+    {
+        if (EditFief is null)
+            return;
+
+        _lordName = EditFief.LiegeName;
+        _seniorDomainId = EditFief.SeniorDomainId;
+        _colorHex = EditFief.ColorHex;
+    }
+
+    private static readonly string[] Swatches =
+    {
+        "#5dade2", "#3498db", "#9b59b6", "#1abc9c",
+        "#f39c12", "#e74c3c", "#95a5a6", "#7f8c8d",
+    };
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void OnCustomColorChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string value && !string.IsNullOrWhiteSpace(value))
+            _colorHex = value;
+    }
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_lordName))
+        {
+            _snackBar.Add("Lord name is required.", Severity.Warning);
+            return;
+        }
+
+        if (_seniorDomainId is null)
+        {
+            _snackBar.Add("Senior domain is required.", Severity.Warning);
+            return;
+        }
+
+        var dto = EditFief ?? new FiefDTO { BonusMultiplier = 0.85m };
+        dto.LiegeName = _lordName.Trim();
+        dto.SeniorDomainId = _seniorDomainId;
+        dto.ColorHex = _colorHex;
+        if (dto.IsBaronDemesne || dto.IsDomainDefault)
+            dto.Name = TerrainMapVisuals.DefaultLordFiefName(_lordName.Trim());
+        else if (!IsEdit)
+            dto.Name = _lordName.Trim();
+        MudDialog.Close(DialogResult.Ok(dto));
+    }
+}

@@ -27,6 +27,9 @@ namespace DagoniteEmpire.Pages.Barony
         protected string? LoadError { get; set; }
         protected bool CanEdit { get; set; }
 
+        /// <summary>Game Master / Admin — barony structure edits (buildings, etc.).</summary>
+        protected bool CanManageAsMg { get; set; }
+
         /// <summary>Loads barony for the currently selected baron character. Baronies are created by MG only.</summary>
         protected async Task LoadBaronyAsync()
         {
@@ -64,6 +67,7 @@ namespace DagoniteEmpire.Pages.Barony
                 }
 
                 CanEdit = isAdminOrMg || isBaron;
+                CanManageAsMg = isAdminOrMg;
             }
             catch (System.Exception ex)
             {

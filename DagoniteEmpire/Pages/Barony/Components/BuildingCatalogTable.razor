@@ -1,30 +1,37 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<table class="ppb-table ppb-table--catalog ppb-table--lined">
+<table class="ppb-table ppb-table--advisors ppb-table--catalog ppb-table--lined">
     <thead>
         <tr>
-            <th class="catalog-col-name catalog-th--sortable @SortClass(SortName)" @onclick="() => ToggleSort(SortName)">
+            <th rowspan="2" class="catalog-col-name catalog-th--sortable @SortClass(SortName)" @onclick="() => ToggleSort(SortName)">
                 Name<span class="catalog-sort-indicator">@SortIndicator(SortName)</span>
             </th>
-            <th class="catalog-col-lordship catalog-th--sortable @SortClass(SortLordship)" title="Required lordship authority level" @onclick="() => ToggleSort(SortLordship)">
+            <th rowspan="2" class="catalog-col-lordship catalog-th--sortable @SortClass(SortLordship)" title="Required lordship authority level" @onclick="() => ToggleSort(SortLordship)">
                 Lordship<span class="catalog-sort-indicator">@SortIndicator(SortLordship)</span>
             </th>
-            <th class="catalog-col-kind catalog-th--sortable @SortClass(SortType)" @onclick="() => ToggleSort(SortType)">
+            <th rowspan="2" class="catalog-col-kind catalog-th--sortable @SortClass(SortType)" @onclick="() => ToggleSort(SortType)">
                 Type<span class="catalog-sort-indicator">@SortIndicator(SortType)</span>
             </th>
-            <th class="catalog-col-cost catalog-th--sortable @SortClass(SortProdCost)" title="Production cost" @onclick="() => ToggleSort(SortProdCost)">
+            <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortProdCost)" title="Production cost" @onclick="() => ToggleSort(SortProdCost)">
                 Prod.<span class="catalog-sort-indicator">@SortIndicator(SortProdCost)</span>
             </th>
-            <th class="catalog-col-cost catalog-th--sortable @SortClass(SortGoldCost)" title="Gold cost" @onclick="() => ToggleSort(SortGoldCost)">
+            <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortGoldCost)" title="Gold cost" @onclick="() => ToggleSort(SortGoldCost)">
                 Gold<span class="catalog-sort-indicator">@SortIndicator(SortGoldCost)</span>
             </th>
-            <th class="catalog-col-desc">Description</th>
+            <th rowspan="2" class="catalog-col-desc">Description</th>
             @foreach (var info in PpbCatalog.All)
             {
                 var sortKey = PpbSortKey(info.Key);
-                <th class="catalog-th--sortable @SortClass(sortKey)" title="@info.NamePl" @onclick="() => ToggleSort(sortKey)">
+                <th colspan="2" class="catalog-th--sortable @SortClass(sortKey)" title="@info.NamePl" @onclick="() => ToggleSort(sortKey)">
                     @PpbShort(info.Key)<span class="catalog-sort-indicator">@SortIndicator(sortKey)</span>
                 </th>
+            }
+        </tr>
+        <tr>
+            @foreach (var _ in PpbCatalog.All)
+            {
+                <th class="ppb-subcol ppb-subcol--add">+</th>
+                <th class="ppb-subcol ppb-subcol--pct">%</th>
             }
         </tr>
     </thead>
@@ -49,7 +56,8 @@
                 </td>
                 @foreach (var info in PpbCatalog.All)
                 {
-                    <td class="@CellClass(item, info.Key)">@((MarkupString)CellContent(item, info.Key))</td>
+                    <td class="@ValueClass(item.EffectAdditive[info.Key])">@FmtAdd(item.EffectAdditive[info.Key])</td>
+                    <td class="@ValueClass(item.EffectPercent[info.Key])">@FmtPct(item.EffectPercent[info.Key])</td>
                 }
             </tr>
         }
@@ -148,35 +156,30 @@
             : rounded.ToString("0.##");
     }
 
-    private static string Fmt(decimal v)
+    private static string FmtAdd(decimal v)
     {
         if (v == 0m)
             return "·";
-        var rounded = decimal.Round(v, 2);
-        var text = rounded == decimal.Truncate(rounded)
-            ? ((long)rounded).ToString()
-            : rounded.ToString("0.##");
-        return rounded > 0 ? "+" + text : text;
+        return (v > 0 ? "+" : "") + Num(v);
     }
 
-    private static string CellContent(BuildingTemplateDTO item, Ppb p)
+    private static string FmtPct(decimal v)
     {
-        var add = item.EffectAdditive[p];
-        var pct = item.EffectPercent[p];
-        var parts = new List<string>();
-        if (add != 0m)
-            parts.Add(Fmt(add));
-        if (pct != 0m)
-            parts.Add(Fmt(pct) + "%");
-        return parts.Count == 0 ? "<span class=\"ppb-cell-zero\">·</span>" : string.Join(" / ", parts);
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v) + "%";
     }
 
-    private static string CellClass(BuildingTemplateDTO item, Ppb p)
+    private static string Num(decimal v)
     {
-        var add = item.EffectAdditive[p];
-        var pct = item.EffectPercent[p];
-        if (add > 0m || pct > 0m) return "ppb-cell-pos";
-        if (add < 0m || pct < 0m) return "ppb-cell-neg";
+        var r = decimal.Round(v, 2);
+        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+    }
+
+    private static string ValueClass(decimal v)
+    {
+        if (v > 0m) return "ppb-cell-pos";
+        if (v < 0m) return "ppb-cell-neg";
         return "ppb-cell-zero";
     }
 

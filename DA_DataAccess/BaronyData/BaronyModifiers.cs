@@ -69,8 +69,12 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Grupa (SocialGroup).</summary>
         public string Group { get; set; } = string.Empty;
 
-        /// <summary>Poziom relacji (0 = obojętność).</summary>
+        /// <summary>Poziom relacji (0 = indifference).</summary>
         public int RelationLevel { get; set; }
+
+        public int? InfluencePercent { get; set; }
+
+        public bool? IsActive { get; set; }
 
         public string AdditiveJson { get; set; } = "{}";
         public string PercentJson { get; set; } = "{}";

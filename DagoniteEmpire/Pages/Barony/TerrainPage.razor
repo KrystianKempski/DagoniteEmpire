@@ -1,0 +1,1105 @@
+@page "/barony/terrain"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject IDialogService _dialogService
+@inject IJSRuntime JS
+
+<PageTitle>Dagonite Empire | Terrain</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading terrain map...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else
+{
+    <div class="terrain-page">
+        <BaronyPageHeader Title="Terrain" ShowSectionToggle="false">
+            <Summary>
+                <span class="terrain-page__summary">@_tileIndex.Count / @TotalCells tiles defined</span>
+            </Summary>
+        </BaronyPageHeader>
+
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="terrain-page__intro">
+            @GridSize×@GridSize domain map. Toggle layers to inspect terrain.
+            @(CanManageAsMg ? " Select a brush tab to paint tiles." : " Hover a tile to inspect it.")
+        </MudText>
+
+        @if (CanManageAsMg)
+        {
+            <div class="terrain-page__brushes">
+                <MudTabs @bind-ActivePanelIndex="_brushTabIndex"
+                         Elevation="0"
+                         Rounded="false"
+                         Border="false"
+                         ApplyEffectsToContainer="false"
+                         Class="terrain-brush-tabs">
+                    <MudTabPanel Text="Off">
+                        <div class="terrain-brush">
+                            <MudText Typo="Typo.caption" Class="terrain-brush__hint">
+                                No brush selected. Hover tiles to inspect the map.
+                            </MudText>
+                            <div class="terrain-brush__body"></div>
+                        </div>
+                    </MudTabPanel>
+                    <MudTabPanel Text="Fertility">
+                        <TerrainFertilityBrush Value="@_brushFertility"
+                                               ValueChanged="v => _brushFertility = v" />
+                    </MudTabPanel>
+                    <MudTabPanel Text="Terrain type">
+                        <TerrainTypeBrush SubMode="@_terrainTypeSubMode"
+                                          SubModeChanged="v => _terrainTypeSubMode = v"
+                                          BaseTypeValue="@_brushBaseType"
+                                          BaseTypeValueChanged="v => _brushBaseType = v"
+                                          FeatureValue="@_brushFeature"
+                                          FeatureValueChanged="v => _brushFeature = v" />
+                    </MudTabPanel>
+                    <MudTabPanel Text="Domain">
+                        <TerrainDomainBrush Domains="@_mapDomains"
+                                            SelectedDomainId="@_selectedDomainId"
+                                            SelectedDomainIdChanged="v => _selectedDomainId = v"
+                                            OnDomainColorChanged="OnDomainColorChangedAsync"
+                                            OnAddDomain="OpenAddDomainDialogAsync"
+                                            OnEditDomain="OpenEditDomainDialogAsync"
+                                            OnDeleteDomain="DeleteDomainAsync" />
+                    </MudTabPanel>
+                    <MudTabPanel Text="Fief">
+                        <TerrainFiefBrush Fiefs="@_fiefs"
+                                          DomainsById="@_domainsById"
+                                          SelectedFiefId="@_selectedFiefId"
+                                          SelectedFiefIdChanged="v => _selectedFiefId = v"
+                                          OnFiefColorChanged="OnFiefColorChangedAsync"
+                                          OnAddFief="OpenAddFiefDialogAsync"
+                                          OnEditFief="OpenEditFiefDialogAsync"
+                                          OnDeleteFief="DeleteFiefAsync" />
+                    </MudTabPanel>
+                    <MudTabPanel Text="Resources">
+                        <TerrainResourceBrush Value="@_brushResource"
+                                              ValueChanged="v => _brushResource = v" />
+                    </MudTabPanel>
+                    <MudTabPanel Text="Improvements">
+                        <TerrainImprovementBrush Value="@_brushImprovement"
+                                                 ValueChanged="OnBrushImprovementChanged" />
+                    </MudTabPanel>
+                </MudTabs>
+            </div>
+        }
+
+        <div class="terrain-page__layers">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Layers:</MudText>
+            @foreach (var layer in AllLayers)
+            {
+                <MudChip T="string"
+                         Variant="@(IsLayerVisible(layer) ? Variant.Filled : Variant.Outlined)"
+                         Color="@(IsLayerVisible(layer) ? Color.Primary : Color.Default)"
+                         Size="Size.Small"
+                         OnClick="@(() => ToggleLayer(layer))">
+                    @LayerLabel(layer)
+                </MudChip>
+            }
+            @if (CanManageAsMg && PaintMode != TerrainPaintMode.None)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           Color="Color.Warning"
+                           StartIcon="@Icons.Material.Filled.DeleteSweep"
+                           OnClick="ClearCurrentLayerAsync">
+                    Clear current layer
+                </MudButton>
+            }
+        </div>
+
+        <TerrainMapGrid GridSize="@GridSize"
+                        Tiles="@_tileIndex"
+                        Fiefs="@_fiefIndex"
+                        ImprovementsByTileId="@_improvementByTileId"
+                        DomainsById="@_domainsById"
+                        VisibleLayers="@_visibleLayers"
+                        HoveredX="@_hoverX"
+                        HoveredY="@_hoverY"
+                        HoverLines="@_hoverTileLines"
+                        PaintEnabled="@(CanManageAsMg && PaintMode != TerrainPaintMode.None)"
+                        OnCellHover="HoverCellAsync"
+                        OnCellPaint="PaintCellAsync" />
+    </div>
+}
+
+@code {
+    private const int GridSize = TerrainMapConstants.GridSize;
+    private static readonly TerrainMapLayer[] AllLayers = Enum.GetValues<TerrainMapLayer>();
+
+    private int TotalCells => GridSize * GridSize;
+
+    private Dictionary<(int X, int Y), TerrainTileDTO> _tileIndex = new();
+    private Dictionary<int, FiefDTO> _fiefIndex = new();
+    private List<FiefDTO> _fiefs = new();
+    private Dictionary<int, TerrainImprovementDTO> _improvementByTileId = new();
+    private Dictionary<int, TerrainMapDomainDTO> _domainsById = new();
+    private List<TerrainMapDomainDTO> _mapDomains = new();
+    private HashSet<TerrainMapLayer> _visibleLayers = new(
+        AllLayers.Where(l => l is not TerrainMapLayer.Fertility and not TerrainMapLayer.Fief));
+
+    private int? _hoverX;
+    private int? _hoverY;
+    private string _hoverTileInfo = "Hover a tile for details.";
+    private IReadOnlyList<string> _hoverTileLines = Array.Empty<string>();
+    private int _brushTabIndex;
+    private int _brushFertility = 3;
+    private string _brushBaseType = TerrainBaseType.Plains;
+    private TerrainTypeSubMode _terrainTypeSubMode = TerrainTypeSubMode.Base;
+    private int _brushFeature = TerrainFeature.Forest;
+    private string? _brushResource = TerrainResource.Iron;
+    private string? _brushImprovement = MapImprovement.Village;
+    private string? _improvementPlaceNameStroke;
+    private bool _improvementNamingInProgress;
+    private int? _selectedDomainId;
+    private int? _selectedFiefId;
+    private int? _playerPrimaryDomainId;
+
+    private TerrainPaintMode PaintMode => _brushTabIndex switch
+    {
+        1 => TerrainPaintMode.Fertility,
+        2 => TerrainPaintMode.TerrainType,
+        3 => TerrainPaintMode.Domain,
+        4 => TerrainPaintMode.Fief,
+        5 => TerrainPaintMode.Resource,
+        6 => TerrainPaintMode.Improvement,
+        _ => TerrainPaintMode.None,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        await LoadMapDataAsync();
+    }
+
+    private async Task LoadMapDataAsync()
+    {
+        if (Barony is null)
+            return;
+
+        var tiles = await _baronyRepo.EnsureTerrainGrid(Barony.Id);
+        _tileIndex = tiles.ToDictionary(t => (t.X, t.Y));
+
+        var improvements = await _baronyRepo.GetImprovements(Barony.Id);
+        _improvementByTileId = improvements
+            .Where(i => i.TileId is int tileId)
+            .GroupBy(i => i.TileId!.Value)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        await EnsurePlayerDomainAsync();
+        await EnsurePlayerFiefAsync();
+    }
+
+    private async Task EnsurePlayerDomainAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _mapDomains = await _baronyRepo.GetMapDomains(Barony.Id);
+        var playerDomain = _mapDomains.FirstOrDefault(d => d.IsPrimary);
+        if (playerDomain is null)
+        {
+            var lordName = UserInfo?.SelectedCharacter?.NPCName ?? "Unknown Lord";
+            playerDomain = await _baronyRepo.SaveMapDomain(new TerrainMapDomainDTO
+            {
+                BaronyId = Barony.Id,
+                Name = Barony.Name,
+                LordName = lordName,
+                ColorHex = "#9c7a33",
+                IsPrimary = true,
+                SortOrder = 0,
+            });
+            _mapDomains = await _baronyRepo.GetMapDomains(Barony.Id);
+        }
+
+        _domainsById = _mapDomains.ToDictionary(d => d.Id);
+        _playerPrimaryDomainId = playerDomain.Id;
+        if (_selectedDomainId is null || !_domainsById.ContainsKey(_selectedDomainId.Value))
+            _selectedDomainId = playerDomain.Id;
+    }
+
+    private async Task OpenAddDomainDialogAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<AddTerrainDomainDialog>(string.Empty, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not TerrainMapDomainDTO dto)
+            return;
+
+        dto.BaronyId = Barony!.Id;
+        var saved = await _baronyRepo.SaveMapDomain(dto);
+        await ReloadDomainsAsync();
+        await EnsureDefaultFiefForDomainAsync(saved);
+        _selectedDomainId = saved.Id;
+        StateHasChanged();
+    }
+
+    private async Task OpenEditDomainDialogAsync(int domainId)
+    {
+        var domain = _mapDomains.FirstOrDefault(d => d.Id == domainId);
+        if (domain is null)
+            return;
+
+        var previousLordName = domain.LordName;
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var parameters = new DialogParameters<AddTerrainDomainDialog>
+        {
+            { x => x.EditDomain, domain }
+        };
+        var dialog = await _dialogService.ShowAsync<AddTerrainDomainDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not TerrainMapDomainDTO dto)
+            return;
+
+        dto.BaronyId = Barony!.Id;
+        await _baronyRepo.SaveMapDomain(dto);
+        await ReloadDomainsAsync();
+        await SyncDefaultFiefForDomainAsync(dto.Id, previousLordName);
+        StateHasChanged();
+    }
+
+    private async Task DeleteDomainAsync(int domainId)
+    {
+        var domain = _mapDomains.FirstOrDefault(d => d.Id == domainId);
+        if (domain is null || domain.IsPrimary)
+            return;
+
+        if (_fiefs.Any(f => f.SeniorDomainId == domainId && !TerrainMapVisuals.IsProtectedDefaultFief(f)))
+        {
+            _snackBar.Add("Cannot delete a domain that is a senior for other fiefs.", Severity.Warning);
+            return;
+        }
+
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"Are you sure you want to delete domain \"{domain.Name}\"?");
+        if (!confirmed)
+            return;
+
+        var defaultFief = _fiefs.FirstOrDefault(f => f.IsDomainDefault && f.SeniorDomainId == domainId);
+        if (defaultFief is not null)
+        {
+            await ClearFiefFromTilesAsync(defaultFief.Id);
+            await _baronyRepo.DeleteFief(defaultFief.Id);
+        }
+
+        await ClearDomainFromTilesAsync(domainId);
+        await _baronyRepo.DeleteMapDomain(domainId);
+        await ReloadDomainsAsync();
+        await ReloadFiefsAsync();
+        StateHasChanged();
+    }
+
+    private async Task ReloadDomainsAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _mapDomains = await _baronyRepo.GetMapDomains(Barony.Id);
+        _domainsById = _mapDomains.ToDictionary(d => d.Id);
+        var playerDomain = _mapDomains.FirstOrDefault(d => d.IsPrimary);
+        if (playerDomain is not null)
+            _playerPrimaryDomainId = playerDomain.Id;
+        if (_selectedDomainId is not null && !_domainsById.ContainsKey(_selectedDomainId.Value))
+            _selectedDomainId = playerDomain?.Id;
+    }
+
+    private async Task EnsurePlayerFiefAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _fiefs = (await _baronyRepo.GetFiefs(Barony.Id))
+            .OrderBy(f => f.IsBaronDemesne ? 0 : f.IsDomainDefault ? 1 : 2)
+            .ThenBy(f => f.Name)
+            .ToList();
+        var baronFief = _fiefs.FirstOrDefault(f => f.IsBaronDemesne);
+        var primaryDomain = _mapDomains.FirstOrDefault(d => d.IsPrimary);
+
+        if (baronFief is null)
+        {
+            var baronName = UserInfo?.SelectedCharacter?.NPCName ?? "Baron";
+            baronFief = await _baronyRepo.SaveFief(new FiefDTO
+            {
+                BaronyId = Barony.Id,
+                Name = TerrainMapVisuals.DefaultLordFiefName(baronName),
+                LiegeName = baronName,
+                IsBaronDemesne = true,
+                SeniorDomainId = primaryDomain?.Id,
+                ColorHex = "#4d7ea8",
+                BonusMultiplier = 1.0m,
+            });
+            await ReloadFiefsAsync();
+        }
+        else
+        {
+            var expectedName = TerrainMapVisuals.DefaultLordFiefName(baronFief.LiegeName);
+            var changed = false;
+            if (baronFief.Name != expectedName)
+            {
+                baronFief.Name = expectedName;
+                changed = true;
+            }
+            if (baronFief.SeniorDomainId is null && primaryDomain is not null)
+            {
+                baronFief.SeniorDomainId = primaryDomain.Id;
+                changed = true;
+            }
+            if (changed)
+            {
+                await _baronyRepo.SaveFief(baronFief);
+                await ReloadFiefsAsync();
+            }
+        }
+
+        await EnsureDefaultFiefsForDomainsAsync();
+
+        baronFief = _fiefs.FirstOrDefault(f => f.IsBaronDemesne);
+        _fiefIndex = _fiefs.ToDictionary(f => f.Id);
+        if (baronFief is not null && (_selectedFiefId is null || !_fiefIndex.ContainsKey(_selectedFiefId.Value)))
+            _selectedFiefId = baronFief.Id;
+    }
+
+    private async Task EnsureDefaultFiefsForDomainsAsync()
+    {
+        if (Barony is null)
+            return;
+
+        foreach (var domain in _mapDomains.Where(d => !d.IsPrimary))
+            await EnsureDefaultFiefForDomainAsync(domain);
+    }
+
+    private async Task EnsureDefaultFiefForDomainAsync(TerrainMapDomainDTO domain)
+    {
+        if (Barony is null || domain.IsPrimary)
+            return;
+
+        var existing = _fiefs.FirstOrDefault(f => f.IsDomainDefault && f.SeniorDomainId == domain.Id)
+            ?? _fiefs.FirstOrDefault(f =>
+                !f.IsBaronDemesne
+                && !f.IsDomainDefault
+                && f.SeniorDomainId == domain.Id
+                && f.LiegeName == domain.LordName);
+
+        if (existing is not null)
+        {
+            var expectedName = TerrainMapVisuals.DefaultLordFiefName(domain.LordName);
+            var changed = false;
+            if (!existing.IsDomainDefault)
+            {
+                existing.IsDomainDefault = true;
+                changed = true;
+            }
+            if (existing.Name != expectedName)
+            {
+                existing.Name = expectedName;
+                changed = true;
+            }
+            if (existing.LiegeName != domain.LordName)
+            {
+                existing.LiegeName = domain.LordName;
+                changed = true;
+            }
+            if (existing.ColorHex != domain.ColorHex)
+            {
+                existing.ColorHex = domain.ColorHex;
+                changed = true;
+            }
+            if (changed)
+            {
+                await _baronyRepo.SaveFief(existing);
+                await ReloadFiefsAsync();
+            }
+            return;
+        }
+
+        await _baronyRepo.SaveFief(new FiefDTO
+        {
+            BaronyId = Barony.Id,
+            Name = TerrainMapVisuals.DefaultLordFiefName(domain.LordName),
+            LiegeName = domain.LordName,
+            IsDomainDefault = true,
+            SeniorDomainId = domain.Id,
+            ColorHex = domain.ColorHex,
+            BonusMultiplier = 0.85m,
+        });
+        await ReloadFiefsAsync();
+    }
+
+    private async Task SyncDefaultFiefForDomainAsync(int domainId, string previousLordName)
+    {
+        if (Barony is null)
+            return;
+
+        var domain = _mapDomains.FirstOrDefault(d => d.Id == domainId);
+        if (domain is null || domain.IsPrimary)
+            return;
+
+        var defaultFief = _fiefs.FirstOrDefault(f => f.IsDomainDefault && f.SeniorDomainId == domainId)
+            ?? _fiefs.FirstOrDefault(f =>
+                !f.IsBaronDemesne
+                && f.SeniorDomainId == domainId
+                && f.LiegeName == previousLordName);
+
+        if (defaultFief is null)
+        {
+            await EnsureDefaultFiefForDomainAsync(domain);
+            return;
+        }
+
+        defaultFief.IsDomainDefault = true;
+        defaultFief.LiegeName = domain.LordName;
+        defaultFief.Name = TerrainMapVisuals.DefaultLordFiefName(domain.LordName);
+        defaultFief.ColorHex = domain.ColorHex;
+        await _baronyRepo.SaveFief(defaultFief);
+        await ReloadFiefsAsync();
+    }
+
+    private async Task OpenAddFiefDialogAsync()
+    {
+        if (Barony is null)
+            return;
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var parameters = new DialogParameters<AddTerrainFiefDialog>
+        {
+            { x => x.Domains, _mapDomains }
+        };
+        var dialog = await _dialogService.ShowAsync<AddTerrainFiefDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not FiefDTO dto)
+            return;
+
+        dto.BaronyId = Barony.Id;
+        dto.IsBaronDemesne = false;
+        dto.IsDomainDefault = false;
+        var saved = await _baronyRepo.SaveFief(dto);
+        await ReloadFiefsAsync();
+        _selectedFiefId = saved.Id;
+        StateHasChanged();
+    }
+
+    private async Task OpenEditFiefDialogAsync(int fiefId)
+    {
+        var fief = _fiefs.FirstOrDefault(f => f.Id == fiefId);
+        if (fief is null || Barony is null)
+            return;
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var parameters = new DialogParameters<AddTerrainFiefDialog>
+        {
+            { x => x.Domains, _mapDomains },
+            { x => x.EditFief, fief }
+        };
+        var dialog = await _dialogService.ShowAsync<AddTerrainFiefDialog>(string.Empty, parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not FiefDTO dto)
+            return;
+
+        dto.BaronyId = Barony.Id;
+        dto.IsBaronDemesne = fief.IsBaronDemesne;
+        dto.IsDomainDefault = fief.IsDomainDefault;
+        await _baronyRepo.SaveFief(dto);
+        await ReloadFiefsAsync();
+        StateHasChanged();
+    }
+
+    private async Task DeleteFiefAsync(int fiefId)
+    {
+        var fief = _fiefs.FirstOrDefault(f => f.Id == fiefId);
+        if (fief is null || TerrainMapVisuals.IsProtectedDefaultFief(fief))
+            return;
+
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"Are you sure you want to delete fief \"{fief.Name}\"?");
+        if (!confirmed)
+            return;
+
+        await ClearFiefFromTilesAsync(fiefId);
+        await _baronyRepo.DeleteFief(fiefId);
+        await ReloadFiefsAsync();
+        StateHasChanged();
+    }
+
+    private async Task ReloadFiefsAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _fiefs = (await _baronyRepo.GetFiefs(Barony.Id))
+            .OrderBy(f => f.IsBaronDemesne ? 0 : f.IsDomainDefault ? 1 : 2)
+            .ThenBy(f => f.Name)
+            .ToList();
+        _fiefIndex = _fiefs.ToDictionary(f => f.Id);
+        var baronFief = _fiefs.FirstOrDefault(f => f.IsBaronDemesne);
+        if (_selectedFiefId is not null && !_fiefIndex.ContainsKey(_selectedFiefId.Value))
+            _selectedFiefId = baronFief?.Id;
+    }
+
+    private async Task OnDomainColorChangedAsync((int DomainId, string ColorHex) change)
+    {
+        var domain = _mapDomains.FirstOrDefault(d => d.Id == change.DomainId);
+        if (domain is null)
+            return;
+
+        domain.ColorHex = change.ColorHex;
+        await _baronyRepo.SaveMapDomain(domain);
+        await EnsurePlayerDomainAsync();
+        StateHasChanged();
+    }
+
+    private async Task OnFiefColorChangedAsync((int FiefId, string ColorHex) change)
+    {
+        var fief = _fiefs.FirstOrDefault(f => f.Id == change.FiefId);
+        if (fief is null)
+            return;
+
+        fief.ColorHex = change.ColorHex;
+        await _baronyRepo.SaveFief(fief);
+        await EnsurePlayerFiefAsync();
+        StateHasChanged();
+    }
+
+    private Task HoverCellAsync((int? X, int? Y) cell)
+    {
+        _hoverX = cell.X;
+        _hoverY = cell.Y;
+        if (cell.X is int x && cell.Y is int y)
+        {
+            _hoverTileLines = TileDetailLines(x, y);
+            _hoverTileInfo = string.Join("; ", _hoverTileLines);
+        }
+        else
+        {
+            _hoverTileLines = Array.Empty<string>();
+            _hoverTileInfo = "Hover a tile for details.";
+        }
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task PaintCellAsync((int X, int Y) cell) => PaintMode switch
+    {
+        TerrainPaintMode.Fertility => PaintFertilityAsync(cell),
+        TerrainPaintMode.TerrainType => PaintTerrainTypeAsync(cell),
+        TerrainPaintMode.Domain => PaintDomainAsync(cell),
+        TerrainPaintMode.Fief => PaintFiefAsync(cell),
+        TerrainPaintMode.Resource => PaintResourceAsync(cell),
+        TerrainPaintMode.Improvement => PaintImprovementAsync(cell),
+        _ => Task.CompletedTask,
+    };
+
+    private async Task PaintFertilityAsync((int X, int Y) cell)
+    {
+        if (Barony is null || !CanManageAsMg || PaintMode != TerrainPaintMode.Fertility)
+            return;
+
+        var key = (cell.X, cell.Y);
+        var tile = GetOrCreateTile(cell.X, cell.Y);
+        if (!TerrainBaseType.SupportsFertility(tile.BaseType))
+            return;
+
+        if (_brushFertility == TerrainFertility.Unknown)
+        {
+            if (tile.Fertility == TerrainFertility.Unknown)
+                return;
+
+            tile.Fertility = TerrainFertility.Unknown;
+            await SaveTileAsync(key, tile);
+            RefreshHoverInfo(cell.X, cell.Y);
+            StateHasChanged();
+            return;
+        }
+
+        if (TerrainFertility.IsKnown(tile.Fertility) && tile.Fertility == _brushFertility)
+            return;
+
+        tile.Fertility = _brushFertility;
+        await SaveTileAsync(key, tile);
+        RefreshHoverInfo(cell.X, cell.Y);
+        StateHasChanged();
+    }
+
+    private async Task PaintTerrainTypeAsync((int X, int Y) cell)
+    {
+        if (Barony is null || !CanManageAsMg || PaintMode != TerrainPaintMode.TerrainType)
+            return;
+
+        var key = (cell.X, cell.Y);
+        var tile = GetOrCreateTile(cell.X, cell.Y);
+
+        if (_terrainTypeSubMode == TerrainTypeSubMode.Feature)
+        {
+            if (!TerrainFeature.Paintable.Contains(_brushFeature))
+                return;
+
+            var nextMask = TerrainFeature.ApplyPaintToggle(tile.FeaturesMask, _brushFeature);
+            if (nextMask == tile.FeaturesMask)
+                return;
+
+            tile.FeaturesMask = nextMask;
+            await SaveTileAsync(key, tile);
+            RefreshHoverInfo(cell.X, cell.Y);
+            StateHasChanged();
+            return;
+        }
+
+        if (!TerrainBaseType.IsKnown(_brushBaseType))
+            return;
+
+        var changed = false;
+
+        if (tile.BaseType != _brushBaseType)
+        {
+            tile.BaseType = _brushBaseType;
+            changed = true;
+        }
+
+        if (!TerrainBaseType.SupportsFertility(tile.BaseType)
+            && tile.Fertility != TerrainFertility.Unknown)
+        {
+            tile.Fertility = TerrainFertility.Unknown;
+            changed = true;
+        }
+
+        if (!changed)
+            return;
+
+        await SaveTileAsync(key, tile);
+        RefreshHoverInfo(cell.X, cell.Y);
+        StateHasChanged();
+    }
+
+    private async Task PaintDomainAsync((int X, int Y) cell)
+    {
+        if (Barony is null || !CanManageAsMg || PaintMode != TerrainPaintMode.Domain || _selectedDomainId is not int domainId)
+            return;
+
+        var key = (cell.X, cell.Y);
+        var tile = GetOrCreateTile(cell.X, cell.Y);
+        if (tile.MapDomainId == domainId)
+            return;
+
+        tile.MapDomainId = domainId;
+        await SaveTileAsync(key, tile);
+        RefreshHoverInfo(cell.X, cell.Y);
+        StateHasChanged();
+    }
+
+    private async Task PaintFiefAsync((int X, int Y) cell)
+    {
+        if (Barony is null || !CanManageAsMg || PaintMode != TerrainPaintMode.Fief || _selectedFiefId is not int fiefId)
+            return;
+
+        if (!_fiefIndex.TryGetValue(fiefId, out var fief) || fief.SeniorDomainId is not int seniorDomainId)
+            return;
+
+        var key = (cell.X, cell.Y);
+        var tile = GetOrCreateTile(cell.X, cell.Y);
+        if (tile.MapDomainId != seniorDomainId)
+            return;
+
+        if (tile.FiefId == fiefId)
+            return;
+
+        tile.FiefId = fiefId;
+        await SaveTileAsync(key, tile);
+        RefreshHoverInfo(cell.X, cell.Y);
+        StateHasChanged();
+    }
+
+    private async Task PaintResourceAsync((int X, int Y) cell)
+    {
+        if (Barony is null || !CanManageAsMg || PaintMode != TerrainPaintMode.Resource)
+            return;
+
+        var key = (cell.X, cell.Y);
+        var tile = GetOrCreateTile(cell.X, cell.Y);
+        var next = string.IsNullOrWhiteSpace(_brushResource) ? null : _brushResource;
+        if (tile.Resource == next)
+            return;
+
+        tile.Resource = next;
+        await SaveTileAsync(key, tile);
+        RefreshHoverInfo(cell.X, cell.Y);
+        StateHasChanged();
+    }
+
+    private Task OnBrushImprovementChanged(string? value)
+    {
+        _brushImprovement = value;
+        _improvementPlaceNameStroke = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task PaintImprovementAsync((int X, int Y) cell)
+    {
+        if (Barony is null || !CanManageAsMg || PaintMode != TerrainPaintMode.Improvement)
+            return;
+
+        if (_improvementNamingInProgress)
+            return;
+
+        var key = (cell.X, cell.Y);
+        var tile = GetOrCreateTile(cell.X, cell.Y);
+        if (tile.Id <= 0)
+            await SaveTileAsync(key, tile);
+
+        if (tile.Id <= 0)
+            return;
+
+        _improvementByTileId.TryGetValue(tile.Id, out var existing);
+        var nextName = string.IsNullOrWhiteSpace(_brushImprovement) ? null : _brushImprovement;
+
+        if (nextName is null)
+        {
+            _improvementPlaceNameStroke = null;
+            if (existing is null)
+                return;
+
+            try
+            {
+                await _baronyRepo.DeleteImprovement(existing.Id);
+                _improvementByTileId.Remove(tile.Id);
+            }
+            catch (Exception ex)
+            {
+                _snackBar.Add("Failed to remove improvement: " + ex.Message, Severity.Error);
+                return;
+            }
+
+            RefreshHoverInfo(cell.X, cell.Y);
+            StateHasChanged();
+            return;
+        }
+
+        string? placeName = null;
+        if (MapImprovement.RequiresPlaceName(nextName))
+        {
+            if (existing is not null
+                && existing.Name == nextName
+                && !string.IsNullOrWhiteSpace(existing.Description))
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_improvementPlaceNameStroke))
+            {
+                _improvementNamingInProgress = true;
+                try
+                {
+                    var parameters = new DialogParameters
+                    {
+                        [nameof(NameImprovementDialog.ImprovementKind)] = nextName,
+                        [nameof(NameImprovementDialog.InitialName)] = existing?.Name == nextName
+                            ? existing.Description
+                            : null,
+                    };
+                    var options = new DialogOptions
+                    {
+                        CloseOnEscapeKey = true,
+                        MaxWidth = MaxWidth.ExtraSmall,
+                        FullWidth = true,
+                    };
+                    var dialog = await _dialogService.ShowAsync<NameImprovementDialog>(
+                        string.Empty,
+                        parameters,
+                        options);
+                    var result = await dialog.Result;
+                    if (result is null || result.Canceled || result.Data is not string chosenName)
+                        return;
+
+                    _improvementPlaceNameStroke = chosenName;
+                }
+                finally
+                {
+                    _improvementNamingInProgress = false;
+                }
+            }
+
+            placeName = _improvementPlaceNameStroke;
+        }
+        else
+        {
+            _improvementPlaceNameStroke = null;
+            if (existing is not null && existing.Name == nextName)
+                return;
+        }
+
+        try
+        {
+            var dto = existing ?? new TerrainImprovementDTO
+            {
+                BaronyId = Barony.Id,
+                TileId = tile.Id,
+            };
+            dto.BaronyId = Barony.Id;
+            dto.TileId = tile.Id;
+            dto.Name = nextName;
+            dto.Description = placeName;
+
+            var saved = await _baronyRepo.SaveImprovement(dto);
+            _improvementByTileId[tile.Id] = saved;
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Failed to save improvement: " + ex.Message, Severity.Error);
+            return;
+        }
+
+        RefreshHoverInfo(cell.X, cell.Y);
+        StateHasChanged();
+    }
+
+    private async Task ClearDomainFromTilesAsync(int domainId)
+    {
+        foreach (var kvp in _tileIndex.ToList())
+        {
+            var tile = kvp.Value;
+            if (tile.MapDomainId != domainId)
+                continue;
+
+            tile.MapDomainId = null;
+            await SaveTileAsync(kvp.Key, tile);
+        }
+    }
+
+    private async Task ClearFiefFromTilesAsync(int fiefId)
+    {
+        foreach (var kvp in _tileIndex.ToList())
+        {
+            var tile = kvp.Value;
+            if (tile.FiefId != fiefId)
+                continue;
+
+            tile.FiefId = null;
+            await SaveTileAsync(kvp.Key, tile);
+        }
+    }
+
+    private async Task ClearCurrentLayerAsync()
+    {
+        if (Barony is null || !CanManageAsMg || PaintMode == TerrainPaintMode.None)
+            return;
+
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure? This will clear data on all tiles for the selected layer.");
+        if (!confirmed)
+            return;
+
+        foreach (var kvp in _tileIndex.ToList())
+        {
+            var key = kvp.Key;
+            var tile = kvp.Value;
+            var changed = false;
+
+            switch (PaintMode)
+            {
+                case TerrainPaintMode.Fertility:
+                    if (TerrainBaseType.SupportsFertility(tile.BaseType) && tile.Fertility != TerrainFertility.Unknown)
+                    {
+                        tile.Fertility = TerrainFertility.Unknown;
+                        changed = true;
+                    }
+                    break;
+                case TerrainPaintMode.TerrainType:
+                    if (tile.BaseType != TerrainBaseType.Plains)
+                    {
+                        tile.BaseType = TerrainBaseType.Plains;
+                        changed = true;
+                    }
+                    if (tile.FeaturesMask != TerrainFeature.None)
+                    {
+                        tile.FeaturesMask = TerrainFeature.None;
+                        changed = true;
+                    }
+                    break;
+                case TerrainPaintMode.Domain:
+                    if (tile.MapDomainId is not null)
+                    {
+                        tile.MapDomainId = null;
+                        changed = true;
+                    }
+                    break;
+                case TerrainPaintMode.Fief:
+                    if (tile.FiefId is not null)
+                    {
+                        tile.FiefId = null;
+                        changed = true;
+                    }
+                    break;
+                case TerrainPaintMode.Resource:
+                    if (!string.IsNullOrWhiteSpace(tile.Resource))
+                    {
+                        tile.Resource = null;
+                        changed = true;
+                    }
+                    break;
+            }
+
+            if (changed)
+                await SaveTileAsync(key, tile);
+        }
+
+        if (PaintMode == TerrainPaintMode.Improvement)
+        {
+            foreach (var improvement in _improvementByTileId.Values.ToList())
+            {
+                try
+                {
+                    await _baronyRepo.DeleteImprovement(improvement.Id);
+                }
+                catch (Exception ex)
+                {
+                    _snackBar.Add("Failed to clear improvement: " + ex.Message, Severity.Error);
+                }
+            }
+
+            _improvementByTileId.Clear();
+        }
+
+        if (_hoverX is int x && _hoverY is int y)
+        {
+            _hoverTileLines = TileDetailLines(x, y);
+            _hoverTileInfo = string.Join("; ", _hoverTileLines);
+        }
+        StateHasChanged();
+    }
+
+    private TerrainTileDTO GetOrCreateTile(int x, int y)
+    {
+        var key = (x, y);
+        if (_tileIndex.TryGetValue(key, out var tile))
+            return tile;
+
+        tile = new TerrainTileDTO
+        {
+            BaronyId = Barony!.Id,
+            X = x,
+            Y = y,
+            BaseType = TerrainBaseType.Plains,
+            Fertility = TerrainFertility.Unknown,
+        };
+        _tileIndex[key] = tile;
+        return tile;
+    }
+
+    private async Task SaveTileAsync((int X, int Y) key, TerrainTileDTO tile)
+    {
+        tile.BaronyId = Barony!.Id;
+        try
+        {
+            var saved = await _baronyRepo.SaveTile(tile);
+            _tileIndex[key] = saved;
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Failed to save terrain tile: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private void RefreshHoverInfo(int x, int y)
+    {
+        if (_hoverX == x && _hoverY == y)
+        {
+            _hoverTileLines = TileDetailLines(x, y);
+            _hoverTileInfo = string.Join("; ", _hoverTileLines);
+        }
+    }
+
+    private void ToggleLayer(TerrainMapLayer layer)
+    {
+        if (!_visibleLayers.Remove(layer))
+            _visibleLayers.Add(layer);
+    }
+
+    private bool IsLayerVisible(TerrainMapLayer layer) => _visibleLayers.Contains(layer);
+
+    private IReadOnlyList<string> TileDetailLines(int x, int y)
+    {
+        if (!_tileIndex.TryGetValue((x, y), out var tile))
+        {
+            return new[]
+            {
+                $"[{x}, {y}]",
+                "Plains with unknown fertility",
+            };
+        }
+
+        var title = $"[{x}, {y}]";
+        TerrainImprovementDTO? improvement = null;
+        if (tile.Id > 0)
+            _improvementByTileId.TryGetValue(tile.Id, out improvement);
+
+        if (improvement is not null)
+        {
+            var name = string.IsNullOrWhiteSpace(improvement.Description)
+                ? MapImprovement.DisplayName(improvement.Name)
+                : improvement.Description.Trim();
+            title = $"[{x}, {y}] {name}";
+        }
+
+        return new[] { title, BuildTileProse(tile) };
+    }
+
+    private string BuildTileProse(TerrainTileDTO tile)
+    {
+        var chunks = new List<string>();
+
+        var terrain = TerrainBaseType.DisplayName(tile.BaseType);
+        var features = TerrainFeature.Paintable
+            .Where(f => tile.HasFeature(f))
+            .Select(f => TerrainFeature.DisplayName(f).ToLowerInvariant())
+            .ToList();
+        if (features.Count > 0)
+            chunks.Add($"{terrain} with {JoinFeatureNames(features)}");
+        else
+            chunks.Add(terrain);
+
+        if (TerrainBaseType.SupportsFertility(tile.BaseType))
+            chunks.Add(TerrainFertility.Phrase(tile.Fertility));
+
+        if (tile.MapDomainId is int domainId && _domainsById.TryGetValue(domainId, out var domain))
+            chunks.Add($"{domain.Name} (lord {domain.LordName})");
+
+        if (tile.FiefId is int fiefId && _fiefIndex.TryGetValue(fiefId, out var fief))
+            chunks.Add($"fief of {TerrainMapVisuals.FiefChipTitle(fief)}");
+
+        if (!string.IsNullOrWhiteSpace(tile.Resource))
+            chunks.Add($"{TerrainResource.DisplayName(tile.Resource).ToLowerInvariant()} deposit");
+
+        return string.Join(", ", chunks);
+    }
+
+    private static string JoinFeatureNames(IReadOnlyList<string> names)
+    {
+        if (names.Count == 1)
+            return names[0];
+        if (names.Count == 2)
+            return $"{names[0]} and {names[1]}";
+        return string.Join(", ", names.Take(names.Count - 1)) + " and " + names[^1];
+    }
+
+    private string TileDetailText(int x, int y) => string.Join("; ", TileDetailLines(x, y));
+
+    private static string LayerLabel(TerrainMapLayer layer) => layer switch
+    {
+        TerrainMapLayer.Fertility => "Fertility",
+        TerrainMapLayer.TerrainType => "Terrain type",
+        TerrainMapLayer.Domain => "Domain",
+        TerrainMapLayer.Fief => "Fief",
+        TerrainMapLayer.Resources => "Resources",
+        TerrainMapLayer.Improvements => "Improvements",
+        _ => layer.ToString(),
+    };
+}

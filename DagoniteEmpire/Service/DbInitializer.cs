@@ -2848,7 +2848,7 @@ namespace DagoniteEmpire.Service
             }
         }
 
-        /// <summary>Reseed catalog when empty or still using legacy Polish seed data.</summary>
+        /// <summary>Reseed catalog when empty, legacy Polish, or pre-rename farm/mine/quarry names.</summary>
         private static async Task SyncBuildingTemplateCatalogAsync(ApplicationDbContext ctx)
         {
             var needsReseed = !await ctx.BuildingTemplates.AnyAsync()
@@ -2856,7 +2856,26 @@ namespace DagoniteEmpire.Service
                     t.Kind == "Budynek"
                     || t.Kind == "Ulepszenie"
                     || t.Name == "Akademia Wojskowa"
-                    || t.Name == "Cmentarzysko");
+                    || t.Name == "Cmentarzysko"
+                    || t.Name == "Poor Farms"
+                    || t.Name == "Common Farms"
+                    || t.Name == "Fertile Farms"
+                    || t.Name == "Iron Mine"
+                    || t.Name == "Copper Mine"
+                    || t.Name == "Granite Quarry"
+                    || t.Name == "Common Quarry"
+                    || t.Name == "Obsidian Quarry"
+                    || t.Name == "Dagonite Mine"
+                    || t.Name == "Soft Metal Mine"
+                    || t.Name == "Hard Metal Mine"
+                    || t.Name == "Luxury Metal Mine"
+                    || t.Name == "Silver Mine"
+                    || t.Name == "Gold Mine"
+                    || t.Name == "Precious Gem Mine (Luxury)"
+                    || t.Name == "Precious Gem Mine (Common)")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Quarry - Tarnit")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Dagoferryt")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - exceptionally fertile");
 
             if (!needsReseed)
                 return;

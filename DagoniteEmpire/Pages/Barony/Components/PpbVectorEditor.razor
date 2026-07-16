@@ -1,6 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<div class="ppb-editor @(Compact ? "ppb-editor--compact" : "")">
+<div class="ppb-editor @(Compact ? "ppb-editor--compact" : "") @(ReadOnly ? "ppb-editor--readonly" : "")">
     @if (!string.IsNullOrEmpty(Title))
     {
         <MudText Typo="Typo.subtitle2" Class="mb-1">@Title</MudText>
@@ -20,6 +20,8 @@
                              IconSize="Size.Small"
                              Step="@StepSize"
                              Format="0.##"
+                             Disabled="@ReadOnly"
+                             HideSpinButtons="@ReadOnly"
                              Class="@FieldClass(significant)"
                              title="@FieldTitle(info, significant)" />
         }
@@ -32,6 +34,7 @@
     [Parameter] public string? Title { get; set; }
     [Parameter] public bool Percent { get; set; }
     [Parameter] public bool Compact { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
     [Parameter] public bool ExcludeTreasury { get; set; }
     [Parameter] public IReadOnlySet<Ppb>? SignificantKeys { get; set; }
 

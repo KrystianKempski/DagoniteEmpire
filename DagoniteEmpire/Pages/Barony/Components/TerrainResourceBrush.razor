@@ -1,0 +1,46 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="terrain-brush">
+    <MudText Typo="Typo.caption" Class="terrain-brush__hint">
+        Paint a deposit onto tiles (bottom-right). Select None to erase. Clear layer removes all resources.
+    </MudText>
+    <div class="terrain-brush__body">
+        <div class="terrain-brush__options">
+            <button type="button"
+                    class="terrain-type-option @(string.IsNullOrEmpty(Value) ? "terrain-type-option--selected" : "")"
+                    title="Clear resource"
+                    aria-label="Clear resource"
+                    @onclick="() => SelectAsync(null)">
+                <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" />
+                <span>None</span>
+            </button>
+            @foreach (var resource in TerrainResource.All)
+            {
+                var r = resource;
+                var selected = Value == r;
+                <button type="button"
+                        class="terrain-type-option @(selected ? "terrain-type-option--selected" : "")"
+                        title="@TerrainResource.DisplayName(r)"
+                        aria-label="@TerrainResource.DisplayName(r)"
+                        @onclick="() => SelectAsync(r)">
+                    <span class="terrain-resource-option__icon"
+                          style="@IconStyle(r)"
+                          aria-hidden="true"></span>
+                    <span>@TerrainResource.DisplayName(r)</span>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    private Task SelectAsync(string? resource) => ValueChanged.InvokeAsync(resource);
+
+    private static string IconStyle(string resource) =>
+        $"--resource-color:{TerrainResource.ColorHex(resource)};" +
+        $"-webkit-mask-image:url('{TerrainResource.IconUrl(resource)}');" +
+        $"mask-image:url('{TerrainResource.IconUrl(resource)}');";
+}

@@ -1,0 +1,87 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="terrain-brush">
+    <MudText Typo="Typo.caption" Class="terrain-brush__hint">
+        Select a fief, then paint only within its senior domain. Fief overlay uses 50% opacity.
+    </MudText>
+    <div class="terrain-brush__body">
+        <div class="terrain-brush__options">
+            @foreach (var fief in Fiefs)
+            {
+                var f = fief;
+                var selected = f.Id == SelectedFiefId;
+                var seniorDomain = GetSeniorDomain(f);
+                var title = TerrainMapVisuals.FiefChipTitle(f);
+                var subtitle = TerrainMapVisuals.FiefChipSubtitle(f, seniorDomain);
+                <div class="terrain-domain-chip-row">
+                    <button type="button"
+                            class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
+                            title="@($"{title} — {subtitle}")"
+                            @onclick="() => SelectFiefAsync(f.Id)">
+                        <span class="terrain-domain-chip__swatch"
+                              style="background-color: @f.ColorHex"></span>
+                        <span class="terrain-domain-chip__text">
+                            <span class="terrain-domain-chip__name">@title</span>
+                            <span class="terrain-domain-chip__lord">@subtitle</span>
+                        </span>
+                    </button>
+                    <input type="color"
+                           class="terrain-domain-chip__color-input"
+                           value="@f.ColorHex"
+                           title="Change fief color"
+                           aria-label="@($"Change color for {title}")"
+                           @onchange="e => OnFiefColorInputChangedAsync(f.Id, e)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Size="Size.Small"
+                                   title="Edit fief"
+                                   OnClick="@(() => OnEditFiefAsync(f.Id))" />
+                    @if (!TerrainMapVisuals.IsProtectedDefaultFief(f))
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       title="Delete fief"
+                                       OnClick="@(() => OnDeleteFiefAsync(f.Id))" />
+                    }
+                </div>
+            }
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OnAddFiefAsync">
+                Add fief
+            </MudButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<FiefDTO> Fiefs { get; set; } = Array.Empty<FiefDTO>();
+    [Parameter] public IReadOnlyDictionary<int, TerrainMapDomainDTO> DomainsById { get; set; }
+        = new Dictionary<int, TerrainMapDomainDTO>();
+    [Parameter] public int? SelectedFiefId { get; set; }
+    [Parameter] public EventCallback<int?> SelectedFiefIdChanged { get; set; }
+    [Parameter] public EventCallback<(int FiefId, string ColorHex)> OnFiefColorChanged { get; set; }
+    [Parameter] public EventCallback OnAddFief { get; set; }
+    [Parameter] public EventCallback<int> OnEditFief { get; set; }
+    [Parameter] public EventCallback<int> OnDeleteFief { get; set; }
+
+    private Task SelectFiefAsync(int fiefId) => SelectedFiefIdChanged.InvokeAsync(fiefId);
+
+    private TerrainMapDomainDTO? GetSeniorDomain(FiefDTO fief) =>
+        fief.SeniorDomainId is int id && DomainsById.TryGetValue(id, out var domain)
+            ? domain
+            : null;
+
+    private Task OnFiefColorInputChangedAsync(int fiefId, ChangeEventArgs e)
+    {
+        if (e.Value is not string color || string.IsNullOrWhiteSpace(color))
+            return Task.CompletedTask;
+
+        return OnFiefColorChanged.InvokeAsync((fiefId, color));
+    }
+
+    private Task OnAddFiefAsync() => OnAddFief.InvokeAsync();
+    private Task OnEditFiefAsync(int fiefId) => OnEditFief.InvokeAsync(fiefId);
+    private Task OnDeleteFiefAsync(int fiefId) => OnDeleteFief.InvokeAsync(fiefId);
+}

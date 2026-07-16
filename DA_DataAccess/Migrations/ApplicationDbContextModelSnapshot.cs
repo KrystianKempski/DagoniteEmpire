@@ -496,7 +496,14 @@ namespace DA_DataAccess.Migrations
                     b.Property<decimal>("BonusMultiplier")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("ColorHex")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsBaronDemesne")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDomainDefault")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LiegeName")
@@ -506,6 +513,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("SeniorDomainId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -533,6 +543,12 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Group")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("InfluencePercent")
+                        .HasColumnType("integer");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PercentJson")
                         .IsRequired()
@@ -586,6 +602,40 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("TerrainImprovements");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.TerrainMapDomain", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ColorHex")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LordName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TerrainMapDomains");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.TerrainTile", b =>
                 {
                     b.Property<int>("Id")
@@ -604,14 +654,19 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Comment")
                         .HasColumnType("text");
 
-                    b.Property<string>("FeaturesCsv")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("FeaturesMask")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Fertility")
                         .HasColumnType("integer");
 
                     b.Property<int?>("FiefId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MapDomainId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MapId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Resource")
@@ -624,6 +679,9 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BaronyId", "X", "Y")
+                        .IsUnique();
 
                     b.ToTable("TerrainTiles");
                 });

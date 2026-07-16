@@ -59,8 +59,14 @@ namespace DA_Business.Repository.CharacterReps.IRepository
 
         // --- Pola terenu ---
         Task<List<TerrainTileDTO>> GetTiles(int baronyId);
+        Task<List<TerrainTileDTO>> EnsureTerrainGrid(int baronyId);
         Task<TerrainTileDTO> SaveTile(TerrainTileDTO dto);
         Task<int> DeleteTile(int id);
+
+        // --- Map domains ---
+        Task<List<TerrainMapDomainDTO>> GetMapDomains(int baronyId);
+        Task<TerrainMapDomainDTO> SaveMapDomain(TerrainMapDomainDTO dto);
+        Task<int> DeleteMapDomain(int id);
 
         // --- Ulepszenia terenu ---
         Task<List<TerrainImprovementDTO>> GetImprovements(int baronyId);

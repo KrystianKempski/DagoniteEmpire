@@ -3,7 +3,7 @@
 @layout DagoniteEmpire.Shared.MainLayout
 @inject NavigationManager NavigationManager
 
-<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "")">
+<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "")">
     <AuthorizeView Roles="@BaronRoles">
         <Authorized Context="baronyAuth">
             @if (baronyAuth.User.IsInRole(SD.Role_Admin) || baronyAuth.User.IsInRole(SD.Role_GameMaster))
@@ -29,4 +29,13 @@
 
     private readonly BaronyViewOptions _viewOptions = new();
     private bool IsDomainPanel => "/" + NavigationManager.ToBaseRelativePath(NavigationManager.Uri).TrimEnd('/') == "/barony";
+
+    private bool IsBuildingsCatalog
+    {
+        get
+        {
+            var path = "/" + NavigationManager.ToBaseRelativePath(NavigationManager.Uri).TrimEnd('/');
+            return path == "/barony/buildings";
+        }
+    }
 }

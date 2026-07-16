@@ -17,8 +17,39 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Czy to bezpośrednia domena barona.</summary>
         public bool IsBaronDemesne { get; set; }
 
+        /// <summary>Auto-created default fief for a domain (non-deletable).</summary>
+        public bool IsDomainDefault { get; set; }
+
+        /// <summary>Domain that acts as senior for this fief.</summary>
+        public int? SeniorDomainId { get; set; }
+
+        /// <summary>#RRGGBB hex color used on terrain fief layer.</summary>
+        public string ColorHex { get; set; } = "#4d7ea8";
+
         /// <summary>Mnożnik bonusów z ulepszeń na tym lennie (1.0 dla domeny barona, mniej dla lenników).</summary>
         public decimal BonusMultiplier { get; set; } = 1.0m;
+    }
+
+    /// <summary>Regional domain painted on a barony terrain map.</summary>
+    public class TerrainMapDomain
+    {
+        [Key]
+        public int Id { get; set; }
+
+        public int BaronyId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>Ruling lord display name.</summary>
+        public string LordName { get; set; } = string.Empty;
+
+        /// <summary>#RRGGBB hex color.</summary>
+        public string ColorHex { get; set; } = "#888888";
+
+        /// <summary>Player barony demesne — rendered with lower overlay opacity.</summary>
+        public bool IsPrimary { get; set; }
+
+        public int SortOrder { get; set; }
     }
 
     /// <summary>Pojedyncze pole (kwadrat) terenu baronii.</summary>
@@ -28,14 +59,17 @@ namespace DA_DataAccess.BaronyData
         public int Id { get; set; }
         public int BaronyId { get; set; }
 
+        /// <summary>Shared map id (one grid for neighboring baronies).</summary>
+        public int MapId { get; set; } = 1;
+
         public int X { get; set; }
         public int Y { get; set; }
 
         /// <summary>Rodzaj bazowy (TerrainBaseType).</summary>
         public string BaseType { get; set; } = DA_Common.Barony.TerrainBaseType.Plains;
 
-        /// <summary>Dodatki terenu jako CSV (TerrainFeature), np. "Las,Rzeka".</summary>
-        public string FeaturesCsv { get; set; } = string.Empty;
+        /// <summary>Feature bit flags (TerrainFeature).</summary>
+        public int FeaturesMask { get; set; }
 
         /// <summary>Żyzność 0-5 (tylko równiny/wzgórza).</summary>
         public int Fertility { get; set; }
@@ -45,6 +79,9 @@ namespace DA_DataAccess.BaronyData
 
         /// <summary>Lenno, do którego należy pole (opcjonalne).</summary>
         public int? FiefId { get; set; }
+
+        /// <summary>Regional domain ownership (terrain map layer).</summary>
+        public int? MapDomainId { get; set; }
 
         public string? Comment { get; set; }
     }

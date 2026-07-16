@@ -1,6 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IBaronyRepository _baronyRepo
 @inject ISnackbar _snackBar
+@inject IDialogService _dialogService
 
 <BaronySection Title="City and Buildings">
     <Summary>
@@ -16,10 +17,6 @@
                         {
                             <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
                         }
-                        @if (CanEdit)
-                        {
-                            <th rowspan="2" class="city-building-col-actions"></th>
-                        }
                     </tr>
                     <tr>
                         @foreach (var _ in PpbCatalog.All)
@@ -34,25 +31,14 @@
                     {
                         <tr class="city-building-row--core">
                             <td class="city-building-col-name">
-                                @if (!string.IsNullOrWhiteSpace(core.Description))
-                                {
-                                    <MudTooltip Text="@core.Description" Placement="Placement.Top" Arrow="true">
-                                        <span>@core.Name</span>
-                                    </MudTooltip>
-                                }
-                                else
-                                {
-                                    @core.Name
-                                }
+                                <div class="city-building-name-cell">
+                                    <span class="city-building-name-text">@RenderNameText(core.Name, core.Description)</span>
+                                </div>
                             </td>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <td class="@ValueClass(core.Additive[info.Key])">@FmtAdd(core.Additive[info.Key])</td>
                                 <td class="@ValueClass(core.Percent[info.Key])">@FmtPct(core.Percent[info.Key])</td>
-                            }
-                            @if (CanEdit)
-                            {
-                                <td class="city-building-col-actions"></td>
                             }
                         </tr>
                     }
@@ -61,96 +47,45 @@
                     {
                         <tr>
                             <td class="city-building-col-name">
-                                @if (CanEdit)
-                                {
-                                    @if (!string.IsNullOrWhiteSpace(building.Description))
+                                <div class="city-building-name-cell">
+                                    <span class="city-building-name-text">@RenderNameText(building.Name, building.Description)</span>
+                                    @if (CanManage)
                                     {
-                                        <MudTooltip Text="@building.Description" Placement="Placement.Top" Arrow="true">
-                                            <div class="city-building-select-wrap">
-                                                <MudSelect T="int?"
-                                                           Value="@building.TemplateId"
-                                                           ValueChanged="@(id => OnTemplateSelectedAsync(building, id))"
-                                                           Dense="true"
-                                                           Margin="Margin.Dense"
-                                                           Variant="Variant.Outlined"
-                                                           Placeholder="Select building…"
-                                                           Class="city-building-select">
-                                                    @foreach (var template in Catalog)
-                                                    {
-                                                        <MudSelectItem T="int?" Value="@template.Id">@template.Name</MudSelectItem>
-                                                    }
-                                                </MudSelect>
-                                            </div>
-                                        </MudTooltip>
+                                        <span class="city-building-name-actions">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Size="Size.Small"
+                                                           title="Edit building"
+                                                           OnClick="@(() => EditBuildingAsync(building))" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Size="Size.Small"
+                                                           Color="Color.Error"
+                                                           title="Remove building"
+                                                           OnClick="@(() => DeleteBuildingAsync(building))" />
+                                        </span>
                                     }
-                                    else
-                                    {
-                                        <div class="city-building-select-wrap">
-                                            <MudSelect T="int?"
-                                                       Value="@building.TemplateId"
-                                                       ValueChanged="@(id => OnTemplateSelectedAsync(building, id))"
-                                                       Dense="true"
-                                                       Margin="Margin.Dense"
-                                                       Variant="Variant.Outlined"
-                                                       Placeholder="Select building…"
-                                                       Class="city-building-select">
-                                                @foreach (var template in Catalog)
-                                                {
-                                                    <MudSelectItem T="int?" Value="@template.Id">@template.Name</MudSelectItem>
-                                                }
-                                            </MudSelect>
-                                        </div>
-                                    }
-                                }
-                                else
-                                {
-                                    @if (!string.IsNullOrWhiteSpace(building.Description))
-                                    {
-                                        <MudTooltip Text="@building.Description" Placement="Placement.Top" Arrow="true">
-                                            <span>@(string.IsNullOrWhiteSpace(building.Name) ? "—" : building.Name)</span>
-                                        </MudTooltip>
-                                    }
-                                    else
-                                    {
-                                        <span>@(string.IsNullOrWhiteSpace(building.Name) ? "—" : building.Name)</span>
-                                    }
-                                }
+                                </div>
                             </td>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <td class="@ValueClass(building.Additive[info.Key])">@FmtAdd(building.Additive[info.Key])</td>
                                 <td class="@ValueClass(building.Percent[info.Key])">@FmtPct(building.Percent[info.Key])</td>
                             }
-                            @if (CanEdit)
-                            {
-                                <td class="city-building-col-actions">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                   Size="Size.Small"
-                                                   Color="Color.Error"
-                                                   title="Remove building"
-                                                   OnClick="@(() => DeleteBuildingAsync(building))" />
-                                </td>
-                            }
                         </tr>
                     }
 
                     <tr class="ppb-summary-row">
-                        <td class="ppb-row-label">Σ section</td>
+                        <td class="ppb-row-label city-building-col-name">Σ section</td>
                         @foreach (var info in PpbCatalog.All)
                         {
                             <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
                             <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
-                        }
-                        @if (CanEdit)
-                        {
-                            <td class="city-building-col-actions"></td>
                         }
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        @if (CanEdit)
+        @if (CanManage)
         {
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <MudButton Variant="Variant.Outlined"
@@ -167,7 +102,7 @@
     [Parameter] public int BaronyId { get; set; }
     [Parameter] public List<BaronyBuildingDTO> SavedBuildings { get; set; } = new();
     [Parameter] public List<BuildingTemplateDTO> Catalog { get; set; } = new();
-    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private IReadOnlyList<BaronyBuildingDTO> CoreBuildings => BaronyCalc.CoreCityBuildings(BaronyId);
@@ -176,42 +111,64 @@
     private PpbVector PercentSum => BaronyCalc.SumCityBuildingsPercent(BaronyId, SavedBuildings);
     private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.CityBuildingSectionRows(BaronyId, SavedBuildings));
 
+    private RenderFragment RenderNameText(string name, string? description) => builder =>
+    {
+        var display = string.IsNullOrWhiteSpace(name) ? "—" : name;
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            builder.AddContent(0, display);
+            return;
+        }
+
+        builder.OpenComponent<MudTooltip>(0);
+        builder.AddAttribute(1, "Text", description);
+        builder.AddAttribute(2, "Placement", Placement.Top);
+        builder.AddAttribute(3, "Arrow", true);
+        builder.AddAttribute(4, "ChildContent", (RenderFragment)(b => b.AddContent(0, display)));
+        builder.CloseComponent();
+    };
+
     private async Task AddBuildingAsync()
     {
-        try
+        await OpenBuildingDialog(new BaronyBuildingDTO
         {
-            await _baronyRepo.SaveBuilding(new BaronyBuildingDTO
-            {
-                BaronyId = BaronyId,
-                Kind = BuildingKind.Building,
-            });
-            await OnChanged.InvokeAsync();
-        }
-        catch (Exception ex)
-        {
-            _snackBar.Add("Could not add building: " + ex.Message, Severity.Error);
-        }
+            BaronyId = BaronyId,
+            Kind = BuildingKind.Building,
+        }, isNew: true);
     }
 
-    private async Task OnTemplateSelectedAsync(BaronyBuildingDTO building, int? templateId)
+    private Task EditBuildingAsync(BaronyBuildingDTO building)
+        => OpenBuildingDialog(CloneBuilding(building), isNew: false);
+
+    private async Task OpenBuildingDialog(BaronyBuildingDTO draft, bool isNew)
     {
-        if (templateId is null or <= 0)
+        var parameters = new DialogParameters<CityBuildingEditDialog>
+        {
+            { x => x.Building, draft },
+            { x => x.Catalog, Catalog },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CityBuildingEditDialog>(
+            isNew ? "Add Building" : "Edit Building",
+            parameters,
+            DialogOptions());
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyBuildingDTO saved)
             return;
 
-        var template = Catalog.FirstOrDefault(t => t.Id == templateId);
-        if (template is null)
+        if (string.IsNullOrWhiteSpace(saved.Name))
+        {
+            _snackBar.Add("Building name is required.", Severity.Warning);
             return;
+        }
 
-        building.TemplateId = template.Id;
-        building.Name = template.Name;
-        building.Kind = template.Kind;
-        building.Additive = template.EffectAdditive.Clone();
-        building.Percent = template.EffectPercent.Clone();
-        building.Description = template.Description;
+        saved.BaronyId = BaronyId;
 
         try
         {
-            await _baronyRepo.SaveBuilding(building);
+            await _baronyRepo.SaveBuilding(saved);
+            _snackBar.Add(isNew ? "Building added." : "Building updated.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -228,6 +185,7 @@
         try
         {
             await _baronyRepo.DeleteBuilding(building.Id);
+            _snackBar.Add("Building removed.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -235,6 +193,25 @@
             _snackBar.Add("Could not remove building: " + ex.Message, Severity.Error);
         }
     }
+
+    private static BaronyBuildingDTO CloneBuilding(BaronyBuildingDTO source) => new()
+    {
+        Id = source.Id,
+        BaronyId = source.BaronyId,
+        TemplateId = source.TemplateId,
+        Name = source.Name,
+        Kind = source.Kind,
+        Description = source.Description,
+        Additive = source.Additive.Clone(),
+        Percent = source.Percent.Clone(),
+    };
+
+    private static DialogOptions DialogOptions() => new()
+    {
+        MaxWidth = MaxWidth.False,
+        FullWidth = false,
+        CloseOnEscapeKey = true,
+    };
 
     private static string PpbShort(Ppb p) => p switch
     {
