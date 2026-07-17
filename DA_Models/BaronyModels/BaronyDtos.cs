@@ -90,6 +90,9 @@ namespace DA_Models.BaronyModels
         public PpbVector Percent { get; set; } = new();
         public string? Description { get; set; }
         public string? FormulaText { get; set; }
+
+        /// <summary>When false, PPB is excluded from totals.</summary>
+        public bool IsActive { get; set; } = true;
     }
 
     public class BaronyEventDTO
@@ -97,11 +100,22 @@ namespace DA_Models.BaronyModels
         public int Id { get; set; }
         public int BaronyId { get; set; }
         public string Name { get; set; } = string.Empty;
-        public int TurnNumber { get; set; }
-        public bool IsActive { get; set; } = true;
+
+        /// <summary>First turn on which the event applies (inclusive).</summary>
+        public int StartTurn { get; set; } = 1;
+
+        /// <summary>Last turn (inclusive). Null = ongoing / no end.</summary>
+        public int? EndTurn { get; set; }
+
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();
         public string? Description { get; set; }
+
+        public bool IsActiveOnTurn(int turn) =>
+            turn >= StartTurn && (EndTurn is null || turn <= EndTurn.Value);
+
+        public string TurnRangeLabel =>
+            EndTurn is int end ? $"{StartTurn}–{end}" : $"{StartTurn}–∞";
     }
 
     public class CommunityModifierDTO
@@ -168,6 +182,15 @@ namespace DA_Models.BaronyModels
         public PpbVector Percent { get; set; } = new();
         public string? Description { get; set; }
         public string? FormulaText { get; set; }
+
+        /// <summary>When false, PPB is excluded from totals and shown struck through.</summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>Why inactive — shown on Domain Panel name hover.</summary>
+        public string? InactiveReason { get; set; }
+
+        /// <summary>Optional icon override for custom map improvements.</summary>
+        public string? IconUrl { get; set; }
     }
 
     public class BaronyProjectDTO

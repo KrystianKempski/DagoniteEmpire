@@ -2848,7 +2848,7 @@ namespace DagoniteEmpire.Service
             }
         }
 
-        /// <summary>Reseed catalog when empty, legacy Polish, or pre-rename farm/mine/quarry names.</summary>
+        /// <summary>Reseed catalog when empty, legacy Polish, or outdated farm/mine/quarry/sawmill names.</summary>
         private static async Task SyncBuildingTemplateCatalogAsync(ApplicationDbContext ctx)
         {
             var needsReseed = !await ctx.BuildingTemplates.AnyAsync()
@@ -2862,20 +2862,52 @@ namespace DagoniteEmpire.Service
                     || t.Name == "Fertile Farms"
                     || t.Name == "Iron Mine"
                     || t.Name == "Copper Mine"
+                    || t.Name == "Mine - Copper"
+                    || t.Name == "Mine - hard metals"
+                    || t.Name == "Mine - luxury metals"
+                    || t.Name == "Mine - precious gems (common)"
                     || t.Name == "Granite Quarry"
                     || t.Name == "Common Quarry"
                     || t.Name == "Obsidian Quarry"
                     || t.Name == "Dagonite Mine"
+                    || t.Name == "Mine - Dagonite"
                     || t.Name == "Soft Metal Mine"
                     || t.Name == "Hard Metal Mine"
                     || t.Name == "Luxury Metal Mine"
                     || t.Name == "Silver Mine"
                     || t.Name == "Gold Mine"
                     || t.Name == "Precious Gem Mine (Luxury)"
-                    || t.Name == "Precious Gem Mine (Common)")
+                    || t.Name == "Precious Gem Mine (Common)"
+                    || t.Name == "Ironwood Sawmill"
+                    || t.Name == "Common Sawmill"
+                    || t.Name == "Farm - very poor"
+                    || t.Name == "Farm - poor"
+                    || t.Name == "Farm - regular fertility"
+                    || t.Name == "Farm - very fertile"
+                    || t.Name == "Farm - exceptionally fertile")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Clay pit")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Salt")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Sawmill - Elven alder")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Quarry - Tarnit")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Dagoferryt")
-                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - exceptionally fertile");
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - poor fertility")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - fertile")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - bountiful")
+                || await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Dagonite")
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Fishing Pier"
+                    && (t.EffectAdditiveJson == null || !t.EffectAdditiveJson.Contains("-0.5,10")))
+                // Farm PPB sync: defense -1 + treasury 8/10/15/20 (was wrongly treasury -1).
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Farm - poor fertility"
+                    && (t.EffectAdditiveJson == null || !t.EffectAdditiveJson.Contains("-1,8")))
+                // Hunter's Lodge: Army 2 was wrongly stored as Corruption 2.
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Hunter's Lodge"
+                    && (t.EffectAdditiveJson == null
+                        || t.EffectAdditiveJson.Contains("2,0,0,0,0,3,5")
+                        || !t.EffectAdditiveJson.Contains("0,0,0,0,0,0,3,5")));
 
             if (!needsReseed)
                 return;

@@ -115,8 +115,8 @@
                             @if (ShowLayer(TerrainMapLayer.Improvements) && improvement is not null)
                             {
                                 <span class="barony-terrain-cell__layer barony-terrain-cell__improvement">
-                                    <img src="@MapImprovement.IconUrl(improvement.Name)"
-                                         alt="@MapImprovement.DisplayName(improvement.Name)"
+                                    <img src="@MapImprovement.ResolveIconUrl(improvement.Name, improvement.IconUrl)"
+                                         alt="@(string.IsNullOrWhiteSpace(improvement.Description) ? MapImprovement.DisplayName(improvement.Name) : improvement.Description)"
                                          class="@($"barony-terrain-cell__improvement-icon barony-terrain-cell__improvement-icon--{ImprovementIconCss(improvement.Name)}")" />
                                     @if (!string.IsNullOrWhiteSpace(improvement.Description))
                                     {
@@ -261,6 +261,7 @@
         MapImprovement.Mine => "mine",
         MapImprovement.Sawmill => "sawmill",
         MapImprovement.Farm => "farm",
+        MapImprovement.Custom => "custom",
         _ => "unknown",
     };
 }

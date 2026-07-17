@@ -155,7 +155,9 @@ else
     private string? _brushResource = TerrainResource.Iron;
     private string? _brushImprovement = MapImprovement.Village;
     private string? _improvementPlaceNameStroke;
+    private CustomImprovementDialog.CustomImprovementDraft? _customPlacementStroke;
     private bool _improvementNamingInProgress;
+    private List<BuildingTemplateDTO> _improvementTemplates = new();
     private int? _selectedDomainId;
     private int? _selectedFiefId;
     private int? _playerPrimaryDomainId;
@@ -193,6 +195,10 @@ else
             .Where(i => i.TileId is int tileId)
             .GroupBy(i => i.TileId!.Value)
             .ToDictionary(g => g.Key, g => g.First());
+
+        _improvementTemplates = (await _baronyRepo.GetBuildingTemplates())
+            .Where(t => t.Kind == BuildingKind.Improvement)
+            .ToList();
 
         await EnsurePlayerDomainAsync();
         await EnsurePlayerFiefAsync();
@@ -738,6 +744,7 @@ else
     {
         _brushImprovement = value;
         _improvementPlaceNameStroke = null;
+        _customPlacementStroke = null;
         return Task.CompletedTask;
     }
 
@@ -763,6 +770,7 @@ else
         if (nextName is null)
         {
             _improvementPlaceNameStroke = null;
+            _customPlacementStroke = null;
             if (existing is null)
                 return;
 
@@ -828,11 +836,66 @@ else
 
             placeName = _improvementPlaceNameStroke;
         }
+        else if (MapImprovement.IsCustom(nextName))
+        {
+            if (_customPlacementStroke is null)
+            {
+                _improvementNamingInProgress = true;
+                try
+                {
+                    var prefill = existing is not null && MapImprovement.IsCustom(existing.Name)
+                        ? existing
+                        : null;
+                    var parameters = new DialogParameters
+                    {
+                        [nameof(CustomImprovementDialog.InitialName)] = prefill?.Description,
+                        [nameof(CustomImprovementDialog.InitialIconUrl)] = prefill?.IconUrl,
+                        [nameof(CustomImprovementDialog.InitialAdditive)] = prefill?.Additive,
+                        [nameof(CustomImprovementDialog.InitialPercent)] = prefill?.Percent,
+                    };
+                    var options = new DialogOptions
+                    {
+                        CloseOnEscapeKey = true,
+                        MaxWidth = MaxWidth.Medium,
+                        FullWidth = true,
+                    };
+                    var dialog = await _dialogService.ShowAsync<CustomImprovementDialog>(
+                        string.Empty,
+                        parameters,
+                        options);
+                    var result = await dialog.Result;
+                    if (result is null
+                        || result.Canceled
+                        || result.Data is not CustomImprovementDialog.CustomImprovementDraft draft)
+                        return;
+
+                    _customPlacementStroke = draft;
+                }
+                finally
+                {
+                    _improvementNamingInProgress = false;
+                }
+            }
+        }
         else
         {
             _improvementPlaceNameStroke = null;
-            if (existing is not null && existing.Name == nextName)
+            _customPlacementStroke = null;
+            // Re-paint allowed: fertility/resource may have changed → refresh catalog PPB.
+        }
+
+        if (TerrainImprovementCatalogMap.IsCatalogBacked(nextName))
+        {
+            var templateName = TerrainImprovementCatalogMap.ResolveTemplateName(
+                nextName, tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType);
+            if (templateName is null)
+            {
+                var reason = TerrainImprovementCatalogMap.FailureReason(
+                    nextName, tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType)
+                    ?? "Cannot place this improvement on this tile.";
+                _snackBar.Add(reason, Severity.Warning);
                 return;
+            }
         }
 
         try
@@ -845,7 +908,30 @@ else
             dto.BaronyId = Barony.Id;
             dto.TileId = tile.Id;
             dto.Name = nextName;
-            dto.Description = placeName;
+
+            if (MapImprovement.IsCustom(nextName) && _customPlacementStroke is not null)
+            {
+                var draft = _customPlacementStroke;
+                dto.TemplateId = null;
+                dto.Description = draft.Name;
+                dto.IconUrl = draft.IconUrl;
+                dto.Additive = draft.Additive.Clone();
+                dto.Percent = draft.Percent.Clone();
+                dto.FormulaText = null;
+                ApplyVassalTreasuryHalf(dto, tile);
+            }
+            else if (TerrainImprovementCatalogMap.IsCatalogBacked(nextName))
+            {
+                if (!ApplyCatalogTemplate(dto, nextName, tile, placeName))
+                    return;
+                dto.IconUrl = null;
+            }
+            else
+            {
+                dto.Description = placeName;
+                dto.TemplateId = null;
+                dto.IconUrl = null;
+            }
 
             var saved = await _baronyRepo.SaveImprovement(dto);
             _improvementByTileId[tile.Id] = saved;
@@ -858,6 +944,63 @@ else
 
         RefreshHoverInfo(cell.X, cell.Y);
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Copies PPB from the Buildings catalog. Keeps Name as the map kind (for icons).
+    /// Village/Town place names stay in Description; other kinds store the catalog name there for Domain Panel.
+    /// </summary>
+    private bool ApplyCatalogTemplate(
+        TerrainImprovementDTO dto,
+        string mapKind,
+        TerrainTileDTO tile,
+        string? placeName)
+    {
+        var templateName = TerrainImprovementCatalogMap.ResolveTemplateName(
+            mapKind, tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType);
+        if (templateName is null)
+            return false;
+
+        var template = _improvementTemplates.FirstOrDefault(t =>
+            string.Equals(t.Name, templateName, StringComparison.OrdinalIgnoreCase));
+        if (template is null)
+        {
+            _snackBar.Add($"Catalog entry “{templateName}” not found. Restart the app to reseed Buildings.", Severity.Error);
+            return false;
+        }
+
+        dto.TemplateId = template.Id;
+        dto.Additive = template.EffectAdditive.Clone();
+        dto.Percent = template.EffectPercent.Clone();
+        dto.FormulaText = template.Description;
+        dto.Description = MapImprovement.RequiresPlaceName(mapKind)
+            ? placeName
+            : template.Name;
+
+        if (mapKind == MapImprovement.FishingHarbor
+            && TerrainImprovementCatalogMap.HasFisheryBonus(tile.Resource))
+        {
+            dto.Additive[Ppb.Food] += TerrainImprovementCatalogMap.FishingHarborFisheryFoodBonus;
+            dto.Additive[Ppb.Treasury] += TerrainImprovementCatalogMap.FishingHarborFisheryTreasuryBonus;
+        }
+
+        // Vassal fief: baron receives only half of positive treasury income.
+        ApplyVassalTreasuryHalf(dto, tile);
+
+        return true;
+    }
+
+    private void ApplyVassalTreasuryHalf(TerrainImprovementDTO dto, TerrainTileDTO tile)
+    {
+        if (IsOnVassalFief(tile) && dto.Additive[Ppb.Treasury] > 0)
+            dto.Additive[Ppb.Treasury] = decimal.Round(dto.Additive[Ppb.Treasury] / 2m, 2);
+    }
+
+    private bool IsOnVassalFief(TerrainTileDTO tile)
+    {
+        if (tile.FiefId is not int fiefId || !_fiefIndex.TryGetValue(fiefId, out var fief))
+            return false;
+        return !TerrainMapVisuals.UsesLordTitle(fief);
     }
 
     private async Task ClearDomainFromTilesAsync(int domainId)

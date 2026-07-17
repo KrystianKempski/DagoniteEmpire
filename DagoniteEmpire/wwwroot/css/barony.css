@@ -208,6 +208,209 @@
     box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
 }
 
+.ppb-table--city-buildings .city-building-col-owner {
+    min-width: 2rem;
+    width: 2rem;
+    padding-left: 2px;
+    padding-right: 2px;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    font-size: 0.7rem;
+    cursor: default;
+}
+
+/* Name + Owner together = 320px (same pinned width as Advisors / City Buildings / Social). */
+.ppb-table--terrain-improvements {
+    --terrain-imp-owner-width: 3rem;
+    --terrain-imp-name-width: calc(320px - var(--terrain-imp-owner-width));
+}
+
+.ppb-table--terrain-improvements .city-building-col-name {
+    min-width: var(--terrain-imp-name-width);
+    width: var(--terrain-imp-name-width);
+    max-width: var(--terrain-imp-name-width);
+    box-shadow: none;
+}
+
+.ppb-table--terrain-improvements .city-building-col-owner {
+    min-width: var(--terrain-imp-owner-width);
+    width: var(--terrain-imp-owner-width);
+    max-width: var(--terrain-imp-owner-width);
+    position: sticky;
+    left: var(--terrain-imp-name-width);
+    z-index: 2;
+    background: var(--barony-surface);
+    box-sizing: border-box;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+    font-size: inherit;
+    font-weight: 600;
+    color: var(--barony-ink);
+}
+
+.ppb-table--terrain-improvements thead .city-building-col-owner {
+    z-index: 3;
+}
+
+.ppb-table--terrain-improvements tbody tr:hover .city-building-col-owner {
+    background: var(--barony-accent-soft);
+}
+
+/* Decrees: Name + Active = 320px pinned width. */
+.ppb-table--decrees {
+    --decree-active-width: 4.5rem;
+    --decree-name-width: calc(320px - var(--decree-active-width));
+}
+
+.ppb-table--decrees .city-building-col-name {
+    min-width: var(--decree-name-width);
+    width: var(--decree-name-width);
+    max-width: var(--decree-name-width);
+    box-shadow: none;
+}
+
+.ppb-table--decrees .decree-col-active {
+    min-width: var(--decree-active-width);
+    width: var(--decree-active-width);
+    max-width: var(--decree-active-width);
+    text-align: center;
+    vertical-align: middle;
+    position: sticky;
+    left: var(--decree-name-width);
+    z-index: 2;
+    background: var(--barony-surface);
+    box-sizing: border-box;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+    font-size: inherit;
+    font-weight: 600;
+    color: var(--barony-ink);
+    white-space: nowrap;
+}
+
+.ppb-table--decrees thead .decree-col-active {
+    z-index: 3;
+}
+
+.ppb-table--decrees tbody tr:hover .decree-col-active {
+    background: var(--barony-accent-soft);
+}
+
+.ppb-table--decrees .decree-active-checkbox {
+    margin: 0;
+    justify-content: center;
+}
+
+.ppb-table--decrees .decree-row--inactive td {
+    opacity: 0.42;
+}
+
+.ppb-table--decrees .decree-row--inactive .city-building-col-name {
+    color: var(--barony-muted);
+}
+
+.ppb-table--decrees .decree-row--inactive .ppb-cell-struck {
+    text-decoration: line-through;
+}
+
+/* Events: Name + Turns = 320px pinned width. */
+.ppb-table--events {
+    --event-turns-width: 5.5rem;
+    --event-name-width: calc(320px - var(--event-turns-width));
+}
+
+.ppb-table--events .city-building-col-name {
+    min-width: var(--event-name-width);
+    width: var(--event-name-width);
+    max-width: var(--event-name-width);
+    box-shadow: none;
+}
+
+.ppb-table--events .event-col-turns {
+    min-width: var(--event-turns-width);
+    width: var(--event-turns-width);
+    max-width: var(--event-turns-width);
+    text-align: center;
+    vertical-align: middle;
+    position: sticky;
+    left: var(--event-name-width);
+    z-index: 2;
+    background: var(--barony-surface);
+    box-sizing: border-box;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+    font-size: inherit;
+    font-weight: 600;
+    color: var(--barony-ink);
+    white-space: nowrap;
+}
+
+.ppb-table--events thead .event-col-turns {
+    z-index: 3;
+}
+
+.ppb-table--events tbody tr:hover .event-col-turns {
+    background: var(--barony-accent-soft);
+}
+
+.ppb-table--events .event-row--inactive td {
+    opacity: 0.42;
+}
+
+.ppb-table--events .event-row--inactive .city-building-col-name {
+    color: var(--barony-muted);
+}
+
+.ppb-table--events .event-row--inactive .ppb-cell-struck {
+    text-decoration: line-through;
+}
+
+.event-turn-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.ppb-table--city-buildings .terrain-improvement-row--inactive td {
+    opacity: 0.42;
+}
+
+.ppb-table--city-buildings .terrain-improvement-row--inactive .city-building-col-name {
+    color: var(--barony-muted);
+}
+
+.ppb-table--city-buildings .terrain-improvement-row--inactive .ppb-cell-struck {
+    text-decoration: line-through;
+}
+
+.terrain-improvement-owner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    line-height: 1;
+    cursor: default;
+}
+
+.terrain-improvement-owner--vassal {
+    color: var(--barony-muted);
+    /* Match MudIcon Size.Small (~1.25rem / 20px) */
+    font-size: 1.25rem !important;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* Match MudIcon Size.Small (~20px). */
+.ppb-table--city-buildings .terrain-improvement-owner__crown {
+    width: 20px !important;
+    height: 20px !important;
+    max-width: 20px !important;
+    max-height: 20px !important;
+    display: inline-block;
+    object-fit: contain;
+    opacity: 0.95;
+    vertical-align: middle;
+}
+
 .city-building-name-cell {
     display: flex;
     align-items: center;
@@ -1147,6 +1350,37 @@
     height: 1.35rem;
     object-fit: contain;
     flex-shrink: 0;
+}
+
+.custom-improvement-icon-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.custom-improvement-icon-picker__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0.25rem;
+    border: 1px solid var(--barony-border);
+    border-radius: 4px;
+    background: var(--barony-surface);
+    cursor: pointer;
+}
+
+.custom-improvement-icon-picker__btn--selected {
+    border-color: var(--barony-accent, #8b6914);
+    box-shadow: 0 0 0 2px var(--barony-accent-soft, rgba(139, 105, 20, 0.35));
+}
+
+.custom-improvement-icon-picker__img {
+    width: 1.5rem;
+    height: 1.5rem;
+    object-fit: contain;
 }
 
 .barony-terrain-map--hide-terrain-type .barony-terrain-cell__terrain-type {

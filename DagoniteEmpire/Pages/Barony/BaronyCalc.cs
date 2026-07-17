@@ -267,13 +267,60 @@ namespace DagoniteEmpire.Pages.Barony
             => SocialGroupSectionRows(baronyId, saved).Where(r => r.IsActive).Sum(r => r.InfluencePercent);
 
         public static List<PpbModifierRow> ImprovementRows(IEnumerable<TerrainImprovementDTO> improvements)
-            => improvements.Select(i => Row(i.Name, i.Additive, i.Percent, i.FormulaText, i.Description)).ToList();
+            => improvements
+                .Where(ShowsOnDomainPanel)
+                .Where(i => i.IsActive)
+                .Select(i => Row(ImprovementDisplayLabel(i), i.Additive, i.Percent, i.FormulaText, i.Description))
+                .ToList();
+
+        /// <summary>
+        /// Towns are map markers only for now.
+        /// Overview already limits improvements to the player's primary domain.
+        /// </summary>
+        public static bool ShowsOnDomainPanel(TerrainImprovementDTO improvement) =>
+            !string.Equals(improvement.Name, MapImprovement.Town, StringComparison.OrdinalIgnoreCase);
+
+        public static string ImprovementDisplayLabel(TerrainImprovementDTO improvement)
+        {
+            // Village/Town: place name. Farm/Mine/Sawmill/…: catalog template name stored in Description.
+            if (!string.IsNullOrWhiteSpace(improvement.Description)
+                && MapImprovement.IsKnown(improvement.Name))
+                return improvement.Description.Trim();
+
+            return improvement.Name;
+        }
+
+        /// <summary>
+        /// True when the tile belongs to a vassal fief (not baron demesne / domain default).
+        /// Tiles without a fief count as direct baronial land.
+        /// </summary>
+        public static bool IsVassalFiefTile(TerrainTileDTO? tile, IReadOnlyDictionary<int, FiefDTO> fiefsById)
+        {
+            if (tile?.FiefId is not int fiefId || !fiefsById.TryGetValue(fiefId, out var fief))
+                return false;
+            return !TerrainMapVisuals.UsesLordTitle(fief);
+        }
+
+        public static string OwnershipLabel(bool isVassalFief) =>
+            isVassalFief ? "Vassal" : "Demesne";
+
+        public static string OwnershipTooltip(bool isVassalFief) =>
+            isVassalFief
+                ? "On a vassal’s fief — only half of treasury income goes to the baron."
+                : "On the baron’s demesne — full treasury income.";
+
 
         public static List<PpbModifierRow> DecreeRows(IEnumerable<DecreeDTO> decrees)
-            => decrees.Select(d => Row(d.Name, d.Additive, d.Percent, d.FormulaText, d.Description)).ToList();
+            => decrees
+                .Where(d => d.IsActive)
+                .Select(d => Row(d.Name, d.Additive, d.Percent, d.FormulaText, d.Description))
+                .ToList();
 
-        public static List<PpbModifierRow> EventRows(IEnumerable<BaronyEventDTO> events)
-            => events.Where(e => e.IsActive).Select(e => Row(e.Name, e.Additive, e.Percent, null, e.Description)).ToList();
+        public static List<PpbModifierRow> EventRows(IEnumerable<BaronyEventDTO> events, int currentTurn)
+            => events
+                .Where(e => e.IsActiveOnTurn(currentTurn))
+                .Select(e => Row(e.Name, e.Additive, e.Percent, null, e.Description))
+                .ToList();
 
         public static List<PpbModifierRow> CommunityRows(IEnumerable<CommunityModifierDTO> mods)
             => mods.Select(m => Row(m.Source, m.Additive, m.Percent, m.FormulaText)).ToList();
@@ -307,7 +354,7 @@ namespace DagoniteEmpire.Pages.Barony
             allRows.AddRange(SocialRows(ov.Barony.Id, ov.SocialRelations));
             allRows.AddRange(ImprovementRows(ov.Improvements));
             allRows.AddRange(DecreeRows(ov.Decrees));
-            allRows.AddRange(EventRows(ov.Events));
+            allRows.AddRange(EventRows(ov.Events, ov.Barony.TurnNumber));
             allRows.AddRange(CommunityRows(ov.CommunityModifiers));
 
             var additive = SumAdditive(allRows);

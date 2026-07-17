@@ -148,6 +148,19 @@ namespace DA_Common.Barony
             5 => "exceptional fertility",
             _ => "unknown fertility",
         };
+
+        /// <summary>Farms require fertility 2–5; unknown / wasteland / very poor soil cannot host a farm.</summary>
+        public static bool SupportsFarm(int fertility) => fertility is >= 2 and <= Max;
+
+        /// <summary>Building-catalog farm template for a fertility tier, or null if farms are not allowed.</summary>
+        public static string? FarmTemplateName(int fertility) => fertility switch
+        {
+            2 => "Farm - poor fertility",
+            3 => "Farm",
+            4 => "Farm - fertile",
+            5 => "Farm - bountiful",
+            _ => null,
+        };
     }
 
     /// <summary>Terrain feature add-ons (combinable bit flags).</summary>
@@ -242,6 +255,7 @@ namespace DA_Common.Barony
         public const string Stone = "Stone";
         public const string Granite = "Granite";
         public const string Tarnit = "Tarnit";
+        public const string Obsidian = "Obsidian";
         public const string Clay = "Clay";
         public const string Ironwood = "Ironwood";
         public const string ElvenAlder = "Elven alder";
@@ -252,7 +266,7 @@ namespace DA_Common.Barony
         {
             SoftMetals, Iron, Silver, Gold, Dagoferryt,
             Fishery,
-            Stone, Granite, Tarnit,
+            Stone, Granite, Tarnit, Obsidian,
             Clay, Ironwood, ElvenAlder, Salt, Gemstones,
         };
 
@@ -270,6 +284,7 @@ namespace DA_Common.Barony
             Stone => "Stone",
             Granite => "Granite",
             Tarnit => "Tarnit",
+            Obsidian => "Obsidian",
             Clay => "Clay",
             Ironwood => "Ironwood",
             ElvenAlder => "Elven alder",
@@ -283,6 +298,7 @@ namespace DA_Common.Barony
             SoftMetals or Iron or Silver or Gold or Dagoferryt => "/icons/metal-bar.svg",
             Fishery => "/icons/fishing.svg",
             Stone or Granite or Tarnit => "/icons/stone-block.svg",
+            Obsidian => "/icons/silex.svg",
             Clay or Salt => "/icons/coal-pile.svg",
             Ironwood or ElvenAlder => "/icons/wood-pile.svg",
             Gemstones => "/icons/crystal-growth.svg",
@@ -300,6 +316,7 @@ namespace DA_Common.Barony
             Stone => "#f4f1ea",
             Granite => "#7f8c8d",
             Tarnit => "#9b59b6",
+            Obsidian => "#1c1c1c",
             Clay => "#c4783a",
             Ironwood => "#2471a3",
             ElvenAlder => "#d4af37",
@@ -319,14 +336,33 @@ namespace DA_Common.Barony
         public const string Mine = "Mine";
         public const string Sawmill = "Sawmill";
         public const string Farm = "Farm";
+        public const string Custom = "Custom";
+
+        public const string StoneTowerIconUrl = "/icons/stone-tower.svg";
 
         public static readonly string[] All =
         {
-            Town, Village, HuntersLodge, FishingHarbor, Mine, Sawmill, Farm,
+            Town, Village, HuntersLodge, FishingHarbor, Mine, Sawmill, Farm, Custom,
+        };
+
+        /// <summary>Icons selectable for custom map improvements.</summary>
+        public static readonly string[] IconChoices =
+        {
+            "/icons/medieval-village-01.svg",
+            "/icons/wood-cabin.svg",
+            "/icons/hunting-horn.svg",
+            "/icons/fishing-net.svg",
+            "/icons/mine-wagon.svg",
+            "/icons/axe-in-stump.svg",
+            "/icons/windmill.svg",
+            StoneTowerIconUrl,
         };
 
         public static bool IsKnown(string? key) =>
             !string.IsNullOrWhiteSpace(key) && All.Contains(key);
+
+        public static bool IsCustom(string? key) =>
+            string.Equals(key, Custom, StringComparison.OrdinalIgnoreCase);
 
         public static string DisplayName(string? key) => key switch
         {
@@ -337,6 +373,7 @@ namespace DA_Common.Barony
             Mine => "Mine",
             Sawmill => "Sawmill",
             Farm => "Farm",
+            Custom => "Custom",
             _ => key ?? "None",
         };
 
@@ -349,8 +386,13 @@ namespace DA_Common.Barony
             Mine => "/icons/mine-wagon.svg",
             Sawmill => "/icons/axe-in-stump.svg",
             Farm => "/icons/windmill.svg",
+            Custom => StoneTowerIconUrl,
             _ => "/icons/wood-cabin.svg",
         };
+
+        /// <summary>Uses a stored custom icon when set; otherwise the map-kind default.</summary>
+        public static string ResolveIconUrl(string? mapKind, string? iconUrl) =>
+            !string.IsNullOrWhiteSpace(iconUrl) ? iconUrl.Trim() : IconUrl(mapKind);
 
         public static bool RequiresPlaceName(string? key) =>
             key is Town or Village;

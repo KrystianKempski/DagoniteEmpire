@@ -1,0 +1,124 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
+            <MudTextField @bind-Value="_name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Class="baron-influence-field" />
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          HelperText="Optional description shown on name hover."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="3"
+                          Class="baron-influence-field" />
+
+            <div class="event-turn-fields">
+                <MudNumericField T="int"
+                                 @bind-Value="_startTurn"
+                                 Label="From turn"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="1"
+                                 Class="baron-influence-field" />
+                <MudCheckBox T="bool"
+                             @bind-Value="_noEnd"
+                             Label="Ongoing (no end turn)"
+                             Color="Color.Primary"
+                             Dense="true"
+                             Class="baron-influence-field" />
+                @if (!_noEnd)
+                {
+                    <MudNumericField T="int"
+                                     @bind-Value="_endTurn"
+                                     Label="To turn"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Min="1"
+                                     Class="baron-influence-field" />
+                }
+            </div>
+
+            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyEventDTO Event { get; set; } = new();
+    [Parameter] public int CurrentTurn { get; set; } = 1;
+
+    private string _name = string.Empty;
+    private string? _description;
+    private int _startTurn = 1;
+    private int _endTurn = 1;
+    private bool _noEnd;
+    private PpbVector _additive = new();
+    private PpbVector _percent = new();
+
+    protected override void OnInitialized()
+    {
+        _name = Event.Name;
+        _description = Event.Description;
+        _additive = Event.Additive.Clone();
+        _percent = Event.Percent.Clone();
+
+        if (Event.Id <= 0)
+        {
+            _startTurn = Math.Max(1, CurrentTurn);
+            _noEnd = true;
+            _endTurn = _startTurn;
+        }
+        else
+        {
+            _startTurn = Math.Max(1, Event.StartTurn);
+            _noEnd = Event.EndTurn is null;
+            _endTurn = Event.EndTurn ?? _startTurn;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        if (_startTurn < 1)
+        {
+            _snackBar.Add("Start turn must be at least 1.", Severity.Warning);
+            return;
+        }
+
+        if (!_noEnd && _endTurn < _startTurn)
+        {
+            _snackBar.Add("End turn cannot be before start turn.", Severity.Warning);
+            return;
+        }
+
+        Event.Name = _name.Trim();
+        Event.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        Event.StartTurn = _startTurn;
+        Event.EndTurn = _noEnd ? null : _endTurn;
+        Event.Additive = _additive.Clone();
+        Event.Percent = _percent.Clone();
+        MudDialog.Close(DialogResult.Ok(Event));
+    }
+}

@@ -1,0 +1,268 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<BaronySection Title="Events">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        @if (Events.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No events yet.
+                @if (CanManage)
+                {
+                    <text> Add one below.</text>
+                }
+            </MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--advisors ppb-table--city-buildings ppb-table--events ppb-table--lined">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                            <th rowspan="2" class="event-col-turns" title="Active from turn – to turn (∞ = ongoing)">Turns</th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th colspan="2" title="@info.NamePl">@PpbShort(info.Key)</th>
+                            }
+                        </tr>
+                        <tr>
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <th class="ppb-subcol ppb-subcol--add">+</th>
+                                <th class="ppb-subcol ppb-subcol--pct">%</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in OrderedEvents)
+                        {
+                            var inactive = !item.IsActiveOnTurn(CurrentTurn);
+                            <tr class="@(inactive ? "event-row--inactive" : null)">
+                                <td class="city-building-col-name">
+                                    <div class="city-building-name-cell">
+                                        <span class="city-building-name-text"
+                                              title="@NameTooltip(item)">@item.Name</span>
+                                        @if (CanManage)
+                                        {
+                                            <span class="city-building-name-actions">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               title="Edit event"
+                                                               OnClick="@(() => EditAsync(item))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                               Size="Size.Small"
+                                                               Color="Color.Error"
+                                                               title="Remove event"
+                                                               OnClick="@(() => DeleteAsync(item))" />
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="event-col-turns" title="@TurnTooltip(item)">@item.TurnRangeLabel</td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@PpbCellClass(item.Additive[info.Key], inactive)">@FmtAdd(item.Additive[info.Key])</td>
+                                    <td class="@PpbCellClass(item.Percent[info.Key], inactive)">@FmtPct(item.Percent[info.Key])</td>
+                                }
+                            </tr>
+                        }
+
+                        <tr class="ppb-summary-row">
+                            <td class="ppb-row-label city-building-col-name">Σ section</td>
+                            <td class="event-col-turns"></td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                                <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (CanManage)
+        {
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddAsync">
+                    Add Event
+                </MudButton>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public int CurrentTurn { get; set; } = 1;
+    [Parameter] public List<BaronyEventDTO> Events { get; set; } = new();
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private List<BaronyEventDTO> OrderedEvents =>
+        Events
+            .OrderBy(e => e.StartTurn)
+            .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private IEnumerable<BaronyEventDTO> ActiveEvents =>
+        Events.Where(e => e.IsActiveOnTurn(CurrentTurn));
+
+    private PpbVector AdditiveSum => PpbVector.Sum(ActiveEvents.Select(e => e.Additive));
+    private PpbVector PercentSum => PpbVector.Sum(ActiveEvents.Select(e => e.Percent));
+    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.EventRows(Events, CurrentTurn));
+
+    private static string? NameTooltip(BaronyEventDTO item) =>
+        string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim();
+
+    private string TurnTooltip(BaronyEventDTO item)
+    {
+        var range = item.EndTurn is int end
+            ? $"Turns {item.StartTurn}–{end}"
+            : $"From turn {item.StartTurn} (ongoing)";
+        var status = item.IsActiveOnTurn(CurrentTurn)
+            ? $"Active now (turn {CurrentTurn})."
+            : $"Not active on turn {CurrentTurn}.";
+        return $"{range}. {status}";
+    }
+
+    private async Task AddAsync()
+    {
+        var draft = new BaronyEventDTO
+        {
+            BaronyId = BaronyId,
+            StartTurn = Math.Max(1, CurrentTurn),
+            EndTurn = null,
+        };
+        await OpenEditAsync(draft, isNew: true);
+    }
+
+    private async Task EditAsync(BaronyEventDTO item) => await OpenEditAsync(Clone(item), isNew: false);
+
+    private async Task OpenEditAsync(BaronyEventDTO draft, bool isNew)
+    {
+        var parameters = new DialogParameters<EventEditDialog>
+        {
+            { x => x.Event, draft },
+            { x => x.CurrentTurn, CurrentTurn },
+        };
+
+        var dialog = await _dialogService.ShowAsync<EventEditDialog>(
+            isNew ? "Add Event" : "Edit Event",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyEventDTO saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveEvent(saved);
+            _snackBar.Add(isNew ? "Event added." : "Event updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save event: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(BaronyEventDTO item)
+    {
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Remove event",
+            $"Remove “{item.Name}”?",
+            yesText: "Remove",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteEvent(item.Id);
+            _snackBar.Add("Event removed.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not remove event: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static BaronyEventDTO Clone(BaronyEventDTO source) => new()
+    {
+        Id = source.Id,
+        BaronyId = source.BaronyId,
+        Name = source.Name,
+        Description = source.Description,
+        StartTurn = source.StartTurn,
+        EndTurn = source.EndTurn,
+        Additive = source.Additive.Clone(),
+        Percent = source.Percent.Clone(),
+    };
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v);
+    }
+
+    private static string FmtPct(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v) + "%";
+    }
+
+    private static string Num(decimal v)
+    {
+        var r = decimal.Round(v, 2);
+        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+    }
+
+    private static string ValueClass(decimal v) => v switch
+    {
+        > 0 => "ppb-pos",
+        < 0 => "ppb-neg",
+        _ => "ppb-zero",
+    };
+
+    private static string PpbCellClass(decimal v, bool inactive)
+    {
+        var valueClass = ValueClass(v);
+        return inactive ? $"{valueClass} ppb-cell-inactive ppb-cell-struck" : valueClass;
+    }
+}

@@ -104,5 +104,14 @@ namespace DA_DataAccess.BaronyData
 
         public string? Description { get; set; }
         public string? FormulaText { get; set; }
+
+        /// <summary>When false, PPB is shown struck through and excluded from Domain Panel / budget totals.</summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>Why the improvement is inactive (shown on name hover).</summary>
+        public string? InactiveReason { get; set; }
+
+        /// <summary>Optional icon override (custom improvements). Relative URL under wwwroot.</summary>
+        public string? IconUrl { get; set; }
     }
 }

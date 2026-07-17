@@ -1,0 +1,99 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Custom improvement</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
+            <MudTextField @bind-Value="_name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Immediate="true"
+                          Class="baron-influence-field" />
+
+            <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Icon</MudText>
+            <div class="custom-improvement-icon-picker">
+                @foreach (var icon in MapImprovement.IconChoices)
+                {
+                    var url = icon;
+                    var selected = string.Equals(_iconUrl, url, StringComparison.OrdinalIgnoreCase);
+                    <button type="button"
+                            class="custom-improvement-icon-picker__btn @(selected ? "custom-improvement-icon-picker__btn--selected" : "")"
+                            title="@url"
+                            aria-label="@url"
+                            @onclick="() => _iconUrl = url">
+                        <img src="@url" alt="" class="custom-improvement-icon-picker__img" />
+                    </button>
+                }
+            </div>
+
+            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Confirm</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string? InitialName { get; set; }
+    [Parameter] public string? InitialIconUrl { get; set; }
+    [Parameter] public PpbVector? InitialAdditive { get; set; }
+    [Parameter] public PpbVector? InitialPercent { get; set; }
+
+    private string _name = string.Empty;
+    private string _iconUrl = MapImprovement.StoneTowerIconUrl;
+    private PpbVector _additive = new();
+    private PpbVector _percent = new();
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(InitialName))
+            _name = InitialName.Trim();
+        _iconUrl = string.IsNullOrWhiteSpace(InitialIconUrl)
+            ? MapImprovement.StoneTowerIconUrl
+            : InitialIconUrl.Trim();
+        if (!MapImprovement.IconChoices.Contains(_iconUrl, StringComparer.OrdinalIgnoreCase))
+            _iconUrl = MapImprovement.StoneTowerIconUrl;
+        _additive = InitialAdditive?.Clone() ?? new PpbVector();
+        _percent = InitialPercent?.Clone() ?? new PpbVector();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        var trimmed = _name.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            _snackBar.Add("Enter a name.", Severity.Warning);
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(new CustomImprovementDraft
+        {
+            Name = trimmed,
+            IconUrl = _iconUrl,
+            Additive = _additive.Clone(),
+            Percent = _percent.Clone(),
+        }));
+    }
+
+    public sealed class CustomImprovementDraft
+    {
+        public string Name { get; set; } = string.Empty;
+        public string IconUrl { get; set; } = MapImprovement.StoneTowerIconUrl;
+        public PpbVector Additive { get; set; } = new();
+        public PpbVector Percent { get; set; } = new();
+    }
+}

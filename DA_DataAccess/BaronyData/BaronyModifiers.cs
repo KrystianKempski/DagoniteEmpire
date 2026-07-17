@@ -96,6 +96,9 @@ namespace DA_DataAccess.BaronyData
 
         public string? Description { get; set; }
         public string? FormulaText { get; set; }
+
+        /// <summary>When false, PPB is excluded from Domain Panel / budget totals.</summary>
+        public bool IsActive { get; set; } = true;
     }
 
     /// <summary>Wydarzenie definiowane przez MG (sekcja "Wydarzenia").</summary>
@@ -106,8 +109,12 @@ namespace DA_DataAccess.BaronyData
         public int BaronyId { get; set; }
 
         public string Name { get; set; } = string.Empty;
-        public int TurnNumber { get; set; }
-        public bool IsActive { get; set; } = true;
+
+        /// <summary>First turn on which the event applies (inclusive).</summary>
+        public int StartTurn { get; set; } = 1;
+
+        /// <summary>Last turn (inclusive). Null = ongoing / no end.</summary>
+        public int? EndTurn { get; set; }
 
         public string AdditiveJson { get; set; } = "{}";
         public string PercentJson { get; set; } = "{}";

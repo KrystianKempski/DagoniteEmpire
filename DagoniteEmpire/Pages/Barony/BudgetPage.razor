@@ -142,9 +142,9 @@ else if (_overview is not null)
             new(BudgetSource.Economy, economyIncome, baronIncomeMod, Adj(economyIncome, baronIncomeMod), "PPB Economy -> turn income"),
             new(BudgetSource.Fief, 0, 0, 0, "[TO BE COMPLETED] Income from vassals"),
             new(BudgetSource.Buildings, SumGold(_overview.Buildings.Select(b => b.Additive)), 0, SumGold(_overview.Buildings.Select(b => b.Additive)), "Buildings adding gold"),
-            new(BudgetSource.Improvements, SumGold(_overview.Improvements.Select(i => i.Additive)), 0, SumGold(_overview.Improvements.Select(i => i.Additive)), "Improvements adding gold"),
-            new(BudgetSource.Decrees, SumGold(_overview.Decrees.Select(d => d.Additive)), 0, SumGold(_overview.Decrees.Select(d => d.Additive)), null),
-            new(BudgetSource.Events, SumGold(_overview.Events.Where(e => e.IsActive).Select(e => e.Additive)), 0, SumGold(_overview.Events.Where(e => e.IsActive).Select(e => e.Additive)), null),
+            new(BudgetSource.Improvements, SumGold(_overview.Improvements.Where(i => i.IsActive).Select(i => i.Additive)), 0, SumGold(_overview.Improvements.Where(i => i.IsActive).Select(i => i.Additive)), "Improvements adding gold"),
+            new(BudgetSource.Decrees, SumGold(_overview.Decrees.Where(d => d.IsActive).Select(d => d.Additive)), 0, SumGold(_overview.Decrees.Where(d => d.IsActive).Select(d => d.Additive)), null),
+            new(BudgetSource.Events, SumGold(ActiveEventAdditives()), 0, SumGold(ActiveEventAdditives()), null),
             new(BudgetSource.Other, 0, 0, 0, "[TO BE COMPLETED]"),
         };
 
@@ -152,15 +152,21 @@ else if (_overview is not null)
         {
             new(BudgetSource.Advisors, _overview.Advisors.Sum(a => a.UpkeepGold), 0, _overview.Advisors.Sum(a => a.UpkeepGold), "Office upkeep cost"),
             new(BudgetSource.Buildings, SumGoldNeg(_overview.Buildings.Select(b => b.Additive)), 0, SumGoldNeg(_overview.Buildings.Select(b => b.Additive)), "Buildings subtracting gold"),
-            new(BudgetSource.Improvements, SumGoldNeg(_overview.Improvements.Select(i => i.Additive)), 0, SumGoldNeg(_overview.Improvements.Select(i => i.Additive)), null),
-            new(BudgetSource.Decrees, SumGoldNeg(_overview.Decrees.Select(d => d.Additive)), 0, SumGoldNeg(_overview.Decrees.Select(d => d.Additive)), null),
-            new(BudgetSource.Events, SumGoldNeg(_overview.Events.Where(e => e.IsActive).Select(e => e.Additive)), 0, SumGoldNeg(_overview.Events.Where(e => e.IsActive).Select(e => e.Additive)), null),
+            new(BudgetSource.Improvements, SumGoldNeg(_overview.Improvements.Where(i => i.IsActive).Select(i => i.Additive)), 0, SumGoldNeg(_overview.Improvements.Where(i => i.IsActive).Select(i => i.Additive)), null),
+            new(BudgetSource.Decrees, SumGoldNeg(_overview.Decrees.Where(d => d.IsActive).Select(d => d.Additive)), 0, SumGoldNeg(_overview.Decrees.Where(d => d.IsActive).Select(d => d.Additive)), null),
+            new(BudgetSource.Events, SumGoldNeg(ActiveEventAdditives()), 0, SumGoldNeg(ActiveEventAdditives()), null),
             new(BudgetSource.Other, 0, 0, 0, "[TO BE COMPLETED]"),
         };
 
         _totalIncome = _incomeLines.Sum(l => l.Adjusted);
         _totalExpense = _expenseLines.Sum(l => l.Adjusted);
         _turnBalance = _totalIncome - _totalExpense;
+    }
+
+    private IEnumerable<PpbVector> ActiveEventAdditives()
+    {
+        var turn = _overview!.Barony.TurnNumber;
+        return _overview.Events.Where(e => e.IsActiveOnTurn(turn)).Select(e => e.Additive);
     }
 
     private static decimal SumGold(IEnumerable<PpbVector> vectors)

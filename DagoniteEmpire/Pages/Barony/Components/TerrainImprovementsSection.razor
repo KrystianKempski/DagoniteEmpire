@@ -1,0 +1,241 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<BaronySection Title="Terrain Improvements">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        @if (VisibleImprovements.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No terrain improvements in your domain yet. Place them on tiles belonging to the baron’s primary domain.</MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--advisors ppb-table--city-buildings ppb-table--terrain-improvements ppb-table--lined">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                            <th rowspan="2" class="city-building-col-owner" title="Land ownership">Owner</th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th colspan="2" title="@info.NamePl">@PpbShort(info.Key)</th>
+                            }
+                        </tr>
+                        <tr>
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <th class="ppb-subcol ppb-subcol--add">+</th>
+                                <th class="ppb-subcol ppb-subcol--pct">%</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in VisibleImprovements)
+                        {
+                            var vassal = IsVassal(item);
+                            var inactive = !item.IsActive;
+                            <tr class="@(inactive ? "terrain-improvement-row--inactive" : null)">
+                                <td class="city-building-col-name">
+                                    <div class="city-building-name-cell">
+                                        <span class="city-building-name-text"
+                                              title="@NameTooltip(item)">@DisplayLabel(item)</span>
+                                        @if (CanManage)
+                                        {
+                                            <span class="city-building-name-actions">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               title="Edit improvement"
+                                                               OnClick="@(() => EditAsync(item))" />
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="city-building-col-owner" title="@BaronyCalc.OwnershipTooltip(vassal)">
+                                    @if (vassal)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.Shield"
+                                                 Size="Size.Small"
+                                                 Class="terrain-improvement-owner terrain-improvement-owner--vassal" />
+                                    }
+                                    else
+                                    {
+                                        <img src="/icons/jewel-crown.svg"
+                                             alt="Demesne"
+                                             width="20"
+                                             height="20"
+                                             class="terrain-improvement-owner__crown"
+                                             title="@BaronyCalc.OwnershipTooltip(false)" />
+                                    }
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@PpbCellClass(item.Additive[info.Key], inactive)">@FmtAdd(item.Additive[info.Key])</td>
+                                    <td class="@PpbCellClass(item.Percent[info.Key], inactive)">@FmtPct(item.Percent[info.Key])</td>
+                                }
+                            </tr>
+                        }
+
+                        <tr class="ppb-summary-row">
+                            <td class="ppb-row-label city-building-col-name">Σ section</td>
+                            <td class="city-building-col-owner"></td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                                <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public List<TerrainImprovementDTO> Improvements { get; set; } = new();
+    [Parameter] public List<TerrainTileDTO> Tiles { get; set; } = new();
+    [Parameter] public List<FiefDTO> Fiefs { get; set; } = new();
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private Dictionary<int, TerrainTileDTO> TilesById =>
+        Tiles.ToDictionary(t => t.Id);
+
+    private Dictionary<int, FiefDTO> FiefsById =>
+        Fiefs.ToDictionary(f => f.Id);
+
+    private List<TerrainImprovementDTO> VisibleImprovements =>
+        Improvements.Where(BaronyCalc.ShowsOnDomainPanel)
+            .OrderBy(DisplayLabel, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private IEnumerable<TerrainImprovementDTO> ActiveImprovements =>
+        VisibleImprovements.Where(i => i.IsActive);
+
+    private PpbVector AdditiveSum => PpbVector.Sum(ActiveImprovements.Select(i => i.Additive));
+    private PpbVector PercentSum => PpbVector.Sum(ActiveImprovements.Select(i => i.Percent));
+    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.ImprovementRows(Improvements));
+
+    private static string DisplayLabel(TerrainImprovementDTO item) => BaronyCalc.ImprovementDisplayLabel(item);
+
+    private static string? NameTooltip(TerrainImprovementDTO item)
+    {
+        if (item.IsActive)
+            return null;
+        return string.IsNullOrWhiteSpace(item.InactiveReason)
+            ? "Inactive — excluded from totals."
+            : item.InactiveReason.Trim();
+    }
+
+    private bool IsVassal(TerrainImprovementDTO item)
+    {
+        if (item.TileId is not int tileId || !TilesById.TryGetValue(tileId, out var tile))
+            return false;
+        return BaronyCalc.IsVassalFiefTile(tile, FiefsById);
+    }
+
+    private async Task EditAsync(TerrainImprovementDTO item)
+    {
+        var draft = Clone(item);
+        var parameters = new DialogParameters<TerrainImprovementEditDialog>
+        {
+            { x => x.Improvement, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<TerrainImprovementEditDialog>(
+            "Edit Improvement",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not TerrainImprovementDTO saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveImprovement(saved);
+            _snackBar.Add("Improvement updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save improvement: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static TerrainImprovementDTO Clone(TerrainImprovementDTO source) => new()
+    {
+        Id = source.Id,
+        BaronyId = source.BaronyId,
+        TileId = source.TileId,
+        TemplateId = source.TemplateId,
+        Name = source.Name,
+        Description = source.Description,
+        FormulaText = source.FormulaText,
+        IsActive = source.IsActive,
+        InactiveReason = source.InactiveReason,
+        IconUrl = source.IconUrl,
+        Additive = source.Additive.Clone(),
+        Percent = source.Percent.Clone(),
+    };
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v);
+    }
+
+    private static string FmtPct(decimal v)
+    {
+        if (v == 0m)
+            return "·";
+        return (v > 0 ? "+" : "") + Num(v) + "%";
+    }
+
+    private static string Num(decimal v)
+    {
+        var r = decimal.Round(v, 2);
+        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+    }
+
+    private static string ValueClass(decimal v) => v switch
+    {
+        > 0 => "ppb-pos",
+        < 0 => "ppb-neg",
+        _ => "ppb-zero",
+    };
+
+    private static string PpbCellClass(decimal v, bool inactive)
+    {
+        var valueClass = ValueClass(v);
+        return inactive ? $"{valueClass} ppb-cell-inactive ppb-cell-struck" : valueClass;
+    }
+}

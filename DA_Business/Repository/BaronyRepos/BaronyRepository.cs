@@ -168,18 +168,39 @@ namespace DA_Business.Repository.BaronyRepos
                 if (barony is null)
                     return null;
 
+                var primaryDomainId = await ctx.TerrainMapDomains.AsNoTracking()
+                    .Where(d => d.BaronyId == baronyId && d.IsPrimary)
+                    .Select(d => (int?)d.Id)
+                    .FirstOrDefaultAsync();
+
+                var tiles = await ctx.TerrainTiles.AsNoTracking()
+                    .Where(x => x.BaronyId == baronyId)
+                    .ToListAsync();
+
+                // Domain Panel / PPB: only improvements on tiles inside the player's primary domain.
+                var playerTileIds = primaryDomainId is int pid
+                    ? tiles.Where(t => t.MapDomainId == pid).Select(t => t.Id).ToHashSet()
+                    : new HashSet<int>();
+
+                var improvements = (await ctx.TerrainImprovements.AsNoTracking()
+                        .Where(x => x.BaronyId == baronyId)
+                        .ToListAsync())
+                    .Where(e => e.TileId is int tid && playerTileIds.Contains(tid))
+                    .Select(ToDTO)
+                    .ToList();
+
                 return new BaronyOverviewDTO
                 {
                     Barony = ToDTO(barony),
                     Advisors = (await ctx.Advisors.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Buildings = (await ctx.BaronyBuildings.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     SocialRelations = (await ctx.SocialGroupRelations.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
-                    Improvements = (await ctx.TerrainImprovements.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    Improvements = improvements,
                     Decrees = (await ctx.Decrees.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Events = (await ctx.BaronyEvents.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     CommunityModifiers = (await ctx.CommunityModifiers.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Fiefs = (await ctx.Fiefs.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
-                    Tiles = (await ctx.TerrainTiles.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    Tiles = tiles.Select(ToDTO).ToList(),
                     Projects = (await ctx.BaronyProjects.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                 };
             }
@@ -862,6 +883,7 @@ namespace DA_Business.Repository.BaronyRepos
         {
             Id = e.Id, BaronyId = e.BaronyId, Name = e.Name, Additive = De(e.AdditiveJson),
             Percent = De(e.PercentJson), Description = e.Description, FormulaText = e.FormulaText,
+            IsActive = e.IsActive,
         };
 
         private static Decree ToEntity(DecreeDTO d) { var e = new Decree(); ApplyDecree(e, d); e.Id = d.Id; return e; }
@@ -870,12 +892,14 @@ namespace DA_Business.Repository.BaronyRepos
         {
             e.BaronyId = d.BaronyId; e.Name = d.Name; e.AdditiveJson = Ser(d.Additive);
             e.PercentJson = Ser(d.Percent); e.Description = d.Description; e.FormulaText = d.FormulaText;
+            e.IsActive = d.IsActive;
         }
 
         // ---------------- Mapping: Event ----------------
         private static BaronyEventDTO ToDTO(BaronyEvent e) => new()
         {
-            Id = e.Id, BaronyId = e.BaronyId, Name = e.Name, TurnNumber = e.TurnNumber, IsActive = e.IsActive,
+            Id = e.Id, BaronyId = e.BaronyId, Name = e.Name,
+            StartTurn = e.StartTurn, EndTurn = e.EndTurn,
             Additive = De(e.AdditiveJson), Percent = De(e.PercentJson), Description = e.Description,
         };
 
@@ -883,7 +907,8 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static void ApplyEvent(BaronyEvent e, BaronyEventDTO d)
         {
-            e.BaronyId = d.BaronyId; e.Name = d.Name; e.TurnNumber = d.TurnNumber; e.IsActive = d.IsActive;
+            e.BaronyId = d.BaronyId; e.Name = d.Name;
+            e.StartTurn = d.StartTurn; e.EndTurn = d.EndTurn;
             e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent); e.Description = d.Description;
         }
 
@@ -1023,6 +1048,7 @@ namespace DA_Business.Repository.BaronyRepos
         {
             Id = e.Id, BaronyId = e.BaronyId, TileId = e.TileId, TemplateId = e.TemplateId, Name = e.Name,
             Additive = De(e.AdditiveJson), Percent = De(e.PercentJson), Description = e.Description, FormulaText = e.FormulaText,
+            IsActive = e.IsActive, InactiveReason = e.InactiveReason, IconUrl = e.IconUrl,
         };
 
         private static TerrainImprovement ToEntity(TerrainImprovementDTO d) { var e = new TerrainImprovement(); ApplyImprovement(e, d); e.Id = d.Id; return e; }
@@ -1031,6 +1057,7 @@ namespace DA_Business.Repository.BaronyRepos
         {
             e.BaronyId = d.BaronyId; e.TileId = d.TileId; e.TemplateId = d.TemplateId; e.Name = d.Name;
             e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent); e.Description = d.Description; e.FormulaText = d.FormulaText;
+            e.IsActive = d.IsActive; e.InactiveReason = d.InactiveReason; e.IconUrl = d.IconUrl;
         }
 
         // ---------------- Mapping: Project ----------------

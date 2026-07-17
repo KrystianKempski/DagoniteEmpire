@@ -119,7 +119,7 @@ else if (_overview is not null)
     private PpbVector SumEventIncome()
     {
         var v = new PpbVector();
-        foreach (var e in _overview!.Events.Where(x => x.IsActive))
+        foreach (var e in _overview!.Events.Where(x => x.IsActiveOnTurn(_overview.Barony.TurnNumber)))
             v.AddInPlace(e.Additive);
         return v;
     }
