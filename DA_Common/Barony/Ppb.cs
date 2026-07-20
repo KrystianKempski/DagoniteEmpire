@@ -20,12 +20,14 @@ namespace DA_Common.Barony
         Treasury = 12,
     }
 
-    /// <summary>Metadane pojedynczego PPB (nazwa PL, skrót, czy kumuluje się między turami).</summary>
+    /// <summary>Metadane pojedynczego PPB (nazwy PL/EN, skróty, czy kumuluje się między turami).</summary>
     public sealed class PpbInfo
     {
         public Ppb Key { get; init; }
         public string NamePl { get; init; } = string.Empty;
         public string ShortPl { get; init; } = string.Empty;
+        public string NameEn { get; init; } = string.Empty;
+        public string ShortEn { get; init; } = string.Empty;
 
         /// <summary>Czy wartość przenosi się między turami (akumulator), np. skarbiec.</summary>
         public bool IsCumulative { get; init; }
@@ -40,19 +42,19 @@ namespace DA_Common.Barony
 
         public static readonly IReadOnlyList<PpbInfo> All = new List<PpbInfo>
         {
-            new() { Key = Ppb.Food,         NamePl = "Wyżywienie",   ShortPl = "Wyż.",   IsCumulative = false },
-            new() { Key = Ppb.Economy,      NamePl = "Ekonomia",     ShortPl = "Ekon.",  IsCumulative = false },
-            new() { Key = Ppb.Production,    NamePl = "Produkcja",    ShortPl = "Prod.",  IsCumulative = false },
-            new() { Key = Ppb.Loyalty,      NamePl = "Lojalność",    ShortPl = "Loj.",   IsCumulative = false },
-            new() { Key = Ppb.Stability,    NamePl = "Stabilność",   ShortPl = "Stab.",  IsCumulative = false },
-            new() { Key = Ppb.Law,          NamePl = "Prawo",        ShortPl = "Prawo",  IsCumulative = false },
-            new() { Key = Ppb.Corruption,   NamePl = "Korupcja",     ShortPl = "Korup.", IsCumulative = false },
-            new() { Key = Ppb.Science,      NamePl = "Nauka",        ShortPl = "Nauka",  IsCumulative = false },
-            new() { Key = Ppb.Magic,        NamePl = "Magia",        ShortPl = "Magia",  IsCumulative = false },
-            new() { Key = Ppb.Culture,      NamePl = "Kultura",      ShortPl = "Kult.",  IsCumulative = false },
-            new() { Key = Ppb.Intelligence, NamePl = "Wywiad",       ShortPl = "Wyw.",   IsCumulative = false },
-            new() { Key = Ppb.Defense,      NamePl = "Obrona",       ShortPl = "Obr.",   IsCumulative = false },
-            new() { Key = Ppb.Treasury,     NamePl = "Skarb/Złoto",  ShortPl = "Złoto",  IsCumulative = true  },
+            new() { Key = Ppb.Food,         NamePl = "Wyżywienie",   ShortPl = "Wyż.",   NameEn = "Food",          ShortEn = "Food",  IsCumulative = false },
+            new() { Key = Ppb.Economy,      NamePl = "Ekonomia",     ShortPl = "Ekon.",  NameEn = "Economy",       ShortEn = "Econ",  IsCumulative = false },
+            new() { Key = Ppb.Production,    NamePl = "Produkcja",    ShortPl = "Prod.",  NameEn = "Production",    ShortEn = "Prod",  IsCumulative = false },
+            new() { Key = Ppb.Loyalty,      NamePl = "Lojalność",    ShortPl = "Loj.",   NameEn = "Loyalty",       ShortEn = "Loy",   IsCumulative = false },
+            new() { Key = Ppb.Stability,    NamePl = "Stabilność",   ShortPl = "Stab.",  NameEn = "Stability",     ShortEn = "Stab",  IsCumulative = false },
+            new() { Key = Ppb.Law,          NamePl = "Prawo",        ShortPl = "Prawo",  NameEn = "Law",           ShortEn = "Law",   IsCumulative = false },
+            new() { Key = Ppb.Corruption,   NamePl = "Korupcja",     ShortPl = "Korup.", NameEn = "Corruption",    ShortEn = "Corr",  IsCumulative = false },
+            new() { Key = Ppb.Science,      NamePl = "Nauka",        ShortPl = "Nauka",  NameEn = "Science",       ShortEn = "Sci",   IsCumulative = false },
+            new() { Key = Ppb.Magic,        NamePl = "Magia",        ShortPl = "Magia",  NameEn = "Magic",         ShortEn = "Mag",   IsCumulative = false },
+            new() { Key = Ppb.Culture,      NamePl = "Kultura",      ShortPl = "Kult.",  NameEn = "Culture",       ShortEn = "Cult",  IsCumulative = false },
+            new() { Key = Ppb.Intelligence, NamePl = "Wywiad",       ShortPl = "Wyw.",   NameEn = "Intelligence",  ShortEn = "Intel", IsCumulative = false },
+            new() { Key = Ppb.Defense,      NamePl = "Obrona",       ShortPl = "Obr.",   NameEn = "Defense",       ShortEn = "Def",   IsCumulative = false },
+            new() { Key = Ppb.Treasury,     NamePl = "Skarb/Złoto",  ShortPl = "Złoto",  NameEn = "Treasury/Gold", ShortEn = "Gold",  IsCumulative = true  },
         };
 
         public static PpbInfo Info(Ppb p) => All[(int)p];
@@ -60,5 +62,9 @@ namespace DA_Common.Barony
         public static string Name(Ppb p) => All[(int)p].NamePl;
 
         public static string Short(Ppb p) => All[(int)p].ShortPl;
+
+        public static string NameEnglish(Ppb p) => All[(int)p].NameEn;
+
+        public static string ShortEnglish(Ppb p) => All[(int)p].ShortEn;
     }
 }

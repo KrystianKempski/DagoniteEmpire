@@ -1,0 +1,78 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IJSRuntime Js
+
+@if (string.IsNullOrWhiteSpace(Text))
+{
+    @ChildContent
+}
+else
+{
+    <MudTooltip Placement="@_placement"
+                Arrow="false"
+                Color="Color.Transparent"
+                TooltipClass="barony-tip-popover"
+                ShowOnHover="false"
+                ShowOnFocus="false"
+                @bind-Visible="_visible">
+        <ChildContent>
+            <span @ref="_anchor"
+                  class="barony-tip-anchor"
+                  @onpointerenter="ShowAsync"
+                  @onpointerleave="Hide">
+                @ChildContent
+            </span>
+        </ChildContent>
+        <TooltipContent>
+            <div class="barony-tip__box">
+                @if (!string.IsNullOrWhiteSpace(Title))
+                {
+                    <div class="barony-tip__title">@Title</div>
+                }
+                <div class="barony-tip__body">@Text</div>
+            </div>
+        </TooltipContent>
+    </MudTooltip>
+}
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public Placement Placement { get; set; } = Placement.Right;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private ElementReference _anchor;
+    private Placement _placement = Placement.Right;
+    private bool _visible;
+
+    protected override void OnParametersSet()
+    {
+        if (!_visible)
+            _placement = Placement;
+    }
+
+    private async Task ShowAsync()
+    {
+        try
+        {
+            var name = await Js.InvokeAsync<string>(
+                "baronyPickTooltipPlacement",
+                _anchor,
+                Placement.ToString());
+            _placement = name switch
+            {
+                "Left" => Placement.Left,
+                "Top" => Placement.Top,
+                "Bottom" => Placement.Bottom,
+                _ => Placement.Right,
+            };
+        }
+        catch
+        {
+            _placement = Placement;
+        }
+
+        _visible = true;
+    }
+
+    private void Hide() => _visible = false;
+}

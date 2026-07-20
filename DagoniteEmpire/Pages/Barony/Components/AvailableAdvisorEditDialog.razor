@@ -1,0 +1,48 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" />
+        <MudTextField @bind-Value="_description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" />
+        <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">Skills</MudText>
+        <PpbVectorEditor Value="@_skills" ValueChanged="v => _skills = v" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public AvailableAdvisorDTO Advisor { get; set; } = new();
+
+    private string _name = string.Empty;
+    private string? _description;
+    private PpbVector _skills = new();
+
+    protected override void OnInitialized()
+    {
+        _name = Advisor.Name;
+        _description = Advisor.Description;
+        _skills = Advisor.Skills.Clone();
+        _skills[Ppb.Treasury] = 0m;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+        _skills[Ppb.Treasury] = 0m;
+        Advisor.Name = _name.Trim();
+        Advisor.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        Advisor.Skills = _skills;
+        MudDialog.Close(DialogResult.Ok(Advisor));
+    }
+}

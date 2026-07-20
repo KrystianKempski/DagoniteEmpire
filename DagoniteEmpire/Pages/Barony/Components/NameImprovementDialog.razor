@@ -16,6 +16,26 @@
                           Class="baron-influence-field"
                           Required="true"
                           Immediate="true" />
+            @if (NeedsPopulation)
+            {
+                <MudNumericField T="int"
+                                 @bind-Value="_population"
+                                 Label="Population (Pop)"
+                                 HelperText="@PopulationHelp"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="0"
+                                 Class="baron-influence-field" />
+            }
+            @if (IsVillage)
+            {
+                <MudCheckBox T="bool"
+                             @bind-Value="_hasPalisade"
+                             Label="Palisade (+5 Defense, +3 Stability, +1 Law)"
+                             Color="Color.Primary"
+                             Dense="true"
+                             Class="baron-influence-field" />
+            }
         </div>
     </DialogContent>
     <DialogActions>
@@ -25,11 +45,34 @@
 </MudDialog>
 
 @code {
+    public sealed class PlaceNameDraft
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Population { get; set; }
+        public bool HasPalisade { get; set; }
+    }
+
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public string ImprovementKind { get; set; } = MapImprovement.Town;
     [Parameter] public string? InitialName { get; set; }
+    [Parameter] public int InitialPopulation { get; set; }
+    [Parameter] public bool InitialHasPalisade { get; set; }
 
     private string _name = string.Empty;
+    private int _population;
+    private bool _hasPalisade;
+
+    private bool IsVillage =>
+        string.Equals(ImprovementKind, MapImprovement.Village, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsTown =>
+        string.Equals(ImprovementKind, MapImprovement.Town, StringComparison.OrdinalIgnoreCase);
+
+    private bool NeedsPopulation => IsVillage || IsTown;
+
+    private string PopulationHelp => IsTown
+        ? "Town PPB is computed from Population."
+        : "Village PPB is computed from Population, tile fertility, and palisade.";
 
     private string Title => $"Name this {MapImprovement.DisplayName(ImprovementKind).ToLowerInvariant()}";
 
@@ -37,6 +80,8 @@
     {
         if (!string.IsNullOrWhiteSpace(InitialName))
             _name = InitialName;
+        _population = Math.Max(0, InitialPopulation);
+        _hasPalisade = InitialHasPalisade;
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -50,6 +95,11 @@
             return;
         }
 
-        MudDialog.Close(DialogResult.Ok(trimmed));
+        MudDialog.Close(DialogResult.Ok(new PlaceNameDraft
+        {
+            Name = trimmed,
+            Population = NeedsPopulation ? Math.Max(0, _population) : 0,
+            HasPalisade = IsVillage && _hasPalisade,
+        }));
     }
 }

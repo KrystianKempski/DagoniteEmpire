@@ -23,6 +23,9 @@ v1: obliczenia w C# + zapisany czytelny tekst formuły do podglądu (hover).
 Pełny edytowalny silnik wyrażeń z DB → osobna, późniejsza faza.
 Powód: szybkie dostarczenie wartości, uniknięcie przedwczesnej złożoności silnika.
 
+**Katalog dokumentacyjny (2026-07-19):** [`FORMULAS.md`](./FORMULAS.md) + [`formulas.json`](./formulas.json)
+— zbiorczy rejestr formuł; JSON jako seed pod przyszły silnik.
+
 ### D4. Centralny typ `PpbVector`
 Wszystkie tabele Panelu Domeny mają kolumny = PPB. Wprowadzamy jeden typ wartości
 `PpbVector` (13 pól decimal), używany jako `Additive` i `Percent` przez każde

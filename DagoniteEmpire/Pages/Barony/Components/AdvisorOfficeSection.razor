@@ -59,6 +59,8 @@
 @code {
     [Parameter] public AdvisorDTO Advisor { get; set; } = new();
     [Parameter] public List<AdvisorInfluenceModifierDTO> CustomModifiers { get; set; } = new();
+    [Parameter] public List<AvailableAdvisorDTO> AvailableAdvisors { get; set; } = new();
+    [Parameter] public IEnumerable<AdvisorDTO>? AllAdvisors { get; set; }
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
@@ -82,10 +84,17 @@
 
     private async Task EditProfileAsync()
     {
+        var occupiedIds = AvailableAdvisors
+            .Where(a => AllOffices.Any(o => o.AvailableAdvisorId == a.Id && o.Id != Advisor.Id))
+            .Select(a => a.Id)
+            .ToHashSet();
+
         var parameters = new DialogParameters<AdvisorProfileEditDialog>
         {
             { x => x.Advisor, CloneAdvisor() },
             { x => x.AllowTitleEdit, !BaronyCalc.IsCoreOffice(Advisor) },
+            { x => x.AvailableAdvisors, AvailableAdvisors },
+            { x => x.OccupiedAvailableAdvisorIds, occupiedIds },
         };
 
         var dialog = await _dialogService.ShowAsync<AdvisorProfileEditDialog>(
@@ -225,8 +234,24 @@
     {
         BaronyCalc.SyncAdvisorAdditive(Advisor, CustomModifiers);
         await _baronyRepo.SaveAdvisor(Advisor);
+        await SyncAvailableAdvisorAsync();
         _snackBar.Add("Office updated.", Severity.Success);
         await OnChanged.InvokeAsync();
+    }
+
+    private async Task SyncAvailableAdvisorAsync()
+    {
+        if (Advisor.AvailableAdvisorId is not int id || id <= 0)
+            return;
+        var pool = AvailableAdvisors.FirstOrDefault(a => a.Id == id);
+        if (pool is null)
+            return;
+
+        pool.Name = Advisor.PersonName;
+        pool.Description = Advisor.Description;
+        pool.Skills = Advisor.Skills.Clone();
+        pool.Skills[Ppb.Treasury] = 0m;
+        await _baronyRepo.SaveAvailableAdvisor(pool);
     }
 
     private AdvisorDTO CloneAdvisor() => new()
@@ -251,6 +276,8 @@
         Advisor.Title = saved.Title;
         Advisor.Description = saved.Description;
         Advisor.UpkeepGold = saved.UpkeepGold;
+        Advisor.AvailableAdvisorId = saved.AvailableAdvisorId;
+        Advisor.Skills = saved.Skills.Clone();
     }
 
     private static DialogOptions DialogOptions() => new()
@@ -259,4 +286,6 @@
         FullWidth = false,
         CloseOnEscapeKey = true,
     };
+
+    private List<AdvisorDTO> AllOffices => BaronyCalc.OrderOffices(AllAdvisors);
 }

@@ -42,6 +42,7 @@ namespace DA_Models.BaronyModels
     {
         public int Id { get; set; }
         public int BaronyId { get; set; }
+        public int? AvailableAdvisorId { get; set; }
         public string OfficeType { get; set; } = DA_Common.Barony.OfficeType.Custom;
         public string Title { get; set; } = string.Empty;
         public string PersonName { get; set; } = string.Empty;
@@ -56,6 +57,15 @@ namespace DA_Models.BaronyModels
         public decimal UpkeepGold { get; set; }
     }
 
+    public class AvailableAdvisorDTO
+    {
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public PpbVector Skills { get; set; } = new();
+    }
+
     public class BaronyBuildingDTO
     {
         public int Id { get; set; }
@@ -66,6 +76,9 @@ namespace DA_Models.BaronyModels
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();
         public string? Description { get; set; }
+
+        /// <summary>Display-only population (e.g. town row in City Buildings).</summary>
+        public int Population { get; set; }
     }
 
     public class SocialGroupRelationDTO
@@ -76,6 +89,7 @@ namespace DA_Models.BaronyModels
         public int RelationLevel { get; set; }
         public int? InfluencePercent { get; set; }
         public bool? IsActive { get; set; }
+        public int? TaxPercent { get; set; }
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();
         public string? FormulaText { get; set; }
@@ -191,6 +205,12 @@ namespace DA_Models.BaronyModels
 
         /// <summary>Optional icon override for custom map improvements.</summary>
         public string? IconUrl { get; set; }
+
+        /// <summary>Settlement population (villages and towns).</summary>
+        public int Population { get; set; }
+
+        /// <summary>Village palisade (+5 Def, +3 Stab, +1 Law).</summary>
+        public bool HasPalisade { get; set; }
     }
 
     public class BaronyProjectDTO

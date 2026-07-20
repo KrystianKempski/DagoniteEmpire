@@ -113,5 +113,11 @@ namespace DA_DataAccess.BaronyData
 
         /// <summary>Optional icon override (custom improvements). Relative URL under wwwroot.</summary>
         public string? IconUrl { get; set; }
+
+        /// <summary>Settlement population (villages and towns).</summary>
+        public int Population { get; set; }
+
+        /// <summary>Village palisade (+5 Def, +3 Stab, +1 Law).</summary>
+        public bool HasPalisade { get; set; }
     }
 }

@@ -11,6 +11,7 @@ namespace DA_Models.BaronyModels
         public int InfluencePercent { get; init; }
         public bool IsActive { get; init; }
         public int RelationScore { get; init; }
+        public int TaxPercent { get; init; }
         public PpbVector Additive { get; init; } = new();
         public PpbVector Percent { get; init; } = new();
 

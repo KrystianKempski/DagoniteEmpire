@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "terrain.village.unfortified",
+      "title": "Unfortified Village",
+      "category": "terrain-improvement",
+      "implementation": "DA_Common/Barony/VillagePpbFormulas.cs",
+      "additive": {
+        "Food": "farmYield(Fertility) - Population",
+        "Economy": "Population / 2",
+        "Production": "Population",
+        "Stability": "-2 * Population",
+        "Law": "-Population / 2",
+        "Corruption": "Population / 4",
+        "Science": "Population / 4",
+        "Magic": "Population / 8",
+        "Culture": "Population / 4",
+        "Defense": "Population",
+        "Treasury": "(Nob%/100)*Population*5 + (Burg%/100)*Population*5 + (Peas%/100)*Population*15"
+      }
+    },
+    {
+      "id": "terrain.town",
+      "title": "Town",
+      "category": "terrain-improvement",
+      "implementation": "DA_Common/Barony/TownPpbFormulas.cs",
+      "additive": {
+        "Food": "-Population",
+        "Economy": "Population",
+        "Production": "2 * Population",
+        "Loyalty": "-Population",
+        "Stability": "-4 * Population",
+        "Law": "-Population",
+        "Corruption": "Population",
+        "Science": "Population / 2",
+        "Magic": "Population / 4",
+        "Culture": "Population / 2",
+        "Defense": "2 * Population",
+        "Treasury": "(Nob%/100)*Population*20 + (Burg%/100)*Population*25 + (Peas%/100)*Population*10"
+      }
+    },
+    {
+      "id": "community.hunger",
+      "title": "Hunger",
+      "category": "community-penalty",
+      "implementation": "DA_Common/Barony/HungerPpbFormulas.cs",
+      "input": "Hunger = max(0, -FoodBalance)",
+      "additive": {
+        "Loyalty": "-Hunger * 3",
+        "Stability": "-Hunger * 3",
+        "Law": "-Hunger * 2",
+        "Corruption": "Hunger * 1"
+      },
+      "percent": {
+        "Economy": "max(-Hunger * 10, -50)",
+        "Production": "max(-Hunger * 10, -50)"
+      }
+    },
+    {
+      "id": "community.crime",
+      "title": "Crime",
+      "category": "community-penalty",
+      "implementation": "DA_Common/Barony/CrimePpbFormulas.cs",
+      "input": "Crime = max(0, -LawBalance)",
+      "additive": {
+        "Loyalty": "-Crime * 1",
+        "Stability": "-Crime * 2",
+        "Corruption": "Crime / 2"
+      },
+      "percent": {
+        "Economy": "max(-Crime * 5, -50)",
+        "Production": "max(-Crime * 5, -50)"
+      }
+    },
+    {
+      "id": "community.corruption",
+      "title": "Corruption",
+      "category": "community-penalty",
+      "implementation": "DA_Common/Barony/CorruptionPpbFormulas.cs",
+      "input": "Corruption = max(0, CorruptionBalance)",
+      "additive": {
+        "Loyalty": "-Corruption * 2",
+        "Stability": "-Corruption * 1"
+      },
+      "percent": {
+        "Economy": "max(-Corruption * 5, -50)",
+        "Production": "max(-Corruption * 5, -50)"
+      }
+    },
+    {
+      "id": "community.unrest",
+      "title": "Unrest",
+      "category": "community-penalty",
+      "implementation": "DA_Common/Barony/UnrestPpbFormulas.cs",
+      "input": "Unrest = Barony.Unrest",
+      "additive": {
+        "Loyalty": "-Unrest * 3",
+        "Stability": "-Unrest * 3",
+        "Law": "-Unrest * 3"
+      },
+      "percent": {
+        "Economy": "-Unrest * 15",
+        "Production": "-Unrest * 15"
+      }
+    },
+    {
+      "id": "baron.skills",
+      "title": "From Skills",
+      "category": "baron-influence",
+      "implementation": "DA_Common/Barony/BaronSkillPpbFormulas.cs",
+      "additive": {
+        "Food": "floor((Plants and mushrooms + Animals care + Beasts) / 3)",
+        "Economy": "floor((Mathematics and logic + Races and nations + Trade) / 3)",
+        "Production": "floor(Craft + Intelligence mod)",
+        "Loyalty": "floor((Bluff + Public speech + Sense motives) / 3)",
+        "Stability": "floor((Intimidate + History and religion + Persuasion) / 3)",
+        "Law": "floor((Investigation + Observation + Tracking) / 3)",
+        "Corruption": "floor((Vigilance + Gambling + Acting) / 3)",
+        "Science": "floor(Knowledge + Intelligence mod)",
+        "Magic": "floor(Magic + Willpower mod)",
+        "Culture": "floor((Fine arts + Linguistics + Diplomacy) / 3)",
+        "Intelligence": "floor(Perception / 2 + Survival / 2 + Deceit)",
+        "Defense": "floor((Strategy and tactics + Inspire + Geography) / 3)"
+      }
+    }
+  ]
+}

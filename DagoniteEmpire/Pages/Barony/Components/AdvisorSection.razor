@@ -34,12 +34,16 @@
                         @foreach (var advisor in AdvisorList)
                         {
                             <tr class="@(advisor.IsBaron ? "advisor-row--baron" : "")">
-                                <td class="ppb-row-label advisor-col-role" title="@RoleTitle(advisor)">
-                                    @BaronyCalc.AdvisorRoleLabel(advisor)
-                                    @if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
-                                    {
-                                        <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
-                                    }
+                                <td class="ppb-row-label advisor-col-role">
+                                    <BaronyTooltip Title="Description" Text="@RoleTitle(advisor)">
+                                        <span>
+                                            @BaronyCalc.AdvisorRoleLabel(advisor)
+                                            @if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
+                                            {
+                                                <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
+                                            }
+                                        </span>
+                                    </BaronyTooltip>
                                 </td>
                                 <td class="advisor-col-name">@DisplayName(advisor)</td>
                                 @foreach (var info in PpbCatalog.All)

@@ -1,0 +1,72 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Edit village</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Class="baron-influence-field" />
+            <MudNumericField T="int"
+                             @bind-Value="_population"
+                             Label="Population (Pop)"
+                             HelperText="Village PPB is computed from Population, tile fertility, and palisade."
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Class="baron-influence-field" />
+            <MudCheckBox T="bool"
+                         @bind-Value="_hasPalisade"
+                         Label="Palisade (+5 Defense, +3 Stability, +1 Law)"
+                         Color="Color.Primary"
+                         Dense="true"
+                         Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public TerrainImprovementDTO Improvement { get; set; } = new();
+
+    private string _name = string.Empty;
+    private int _population;
+    private bool _hasPalisade;
+
+    protected override void OnInitialized()
+    {
+        _name = BaronyCalc.ImprovementDisplayLabel(Improvement);
+        _population = Math.Max(0, Improvement.Population);
+        _hasPalisade = Improvement.HasPalisade;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        Improvement.Description = _name.Trim();
+        Improvement.Population = Math.Max(0, _population);
+        Improvement.HasPalisade = _hasPalisade;
+        Improvement.FormulaText = VillagePpbFormulas.CatalogDescription;
+        MudDialog.Close(DialogResult.Ok(Improvement));
+    }
+}

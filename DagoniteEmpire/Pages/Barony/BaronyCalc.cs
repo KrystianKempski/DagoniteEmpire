@@ -1,4 +1,3 @@
-using DA_Common;
 using DA_Common.Barony;
 using DA_Models.BaronyModels;
 using DA_Models.CharacterModels;
@@ -74,8 +73,12 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<BaronInfluenceModifierDTO>? baronModifiers,
             AdvisorDTO? existingBaronAdvisor = null)
         {
-            var influence = SumInfluenceRows(
-                BuildInfluenceRows(character, barony.Prestige, barony.Honor, baronModifiers));
+            var skillInfluence = InfluenceFromSkills(character);
+            var skillBasedAdditive = BaronSkillAdditiveToAdvisor(skillInfluence);
+            var skillBasedPercent = BaronFoodPercentToAdvisor(skillInfluence[Ppb.Food]);
+            var customAdditive = PpbVector.Sum((baronModifiers ?? Enumerable.Empty<BaronInfluenceModifierDTO>())
+                .Select(m => m.Additive));
+            skillBasedAdditive.AddInPlace(customAdditive);
 
             var name = !string.IsNullOrWhiteSpace(character?.NPCName)
                 ? character!.NPCName
@@ -91,10 +94,43 @@ namespace DagoniteEmpire.Pages.Barony
                 Title = "Baron",
                 PersonName = name,
                 IsBaron = true,
-                Additive = influence,
-                Percent = existingBaronAdvisor?.Percent.Clone() ?? new PpbVector(),
-                FormulaText = "Baron Card: skills, prestige/honor, and custom sources",
+                Additive = skillBasedAdditive,
+                Percent = skillBasedPercent,
+                FormulaText = "Food skill: +X% to all PPB except Gold, and −X% Corruption; additive: +Stability/Loyalty/Law/Science/Magic/Culture/Intelligence and −Corruption from baron skills.",
             };
+        }
+
+        private static PpbVector BaronSkillAdditiveToAdvisor(PpbVector skillInfluence)
+        {
+            var v = new PpbVector();
+            v.EnsureSize();
+            v[Ppb.Stability] = skillInfluence[Ppb.Stability];
+            v[Ppb.Loyalty] = skillInfluence[Ppb.Loyalty];
+            v[Ppb.Law] = skillInfluence[Ppb.Law];
+            v[Ppb.Science] = skillInfluence[Ppb.Science];
+            v[Ppb.Magic] = skillInfluence[Ppb.Magic];
+            v[Ppb.Culture] = skillInfluence[Ppb.Culture];
+            v[Ppb.Intelligence] = skillInfluence[Ppb.Intelligence];
+            v[Ppb.Corruption] = -skillInfluence[Ppb.Corruption];
+            return v;
+        }
+
+        private static PpbVector BaronFoodPercentToAdvisor(decimal foodSkill)
+        {
+            var v = new PpbVector();
+            v.EnsureSize();
+            foreach (Ppb key in Enum.GetValues<Ppb>())
+            {
+                if (key == Ppb.Treasury)
+                    continue;
+                if (key == Ppb.Corruption)
+                {
+                    v[key] = -foodSkill;
+                    continue;
+                }
+                v[key] = foodSkill;
+            }
+            return v;
         }
 
         private static int RankAdvisor(AdvisorDTO advisor)
@@ -175,29 +211,68 @@ namespace DagoniteEmpire.Pages.Barony
             };
         }
 
-        /// <summary>Core buildings plus catalog instances saved for the barony.</summary>
-        public static List<PpbModifierRow> CityBuildingSectionRows(int baronyId, IEnumerable<BaronyBuildingDTO> saved)
+        /// <summary>Core buildings plus map towns and catalog instances saved for the barony.</summary>
+        public static List<PpbModifierRow> CityBuildingSectionRows(
+            int baronyId,
+            IEnumerable<BaronyBuildingDTO> saved,
+            IEnumerable<TerrainImprovementDTO>? improvements = null)
         {
             var rows = CoreCityBuildings(baronyId)
                 .Select(b => Row(b.Name, b.Additive, b.Percent, null, b.Description))
                 .ToList();
+            rows.AddRange(TownPopulationRows(improvements));
             rows.AddRange(BuildingRows(saved));
             return rows;
         }
 
-        public static PpbVector SumCityBuildings(int baronyId, IEnumerable<BaronyBuildingDTO> saved)
+        public static IEnumerable<TerrainImprovementDTO> ActiveTowns(IEnumerable<TerrainImprovementDTO>? improvements) =>
+            (improvements ?? Enumerable.Empty<TerrainImprovementDTO>())
+                .Where(i => IsTown(i) && i.IsActive);
+
+        public static bool IsTown(TerrainImprovementDTO improvement) =>
+            string.Equals(improvement.Name, MapImprovement.Town, StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsVillage(TerrainImprovementDTO improvement) =>
+            string.Equals(improvement.Name, MapImprovement.Village, StringComparison.OrdinalIgnoreCase);
+
+        public static string TownPopulationLabel(TerrainImprovementDTO town) =>
+            TownPpbFormulas.PopulationRowLabel(ImprovementDisplayLabel(town));
+
+        public static List<PpbModifierRow> TownPopulationRows(IEnumerable<TerrainImprovementDTO>? improvements) =>
+            ActiveTowns(improvements)
+                .OrderBy(TownPopulationLabel, StringComparer.OrdinalIgnoreCase)
+                .Select(t => Row(TownPopulationLabel(t), t.Additive, t.Percent, t.FormulaText, t.Description))
+                .ToList();
+
+        public static PpbVector SumCityBuildings(
+            int baronyId,
+            IEnumerable<BaronyBuildingDTO> saved,
+            IEnumerable<TerrainImprovementDTO>? improvements = null)
         {
             var vectors = CoreCityBuildings(baronyId).Select(b => b.Additive)
+                .Concat(ActiveTowns(improvements).Select(t => t.Additive))
                 .Concat(saved.Select(b => b.Additive));
             return PpbVector.Sum(vectors);
         }
 
-        public static PpbVector SumCityBuildingsPercent(int baronyId, IEnumerable<BaronyBuildingDTO> saved)
+        public static PpbVector SumCityBuildingsPercent(
+            int baronyId,
+            IEnumerable<BaronyBuildingDTO> saved,
+            IEnumerable<TerrainImprovementDTO>? improvements = null)
         {
             var vectors = CoreCityBuildings(baronyId).Select(b => b.Percent)
+                .Concat(ActiveTowns(improvements).Select(t => t.Percent))
                 .Concat(saved.Select(b => b.Percent));
             return PpbVector.Sum(vectors);
         }
+
+        public static int SumCityPopulation(
+            int baronyId,
+            IEnumerable<BaronyBuildingDTO> saved,
+            IEnumerable<TerrainImprovementDTO>? improvements = null) =>
+            CoreCityBuildings(baronyId).Sum(b => b.Population)
+            + ActiveTowns(improvements).Sum(t => t.Population)
+            + saved.Sum(b => b.Population);
 
         public static List<PpbModifierRow> SocialRows(int baronyId, IEnumerable<SocialGroupRelationDTO> relations)
             => SocialGroupSectionRows(baronyId, relations)
@@ -230,6 +305,7 @@ namespace DagoniteEmpire.Pages.Barony
                     InfluencePercent = db?.InfluencePercent ?? SocialGroup.DefaultInfluence(group),
                     IsActive = db?.IsActive ?? SocialGroup.DefaultIsActive(group),
                     RelationScore = relationScore,
+                    TaxPercent = (int)(db?.TaxPercent ?? SocialGroup.DefaultTax(group)),
                     Additive = SocialGroupPpbFormulas.ComputeAdditive(group, relationScore),
                     Percent = SocialGroupPpbFormulas.ComputePercent(group, relationScore),
                 };
@@ -252,6 +328,7 @@ namespace DagoniteEmpire.Pages.Barony
                 RelationLevel = row.RelationScore,
                 InfluencePercent = row.InfluencePercent,
                 IsActive = row.IsActive,
+                TaxPercent = row.TaxPercent,
             };
             ApplyComputedPpb(dto);
             return dto;
@@ -325,6 +402,38 @@ namespace DagoniteEmpire.Pages.Barony
         public static List<PpbModifierRow> CommunityRows(IEnumerable<CommunityModifierDTO> mods)
             => mods.Select(m => Row(m.Source, m.Additive, m.Percent, m.FormulaText)).ToList();
 
+        public static List<PpbModifierRow> CommunityRows(
+            IEnumerable<PpbModifierRow> advisorRows,
+            IEnumerable<PpbModifierRow> buildingRows,
+            IEnumerable<PpbModifierRow> socialRows,
+            IEnumerable<PpbModifierRow> improvementRows,
+            IEnumerable<PpbModifierRow> decreeRows,
+            IEnumerable<PpbModifierRow> eventRows,
+            int unrest)
+        {
+            var preCommunity = new List<PpbModifierRow>();
+            preCommunity.AddRange(advisorRows);
+            preCommunity.AddRange(buildingRows);
+            preCommunity.AddRange(socialRows);
+            preCommunity.AddRange(improvementRows);
+            preCommunity.AddRange(decreeRows);
+            preCommunity.AddRange(eventRows);
+
+            var preAdd = SumAdditive(preCommunity);
+            var hunger = HungerPpbFormulas.FromFoodBalance(preAdd[Ppb.Food]);
+            var crime = CrimePpbFormulas.FromLawBalance(preAdd[Ppb.Law]);
+            var corruption = CorruptionPpbFormulas.FromCorruptionBalance(preAdd[Ppb.Corruption]);
+            var unrestValue = Math.Max(0m, unrest);
+
+            return new List<PpbModifierRow>
+            {
+                Row(CommunitySource.Hunger, HungerPpbFormulas.ComputeAdditive(hunger), HungerPpbFormulas.ComputePercent(hunger)),
+                Row(CommunitySource.Crime, CrimePpbFormulas.ComputeAdditive(crime), CrimePpbFormulas.ComputePercent(crime)),
+                Row(CommunitySource.Corruption, CorruptionPpbFormulas.ComputeAdditive(corruption), CorruptionPpbFormulas.ComputePercent(corruption)),
+                Row(CommunitySource.Unrest, UnrestPpbFormulas.ComputeAdditive(unrestValue), UnrestPpbFormulas.ComputePercent(unrestValue)),
+            };
+        }
+
         /// <summary>Additive sum of rows (for section totals).</summary>
         public static PpbVector SumAdditive(IEnumerable<PpbModifierRow> rows)
             => PpbVector.Sum(rows.Select(r => r.Additive));
@@ -348,14 +457,24 @@ namespace DagoniteEmpire.Pages.Barony
         /// <summary>Grand total of all sections against PPB base values.</summary>
         public static PpbVector GrandTotal(BaronyOverviewDTO ov)
         {
+            var advisorRows = AdvisorRows(ov.Advisors);
+            var buildingRows = BuildingRows(ov.Buildings);
+            var socialRows = SocialRows(ov.Barony.Id, ov.SocialRelations);
+            var improvementRows = ImprovementRows(ov.Improvements);
+            var decreeRows = DecreeRows(ov.Decrees);
+            var eventRows = EventRows(ov.Events, ov.Barony.TurnNumber);
+            var communityRows = CommunityRows(
+                advisorRows, buildingRows, socialRows, improvementRows, decreeRows, eventRows,
+                ov.Barony.Unrest);
+
             var allRows = new List<PpbModifierRow>();
-            allRows.AddRange(AdvisorRows(ov.Advisors));
-            allRows.AddRange(BuildingRows(ov.Buildings));
-            allRows.AddRange(SocialRows(ov.Barony.Id, ov.SocialRelations));
-            allRows.AddRange(ImprovementRows(ov.Improvements));
-            allRows.AddRange(DecreeRows(ov.Decrees));
-            allRows.AddRange(EventRows(ov.Events, ov.Barony.TurnNumber));
-            allRows.AddRange(CommunityRows(ov.CommunityModifiers));
+            allRows.AddRange(advisorRows);
+            allRows.AddRange(buildingRows);
+            allRows.AddRange(socialRows);
+            allRows.AddRange(improvementRows);
+            allRows.AddRange(decreeRows);
+            allRows.AddRange(eventRows);
+            allRows.AddRange(communityRows);
 
             var additive = SumAdditive(allRows);
             var percent = SumPercent(allRows);
@@ -377,7 +496,8 @@ namespace DagoniteEmpire.Pages.Barony
                     Source = BaronInfluenceSource.FromSkills,
                     Values = InfluenceFromSkills(character),
                     IsSystem = true,
-                    Formula = "Extrapolated from baron attributes and skills [TO BE COMPLETED]",
+                    Description = BaronSkillPpbFormulas.CatalogDescription,
+                    ValueTooltip = BaronSkillPpbFormulas.ExplainAdditive,
                 },
                 new()
                 {
@@ -414,87 +534,48 @@ namespace DagoniteEmpire.Pages.Barony
 
         public static PpbVector InfluenceFromSkills(CharacterDTO? character)
         {
-            var values = new PpbVector();
             if (character is null)
-                return values;
+                return new PpbVector();
 
-            if (character.Attributes is not null)
+            CharacterSkillRelations.Wire(character);
+
+            decimal Special(string name)
             {
-                foreach (var attr in character.Attributes)
+                if (character.SpecialSkills is null)
+                    return 0m;
+                foreach (var s in character.SpecialSkills)
                 {
-                    var bonus = attr.SumBonus;
-                    if (bonus == 0)
-                        continue;
-
-                    switch (attr.Name)
-                    {
-                        case SD.Attributes.Charisma:
-                            values[Ppb.Loyalty] += bonus;
-                            values[Ppb.Culture] += bonus / 2;
-                            break;
-                        case SD.Attributes.Intelligence:
-                            values[Ppb.Science] += bonus;
-                            values[Ppb.Economy] += bonus / 2;
-                            break;
-                        case SD.Attributes.Strength:
-                            values[Ppb.Defense] += bonus;
-                            values[Ppb.Production] += bonus / 2;
-                            break;
-                        case SD.Attributes.Endurance:
-                            values[Ppb.Food] += bonus / 2;
-                            values[Ppb.Stability] += bonus;
-                            break;
-                        case SD.Attributes.Willpower:
-                            values[Ppb.Law] += bonus;
-                            values[Ppb.Stability] += bonus / 2;
-                            break;
-                        case SD.Attributes.Instinct:
-                            values[Ppb.Intelligence] += bonus;
-                            break;
-                        case SD.Attributes.Dexterity:
-                            values[Ppb.Law] += bonus / 2;
-                            values[Ppb.Corruption] -= bonus / 3;
-                            break;
-                    }
+                    if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
+                        return s.SumBonus;
                 }
+                return 0m;
             }
 
-            if (character.BaseSkills is not null)
+            decimal Base(string name)
             {
-                foreach (var skill in character.BaseSkills)
+                if (character.BaseSkills is null)
+                    return 0m;
+                foreach (var s in character.BaseSkills)
                 {
-                    var bonus = skill.SumBonus;
-                    if (bonus == 0)
-                        continue;
-
-                    switch (skill.Name)
-                    {
-                        case SD.BaseSkills.Talk:
-                            values[Ppb.Loyalty] += bonus / 2;
-                            values[Ppb.Culture] += bonus;
-                            break;
-                        case SD.BaseSkills.Knowledge:
-                            values[Ppb.Science] += bonus;
-                            break;
-                        case SD.BaseSkills.Craft:
-                            values[Ppb.Production] += bonus;
-                            break;
-                        case SD.BaseSkills.Survival:
-                            values[Ppb.Food] += bonus;
-                            break;
-                        case SD.BaseSkills.Deceit:
-                            values[Ppb.Corruption] += bonus / 2;
-                            values[Ppb.Intelligence] += bonus / 2;
-                            break;
-                        case SD.BaseSkills.Medicine:
-                            values[Ppb.Food] += bonus / 2;
-                            values[Ppb.Stability] += bonus / 2;
-                            break;
-                    }
+                    if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
+                        return s.SumBonus;
                 }
+                return 0m;
             }
 
-            return values;
+            decimal Attr(string name)
+            {
+                if (character.Attributes is null)
+                    return 0m;
+                foreach (var a in character.Attributes)
+                {
+                    if (string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase))
+                        return a.ModifierAbsolute;
+                }
+                return 0m;
+            }
+
+            return BaronSkillPpbFormulas.Compute(Special, Base, Attr);
         }
 
         public static PpbVector InfluenceFromPrestigeHonor(int prestige, int honor)

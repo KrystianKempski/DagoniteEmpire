@@ -11,6 +11,19 @@
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field" />
+            <MudSelect T="int"
+                       Label="Assigned person"
+                       Value="_selectedAvailableId"
+                       ValueChanged="OnAvailableChanged"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                <MudSelectItem Value="0">Manual / none</MudSelectItem>
+                @foreach (var person in SelectableAvailableAdvisors)
+                {
+                    <MudSelectItem Value="@person.Id">@person.Name</MudSelectItem>
+                }
+            </MudSelect>
             @if (AllowTitleEdit)
             {
                 <MudTextField @bind-Value="_title"
@@ -46,11 +59,19 @@
 
     [Parameter] public AdvisorDTO Advisor { get; set; } = new();
     [Parameter] public bool AllowTitleEdit { get; set; }
+    [Parameter] public List<AvailableAdvisorDTO> AvailableAdvisors { get; set; } = new();
+    [Parameter] public HashSet<int> OccupiedAvailableAdvisorIds { get; set; } = new();
 
     private string _personName = string.Empty;
     private string _title = string.Empty;
     private string? _description;
     private decimal _upkeepGold;
+    private int _selectedAvailableId;
+
+    private IEnumerable<AvailableAdvisorDTO> SelectableAvailableAdvisors =>
+        AvailableAdvisors
+            .Where(a => !OccupiedAvailableAdvisorIds.Contains(a.Id) || a.Id == Advisor.AvailableAdvisorId)
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
 
     protected override void OnInitialized()
     {
@@ -58,6 +79,7 @@
         _title = Advisor.Title;
         _description = Advisor.Description;
         _upkeepGold = Advisor.UpkeepGold;
+        _selectedAvailableId = Advisor.AvailableAdvisorId ?? 0;
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -75,6 +97,23 @@
             Advisor.Title = _title.Trim();
         Advisor.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
         Advisor.UpkeepGold = _upkeepGold;
+        Advisor.AvailableAdvisorId = _selectedAvailableId > 0 ? _selectedAvailableId : null;
         MudDialog.Close(DialogResult.Ok(Advisor));
+    }
+
+    private void OnAvailableChanged(int id)
+    {
+        _selectedAvailableId = id;
+        if (id <= 0)
+            return;
+
+        var selected = AvailableAdvisors.FirstOrDefault(a => a.Id == id);
+        if (selected is null)
+            return;
+
+        _personName = selected.Name;
+        _description = selected.Description;
+        Advisor.Skills = selected.Skills.Clone();
+        Advisor.Skills[Ppb.Treasury] = 0m;
     }
 }

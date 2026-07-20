@@ -25,6 +25,14 @@
                              Max="100"
                              Class="baron-influence-field" />
 
+            <MudNumericField @bind-Value="_taxPercent"
+                             Label="Tax (%)"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Max="100"
+                             Class="baron-influence-field" />
+
             <MudNumericField @bind-Value="RelationScore"
                              Label="Relation score"
                              Variant="Variant.Outlined"
@@ -67,6 +75,7 @@
 
     private bool _isActive;
     private int _influencePercent;
+    private int _taxPercent;
     private int _relationScore;
     private List<string> _previewEffects = new();
 
@@ -84,6 +93,7 @@
     {
         _isActive = Relation.IsActive ?? SocialGroup.DefaultIsActive(Relation.Group);
         _influencePercent = Relation.InfluencePercent ?? SocialGroup.DefaultInfluence(Relation.Group);
+        _taxPercent = Relation.TaxPercent ?? (int)SocialGroup.DefaultTax(Relation.Group);
         _relationScore = Relation.RelationLevel;
         RefreshPreview();
     }
@@ -111,6 +121,7 @@
     {
         Relation.IsActive = _isActive;
         Relation.InfluencePercent = Math.Clamp(_influencePercent, 0, 100);
+        Relation.TaxPercent = Math.Clamp(_taxPercent, 0, 100);
         Relation.RelationLevel = Math.Clamp(_relationScore, -100, 100);
         BaronyCalc.ApplyComputedPpb(Relation);
         MudDialog.Close(DialogResult.Ok(Relation));

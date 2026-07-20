@@ -46,8 +46,9 @@
                             <tr class="@(inactive ? "decree-row--inactive" : null)">
                                 <td class="city-building-col-name">
                                     <div class="city-building-name-cell">
-                                        <span class="city-building-name-text"
-                                              title="@NameTooltip(item)">@item.Name</span>
+                                        <BaronyTooltip Title="Description" Text="@NameTooltip(item)">
+                                            <span class="city-building-name-text">@item.Name</span>
+                                        </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">

@@ -18,6 +18,9 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Imię postaci doradcy.</summary>
         public string PersonName { get; set; } = string.Empty;
 
+        /// <summary>Optional link to the available-advisor pool record.</summary>
+        public int? AvailableAdvisorId { get; set; }
+
         /// <summary>Czy ten wiersz reprezentuje samego barona.</summary>
         public bool IsBaron { get; set; }
 
@@ -38,6 +41,16 @@ namespace DA_DataAccess.BaronyData
 
         /// <summary>Koszt utrzymania w złocie na turę.</summary>
         public decimal UpkeepGold { get; set; }
+    }
+
+    public class AvailableAdvisor
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string SkillsJson { get; set; } = "{}";
     }
 
     /// <summary>Budynek/ulepszenie działające w mieście głównym (sekcja "Miasto i budynki").</summary>
@@ -75,6 +88,9 @@ namespace DA_DataAccess.BaronyData
         public int? InfluencePercent { get; set; }
 
         public bool? IsActive { get; set; }
+
+        /// <summary>Tax rate (%) for town treasury income from this group.</summary>
+        public int? TaxPercent { get; set; }
 
         public string AdditiveJson { get; set; } = "{}";
         public string PercentJson { get; set; } = "{}";

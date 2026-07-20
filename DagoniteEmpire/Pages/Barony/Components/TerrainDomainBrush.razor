@@ -10,15 +10,16 @@
             {
                 var d = domain;
                 var selected = d.Id == SelectedDomainId;
+                var tiles = TileCount(d.Id);
                 <div class="terrain-domain-chip-row">
                     <button type="button"
                             class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
-                            title="@($"{d.Name} — {d.LordName}")"
+                            title="@($"{d.Name} : {tiles} tiles — {d.LordName}")"
                             @onclick="() => SelectDomainAsync(d.Id)">
                         <span class="terrain-domain-chip__swatch"
                               style="background-color: @d.ColorHex"></span>
                         <span class="terrain-domain-chip__text">
-                            <span class="terrain-domain-chip__name">@d.Name</span>
+                            <span class="terrain-domain-chip__name">@d.Name : @tiles</span>
                             <span class="terrain-domain-chip__lord">@d.LordName</span>
                         </span>
                     </button>
@@ -54,12 +55,17 @@
 
 @code {
     [Parameter] public IReadOnlyList<TerrainMapDomainDTO> Domains { get; set; } = Array.Empty<TerrainMapDomainDTO>();
+    [Parameter] public IReadOnlyDictionary<int, int> TileCountsByDomainId { get; set; }
+        = new Dictionary<int, int>();
     [Parameter] public int? SelectedDomainId { get; set; }
     [Parameter] public EventCallback<int?> SelectedDomainIdChanged { get; set; }
     [Parameter] public EventCallback<(int DomainId, string ColorHex)> OnDomainColorChanged { get; set; }
     [Parameter] public EventCallback OnAddDomain { get; set; }
     [Parameter] public EventCallback<int> OnEditDomain { get; set; }
     [Parameter] public EventCallback<int> OnDeleteDomain { get; set; }
+
+    private int TileCount(int domainId) =>
+        TileCountsByDomainId.TryGetValue(domainId, out var n) ? n : 0;
 
     private Task SelectDomainAsync(int domainId) => SelectedDomainIdChanged.InvokeAsync(domainId);
 

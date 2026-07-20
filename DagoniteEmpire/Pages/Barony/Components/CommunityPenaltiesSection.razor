@@ -1,0 +1,143 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="Community Penalties and Bonuses">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        @if (RowList.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No entries in this section.</MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--advisors ppb-table--lined">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="ppb-row-label">Source</th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                            }
+                        </tr>
+                        <tr>
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <th class="ppb-subcol ppb-subcol--add">+</th>
+                                <th class="ppb-subcol ppb-subcol--pct">%</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in RowList)
+                        {
+                            var sourceKey = CommunitySource.NormalizeKey(row.Label);
+                            var addExplain = AdditiveExplain(sourceKey);
+                            var pctExplain = PercentExplain(sourceKey);
+                            <tr>
+                                <td class="ppb-row-label">@row.Label</td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    var add = row.Additive[info.Key];
+                                    var pct = row.Percent[info.Key];
+                                    var addTip = addExplain?.Invoke(info.Key);
+                                    var pctTip = pctExplain?.Invoke(info.Key);
+                                    <td class="@ValueClass(add)">
+                                        @if (addTip is not null)
+                                        {
+                                            <BaronyTooltip Title="@info.NameEn" Text="@addTip"><span>@FmtAdd(add)</span></BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            @FmtAdd(add)
+                                        }
+                                    </td>
+                                    <td class="@ValueClass(pct)">
+                                        @if (pctTip is not null)
+                                        {
+                                            <BaronyTooltip Title="@info.NameEn" Text="@pctTip"><span>@FmtPct(pct)</span></BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            @FmtPct(pct)
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                        <tr class="ppb-summary-row">
+                            <td class="ppb-row-label">Σ section</td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                                <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public IEnumerable<PpbModifierRow>? Rows { get; set; }
+
+    private List<PpbModifierRow> RowList => Rows?.ToList() ?? new();
+    private PpbVector AdditiveSum => BaronyCalc.SumAdditive(RowList);
+    private PpbVector PercentSum => BaronyCalc.SumPercent(RowList);
+    private PpbVector Glance => BaronyCalc.SectionGlance(RowList);
+
+    private static Func<Ppb, string?>? AdditiveExplain(string sourceKey) => sourceKey switch
+    {
+        CommunitySource.Hunger => HungerPpbFormulas.ExplainAdditive,
+        CommunitySource.Crime => CrimePpbFormulas.ExplainAdditive,
+        CommunitySource.Corruption => CorruptionPpbFormulas.ExplainAdditive,
+        CommunitySource.Unrest => UnrestPpbFormulas.ExplainAdditive,
+        _ => null,
+    };
+
+    private static Func<Ppb, string?>? PercentExplain(string sourceKey) => sourceKey switch
+    {
+        CommunitySource.Hunger => HungerPpbFormulas.ExplainPercent,
+        CommunitySource.Crime => CrimePpbFormulas.ExplainPercent,
+        CommunitySource.Corruption => CorruptionPpbFormulas.ExplainPercent,
+        CommunitySource.Unrest => UnrestPpbFormulas.ExplainPercent,
+        _ => null,
+    };
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v) => v == 0m ? "·" : (v > 0 ? "+" : "") + Num(v);
+    private static string FmtPct(decimal v) => v == 0m ? "·" : (v > 0 ? "+" : "") + Num(v) + "%";
+
+    private static string Num(decimal v)
+    {
+        var r = decimal.Round(v, 2);
+        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+    }
+
+    private static string ValueClass(decimal v)
+    {
+        if (v > 0m) return "ppb-cell-pos";
+        if (v < 0m) return "ppb-cell-neg";
+        return "ppb-cell-zero";
+    }
+}

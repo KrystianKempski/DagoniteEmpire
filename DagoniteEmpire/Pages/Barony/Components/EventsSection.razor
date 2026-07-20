@@ -46,8 +46,9 @@
                             <tr class="@(inactive ? "event-row--inactive" : null)">
                                 <td class="city-building-col-name">
                                     <div class="city-building-name-cell">
-                                        <span class="city-building-name-text"
-                                              title="@NameTooltip(item)">@item.Name</span>
+                                        <BaronyTooltip Title="Description" Text="@NameTooltip(item)">
+                                            <span class="city-building-name-text">@item.Name</span>
+                                        </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
@@ -64,7 +65,11 @@
                                         }
                                     </div>
                                 </td>
-                                <td class="event-col-turns" title="@TurnTooltip(item)">@item.TurnRangeLabel</td>
+                                <td class="event-col-turns">
+                                    <BaronyTooltip Title="Turn range" Text="@TurnTooltip(item)">
+                                        <span>@item.TurnRangeLabel</span>
+                                    </BaronyTooltip>
+                                </td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
                                     <td class="@PpbCellClass(item.Additive[info.Key], inactive)">@FmtAdd(item.Additive[info.Key])</td>

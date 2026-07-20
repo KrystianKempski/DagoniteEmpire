@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using DA_Common;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;

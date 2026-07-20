@@ -170,8 +170,7 @@ namespace DagoniteEmpire.Service
                 "A low wall that can repel small forces and keep out unwanted elements; gives a sense of safety.",
                 Fx(loyalty: 1, stability: 3, law: 1, defense: 10));
             Add("Unfortified Village", 1, I, 300, 300,
-                "A small village allowing farms and sawmills on distant land. Besides gold and production cost, requires 1 community relocated from elsewhere. Food and production scale with population.",
-                Fx(defense: -4));
+                VillagePpbFormulas.CatalogDescription);
             Add("Palace", 2, B, additive: Fx(economy: 2, production: 2));
             Add("Park Grove", 1, B, 50, 60,
                 "A place to rest, meet, hold simple gatherings, and enjoy light recreation.",

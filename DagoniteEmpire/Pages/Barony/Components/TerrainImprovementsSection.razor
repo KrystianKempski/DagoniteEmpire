@@ -19,13 +19,15 @@
                     <thead>
                         <tr>
                             <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
-                            <th rowspan="2" class="city-building-col-owner" title="Land ownership">Owner</th>
+                            <th rowspan="2" class="city-building-col-owner" title="Land ownership"></th>
+                            <th class="city-building-col-pop" title="Population (additive)">Pop</th>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <th colspan="2" title="@info.NamePl">@PpbShort(info.Key)</th>
                             }
                         </tr>
                         <tr>
+                            <th class="ppb-subcol ppb-subcol--add city-building-col-pop">+</th>
                             @foreach (var _ in PpbCatalog.All)
                             {
                                 <th class="ppb-subcol ppb-subcol--add">+</th>
@@ -41,8 +43,9 @@
                             <tr class="@(inactive ? "terrain-improvement-row--inactive" : null)">
                                 <td class="city-building-col-name">
                                     <div class="city-building-name-cell">
-                                        <span class="city-building-name-text"
-                                              title="@NameTooltip(item)">@DisplayLabel(item)</span>
+                                        <BaronyTooltip Title="Description" Text="@NameTooltip(item)">
+                                            <span class="city-building-name-text">@DisplayLabel(item)</span>
+                                        </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
@@ -54,26 +57,54 @@
                                         }
                                     </div>
                                 </td>
-                                <td class="city-building-col-owner" title="@BaronyCalc.OwnershipTooltip(vassal)">
-                                    @if (vassal)
+                                <td class="city-building-col-owner">
+                                    <BaronyTooltip Text="@BaronyCalc.OwnershipTooltip(vassal)">
+                                        @if (vassal)
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Shield"
+                                                     Size="Size.Small"
+                                                     Class="terrain-improvement-owner terrain-improvement-owner--vassal" />
+                                        }
+                                        else
+                                        {
+                                            <img src="/icons/jewel-crown.svg"
+                                                 alt="Demesne"
+                                                 width="20"
+                                                 height="20"
+                                                 class="terrain-improvement-owner__crown" />
+                                        }
+                                    </BaronyTooltip>
+                                </td>
+                                <td class="@PopulationCellClass(item.Population, inactive, CanManage && BaronyCalc.IsVillage(item))"
+                                    @onclick="@(() => EditPopulationAsync(item))">
+                                    @if (BaronyCalc.IsVillage(item))
                                     {
-                                        <MudIcon Icon="@Icons.Material.Filled.Shield"
-                                                 Size="Size.Small"
-                                                 Class="terrain-improvement-owner terrain-improvement-owner--vassal" />
+                                        <BaronyTooltip Text="Population — input for village PPB formulas.">
+                                            <span>@FmtAdd(item.Population)</span>
+                                        </BaronyTooltip>
                                     }
                                     else
                                     {
-                                        <img src="/icons/jewel-crown.svg"
-                                             alt="Demesne"
-                                             width="20"
-                                             height="20"
-                                             class="terrain-improvement-owner__crown"
-                                             title="@BaronyCalc.OwnershipTooltip(false)" />
+                                        @FmtAdd(item.Population)
                                     }
                                 </td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
-                                    <td class="@PpbCellClass(item.Additive[info.Key], inactive)">@FmtAdd(item.Additive[info.Key])</td>
+                                    <td class="@PpbCellClass(item.Additive[info.Key], inactive)">
+                                        @{
+                                            var tip = VillageAdditiveTooltip(item, info.Key);
+                                        }
+                                        @if (tip is not null)
+                                        {
+                                            <BaronyTooltip Title="@info.NameEn" Text="@tip">
+                                                <span>@FmtAdd(item.Additive[info.Key])</span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            @FmtAdd(item.Additive[info.Key])
+                                        }
+                                    </td>
                                     <td class="@PpbCellClass(item.Percent[info.Key], inactive)">@FmtPct(item.Percent[info.Key])</td>
                                 }
                             </tr>
@@ -82,6 +113,7 @@
                         <tr class="ppb-summary-row">
                             <td class="ppb-row-label city-building-col-name">Σ section</td>
                             <td class="city-building-col-owner"></td>
+                            <td class="@PopulationCellClass(PopulationSum, inactive: false)"><b>@FmtAdd(PopulationSum)</b></td>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
@@ -119,16 +151,37 @@
     private PpbVector AdditiveSum => PpbVector.Sum(ActiveImprovements.Select(i => i.Additive));
     private PpbVector PercentSum => PpbVector.Sum(ActiveImprovements.Select(i => i.Percent));
     private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.ImprovementRows(Improvements));
+    private int PopulationSum => ActiveImprovements.Sum(i => BaronyCalc.IsVillage(i) ? i.Population : 0);
 
     private static string DisplayLabel(TerrainImprovementDTO item) => BaronyCalc.ImprovementDisplayLabel(item);
 
     private static string? NameTooltip(TerrainImprovementDTO item)
     {
+        if (BaronyCalc.IsVillage(item))
+        {
+            var parts = new List<string> { VillagePpbFormulas.CatalogDescription };
+            if (!item.IsActive)
+            {
+                parts.Add(string.IsNullOrWhiteSpace(item.InactiveReason)
+                    ? "Inactive — excluded from totals."
+                    : item.InactiveReason.Trim());
+            }
+
+            return string.Join("\n\n", parts);
+        }
+
         if (item.IsActive)
             return null;
         return string.IsNullOrWhiteSpace(item.InactiveReason)
             ? "Inactive — excluded from totals."
             : item.InactiveReason.Trim();
+    }
+
+    private static string? VillageAdditiveTooltip(TerrainImprovementDTO item, Ppb key)
+    {
+        if (!BaronyCalc.IsVillage(item))
+            return null;
+        return VillagePpbFormulas.ExplainAdditive(key, item.HasPalisade);
     }
 
     private bool IsVassal(TerrainImprovementDTO item)
@@ -141,6 +194,12 @@
     private async Task EditAsync(TerrainImprovementDTO item)
     {
         var draft = Clone(item);
+        if (string.Equals(item.Name, MapImprovement.Village, StringComparison.OrdinalIgnoreCase))
+        {
+            await EditVillageAsync(draft);
+            return;
+        }
+
         var parameters = new DialogParameters<TerrainImprovementEditDialog>
         {
             { x => x.Improvement, draft },
@@ -172,6 +231,79 @@
         }
     }
 
+    private async Task EditPopulationAsync(TerrainImprovementDTO item)
+    {
+        if (!CanManage || item.Id <= 0 || !BaronyCalc.IsVillage(item))
+            return;
+
+        var parameters = new DialogParameters<PopulationEditDialog>
+        {
+            { x => x.TargetName, DisplayLabel(item) },
+            { x => x.Value, item.Population },
+        };
+
+        var dialog = await _dialogService.ShowAsync<PopulationEditDialog>(
+            "Population",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int population)
+            return;
+
+        var draft = Clone(item);
+        draft.Population = population;
+
+        try
+        {
+            await _baronyRepo.SaveImprovement(draft);
+            _snackBar.Add("Population updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save improvement: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EditVillageAsync(TerrainImprovementDTO draft)
+    {
+        var parameters = new DialogParameters<VillageEditDialog>
+        {
+            { x => x.Improvement, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<VillageEditDialog>(
+            "Edit village",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not TerrainImprovementDTO saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveImprovement(saved);
+            _snackBar.Add("Village updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save village: " + ex.Message, Severity.Error);
+        }
+    }
+
     private static TerrainImprovementDTO Clone(TerrainImprovementDTO source) => new()
     {
         Id = source.Id,
@@ -184,6 +316,8 @@
         IsActive = source.IsActive,
         InactiveReason = source.InactiveReason,
         IconUrl = source.IconUrl,
+        Population = source.Population,
+        HasPalisade = source.HasPalisade,
         Additive = source.Additive.Clone(),
         Percent = source.Percent.Clone(),
     };
@@ -237,5 +371,15 @@
     {
         var valueClass = ValueClass(v);
         return inactive ? $"{valueClass} ppb-cell-inactive ppb-cell-struck" : valueClass;
+    }
+
+    private static string PopulationCellClass(int population, bool inactive, bool editable = false)
+    {
+        var cls = "city-building-col-pop " + ValueClass(population);
+        if (inactive)
+            cls += " ppb-cell-inactive ppb-cell-struck";
+        if (editable)
+            cls += " city-building-col-pop--editable";
+        return cls;
     }
 }

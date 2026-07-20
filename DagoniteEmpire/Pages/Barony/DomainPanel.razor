@@ -42,6 +42,7 @@ else if (_overview is not null)
     <AdvisorSection Advisors="@_advisorsForSection" />
     <CityBuildingsSection BaronyId="@BaronyId"
                           SavedBuildings="@_savedBuildings"
+                          Improvements="@_overview.Improvements"
                           Catalog="@_buildingCatalog"
                           CanManage="@CanManageAsMg"
                           OnChanged="ReloadOverviewAsync" />
@@ -64,7 +65,7 @@ else if (_overview is not null)
                    Events="@_overview.Events"
                    CanManage="@CanManageAsMg"
                    OnChanged="ReloadOverviewAsync" />
-    <SectionTable Title="Community Penalties and Bonuses" Rows="@_communityRows" />
+    <CommunityPenaltiesSection Rows="@_communityRows" />
 
     @* --- Summary section --- *@
     <div class="barony-card mt-3">
@@ -116,12 +117,19 @@ else if (_overview is not null)
             .Where(t => t.Kind == BuildingKind.Building)
             .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        _buildingRows = BaronyCalc.CityBuildingSectionRows(Barony!.Id, _savedBuildings);
+        _buildingRows = BaronyCalc.CityBuildingSectionRows(Barony!.Id, _savedBuildings, _overview.Improvements);
         _socialRows = BaronyCalc.SocialRows(Barony!.Id, _overview.SocialRelations);
         _improvementRows = BaronyCalc.ImprovementRows(_overview.Improvements);
         _decreeRows = BaronyCalc.DecreeRows(_overview.Decrees);
         _eventRows = BaronyCalc.EventRows(_overview.Events, _overview.Barony.TurnNumber);
-        _communityRows = BaronyCalc.CommunityRows(_overview.CommunityModifiers);
+        _communityRows = BaronyCalc.CommunityRows(
+            _advisorRows,
+            _buildingRows,
+            _socialRows,
+            _improvementRows,
+            _decreeRows,
+            _eventRows,
+            _overview.Barony.Unrest);
 
         BuildTotals();
     }
@@ -136,12 +144,19 @@ else if (_overview is not null)
             return;
 
         _savedBuildings = _overview.Buildings;
-        _buildingRows = BaronyCalc.CityBuildingSectionRows(Barony.Id, _savedBuildings);
+        _buildingRows = BaronyCalc.CityBuildingSectionRows(Barony.Id, _savedBuildings, _overview.Improvements);
         _socialRows = BaronyCalc.SocialRows(Barony!.Id, _overview.SocialRelations);
         _improvementRows = BaronyCalc.ImprovementRows(_overview.Improvements);
         _decreeRows = BaronyCalc.DecreeRows(_overview.Decrees);
         _eventRows = BaronyCalc.EventRows(_overview.Events, _overview.Barony.TurnNumber);
-        _communityRows = BaronyCalc.CommunityRows(_overview.CommunityModifiers);
+        _communityRows = BaronyCalc.CommunityRows(
+            _advisorRows,
+            _buildingRows,
+            _socialRows,
+            _improvementRows,
+            _decreeRows,
+            _eventRows,
+            _overview.Barony.Unrest);
         BuildTotals();
         StateHasChanged();
     }

@@ -16,6 +16,9 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<List<AdvisorDTO>> GetAdvisors(int baronyId);
         Task<AdvisorDTO> SaveAdvisor(AdvisorDTO dto);
         Task<int> DeleteAdvisor(int id);
+        Task<List<AvailableAdvisorDTO>> GetAvailableAdvisors(int baronyId);
+        Task<AvailableAdvisorDTO> SaveAvailableAdvisor(AvailableAdvisorDTO dto);
+        Task<int> DeleteAvailableAdvisor(int id);
 
         // --- Budynki miasta ---
         Task<List<BaronyBuildingDTO>> GetBuildings(int baronyId);

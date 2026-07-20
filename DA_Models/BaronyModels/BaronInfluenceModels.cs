@@ -21,5 +21,7 @@ namespace DA_Models.BaronyModels
         public int? ModifierId { get; set; }
         public string? Formula { get; set; }
         public string? Description { get; set; }
+        /// <summary>Per-PPB cell tooltip (e.g. skill formulas). Null = no cell tip.</summary>
+        public Func<Ppb, string?>? ValueTooltip { get; set; }
     }
 }

@@ -3,6 +3,8 @@
 > Żywy dokument. Zbiera całą wiedzę projektową o warstwie "Zarządzanie Baronią".
 > Formuły, listy budynków, wydarzeń itp. będą dopisywane w kolejnych iteracjach
 > (oznaczone jako **[DO UZUPEŁNIENIA]**).
+>
+> **Katalog formuł:** [`FORMULAS.md`](./FORMULAS.md) + [`formulas.json`](./formulas.json).
 
 Branch roboczy: **`Duke`**.
 
@@ -233,10 +235,10 @@ rejestracja w `DagoniteEmpire/Program.cs`. Wektory zapisywane jako owned type / 
 
 ## 8. Do uzupełnienia (kolejne prompty)
 
-- [ ] Dokładne formuły wszystkich PPB i podsumowania.
+- [ ] Dokładne formuły wszystkich PPB i podsumowania → zbierane w [`FORMULAS.md`](./FORMULAS.md) / [`formulas.json`](./formulas.json) (na razie Wioska).
 - [ ] Które PPB dokładnie się kumulują między turami.
 - [ ] Formuła relacji z grupami społecznymi.
-- [ ] Formuła ulepszeń terenu zależna od parametrów pola.
+- [x] Formuła ulepszeń terenu zależna od parametrów pola (Wioska: Population + żyzność; Miasto: Population + żyzność → wiersz w City Buildings).
 - [ ] Pełna lista budynków i ulepszeń + ich wpływ na PPB.
 - [ ] Formuła ekstrapolacji umiejętności barona z jego postaci.
 - [ ] Formuła bonusów z terenów lenników (pomniejszenie).

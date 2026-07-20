@@ -186,7 +186,16 @@ namespace DA_Business.Repository.BaronyRepos
                         .Where(x => x.BaronyId == baronyId)
                         .ToListAsync())
                     .Where(e => e.TileId is int tid && playerTileIds.Contains(tid))
-                    .Select(ToDTO)
+                    .ToList();
+
+                var taxRates = TownTaxRates.FromRelations(
+                    (await ctx.SocialGroupRelations.AsNoTracking()
+                        .Where(x => x.BaronyId == baronyId)
+                        .ToListAsync())
+                    .Select(r => (r.Group, r.TaxPercent)));
+
+                var improvementDtos = improvements
+                    .Select(e => ToImprovementDto(e, tiles, taxRates))
                     .ToList();
 
                 return new BaronyOverviewDTO
@@ -195,7 +204,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Advisors = (await ctx.Advisors.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Buildings = (await ctx.BaronyBuildings.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     SocialRelations = (await ctx.SocialGroupRelations.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
-                    Improvements = improvements,
+                    Improvements = improvementDtos,
                     Decrees = (await ctx.Decrees.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Events = (await ctx.BaronyEvents.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     CommunityModifiers = (await ctx.CommunityModifiers.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
@@ -210,6 +219,9 @@ namespace DA_Business.Repository.BaronyRepos
         // ---------------- Advisors ----------------
         public async Task<List<AdvisorDTO>> GetAdvisors(int baronyId) =>
             await GetList(ctx => ctx.Advisors, baronyId, ToDTO, nameof(GetAdvisors));
+
+        public async Task<List<AvailableAdvisorDTO>> GetAvailableAdvisors(int baronyId) =>
+            await GetList(ctx => ctx.AvailableAdvisors, baronyId, ToDTO, nameof(GetAvailableAdvisors));
 
         public async Task<AdvisorDTO> SaveAdvisor(AdvisorDTO dto)
         {
@@ -233,6 +245,30 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         public Task<int> DeleteAdvisor(int id) => Delete(ctx => ctx.Advisors, id, nameof(DeleteAdvisor));
+
+        public async Task<AvailableAdvisorDTO> SaveAvailableAdvisor(AvailableAdvisorDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0 ? await ctx.AvailableAdvisors.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                if (e is null)
+                {
+                    e = ToEntity(dto);
+                    ctx.AvailableAdvisors.Add(e);
+                }
+                else
+                {
+                    ApplyAvailableAdvisor(e, dto);
+                }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveAvailableAdvisor)); }
+        }
+
+        public Task<int> DeleteAvailableAdvisor(int id) =>
+            Delete(ctx => ctx.AvailableAdvisors, id, nameof(DeleteAvailableAdvisor));
 
         // ---------------- Buildings ----------------
         public async Task<List<BaronyBuildingDTO>> GetBuildings(int baronyId) =>
@@ -515,19 +551,47 @@ namespace DA_Business.Repository.BaronyRepos
             Delete(ctx => ctx.TerrainMapDomains, id, nameof(DeleteMapDomain));
 
         // ---------------- Improvements ----------------
-        public async Task<List<TerrainImprovementDTO>> GetImprovements(int baronyId) =>
-            await GetList(ctx => ctx.TerrainImprovements, baronyId, ToDTO, nameof(GetImprovements));
+        public async Task<List<TerrainImprovementDTO>> GetImprovements(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var entities = await ctx.TerrainImprovements.AsNoTracking()
+                    .Where(x => x.BaronyId == baronyId)
+                    .ToListAsync();
+                var tiles = await ctx.TerrainTiles.AsNoTracking()
+                    .Where(x => x.BaronyId == baronyId)
+                    .ToListAsync();
+                var taxRates = TownTaxRates.FromRelations(
+                    (await ctx.SocialGroupRelations.AsNoTracking()
+                        .Where(x => x.BaronyId == baronyId)
+                        .ToListAsync())
+                    .Select(r => (r.Group, r.TaxPercent)));
+                return entities.Select(e => ToImprovementDto(e, tiles, taxRates)).ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetImprovements)); }
+        }
 
         public async Task<TerrainImprovementDTO> SaveImprovement(TerrainImprovementDTO dto)
         {
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
+                await ApplySettlementFormulasAsync(ctx, dto);
                 var e = dto.Id > 0 ? await ctx.TerrainImprovements.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
                 if (e is null) { e = ToEntity(dto); ctx.TerrainImprovements.Add(e); }
                 else { ApplyImprovement(e, dto); }
                 await ctx.SaveChangesAsync();
-                return ToDTO(e);
+
+                var tile = dto.TileId is int tid
+                    ? await ctx.TerrainTiles.AsNoTracking().FirstOrDefaultAsync(t => t.Id == tid)
+                    : null;
+                var taxRates = TownTaxRates.FromRelations(
+                    (await ctx.SocialGroupRelations.AsNoTracking()
+                        .Where(x => x.BaronyId == dto.BaronyId)
+                        .ToListAsync())
+                    .Select(r => (r.Group, r.TaxPercent)));
+                return ToImprovementDto(e, tile, taxRates);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveImprovement)); }
         }
@@ -821,7 +885,7 @@ namespace DA_Business.Repository.BaronyRepos
         private static AdvisorDTO ToDTO(Advisor e) => new()
         {
             Id = e.Id, BaronyId = e.BaronyId, OfficeType = e.OfficeType, Title = e.Title,
-            PersonName = e.PersonName, IsBaron = e.IsBaron,
+            PersonName = e.PersonName, IsBaron = e.IsBaron, AvailableAdvisorId = e.AvailableAdvisorId,
             Skills = De(e.SkillsJson), SignificantSkills = AdvisorSignificantSkills.Deserialize(e.SignificantSkillsJson),
             Additive = De(e.AdditiveJson),
             Percent = De(e.PercentJson), FormulaText = e.FormulaText, Description = e.Description, UpkeepGold = e.UpkeepGold,
@@ -833,10 +897,36 @@ namespace DA_Business.Repository.BaronyRepos
         {
             e.BaronyId = d.BaronyId; e.OfficeType = d.OfficeType; e.Title = d.Title; e.PersonName = d.PersonName;
             e.IsBaron = d.IsBaron;
+            e.AvailableAdvisorId = d.AvailableAdvisorId;
             e.SkillsJson = Ser(d.Skills);
             e.SignificantSkillsJson = AdvisorSignificantSkills.Serialize(d.SignificantSkills);
             e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent);
             e.FormulaText = d.FormulaText; e.Description = d.Description; e.UpkeepGold = d.UpkeepGold;
+        }
+
+        private static AvailableAdvisorDTO ToDTO(AvailableAdvisor e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Name = e.Name,
+            Description = e.Description,
+            Skills = De(e.SkillsJson),
+        };
+
+        private static AvailableAdvisor ToEntity(AvailableAdvisorDTO d)
+        {
+            var e = new AvailableAdvisor();
+            ApplyAvailableAdvisor(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyAvailableAdvisor(AvailableAdvisor e, AvailableAdvisorDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Name = d.Name;
+            e.Description = d.Description;
+            e.SkillsJson = Ser(d.Skills);
         }
 
         // ---------------- Mapping: Building ----------------
@@ -858,7 +948,7 @@ namespace DA_Business.Repository.BaronyRepos
         private static SocialGroupRelationDTO ToDTO(SocialGroupRelation e) => new()
         {
             Id = e.Id, BaronyId = e.BaronyId, Group = e.Group, RelationLevel = e.RelationLevel,
-            InfluencePercent = e.InfluencePercent, IsActive = e.IsActive,
+            InfluencePercent = e.InfluencePercent, IsActive = e.IsActive, TaxPercent = e.TaxPercent,
             Additive = De(e.AdditiveJson), Percent = De(e.PercentJson), FormulaText = e.FormulaText,
         };
 
@@ -871,6 +961,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.RelationLevel = d.RelationLevel;
             e.InfluencePercent = d.InfluencePercent;
             e.IsActive = d.IsActive;
+            e.TaxPercent = d.TaxPercent;
             var additive = SocialGroupPpbFormulas.ComputeAdditive(e.Group, e.RelationLevel);
             var percent = SocialGroupPpbFormulas.ComputePercent(e.Group, e.RelationLevel);
             e.AdditiveJson = Ser(additive);
@@ -1044,11 +1135,85 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         // ---------------- Mapping: Improvement ----------------
+        private static async Task ApplySettlementFormulasAsync(ApplicationDbContext ctx, TerrainImprovementDTO dto)
+        {
+            if (!IsVillage(dto.Name) && !IsTown(dto.Name))
+                return;
+
+            var fertility = TerrainFertility.Unknown;
+            if (dto.TileId is int tid)
+            {
+                var tileFertility = await ctx.TerrainTiles.AsNoTracking()
+                    .Where(t => t.Id == tid)
+                    .Select(t => (int?)t.Fertility)
+                    .FirstOrDefaultAsync();
+                if (tileFertility is int f)
+                    fertility = f;
+            }
+
+            var taxRates = TownTaxRates.FromRelations(
+                (await ctx.SocialGroupRelations.AsNoTracking()
+                    .Where(x => x.BaronyId == dto.BaronyId)
+                    .ToListAsync())
+                .Select(r => (r.Group, r.TaxPercent)));
+
+            ApplySettlementFormulas(dto, fertility, taxRates);
+        }
+
+        private static void ApplySettlementFormulas(
+            TerrainImprovementDTO dto,
+            int fertility,
+            TownTaxRates? taxRates = null)
+        {
+            var taxes = taxRates ?? TownTaxRates.Defaults;
+            if (IsVillage(dto.Name))
+            {
+                dto.Additive = VillagePpbFormulas.Compute(dto.Population, fertility, dto.HasPalisade, taxes);
+                dto.Percent = new PpbVector();
+                dto.FormulaText = VillagePpbFormulas.CatalogDescription;
+            }
+            else if (IsTown(dto.Name))
+            {
+                dto.HasPalisade = false;
+                dto.Additive = TownPpbFormulas.Compute(dto.Population, taxes);
+                dto.Percent = new PpbVector();
+                dto.FormulaText = TownPpbFormulas.CatalogDescription;
+            }
+        }
+
+        private static bool IsVillage(string? name) =>
+            string.Equals(name, MapImprovement.Village, StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsTown(string? name) =>
+            string.Equals(name, MapImprovement.Town, StringComparison.OrdinalIgnoreCase);
+
+        private static TerrainImprovementDTO ToImprovementDto(
+            TerrainImprovement e,
+            IEnumerable<TerrainTile> tiles,
+            TownTaxRates taxRates)
+        {
+            TerrainTile? tile = null;
+            if (e.TileId is int tid)
+                tile = tiles.FirstOrDefault(t => t.Id == tid);
+            return ToImprovementDto(e, tile, taxRates);
+        }
+
+        private static TerrainImprovementDTO ToImprovementDto(
+            TerrainImprovement e,
+            TerrainTile? tile,
+            TownTaxRates taxRates)
+        {
+            var dto = ToDTO(e);
+            ApplySettlementFormulas(dto, tile?.Fertility ?? TerrainFertility.Unknown, taxRates);
+            return dto;
+        }
+
         private static TerrainImprovementDTO ToDTO(TerrainImprovement e) => new()
         {
             Id = e.Id, BaronyId = e.BaronyId, TileId = e.TileId, TemplateId = e.TemplateId, Name = e.Name,
             Additive = De(e.AdditiveJson), Percent = De(e.PercentJson), Description = e.Description, FormulaText = e.FormulaText,
             IsActive = e.IsActive, InactiveReason = e.InactiveReason, IconUrl = e.IconUrl,
+            Population = e.Population, HasPalisade = e.HasPalisade,
         };
 
         private static TerrainImprovement ToEntity(TerrainImprovementDTO d) { var e = new TerrainImprovement(); ApplyImprovement(e, d); e.Id = d.Id; return e; }
@@ -1058,6 +1223,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.BaronyId = d.BaronyId; e.TileId = d.TileId; e.TemplateId = d.TemplateId; e.Name = d.Name;
             e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent); e.Description = d.Description; e.FormulaText = d.FormulaText;
             e.IsActive = d.IsActive; e.InactiveReason = d.InactiveReason; e.IconUrl = d.IconUrl;
+            e.Population = d.Population; e.HasPalisade = d.HasPalisade;
         }
 
         // ---------------- Mapping: Project ----------------

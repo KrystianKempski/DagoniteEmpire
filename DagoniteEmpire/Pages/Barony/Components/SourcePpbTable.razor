@@ -18,9 +18,9 @@
                     <div class="source-cell">
                         @if (!string.IsNullOrWhiteSpace(row.Description))
                         {
-                            <MudTooltip Text="@row.Description">
+                            <BaronyTooltip Title="Description" Text="@row.Description">
                                 <span class="source-cell__name">@row.Source</span>
-                            </MudTooltip>
+                            </BaronyTooltip>
                         }
                         else
                         {
@@ -41,7 +41,19 @@
                 </td>
                 @foreach (var info in PpbCatalog.All)
                 {
-                    <td class="@ValueClass(row.Values[info.Key])">@Fmt(row.Values[info.Key])</td>
+                    var tip = row.ValueTooltip?.Invoke(info.Key);
+                    <td class="@ValueClass(row.Values[info.Key])">
+                        @if (tip is not null)
+                        {
+                            <BaronyTooltip Title="@info.NameEn" Text="@tip">
+                                <span>@Fmt(row.Values[info.Key])</span>
+                            </BaronyTooltip>
+                        }
+                        else
+                        {
+                            @Fmt(row.Values[info.Key])
+                        }
+                    </td>
                 }
             </tr>
         }

@@ -165,6 +165,7 @@
     [Parameter] public bool PaintEnabled { get; set; }
     [Parameter] public EventCallback<(int? X, int? Y)> OnCellHover { get; set; }
     [Parameter] public EventCallback<(int X, int Y)> OnCellPaint { get; set; }
+    [Parameter] public EventCallback OnPaintStrokeEnd { get; set; }
 
     private bool _dragPainting;
 
@@ -191,10 +192,13 @@
         await OnCellHover.InvokeAsync((null, null));
     }
 
-    private Task EndDragAsync()
+    private async Task EndDragAsync()
     {
+        if (!_dragPainting)
+            return;
+
         _dragPainting = false;
-        return Task.CompletedTask;
+        await OnPaintStrokeEnd.InvokeAsync();
     }
 
     private string TooltipPlacementClass(int x, int y)

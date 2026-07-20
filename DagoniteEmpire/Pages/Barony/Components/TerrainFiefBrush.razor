@@ -13,15 +13,16 @@
                 var seniorDomain = GetSeniorDomain(f);
                 var title = TerrainMapVisuals.FiefChipTitle(f);
                 var subtitle = TerrainMapVisuals.FiefChipSubtitle(f, seniorDomain);
+                var tiles = TileCount(f.Id);
                 <div class="terrain-domain-chip-row">
                     <button type="button"
                             class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
-                            title="@($"{title} — {subtitle}")"
+                            title="@($"{title} : {tiles} tiles — {subtitle}")"
                             @onclick="() => SelectFiefAsync(f.Id)">
                         <span class="terrain-domain-chip__swatch"
                               style="background-color: @f.ColorHex"></span>
                         <span class="terrain-domain-chip__text">
-                            <span class="terrain-domain-chip__name">@title</span>
+                            <span class="terrain-domain-chip__name">@title : @tiles</span>
                             <span class="terrain-domain-chip__lord">@subtitle</span>
                         </span>
                     </button>
@@ -59,12 +60,17 @@
     [Parameter] public IReadOnlyList<FiefDTO> Fiefs { get; set; } = Array.Empty<FiefDTO>();
     [Parameter] public IReadOnlyDictionary<int, TerrainMapDomainDTO> DomainsById { get; set; }
         = new Dictionary<int, TerrainMapDomainDTO>();
+    [Parameter] public IReadOnlyDictionary<int, int> TileCountsByFiefId { get; set; }
+        = new Dictionary<int, int>();
     [Parameter] public int? SelectedFiefId { get; set; }
     [Parameter] public EventCallback<int?> SelectedFiefIdChanged { get; set; }
     [Parameter] public EventCallback<(int FiefId, string ColorHex)> OnFiefColorChanged { get; set; }
     [Parameter] public EventCallback OnAddFief { get; set; }
     [Parameter] public EventCallback<int> OnEditFief { get; set; }
     [Parameter] public EventCallback<int> OnDeleteFief { get; set; }
+
+    private int TileCount(int fiefId) =>
+        TileCountsByFiefId.TryGetValue(fiefId, out var n) ? n : 0;
 
     private Task SelectFiefAsync(int fiefId) => SelectedFiefIdChanged.InvokeAsync(fiefId);
 

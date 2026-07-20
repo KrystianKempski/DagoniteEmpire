@@ -148,9 +148,11 @@
 
 .ppb-table--advisors,
 .ppb-table--city-buildings {
+    --barony-pre-ppb-width: 350px;
+    --barony-pop-width: 48px;
     --barony-advisor-role-width: 160px;
-    --barony-advisor-name-width: 160px;
-    --barony-pinned-label-width: calc(var(--barony-advisor-role-width) + var(--barony-advisor-name-width));
+    --barony-advisor-name-width: calc(var(--barony-pre-ppb-width) - var(--barony-advisor-role-width));
+    --barony-pinned-label-width: calc(var(--barony-pre-ppb-width) - var(--barony-pop-width));
 }
 
 .ppb-table--advisors .advisor-col-role {
@@ -205,7 +207,43 @@
     left: 0;
     z-index: 2;
     background: var(--barony-surface);
+    box-shadow: none;
+}
+
+.ppb-table--city-buildings .city-building-col-pop {
+    min-width: var(--barony-pop-width);
+    width: var(--barony-pop-width);
+    max-width: var(--barony-pop-width);
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+    font-size: inherit;
+    font-weight: 600;
+    color: var(--barony-ink);
+    position: sticky;
+    left: var(--barony-pinned-label-width);
+    z-index: 2;
+    background: var(--barony-surface);
+    box-sizing: border-box;
     box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.ppb-table--city-buildings thead .city-building-col-pop {
+    z-index: 3;
+}
+
+.ppb-table--city-buildings thead .city-building-col-pop.ppb-subcol--add {
+    background: rgba(79, 122, 77, 0.08);
+}
+
+.ppb-table--city-buildings tbody tr:hover .city-building-col-pop {
+    background: var(--barony-accent-soft);
+}
+
+.ppb-table--city-buildings .city-building-col-pop--editable {
+    cursor: pointer;
 }
 
 .ppb-table--city-buildings .city-building-col-owner {
@@ -220,10 +258,11 @@
     cursor: default;
 }
 
-/* Name + Owner together = 320px (same pinned width as Advisors / City Buildings / Social). */
+/* Name + Owner + Pop = 350px (same pinned width as City Buildings). */
 .ppb-table--terrain-improvements {
     --terrain-imp-owner-width: 3rem;
-    --terrain-imp-name-width: calc(320px - var(--terrain-imp-owner-width));
+    --terrain-imp-pop-width: var(--barony-pop-width);
+    --terrain-imp-name-width: calc(var(--barony-pre-ppb-width) - var(--terrain-imp-owner-width) - var(--terrain-imp-pop-width));
 }
 
 .ppb-table--terrain-improvements .city-building-col-name {
@@ -242,10 +281,14 @@
     z-index: 2;
     background: var(--barony-surface);
     box-sizing: border-box;
-    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+    box-shadow: none;
     font-size: inherit;
     font-weight: 600;
     color: var(--barony-ink);
+}
+
+.ppb-table--terrain-improvements .city-building-col-pop {
+    left: calc(var(--terrain-imp-name-width) + var(--terrain-imp-owner-width));
 }
 
 .ppb-table--terrain-improvements thead .city-building-col-owner {
@@ -256,10 +299,10 @@
     background: var(--barony-accent-soft);
 }
 
-/* Decrees: Name + Active = 320px pinned width. */
+/* Decrees: Name + Active = 350px pinned width. */
 .ppb-table--decrees {
     --decree-active-width: 4.5rem;
-    --decree-name-width: calc(320px - var(--decree-active-width));
+    --decree-name-width: calc(var(--barony-pre-ppb-width) - var(--decree-active-width));
 }
 
 .ppb-table--decrees .city-building-col-name {
@@ -312,10 +355,10 @@
     text-decoration: line-through;
 }
 
-/* Events: Name + Turns = 320px pinned width. */
+/* Events: Name + Turns = 350px pinned width. */
 .ppb-table--events {
     --event-turns-width: 5.5rem;
-    --event-name-width: calc(320px - var(--event-turns-width));
+    --event-name-width: calc(var(--barony-pre-ppb-width) - var(--event-turns-width));
 }
 
 .ppb-table--events .city-building-col-name {
@@ -446,8 +489,18 @@
     font-size: 1rem;
 }
 
-.ppb-table--city-buildings thead .city-building-col-name {
+.ppb-table--city-buildings thead .city-building-col-name,
+.ppb-table--city-buildings thead .city-building-col-pop {
     z-index: 3;
+}
+
+.ppb-table--city-buildings tbody tr:hover .city-building-col-name,
+.ppb-table--city-buildings tbody tr:hover .city-building-col-pop {
+    background: var(--barony-accent-soft);
+}
+
+.ppb-table--city-buildings thead .city-building-col-pop.ppb-subcol--add {
+    background: rgba(79, 122, 77, 0.08);
 }
 
 .ppb-table--city-buildings tbody tr:hover .city-building-col-name {
@@ -461,12 +514,14 @@
 /* ---- Social group relations (sticky/hover — widths defined after ppb-row-label) ---- */
 .ppb-table--social-groups thead .social-group-col-name,
 .ppb-table--social-groups thead .social-group-col-influence,
+.ppb-table--social-groups thead .social-group-col-tax,
 .ppb-table--social-groups thead .social-group-col-relation {
     z-index: 3;
 }
 
 .ppb-table--social-groups tbody tr:hover .social-group-col-name,
 .ppb-table--social-groups tbody tr:hover .social-group-col-influence,
+.ppb-table--social-groups tbody tr:hover .social-group-col-tax,
 .ppb-table--social-groups tbody tr:hover .social-group-col-relation {
     background: var(--barony-accent-soft);
 }
@@ -537,6 +592,88 @@
 .ppb-table--source .source-row--system .source-col {
     color: var(--barony-muted);
     font-style: italic;
+}
+
+.barony-tooltip {
+    max-width: 360px;
+    line-height: 1.35;
+}
+
+.barony-tooltip__title {
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.barony-tooltip__text {
+    white-space: pre-wrap;
+}
+
+.barony-tip-anchor {
+    display: inline;
+}
+
+/* Generic Domain Panel tooltip: kill Mud chrome; parchment lives on .barony-tip__box. */
+.mud-tooltip.barony-tip-popover,
+.mud-tooltip.mud-tooltip-default.barony-tip-popover,
+.mud-tooltip.mud-theme-transparent.barony-tip-popover {
+    background: transparent !important;
+    background-color: transparent !important;
+    color: inherit !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    font-weight: 400 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-align: left !important;
+}
+
+.mud-tooltip.barony-tip-popover > .d-block,
+.mud-tooltip.barony-tip-popover .d-block {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    white-space: normal !important;
+}
+
+.barony-tip__box {
+    max-width: min(22rem, calc(100vw - 2rem));
+    min-width: 10rem;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, #fbf8f1 0%, #f0ead9 100%);
+    color: #2f2a24;
+    border: 1px solid #c3b696;
+    border-radius: 4px;
+    box-shadow:
+        0 2px 10px rgba(47, 42, 36, 0.2),
+        inset 0 1px 0 rgba(251, 248, 241, 0.75);
+    font-family: 'Open Sans', sans-serif;
+    text-align: left;
+}
+
+.barony-tip__title {
+    font-family: 'Eagle Lake', serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #9c7a33;
+    margin: 0 0 6px 0;
+    padding: 0 0 5px 0;
+    border-bottom: 1px solid #d9cfb8;
+    letter-spacing: 0.02em;
+}
+
+.barony-tip__body {
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.45;
+    color: #2f2a24;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .barony-section {
@@ -627,12 +764,13 @@
     min-width: 160px;
 }
 
-/* Social groups: override ppb-row-label 160px — must follow generic label rule */
+/* Social groups: Group + Infl. + Tax + Relation = 350px pinned width. */
 .ppb-table--social-groups {
     --social-group-name-width: 125px;
-    --social-group-influence-width: 85px;
-    --social-group-relation-width: 110px;
-    --social-group-pinned-width: 320px;
+    --social-group-influence-width: 52px;
+    --social-group-tax-width: 44px;
+    --social-group-relation-width: 129px;
+    --social-group-pinned-width: 350px;
 }
 
 .ppb-table--social-groups col.social-group-col-name {
@@ -641,6 +779,10 @@
 
 .ppb-table--social-groups col.social-group-col-influence {
     width: var(--social-group-influence-width);
+}
+
+.ppb-table--social-groups col.social-group-col-tax {
+    width: var(--social-group-tax-width);
 }
 
 .ppb-table--social-groups col.social-group-col-relation {
@@ -684,9 +826,24 @@
     min-width: var(--social-group-influence-width) !important;
     width: var(--social-group-influence-width) !important;
     max-width: var(--social-group-influence-width) !important;
+    text-align: center;
     font-variant-numeric: tabular-nums;
     position: sticky;
     left: var(--social-group-name-width);
+    z-index: 2;
+    background: var(--barony-surface);
+    box-sizing: border-box;
+}
+
+.ppb-table--social-groups th.social-group-col-tax,
+.ppb-table--social-groups td.social-group-col-tax {
+    min-width: var(--social-group-tax-width) !important;
+    width: var(--social-group-tax-width) !important;
+    max-width: var(--social-group-tax-width) !important;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    position: sticky;
+    left: calc(var(--social-group-name-width) + var(--social-group-influence-width));
     z-index: 2;
     background: var(--barony-surface);
     box-sizing: border-box;
@@ -700,7 +857,7 @@
     text-align: left;
     white-space: nowrap;
     position: sticky;
-    left: calc(var(--social-group-name-width) + var(--social-group-influence-width));
+    left: calc(var(--social-group-name-width) + var(--social-group-influence-width) + var(--social-group-tax-width));
     z-index: 2;
     background: var(--barony-surface);
     box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);

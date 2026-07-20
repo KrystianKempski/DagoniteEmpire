@@ -39,6 +39,14 @@ namespace DA_Common.Barony
             _ => false,
         };
 
+        public static decimal DefaultTax(string group) => NormalizeKey(group) switch
+        {
+            Nobility => 5m,
+            Burghers => 15m,
+            Peasants => 30m,
+            _ => 0m,
+        };
+
         /// <summary>Maps legacy Polish group names stored in older rows.</summary>
         public static string NormalizeKey(string group) => group switch
         {
@@ -444,6 +452,22 @@ namespace DA_Common.Barony
         public const string Unrest = "Niepokój";
 
         public static readonly string[] All = { Society, Hunger, Crime, Corruption, Unrest };
+
+        public static string NormalizeKey(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return string.Empty;
+
+            var s = raw.Trim().ToLowerInvariant();
+            return s switch
+            {
+                "głód" or "glod" or "hunger" => Hunger,
+                "przestępczość" or "przestepczosc" or "crime" => Crime,
+                "korupcja" or "corruption" => Corruption,
+                "niepokój" or "niepokoj" or "unrest" => Unrest,
+                _ => raw.Trim(),
+            };
+        }
     }
 
     /// <summary>Fixed terrain map dimensions (one grid per barony).</summary>

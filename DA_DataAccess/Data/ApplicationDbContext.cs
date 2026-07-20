@@ -60,6 +60,7 @@ namespace DA_DataAccess.Data
         // BARONIA - warstwa zarządzania baronią
         public DbSet<Barony> Baronies { get; set; }
         public DbSet<Advisor> Advisors { get; set; }
+        public DbSet<AvailableAdvisor> AvailableAdvisors { get; set; }
         public DbSet<BaronyBuilding> BaronyBuildings { get; set; }
         public DbSet<SocialGroupRelation> SocialGroupRelations { get; set; }
         public DbSet<Decree> Decrees { get; set; }

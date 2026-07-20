@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.Data;
 using DA_DataAccess.CharacterClasses;
@@ -172,6 +172,9 @@ namespace DA_Business.Repository.CharacterReps
                     .AsNoTracking()
                     .Include(r => r.Race)
                     .Include(r => r.Profession)
+                    .Include(r => r.Attributes)
+                    .Include(r => r.BaseSkills)
+                    .Include(r => r.SpecialSkills)
                     .Include(r => r.EquipmentSlots!)
                         .ThenInclude(u => u.Equipment)
                         .ThenInclude(b => b!.Traits!)
@@ -188,7 +191,10 @@ namespace DA_Business.Repository.CharacterReps
 
             if (obj != null)
             {
-                return _mapper.Map<Character, CharacterDTO>(obj);
+                var dto = _mapper.Map<Character, CharacterDTO>(obj);
+                if (fullIncludes)
+                    CharacterSkillRelations.Wire(dto);
+                return dto;
             }
             return new CharacterDTO();
         }
@@ -202,6 +208,9 @@ namespace DA_Business.Repository.CharacterReps
                     .AsNoTracking()
                     .Include(r => r.Race)
                     .Include(r => r.Profession)
+                    .Include(r => r.Attributes)
+                    .Include(r => r.BaseSkills)
+                    .Include(r => r.SpecialSkills)
                     .Include(r => r.EquipmentSlots)
                         .ThenInclude(u => u.Equipment)
                         .ThenInclude(b => b.Traits)
@@ -217,7 +226,10 @@ namespace DA_Business.Repository.CharacterReps
             }
             if (obj != null)
             {
-                return _mapper.Map<Character, CharacterDTO>(obj);
+                var dto = _mapper.Map<Character, CharacterDTO>(obj);
+                if (fullIncludes)
+                    CharacterSkillRelations.Wire(dto);
+                return dto;
             }
             return new CharacterDTO();
         }

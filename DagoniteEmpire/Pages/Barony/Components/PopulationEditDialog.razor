@@ -1,0 +1,46 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Population</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            @if (!string.IsNullOrWhiteSpace(TargetName))
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                    @TargetName
+                </MudText>
+            }
+            <MudNumericField T="int"
+                             @bind-Value="_value"
+                             Label="Population (+)"
+                             HelperText="Settlement size (population). Additive only — no percent."
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string? TargetName { get; set; }
+    [Parameter] public int Value { get; set; }
+
+    private int _value;
+
+    protected override void OnInitialized() => _value = Math.Max(0, Value);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save() => MudDialog.Close(DialogResult.Ok(Math.Max(0, _value)));
+}
