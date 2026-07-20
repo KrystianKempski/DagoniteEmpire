@@ -123,6 +123,8 @@ namespace DA_Business.Repository.BaronyRepos
                     Name = string.IsNullOrWhiteSpace(name) ? "Nowa Baronia" : name.Trim(),
                     Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
                     BaseParametersJson = Ser(new PpbVector()),
+                    ResourceStocksJson = Ser(new PpbVector()),
+                    PreviousTurnIncomeJson = Ser(new PpbVector()),
                 };
                 var added = await ctx.Baronies.AddAsync(entity);
                 await ctx.SaveChangesAsync();
@@ -211,6 +213,8 @@ namespace DA_Business.Repository.BaronyRepos
                     Fiefs = (await ctx.Fiefs.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Tiles = tiles.Select(ToDTO).ToList(),
                     Projects = (await ctx.BaronyProjects.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    ResourceSources = (await ctx.BaronyResourceSources.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    PurseSources = (await ctx.BaronPurseSources.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                 };
             }
             catch (System.Exception ex) { throw Err(ex, nameof(GetOverview)); }
@@ -618,6 +622,48 @@ namespace DA_Business.Repository.BaronyRepos
 
         public Task<int> DeleteProject(int id) => Delete(ctx => ctx.BaronyProjects, id, nameof(DeleteProject));
 
+        // ---------------- Resource sources ----------------
+        public async Task<List<BaronyResourceSourceDTO>> GetResourceSources(int baronyId) =>
+            await GetList(ctx => ctx.BaronyResourceSources, baronyId, ToDTO, nameof(GetResourceSources));
+
+        public async Task<BaronyResourceSourceDTO> SaveResourceSource(BaronyResourceSourceDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0 ? await ctx.BaronyResourceSources.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                if (e is null) { e = ToEntity(dto); ctx.BaronyResourceSources.Add(e); }
+                else { ApplyResourceSource(e, dto); }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveResourceSource)); }
+        }
+
+        public Task<int> DeleteResourceSource(int id) =>
+            Delete(ctx => ctx.BaronyResourceSources, id, nameof(DeleteResourceSource));
+
+        // ---------------- Baron purse sources ----------------
+        public async Task<List<BaronPurseSourceDTO>> GetPurseSources(int baronyId) =>
+            await GetList(ctx => ctx.BaronPurseSources, baronyId, ToDTO, nameof(GetPurseSources));
+
+        public async Task<BaronPurseSourceDTO> SavePurseSource(BaronPurseSourceDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0 ? await ctx.BaronPurseSources.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                if (e is null) { e = ToEntity(dto); ctx.BaronPurseSources.Add(e); }
+                else { ApplyPurseSource(e, dto); }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SavePurseSource)); }
+        }
+
+        public Task<int> DeletePurseSource(int id) =>
+            Delete(ctx => ctx.BaronPurseSources, id, nameof(DeletePurseSource));
+
         // ---------------- Building templates (global) ----------------
         public async Task<List<BuildingTemplateDTO>> GetBuildingTemplates()
         {
@@ -750,7 +796,7 @@ namespace DA_Business.Repository.BaronyRepos
                     BaronyId = baronyId,
                     OfficeType = OfficeType.Chancellor,
                     Title = "Chancellor",
-                    PersonName = "Unassigned",
+                    PersonName = "",
                     SkillsJson = Ser(chancellorSkills),
                     SignificantSkillsJson = AdvisorSignificantSkills.Serialize(chancellorSignificant),
                     AdditiveJson = Ser(chancellorAdd),
@@ -763,7 +809,7 @@ namespace DA_Business.Repository.BaronyRepos
                     BaronyId = baronyId,
                     OfficeType = OfficeType.GuardCaptain,
                     Title = "Guard Captain",
-                    PersonName = "Unassigned",
+                    PersonName = "",
                     SkillsJson = Ser(captainSkills),
                     SignificantSkillsJson = AdvisorSignificantSkills.Serialize(captainSignificant),
                     AdditiveJson = Ser(captainAdd),
@@ -776,7 +822,7 @@ namespace DA_Business.Repository.BaronyRepos
                     BaronyId = baronyId,
                     OfficeType = OfficeType.Steward,
                     Title = "Steward",
-                    PersonName = "Unassigned",
+                    PersonName = "",
                     SkillsJson = Ser(stewardSkills),
                     SignificantSkillsJson = AdvisorSignificantSkills.Serialize(stewardSignificant),
                     AdditiveJson = Ser(stewardAdd),
@@ -832,26 +878,36 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         // ---------------- Mapping: Barony ----------------
-        private static BaronyDTO ToDTO(Barony e) => new()
+        private static BaronyDTO ToDTO(Barony e)
         {
-            Id = e.Id,
-            CharacterId = e.CharacterId,
-            Name = e.Name,
-            Size = e.Size,
-            Year = e.Year,
-            Month = e.Month,
-            TurnNumber = e.TurnNumber,
-            Season = e.Season,
-            TreasuryGold = e.TreasuryGold,
-            BaronPurseGold = e.BaronPurseGold,
-            FoodInGranaries = e.FoodInGranaries,
-            Unrest = e.Unrest,
-            Prestige = e.Prestige,
-            Honor = e.Honor,
-            Fear = e.Fear,
-            BaseParameters = De(e.BaseParametersJson),
-            Notes = e.Notes,
-        };
+            var stocks = De(e.ResourceStocksJson);
+            // Food / Gold scalars remain the source of truth for Budget / Domain Panel.
+            stocks[Ppb.Food] = e.FoodInGranaries;
+            stocks[Ppb.Treasury] = e.TreasuryGold;
+
+            return new()
+            {
+                Id = e.Id,
+                CharacterId = e.CharacterId,
+                Name = e.Name,
+                Size = e.Size,
+                Year = e.Year,
+                Month = e.Month,
+                TurnNumber = e.TurnNumber,
+                Season = e.Season,
+                TreasuryGold = e.TreasuryGold,
+                BaronPurseGold = e.BaronPurseGold,
+                FoodInGranaries = e.FoodInGranaries,
+                ResourceStocks = stocks,
+                PreviousTurnIncome = De(e.PreviousTurnIncomeJson),
+                Unrest = e.Unrest,
+                Prestige = e.Prestige,
+                Honor = e.Honor,
+                Fear = e.Fear,
+                BaseParameters = De(e.BaseParametersJson),
+                Notes = e.Notes,
+            };
+        }
 
         private static Barony ToEntity(BaronyDTO d)
         {
@@ -870,15 +926,22 @@ namespace DA_Business.Repository.BaronyRepos
             e.Month = d.Month;
             e.TurnNumber = d.TurnNumber;
             e.Season = d.Season;
-            e.TreasuryGold = d.TreasuryGold;
             e.BaronPurseGold = d.BaronPurseGold;
-            e.FoodInGranaries = d.FoodInGranaries;
             e.Unrest = d.Unrest;
             e.Prestige = d.Prestige;
             e.Honor = d.Honor;
             e.Fear = d.Fear;
             e.BaseParametersJson = Ser(d.BaseParameters);
             e.Notes = d.Notes;
+
+            var stocks = ResourceCatalog.Slice(d.ResourceStocks);
+            // Keep Food/Gold scalars and vector in sync (Budget may update scalars only).
+            stocks[Ppb.Food] = d.FoodInGranaries;
+            stocks[Ppb.Treasury] = d.TreasuryGold;
+            e.FoodInGranaries = stocks[Ppb.Food];
+            e.TreasuryGold = stocks[Ppb.Treasury];
+            e.ResourceStocksJson = Ser(stocks);
+            e.PreviousTurnIncomeJson = Ser(ResourceCatalog.Slice(d.PreviousTurnIncome));
         }
 
         // ---------------- Mapping: Advisor ----------------
@@ -1241,6 +1304,58 @@ namespace DA_Business.Repository.BaronyRepos
             e.BaronyId = d.BaronyId; e.Name = d.Name; e.CostJson = Ser(d.Cost); e.ResultJson = Ser(d.Result);
             e.AllocatedJson = Ser(d.Allocated); e.ResultDescription = d.ResultDescription; e.Status = d.Status;
             e.TurnsRemaining = d.TurnsRemaining; e.Notes = d.Notes;
+        }
+
+        // ---------------- Mapping: Resource source ----------------
+        private static BaronyResourceSourceDTO ToDTO(BaronyResourceSource e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Name = e.Name,
+            Description = e.Description,
+            Additive = De(e.AdditiveJson),
+        };
+
+        private static BaronyResourceSource ToEntity(BaronyResourceSourceDTO d)
+        {
+            var e = new BaronyResourceSource();
+            ApplyResourceSource(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyResourceSource(BaronyResourceSource e, BaronyResourceSourceDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Name = d.Name;
+            e.Description = d.Description;
+            e.AdditiveJson = Ser(ResourceCatalog.Slice(d.Additive));
+        }
+
+        // ---------------- Mapping: Baron purse source ----------------
+        private static BaronPurseSourceDTO ToDTO(BaronPurseSource e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Name = e.Name,
+            Description = e.Description,
+            Amount = e.Amount,
+        };
+
+        private static BaronPurseSource ToEntity(BaronPurseSourceDTO d)
+        {
+            var e = new BaronPurseSource();
+            ApplyPurseSource(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyPurseSource(BaronPurseSource e, BaronPurseSourceDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Name = d.Name;
+            e.Description = d.Description;
+            e.Amount = d.Amount;
         }
 
         // ---------------- Mapping: Template ----------------

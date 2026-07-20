@@ -4,7 +4,7 @@
     <thead>
         <tr>
             <th class="ppb-row-label source-col">Source</th>
-            @foreach (var info in PpbCatalog.All)
+            @foreach (var info in SkillColumns)
             {
                 <th title="@info.Code">@PpbShort(info.Key)</th>
             }
@@ -39,10 +39,10 @@
                         }
                     </div>
                 </td>
-                @foreach (var info in PpbCatalog.All)
+                @foreach (var info in SkillColumns)
                 {
                     var tip = row.ValueTooltip?.Invoke(info.Key);
-                    <td class="@ValueClass(row.Values[info.Key])">
+                    <td class="@PpbCellStyle.ValueClass(info.Key, row.Values[info.Key])">
                         @if (tip is not null)
                         {
                             <BaronyTooltip Title="@info.NameEn" Text="@tip">
@@ -61,10 +61,10 @@
         {
             <tr class="ppb-summary-row">
                 <td class="ppb-row-label">@SummaryLabel</td>
-                @foreach (var info in PpbCatalog.All)
+                @foreach (var info in SkillColumns)
                 {
                     var v = Summary[info.Key];
-                    <td class="@ValueClass(v)"><b>@Fmt(v)</b></td>
+                    <td class="@PpbCellStyle.ValueClass(info.Key, v)"><b>@Fmt(v)</b></td>
                 }
             </tr>
         }
@@ -78,6 +78,9 @@
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public EventCallback<BaronInfluenceRow> OnEdit { get; set; }
     [Parameter] public EventCallback<BaronInfluenceRow> OnDelete { get; set; }
+
+    private static IEnumerable<PpbInfo> SkillColumns
+        => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);
 
     private static string RowTitle(BaronInfluenceRow row)
     {
@@ -104,21 +107,5 @@
         _ => p.ToString(),
     };
 
-    private static string Fmt(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        var rounded = decimal.Round(v, 2);
-        var text = rounded == decimal.Truncate(rounded)
-            ? ((long)rounded).ToString()
-            : rounded.ToString("0.##");
-        return rounded > 0 ? "+" + text : text;
-    }
-
-    private static string ValueClass(decimal v)
-    {
-        if (v > 0m) return "ppb-cell-pos";
-        if (v < 0m) return "ppb-cell-neg";
-        return "ppb-cell-zero";
-    }
+    private static string Fmt(decimal v) => PpbFormat.Additive(v);
 }

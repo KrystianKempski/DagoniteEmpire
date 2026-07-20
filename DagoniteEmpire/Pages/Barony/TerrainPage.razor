@@ -1083,7 +1083,7 @@ else
     private void ApplyVassalTreasuryHalf(TerrainImprovementDTO dto, TerrainTileDTO tile)
     {
         if (IsOnVassalFief(tile) && dto.Additive[Ppb.Treasury] > 0)
-            dto.Additive[Ppb.Treasury] = decimal.Round(dto.Additive[Ppb.Treasury] / 2m, 2);
+            dto.Additive[Ppb.Treasury] = PpbFormat.Round(dto.Additive[Ppb.Treasury] / 2m);
     }
 
     private bool IsOnVassalFief(TerrainTileDTO tile)

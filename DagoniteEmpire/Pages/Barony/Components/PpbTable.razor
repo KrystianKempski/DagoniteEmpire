@@ -9,7 +9,7 @@
             }
             @foreach (var info in PpbCatalog.All)
             {
-                <th title="@info.NamePl">@info.ShortPl</th>
+                <th title="@info.NameEn">@info.ShortEn</th>
             }
         </tr>
     </thead>
@@ -43,7 +43,7 @@
                 @foreach (var info in PpbCatalog.All)
                 {
                     var v = Summary[info.Key];
-                    <td class="@ValueClass(v)">@Fmt(v)</td>
+                    <td class="@PpbCellStyle.ValueClass(info.Key, v)">@Fmt(v)</td>
                 }
             </tr>
         }
@@ -53,21 +53,12 @@
 @code {
     [Parameter] public IEnumerable<PpbModifierRow> Rows { get; set; } = Array.Empty<PpbModifierRow>();
     [Parameter] public PpbVector? Summary { get; set; }
-    [Parameter] public string SummaryLabel { get; set; } = "Suma sekcji";
-    [Parameter] public string RowHeader { get; set; } = "Modyfikator";
+    [Parameter] public string SummaryLabel { get; set; } = "Section total";
+    [Parameter] public string RowHeader { get; set; } = "Modifier";
     [Parameter] public string TableClass { get; set; } = "ppb-table--zebra";
     [Parameter] public bool ShowRowLabels { get; set; } = true;
 
-    private static string Fmt(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        var rounded = decimal.Round(v, 2);
-        var text = rounded == decimal.Truncate(rounded)
-            ? ((long)rounded).ToString()
-            : rounded.ToString("0.##");
-        return rounded > 0 ? "+" + text : text;
-    }
+    private static string Fmt(decimal v) => PpbFormat.Additive(v);
 
     private static string CellContent(PpbModifierRow row, Ppb p)
     {
@@ -75,9 +66,9 @@
         var pct = row.Percent?[p] ?? 0m;
         var parts = new List<string>();
         if (add != 0m)
-            parts.Add(Fmt(add));
+            parts.Add(PpbFormat.Additive(add));
         if (pct != 0m)
-            parts.Add(Fmt(pct) + "%");
+            parts.Add(PpbFormat.Percent(pct));
         return parts.Count == 0 ? "<span class=\"ppb-cell-zero\">·</span>" : string.Join(" / ", parts);
     }
 
@@ -86,13 +77,6 @@
         var add = row.Additive?[p] ?? 0m;
         var pct = row.Percent?[p] ?? 0m;
         var net = add + pct;
-        return ValueClass(net);
-    }
-
-    private static string ValueClass(decimal v)
-    {
-        if (v > 0m) return "ppb-cell-pos";
-        if (v < 0m) return "ppb-cell-neg";
-        return "ppb-cell-zero";
+        return PpbCellStyle.ValueClass(p, net);
     }
 }

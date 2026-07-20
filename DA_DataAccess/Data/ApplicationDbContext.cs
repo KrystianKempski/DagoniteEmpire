@@ -73,6 +73,8 @@ namespace DA_DataAccess.Data
         public DbSet<TerrainMapDomain> TerrainMapDomains { get; set; }
         public DbSet<TerrainImprovement> TerrainImprovements { get; set; }
         public DbSet<BaronyProject> BaronyProjects { get; set; }
+        public DbSet<BaronyResourceSource> BaronyResourceSources { get; set; }
+        public DbSet<BaronPurseSource> BaronPurseSources { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

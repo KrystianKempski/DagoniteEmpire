@@ -19,7 +19,7 @@
                              ShrinkLabel="@Compact"
                              IconSize="Size.Small"
                              Step="@StepSize"
-                             Format="0.##"
+                             Format="0.#"
                              Disabled="@ReadOnly"
                              HideSpinButtons="@ReadOnly"
                              Class="@FieldClass(significant)"
@@ -37,11 +37,15 @@
     [Parameter] public bool ReadOnly { get; set; }
     [Parameter] public bool ExcludeTreasury { get; set; }
     [Parameter] public IReadOnlySet<Ppb>? SignificantKeys { get; set; }
+    /// <summary>When set, only these PPB keys are shown (overrides ExcludeTreasury).</summary>
+    [Parameter] public IReadOnlyCollection<PpbInfo>? Columns { get; set; }
 
     private decimal StepSize => Percent ? 0.1m : 1m;
 
     private IEnumerable<PpbInfo> VisibleColumns =>
-        ExcludeTreasury ? PpbCatalog.All.Where(p => p.Key != Ppb.Treasury) : PpbCatalog.All;
+        Columns is { Count: > 0 }
+            ? Columns
+            : ExcludeTreasury ? PpbCatalog.All.Where(p => p.Key != Ppb.Treasury) : PpbCatalog.All;
 
     private bool IsSignificant(Ppb key)
         => SignificantKeys is { Count: > 0 } && SignificantKeys.Contains(key);
@@ -66,7 +70,9 @@
     }
 
     private string CompactGridClass =>
-        ExcludeTreasury ? "ppb-editor-grid--compact-12" : "ppb-editor-grid--compact";
+        Columns is { Count: > 0 }
+            ? "ppb-editor-grid--compact-resources"
+            : ExcludeTreasury ? "ppb-editor-grid--compact-12" : "ppb-editor-grid--compact";
 
     private string FieldLabel(PpbInfo info) =>
         Compact ? PpbShort(info.Key) : info.NamePl + (Percent ? " %" : "");

@@ -16,23 +16,48 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <div class="barony-resource-bar">
-        <div class="barony-resource-bar__name">
-            @_overview.Barony.Name
+    <div class="barony-meta-bar" aria-label="Barony status">
+        <div class="barony-meta-bar__name">@_overview.Barony.Name</div>
+        <div class="barony-meta-bar__group" aria-label="Calendar">
+            <span class="barony-meta-bar__stat">
+                <span class="barony-meta-bar__label">Year</span>
+                <span class="barony-meta-bar__value">@_overview.Barony.Year</span>
+            </span>
+            <span class="barony-meta-bar__stat">
+                <span class="barony-meta-bar__label">Month</span>
+                <span class="barony-meta-bar__value">@MonthEn(_overview.Barony.Month)</span>
+            </span>
+            <span class="barony-meta-bar__stat">
+                <span class="barony-meta-bar__label">Season</span>
+                <span class="barony-meta-bar__value">@SeasonEn(_overview.Barony.Season)</span>
+            </span>
+            <span class="barony-meta-bar__stat">
+                <span class="barony-meta-bar__label">Turn</span>
+                <span class="barony-meta-bar__value">@_overview.Barony.TurnNumber</span>
+            </span>
+            <span class="barony-meta-bar__stat">
+                <span class="barony-meta-bar__label">Size</span>
+                <span class="barony-meta-bar__value">@_overview.Barony.Size</span>
+            </span>
         </div>
-        <div class="barony-resource-bar__items">
-            <span>Year <b>@_overview.Barony.Year</b></span>
-            <span>Month <b>@MonthEn(_overview.Barony.Month)</b></span>
-            <span>Season <b>@SeasonEn(_overview.Barony.Season)</b></span>
-            <span>Turn <b>@_overview.Barony.TurnNumber</b></span>
-            <span>Size <b>@_overview.Barony.Size</b></span>
-            <span>Treasury <b>@Num(_overview.Barony.TreasuryGold)</b></span>
-            <span>Food <b>@Num(_overview.Barony.FoodInGranaries)</b></span>
-            <span>Production <b>@Num(_grandTotal[Ppb.Production])</b></span>
-            <span>Loyalty <b>@Num(_grandTotal[Ppb.Loyalty])</b></span>
-            <span>Stability <b>@Num(_grandTotal[Ppb.Stability])</b></span>
-            <span>Economy <b>@Num(_grandTotal[Ppb.Economy])</b></span>
-            <span>Unrest <b>@_overview.Barony.Unrest</b></span>
+        <div class="barony-meta-bar__divider" aria-hidden="true"></div>
+        <div class="barony-meta-bar__group" aria-label="Domain status">
+            <span class="barony-meta-bar__stat">
+                <span class="barony-meta-bar__label">Loyalty</span>
+                <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Loyalty])">@FmtAdd(_grandTotal[Ppb.Loyalty])</span>
+            </span>
+            <span class="barony-meta-bar__stat">
+                <span class="barony-meta-bar__label">Stability</span>
+                <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Stability])">@FmtAdd(_grandTotal[Ppb.Stability])</span>
+            </span>
+            <span class="barony-meta-bar__stat">
+                <span class="barony-meta-bar__label">Economy</span>
+                <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Economy])">@FmtAdd(_grandTotal[Ppb.Economy])</span>
+            </span>
+            <span class="barony-meta-bar__stat">
+                <span class="barony-meta-bar__label">Unrest</span>
+                <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
+            </span>
         </div>
     </div>
 
@@ -67,16 +92,55 @@ else if (_overview is not null)
                    OnChanged="ReloadOverviewAsync" />
     <CommunityPenaltiesSection Rows="@_communityRows" />
 
-    @* --- Summary section --- *@
-    <div class="barony-card mt-3">
-        <div class="barony-card__title">Barony PPB Summary</div>
-        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-            Draft formula: (base + Σ additive) × (1 + Σ percent). Detailed formulas will be provided later.
-        </MudText>
-        <div style="overflow-x:auto;">
-            <PpbTable Rows="@_totalBreakdown" Summary="@_grandTotal" SummaryLabel="Final Value" RowHeader="Component" TableClass="ppb-table--lined" />
-        </div>
-    </div>
+    <BaronySection Title="Barony Summary">
+        <Summary>
+            <PpbSummaryChips Vector="@_grandTotal" />
+        </Summary>
+        <ChildContent>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                final = Σ additive + scalable_additive × (Σ percent / 100). Percent scales positive additives (negative for Corruption).
+            </MudText>
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--summary ppb-table--lined">
+                    <colgroup>
+                        <col class="summary-col-component" />
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <col class="summary-col-ppb" />
+                        }
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="ppb-row-label summary-col-component">Component</th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th title="@info.NameEn">@PpbShort(info.Key)</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _totalBreakdown)
+                        {
+                            <tr>
+                                <td class="ppb-row-label summary-col-component">@row.Label</td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@SummaryCellClass(row, info.Key)">@SummaryCellText(row, info.Key)</td>
+                                }
+                            </tr>
+                        }
+                        <tr class="ppb-summary-row">
+                            <td class="ppb-row-label summary-col-component">Final Value</td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@PpbCellStyle.ValueClass(info.Key, _grandTotal[info.Key])"><b>@FmtAdd(_grandTotal[info.Key])</b></td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </ChildContent>
+    </BaronySection>
 }
 
 @code {
@@ -108,30 +172,25 @@ else if (_overview is not null)
 
         var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
         var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
-        _advisorsForSection = BaronyCalc.AdvisorsForDomainPanel(
-            _overview.Advisors, _overview.Barony, character, baronModifiers);
+        var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        var panel = BaronyCalc.BuildDomainPanelRows(
+            _overview, character, baronModifiers, advisorModifiers);
 
-        _advisorRows = BaronyCalc.AdvisorRows(_advisorsForSection);
+        _advisorsForSection = panel.Advisors;
+        _advisorRows = panel.AdvisorRows;
         _savedBuildings = _overview.Buildings;
         _buildingCatalog = (await _baronyRepo.GetBuildingTemplates())
             .Where(t => t.Kind == BuildingKind.Building)
             .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        _buildingRows = BaronyCalc.CityBuildingSectionRows(Barony!.Id, _savedBuildings, _overview.Improvements);
-        _socialRows = BaronyCalc.SocialRows(Barony!.Id, _overview.SocialRelations);
-        _improvementRows = BaronyCalc.ImprovementRows(_overview.Improvements);
-        _decreeRows = BaronyCalc.DecreeRows(_overview.Decrees);
-        _eventRows = BaronyCalc.EventRows(_overview.Events, _overview.Barony.TurnNumber);
-        _communityRows = BaronyCalc.CommunityRows(
-            _advisorRows,
-            _buildingRows,
-            _socialRows,
-            _improvementRows,
-            _decreeRows,
-            _eventRows,
-            _overview.Barony.Unrest);
-
-        BuildTotals();
+        _buildingRows = panel.BuildingRows;
+        _socialRows = panel.SocialRows;
+        _improvementRows = panel.ImprovementRows;
+        _decreeRows = panel.DecreeRows;
+        _eventRows = panel.EventRows;
+        _communityRows = panel.CommunityRows;
+        ApplyPanelTotals(panel);
+        NotifyResourceHud();
     }
 
     private async Task ReloadOverviewAsync()
@@ -143,56 +202,82 @@ else if (_overview is not null)
         if (_overview is null)
             return;
 
+        var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+        var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+        var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        var panel = BaronyCalc.BuildDomainPanelRows(
+            _overview, character, baronModifiers, advisorModifiers);
+
+        _advisorsForSection = panel.Advisors;
+        _advisorRows = panel.AdvisorRows;
         _savedBuildings = _overview.Buildings;
-        _buildingRows = BaronyCalc.CityBuildingSectionRows(Barony.Id, _savedBuildings, _overview.Improvements);
-        _socialRows = BaronyCalc.SocialRows(Barony!.Id, _overview.SocialRelations);
-        _improvementRows = BaronyCalc.ImprovementRows(_overview.Improvements);
-        _decreeRows = BaronyCalc.DecreeRows(_overview.Decrees);
-        _eventRows = BaronyCalc.EventRows(_overview.Events, _overview.Barony.TurnNumber);
-        _communityRows = BaronyCalc.CommunityRows(
-            _advisorRows,
-            _buildingRows,
-            _socialRows,
-            _improvementRows,
-            _decreeRows,
-            _eventRows,
-            _overview.Barony.Unrest);
-        BuildTotals();
+        _buildingRows = panel.BuildingRows;
+        _socialRows = panel.SocialRows;
+        _improvementRows = panel.ImprovementRows;
+        _decreeRows = panel.DecreeRows;
+        _eventRows = panel.EventRows;
+        _communityRows = panel.CommunityRows;
+        ApplyPanelTotals(panel);
+        NotifyResourceHud();
         StateHasChanged();
     }
 
-    private void BuildTotals()
+    private void ApplyPanelTotals(BaronyCalc.DomainPanelRowSet panel)
     {
-        if (_overview is null)
-            return;
-
-        var allRows = new List<PpbModifierRow>();
-        allRows.AddRange(_advisorRows);
-        allRows.AddRange(_buildingRows);
-        allRows.AddRange(_socialRows);
-        allRows.AddRange(_improvementRows);
-        allRows.AddRange(_decreeRows);
-        allRows.AddRange(_eventRows);
-        allRows.AddRange(_communityRows);
-
-        var additive = BaronyCalc.SumAdditive(allRows);
-        var percent = BaronyCalc.SumPercent(allRows);
+        var additive = BaronyCalc.SumAdditive(panel.AllRows);
+        var percent = BaronyCalc.SumPercent(panel.AllRows);
 
         _totalBreakdown = new List<PpbModifierRow>
         {
-            new() { Label = "PPB Base", Additive = _overview.Barony.BaseParameters },
             new() { Label = "Σ additive (all sections)", Additive = additive },
             new() { Label = "Σ percent (all sections)", Percent = percent },
         };
 
-        _grandTotal = PpbMath.Summarize(_overview.Barony.BaseParameters, additive, percent);
+        _grandTotal = panel.GrandTotal;
     }
 
-    private static string Num(decimal v)
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string SignedClass(decimal v)
+        => v > 0m ? "barony-meta-bar__value--pos"
+            : v < 0m ? "barony-meta-bar__value--neg"
+            : "";
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
+
+    private static string SummaryCellText(PpbModifierRow row, Ppb p)
     {
-        var r = decimal.Round(v, 2);
-        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
+        var add = row.Additive[p];
+        var pct = row.Percent[p];
+        if (add != 0m)
+            return FmtAdd(add);
+        if (pct != 0m)
+            return FmtPct(pct);
+        return "·";
     }
+
+    private static string SummaryCellClass(PpbModifierRow row, Ppb p)
+    {
+        var add = row.Additive[p];
+        var pct = row.Percent[p];
+        return PpbCellStyle.ValueClass(p, add != 0m ? add : pct);
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
 
     private static string SeasonEn(string season) => season switch
     {

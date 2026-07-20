@@ -17,8 +17,8 @@
                     <col class="social-group-col-relation" />
                     @foreach (var _ in PpbCatalog.All)
                     {
-                        <col class="social-group-ppb-col" />
-                        <col class="social-group-ppb-col" />
+                        <col class="ppb-pair-col" />
+                        <col class="ppb-pair-col" />
                     }
                 </colgroup>
                 <thead>
@@ -66,8 +66,8 @@
                             </td>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <td class="@CellClass(row, row.Additive[info.Key])">@FmtAdd(row.Additive[info.Key])</td>
-                                <td class="@CellClass(row, row.Percent[info.Key])">@FmtPct(row.Percent[info.Key])</td>
+                                <td class="@CellClass(row, info.Key, row.Additive[info.Key])">@FmtAdd(row.Additive[info.Key])</td>
+                                <td class="@CellClass(row, info.Key, row.Percent[info.Key])">@FmtPct(row.Percent[info.Key])</td>
                             }
                         </tr>
                     }
@@ -79,8 +79,8 @@
                         <td class="social-group-col-relation"></td>
                         @foreach (var info in PpbCatalog.All)
                         {
-                            <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
-                            <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                            <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                            <td class="@PpbCellStyle.ValueClass(info.Key, PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
                         }
                     </tr>
                 </tbody>
@@ -137,42 +137,18 @@
     private static string RowClass(SocialGroupRow row)
         => row.IsActive ? "" : "social-group-row--inactive";
 
-    private static string CellClass(SocialGroupRow row, decimal v)
+    private static string CellClass(SocialGroupRow row, Ppb key, decimal v)
     {
         if (!row.IsActive)
             return "ppb-cell-inactive";
-        return ValueClass(v);
+        return PpbCellStyle.ValueClass(key, v);
     }
 
     private static string FmtPctValue(int pct)
         => pct <= 0 ? "·" : $"{pct}%";
 
-    private static string FmtAdd(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v);
-    }
-
-    private static string FmtPct(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v) + "%";
-    }
-
-    private static string Num(decimal v)
-    {
-        var r = decimal.Round(v, 2);
-        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
-    }
-
-    private static string ValueClass(decimal v)
-    {
-        if (v > 0m) return "ppb-cell-pos";
-        if (v < 0m) return "ppb-cell-neg";
-        return "ppb-cell-zero";
-    }
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
 
     private static string PpbShort(Ppb p) => p switch
     {

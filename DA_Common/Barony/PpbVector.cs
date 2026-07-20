@@ -116,27 +116,28 @@ namespace DA_Common.Barony
         }
     }
 
-    /// <summary>Pomocnicze operacje podsumowania PPB (baza + addytywne, następnie procentowe).</summary>
+    /// <summary>Pomocnicze operacje podsumowania PPB z sekcji domeny.</summary>
     public static class PpbMath
     {
         /// <summary>
-        /// Wstępny wzór podsumowania: wynik = (baza + Σ addytywne) * (1 + Σ procent/100).
-        /// Dokładny porządek zostanie potwierdzony przy dostarczeniu formuł.
+        /// final = Σ additive + scalable_additive × (Σ percent / 100).
+        /// <paramref name="scalableAdditive"/> — suma dodatnich wartości addytywnych per wiersz
+        /// (dla Korupcji: suma ujemnych).
         /// </summary>
-        public static PpbVector Summarize(PpbVector? baseVec, PpbVector? additive, PpbVector? percent)
+        public static PpbVector Summarize(PpbVector? additive, PpbVector? scalableAdditive, PpbVector? percent)
         {
             var result = new PpbVector();
-            var b = baseVec ?? new PpbVector();
             var a = additive ?? new PpbVector();
+            var s = scalableAdditive ?? new PpbVector();
             var p = percent ?? new PpbVector();
-            b.EnsureSize();
             a.EnsureSize();
+            s.EnsureSize();
             p.EnsureSize();
 
             for (int i = 0; i < PpbCatalog.Count; i++)
             {
-                var value = (b.Values[i] + a.Values[i]) * (1m + p.Values[i] / 100m);
-                result.Values[i] = decimal.Round(value, 2);
+                var value = a.Values[i] + s.Values[i] * (p.Values[i] / 100m);
+                result.Values[i] = PpbFormat.Round(value);
             }
             return result;
         }

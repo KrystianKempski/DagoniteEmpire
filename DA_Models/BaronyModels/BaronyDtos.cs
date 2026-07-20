@@ -17,6 +17,13 @@ namespace DA_Models.BaronyModels
         public decimal TreasuryGold { get; set; }
         public decimal BaronPurseGold { get; set; }
         public decimal FoodInGranaries { get; set; }
+
+        /// <summary>Cumulative stocks for Food, Gold, Production, Science, Magic, Culture, Intelligence, Defense.</summary>
+        public PpbVector ResourceStocks { get; set; } = new();
+
+        /// <summary>Income from the previous turn (editable on turn 1 for MG starting grants).</summary>
+        public PpbVector PreviousTurnIncome { get; set; } = new();
+
         public int Unrest { get; set; }
 
         public int Prestige { get; set; }
@@ -140,6 +147,28 @@ namespace DA_Models.BaronyModels
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();
         public string? FormulaText { get; set; }
+    }
+
+    public class BaronyResourceSourceDTO
+    {
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+
+        /// <summary>Resource deltas. Positive = income, negative = expense.</summary>
+        public PpbVector Additive { get; set; } = new();
+    }
+
+    public class BaronPurseSourceDTO
+    {
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+
+        /// <summary>Gold delta. Positive = income, negative = expense.</summary>
+        public decimal Amount { get; set; }
     }
 
     public class FiefDTO

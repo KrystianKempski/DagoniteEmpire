@@ -1,14 +1,14 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
 <div class="ppb-chips">
-    @foreach (var info in PpbCatalog.All)
+    @foreach (var info in VisibleColumns)
     {
         var v = Vector?[info.Key] ?? 0m;
         if (v == 0m && HideZero)
         {
             continue;
         }
-        <span class="ppb-chip @(v > 0 ? "ppb-chip--pos" : v < 0 ? "ppb-chip--neg" : "")" title="@info.NameEn">
+        <span class="ppb-chip @PpbCellStyle.ChipClass(info.Key, v)" title="@info.NameEn">
             <span class="ppb-chip__label">@info.ShortEn</span>
             <span class="ppb-chip__value">@Fmt(v)</span>
         </span>
@@ -18,13 +18,13 @@
 @code {
     [Parameter] public PpbVector? Vector { get; set; }
     [Parameter] public bool HideZero { get; set; } = true;
+    [Parameter] public bool ExcludeTreasury { get; set; }
+    [Parameter] public IReadOnlyCollection<PpbInfo>? Columns { get; set; }
 
-    private static string Fmt(decimal v)
-    {
-        var rounded = decimal.Round(v, 2);
-        var text = rounded == decimal.Truncate(rounded)
-            ? ((long)rounded).ToString()
-            : rounded.ToString("0.##");
-        return rounded > 0 ? "+" + text : text;
-    }
+    private IEnumerable<PpbInfo> VisibleColumns =>
+        Columns is { Count: > 0 }
+            ? Columns
+            : ExcludeTreasury ? PpbCatalog.All.Where(p => p.Key != Ppb.Treasury) : PpbCatalog.All;
+
+    private static string Fmt(decimal v) => PpbFormat.Additive(v);
 }

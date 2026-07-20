@@ -42,18 +42,18 @@ namespace DA_Common.Barony
 
         public static readonly IReadOnlyList<PpbInfo> All = new List<PpbInfo>
         {
-            new() { Key = Ppb.Food,         NamePl = "Wyżywienie",   ShortPl = "Wyż.",   NameEn = "Food",          ShortEn = "Food",  IsCumulative = false },
+            new() { Key = Ppb.Food,         NamePl = "Wyżywienie",   ShortPl = "Wyż.",   NameEn = "Food",          ShortEn = "Food",  IsCumulative = true  },
             new() { Key = Ppb.Economy,      NamePl = "Ekonomia",     ShortPl = "Ekon.",  NameEn = "Economy",       ShortEn = "Econ",  IsCumulative = false },
-            new() { Key = Ppb.Production,    NamePl = "Produkcja",    ShortPl = "Prod.",  NameEn = "Production",    ShortEn = "Prod",  IsCumulative = false },
+            new() { Key = Ppb.Production,    NamePl = "Produkcja",    ShortPl = "Prod.",  NameEn = "Production",    ShortEn = "Prod",  IsCumulative = true  },
             new() { Key = Ppb.Loyalty,      NamePl = "Lojalność",    ShortPl = "Loj.",   NameEn = "Loyalty",       ShortEn = "Loy",   IsCumulative = false },
             new() { Key = Ppb.Stability,    NamePl = "Stabilność",   ShortPl = "Stab.",  NameEn = "Stability",     ShortEn = "Stab",  IsCumulative = false },
             new() { Key = Ppb.Law,          NamePl = "Prawo",        ShortPl = "Prawo",  NameEn = "Law",           ShortEn = "Law",   IsCumulative = false },
             new() { Key = Ppb.Corruption,   NamePl = "Korupcja",     ShortPl = "Korup.", NameEn = "Corruption",    ShortEn = "Corr",  IsCumulative = false },
-            new() { Key = Ppb.Science,      NamePl = "Nauka",        ShortPl = "Nauka",  NameEn = "Science",       ShortEn = "Sci",   IsCumulative = false },
-            new() { Key = Ppb.Magic,        NamePl = "Magia",        ShortPl = "Magia",  NameEn = "Magic",         ShortEn = "Mag",   IsCumulative = false },
-            new() { Key = Ppb.Culture,      NamePl = "Kultura",      ShortPl = "Kult.",  NameEn = "Culture",       ShortEn = "Cult",  IsCumulative = false },
-            new() { Key = Ppb.Intelligence, NamePl = "Wywiad",       ShortPl = "Wyw.",   NameEn = "Intelligence",  ShortEn = "Intel", IsCumulative = false },
-            new() { Key = Ppb.Defense,      NamePl = "Obrona",       ShortPl = "Obr.",   NameEn = "Defense",       ShortEn = "Def",   IsCumulative = false },
+            new() { Key = Ppb.Science,      NamePl = "Nauka",        ShortPl = "Nauka",  NameEn = "Science",       ShortEn = "Sci",   IsCumulative = true  },
+            new() { Key = Ppb.Magic,        NamePl = "Magia",        ShortPl = "Magia",  NameEn = "Magic",         ShortEn = "Mag",   IsCumulative = true  },
+            new() { Key = Ppb.Culture,      NamePl = "Kultura",      ShortPl = "Kult.",  NameEn = "Culture",       ShortEn = "Cult",  IsCumulative = true  },
+            new() { Key = Ppb.Intelligence, NamePl = "Wywiad",       ShortPl = "Wyw.",   NameEn = "Intelligence",  ShortEn = "Intel", IsCumulative = true  },
+            new() { Key = Ppb.Defense,      NamePl = "Obrona",       ShortPl = "Obr.",   NameEn = "Defense",       ShortEn = "Def",   IsCumulative = true  },
             new() { Key = Ppb.Treasury,     NamePl = "Skarb/Złoto",  ShortPl = "Złoto",  NameEn = "Treasury/Gold", ShortEn = "Gold",  IsCumulative = true  },
         };
 
@@ -66,5 +66,61 @@ namespace DA_Common.Barony
         public static string NameEnglish(Ppb p) => All[(int)p].NameEn;
 
         public static string ShortEnglish(Ppb p) => All[(int)p].ShortEn;
+    }
+
+    /// <summary>
+    /// Cumulative resource columns for the Resources tab (display order).
+    /// Food, Production, Science, Magic, Culture, Intelligence, Defense, Gold.
+    /// </summary>
+    public static class ResourceCatalog
+    {
+        public static readonly IReadOnlyList<PpbInfo> All = new List<PpbInfo>
+        {
+            PpbCatalog.Info(Ppb.Food),
+            PpbCatalog.Info(Ppb.Production),
+            PpbCatalog.Info(Ppb.Science),
+            PpbCatalog.Info(Ppb.Magic),
+            PpbCatalog.Info(Ppb.Culture),
+            PpbCatalog.Info(Ppb.Intelligence),
+            PpbCatalog.Info(Ppb.Defense),
+            PpbCatalog.Info(Ppb.Treasury),
+        };
+
+        public static readonly IReadOnlySet<Ppb> Keys = new HashSet<Ppb>(All.Select(i => i.Key));
+
+        public static bool Contains(Ppb p) => Keys.Contains(p);
+
+        /// <summary>CSS modifier for resource accent color (e.g. "food", "gold").</summary>
+        public static string ColorKey(Ppb p) => p switch
+        {
+            Ppb.Food => "food",
+            Ppb.Production => "production",
+            Ppb.Science => "science",
+            Ppb.Magic => "magic",
+            Ppb.Culture => "culture",
+            Ppb.Intelligence => "intelligence",
+            Ppb.Defense => "defense",
+            Ppb.Treasury => "gold",
+            _ => "default",
+        };
+
+        /// <summary>Copy only cumulative resource keys from <paramref name="source"/>.</summary>
+        public static PpbVector Slice(PpbVector? source)
+        {
+            var result = new PpbVector();
+            if (source is null)
+                return result;
+            foreach (var info in All)
+                result[info.Key] = source[info.Key];
+            return result;
+        }
+
+        public static PpbVector Subtract(PpbVector a, PpbVector b)
+        {
+            var result = new PpbVector();
+            foreach (var info in All)
+                result[info.Key] = a[info.Key] - b[info.Key];
+            return result;
+        }
     }
 }

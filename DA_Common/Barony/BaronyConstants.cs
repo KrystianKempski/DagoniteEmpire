@@ -426,30 +426,39 @@ namespace DA_Common.Barony
         public static readonly string[] All = { Draft, InProgress, Completed, Cancelled };
     }
 
-    /// <summary>Kategorie źródeł na stronie Budżet (kolumna Skarb/Złoto).</summary>
+    /// <summary>Budget page source labels (treasury gold column).</summary>
     public readonly struct BudgetSource
     {
-        public const string Economy = "Ekonomia";
-        public const string Fief = "Leno";
-        public const string Buildings = "Miasto i budynki";
-        public const string Improvements = "Ulepszenia";
-        public const string Decrees = "Dekrety i technologie";
-        public const string Events = "Wydarzenia";
-        public const string Advisors = "Doradcy";
-        public const string Other = "Inne";
+        public const string Advisors = "Advisors";
+        public const string Fief = "Fief";
+        public const string Buildings = "City and Buildings";
+        public const string SocialGroups = "Social Groups";
+        public const string Improvements = "Terrain Improvements";
+        public const string Decrees = "Decrees and Technologies";
+        public const string Events = "Events";
+        public const string Community = "Community";
+        public const string PercentModifiers = "% modifiers";
+        public const string Other = "Other";
 
-        public static readonly string[] Income = { Economy, Fief, Buildings, Improvements, Decrees, Events, Other };
-        public static readonly string[] Expense = { Economy, Fief, Buildings, Improvements, Decrees, Events, Advisors, Other };
+        public static readonly string[] Income =
+        {
+            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Community, PercentModifiers, Other,
+        };
+
+        public static readonly string[] Expense =
+        {
+            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Community, PercentModifiers, Other,
+        };
     }
 
     /// <summary>Kategorie kar i bonusów społeczności.</summary>
     public readonly struct CommunitySource
     {
-        public const string Society = "Społeczeństwo";
-        public const string Hunger = "Głód";
-        public const string Crime = "Przestępczość";
-        public const string Corruption = "Korupcja";
-        public const string Unrest = "Niepokój";
+        public const string Society = "Society";
+        public const string Hunger = "Hunger";
+        public const string Crime = "Crime";
+        public const string Corruption = "Corruption";
+        public const string Unrest = "Unrest";
 
         public static readonly string[] All = { Society, Hunger, Crime, Corruption, Unrest };
 

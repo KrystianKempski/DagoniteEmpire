@@ -16,14 +16,24 @@
         {
             <div style="overflow-x:auto;">
                 <table class="ppb-table ppb-table--advisors ppb-table--city-buildings ppb-table--terrain-improvements ppb-table--lined">
+                    <colgroup>
+                        <col class="city-building-col-name" />
+                        <col class="city-building-col-owner" />
+                        <col class="city-building-col-pop" />
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <col class="ppb-pair-col" />
+                            <col class="ppb-pair-col" />
+                        }
+                    </colgroup>
                     <thead>
                         <tr>
                             <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
-                            <th rowspan="2" class="city-building-col-owner" title="Land ownership"></th>
+                            <th rowspan="2" class="city-building-col-owner" title="Land ownership">Owner</th>
                             <th class="city-building-col-pop" title="Population (additive)">Pop</th>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <th colspan="2" title="@info.NamePl">@PpbShort(info.Key)</th>
+                                <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
                             }
                         </tr>
                         <tr>
@@ -90,7 +100,7 @@
                                 </td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
-                                    <td class="@PpbCellClass(item.Additive[info.Key], inactive)">
+                                    <td class="@PpbCellClass(info.Key, item.Additive[info.Key], inactive)">
                                         @{
                                             var tip = VillageAdditiveTooltip(item, info.Key);
                                         }
@@ -105,7 +115,7 @@
                                             @FmtAdd(item.Additive[info.Key])
                                         }
                                     </td>
-                                    <td class="@PpbCellClass(item.Percent[info.Key], inactive)">@FmtPct(item.Percent[info.Key])</td>
+                                    <td class="@PpbCellClass(info.Key, item.Percent[info.Key], inactive)">@FmtPct(item.Percent[info.Key])</td>
                                 }
                             </tr>
                         }
@@ -116,8 +126,8 @@
                             <td class="@PopulationCellClass(PopulationSum, inactive: false)"><b>@FmtAdd(PopulationSum)</b></td>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
-                                <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key, PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
                             }
                         </tr>
                     </tbody>
@@ -340,42 +350,18 @@
         _ => p.ToString(),
     };
 
-    private static string FmtAdd(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v);
-    }
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
 
-    private static string FmtPct(decimal v)
+    private static string PpbCellClass(Ppb key, decimal v, bool inactive)
     {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v) + "%";
-    }
-
-    private static string Num(decimal v)
-    {
-        var r = decimal.Round(v, 2);
-        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
-    }
-
-    private static string ValueClass(decimal v) => v switch
-    {
-        > 0 => "ppb-pos",
-        < 0 => "ppb-neg",
-        _ => "ppb-zero",
-    };
-
-    private static string PpbCellClass(decimal v, bool inactive)
-    {
-        var valueClass = ValueClass(v);
+        var valueClass = PpbCellStyle.ValueClass(key, v);
         return inactive ? $"{valueClass} ppb-cell-inactive ppb-cell-struck" : valueClass;
     }
 
     private static string PopulationCellClass(int population, bool inactive, bool editable = false)
     {
-        var cls = "city-building-col-pop " + ValueClass(population);
+        var cls = "city-building-col-pop " + PpbCellStyle.ValueClassStandard(population);
         if (inactive)
             cls += " ppb-cell-inactive ppb-cell-struck";
         if (editable)

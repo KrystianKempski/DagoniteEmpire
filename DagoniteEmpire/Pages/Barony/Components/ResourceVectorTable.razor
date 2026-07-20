@@ -1,0 +1,84 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<table class="ppb-table ppb-table--resources ppb-table--lined">
+    <colgroup>
+        <col class="resource-col-name" />
+        @foreach (var _ in ResourceCatalog.All)
+        {
+            <col class="resource-col-ppb" />
+        }
+    </colgroup>
+    <thead>
+        <tr>
+            <th class="ppb-row-label resource-col-name">@NameHeader</th>
+            @foreach (var info in ResourceCatalog.All)
+            {
+                <th title="@info.NameEn">@info.ShortEn</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr>
+                <td class="ppb-row-label resource-col-name">
+                    <div class="city-building-name-cell">
+                        @if (!string.IsNullOrWhiteSpace(row.Description))
+                        {
+                            <BaronyTooltip Title="Description" Text="@row.Description">
+                                <span class="city-building-name-text">@row.Label</span>
+                            </BaronyTooltip>
+                        }
+                        else
+                        {
+                            <span class="city-building-name-text">@row.Label</span>
+                        }
+                        @if (row.CanEdit || row.CanDelete)
+                        {
+                            <span class="city-building-name-actions">
+                                @if (row.CanEdit)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Size="Size.Small"
+                                                   title="Edit"
+                                                   OnClick="@(() => OnEdit.InvokeAsync(row))" />
+                                }
+                                @if (row.CanDelete)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   title="Remove"
+                                                   OnClick="@(() => OnDelete.InvokeAsync(row))" />
+                                }
+                            </span>
+                        }
+                    </div>
+                </td>
+                @foreach (var info in ResourceCatalog.All)
+                {
+                    <td class="@PpbCellStyle.ValueClass(info.Key, row.Values[info.Key])">@PpbFormat.Additive(row.Values[info.Key])</td>
+                }
+            </tr>
+        }
+        @if (Summary is not null)
+        {
+            <tr class="ppb-summary-row">
+                <td class="ppb-row-label resource-col-name">@SummaryLabel</td>
+                @foreach (var info in ResourceCatalog.All)
+                {
+                    <td class="@PpbCellStyle.ValueClass(info.Key, Summary[info.Key])"><b>@PpbFormat.Additive(Summary[info.Key])</b></td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public IEnumerable<ResourceTableRow> Rows { get; set; } = Array.Empty<ResourceTableRow>();
+    [Parameter] public PpbVector? Summary { get; set; }
+    [Parameter] public string SummaryLabel { get; set; } = "Σ section";
+    [Parameter] public string NameHeader { get; set; } = "Source";
+    [Parameter] public EventCallback<ResourceTableRow> OnEdit { get; set; }
+    [Parameter] public EventCallback<ResourceTableRow> OnDelete { get; set; }
+}

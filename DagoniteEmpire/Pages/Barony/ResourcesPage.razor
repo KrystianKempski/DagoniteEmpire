@@ -2,6 +2,9 @@
 @layout BaronyLayout
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject ICharacterRepository _characterRepo
+@inject IDialogService _dialogService
+@inject ISnackbar _snackBar
 
 <PageTitle>Dagonite Empire | Barony Resources</PageTitle>
 
@@ -16,36 +19,65 @@ else if (LoadError is not null)
 else if (_overview is not null)
 {
     <BaronyPageHeader Title="Resources" />
-    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-        PPB income and expenses with current resource state. Detailed formulas - [TO BE COMPLETED].
-    </MudText>
 
-    <div class="barony-card mb-3">
-        <div class="barony-card__title">Accumulator State</div>
-        <div class="barony-info-grid">
-            <div class="barony-stat"><span class="barony-stat__label">Food in Granaries</span><span class="barony-stat__value">@Num(_overview.Barony.FoodInGranaries)</span></div>
-            <div class="barony-stat"><span class="barony-stat__label">Treasury Gold</span><span class="barony-stat__value">@Num(_overview.Barony.TreasuryGold)</span></div>
-            <div class="barony-stat"><span class="barony-stat__label">Baron Purse</span><span class="barony-stat__value">@Num(_overview.Barony.BaronPurseGold)</span></div>
-        </div>
-    </div>
+    <BaronySection Title="Current Resource Stocks">
+        <Summary>
+            <PpbSummaryChips Vector="@_stocksGlance" Columns="@ResourceCatalog.All" />
+        </Summary>
+        <ChildContent>
+            <ResourceStocksHero Stocks="@_stocksGlance" />
+        </ChildContent>
+    </BaronySection>
 
-    <SectionTable Title="Turn Income (PPB)" Rows="@_incomeRows" TableClass="ppb-table--lined" />
-    <SectionTable Title="Turn Expenses (PPB)" Rows="@_expenseRows" TableClass="ppb-table--lined" />
+    <BaronySection Title="Expected Income This Turn">
+        <Summary>
+            <PpbSummaryChips Vector="@_expectedGlance" Columns="@ResourceCatalog.All" />
+        </Summary>
+        <ChildContent>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Domain Panel grand total for cumulative resources (Gold matches Budget turn balance). Applied to stocks when the turn is ended (coming later).
+            </MudText>
+            <div style="overflow-x:auto;">
+                <ResourceVectorTable Rows="@_expectedRows" NameHeader="Source" />
+            </div>
+        </ChildContent>
+    </BaronySection>
 
-    <div class="barony-card mt-3">
-        <div class="barony-card__title">PPB Resource Balance (Draft)</div>
-        <div style="overflow-x:auto;">
-            <PpbTable Rows="@_balanceRows" Summary="@_netBalance" SummaryLabel="Net State" TableClass="ppb-table--zebra" />
-        </div>
-    </div>
+    <BaronySection Title="Resource Balance">
+        <Summary>
+            <PpbSummaryChips Vector="@_balanceSum" Columns="@ResourceCatalog.All" />
+        </Summary>
+        <ChildContent>
+            <div style="overflow-x:auto;">
+                <ResourceVectorTable Rows="@_balanceRows"
+                                    Summary="@_balanceSum"
+                                    SummaryLabel="Σ balance"
+                                    NameHeader="Source"
+                                    OnEdit="EditBalanceRowAsync"
+                                    OnDelete="DeleteBalanceRowAsync" />
+            </div>
+            @if (CanManageAsMg)
+            {
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="AddSourceAsync">
+                        Add Source
+                    </MudButton>
+                </div>
+            }
+        </ChildContent>
+    </BaronySection>
 }
 
 @code {
     private BaronyOverviewDTO? _overview;
-    private List<PpbModifierRow> _incomeRows = new();
-    private List<PpbModifierRow> _expenseRows = new();
-    private List<PpbModifierRow> _balanceRows = new();
-    private PpbVector _netBalance = new();
+    private PpbVector _expectedIncome = new();
+    private List<ResourceTableRow> _expectedRows = new();
+    private List<ResourceTableRow> _balanceRows = new();
+    private PpbVector _balanceSum = new();
+    private PpbVector _stocksGlance = new();
+    private PpbVector _expectedGlance = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -53,98 +85,239 @@ else if (_overview is not null)
         if (Barony is null)
             return;
 
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+
         _overview = await _baronyRepo.GetOverview(Barony.Id);
         if (_overview is null)
             return;
 
-        var total = BaronyCalc.GrandTotal(_overview);
+        var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+        var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+        var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        _expectedIncome = ResourceCatalog.Slice(
+            BaronyCalc.GrandTotal(_overview, character, baronModifiers, advisorModifiers));
 
-        _incomeRows = new List<PpbModifierRow>
+        BuildTables();
+        NotifyResourceHud();
+        StateHasChanged();
+    }
+
+    private void BuildTables()
+    {
+        if (_overview is null)
+            return;
+
+        var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+        var prevIncome = ResourceCatalog.Slice(_overview.Barony.PreviousTurnIncome);
+        var prevStock = ResourceCatalog.Subtract(stocks, prevIncome);
+        var projectCosts = ProjectCosts();
+
+        _stocksGlance = stocks;
+        _expectedGlance = _expectedIncome;
+
+        _expectedRows = new List<ResourceTableRow>
         {
-            BaronyCalc.Row("Production This Turn", Vec(Ppb.Production, total[Ppb.Production]), new(), "Σ modifiers -> Production"),
-            BaronyCalc.Row("Food This Turn", Vec(Ppb.Food, total[Ppb.Food]), new(), "Σ modifiers -> Food"),
-            BaronyCalc.Row("Economy This Turn", Vec(Ppb.Economy, total[Ppb.Economy]), new(), "Σ modifiers -> Economy"),
-            BaronyCalc.Row("Projects (results)", SumProjectResults(), new(), "Sum of completed / in-progress results"),
-            BaronyCalc.Row("Events (income)", SumEventIncome(), new()),
-            BaronyCalc.Row("Other Income", new(), new(), "[TO BE COMPLETED]"),
+            new()
+            {
+                Label = "Domain Panel grand total",
+                Description = "Expected cumulative PPB when the turn ends.",
+                Values = _expectedIncome,
+                IsSystem = true,
+            },
         };
 
-        _expenseRows = new List<PpbModifierRow>
+        var canEditStartStock = CanManageAsMg && _overview.Barony.TurnNumber <= 1;
+        _balanceRows = new List<ResourceTableRow>
         {
-            BaronyCalc.Row("Advisor Upkeep", Vec(Ppb.Treasury, -SumAdvisorUpkeep()), new()),
-            BaronyCalc.Row("Buildings (upkeep)", SumBuildingCosts(), new()),
-            BaronyCalc.Row("Projects (costs)", SumProjectCosts(), new()),
-            BaronyCalc.Row("Other Expenses", new(), new(), "[TO BE COMPLETED]"),
+            new()
+            {
+                Label = "Stock from previous turn",
+                Description = canEditStartStock
+                    ? "Editable on turn 1 so the GM can set starting stock."
+                    : "Current stocks minus income from the previous turn.",
+                Values = prevStock,
+                IsSystem = true,
+                CanEdit = canEditStartStock,
+            },
+            new()
+            {
+                Label = "Income from previous turn",
+                Description = "Filled when a turn is ended (locked after turn 1).",
+                Values = prevIncome,
+                IsSystem = true,
+            },
+            new()
+            {
+                Label = "Project costs",
+                Description = "Negated cost of projects currently in progress.",
+                Values = projectCosts,
+                IsSystem = true,
+            },
         };
 
-        var incomeSum = BaronyCalc.SumAdditive(_incomeRows);
-        var expenseSum = BaronyCalc.SumAdditive(_expenseRows);
-
-        _balanceRows = new List<PpbModifierRow>
+        foreach (var src in _overview.ResourceSources.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase))
         {
-            new() { Label = "Previous Stores", Additive = PreviousStores() },
-            new() { Label = "Σ turn income", Additive = incomeSum },
-            new() { Label = "Σ turn expenses", Additive = expenseSum },
+            _balanceRows.Add(new ResourceTableRow
+            {
+                Label = src.Name,
+                Description = src.Description,
+                Values = ResourceCatalog.Slice(src.Additive),
+                SourceId = src.Id,
+                CanEdit = CanManageAsMg,
+                CanDelete = CanManageAsMg,
+            });
+        }
+
+        _balanceSum = PpbVector.Sum(_balanceRows.Select(r => r.Values));
+        _balanceSum = ResourceCatalog.Slice(_balanceSum);
+    }
+
+    private PpbVector ProjectCosts()
+    {
+        var v = new PpbVector();
+        if (_overview is null)
+            return v;
+
+        foreach (var p in _overview.Projects.Where(x => x.Status == ProjectStatus.InProgress))
+        {
+            foreach (var info in ResourceCatalog.All)
+                v[info.Key] -= p.Cost[info.Key];
+        }
+
+        return v;
+    }
+
+    private async Task EditBalanceRowAsync(ResourceTableRow row)
+    {
+        if (row.SourceId is int id)
+        {
+            var src = _overview?.ResourceSources.FirstOrDefault(s => s.Id == id);
+            if (src is null)
+                return;
+            await OpenSourceDialogAsync(CloneSource(src), isNew: false);
+            return;
+        }
+
+        if (row.Label == "Stock from previous turn")
+            await EditPreviousTurnStockAsync();
+    }
+
+    private async Task EditPreviousTurnStockAsync()
+    {
+        if (_overview is null || !CanManageAsMg || _overview.Barony.TurnNumber > 1)
+            return;
+
+        var prevIncome = ResourceCatalog.Slice(_overview.Barony.PreviousTurnIncome);
+        var prevStock = ResourceCatalog.Subtract(
+            ResourceCatalog.Slice(_overview.Barony.ResourceStocks),
+            prevIncome);
+
+        var parameters = new DialogParameters<PreviousTurnIncomeEditDialog>
+        {
+            { x => x.Values, prevStock },
         };
 
-        _netBalance = PreviousStores();
-        _netBalance.AddInPlace(incomeSum);
-        _netBalance.AddInPlace(expenseSum);
+        var dialog = await _dialogService.ShowAsync<PreviousTurnIncomeEditDialog>(
+            "Edit starting stock",
+            parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not PpbVector saved)
+            return;
+
+        try
+        {
+            // Current stocks = stock from previous turn + income from previous turn.
+            var stocks = ResourceCatalog.Slice(saved);
+            stocks.AddInPlace(prevIncome);
+
+            _overview.Barony.ResourceStocks = stocks;
+            _overview.Barony.FoodInGranaries = stocks[Ppb.Food];
+            _overview.Barony.TreasuryGold = stocks[Ppb.Treasury];
+            await _baronyRepo.UpdateBarony(_overview.Barony);
+            _snackBar.Add("Starting stock saved.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save: " + ex.Message, Severity.Error);
+        }
     }
 
-    private PpbVector PreviousStores()
+    private async Task AddSourceAsync()
     {
-        var v = new PpbVector();
-        v[Ppb.Food] = _overview!.Barony.FoodInGranaries;
-        v[Ppb.Treasury] = _overview.Barony.TreasuryGold;
-        return v;
+        if (_overview is null || !CanManageAsMg)
+            return;
+
+        await OpenSourceDialogAsync(new BaronyResourceSourceDTO { BaronyId = _overview.Barony.Id }, isNew: true);
     }
 
-    private PpbVector SumProjectResults()
+    private async Task OpenSourceDialogAsync(BaronyResourceSourceDTO draft, bool isNew)
     {
-        var v = new PpbVector();
-        foreach (var p in _overview!.Projects.Where(x => x.Status != ProjectStatus.Cancelled))
-            v.AddInPlace(p.Result);
-        return v;
+        var parameters = new DialogParameters<ResourceSourceEditDialog>
+        {
+            { x => x.Source, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<ResourceSourceEditDialog>(
+            isNew ? "Add Source" : "Edit Source",
+            parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyResourceSourceDTO saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveResourceSource(saved);
+            _snackBar.Add(isNew ? "Source added." : "Source updated.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save source: " + ex.Message, Severity.Error);
+        }
     }
 
-    private PpbVector SumProjectCosts()
+    private async Task DeleteBalanceRowAsync(ResourceTableRow row)
     {
-        var v = new PpbVector();
-        foreach (var p in _overview!.Projects.Where(x => x.Status == ProjectStatus.InProgress))
-            v.AddInPlace(p.Cost);
-        return v;
+        if (row.SourceId is not int id || !CanManageAsMg)
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Remove source",
+            $"Remove “{row.Label}”?",
+            yesText: "Remove",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteResourceSource(id);
+            _snackBar.Add("Source removed.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not remove source: " + ex.Message, Severity.Error);
+        }
     }
 
-    private PpbVector SumEventIncome()
+    private static BaronyResourceSourceDTO CloneSource(BaronyResourceSourceDTO s) => new()
     {
-        var v = new PpbVector();
-        foreach (var e in _overview!.Events.Where(x => x.IsActiveOnTurn(_overview.Barony.TurnNumber)))
-            v.AddInPlace(e.Additive);
-        return v;
-    }
-
-    private PpbVector SumBuildingCosts()
-    {
-        var v = new PpbVector();
-        foreach (var b in _overview!.Buildings)
-            if (b.Additive[Ppb.Treasury] < 0)
-                v.AddInPlace(Vec(Ppb.Treasury, b.Additive[Ppb.Treasury]));
-        return v;
-    }
-
-    private decimal SumAdvisorUpkeep() => _overview!.Advisors.Sum(a => a.UpkeepGold);
-
-    private static PpbVector Vec(Ppb p, decimal val)
-    {
-        var v = new PpbVector();
-        v[p] = val;
-        return v;
-    }
-
-    private static string Num(decimal v)
-    {
-        var r = decimal.Round(v, 2);
-        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
-    }
+        Id = s.Id,
+        BaronyId = s.BaronyId,
+        Name = s.Name,
+        Description = s.Description,
+        Additive = ResourceCatalog.Slice(s.Additive),
+    };
 }

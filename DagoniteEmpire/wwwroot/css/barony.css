@@ -98,52 +98,204 @@
     font-size: 0.78rem;
 }
 
-/* ---- Top fixed resource bar ---- */
-.barony-resource-bar {
+/* ---- Domain Panel meta bar (calendar + status; stocks live in HUD) ---- */
+.barony-meta-bar {
     position: fixed;
     top: 70px;
     left: 12px;
-    right: 12px;
     z-index: 1400;
-    background: #1f1b16;
-    color: #f5f0e4;
-    border-radius: 999px;
-    padding: 6px 14px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-}
-
-.barony-scope--domain-panel .barony-page-header {
-    margin-top: 46px;
-}
-
-.barony-resource-bar__name {
-    font-family: 'Eagle Lake', serif;
-    font-size: 0.95rem;
-    font-weight: 600;
-    padding-right: 10px;
-    border-right: 1px solid rgba(245, 240, 228, 0.2);
-    white-space: nowrap;
-}
-
-.barony-resource-bar__items {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 12px;
-    font-size: 0.8rem;
+    align-items: center;
+    gap: 0.55rem 0.75rem;
+    max-width: min(720px, calc(100vw - min(560px, 48vw) - 28px));
+    padding: 0.4rem 0.75rem 0.45rem;
+    border-radius: 10px;
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border-strong);
+    box-shadow:
+        0 2px 8px rgba(47, 42, 36, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
-.barony-resource-bar__items span {
+.barony-meta-bar__name {
+    font-family: 'Eagle Lake', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--barony-ink);
+    padding-right: 0.75rem;
+    margin-right: 0.15rem;
+    border-right: 1px solid var(--barony-border);
     white-space: nowrap;
-    color: rgba(245, 240, 228, 0.85);
+    line-height: 1.2;
 }
 
-.barony-resource-bar__items span b {
-    color: #ffeb99;
+.barony-meta-bar__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.55rem 0.85rem;
+}
+
+.barony-meta-bar__divider {
+    width: 1px;
+    align-self: stretch;
+    min-height: 1.6rem;
+    background: var(--barony-border);
+    flex: 0 0 1px;
+}
+
+.barony-meta-bar__stat {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    line-height: 1.1;
+    min-width: 0;
+}
+
+.barony-meta-bar__label {
+    font-size: 0.58rem;
     font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--barony-muted);
+}
+
+.barony-meta-bar__value {
+    font-size: 0.88rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--barony-ink);
+    white-space: nowrap;
+}
+
+.barony-meta-bar__value--pos { color: var(--barony-pos); }
+.barony-meta-bar__value--neg { color: var(--barony-neg); }
+
+.barony-scope--domain-panel .barony-page-header {
+    margin-top: 52px;
+}
+
+@media (max-width: 720px) {
+    .barony-meta-bar {
+        position: static;
+        max-width: none;
+        margin-bottom: 0.75rem;
+    }
+
+    .barony-scope--domain-panel .barony-page-header {
+        margin-top: 0;
+    }
+}
+
+/* ---- Global cumulative resource HUD (game-style, top-right) ---- */
+.barony-resource-hud {
+    --res-food: #6bcf75;
+    --res-production: #e07a8a;
+    --res-science: #6aa8f0;
+    --res-magic: #b07aef;
+    --res-culture: #f0a45a;
+    --res-intelligence: #d4cfc6;
+    --res-defense: #a8b0bc;
+    --res-gold: #f0d060;
+    position: fixed;
+    top: 70px;
+    right: 12px;
+    z-index: 1401;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: stretch;
+    gap: 2px;
+    max-width: min(540px, calc(100vw - 24px));
+    padding: 4px 6px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(36, 30, 24, 0.94), rgba(22, 18, 14, 0.96));
+    border: 1px solid rgba(212, 180, 100, 0.28);
+    box-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.barony-resource-hud__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.35rem;
+    padding: 0.2rem 0.4rem 0.25rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 2px solid var(--res-accent, rgba(212, 180, 100, 0.45));
+}
+
+.barony-resource-hud__label {
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--res-accent, rgba(245, 240, 228, 0.7));
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.barony-resource-hud__values {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.05;
+    margin-top: 1px;
+}
+
+.barony-resource-hud__stock {
+    font-family: 'Eagle Lake', serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: #f7f1e4;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.barony-resource-hud__delta {
+    font-size: 0.62rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.78;
+    margin-top: 1px;
+}
+
+.barony-resource-hud__delta--pos { color: #8fd48a; }
+.barony-resource-hud__delta--neg { color: #e08a78; }
+
+.barony-resource-hud__item--food { --res-accent: var(--res-food); }
+.barony-resource-hud__item--production { --res-accent: var(--res-production); }
+.barony-resource-hud__item--science { --res-accent: var(--res-science); }
+.barony-resource-hud__item--magic { --res-accent: var(--res-magic); }
+.barony-resource-hud__item--culture { --res-accent: var(--res-culture); }
+.barony-resource-hud__item--intelligence { --res-accent: var(--res-intelligence); }
+.barony-resource-hud__item--defense { --res-accent: var(--res-defense); }
+.barony-resource-hud__item--gold { --res-accent: var(--res-gold); }
+
+@media (max-width: 720px) {
+    .barony-resource-hud {
+        top: auto;
+        bottom: 72px;
+        right: 8px;
+        left: 8px;
+        max-width: none;
+        justify-content: space-between;
+    }
+
+    .barony-resource-hud__item {
+        min-width: 0;
+        flex: 1 1 0;
+        padding: 0.15rem 0.15rem 0.2rem;
+    }
+
+    .barony-resource-hud__stock {
+        font-size: 0.82rem;
+    }
 }
 
 .ppb-table--advisors,
@@ -153,11 +305,46 @@
     --barony-advisor-role-width: 160px;
     --barony-advisor-name-width: calc(var(--barony-pre-ppb-width) - var(--barony-advisor-role-width));
     --barony-pinned-label-width: calc(var(--barony-pre-ppb-width) - var(--barony-pop-width));
+    --barony-ppb-subcol-width: 34px;
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+}
+
+.ppb-table--advisors col.advisor-col-role {
+    width: var(--barony-advisor-role-width);
+}
+
+.ppb-table--advisors col.advisor-col-name {
+    width: var(--barony-advisor-name-width);
+}
+
+.ppb-table--city-buildings col.city-building-col-name {
+    width: var(--barony-pinned-label-width);
+}
+
+.ppb-table--city-buildings col.city-building-col-pop {
+    width: var(--barony-pop-width);
+}
+
+.ppb-table--advisors col.ppb-pair-col,
+.ppb-table--city-buildings col.ppb-pair-col,
+.ppb-table--social-groups col.ppb-pair-col,
+.ppb-table--terrain-improvements col.ppb-pair-col,
+.ppb-table--decrees col.ppb-pair-col,
+.ppb-table--events col.ppb-pair-col,
+.ppb-table--community col.ppb-pair-col {
+    width: var(--barony-ppb-subcol-width);
 }
 
 .ppb-table--advisors .advisor-col-role {
     min-width: var(--barony-advisor-role-width);
     width: var(--barony-advisor-role-width);
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--barony-surface);
+    box-sizing: border-box;
 }
 
 .ppb-table--advisors .advisor-col-name {
@@ -168,7 +355,32 @@
     color: var(--barony-ink);
     position: sticky;
     left: var(--barony-advisor-role-width);
+    z-index: 2;
     background: var(--barony-surface);
+    box-sizing: border-box;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+}
+
+.ppb-table--advisors thead .advisor-col-role,
+.ppb-table--advisors thead .advisor-col-name {
+    z-index: 4;
+}
+
+.ppb-table--advisors th.ppb-row-label.advisor-col-role,
+.ppb-table--advisors td.advisor-col-role {
+    left: 0;
+    min-width: var(--barony-advisor-role-width);
+}
+
+.ppb-table--advisors th.ppb-row-label.advisor-col-name,
+.ppb-table--advisors td.advisor-col-name {
+    left: var(--barony-advisor-role-width);
+    min-width: var(--barony-advisor-name-width);
+}
+
+.ppb-table--advisors tbody tr:hover .advisor-col-role,
+.ppb-table--advisors tbody tr:hover .advisor-col-name {
+    background: var(--barony-accent-soft);
 }
 
 .ppb-table--advisors .ppb-subcol {
@@ -176,7 +388,10 @@
     color: var(--barony-muted);
     font-weight: 700;
     padding: 2px 5px;
-    min-width: 34px;
+    min-width: var(--barony-ppb-subcol-width);
+    width: var(--barony-ppb-subcol-width);
+    max-width: var(--barony-ppb-subcol-width);
+    box-sizing: border-box;
 }
 
 .ppb-table--advisors .ppb-subcol--add {
@@ -192,10 +407,6 @@
     font-weight: 700;
 }
 
-.ppb-table--advisors tbody tr:hover .advisor-col-name {
-    background: var(--barony-accent-soft);
-}
-
 .ppb-table--city-buildings .city-building-col-name {
     min-width: var(--barony-pinned-label-width);
     width: var(--barony-pinned-label-width);
@@ -207,7 +418,16 @@
     left: 0;
     z-index: 2;
     background: var(--barony-surface);
-    box-shadow: none;
+    box-sizing: border-box;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+}
+
+.ppb-table--city-buildings th.ppb-row-label.city-building-col-name,
+.ppb-table--city-buildings td.city-building-col-name {
+    min-width: var(--barony-pinned-label-width);
+    width: var(--barony-pinned-label-width);
+    max-width: var(--barony-pinned-label-width);
+    left: 0;
 }
 
 .ppb-table--city-buildings .city-building-col-pop {
@@ -220,26 +440,17 @@
     font-size: inherit;
     font-weight: 600;
     color: var(--barony-ink);
-    position: sticky;
-    left: var(--barony-pinned-label-width);
-    z-index: 2;
-    background: var(--barony-surface);
     box-sizing: border-box;
-    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
     padding-left: 2px;
     padding-right: 2px;
 }
 
-.ppb-table--city-buildings thead .city-building-col-pop {
+.ppb-table--city-buildings thead .city-building-col-name {
     z-index: 3;
 }
 
 .ppb-table--city-buildings thead .city-building-col-pop.ppb-subcol--add {
     background: rgba(79, 122, 77, 0.08);
-}
-
-.ppb-table--city-buildings tbody tr:hover .city-building-col-pop {
-    background: var(--barony-accent-soft);
 }
 
 .ppb-table--city-buildings .city-building-col-pop--editable {
@@ -258,58 +469,105 @@
     cursor: default;
 }
 
-/* Name + Owner + Pop = 350px (same pinned width as City Buildings). */
+/* Name + Owner + Pop = 350px before PPB (Name/Owner sticky; Pop scrolls). */
 .ppb-table--terrain-improvements {
     --terrain-imp-owner-width: 3rem;
     --terrain-imp-pop-width: var(--barony-pop-width);
     --terrain-imp-name-width: calc(var(--barony-pre-ppb-width) - var(--terrain-imp-owner-width) - var(--terrain-imp-pop-width));
 }
 
+.ppb-table--terrain-improvements col.city-building-col-name {
+    width: var(--terrain-imp-name-width);
+}
+
+.ppb-table--terrain-improvements col.city-building-col-owner {
+    width: var(--terrain-imp-owner-width);
+}
+
+.ppb-table--terrain-improvements col.city-building-col-pop {
+    width: var(--terrain-imp-pop-width);
+}
+
 .ppb-table--terrain-improvements .city-building-col-name {
     min-width: var(--terrain-imp-name-width);
     width: var(--terrain-imp-name-width);
     max-width: var(--terrain-imp-name-width);
-    box-shadow: none;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--barony-surface);
+    box-sizing: border-box;
+}
+
+.ppb-table--terrain-improvements th.ppb-row-label.city-building-col-name,
+.ppb-table--terrain-improvements td.city-building-col-name {
+    min-width: var(--terrain-imp-name-width);
+    width: var(--terrain-imp-name-width);
+    max-width: var(--terrain-imp-name-width);
+    left: 0;
 }
 
 .ppb-table--terrain-improvements .city-building-col-owner {
     min-width: var(--terrain-imp-owner-width);
     width: var(--terrain-imp-owner-width);
     max-width: var(--terrain-imp-owner-width);
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    font-size: inherit;
+    font-weight: 600;
+    color: var(--barony-ink);
+    box-sizing: border-box;
     position: sticky;
     left: var(--terrain-imp-name-width);
     z-index: 2;
     background: var(--barony-surface);
-    box-sizing: border-box;
-    box-shadow: none;
-    font-size: inherit;
-    font-weight: 600;
-    color: var(--barony-ink);
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
 }
 
 .ppb-table--terrain-improvements .city-building-col-pop {
-    left: calc(var(--terrain-imp-name-width) + var(--terrain-imp-owner-width));
+    min-width: var(--terrain-imp-pop-width);
+    width: var(--terrain-imp-pop-width);
+    max-width: var(--terrain-imp-pop-width);
 }
 
+.ppb-table--terrain-improvements thead .city-building-col-name,
 .ppb-table--terrain-improvements thead .city-building-col-owner {
-    z-index: 3;
+    z-index: 4;
 }
 
+.ppb-table--terrain-improvements tbody tr:hover .city-building-col-name,
 .ppb-table--terrain-improvements tbody tr:hover .city-building-col-owner {
     background: var(--barony-accent-soft);
 }
 
-/* Decrees: Name + Active = 350px pinned width. */
+/* Decrees: Name + Active = 350px before PPB (Active scrolls; Name sticky). */
 .ppb-table--decrees {
-    --decree-active-width: 4.5rem;
+    --decree-active-width: 3.25rem;
     --decree-name-width: calc(var(--barony-pre-ppb-width) - var(--decree-active-width));
+}
+
+.ppb-table--decrees col.city-building-col-name {
+    width: var(--decree-name-width);
+}
+
+.ppb-table--decrees col.decree-col-active {
+    width: var(--decree-active-width);
 }
 
 .ppb-table--decrees .city-building-col-name {
     min-width: var(--decree-name-width);
     width: var(--decree-name-width);
     max-width: var(--decree-name-width);
-    box-shadow: none;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+}
+
+.ppb-table--decrees th.ppb-row-label.city-building-col-name,
+.ppb-table--decrees td.city-building-col-name {
+    min-width: var(--decree-name-width);
+    width: var(--decree-name-width);
+    max-width: var(--decree-name-width);
+    left: 0;
 }
 
 .ppb-table--decrees .decree-col-active {
@@ -318,29 +576,55 @@
     max-width: var(--decree-active-width);
     text-align: center;
     vertical-align: middle;
-    position: sticky;
-    left: var(--decree-name-width);
-    z-index: 2;
-    background: var(--barony-surface);
-    box-sizing: border-box;
-    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
     font-size: inherit;
     font-weight: 600;
     color: var(--barony-ink);
     white-space: nowrap;
+    box-sizing: border-box;
 }
 
-.ppb-table--decrees thead .decree-col-active {
+.ppb-table--decrees thead .city-building-col-name {
     z-index: 3;
 }
 
-.ppb-table--decrees tbody tr:hover .decree-col-active {
+.ppb-table--decrees tbody tr:hover .city-building-col-name {
     background: var(--barony-accent-soft);
+}
+
+.ppb-table--decrees td.decree-col-active {
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.ppb-table--decrees .decree-active-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 1.5rem;
 }
 
 .ppb-table--decrees .decree-active-checkbox {
     margin: 0;
-    justify-content: center;
+    padding: 0;
+}
+
+.ppb-table--decrees .decree-active-checkbox .mud-checkbox-root,
+.ppb-table--decrees .decree-active-checkbox.mud-checkbox {
+    margin: 0;
+    padding: 0;
+}
+
+.ppb-table--decrees .ppb-summary-row .city-building-col-name,
+.ppb-table--decrees .ppb-summary-row td.decree-col-active {
+    background: var(--barony-surface);
+}
+
+.ppb-table--decrees .ppb-summary-row td.decree-col-active--summary {
+    border-bottom: 1px solid var(--barony-border);
+}
+
+.ppb-table--decrees .ppb-summary-row td.ppb-cell-zero {
+    font-weight: 400;
 }
 
 .ppb-table--decrees .decree-row--inactive td {
@@ -355,17 +639,33 @@
     text-decoration: line-through;
 }
 
-/* Events: Name + Turns = 350px pinned width. */
+/* Events: Name + Turns = 350px before PPB (Turns scrolls; Name sticky). */
 .ppb-table--events {
     --event-turns-width: 5.5rem;
     --event-name-width: calc(var(--barony-pre-ppb-width) - var(--event-turns-width));
+}
+
+.ppb-table--events col.city-building-col-name {
+    width: var(--event-name-width);
+}
+
+.ppb-table--events col.event-col-turns {
+    width: var(--event-turns-width);
 }
 
 .ppb-table--events .city-building-col-name {
     min-width: var(--event-name-width);
     width: var(--event-name-width);
     max-width: var(--event-name-width);
-    box-shadow: none;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+}
+
+.ppb-table--events th.ppb-row-label.city-building-col-name,
+.ppb-table--events td.city-building-col-name {
+    min-width: var(--event-name-width);
+    width: var(--event-name-width);
+    max-width: var(--event-name-width);
+    left: 0;
 }
 
 .ppb-table--events .event-col-turns {
@@ -374,23 +674,18 @@
     max-width: var(--event-turns-width);
     text-align: center;
     vertical-align: middle;
-    position: sticky;
-    left: var(--event-name-width);
-    z-index: 2;
-    background: var(--barony-surface);
-    box-sizing: border-box;
-    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
     font-size: inherit;
     font-weight: 600;
     color: var(--barony-ink);
     white-space: nowrap;
+    box-sizing: border-box;
 }
 
-.ppb-table--events thead .event-col-turns {
+.ppb-table--events thead .city-building-col-name {
     z-index: 3;
 }
 
-.ppb-table--events tbody tr:hover .event-col-turns {
+.ppb-table--events tbody tr:hover .city-building-col-name {
     background: var(--barony-accent-soft);
 }
 
@@ -404,6 +699,195 @@
 
 .ppb-table--events .event-row--inactive .ppb-cell-struck {
     text-decoration: line-through;
+}
+
+/* Community: Source = 350px before PPB. */
+.ppb-table--community {
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+}
+
+.ppb-table--community col.community-col-source {
+    width: var(--barony-pre-ppb-width);
+}
+
+.ppb-table--community th.ppb-row-label.community-col-source,
+.ppb-table--community td.ppb-row-label.community-col-source {
+    min-width: var(--barony-pre-ppb-width);
+    width: var(--barony-pre-ppb-width);
+    max-width: var(--barony-pre-ppb-width);
+    left: 0;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+    box-sizing: border-box;
+}
+
+.ppb-table--community thead .community-col-source {
+    z-index: 3;
+}
+
+.ppb-table--community tbody tr:hover .community-col-source {
+    background: var(--barony-accent-soft);
+}
+
+/* Barony Summary: one column per PPB (no +/% split). */
+.ppb-table--summary {
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+}
+
+.ppb-table--summary col.summary-col-component {
+    width: var(--barony-pre-ppb-width);
+}
+
+.ppb-table--summary col.summary-col-ppb {
+    width: 3.25rem;
+}
+
+.ppb-table--summary th.ppb-row-label.summary-col-component,
+.ppb-table--summary td.ppb-row-label.summary-col-component {
+    min-width: var(--barony-pre-ppb-width);
+    width: var(--barony-pre-ppb-width);
+    max-width: var(--barony-pre-ppb-width);
+    left: 0;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+    box-sizing: border-box;
+}
+
+.ppb-table--summary thead .summary-col-component {
+    z-index: 3;
+}
+
+.ppb-table--summary tbody tr:hover .summary-col-component {
+    background: var(--barony-accent-soft);
+}
+
+/* Resources tab: Name sticky + 8 cumulative resource columns. */
+.ppb-table--resources {
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+}
+
+.ppb-table--resources col.resource-col-name {
+    width: var(--barony-pre-ppb-width);
+}
+
+.ppb-table--resources col.resource-col-ppb {
+    width: 3.5rem;
+}
+
+.ppb-table--resources th.ppb-row-label.resource-col-name,
+.ppb-table--resources td.ppb-row-label.resource-col-name {
+    min-width: var(--barony-pre-ppb-width);
+    width: var(--barony-pre-ppb-width);
+    max-width: var(--barony-pre-ppb-width);
+    left: 0;
+    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
+    box-sizing: border-box;
+}
+
+.ppb-table--resources thead .resource-col-name {
+    z-index: 3;
+}
+
+.ppb-table--resources tbody tr:hover .resource-col-name {
+    background: var(--barony-accent-soft);
+}
+
+/* Current stocks — large colored readouts (not a table). */
+.resource-stocks-hero {
+    --res-food: #3d7a45;
+    --res-production: #7a2e3a;
+    --res-science: #2f5f9e;
+    --res-magic: #6b3d9e;
+    --res-culture: #c46a1a;
+    --res-intelligence: #2a2622;
+    --res-defense: #7a818c;
+    --res-gold: #b8922e;
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 0.35rem 0.4rem;
+}
+
+@media (max-width: 1100px) {
+    .resource-stocks-hero {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .resource-stocks-hero {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.resource-stocks-hero__item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: 0.3rem 0.45rem 0.35rem;
+    border-radius: 2px;
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border);
+    border-left: 3px solid var(--res-accent, var(--barony-accent));
+    min-width: 0;
+}
+
+.resource-stocks-hero__label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--res-accent, var(--barony-muted));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.resource-stocks-hero__value {
+    font-family: 'Eagle Lake', serif;
+    font-size: 1.05rem;
+    line-height: 1.15;
+    font-weight: 400;
+    color: var(--res-accent, var(--barony-ink));
+    font-variant-numeric: tabular-nums;
+}
+
+.resource-stocks-hero__item--food { --res-accent: var(--res-food); }
+.resource-stocks-hero__item--production { --res-accent: var(--res-production); }
+.resource-stocks-hero__item--science { --res-accent: var(--res-science); }
+.resource-stocks-hero__item--magic { --res-accent: var(--res-magic); }
+.resource-stocks-hero__item--culture { --res-accent: var(--res-culture); }
+.resource-stocks-hero__item--intelligence { --res-accent: var(--res-intelligence); }
+.resource-stocks-hero__item--defense { --res-accent: var(--res-defense); }
+.resource-stocks-hero__item--gold { --res-accent: var(--res-gold); }
+
+/* Colored headers on resource tables (same order / palette). */
+.ppb-table--resources thead th:nth-child(2) { color: #3d7a45; }
+.ppb-table--resources thead th:nth-child(3) { color: #7a2e3a; }
+.ppb-table--resources thead th:nth-child(4) { color: #2f5f9e; }
+.ppb-table--resources thead th:nth-child(5) { color: #6b3d9e; }
+.ppb-table--resources thead th:nth-child(6) { color: #c46a1a; }
+.ppb-table--resources thead th:nth-child(7) { color: #2a2622; }
+.ppb-table--resources thead th:nth-child(8) { color: #7a818c; }
+.ppb-table--resources thead th:nth-child(9) { color: #b8922e; }
+
+.budget-overview-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.1rem;
+    align-items: baseline;
+    font-size: 0.82rem;
+    color: var(--barony-muted);
+}
+
+.budget-overview-chips b {
+    color: var(--barony-ink);
+    font-weight: 700;
 }
 
 .event-turn-fields {
@@ -489,18 +973,8 @@
     font-size: 1rem;
 }
 
-.ppb-table--city-buildings thead .city-building-col-name,
-.ppb-table--city-buildings thead .city-building-col-pop {
+.ppb-table--city-buildings thead .city-building-col-name {
     z-index: 3;
-}
-
-.ppb-table--city-buildings tbody tr:hover .city-building-col-name,
-.ppb-table--city-buildings tbody tr:hover .city-building-col-pop {
-    background: var(--barony-accent-soft);
-}
-
-.ppb-table--city-buildings thead .city-building-col-pop.ppb-subcol--add {
-    background: rgba(79, 122, 77, 0.08);
 }
 
 .ppb-table--city-buildings tbody tr:hover .city-building-col-name {
@@ -570,6 +1044,40 @@
 
 .ppb-table--source .source-col {
     min-width: 200px;
+}
+
+/* Offices page: aligned PPB grids across office sections and available-advisor pool. */
+.ppb-table--office,
+.ppb-table--available-advisors {
+    --offices-label-width: 350px;
+    --offices-ppb-width: 46px;
+    --offices-trailing-width: 56px;
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+}
+
+.ppb-table--office col.offices-label-col,
+.ppb-table--available-advisors col.offices-label-col {
+    width: var(--offices-label-width);
+}
+
+.ppb-table--office col.offices-ppb-col,
+.ppb-table--available-advisors col.offices-ppb-col {
+    width: var(--offices-ppb-width);
+}
+
+.ppb-table--office col.offices-trailing-col,
+.ppb-table--available-advisors col.offices-trailing-col {
+    width: var(--offices-trailing-width);
+}
+
+.ppb-table--office .source-col,
+.ppb-table--available-advisors .source-col {
+    min-width: var(--offices-label-width);
+    width: var(--offices-label-width);
+    max-width: var(--offices-label-width);
+    box-sizing: border-box;
 }
 
 .ppb-table--source .source-cell {
@@ -764,13 +1272,16 @@
     min-width: 160px;
 }
 
-/* Social groups: Group + Infl. + Tax + Relation = 350px pinned width. */
+/* Social groups: Group + Infl. + Tax + Relation = 350px before PPB. */
 .ppb-table--social-groups {
     --social-group-name-width: 125px;
     --social-group-influence-width: 52px;
     --social-group-tax-width: 44px;
     --social-group-relation-width: 129px;
     --social-group-pinned-width: 350px;
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
 }
 
 .ppb-table--social-groups col.social-group-col-name {
@@ -986,6 +1497,14 @@
     max-width: 100%;
 }
 
+.ppb-editor-grid--compact-resources {
+    display: grid;
+    grid-template-columns: repeat(8, 45px);
+    gap: 12px 16px;
+    width: max-content;
+    max-width: 100%;
+}
+
 /* ---- Baron influence edit dialog (rendered outside .barony-scope) ---- */
 
 .barony-dialog-theme {
@@ -1162,7 +1681,8 @@
     color: var(--barony-ink);
 }
 
-.advisor-office-description {
+.advisor-office-description,
+.advisor-profile-description {
     margin-top: 4px;
     color: var(--barony-muted);
     white-space: pre-wrap;
@@ -1170,8 +1690,19 @@
 
 .ppb-table--office .office-cost-col {
     text-align: center;
-    min-width: 52px;
+    min-width: var(--offices-trailing-width, 56px);
+    width: var(--offices-trailing-width, 56px);
+    max-width: var(--offices-trailing-width, 56px);
     font-variant-numeric: tabular-nums;
+    box-sizing: border-box;
+}
+
+.ppb-table--available-advisors .available-advisor-actions-col {
+    white-space: nowrap;
+    min-width: var(--offices-trailing-width, 56px);
+    width: var(--offices-trailing-width, 56px);
+    max-width: var(--offices-trailing-width, 56px);
+    box-sizing: border-box;
 }
 
 /* ---- Bottom "Barony Tabs" bar (Excel-like tabs) ---- */

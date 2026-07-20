@@ -81,6 +81,16 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyProjectDTO> SaveProject(BaronyProjectDTO dto);
         Task<int> DeleteProject(int id);
 
+        // --- Resources balance custom sources ---
+        Task<List<BaronyResourceSourceDTO>> GetResourceSources(int baronyId);
+        Task<BaronyResourceSourceDTO> SaveResourceSource(BaronyResourceSourceDTO dto);
+        Task<int> DeleteResourceSource(int id);
+
+        // --- Baron purse ledger ---
+        Task<List<BaronPurseSourceDTO>> GetPurseSources(int baronyId);
+        Task<BaronPurseSourceDTO> SavePurseSource(BaronPurseSourceDTO dto);
+        Task<int> DeletePurseSource(int id);
+
         // --- Katalog budynków/ulepszeń (globalny) ---
         Task<List<BuildingTemplateDTO>> GetBuildingTemplates();
         Task<BuildingTemplateDTO> SaveBuildingTemplate(BuildingTemplateDTO dto);

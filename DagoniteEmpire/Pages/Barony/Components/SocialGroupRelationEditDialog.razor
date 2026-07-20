@@ -110,9 +110,9 @@
     private static IEnumerable<string> PreviewEntries(Ppb key, decimal add, decimal pct)
     {
         if (add != 0m)
-            yield return $"{PpbShort(key)} {(add > 0 ? "+" : "")}{Fmt(add)}";
+            yield return $"{PpbShort(key)} {PpbFormat.Additive(add)}";
         if (pct != 0m)
-            yield return $"{PpbShort(key)} {(pct > 0 ? "+" : "")}{Fmt(pct)}%";
+            yield return $"{PpbShort(key)} {PpbFormat.Percent(pct)}";
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -125,12 +125,6 @@
         Relation.RelationLevel = Math.Clamp(_relationScore, -100, 100);
         BaronyCalc.ApplyComputedPpb(Relation);
         MudDialog.Close(DialogResult.Ok(Relation));
-    }
-
-    private static string Fmt(decimal v)
-    {
-        var r = decimal.Round(v, 2);
-        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
     }
 
     private static string PpbShort(Ppb p) => p switch

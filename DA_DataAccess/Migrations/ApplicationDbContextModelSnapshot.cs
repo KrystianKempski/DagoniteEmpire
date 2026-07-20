@@ -258,6 +258,14 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("Prestige")
                         .HasColumnType("integer");
 
+                    b.Property<string>("PreviousTurnIncomeJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResourceStocksJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Season")
                         .IsRequired()
                         .HasColumnType("text");
@@ -401,6 +409,59 @@ namespace DA_DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("BaronyProjects");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyResourceSource", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdditiveJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BaronyResourceSources");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronPurseSource", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BaronPurseSources");
                 });
 
             modelBuilder.Entity("DA_DataAccess.BaronyData.BuildingTemplate", b =>

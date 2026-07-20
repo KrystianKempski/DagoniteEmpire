@@ -10,6 +10,7 @@
         "Food": "farmYield(Fertility) - Population",
         "Economy": "Population / 2",
         "Production": "Population",
+        "Loyalty": "-Population",
         "Stability": "-2 * Population",
         "Law": "-Population / 2",
         "Corruption": "Population / 4",
@@ -21,7 +22,26 @@
       }
     },
     {
-      "id": "terrain.town",
+      "id": "terrain.village.fortified",
+      "title": "Village with palisade",
+      "category": "terrain-improvement",
+      "implementation": "DA_Common/Barony/VillagePpbFormulas.cs",
+      "notes": "Same as unfortified except Stability +3, Law +1, Defense +5 when HasPalisade.",
+      "additive": {
+        "Food": "farmYield(Fertility) - Population",
+        "Economy": "Population / 2",
+        "Production": "Population",
+        "Loyalty": "-Population",
+        "Stability": "-2 * Population + 3",
+        "Law": "-Population / 2 + 1",
+        "Corruption": "Population / 4",
+        "Science": "Population / 4",
+        "Magic": "Population / 8",
+        "Culture": "Population / 4",
+        "Defense": "Population + 5",
+        "Treasury": "(Nob%/100)*Population*5 + (Burg%/100)*Population*5 + (Peas%/100)*Population*15"
+      }
+    },
       "title": "Town",
       "category": "terrain-improvement",
       "implementation": "DA_Common/Barony/TownPpbFormulas.cs",
@@ -29,8 +49,8 @@
         "Food": "-Population",
         "Economy": "Population",
         "Production": "2 * Population",
-        "Loyalty": "-Population",
-        "Stability": "-4 * Population",
+        "Loyalty": "-2 * Population",
+        "Stability": "-3 * Population",
         "Law": "-Population",
         "Corruption": "Population",
         "Science": "Population / 2",
@@ -109,6 +129,7 @@
       "title": "From Skills",
       "category": "baron-influence",
       "implementation": "DA_Common/Barony/BaronSkillPpbFormulas.cs",
+      "notes": "Skill SumBonus + attribute ModifierAbsolute; all results floored.",
       "additive": {
         "Food": "floor((Plants and mushrooms + Animals care + Beasts) / 3)",
         "Economy": "floor((Mathematics and logic + Races and nations + Trade) / 3)",
@@ -116,13 +137,80 @@
         "Loyalty": "floor((Bluff + Public speech + Sense motives) / 3)",
         "Stability": "floor((Intimidate + History and religion + Persuasion) / 3)",
         "Law": "floor((Investigation + Observation + Tracking) / 3)",
-        "Corruption": "floor((Vigilance + Gambling + Acting) / 3)",
+        "Corruption": "−floor((Vigilance + Gambling + Acting) / 3)",
         "Science": "floor(Knowledge + Intelligence mod)",
         "Magic": "floor(Magic + Willpower mod)",
         "Culture": "floor((Fine arts + Linguistics + Diplomacy) / 3)",
         "Intelligence": "floor(Perception / 2 + Survival / 2 + Deceit)",
         "Defense": "floor((Strategy and tactics + Inspire + Geography) / 3)"
       }
+    },
+    {
+      "id": "baron.advisor-row",
+      "title": "Baron and Advisors — baron row",
+      "category": "baron-influence",
+      "implementation": "DagoniteEmpire/Pages/Barony/BaronyCalc.cs (BuildBaronAdvisorRow)",
+      "notes": "Percent: each PPB uses its linked From Skills value. Additive: same except Food/Economy/Production/Defense (percent only). Corruption stored signed (negative reduces corruption) for baron and office skills. Treasury excluded.",
+      "additive": {
+        "Loyalty": "From Skills: Loyalty",
+        "Stability": "From Skills: Stability",
+        "Law": "From Skills: Law",
+        "Science": "From Skills: Science",
+        "Magic": "From Skills: Magic",
+        "Culture": "From Skills: Culture",
+        "Intelligence": "From Skills: Intelligence",
+        "Corruption": "From Skills: Corruption (negative on Baron Card)",
+        "Food": "none (percent only)",
+        "Economy": "none (percent only)",
+        "Production": "none (percent only)",
+        "Defense": "none (percent only)"
+      },
+      "additiveTooltips": {
+        "_default": "= {ppb} skill",
+        "Corruption": "= corruption skill",
+        "Food": "none",
+        "Economy": "none",
+        "Production": "none",
+        "Defense": "none",
+        "Treasury": "none"
+      },
+      "percent": {
+        "Food": "+X/60 (X = Food skill; rounded to 0.1 pp)",
+        "Economy": "+X/60 (X = Economy skill; rounded to 0.1 pp)",
+        "Production": "+X/60 (X = Production skill; rounded to 0.1 pp)",
+        "Defense": "+X/60 (X = Defense skill; rounded to 0.1 pp)",
+        "Loyalty": "+X/100 (X = Loyalty skill)",
+        "Stability": "+X/100 (X = Stability skill)",
+        "Law": "+X/100 (X = Law skill)",
+        "Corruption": "X/100 (X = Corruption skill; negative on Baron Card)",
+        "Science": "+X/100 (X = Science skill)",
+        "Magic": "+X/100 (X = Magic skill)",
+        "Culture": "+X/100 (X = Culture skill)",
+        "Intelligence": "+X/100 (X = Intelligence skill)",
+        "Treasury": "none"
+      },
+      "percentTooltips": {
+        "Food": "= food skill/60",
+        "Economy": "= economy skill/60",
+        "Production": "= production skill/60",
+        "Defense": "= defense skill/60",
+        "_default": "= {ppb} skill/100",
+        "Corruption": "= corruption skill/100",
+        "Treasury": "none"
+      }
+    },
+    {
+      "id": "advisors.office-row",
+      "title": "Baron and Advisors — office holder rows",
+      "category": "baron-influence",
+      "implementation": "BaronyCalc.ApplyAdvisorSkillInfluence",
+      "notes": "Same mapping as baron.advisor-row but only SignificantSkills (active skills) from Advisor.Skills. Custom AdvisorInfluenceModifier additive only.",
+      "activeSkills": {
+        "Chancellor": ["Loyalty", "Stability", "Culture"],
+        "GuardCaptain": ["Law", "Corruption", "Defense"],
+        "Steward": ["Food", "Production", "Economy"]
+      },
+      "mapping": "baron.advisor-row (scoped to active skills)"
     }
   ]
 }

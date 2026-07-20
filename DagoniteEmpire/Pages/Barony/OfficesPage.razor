@@ -35,48 +35,11 @@ else if (Barony is not null)
                             OnChanged="ReloadAsync" />
     }
 
-    <BaronySection Title="Available advisors">
-        <ChildContent>
-            <div style="overflow-x:auto;">
-                <table class="ppb-table ppb-table--lined">
-                    <thead>
-                        <tr>
-                            <th class="ppb-row-label">Name</th>
-                            <th>Description</th>
-                            <th>Skills</th>
-                            @if (CanEdit)
-                            {
-                                <th>Actions</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var person in _availableAdvisors)
-                        {
-                            <tr>
-                                <td class="ppb-row-label">@person.Name</td>
-                                <td>@person.Description</td>
-                                <td><PpbSummaryChips Vector="@person.Skills" /></td>
-                                @if (CanEdit)
-                                {
-                                    <td>
-                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditAvailableAdvisorAsync(person))" />
-                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAvailableAdvisorAsync(person))" />
-                                    </td>
-                                }
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            @if (CanEdit)
-            {
-                <MudButton Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAvailableAdvisorAsync">
-                    Add available advisor
-                </MudButton>
-            }
-        </ChildContent>
-    </BaronySection>
+    <AvailableAdvisorsSection Advisors="@_availableAdvisors"
+                              CanEdit="@CanEdit"
+                              OnEdit="EditAvailableAdvisorAsync"
+                              OnDelete="DeleteAvailableAdvisorAsync"
+                              OnAdd="AddAvailableAdvisorAsync" />
 
     @if (CanEdit)
     {
@@ -95,15 +58,7 @@ else if (Barony is not null)
     private List<AdvisorInfluenceModifierDTO> _modifiers = new();
     private decimal _totalUpkeep;
 
-    private static string FmtUpkeep(decimal value)
-    {
-        if (value == 0m)
-            return "0";
-        var rounded = decimal.Round(value, 2);
-        return rounded == decimal.Truncate(rounded)
-            ? ((long)rounded).ToString()
-            : rounded.ToString("0.##");
-    }
+    private static string FmtUpkeep(decimal value) => PpbFormat.Number(value);
 
     protected override async Task OnInitializedAsync()
     {

@@ -1,6 +1,14 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
 <table class="ppb-table ppb-table--source ppb-table--office ppb-table--lined">
+    <colgroup>
+        <col class="offices-label-col" />
+        @foreach (var _ in SkillColumns)
+        {
+            <col class="offices-ppb-col" />
+        }
+        <col class="offices-trailing-col" />
+    </colgroup>
     <thead>
         <tr>
             <th class="ppb-row-label source-col">Source</th>
@@ -32,14 +40,11 @@
                         {
                             <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Style="vertical-align:text-bottom;opacity:.6;" />
                         }
-                        @if (CanEdit)
+                        @if (CanEdit && !row.IsSystem)
                         {
                             <span class="source-cell__actions">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OnEdit.InvokeAsync(row))" />
-                                @if (!row.IsSystem)
-                                {
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => OnDelete.InvokeAsync(row))" />
-                                }
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => OnDelete.InvokeAsync(row))" />
                             </span>
                         }
                     </div>
@@ -47,7 +52,7 @@
                 @foreach (var info in SkillColumns)
                 {
                     var inactive = IsSkillsCellInactive(row, info.Key);
-                    <td class="@CellClass(row.Values[info.Key], inactive)">@Fmt(row.Values[info.Key])</td>
+                    <td class="@CellClass(info.Key, row.Values[info.Key], inactive)">@Fmt(row.Values[info.Key])</td>
                 }
                 <td class="office-cost-col @CostClass(row.Cost)">@FmtCost(row.Cost)</td>
             </tr>
@@ -59,7 +64,7 @@
                 @foreach (var info in SkillColumns)
                 {
                     var v = Summary[info.Key];
-                    <td class="@ValueClass(v)"><b>@Fmt(v)</b></td>
+                    <td class="@PpbCellStyle.ValueClass(info.Key, v)"><b>@Fmt(v)</b></td>
                 }
                 <td class="office-cost-col @CostClass(SummaryCost)"><b>@FmtCost(SummaryCost)</b></td>
             </tr>
@@ -104,32 +109,15 @@
         _ => p.ToString(),
     };
 
-    private static string Fmt(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        var rounded = decimal.Round(v, 2);
-        var text = rounded == decimal.Truncate(rounded)
-            ? ((long)rounded).ToString()
-            : rounded.ToString("0.##");
-        return rounded > 0 ? "+" + text : text;
-    }
+    private static string Fmt(decimal v) => PpbFormat.Additive(v);
 
     private static string FmtCost(decimal cost)
-    {
-        if (cost == 0m)
-            return "·";
-        var rounded = decimal.Round(cost, 2);
-        return rounded == decimal.Truncate(rounded)
-            ? ((long)rounded).ToString()
-            : rounded.ToString("0.##");
-    }
+        => PpbFormat.Round(cost) == 0m ? "·" : PpbFormat.Number(cost);
 
-    private static string ValueClass(decimal v)
+    private static string CellClass(Ppb key, decimal v, bool inactive)
     {
-        if (v > 0m) return "ppb-cell-pos";
-        if (v < 0m) return "ppb-cell-neg";
-        return "ppb-cell-zero";
+        var valueClass = PpbCellStyle.ValueClass(key, v);
+        return inactive ? $"{valueClass} ppb-cell-inactive" : valueClass;
     }
 
     private bool IsColumnInactive(Ppb key)
@@ -138,17 +126,11 @@
     private bool IsSkillsCellInactive(AdvisorInfluenceRow row, Ppb key)
         => row.SystemKind == AdvisorInfluenceSystemKind.Skills && IsColumnInactive(key);
 
-    private static string CellClass(decimal v, bool inactive)
-    {
-        var valueClass = ValueClass(v);
-        return inactive ? $"{valueClass} ppb-cell-inactive" : valueClass;
-    }
-
     private static string HeaderClass(bool inactive)
         => inactive ? "ppb-col-inactive" : string.Empty;
 
     private static string? HeaderTitle(PpbInfo info, bool inactive)
-        => inactive ? $"{info.NamePl} — not significant for this office" : info.Code;
+        => inactive ? $"{info.NameEn} — not significant for this office" : info.Code;
 
     private static string CostClass(decimal cost)
         => cost > 0m ? "ppb-cell-neg" : "ppb-cell-zero";

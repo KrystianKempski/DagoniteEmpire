@@ -6,11 +6,6 @@
            ActionsClass="baron-influence-dialog-actions">
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
-            <MudTextField @bind-Value="_personName"
-                          Label="Advisor name"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Class="baron-influence-field" />
             <MudSelect T="int"
                        Label="Assigned person"
                        Value="_selectedAvailableId"
@@ -18,34 +13,34 @@
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
-                <MudSelectItem Value="0">Manual / none</MudSelectItem>
+                <MudSelectItem Value="0">Nobody</MudSelectItem>
                 @foreach (var person in SelectableAvailableAdvisors)
                 {
                     <MudSelectItem Value="@person.Id">@person.Name</MudSelectItem>
                 }
             </MudSelect>
+            @if (SelectedPerson is not null && !string.IsNullOrWhiteSpace(SelectedPerson.Description))
+            {
+                <MudText Typo="Typo.body2" Class="advisor-profile-description mt-2">
+                    @SelectedPerson.Description
+                </MudText>
+            }
             @if (AllowTitleEdit)
             {
                 <MudTextField @bind-Value="_title"
                               Label="Office title"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
-                              Class="baron-influence-field"
+                              Class="baron-influence-field mt-2"
                               Required="true" />
             }
-            <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Lines="3"
-                          Class="baron-influence-field" />
             <MudNumericField T="decimal"
                              @bind-Value="_upkeepGold"
                              Label="Upkeep cost (gold / turn)"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
-                             Class="baron-influence-field" />
+                             Class="baron-influence-field mt-2" />
         </div>
     </DialogContent>
     <DialogActions>
@@ -62,9 +57,7 @@
     [Parameter] public List<AvailableAdvisorDTO> AvailableAdvisors { get; set; } = new();
     [Parameter] public HashSet<int> OccupiedAvailableAdvisorIds { get; set; } = new();
 
-    private string _personName = string.Empty;
     private string _title = string.Empty;
-    private string? _description;
     private decimal _upkeepGold;
     private int _selectedAvailableId;
 
@@ -73,13 +66,16 @@
             .Where(a => !OccupiedAvailableAdvisorIds.Contains(a.Id) || a.Id == Advisor.AvailableAdvisorId)
             .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
 
+    private AvailableAdvisorDTO? SelectedPerson =>
+        _selectedAvailableId > 0
+            ? AvailableAdvisors.FirstOrDefault(a => a.Id == _selectedAvailableId)
+            : null;
+
     protected override void OnInitialized()
     {
-        _personName = Advisor.PersonName;
-        _title = Advisor.Title;
-        _description = Advisor.Description;
-        _upkeepGold = Advisor.UpkeepGold;
         _selectedAvailableId = Advisor.AvailableAdvisorId ?? 0;
+        _title = Advisor.Title;
+        _upkeepGold = Advisor.UpkeepGold;
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -92,12 +88,26 @@
             return;
         }
 
-        Advisor.PersonName = _personName.Trim();
+        Advisor.UpkeepGold = _upkeepGold;
         if (AllowTitleEdit)
             Advisor.Title = _title.Trim();
-        Advisor.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
-        Advisor.UpkeepGold = _upkeepGold;
-        Advisor.AvailableAdvisorId = _selectedAvailableId > 0 ? _selectedAvailableId : null;
+
+        if (_selectedAvailableId <= 0)
+        {
+            Advisor.PersonName = string.Empty;
+            Advisor.Description = null;
+            Advisor.Skills = new PpbVector();
+            Advisor.AvailableAdvisorId = null;
+        }
+        else if (SelectedPerson is not null)
+        {
+            Advisor.PersonName = SelectedPerson.Name;
+            Advisor.Description = SelectedPerson.Description;
+            Advisor.Skills = SelectedPerson.Skills.Clone();
+            Advisor.Skills[Ppb.Treasury] = 0m;
+            Advisor.AvailableAdvisorId = SelectedPerson.Id;
+        }
+
         MudDialog.Close(DialogResult.Ok(Advisor));
     }
 
@@ -105,14 +115,15 @@
     {
         _selectedAvailableId = id;
         if (id <= 0)
+        {
+            Advisor.Skills = new PpbVector();
             return;
+        }
 
         var selected = AvailableAdvisors.FirstOrDefault(a => a.Id == id);
         if (selected is null)
             return;
 
-        _personName = selected.Name;
-        _description = selected.Description;
         Advisor.Skills = selected.Skills.Clone();
         Advisor.Skills[Ppb.Treasury] = 0m;
     }

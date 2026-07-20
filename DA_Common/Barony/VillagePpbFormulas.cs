@@ -27,6 +27,7 @@ namespace DA_Common.Barony
             v[Ppb.Food] = FarmFoodForFertility(fertility) - pop;
             v[Ppb.Economy] = pop / 2m;
             v[Ppb.Production] = pop;
+            v[Ppb.Loyalty] = -pop;
             v[Ppb.Stability] = -2m * pop + (hasPalisade ? 3m : 0m);
             v[Ppb.Law] = -pop / 2m + (hasPalisade ? 1m : 0m);
             v[Ppb.Corruption] = pop / 4m;
@@ -46,6 +47,7 @@ namespace DA_Common.Barony
                 Ppb.Food => $"= farm yield − {p}",
                 Ppb.Economy => $"= {p} / 2",
                 Ppb.Production => $"= {p}",
+                Ppb.Loyalty => $"= −{p}",
                 Ppb.Stability when hasPalisade => $"= −2 × {p} + palisade",
                 Ppb.Stability => $"= −2 × {p}",
                 Ppb.Law when hasPalisade => $"= −{p} / 2 + palisade",
@@ -64,6 +66,6 @@ namespace DA_Common.Barony
         public static string CatalogDescription =>
             "A small village allowing farms and sawmills on distant land. Besides gold and production cost, requires 1 community relocated from elsewhere. "
             + "PPB comes from Population, tile fertility, and an optional palisade — hover each PPB value for its formula "
-            + "(Economy = Population/2, Law = −Population/2, Corruption = Population/4; Food = farm yield − Population).";
+            + "(Economy = Population/2, Law = −Population/2, Corruption = Population/4, Loyalty = −Population; Food = farm yield − Population).";
     }
 }

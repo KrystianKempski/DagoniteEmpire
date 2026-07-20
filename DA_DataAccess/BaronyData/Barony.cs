@@ -36,6 +36,12 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Żywność w spichlerzach.</summary>
         public decimal FoodInGranaries { get; set; }
 
+        /// <summary>Cumulative resource stocks (JSON PpbVector; Food/Gold mirrored with scalar fields).</summary>
+        public string ResourceStocksJson { get; set; } = "{}";
+
+        /// <summary>Income applied at end of the previous turn (JSON PpbVector). Editable on turn 1 for MG start.</summary>
+        public string PreviousTurnIncomeJson { get; set; } = "{}";
+
         public int Unrest { get; set; }
 
         public int Prestige { get; set; }

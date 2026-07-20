@@ -1,0 +1,123 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="Available advisors">
+    <ChildContent>
+        @if (AdvisorList.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No available advisors in the pool yet.</MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--source ppb-table--available-advisors ppb-table--lined">
+                    <colgroup>
+                        <col class="offices-label-col" />
+                        @foreach (var _ in SkillColumns)
+                        {
+                            <col class="offices-ppb-col" />
+                        }
+                        @if (CanEdit)
+                        {
+                            <col class="offices-trailing-col" />
+                        }
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="ppb-row-label source-col">Name</th>
+                            @foreach (var info in SkillColumns)
+                            {
+                                <th title="@info.NameEn">@PpbShort(info.Key)</th>
+                            }
+                            @if (CanEdit)
+                            {
+                                <th class="available-advisor-actions-col">Actions</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var person in AdvisorList)
+                        {
+                            <tr>
+                                <td class="ppb-row-label source-col">
+                                    @if (!string.IsNullOrWhiteSpace(person.Description))
+                                    {
+                                        <BaronyTooltip Title="Description" Text="@person.Description">
+                                            <span>@person.Name</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        @person.Name
+                                    }
+                                </td>
+                                @foreach (var info in SkillColumns)
+                                {
+                                    var v = person.Skills[info.Key];
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, v)">@Fmt(v)</td>
+                                }
+                                @if (CanEdit)
+                                {
+                                    <td class="available-advisor-actions-col">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                       Size="Size.Small"
+                                                       title="Edit"
+                                                       OnClick="@(() => OnEdit.InvokeAsync(person))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                       Size="Size.Small"
+                                                       Color="Color.Error"
+                                                       title="Remove"
+                                                       OnClick="@(() => OnDelete.InvokeAsync(person))" />
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        @if (CanEdit)
+        {
+            <MudButton Variant="Variant.Outlined"
+                       Class="mt-2"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OnAdd">
+                Add available advisor
+            </MudButton>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public IEnumerable<AvailableAdvisorDTO>? Advisors { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback<AvailableAdvisorDTO> OnEdit { get; set; }
+    [Parameter] public EventCallback<AvailableAdvisorDTO> OnDelete { get; set; }
+    [Parameter] public EventCallback OnAdd { get; set; }
+
+    private List<AvailableAdvisorDTO> AdvisorList =>
+        (Advisors ?? Enumerable.Empty<AvailableAdvisorDTO>())
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private static IEnumerable<PpbInfo> SkillColumns
+        => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        _ => p.ToString(),
+    };
+
+    private static string Fmt(decimal v) => PpbFormat.Additive(v);
+}

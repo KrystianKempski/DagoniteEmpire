@@ -56,8 +56,8 @@
                 </td>
                 @foreach (var info in PpbCatalog.All)
                 {
-                    <td class="@ValueClass(item.EffectAdditive[info.Key])">@FmtAdd(item.EffectAdditive[info.Key])</td>
-                    <td class="@ValueClass(item.EffectPercent[info.Key])">@FmtPct(item.EffectPercent[info.Key])</td>
+                    <td class="@PpbCellStyle.ValueClass(info.Key, item.EffectAdditive[info.Key])">@FmtAdd(item.EffectAdditive[info.Key])</td>
+                    <td class="@PpbCellStyle.ValueClass(info.Key, item.EffectPercent[info.Key])">@FmtPct(item.EffectPercent[info.Key])</td>
                 }
             </tr>
         }
@@ -147,41 +147,10 @@
         => level <= 0 ? "·" : level.ToString();
 
     private static string FmtCost(decimal cost)
-    {
-        if (cost == 0m)
-            return "·";
-        var rounded = decimal.Round(cost, 2);
-        return rounded == decimal.Truncate(rounded)
-            ? ((long)rounded).ToString()
-            : rounded.ToString("0.##");
-    }
+        => PpbFormat.Round(cost) == 0m ? "·" : PpbFormat.Number(cost);
 
-    private static string FmtAdd(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v);
-    }
-
-    private static string FmtPct(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v) + "%";
-    }
-
-    private static string Num(decimal v)
-    {
-        var r = decimal.Round(v, 2);
-        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
-    }
-
-    private static string ValueClass(decimal v)
-    {
-        if (v > 0m) return "ppb-cell-pos";
-        if (v < 0m) return "ppb-cell-neg";
-        return "ppb-cell-zero";
-    }
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
 
     private static string PpbShort(Ppb p) => p switch
     {

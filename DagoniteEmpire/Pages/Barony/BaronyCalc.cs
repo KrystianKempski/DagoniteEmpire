@@ -53,19 +53,50 @@ namespace DagoniteEmpire.Pages.Barony
             => PpbVector.Sum(advisors.Select(a => a.Percent));
 
         /// <summary>
-        /// Domain Panel list: baron row from Baron Card influence + non-baron advisors from DB.
+        /// Domain Panel list: baron row from character skills + non-baron advisors with skill mapping applied.
         /// </summary>
         public static List<AdvisorDTO> AdvisorsForDomainPanel(
             IEnumerable<AdvisorDTO>? advisors,
             BaronyDTO barony,
             CharacterDTO? character,
-            IEnumerable<BaronInfluenceModifierDTO>? baronModifiers)
+            IEnumerable<BaronInfluenceModifierDTO>? baronModifiers,
+            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null)
         {
-            var offices = OrderAdvisors(advisors?.Where(a => !a.IsBaron)).ToList();
+            var modsByAdvisor = (advisorModifiers ?? Enumerable.Empty<AdvisorInfluenceModifierDTO>())
+                .GroupBy(m => m.AdvisorId)
+                .ToDictionary(g => g.Key, g => (IEnumerable<AdvisorInfluenceModifierDTO>)g.ToList());
+
+            var offices = OrderAdvisors(advisors?.Where(a => !a.IsBaron))
+                .Select(a =>
+                {
+                    var row = CloneAdvisorForPanel(a);
+                    var mods = modsByAdvisor.GetValueOrDefault(a.Id);
+                    ApplyAdvisorSkillInfluence(row, mods);
+                    ApplyOfficeGoldCostToPanelRow(row, mods);
+                    return row;
+                })
+                .ToList();
+
             var existingBaron = advisors?.FirstOrDefault(a => a.IsBaron);
             offices.Insert(0, BuildBaronAdvisorRow(barony, character, baronModifiers, existingBaron));
             return offices;
         }
+
+        private static AdvisorDTO CloneAdvisorForPanel(AdvisorDTO source) => new()
+        {
+            Id = source.Id,
+            BaronyId = source.BaronyId,
+            AvailableAdvisorId = source.AvailableAdvisorId,
+            OfficeType = source.OfficeType,
+            Title = source.Title,
+            PersonName = source.PersonName,
+            IsBaron = source.IsBaron,
+            Skills = source.Skills.Clone(),
+            SignificantSkills = source.SignificantSkills.ToList(),
+            FormulaText = source.FormulaText,
+            Description = source.Description,
+            UpkeepGold = source.UpkeepGold,
+        };
 
         public static AdvisorDTO BuildBaronAdvisorRow(
             BaronyDTO barony,
@@ -74,8 +105,8 @@ namespace DagoniteEmpire.Pages.Barony
             AdvisorDTO? existingBaronAdvisor = null)
         {
             var skillInfluence = InfluenceFromSkills(character);
-            var skillBasedAdditive = BaronSkillAdditiveToAdvisor(skillInfluence);
-            var skillBasedPercent = BaronFoodPercentToAdvisor(skillInfluence[Ppb.Food]);
+            var skillBasedAdditive = BaronSkillPpbFormulas.MapToAdvisorAdditive(skillInfluence);
+            var skillBasedPercent = BaronSkillPpbFormulas.MapToAdvisorPercent(skillInfluence);
             var customAdditive = PpbVector.Sum((baronModifiers ?? Enumerable.Empty<BaronInfluenceModifierDTO>())
                 .Select(m => m.Additive));
             skillBasedAdditive.AddInPlace(customAdditive);
@@ -96,41 +127,8 @@ namespace DagoniteEmpire.Pages.Barony
                 IsBaron = true,
                 Additive = skillBasedAdditive,
                 Percent = skillBasedPercent,
-                FormulaText = "Food skill: +X% to all PPB except Gold, and −X% Corruption; additive: +Stability/Loyalty/Law/Science/Magic/Culture/Intelligence and −Corruption from baron skills.",
+                Description = BaronSkillPpbFormulas.BaronAdvisorNameTooltip,
             };
-        }
-
-        private static PpbVector BaronSkillAdditiveToAdvisor(PpbVector skillInfluence)
-        {
-            var v = new PpbVector();
-            v.EnsureSize();
-            v[Ppb.Stability] = skillInfluence[Ppb.Stability];
-            v[Ppb.Loyalty] = skillInfluence[Ppb.Loyalty];
-            v[Ppb.Law] = skillInfluence[Ppb.Law];
-            v[Ppb.Science] = skillInfluence[Ppb.Science];
-            v[Ppb.Magic] = skillInfluence[Ppb.Magic];
-            v[Ppb.Culture] = skillInfluence[Ppb.Culture];
-            v[Ppb.Intelligence] = skillInfluence[Ppb.Intelligence];
-            v[Ppb.Corruption] = -skillInfluence[Ppb.Corruption];
-            return v;
-        }
-
-        private static PpbVector BaronFoodPercentToAdvisor(decimal foodSkill)
-        {
-            var v = new PpbVector();
-            v.EnsureSize();
-            foreach (Ppb key in Enum.GetValues<Ppb>())
-            {
-                if (key == Ppb.Treasury)
-                    continue;
-                if (key == Ppb.Corruption)
-                {
-                    v[key] = -foodSkill;
-                    continue;
-                }
-                v[key] = foodSkill;
-            }
-            return v;
         }
 
         private static int RankAdvisor(AdvisorDTO advisor)
@@ -443,6 +441,44 @@ namespace DagoniteEmpire.Pages.Barony
             => PpbVector.Sum(rows.Select(r => r.Percent));
 
         /// <summary>
+        /// Additive values that percent modifiers scale: positive per row (negative for Corruption).
+        /// </summary>
+        public static PpbVector SumScalableAdditive(IEnumerable<PpbModifierRow> rows)
+        {
+            var sum = new PpbVector();
+            foreach (var row in rows)
+            {
+                if (row.Additive is null)
+                    continue;
+                foreach (var info in PpbCatalog.All)
+                {
+                    var key = info.Key;
+                    var v = row.Additive[key];
+                    if (key == Ppb.Corruption)
+                    {
+                        if (v < 0m)
+                            sum[key] += v;
+                    }
+                    else if (v > 0m)
+                    {
+                        sum[key] += v;
+                    }
+                }
+            }
+            return sum;
+        }
+
+        /// <summary>Grand total from all Domain Panel section rows.</summary>
+        public static PpbVector SummarizeSections(IEnumerable<PpbModifierRow> rows)
+        {
+            var list = rows.ToList();
+            return PpbMath.Summarize(
+                SumAdditive(list),
+                SumScalableAdditive(list),
+                SumPercent(list));
+        }
+
+        /// <summary>
         /// Simplified section "glance vector" for chips in collapsed headers:
         /// additive sum + percent sum (informational only).
         /// </summary>
@@ -454,11 +490,20 @@ namespace DagoniteEmpire.Pages.Barony
             return glance;
         }
 
-        /// <summary>Grand total of all sections against PPB base values.</summary>
-        public static PpbVector GrandTotal(BaronyOverviewDTO ov)
+        /// <summary>
+        /// Same section rows as Domain Panel (including core buildings + towns under City and Buildings).
+        /// Used by Domain Panel summary, Resources expected income, and Budget turn gold.
+        /// </summary>
+        public static DomainPanelRowSet BuildDomainPanelRows(
+            BaronyOverviewDTO ov,
+            CharacterDTO? character = null,
+            IEnumerable<BaronInfluenceModifierDTO>? baronModifiers = null,
+            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null)
         {
-            var advisorRows = AdvisorRows(ov.Advisors);
-            var buildingRows = BuildingRows(ov.Buildings);
+            var advisors = AdvisorsForDomainPanel(
+                ov.Advisors, ov.Barony, character, baronModifiers, advisorModifiers);
+            var advisorRows = AdvisorRows(advisors);
+            var buildingRows = CityBuildingSectionRows(ov.Barony.Id, ov.Buildings, ov.Improvements);
             var socialRows = SocialRows(ov.Barony.Id, ov.SocialRelations);
             var improvementRows = ImprovementRows(ov.Improvements);
             var decreeRows = DecreeRows(ov.Decrees);
@@ -476,9 +521,58 @@ namespace DagoniteEmpire.Pages.Barony
             allRows.AddRange(eventRows);
             allRows.AddRange(communityRows);
 
-            var additive = SumAdditive(allRows);
-            var percent = SumPercent(allRows);
-            return PpbMath.Summarize(ov.Barony.BaseParameters, additive, percent);
+            return new DomainPanelRowSet
+            {
+                Advisors = advisors,
+                AdvisorRows = advisorRows,
+                BuildingRows = buildingRows,
+                SocialRows = socialRows,
+                ImprovementRows = improvementRows,
+                DecreeRows = decreeRows,
+                EventRows = eventRows,
+                CommunityRows = communityRows,
+                AllRows = allRows,
+                GrandTotal = SummarizeSections(allRows),
+            };
+        }
+
+        /// <summary>
+        /// Domain Panel only: fold office upkeep (+ bonus source gold costs) into the office row's Gold.
+        /// Not used by Offices sync — upkeep stays a separate field there.
+        /// </summary>
+        private static void ApplyOfficeGoldCostToPanelRow(
+            AdvisorDTO advisor,
+            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
+        {
+            if (advisor.IsBaron)
+                return;
+
+            var cost = PpbFormat.Round(TotalOfficeCost(advisor, customModifiers));
+            advisor.UpkeepGold = cost;
+            if (cost != 0m)
+                advisor.Additive[Ppb.Treasury] -= cost;
+        }
+
+        /// <summary>Grand total of all Domain Panel sections (same Gold as Resources / Budget turn balance).</summary>
+        public static PpbVector GrandTotal(
+            BaronyOverviewDTO ov,
+            CharacterDTO? character = null,
+            IEnumerable<BaronInfluenceModifierDTO>? baronModifiers = null,
+            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null)
+            => BuildDomainPanelRows(ov, character, baronModifiers, advisorModifiers).GrandTotal;
+
+        public sealed class DomainPanelRowSet
+        {
+            public List<AdvisorDTO> Advisors { get; init; } = new();
+            public List<PpbModifierRow> AdvisorRows { get; init; } = new();
+            public List<PpbModifierRow> BuildingRows { get; init; } = new();
+            public List<PpbModifierRow> SocialRows { get; init; } = new();
+            public List<PpbModifierRow> ImprovementRows { get; init; } = new();
+            public List<PpbModifierRow> DecreeRows { get; init; } = new();
+            public List<PpbModifierRow> EventRows { get; init; } = new();
+            public List<PpbModifierRow> CommunityRows { get; init; } = new();
+            public List<PpbModifierRow> AllRows { get; init; } = new();
+            public PpbVector GrandTotal { get; init; } = new();
         }
 
         // --- Baron Card: influence on barony ---
@@ -614,6 +708,9 @@ namespace DagoniteEmpire.Pages.Barony
         public static bool IsCoreOffice(AdvisorDTO advisor)
             => !advisor.IsBaron && OfficeType.Core.Contains(advisor.OfficeType);
 
+        public static bool IsOfficeAssigned(AdvisorDTO advisor)
+            => advisor.AvailableAdvisorId is > 0;
+
         public static IReadOnlyList<Ppb> EffectiveSignificantSkills(AdvisorDTO advisor)
         {
             if (advisor.SignificantSkills.Count > 0)
@@ -625,17 +722,20 @@ namespace DagoniteEmpire.Pages.Barony
             AdvisorDTO advisor,
             IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
         {
-            var rows = new List<AdvisorInfluenceRow>
+            var rows = new List<AdvisorInfluenceRow>();
+
+            if (IsOfficeAssigned(advisor))
             {
-                new()
+                rows.Add(new AdvisorInfluenceRow
                 {
                     Source = AdvisorInfluenceSource.FromSkills,
                     Values = advisor.Skills.Clone(),
                     IsSystem = true,
                     SystemKind = AdvisorInfluenceSystemKind.Skills,
-                    Formula = "Administrative skills of the office holder [TO BE COMPLETED]",
-                },
-            };
+                    Description = "Administrative skills of the office holder. "
+                        + "Only significant (active) skills affect barony PPB in the Domain Panel.",
+                });
+            }
 
             foreach (var modifier in customModifiers ?? Enumerable.Empty<AdvisorInfluenceModifierDTO>())
             {
@@ -669,13 +769,65 @@ namespace DagoniteEmpire.Pages.Barony
             return sum;
         }
 
-        public static void SyncAdvisorAdditive(AdvisorDTO advisor, IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
+        /// <summary>
+        /// Maps office holder skills (significant only) to Domain Panel additive/percent, same rules as baron.
+        /// Custom modifiers add to additive only.
+        /// </summary>
+        public static void ApplyAdvisorSkillInfluence(
+            AdvisorDTO advisor,
+            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
         {
-            var significant = EffectiveSignificantSkills(advisor);
-            var total = AdvisorSignificantSkills.MaskToSignificant(advisor.Skills, significant);
+            if (advisor.IsBaron)
+                return;
+
+            if (IsOfficeAssigned(advisor))
+            {
+                var active = EffectiveSignificantSkills(advisor);
+                var masked = AdvisorSignificantSkills.MaskToSignificant(advisor.Skills, active);
+                advisor.Additive = BaronSkillPpbFormulas.MapToAdvisorAdditive(masked);
+                advisor.Percent = BaronSkillPpbFormulas.MapToAdvisorPercent(masked);
+            }
+            else
+            {
+                advisor.Additive = new PpbVector();
+                advisor.Percent = new PpbVector();
+            }
+
             foreach (var modifier in customModifiers ?? Enumerable.Empty<AdvisorInfluenceModifierDTO>())
-                total.AddInPlace(modifier.Additive);
-            advisor.Additive = total;
+                advisor.Additive.AddInPlace(modifier.Additive);
         }
+
+        public static void SyncAdvisorAdditive(
+            AdvisorDTO advisor,
+            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
+            => ApplyAdvisorSkillInfluence(advisor, customModifiers);
+
+        public static string? ExplainOfficeAdvisorAdditive(AdvisorDTO advisor, Ppb key)
+        {
+            if (advisor.IsBaron)
+                return null;
+
+            string? skillTip = null;
+            if (IsOfficeAssigned(advisor) && IsActiveSkill(advisor, key))
+                skillTip = BaronSkillPpbFormulas.ExplainAdvisorAdditive(key);
+
+            if (key == Ppb.Treasury && advisor.UpkeepGold != 0m)
+            {
+                var upkeep = $"Office upkeep: −{PpbFormat.Number(advisor.UpkeepGold)} gold.";
+                return skillTip is null ? upkeep : $"{skillTip}\n{upkeep}";
+            }
+
+            return skillTip;
+        }
+
+        public static string? ExplainOfficeAdvisorPercent(AdvisorDTO advisor, Ppb key)
+        {
+            if (advisor.IsBaron || !IsOfficeAssigned(advisor) || !IsActiveSkill(advisor, key))
+                return null;
+            return BaronSkillPpbFormulas.ExplainAdvisorPercent(key);
+        }
+
+        private static bool IsActiveSkill(AdvisorDTO advisor, Ppb key)
+            => EffectiveSignificantSkills(advisor).Contains(key);
     }
 }

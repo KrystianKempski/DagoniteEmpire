@@ -1,0 +1,108 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@implements IDisposable
+@inject IBaronyRepository _baronyRepo
+@inject ICharacterRepository _characterRepo
+@inject IUserService _userService
+@inject NavigationManager _navigationManager
+
+@if (_ready)
+{
+    <div class="barony-resource-hud" title="Cumulative stocks · smaller number = expected change next turn">
+        @foreach (var info in ResourceCatalog.All)
+        {
+            var stock = _stocks[info.Key];
+            var delta = _expected[info.Key];
+            var color = ResourceCatalog.ColorKey(info.Key);
+            <div class="barony-resource-hud__item barony-resource-hud__item--@color">
+                <span class="barony-resource-hud__label">@ShortLabel(info)</span>
+                <span class="barony-resource-hud__values">
+                    <span class="barony-resource-hud__stock">@PpbFormat.Number(stock)</span>
+                    @if (PpbFormat.Round(delta) != 0m)
+                    {
+                        <span class="barony-resource-hud__delta @(delta > 0 ? "barony-resource-hud__delta--pos" : "barony-resource-hud__delta--neg")">
+                            @PpbFormat.Additive(delta)
+                        </span>
+                    }
+                </span>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [CascadingParameter] public BaronyViewOptions? ViewOptions { get; set; }
+
+    private bool _ready;
+    private PpbVector _stocks = new();
+    private PpbVector _expected = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _navigationManager.LocationChanged += OnLocationChanged;
+        if (ViewOptions is not null)
+            ViewOptions.ResourceHudChanged += OnResourceHudChanged;
+        await ReloadAsync();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+        => _ = InvokeAsync(ReloadAsync);
+
+    private void OnResourceHudChanged()
+        => _ = InvokeAsync(ReloadAsync);
+
+    private async Task ReloadAsync()
+    {
+        try
+        {
+            var userInfo = await _userService.GetUserInfo();
+            var characterId = userInfo?.SelectedCharacter?.Id ?? 0;
+            if (characterId <= 0)
+            {
+                _ready = false;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var barony = await _baronyRepo.GetByCharacterId(characterId);
+            if (barony is null)
+            {
+                _ready = false;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var overview = await _baronyRepo.GetOverview(barony.Id);
+            if (overview is null)
+            {
+                _ready = false;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var character = await _characterRepo.GetById(barony.CharacterId, fullIncludes: true);
+            var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(barony.Id);
+            var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(barony.Id);
+
+            _stocks = ResourceCatalog.Slice(overview.Barony.ResourceStocks);
+            _expected = ResourceCatalog.Slice(
+                BaronyCalc.GrandTotal(overview, character, baronModifiers, advisorModifiers));
+            _ready = true;
+        }
+        catch
+        {
+            _ready = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string ShortLabel(PpbInfo info)
+        => info.Key == Ppb.Treasury ? "Gold" : info.ShortEn;
+
+    public void Dispose()
+    {
+        _navigationManager.LocationChanged -= OnLocationChanged;
+        if (ViewOptions is not null)
+            ViewOptions.ResourceHudChanged -= OnResourceHudChanged;
+    }
+}

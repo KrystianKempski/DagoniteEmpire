@@ -19,7 +19,7 @@
                           Margin="Margin.Dense"
                           Lines="2"
                           Class="baron-influence-field" />
-            <PpbVectorEditor @bind-Value="_values" Title="PPB bonuses" Compact="true" />
+            <PpbVectorEditor @bind-Value="_values" Title="PPB bonuses" Compact="true" ExcludeTreasury="true" />
         </div>
     </DialogContent>
     <DialogActions>
@@ -42,6 +42,7 @@
         _source = Modifier.Source;
         _description = Modifier.Description;
         _values = Modifier.Additive.Clone();
+        _values[Ppb.Treasury] = 0m;
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -56,6 +57,7 @@
 
         Modifier.Source = _source.Trim();
         Modifier.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        _values[Ppb.Treasury] = 0m;
         Modifier.Additive = _values;
         MudDialog.Close(DialogResult.Ok(Modifier));
     }

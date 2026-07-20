@@ -6,7 +6,7 @@
         <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" />
         <MudTextField @bind-Value="_description" Label="Description" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" />
         <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">Skills</MudText>
-        <PpbVectorEditor Value="@_skills" ValueChanged="v => _skills = v" />
+        <PpbVectorEditor Value="@_skills" ValueChanged="v => _skills = v" ExcludeTreasury="true" />
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>

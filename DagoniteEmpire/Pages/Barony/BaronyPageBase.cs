@@ -19,6 +19,8 @@ namespace DagoniteEmpire.Pages.Barony
         [Inject] protected ISnackbar _snackBar { get; set; } = default!;
         [Inject] protected NavigationManager _navigationManager { get; set; } = default!;
 
+        [CascadingParameter] protected BaronyViewOptions? ViewOptions { get; set; }
+
         protected UserInfo? UserInfo { get; set; }
         protected BaronyDTO? Barony { get; set; }
         protected int BaronyId => Barony?.Id ?? 0;
@@ -78,5 +80,7 @@ namespace DagoniteEmpire.Pages.Barony
                 IsLoading = false;
             }
         }
+
+        protected void NotifyResourceHud() => ViewOptions?.NotifyResourceHudChanged();
     }
 }

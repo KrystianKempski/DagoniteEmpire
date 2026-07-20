@@ -186,4 +186,32 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Additional gold upkeep per turn from this bonus source.</summary>
         public decimal CostGold { get; set; }
     }
+
+    /// <summary>Custom income/expense row on the Resources balance table.</summary>
+    public class BaronyResourceSource
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+
+        /// <summary>Resource deltas (JSON PpbVector). Positive = income, negative = expense.</summary>
+        public string AdditiveJson { get; set; } = "{}";
+    }
+
+    /// <summary>Custom gold income/expense line for the baron’s personal purse.</summary>
+    public class BaronPurseSource
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+
+        /// <summary>Gold delta. Positive = income, negative = expense.</summary>
+        public decimal Amount { get; set; }
+    }
 }

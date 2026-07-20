@@ -3,7 +3,10 @@
 
 <BaronySection Title="@BaronyCalc.OfficeSectionTitle(Advisor)">
     <Summary>
-        <PpbSummaryChips Vector="@_total" />
+        @if (_rows.Count > 0)
+        {
+            <PpbSummaryChips Vector="@_total" />
+        }
     </Summary>
     <ChildContent>
         <div class="advisor-office-header">
@@ -26,14 +29,23 @@
         </div>
 
         <div style="overflow-x:auto;">
-            <OfficeSourcePpbTable Rows="@_rows"
-                                    Summary="@_total"
-                                    SummaryCost="@_totalCost"
-                                    SummaryLabel="Σ total influence"
-                                    SignificantSkills="@_significantSkills"
-                                    CanEdit="@CanEdit"
-                                    OnEdit="EditRowAsync"
-                                    OnDelete="DeleteRowAsync" />
+            @if (_rows.Count > 0)
+            {
+                <OfficeSourcePpbTable Rows="@_rows"
+                                        Summary="@_total"
+                                        SummaryCost="@_totalCost"
+                                        SummaryLabel="Σ total influence"
+                                        SignificantSkills="@_significantSkills"
+                                        CanEdit="@CanEdit"
+                                        OnEdit="EditRowAsync"
+                                        OnDelete="DeleteRowAsync" />
+            }
+            else if (!BaronyCalc.IsOfficeAssigned(Advisor))
+            {
+                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                    No advisor assigned — no skill influence.
+                </MudText>
+            }
         </div>
 
         @if (CanEdit)
@@ -112,13 +124,7 @@
 
     private async Task EditRowAsync(AdvisorInfluenceRow row)
     {
-        if (row.SystemKind == AdvisorInfluenceSystemKind.Skills)
-        {
-            await EditSkillsAsync();
-            return;
-        }
-
-        if (row.ModifierId is null)
+        if (row.IsSystem || row.ModifierId is null)
             return;
 
         var modifier = CustomModifiers.FirstOrDefault(m => m.Id == row.ModifierId);
@@ -135,27 +141,6 @@
             Description = modifier.Description,
             CostGold = modifier.CostGold,
         });
-    }
-
-    private async Task EditSkillsAsync()
-    {
-        var parameters = new DialogParameters<AdvisorSkillsEditDialog>
-        {
-            { x => x.Skills, Advisor.Skills.Clone() },
-            { x => x.SignificantKeys, _significantSkills },
-        };
-
-        var dialog = await _dialogService.ShowAsync<AdvisorSkillsEditDialog>(
-            $"{BaronyCalc.AdvisorRoleLabel(Advisor)} — Skills",
-            parameters,
-            DialogOptions());
-
-        var result = await dialog.Result;
-        if (result is null || result.Canceled || result.Data is not PpbVector skills)
-            return;
-
-        Advisor.Skills = skills;
-        await PersistAdvisorAsync();
     }
 
     private async Task AddRowAsync()
@@ -234,24 +219,8 @@
     {
         BaronyCalc.SyncAdvisorAdditive(Advisor, CustomModifiers);
         await _baronyRepo.SaveAdvisor(Advisor);
-        await SyncAvailableAdvisorAsync();
         _snackBar.Add("Office updated.", Severity.Success);
         await OnChanged.InvokeAsync();
-    }
-
-    private async Task SyncAvailableAdvisorAsync()
-    {
-        if (Advisor.AvailableAdvisorId is not int id || id <= 0)
-            return;
-        var pool = AvailableAdvisors.FirstOrDefault(a => a.Id == id);
-        if (pool is null)
-            return;
-
-        pool.Name = Advisor.PersonName;
-        pool.Description = Advisor.Description;
-        pool.Skills = Advisor.Skills.Clone();
-        pool.Skills[Ppb.Treasury] = 0m;
-        await _baronyRepo.SaveAvailableAdvisor(pool);
     }
 
     private AdvisorDTO CloneAdvisor() => new()
@@ -278,6 +247,8 @@
         Advisor.UpkeepGold = saved.UpkeepGold;
         Advisor.AvailableAdvisorId = saved.AvailableAdvisorId;
         Advisor.Skills = saved.Skills.Clone();
+        if (!BaronyCalc.IsOfficeAssigned(Advisor))
+            Advisor.Skills = new PpbVector();
     }
 
     private static DialogOptions DialogOptions() => new()

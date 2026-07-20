@@ -10,6 +10,15 @@
     <ChildContent>
         <div style="overflow-x:auto;">
             <table class="ppb-table ppb-table--advisors ppb-table--city-buildings ppb-table--lined">
+                <colgroup>
+                    <col class="city-building-col-name" />
+                    <col class="city-building-col-pop" />
+                    @foreach (var _ in PpbCatalog.All)
+                    {
+                        <col class="ppb-pair-col" />
+                        <col class="ppb-pair-col" />
+                    }
+                </colgroup>
                 <thead>
                     <tr>
                         <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
@@ -42,8 +51,8 @@
                             <td class="@PopulationCellClass(core.Population)">@FmtAdd(core.Population)</td>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <td class="@ValueClass(core.Additive[info.Key])">@FmtAdd(core.Additive[info.Key])</td>
-                                <td class="@ValueClass(core.Percent[info.Key])">@FmtPct(core.Percent[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key,core.Additive[info.Key])">@FmtAdd(core.Additive[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key,core.Percent[info.Key])">@FmtPct(core.Percent[info.Key])</td>
                             }
                         </tr>
                     }
@@ -76,7 +85,7 @@
                             </td>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <td class="@ValueClass(town.Additive[info.Key])">
+                                <td class="@PpbCellStyle.ValueClass(info.Key,town.Additive[info.Key])">
                                     @{
                                         var tip = TownPpbFormulas.ExplainAdditive(info.Key);
                                     }
@@ -91,7 +100,7 @@
                                         @FmtAdd(town.Additive[info.Key])
                                     }
                                 </td>
-                                <td class="@ValueClass(town.Percent[info.Key])">@FmtPct(town.Percent[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key,town.Percent[info.Key])">@FmtPct(town.Percent[info.Key])</td>
                             }
                         </tr>
                     }
@@ -123,8 +132,8 @@
                             <td class="@PopulationCellClass(building.Population)">@FmtAdd(building.Population)</td>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <td class="@ValueClass(building.Additive[info.Key])">@FmtAdd(building.Additive[info.Key])</td>
-                                <td class="@ValueClass(building.Percent[info.Key])">@FmtPct(building.Percent[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key,building.Additive[info.Key])">@FmtAdd(building.Additive[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key,building.Percent[info.Key])">@FmtPct(building.Percent[info.Key])</td>
                             }
                         </tr>
                     }
@@ -134,8 +143,8 @@
                         <td class="@PopulationCellClass(PopulationSum)"><b>@FmtAdd(PopulationSum)</b></td>
                         @foreach (var info in PpbCatalog.All)
                         {
-                            <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
-                            <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                            <td class="@PpbCellStyle.ValueClass(info.Key,AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                            <td class="@PpbCellStyle.ValueClass(info.Key,PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
                         }
                     </tr>
                 </tbody>
@@ -386,36 +395,12 @@
         _ => p.ToString(),
     };
 
-    private static string FmtAdd(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v);
-    }
-
-    private static string FmtPct(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v) + "%";
-    }
-
-    private static string Num(decimal v)
-    {
-        var r = decimal.Round(v, 2);
-        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
-    }
-
-    private static string ValueClass(decimal v)
-    {
-        if (v > 0m) return "ppb-cell-pos";
-        if (v < 0m) return "ppb-cell-neg";
-        return "ppb-cell-zero";
-    }
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
 
     private static string PopulationCellClass(int population, bool editable = false)
     {
-        var cls = "city-building-col-pop " + ValueClass(population);
+        var cls = "city-building-col-pop " + PpbCellStyle.ValueClassStandard(population);
         if (editable)
             cls += " city-building-col-pop--editable";
         return cls;

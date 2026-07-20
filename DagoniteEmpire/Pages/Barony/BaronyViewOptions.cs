@@ -28,5 +28,10 @@ namespace DagoniteEmpire.Pages.Barony
         public int Version { get; private set; }
 
         public event Action? Changed;
+
+        /// <summary>Fired when cumulative stocks / expected income may have changed (Resources, Budget transfers).</summary>
+        public event Action? ResourceHudChanged;
+
+        public void NotifyResourceHudChanged() => ResourceHudChanged?.Invoke();
     }
 }

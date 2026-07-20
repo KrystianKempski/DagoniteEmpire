@@ -13,6 +13,15 @@
         {
             <div style="overflow-x:auto;">
                 <table class="ppb-table ppb-table--advisors ppb-table--lined">
+                    <colgroup>
+                        <col class="advisor-col-role" />
+                        <col class="advisor-col-name" />
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <col class="ppb-pair-col" />
+                            <col class="ppb-pair-col" />
+                        }
+                    </colgroup>
                     <thead>
                         <tr>
                             <th rowspan="2" class="ppb-row-label advisor-col-role">Role</th>
@@ -35,21 +44,71 @@
                         {
                             <tr class="@(advisor.IsBaron ? "advisor-row--baron" : "")">
                                 <td class="ppb-row-label advisor-col-role">
-                                    <BaronyTooltip Title="Description" Text="@RoleTitle(advisor)">
-                                        <span>
-                                            @BaronyCalc.AdvisorRoleLabel(advisor)
-                                            @if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
-                                            {
-                                                <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
-                                            }
-                                        </span>
-                                    </BaronyTooltip>
+                                    @if (advisor.IsBaron)
+                                    {
+                                        <BaronyTooltip Title="Baron" Text="@BaronSkillPpbFormulas.BaronAdvisorNameTooltip">
+                                            <span>@BaronyCalc.AdvisorRoleLabel(advisor)</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        <BaronyTooltip Title="Description" Text="@RoleTitle(advisor)">
+                                            <span>
+                                                @BaronyCalc.AdvisorRoleLabel(advisor)
+                                                @if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
+                                                }
+                                            </span>
+                                        </BaronyTooltip>
+                                    }
                                 </td>
-                                <td class="advisor-col-name">@DisplayName(advisor)</td>
+                                <td class="advisor-col-name">
+                                    @if (advisor.IsBaron)
+                                    {
+                                        <BaronyTooltip Title="Baron" Text="@BaronSkillPpbFormulas.BaronAdvisorNameTooltip">
+                                            <span>@DisplayName(advisor)</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        @DisplayName(advisor)
+                                    }
+                                </td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
-                                    <td class="@ValueClass(advisor.Additive[info.Key])">@FmtAdd(advisor.Additive[info.Key])</td>
-                                    <td class="@ValueClass(advisor.Percent[info.Key])">@FmtPct(advisor.Percent[info.Key])</td>
+                                    var add = advisor.Additive[info.Key];
+                                    var pct = advisor.Percent[info.Key];
+                                    var addTip = advisor.IsBaron
+                                        ? BaronSkillPpbFormulas.ExplainAdvisorAdditive(info.Key)
+                                        : BaronyCalc.ExplainOfficeAdvisorAdditive(advisor, info.Key);
+                                    var pctTip = advisor.IsBaron
+                                        ? BaronSkillPpbFormulas.ExplainAdvisorPercent(info.Key)
+                                        : BaronyCalc.ExplainOfficeAdvisorPercent(advisor, info.Key);
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, add)">
+                                        @if (addTip is not null)
+                                        {
+                                            <BaronyTooltip Title="@info.NameEn" Text="@addTip">
+                                                <span>@FmtAdd(add)</span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            @FmtAdd(add)
+                                        }
+                                    </td>
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, pct)">
+                                        @if (pctTip is not null)
+                                        {
+                                            <BaronyTooltip Title="@info.NameEn" Text="@pctTip">
+                                                <span>@FmtPct(pct)</span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            @FmtPct(pct)
+                                        }
+                                    </td>
                                 }
                             </tr>
                         }
@@ -57,8 +116,8 @@
                             <td class="ppb-row-label" colspan="2">Σ section</td>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <td class="@ValueClass(AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
-                                <td class="@ValueClass(PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key, PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
                             }
                         </tr>
                     </tbody>
@@ -107,30 +166,6 @@
         _ => p.ToString(),
     };
 
-    private static string FmtAdd(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v);
-    }
-
-    private static string FmtPct(decimal v)
-    {
-        if (v == 0m)
-            return "·";
-        return (v > 0 ? "+" : "") + Num(v) + "%";
-    }
-
-    private static string Num(decimal v)
-    {
-        var r = decimal.Round(v, 2);
-        return r == decimal.Truncate(r) ? ((long)r).ToString() : r.ToString("0.##");
-    }
-
-    private static string ValueClass(decimal v)
-    {
-        if (v > 0m) return "ppb-cell-pos";
-        if (v < 0m) return "ppb-cell-neg";
-        return "ppb-cell-zero";
-    }
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
 }
