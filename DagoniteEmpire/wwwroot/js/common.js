@@ -226,3 +226,33 @@ window.baronyPickTooltipPlacement = function (el, preferred) {
 
     return order.slice().sort((a, b) => (space[b] ?? 0) - (space[a] ?? 0))[0] || 'Right';
 };
+
+/** Hide an open BaronyTooltip when the user scrolls (capture phase). */
+let baronyTipScrollOwner = null;
+let baronyTipScrollHandler = null;
+
+window.baronyTipWatchScroll = function (ownerId, dotNetRef) {
+    window.baronyTipUnwatchScroll();
+
+    baronyTipScrollOwner = ownerId;
+    baronyTipScrollHandler = function () {
+        if (dotNetRef) {
+            dotNetRef.invokeMethodAsync('OnScrollHide');
+        }
+    };
+
+    window.addEventListener('scroll', baronyTipScrollHandler, true);
+};
+
+window.baronyTipUnwatchScroll = function (ownerId) {
+    if (ownerId && baronyTipScrollOwner && baronyTipScrollOwner !== ownerId) {
+        return;
+    }
+
+    if (baronyTipScrollHandler) {
+        window.removeEventListener('scroll', baronyTipScrollHandler, true);
+    }
+
+    baronyTipScrollOwner = null;
+    baronyTipScrollHandler = null;
+};

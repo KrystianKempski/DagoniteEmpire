@@ -104,6 +104,34 @@ namespace DA_Common.Barony
             _ => "default",
         };
 
+        /// <summary>HUD / UI icon path under wwwroot.</summary>
+        public static string IconUrl(Ppb p) => p switch
+        {
+            Ppb.Food => "/icons/wheat.svg",
+            Ppb.Production => "/icons/gear-hammer.svg",
+            Ppb.Science => "/icons/erlenmeyer.svg",
+            Ppb.Magic => "/icons/crystal-wand.svg",
+            Ppb.Culture => "/icons/lyre.svg",
+            Ppb.Intelligence => "/icons/hood.svg",
+            Ppb.Defense => "/icons/shield.svg",
+            Ppb.Treasury => "/icons/two-coins.svg",
+            _ => "/icons/wheat.svg",
+        };
+
+        /// <summary>Accent hex for masked SVG icons.</summary>
+        public static string ColorHex(Ppb p) => p switch
+        {
+            Ppb.Food => "#6bcf75",
+            Ppb.Production => "#e07a8a",
+            Ppb.Science => "#6aa8f0",
+            Ppb.Magic => "#b07aef",
+            Ppb.Culture => "#f0a45a",
+            Ppb.Intelligence => "#c4b8d8",
+            Ppb.Defense => "#a8b0bc",
+            Ppb.Treasury => "#f0d060",
+            _ => "#d4cfc6",
+        };
+
         /// <summary>Copy only cumulative resource keys from <paramref name="source"/>.</summary>
         public static PpbVector Slice(PpbVector? source)
         {
@@ -121,6 +149,57 @@ namespace DA_Common.Barony
             foreach (var info in All)
                 result[info.Key] = a[info.Key] - b[info.Key];
             return result;
+        }
+    }
+
+    /// <summary>
+    /// Project cost tracks: pay with Gold + Production, or with other cumulative resources.
+    /// </summary>
+    public static class ProjectCostCatalog
+    {
+        public static readonly IReadOnlyList<PpbInfo> GoldProduction = new List<PpbInfo>
+        {
+            PpbCatalog.Info(Ppb.Production),
+            PpbCatalog.Info(Ppb.Treasury),
+        };
+
+        public static readonly IReadOnlyList<PpbInfo> Materials = new List<PpbInfo>
+        {
+            PpbCatalog.Info(Ppb.Food),
+            PpbCatalog.Info(Ppb.Science),
+            PpbCatalog.Info(Ppb.Magic),
+            PpbCatalog.Info(Ppb.Culture),
+            PpbCatalog.Info(Ppb.Intelligence),
+            PpbCatalog.Info(Ppb.Defense),
+        };
+
+        public static PpbVector SliceGoldProduction(PpbVector? source)
+        {
+            var result = new PpbVector();
+            if (source is null)
+                return result;
+            foreach (var info in GoldProduction)
+                result[info.Key] = source[info.Key];
+            return result;
+        }
+
+        public static PpbVector SliceMaterials(PpbVector? source)
+        {
+            var result = new PpbVector();
+            if (source is null)
+                return result;
+            foreach (var info in Materials)
+                result[info.Key] = source[info.Key];
+            return result;
+        }
+
+        public static bool HasRequirement(PpbVector? source) =>
+            source is not null && GoldProduction.Concat(Materials).Any(info => source[info.Key] > 0m);
+
+        public static void SplitLegacyCost(PpbVector legacy, out PpbVector goldProduction, out PpbVector materials)
+        {
+            goldProduction = SliceGoldProduction(legacy);
+            materials = SliceMaterials(legacy);
         }
     }
 }

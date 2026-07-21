@@ -1,3 +1,4 @@
+using DA_Common.Barony;
 using DA_Models.BaronyModels;
 
 namespace DA_Business.Repository.CharacterReps.IRepository
@@ -79,6 +80,9 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         // --- Projekty ---
         Task<List<BaronyProjectDTO>> GetProjects(int baronyId);
         Task<BaronyProjectDTO> SaveProject(BaronyProjectDTO dto);
+        Task<BaronyProjectDTO> AllocateProjectResources(int projectId, PpbVector amounts);
+        Task<BaronyProjectDTO> ClearProjectAllocations(int projectId);
+        Task<BaronyProjectDTO> SetProjectCostMode(int projectId, string mode);
         Task<int> DeleteProject(int id);
 
         // --- Resources balance custom sources ---

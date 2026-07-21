@@ -1,0 +1,216 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog project-allocate-dialog">
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);" Class="mb-3">
+                Transfer resources from your barony stocks into <strong>@Project.Name</strong>.
+                Payment method: <strong>@CostModeLabel(Project.EffectiveCostMode)</strong>.
+                Allocated resources leave your current stocks immediately.
+            </MudText>
+
+            @if (_rows.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                    This project has no remaining resource costs.
+                </MudText>
+            }
+            else
+            {
+                <div style="overflow-x:auto;">
+                    <table class="ppb-table ppb-table--resources ppb-table--project-allocate ppb-table--lined">
+                        <thead>
+                            <tr>
+                                <th class="resource-col-name">Resource</th>
+                                <th>Required</th>
+                                <th>Allocated</th>
+                                <th>Remaining</th>
+                                <th>In stock</th>
+                                <th>Add now</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _rows)
+                            {
+                                <tr>
+                                    <td class="ppb-row-label resource-col-name">@row.Name</td>
+                                    <td>@PpbFormat.Number(row.Required)</td>
+                                    <td>@PpbFormat.Number(row.Allocated)</td>
+                                    <td>@PpbFormat.Number(row.Remaining)</td>
+                                    <td>@PpbFormat.Number(row.InStock)</td>
+                                    <td class="project-allocate-dialog__input">
+                                        <MudNumericField T="decimal"
+                                                         Value="@row.AddNow"
+                                                         ValueChanged="@(v => SetAdd(row.Key, v))"
+                                                         Variant="Variant.Text"
+                                                         Margin="Margin.Dense"
+                                                         Min="0"
+                                                         Max="@row.MaxAdd"
+                                                         Step="1"
+                                                         Format="0.#"
+                                                         HideSpinButtons="false"
+                                                         Class="ppb-compact-numeric" />
+                                        @if (row.MaxAdd > 0)
+                                        {
+                                            <MudButton Variant="Variant.Text"
+                                                       Size="Size.Small"
+                                                       Class="project-allocate-dialog__fill"
+                                                       OnClick="@(() => FillRow(row.Key))">
+                                                Max
+                                            </MudButton>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <MudButton Variant="Variant.Text"
+                               Size="Size.Small"
+                               OnClick="FillAll">
+                        Fill all (up to stock &amp; remaining)
+                    </MudButton>
+                    <MudButton Variant="Variant.Text"
+                               Size="Size.Small"
+                               OnClick="ClearAll">
+                        Clear
+                    </MudButton>
+                </div>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn"
+                   Variant="Variant.Filled"
+                   Disabled="@(_rows.Count == 0)"
+                   OnClick="Save">
+            Allocate
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyProjectDTO Project { get; set; } = new();
+    [Parameter] public PpbVector AvailableStocks { get; set; } = new();
+
+    private readonly List<AllocateRow> _rows = new();
+    private readonly Dictionary<Ppb, decimal> _add = new();
+
+    protected override void OnInitialized()
+    {
+        var activeCost = Project.GetActiveCost();
+        foreach (var info in Project.ActiveCostColumns)
+        {
+            var remaining = Math.Max(0m, activeCost[info.Key] - Project.Allocated[info.Key]);
+            if (remaining <= 0m)
+                continue;
+
+            _add[info.Key] = 0m;
+            _rows.Add(new AllocateRow
+            {
+                Key = info.Key,
+                Name = info.NameEn,
+                Required = activeCost[info.Key],
+                Allocated = Project.Allocated[info.Key],
+                Remaining = remaining,
+                InStock = AvailableStocks[info.Key],
+            });
+        }
+
+        RefreshMax();
+    }
+
+    private static string CostModeLabel(string mode) => mode switch
+    {
+        ProjectCostMode.GoldProduction => "Gold & Production",
+        ProjectCostMode.Materials => "Materials",
+        _ => mode,
+    };
+
+    private void SetAdd(Ppb key, decimal value)
+    {
+        var row = _rows.First(r => r.Key == key);
+        _add[key] = Math.Clamp(value, 0m, row.MaxAdd);
+        row.AddNow = _add[key];
+    }
+
+    private void FillRow(Ppb key)
+    {
+        var row = _rows.First(r => r.Key == key);
+        _add[key] = row.MaxAdd;
+        row.AddNow = row.MaxAdd;
+    }
+
+    private void FillAll()
+    {
+        foreach (var row in _rows)
+        {
+            _add[row.Key] = row.MaxAdd;
+            row.AddNow = row.MaxAdd;
+        }
+    }
+
+    private void ClearAll()
+    {
+        foreach (var row in _rows)
+        {
+            _add[row.Key] = 0m;
+            row.AddNow = 0m;
+        }
+    }
+
+    private void RefreshMax()
+    {
+        foreach (var row in _rows)
+            row.MaxAdd = Math.Min(row.Remaining, row.InStock);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        var amounts = new PpbVector();
+        var any = false;
+        foreach (var row in _rows)
+        {
+            var add = _add.GetValueOrDefault(row.Key);
+            if (add <= 0m)
+                continue;
+            if (add > row.MaxAdd)
+            {
+                _snackBar.Add($"Amount for {row.Name} exceeds available stock or remaining cost.", Severity.Warning);
+                return;
+            }
+            amounts[row.Key] = add;
+            any = true;
+        }
+
+        if (!any)
+        {
+            _snackBar.Add("Enter at least one resource amount.", Severity.Warning);
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(amounts));
+    }
+
+    private sealed class AllocateRow
+    {
+        public Ppb Key { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public decimal Required { get; init; }
+        public decimal Allocated { get; init; }
+        public decimal Remaining { get; init; }
+        public decimal InStock { get; init; }
+        public decimal MaxAdd { get; set; }
+        public decimal AddNow { get; set; }
+    }
+}

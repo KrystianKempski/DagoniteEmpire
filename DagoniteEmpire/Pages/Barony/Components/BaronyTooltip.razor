@@ -1,5 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IJSRuntime Js
+@implements IDisposable
 
 @if (string.IsNullOrWhiteSpace(Text))
 {
@@ -18,7 +19,8 @@ else
             <span @ref="_anchor"
                   class="barony-tip-anchor"
                   @onpointerenter="ShowAsync"
-                  @onpointerleave="Hide">
+                  @onpointerleave="Hide"
+                  @onpointercancel="Hide">
                 @ChildContent
             </span>
         </ChildContent>
@@ -43,6 +45,14 @@ else
     private ElementReference _anchor;
     private Placement _placement = Placement.Right;
     private bool _visible;
+    private int _hoverToken;
+    private readonly Guid _instanceId = Guid.NewGuid();
+    private DotNetObjectReference<BaronyTooltip>? _dotNetRef;
+
+    protected override void OnInitialized()
+    {
+        _dotNetRef = DotNetObjectReference.Create(this);
+    }
 
     protected override void OnParametersSet()
     {
@@ -52,12 +62,17 @@ else
 
     private async Task ShowAsync()
     {
+        var token = ++_hoverToken;
+
         try
         {
             var name = await Js.InvokeAsync<string>(
                 "baronyPickTooltipPlacement",
                 _anchor,
                 Placement.ToString());
+            if (token != _hoverToken)
+                return;
+
             _placement = name switch
             {
                 "Left" => Placement.Left,
@@ -68,11 +83,56 @@ else
         }
         catch
         {
+            if (token != _hoverToken)
+                return;
+
             _placement = Placement;
         }
 
+        if (token != _hoverToken)
+            return;
+
         _visible = true;
+
+        try
+        {
+            await Js.InvokeVoidAsync("baronyTipWatchScroll", _instanceId.ToString(), _dotNetRef);
+        }
+        catch
+        {
+            // ignore disconnect / prerender
+        }
     }
 
-    private void Hide() => _visible = false;
+    private void Hide()
+    {
+        _hoverToken++;
+        _visible = false;
+        _ = TryUnwatchScrollAsync();
+    }
+
+    [JSInvokable]
+    public Task OnScrollHide()
+    {
+        Hide();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task TryUnwatchScrollAsync()
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("baronyTipUnwatchScroll", _instanceId.ToString());
+        }
+        catch
+        {
+            // ignore disconnect / prerender
+        }
+    }
+
+    public void Dispose()
+    {
+        _ = TryUnwatchScrollAsync();
+        _dotNetRef?.Dispose();
+    }
 }

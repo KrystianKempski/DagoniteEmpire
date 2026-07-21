@@ -622,6 +622,137 @@ namespace DA_Business.Repository.BaronyRepos
 
         public Task<int> DeleteProject(int id) => Delete(ctx => ctx.BaronyProjects, id, nameof(DeleteProject));
 
+        public async Task<BaronyProjectDTO> SetProjectCostMode(int projectId, string mode)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var project = await ctx.BaronyProjects.FirstOrDefaultAsync(x => x.Id == projectId)
+                    ?? throw new InvalidOperationException("Project not found.");
+
+                var dto = ToDTO(project);
+                if (dto.Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                    throw new InvalidOperationException("This project cannot change payment method.");
+                if (!dto.GetSelectableCostModes().Contains(mode))
+                    throw new InvalidOperationException("This payment method is not available for the project.");
+                if (!dto.CanSwitchCostMode)
+                    throw new InvalidOperationException("Payment method is locked after the first allocation.");
+
+                dto.SelectedCostMode = mode;
+                ApplyProject(project, dto);
+                await ctx.SaveChangesAsync();
+                return ToDTO(project);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SetProjectCostMode)); }
+        }
+
+        public async Task<BaronyProjectDTO> AllocateProjectResources(int projectId, PpbVector amounts)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var project = await ctx.BaronyProjects.FirstOrDefaultAsync(x => x.Id == projectId)
+                    ?? throw new InvalidOperationException("Project not found.");
+                if (project.Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                    throw new InvalidOperationException("This project cannot accept resources.");
+
+                var barony = await ctx.Baronies.FirstOrDefaultAsync(x => x.Id == project.BaronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var dto = ToDTO(project);
+                var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
+                var toAdd = ResourceCatalog.Slice(amounts);
+                var activeCost = dto.GetActiveCost();
+                var activeKeys = dto.ActiveCostColumns.Select(x => x.Key).ToHashSet();
+                var any = false;
+
+                foreach (var info in ResourceCatalog.All)
+                {
+                    var add = toAdd[info.Key];
+                    if (add <= 0m)
+                        continue;
+
+                    if (!activeKeys.Contains(info.Key))
+                        throw new InvalidOperationException(
+                            $"Cannot allocate {info.NameEn} while paying with {dto.EffectiveCostMode}.");
+
+                    var remaining = Math.Max(0m, activeCost[info.Key] - dto.Allocated[info.Key]);
+                    if (add > remaining)
+                        throw new InvalidOperationException(
+                            $"Cannot allocate more {info.NameEn} than remaining ({PpbFormat.Number(remaining)}).");
+                    if (add > stocks[info.Key])
+                        throw new InvalidOperationException(
+                            $"Not enough {info.NameEn} in stock ({PpbFormat.Number(stocks[info.Key])} available).");
+
+                    dto.Allocated[info.Key] += add;
+                    stocks[info.Key] -= add;
+                    any = true;
+                }
+
+                if (!any)
+                    throw new InvalidOperationException("Enter at least one resource amount to allocate.");
+
+                if (string.IsNullOrWhiteSpace(dto.SelectedCostMode))
+                    dto.SelectedCostMode = dto.EffectiveCostMode;
+
+                ApplyProject(project, dto);
+                stocks = ResourceCatalog.Slice(stocks);
+                barony.ResourceStocksJson = Ser(stocks);
+                barony.FoodInGranaries = stocks[Ppb.Food];
+                barony.TreasuryGold = stocks[Ppb.Treasury];
+
+                await ctx.SaveChangesAsync();
+                return ToDTO(project);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(AllocateProjectResources));
+            }
+        }
+
+        public async Task<BaronyProjectDTO> ClearProjectAllocations(int projectId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var project = await ctx.BaronyProjects.FirstOrDefaultAsync(x => x.Id == projectId)
+                    ?? throw new InvalidOperationException("Project not found.");
+
+                var barony = await ctx.Baronies.FirstOrDefaultAsync(x => x.Id == project.BaronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var dto = ToDTO(project);
+                if (dto.Status != ProjectStatus.Draft)
+                    throw new InvalidOperationException("Only draft projects can have allocations cleared.");
+                if (!dto.HasAnyAllocation)
+                    throw new InvalidOperationException("This project has no allocated resources.");
+
+                var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
+                foreach (var info in ResourceCatalog.All)
+                {
+                    var amount = dto.Allocated[info.Key];
+                    if (amount <= 0m)
+                        continue;
+                    stocks[info.Key] += amount;
+                    dto.Allocated[info.Key] = 0m;
+                }
+
+                dto.SelectedCostMode = null;
+                ApplyProject(project, dto);
+                stocks = ResourceCatalog.Slice(stocks);
+                barony.ResourceStocksJson = Ser(stocks);
+                barony.FoodInGranaries = stocks[Ppb.Food];
+                barony.TreasuryGold = stocks[Ppb.Treasury];
+
+                await ctx.SaveChangesAsync();
+                return ToDTO(project);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(ClearProjectAllocations));
+            }
+        }
+
         // ---------------- Resource sources ----------------
         public async Task<List<BaronyResourceSourceDTO>> GetResourceSources(int baronyId) =>
             await GetList(ctx => ctx.BaronyResourceSources, baronyId, ToDTO, nameof(GetResourceSources));
@@ -1290,20 +1421,68 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         // ---------------- Mapping: Project ----------------
-        private static BaronyProjectDTO ToDTO(BaronyProject e) => new()
+        private static BaronyProjectDTO ToDTO(BaronyProject e)
         {
-            Id = e.Id, BaronyId = e.BaronyId, Name = e.Name, Cost = De(e.CostJson), Result = De(e.ResultJson),
-            Allocated = De(e.AllocatedJson), ResultDescription = e.ResultDescription, Status = e.Status,
-            TurnsRemaining = e.TurnsRemaining, Notes = e.Notes,
-        };
+            var goldProduction = De(e.CostGoldProductionJson);
+            var materials = De(e.CostMaterialsJson);
+            if (!ProjectCostCatalog.HasRequirement(goldProduction) && !ProjectCostCatalog.HasRequirement(materials))
+                ProjectCostCatalog.SplitLegacyCost(De(e.CostJson), out goldProduction, out materials);
+
+            return new BaronyProjectDTO
+            {
+                Id = e.Id,
+                BaronyId = e.BaronyId,
+                Name = e.Name,
+                Description = e.Description,
+                OutputKind = e.OutputKind,
+                CostGoldProduction = goldProduction,
+                CostMaterials = materials,
+                AllowedCostModes = string.IsNullOrWhiteSpace(e.AllowedCostModes)
+                    ? DA_Common.Barony.ProjectAllowedCostModes.PlayerChoice
+                    : e.AllowedCostModes,
+                SelectedCostMode = e.SelectedCostMode,
+                ResultAdditive = De(e.ResultJson),
+                ResultPercent = De(e.ResultPercentJson),
+                Allocated = De(e.AllocatedJson),
+                ResultDescription = e.ResultDescription,
+                Status = e.Status,
+                TurnsRemaining = e.TurnsRemaining,
+                Notes = e.Notes,
+            };
+        }
 
         private static BaronyProject ToEntity(BaronyProjectDTO d) { var e = new BaronyProject(); ApplyProject(e, d); e.Id = d.Id; return e; }
 
         private static void ApplyProject(BaronyProject e, BaronyProjectDTO d)
         {
-            e.BaronyId = d.BaronyId; e.Name = d.Name; e.CostJson = Ser(d.Cost); e.ResultJson = Ser(d.Result);
-            e.AllocatedJson = Ser(d.Allocated); e.ResultDescription = d.ResultDescription; e.Status = d.Status;
-            e.TurnsRemaining = d.TurnsRemaining; e.Notes = d.Notes;
+            e.BaronyId = d.BaronyId;
+            e.Name = d.Name;
+            e.Description = d.Description ?? string.Empty;
+            e.OutputKind = string.IsNullOrWhiteSpace(d.OutputKind)
+                ? DA_Common.Barony.ProjectOutputKind.DecreeOrTechnology
+                : d.OutputKind.Trim();
+            e.CostGoldProductionJson = Ser(ProjectCostCatalog.SliceGoldProduction(d.CostGoldProduction));
+            e.CostMaterialsJson = Ser(ProjectCostCatalog.SliceMaterials(d.CostMaterials));
+            e.AllowedCostModes = string.IsNullOrWhiteSpace(d.AllowedCostModes)
+                ? DA_Common.Barony.ProjectAllowedCostModes.PlayerChoice
+                : d.AllowedCostModes.Trim();
+            e.SelectedCostMode = string.IsNullOrWhiteSpace(d.SelectedCostMode) ? null : d.SelectedCostMode.Trim();
+            e.CostJson = Ser(MergeLegacyCost(d.CostGoldProduction, d.CostMaterials));
+            e.ResultJson = Ser(d.ResultAdditive);
+            e.ResultPercentJson = Ser(d.ResultPercent);
+            e.AllocatedJson = Ser(ResourceCatalog.Slice(d.Allocated));
+            e.ResultDescription = d.ResultDescription;
+            e.Status = d.Status;
+            e.TurnsRemaining = d.TurnsRemaining;
+            e.Notes = d.Notes;
+        }
+
+        private static PpbVector MergeLegacyCost(PpbVector goldProduction, PpbVector materials)
+        {
+            var merged = ProjectCostCatalog.SliceGoldProduction(goldProduction);
+            foreach (var info in ProjectCostCatalog.Materials)
+                merged[info.Key] = materials[info.Key];
+            return merged;
         }
 
         // ---------------- Mapping: Resource source ----------------

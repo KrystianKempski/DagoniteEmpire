@@ -247,32 +247,137 @@ namespace DA_Models.BaronyModels
         public int Id { get; set; }
         public int BaronyId { get; set; }
         public string Name { get; set; } = string.Empty;
-        public PpbVector Cost { get; set; } = new();
-        public PpbVector Result { get; set; } = new();
+        public string Description { get; set; } = string.Empty;
+        public string OutputKind { get; set; } = DA_Common.Barony.ProjectOutputKind.DecreeOrTechnology;
+        public PpbVector CostGoldProduction { get; set; } = new();
+        public PpbVector CostMaterials { get; set; } = new();
+        public string AllowedCostModes { get; set; } = DA_Common.Barony.ProjectAllowedCostModes.PlayerChoice;
+        public string? SelectedCostMode { get; set; }
+        public PpbVector ResultAdditive { get; set; } = new();
+        public PpbVector ResultPercent { get; set; } = new();
         public PpbVector Allocated { get; set; } = new();
         public string ResultDescription { get; set; } = string.Empty;
         public string Status { get; set; } = DA_Common.Barony.ProjectStatus.Draft;
         public int TurnsRemaining { get; set; }
         public string? Notes { get; set; }
 
-        /// <summary>Procent alokacji względem kosztu (0-100), średnia po niezerowych kosztach PPB.</summary>
+        /// <summary>Active payment track after GM rules and player selection.</summary>
+        public string EffectiveCostMode => ResolveEffectiveCostMode();
+
+        public IReadOnlyList<PpbInfo> ActiveCostColumns =>
+            EffectiveCostMode == DA_Common.Barony.ProjectCostMode.GoldProduction
+                ? ProjectCostCatalog.GoldProduction
+                : ProjectCostCatalog.Materials;
+
+        public PpbVector GetActiveCost() =>
+            EffectiveCostMode == DA_Common.Barony.ProjectCostMode.GoldProduction
+                ? ProjectCostCatalog.SliceGoldProduction(CostGoldProduction)
+                : ProjectCostCatalog.SliceMaterials(CostMaterials);
+
+        public List<string> GetSelectableCostModes()
+        {
+            var hasGoldProduction = ProjectCostCatalog.HasRequirement(CostGoldProduction);
+            var hasMaterials = ProjectCostCatalog.HasRequirement(CostMaterials);
+
+            return AllowedCostModes switch
+            {
+                DA_Common.Barony.ProjectAllowedCostModes.GoldProductionOnly when hasGoldProduction =>
+                    new List<string> { DA_Common.Barony.ProjectCostMode.GoldProduction },
+                DA_Common.Barony.ProjectAllowedCostModes.MaterialsOnly when hasMaterials =>
+                    new List<string> { DA_Common.Barony.ProjectCostMode.Materials },
+                _ => BuildChoiceModes(hasGoldProduction, hasMaterials),
+            };
+        }
+
+        public bool HasAllocationOnActiveTrack() =>
+            ActiveCostColumns.Any(info => Allocated[info.Key] > 0m);
+
+        public bool CanSwitchCostMode =>
+            Status is not (ProjectStatus.Completed or ProjectStatus.Cancelled)
+            && GetSelectableCostModes().Count > 1
+            && !HasAllocationOnActiveTrack();
+
+        /// <summary>Procent alokacji względem kosztu aktywnej ścieżki (0-100).</summary>
         public int AllocationPercent
         {
             get
             {
+                var cost = GetActiveCost();
                 var ratios = new List<decimal>();
-                foreach (var info in PpbCatalog.All)
+                foreach (var info in ActiveCostColumns)
                 {
-                    var cost = Cost[info.Key];
-                    if (cost <= 0m)
+                    var required = cost[info.Key];
+                    if (required <= 0m)
                         continue;
-                    var alloc = Allocated[info.Key];
-                    ratios.Add(Math.Clamp(alloc / cost, 0m, 1m));
+                    ratios.Add(Math.Clamp(Allocated[info.Key] / required, 0m, 1m));
                 }
+
                 if (ratios.Count == 0)
-                    return 100;
+                    return ProjectCostCatalog.HasRequirement(cost) ? 0 : 100;
                 return (int)Math.Round(ratios.Average() * 100m);
             }
+        }
+
+        /// <summary>Remaining cost on the active payment track only.</summary>
+        public PpbVector RemainingCost()
+        {
+            var cost = GetActiveCost();
+            var v = new PpbVector();
+            foreach (var info in ActiveCostColumns)
+                v[info.Key] = Math.Max(0m, cost[info.Key] - Allocated[info.Key]);
+            return v;
+        }
+
+        public bool HasRemainingCost =>
+            ActiveCostColumns.Any(info => RemainingCost()[info.Key] > 0m);
+
+        public bool CanAcceptAllocation =>
+            Status is not (ProjectStatus.Completed or ProjectStatus.Cancelled) && HasRemainingCost;
+
+        public bool HasAnyAllocation =>
+            ResourceCatalog.All.Any(info => Allocated[info.Key] > 0m);
+
+        public bool CanClearAllocation =>
+            Status == ProjectStatus.Draft && HasAnyAllocation;
+
+        /// <summary>
+        /// Negative Resources balance row: allocated + remaining on active track.
+        /// Only when at least one resource was allocated; otherwise no stock impact.
+        /// </summary>
+        public PpbVector ResourcesBalanceImpact()
+        {
+            var v = new PpbVector();
+            if (!HasAnyAllocation)
+                return v;
+            if (Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                return v;
+
+            var remaining = RemainingCost();
+            foreach (var info in ResourceCatalog.All)
+                v[info.Key] -= Allocated[info.Key] + remaining[info.Key];
+            return v;
+        }
+
+        private string ResolveEffectiveCostMode()
+        {
+            var selectable = GetSelectableCostModes();
+            if (selectable.Count == 0)
+                return DA_Common.Barony.ProjectCostMode.GoldProduction;
+            if (selectable.Count == 1)
+                return selectable[0];
+            if (!string.IsNullOrWhiteSpace(SelectedCostMode) && selectable.Contains(SelectedCostMode))
+                return SelectedCostMode;
+            return selectable[0];
+        }
+
+        private static List<string> BuildChoiceModes(bool hasGoldProduction, bool hasMaterials)
+        {
+            var modes = new List<string>();
+            if (hasGoldProduction)
+                modes.Add(DA_Common.Barony.ProjectCostMode.GoldProduction);
+            if (hasMaterials)
+                modes.Add(DA_Common.Barony.ProjectCostMode.Materials);
+            return modes;
         }
     }
 

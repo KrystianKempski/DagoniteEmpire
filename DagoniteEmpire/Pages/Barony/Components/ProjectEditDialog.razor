@@ -1,0 +1,175 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
+            <MudTextField @bind-Value="_name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Class="baron-influence-field" />
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          HelperText="Shown on name hover in the project list."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="3"
+                          Class="baron-influence-field" />
+            <MudSelect @bind-Value="_outputKind"
+                       Label="Output type"
+                       HelperText="What this project becomes when completed."
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                @foreach (var kind in ProjectOutputKind.All)
+                {
+                    <MudSelectItem Value="@kind">@kind</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect @bind-Value="_status"
+                       Label="Status"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                @foreach (var status in ProjectStatus.All)
+                {
+                    <MudSelectItem Value="@status">@StatusLabel(status)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudNumericField @bind-Value="_turnsRemaining"
+                             Label="Turns remaining"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Class="baron-influence-field" />
+            <MudTextField @bind-Value="_resultDescription"
+                          Label="Output summary"
+                          HelperText="Short description of the expected result (decree, event, building, etc.)."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="baron-influence-field" />
+            <MudTextField @bind-Value="_notes"
+                          Label="Notes"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="baron-influence-field" />
+            <MudSelect @bind-Value="_allowedCostModes"
+                       Label="Payment options"
+                       HelperText="Which ways players can cover this project's cost."
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                @foreach (var option in ProjectAllowedCostModes.All)
+                {
+                    <MudSelectItem Value="@option">@AllowedCostModesLabel(option)</MudSelectItem>
+                }
+            </MudSelect>
+            <PpbVectorEditor @bind-Value="_costGoldProduction"
+                             Title="Cost — Gold &amp; Production"
+                             Compact="true"
+                             Columns="@ProjectCostCatalog.GoldProduction" />
+            <PpbVectorEditor @bind-Value="_costMaterials"
+                             Title="Cost — Materials"
+                             Compact="true"
+                             Columns="@ProjectCostCatalog.Materials" />
+            <PpbVectorEditor @bind-Value="_resultAdditive"
+                             Title="Expected output — additive (+)"
+                             Compact="true" />
+            <PpbVectorEditor @bind-Value="_resultPercent"
+                             Title="Expected output — percent (%)"
+                             Compact="true"
+                             Percent="true" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyProjectDTO Project { get; set; } = new();
+
+    private string _name = string.Empty;
+    private string? _description;
+    private string _outputKind = ProjectOutputKind.DecreeOrTechnology;
+    private string _status = ProjectStatus.Draft;
+    private int _turnsRemaining;
+    private string? _resultDescription;
+    private string? _notes;
+    private string _allowedCostModes = ProjectAllowedCostModes.PlayerChoice;
+    private PpbVector _costGoldProduction = new();
+    private PpbVector _costMaterials = new();
+    private PpbVector _resultAdditive = new();
+    private PpbVector _resultPercent = new();
+
+    protected override void OnInitialized()
+    {
+        _name = Project.Name;
+        _description = Project.Description;
+        _outputKind = string.IsNullOrWhiteSpace(Project.OutputKind)
+            ? ProjectOutputKind.DecreeOrTechnology
+            : Project.OutputKind;
+        _status = Project.Status;
+        _turnsRemaining = Project.TurnsRemaining;
+        _resultDescription = Project.ResultDescription;
+        _notes = Project.Notes;
+        _allowedCostModes = string.IsNullOrWhiteSpace(Project.AllowedCostModes)
+            ? ProjectAllowedCostModes.PlayerChoice
+            : Project.AllowedCostModes;
+        _costGoldProduction = ProjectCostCatalog.SliceGoldProduction(Project.CostGoldProduction).Clone();
+        _costMaterials = ProjectCostCatalog.SliceMaterials(Project.CostMaterials).Clone();
+        _resultAdditive = Project.ResultAdditive.Clone();
+        _resultPercent = Project.ResultPercent.Clone();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        Project.Name = _name.Trim();
+        Project.Description = string.IsNullOrWhiteSpace(_description) ? string.Empty : _description.Trim();
+        Project.OutputKind = _outputKind;
+        Project.Status = _status;
+        Project.TurnsRemaining = Math.Max(0, _turnsRemaining);
+        Project.ResultDescription = string.IsNullOrWhiteSpace(_resultDescription) ? string.Empty : _resultDescription.Trim();
+        Project.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
+        Project.AllowedCostModes = _allowedCostModes;
+        Project.CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(_costGoldProduction).Clone();
+        Project.CostMaterials = ProjectCostCatalog.SliceMaterials(_costMaterials).Clone();
+        Project.ResultAdditive = _resultAdditive.Clone();
+        Project.ResultPercent = _resultPercent.Clone();
+        MudDialog.Close(DialogResult.Ok(Project));
+    }
+
+    private static string AllowedCostModesLabel(string option) => option switch
+    {
+        ProjectAllowedCostModes.GoldProductionOnly => "Gold & Production only",
+        ProjectAllowedCostModes.MaterialsOnly => "Materials only",
+        ProjectAllowedCostModes.PlayerChoice => "Player choice (both tracks)",
+        _ => option,
+    };
+
+    private static string StatusLabel(string status) => status switch
+    {
+        ProjectStatus.Draft => "Draft",
+        ProjectStatus.InProgress => "In progress",
+        ProjectStatus.Completed => "Completed",
+        ProjectStatus.Cancelled => "Cancelled",
+        _ => status,
+    };
+}

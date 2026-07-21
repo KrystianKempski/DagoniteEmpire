@@ -1,0 +1,349 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<article id="@ProjectAnchorId" class="project-card @CardClass">
+    <header class="project-card__header">
+        <div class="project-card__title-row">
+            @if (HasNotes)
+            {
+                <BaronyTooltip Title="Notes" Text="@NotesTooltip">
+                    <h3 class="project-card__title">@Project.Name</h3>
+                </BaronyTooltip>
+            }
+            else
+            {
+                <h3 class="project-card__title">@Project.Name</h3>
+            }
+            <div class="project-card__badges">
+                <span class="project-output-badge">@OutputLabel(Project.OutputKind)</span>
+                <span class="project-card__status project-card__status--@StatusClass">@StatusLabel(Project.Status)</span>
+                @if (Project.TurnsRemaining > 0)
+                {
+                    <span class="project-card__turns">@TurnsLabel</span>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Project.Description))
+        {
+            @if (HasNotes)
+            {
+                <BaronyTooltip Title="Notes" Text="@NotesTooltip">
+                    <p class="project-card__description">@Project.Description</p>
+                </BaronyTooltip>
+            }
+            else
+            {
+                <p class="project-card__description">@Project.Description</p>
+            }
+        }
+
+        <div class="project-card__progress">
+            <div class="project-card__progress-bar" style="width:@($"{Project.AllocationPercent}%")"></div>
+            <span class="project-card__progress-label">
+                @Project.AllocationPercent% funded · @CostModeShort(Project.EffectiveCostMode)
+            </span>
+        </div>
+
+        <div class="project-card__actions">
+            @if (CanEdit && Project.CanAcceptAllocation)
+            {
+                <MudButton Variant="Variant.Filled"
+                           Size="Size.Small"
+                           Class="baron-influence-save-btn"
+                           StartIcon="@Icons.Material.Filled.Savings"
+                           OnClick="OnAllocate">
+                    Allocate resources
+                </MudButton>
+            }
+            @if (CanEdit && Project.CanClearAllocation)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Undo"
+                           OnClick="OnClearAllocation">
+                    Clear allocation
+                </MudButton>
+            }
+            @if (CanManage)
+            {
+                <BaronyTooltip Text="Edit project">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Size="Size.Small"
+                                   OnClick="OnEdit" />
+                </BaronyTooltip>
+                <BaronyTooltip Text="Remove project">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="OnDelete" />
+                </BaronyTooltip>
+            }
+        </div>
+    </header>
+
+    <div class="project-card__panels">
+        <section class="project-card__panel project-card__panel--cost">
+            <div class="project-card__panel-head">
+                <h4 class="project-card__panel-title">Cost</h4>
+                @if (_selectableModes.Count > 1)
+                {
+                    <div class="project-cost-mode-switch" role="group" aria-label="Payment method">
+                        @foreach (var mode in _selectableModes)
+                        {
+                            var isActive = Project.EffectiveCostMode == mode;
+                            var isLocked = !isActive && (!CanEdit || !Project.CanSwitchCostMode);
+                            @if (isLocked)
+                            {
+                                <BaronyTooltip Text="Locked after first allocation">
+                                    <button type="button"
+                                            class="project-cost-mode-switch__btn"
+                                            disabled="true"
+                                            @onclick="@(() => SwitchModeAsync(mode))">
+                                        @CostModeShort(mode)
+                                    </button>
+                                </BaronyTooltip>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        class="project-cost-mode-switch__btn @(isActive ? "project-cost-mode-switch__btn--active" : null)"
+                                        @onclick="@(() => SwitchModeAsync(mode))">
+                                    @CostModeShort(mode)
+                                </button>
+                            }
+                        }
+                    </div>
+                }
+                else if (_selectableModes.Count == 1)
+                {
+                    <span class="project-cost-mode-badge">@CostModeShort(_selectableModes[0])</span>
+                }
+            </div>
+            @if (_costRows.Count == 0)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                    No cost defined for @CostModeShort(Project.EffectiveCostMode).
+                </MudText>
+            }
+            else
+            {
+                <div class="project-card__table-wrap">
+                    <table class="ppb-table ppb-table--resources ppb-table--project-cost ppb-table--lined">
+                        <colgroup>
+                            <col class="resource-col-name" />
+                            <col class="project-cost-col-value" />
+                            <col class="project-cost-col-value" />
+                            <col class="project-cost-col-value" />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th class="resource-col-name">Resource</th>
+                                <th>
+                                    <BaronyTooltip Title="Required" Text="Total resources required on this payment track.">
+                                        <span>Req</span>
+                                    </BaronyTooltip>
+                                </th>
+                                <th>
+                                    <BaronyTooltip Title="Allocated" Text="Resources already transferred from your stocks.">
+                                        <span>Alloc</span>
+                                    </BaronyTooltip>
+                                </th>
+                                <th>
+                                    <BaronyTooltip Title="Remaining" Text="Still needed to fully fund this track.">
+                                        <span>Rem</span>
+                                    </BaronyTooltip>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _costRows)
+                            {
+                                <tr>
+                                    <td class="ppb-row-label resource-col-name">@row.Name</td>
+                                    <td class="@PpbCellClass(row.Key, row.Required)">@Fmt(row.Required)</td>
+                                    <td class="@PpbCellClass(row.Key, row.Allocated)">@Fmt(row.Allocated)</td>
+                                    <td class="@PpbCellClass(row.Key, row.Remaining)">@Fmt(row.Remaining)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <section class="project-card__panel project-card__panel--output">
+            <h4 class="project-card__panel-title">Expected Output</h4>
+            @if (!HasOutput)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No PPB output defined.</MudText>
+            }
+            else
+            {
+                <div class="project-card__table-wrap">
+                    <table class="ppb-table ppb-table--advisors ppb-table--city-buildings ppb-table--decrees ppb-table--project-output ppb-table--lined">
+                        <colgroup>
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <col class="ppb-pair-col" />
+                                <col class="ppb-pair-col" />
+                            }
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <th colspan="2">
+                                        <BaronyTooltip Title="@info.NameEn" Text="@info.NamePl">
+                                            <span>@PpbShort(info.Key)</span>
+                                        </BaronyTooltip>
+                                    </th>
+                                }
+                            </tr>
+                            <tr>
+                                @foreach (var _ in PpbCatalog.All)
+                                {
+                                    <th class="ppb-subcol ppb-subcol--add">+</th>
+                                    <th class="ppb-subcol ppb-subcol--pct">%</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@PpbCellClass(info.Key, Project.ResultAdditive[info.Key])">@FmtAdd(Project.ResultAdditive[info.Key])</td>
+                                    <td class="@PpbCellClass(info.Key, Project.ResultPercent[info.Key])">@FmtPct(Project.ResultPercent[info.Key])</td>
+                                }
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Project.ResultDescription))
+            {
+                <p class="project-card__output-summary">@Project.ResultDescription</p>
+            }
+        </section>
+    </div>
+</article>
+
+@code {
+    [Parameter] public BaronyProjectDTO Project { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnAllocate { get; set; }
+    [Parameter] public EventCallback OnClearAllocation { get; set; }
+    [Parameter] public EventCallback<string> OnCostModeChanged { get; set; }
+    [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
+
+    private List<CostRow> _costRows = new();
+    private List<string> _selectableModes = new();
+
+    private string ProjectAnchorId => $"project-{Project.Id}";
+
+    private bool HasOutput =>
+        PpbCatalog.All.Any(info =>
+            Project.ResultAdditive[info.Key] != 0m || Project.ResultPercent[info.Key] != 0m);
+
+    protected override void OnParametersSet() => RebuildRows();
+
+    private void RebuildRows()
+    {
+        _selectableModes = Project.GetSelectableCostModes();
+        var activeCost = Project.GetActiveCost();
+        var remaining = Project.RemainingCost();
+        _costRows = Project.ActiveCostColumns
+            .Select(info => new CostRow
+            {
+                Key = info.Key,
+                Name = info.NameEn,
+                Required = activeCost[info.Key],
+                Allocated = Project.Allocated[info.Key],
+                Remaining = remaining[info.Key],
+            })
+            .Where(r => r.Required > 0m || r.Allocated > 0m)
+            .ToList();
+    }
+
+    private async Task SwitchModeAsync(string mode)
+    {
+        if (!CanEdit || mode == Project.EffectiveCostMode || !Project.CanSwitchCostMode)
+            return;
+        await OnCostModeChanged.InvokeAsync(mode);
+    }
+
+    private static string CostModeShort(string mode) => mode switch
+    {
+        ProjectCostMode.GoldProduction => "Gold & Prod",
+        ProjectCostMode.Materials => "Materials",
+        _ => mode,
+    };
+
+    private string CardClass =>
+        Project.Status is ProjectStatus.Completed or ProjectStatus.Cancelled
+            ? "project-card--inactive"
+            : Project.Status == ProjectStatus.InProgress
+                ? "project-card--active"
+                : string.Empty;
+
+    private string StatusClass => Project.Status switch
+    {
+        ProjectStatus.InProgress => "progress",
+        ProjectStatus.Completed => "done",
+        ProjectStatus.Cancelled => "cancelled",
+        _ => "draft",
+    };
+
+    private bool HasNotes => !string.IsNullOrWhiteSpace(Project.Notes);
+    private string? NotesTooltip => Project.Notes?.Trim();
+
+    private string TurnsLabel => Project.Status == ProjectStatus.Draft
+        ? $"{Project.TurnsRemaining} turn{(Project.TurnsRemaining == 1 ? "" : "s")} to complete"
+        : $"{Project.TurnsRemaining} turn{(Project.TurnsRemaining == 1 ? "" : "s")} left";
+
+    private static string OutputLabel(string kind) =>
+        ProjectOutputKind.All.Contains(kind) ? kind : kind;
+
+    private static string StatusLabel(string status) => status switch
+    {
+        ProjectStatus.Draft => "Draft",
+        ProjectStatus.InProgress => "In progress",
+        ProjectStatus.Completed => "Completed",
+        ProjectStatus.Cancelled => "Cancelled",
+        _ => status,
+    };
+
+    private static string Fmt(decimal v) => v == 0m ? "·" : PpbFormat.Number(v);
+    private static string FmtAdd(decimal v) => v == 0m ? "·" : PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => v == 0m ? "·" : PpbFormat.Percent(v);
+
+    private static string PpbCellClass(Ppb key, decimal v) => PpbCellStyle.ValueClass(key, v);
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private sealed class CostRow
+    {
+        public Ppb Key { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public decimal Required { get; init; }
+        public decimal Allocated { get; init; }
+        public decimal Remaining { get; init; }
+    }
+}

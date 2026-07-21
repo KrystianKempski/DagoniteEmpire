@@ -155,7 +155,7 @@ else if (_overview is not null)
             new()
             {
                 Label = "Project costs",
-                Description = "Negated cost of projects currently in progress.",
+                Description = "Committed project spending: allocated resources plus remaining cost on the active payment track. Applies only after the first allocation.",
                 Values = projectCosts,
                 IsSystem = true,
             },
@@ -184,10 +184,11 @@ else if (_overview is not null)
         if (_overview is null)
             return v;
 
-        foreach (var p in _overview.Projects.Where(x => x.Status == ProjectStatus.InProgress))
+        foreach (var p in _overview.Projects)
         {
+            var impact = p.ResourcesBalanceImpact();
             foreach (var info in ResourceCatalog.All)
-                v[info.Key] -= p.Cost[info.Key];
+                v[info.Key] += impact[info.Key];
         }
 
         return v;

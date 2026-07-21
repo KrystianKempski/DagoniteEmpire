@@ -426,6 +426,40 @@ namespace DA_Common.Barony
         public static readonly string[] All = { Draft, InProgress, Completed, Cancelled };
     }
 
+    /// <summary>How a project cost is paid (one active track at a time).</summary>
+    public readonly struct ProjectCostMode
+    {
+        public const string GoldProduction = "Gold & Production";
+        public const string Materials = "Materials";
+
+        public static readonly string[] All = { GoldProduction, Materials };
+    }
+
+    /// <summary>Which cost payment tracks the GM allows for a project.</summary>
+    public readonly struct ProjectAllowedCostModes
+    {
+        public const string GoldProductionOnly = "Gold & Production only";
+        public const string MaterialsOnly = "Materials only";
+        public const string PlayerChoice = "Player choice";
+
+        public static readonly string[] All = { GoldProductionOnly, MaterialsOnly, PlayerChoice };
+    }
+
+    /// <summary>What a completed project becomes.</summary>
+    public readonly struct ProjectOutputKind
+    {
+        public const string DecreeOrTechnology = "Decree / Technology";
+        public const string Event = "Event";
+        public const string OneTimeResources = "One-time resources";
+        public const string Building = "Building";
+        public const string Improvement = "Improvement";
+
+        public static readonly string[] All =
+        {
+            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement,
+        };
+    }
+
     /// <summary>Budget page source labels (treasury gold column).</summary>
     public readonly struct BudgetSource
     {

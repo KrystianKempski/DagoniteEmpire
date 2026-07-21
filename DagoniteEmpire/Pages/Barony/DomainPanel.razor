@@ -17,47 +17,64 @@ else if (LoadError is not null)
 else if (_overview is not null)
 {
     <div class="barony-meta-bar" aria-label="Barony status">
-        <div class="barony-meta-bar__name">@_overview.Barony.Name</div>
-        <div class="barony-meta-bar__group" aria-label="Calendar">
-            <span class="barony-meta-bar__stat">
-                <span class="barony-meta-bar__label">Year</span>
-                <span class="barony-meta-bar__value">@_overview.Barony.Year</span>
-            </span>
-            <span class="barony-meta-bar__stat">
-                <span class="barony-meta-bar__label">Month</span>
-                <span class="barony-meta-bar__value">@MonthEn(_overview.Barony.Month)</span>
-            </span>
-            <span class="barony-meta-bar__stat">
-                <span class="barony-meta-bar__label">Season</span>
-                <span class="barony-meta-bar__value">@SeasonEn(_overview.Barony.Season)</span>
-            </span>
-            <span class="barony-meta-bar__stat">
-                <span class="barony-meta-bar__label">Turn</span>
-                <span class="barony-meta-bar__value">@_overview.Barony.TurnNumber</span>
-            </span>
-            <span class="barony-meta-bar__stat">
-                <span class="barony-meta-bar__label">Size</span>
-                <span class="barony-meta-bar__value">@_overview.Barony.Size</span>
-            </span>
-        </div>
-        <div class="barony-meta-bar__divider" aria-hidden="true"></div>
-        <div class="barony-meta-bar__group" aria-label="Domain status">
-            <span class="barony-meta-bar__stat">
-                <span class="barony-meta-bar__label">Loyalty</span>
-                <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Loyalty])">@FmtAdd(_grandTotal[Ppb.Loyalty])</span>
-            </span>
-            <span class="barony-meta-bar__stat">
-                <span class="barony-meta-bar__label">Stability</span>
-                <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Stability])">@FmtAdd(_grandTotal[Ppb.Stability])</span>
-            </span>
-            <span class="barony-meta-bar__stat">
-                <span class="barony-meta-bar__label">Economy</span>
-                <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Economy])">@FmtAdd(_grandTotal[Ppb.Economy])</span>
-            </span>
-            <span class="barony-meta-bar__stat">
-                <span class="barony-meta-bar__label">Unrest</span>
-                <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
-            </span>
+        <BaronyHudTip Title="Barony" Text="@BaronyUiTooltips.MetaBaronyName">
+            <div class="barony-meta-bar__name">@_overview.Barony.Name</div>
+        </BaronyHudTip>
+        <div class="barony-meta-bar__stats">
+            <BaronyHudTip Title="Year" Text="@BaronyUiTooltips.MetaYear">
+                <span class="barony-meta-bar__stat">
+                    <span class="barony-meta-bar__label">Year</span>
+                    <span class="barony-meta-bar__value">@_overview.Barony.Year</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Month" Text="@BaronyUiTooltips.MetaMonth">
+                <span class="barony-meta-bar__stat">
+                    <span class="barony-meta-bar__label">Month</span>
+                    <span class="barony-meta-bar__value">@MonthEn(_overview.Barony.Month)</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Season" Text="@BaronyUiTooltips.MetaSeason">
+                <span class="barony-meta-bar__stat">
+                    <span class="barony-meta-bar__label">Season</span>
+                    <span class="barony-meta-bar__value">@SeasonEn(_overview.Barony.Season)</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Turn" Text="@BaronyUiTooltips.MetaTurn">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Turn</span>
+                    <span class="barony-meta-bar__value">@_overview.Barony.TurnNumber</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Size" Text="@BaronyUiTooltips.MetaSize">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Size</span>
+                    <span class="barony-meta-bar__value">@_overview.Barony.Size</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Loyalty" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Loyalty, _grandTotal[Ppb.Loyalty])">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Loyalty</span>
+                    <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Loyalty])">@FmtAdd(_grandTotal[Ppb.Loyalty])</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Stability" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Stability, _grandTotal[Ppb.Stability])">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Stability</span>
+                    <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Stability])">@FmtAdd(_grandTotal[Ppb.Stability])</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Economy" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Economy, _grandTotal[Ppb.Economy])">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Economy</span>
+                    <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Economy])">@FmtAdd(_grandTotal[Ppb.Economy])</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Unrest" Text="@BaronyUiTooltips.MetaUnrest">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Unrest</span>
+                    <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
+                </span>
+            </BaronyHudTip>
         </div>
     </div>
 
