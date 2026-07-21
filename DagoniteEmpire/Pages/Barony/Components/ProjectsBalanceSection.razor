@@ -1,4 +1,5 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
+@inject IJSRuntime Js
 
 <BaronySection Title="Project Summary">
     <Summary>
@@ -8,7 +9,7 @@
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-            List of all available projects.
+            Overview of all available projects. Click a project name to jump to its card below.
         </MudText>
 
         @if (_rows.Count == 0)
@@ -70,7 +71,11 @@
                             var outputCellIndex = 0;
                             <tr class="@RowClass(row.Project)">
                                 <td class="ppb-row-label projects-balance-col-name">
-                                    <a class="projects-balance-project-link" href="#@ProjectAnchorId(row.Project.Id)">@row.Project.Name</a>
+                                    <button type="button"
+                                            class="projects-balance-project-link"
+                                            @onclick="@(() => ScrollToProjectAsync(row.Project.Id))">
+                                        @row.Project.Name
+                                    </button>
                                 </td>
                                 @foreach (var info in _costColumns)
                                 {
@@ -112,6 +117,18 @@
     }
 
     private static string ProjectAnchorId(int projectId) => $"project-{projectId}";
+
+    private async Task ScrollToProjectAsync(int projectId)
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("ScrollToElement", ProjectAnchorId(projectId));
+        }
+        catch
+        {
+            // ignore disconnect / prerender
+        }
+    }
 
     private static string RowClass(BaronyProjectDTO project) =>
         project.Status is ProjectStatus.Completed

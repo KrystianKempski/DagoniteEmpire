@@ -14,7 +14,7 @@
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
                           Label="Description"
-                          HelperText="Shown on name hover in the project list."
+                          HelperText="Shown under the project name."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
@@ -30,22 +30,6 @@
                     <MudSelectItem Value="@kind">@kind</MudSelectItem>
                 }
             </MudSelect>
-            <MudSelect @bind-Value="_status"
-                       Label="Status"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Class="baron-influence-field">
-                @foreach (var status in ProjectStatus.All)
-                {
-                    <MudSelectItem Value="@status">@StatusLabel(status)</MudSelectItem>
-                }
-            </MudSelect>
-            <MudNumericField @bind-Value="_turnsRemaining"
-                             Label="Turns remaining"
-                             Variant="Variant.Outlined"
-                             Margin="Margin.Dense"
-                             Min="0"
-                             Class="baron-influence-field" />
             <MudTextField @bind-Value="_resultDescription"
                           Label="Output summary"
                           HelperText="Short description of the expected result (decree, event, building, etc.)."
@@ -53,38 +37,64 @@
                           Margin="Margin.Dense"
                           Lines="2"
                           Class="baron-influence-field" />
-            <MudTextField @bind-Value="_notes"
-                          Label="Notes"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Lines="2"
-                          Class="baron-influence-field" />
-            <MudSelect @bind-Value="_allowedCostModes"
-                       Label="Payment options"
-                       HelperText="Which ways players can cover this project's cost."
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Class="baron-influence-field">
-                @foreach (var option in ProjectAllowedCostModes.All)
-                {
-                    <MudSelectItem Value="@option">@AllowedCostModesLabel(option)</MudSelectItem>
-                }
-            </MudSelect>
-            <PpbVectorEditor @bind-Value="_costGoldProduction"
-                             Title="Cost — Gold &amp; Production"
-                             Compact="true"
-                             Columns="@ProjectCostCatalog.GoldProduction" />
-            <PpbVectorEditor @bind-Value="_costMaterials"
-                             Title="Cost — Materials"
-                             Compact="true"
-                             Columns="@ProjectCostCatalog.Materials" />
-            <PpbVectorEditor @bind-Value="_resultAdditive"
-                             Title="Expected output — additive (+)"
-                             Compact="true" />
-            <PpbVectorEditor @bind-Value="_resultPercent"
-                             Title="Expected output — percent (%)"
-                             Compact="true"
-                             Percent="true" />
+
+            @if (CanManage)
+            {
+                <MudSelect @bind-Value="_status"
+                           Label="Status"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Class="baron-influence-field">
+                    @foreach (var status in ProjectStatus.All)
+                    {
+                        <MudSelectItem Value="@status">@StatusLabel(status)</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudNumericField @bind-Value="_turnsRemaining"
+                                 Label="Turns remaining"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="0"
+                                 Class="baron-influence-field" />
+                <MudTextField @bind-Value="_notes"
+                              Label="Notes"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="2"
+                              Class="baron-influence-field" />
+                <MudSelect @bind-Value="_allowedCostModes"
+                           Label="Payment options"
+                           HelperText="Which ways players can cover this project's cost."
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Class="baron-influence-field">
+                    @foreach (var option in ProjectAllowedCostModes.All)
+                    {
+                        <MudSelectItem Value="@option">@AllowedCostModesLabel(option)</MudSelectItem>
+                    }
+                </MudSelect>
+                <PpbVectorEditor @bind-Value="_costGoldProduction"
+                                 Title="Cost — Gold & Production"
+                                 Compact="true"
+                                 Columns="@ProjectCostCatalog.GoldProduction" />
+                <PpbVectorEditor @bind-Value="_costMaterials"
+                                 Title="Cost — Materials"
+                                 Compact="true"
+                                 Columns="@ProjectCostCatalog.Materials" />
+                <PpbVectorEditor @bind-Value="_resultAdditive"
+                                 Title="Expected output — additive (+)"
+                                 Compact="true" />
+                <PpbVectorEditor @bind-Value="_resultPercent"
+                                 Title="Expected output — percent (%)"
+                                 Compact="true"
+                                 Percent="true" />
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                    New projects are saved as Draft. The game master sets costs, PPB output, and status.
+                </MudText>
+            }
         </div>
     </DialogContent>
     <DialogActions>
@@ -97,6 +107,8 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public BaronyProjectDTO Project { get; set; } = new();
+    /// <summary>When false, only player-facing draft fields are editable (create flow).</summary>
+    [Parameter] public bool CanManage { get; set; }
 
     private string _name = string.Empty;
     private string? _description;
@@ -144,15 +156,34 @@
         Project.Name = _name.Trim();
         Project.Description = string.IsNullOrWhiteSpace(_description) ? string.Empty : _description.Trim();
         Project.OutputKind = _outputKind;
-        Project.Status = _status;
-        Project.TurnsRemaining = Math.Max(0, _turnsRemaining);
         Project.ResultDescription = string.IsNullOrWhiteSpace(_resultDescription) ? string.Empty : _resultDescription.Trim();
-        Project.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
-        Project.AllowedCostModes = _allowedCostModes;
-        Project.CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(_costGoldProduction).Clone();
-        Project.CostMaterials = ProjectCostCatalog.SliceMaterials(_costMaterials).Clone();
-        Project.ResultAdditive = _resultAdditive.Clone();
-        Project.ResultPercent = _resultPercent.Clone();
+
+        if (CanManage)
+        {
+            Project.Status = _status;
+            Project.TurnsRemaining = Math.Max(0, _turnsRemaining);
+            Project.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
+            Project.AllowedCostModes = _allowedCostModes;
+            Project.CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(_costGoldProduction).Clone();
+            Project.CostMaterials = ProjectCostCatalog.SliceMaterials(_costMaterials).Clone();
+            Project.ResultAdditive = _resultAdditive.Clone();
+            Project.ResultPercent = _resultPercent.Clone();
+        }
+        else
+        {
+            // Baron may only propose a draft; GM fills costs / output / status later.
+            Project.Status = ProjectStatus.Draft;
+            Project.TurnsRemaining = 0;
+            Project.Notes = null;
+            Project.AllowedCostModes = ProjectAllowedCostModes.PlayerChoice;
+            Project.CostGoldProduction = new();
+            Project.CostMaterials = new();
+            Project.ResultAdditive = new();
+            Project.ResultPercent = new();
+            Project.Allocated = new();
+            Project.SelectedCostMode = null;
+        }
+
         MudDialog.Close(DialogResult.Ok(Project));
     }
 

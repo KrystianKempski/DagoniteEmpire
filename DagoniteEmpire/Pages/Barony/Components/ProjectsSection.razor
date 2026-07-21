@@ -23,7 +23,7 @@
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
                 No projects yet.
-                @if (CanManage)
+                @if (CanEdit)
                 {
                     <text> Add one below.</text>
                 }
@@ -46,7 +46,7 @@
             </div>
         }
 
-        @if (CanManage)
+        @if (CanEdit)
         {
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <MudButton Variant="Variant.Outlined"
@@ -154,6 +154,9 @@
 
     private async Task AddAsync()
     {
+        if (!CanEdit)
+            return;
+
         var draft = new BaronyProjectDTO
         {
             BaronyId = BaronyId,
@@ -163,13 +166,19 @@
         await OpenEditAsync(draft, isNew: true);
     }
 
-    private async Task EditAsync(BaronyProjectDTO item) => await OpenEditAsync(Clone(item), isNew: false);
+    private async Task EditAsync(BaronyProjectDTO item)
+    {
+        if (!CanManage)
+            return;
+        await OpenEditAsync(Clone(item), isNew: false);
+    }
 
     private async Task OpenEditAsync(BaronyProjectDTO draft, bool isNew)
     {
         var parameters = new DialogParameters<ProjectEditDialog>
         {
             { x => x.Project, draft },
+            { x => x.CanManage, CanManage },
         };
 
         var dialog = await _dialogService.ShowAsync<ProjectEditDialog>(
@@ -178,13 +187,33 @@
             new DialogOptions
             {
                 CloseOnEscapeKey = true,
-                MaxWidth = MaxWidth.Large,
+                MaxWidth = CanManage ? MaxWidth.Large : MaxWidth.Small,
                 FullWidth = true,
             });
 
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not BaronyProjectDTO saved)
             return;
+
+        if (!CanManage)
+        {
+            if (!isNew)
+            {
+                _snackBar.Add("Only the game master can edit existing projects.", Severity.Warning);
+                return;
+            }
+
+            saved.Status = ProjectStatus.Draft;
+            saved.TurnsRemaining = 0;
+            saved.Notes = null;
+            saved.AllowedCostModes = ProjectAllowedCostModes.PlayerChoice;
+            saved.CostGoldProduction = new();
+            saved.CostMaterials = new();
+            saved.ResultAdditive = new();
+            saved.ResultPercent = new();
+            saved.Allocated = new();
+            saved.SelectedCostMode = null;
+        }
 
         try
         {
@@ -201,6 +230,9 @@
 
     private async Task DeleteAsync(BaronyProjectDTO item)
     {
+        if (!CanManage)
+            return;
+
         var confirm = await _dialogService.ShowMessageBoxAsync(
             "Remove project",
             $"Remove “{item.Name}”?",
