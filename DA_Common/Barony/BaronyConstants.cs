@@ -460,6 +460,36 @@ namespace DA_Common.Barony
         };
     }
 
+    /// <summary>Sections on the Relations tab.</summary>
+    public readonly struct RelationCategory
+    {
+        public const string SeniorHouses = "Senior Houses";
+        public const string Vassals = "Vassals";
+        public const string Neighbors = "Neighbors";
+        public const string Organizations = "Organizations";
+        public const string Acquaintances = "Friends, acquaintances and enemies";
+
+        public static readonly string[] All =
+        {
+            SeniorHouses, Vassals, Neighbors, Organizations, Acquaintances,
+        };
+
+        public static string AttitudeLabel(int attitude)
+        {
+            var v = Math.Clamp(attitude, -200, 200);
+            return v switch
+            {
+                <= -150 => "Mortal enemy",
+                <= -80 => "Hostile",
+                <= -30 => "Cold",
+                < 30 => "Neutral",
+                < 80 => "Friendly",
+                < 150 => "Ally",
+                _ => "Best friend",
+            };
+        }
+    }
+
     /// <summary>Budget page source labels (treasury gold column).</summary>
     public readonly struct BudgetSource
     {

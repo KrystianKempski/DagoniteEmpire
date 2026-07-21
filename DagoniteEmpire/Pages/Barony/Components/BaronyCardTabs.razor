@@ -1,36 +1,234 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @implements IDisposable
 @inject NavigationManager _navigationManager
+@inject IUserService _userService
 
-<nav class="barony-tabbar" aria-label="Barony tabs">
-    @foreach (var tab in Tabs)
+<nav class="barony-tabbar"
+     aria-label="Barony tabs"
+     @ondragover="OnNavDragOver"
+     @ondragover:preventDefault>
+    @foreach (var tab in _orderedTabs)
     {
-        <a href="@tab.Href"
-           class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "")">
+        var key = tab.Key;
+        <div role="link"
+             tabindex="0"
+             draggable="true"
+             class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "") @(_dragKey == key ? "barony-tabbar__tab--dragging" : "") @(_dropTargetKey == key ? "barony-tabbar__tab--drop-target" : "")"
+             title="Hold and drag to reorder"
+             @ondragstart="e => OnDragStart(e, key)"
+             @ondragenter="e => OnDragEnter(e, key)"
+             @ondragleave="() => OnDragLeave(key)"
+             @ondragover="e => OnItemDragOver(e, key)"
+             @ondragover:preventDefault
+             @ondrop="e => OnDrop(e, key)"
+             @ondrop:preventDefault
+             @ondragend="OnDragEndAsync"
+             @onclick="() => OnTabActivate(tab.Href)"
+             @onkeydown="e => OnTabKeyDown(e, tab.Href)">
             <MudIcon Icon="@tab.Icon" Size="Size.Small" />
             @tab.Label
-        </a>
+        </div>
     }
 </nav>
 
 @code {
-    private sealed record TabItem(string Label, string Href, string Icon);
+    private sealed record TabItem(string Key, string Label, string Href, string Icon);
 
-    private static readonly TabItem[] Tabs =
+    private static readonly TabItem[] DefaultTabs =
     {
-        new("Domain Panel", "/barony", Icons.Material.Filled.Dashboard),
-        new("Resources", "/barony/resources", Icons.Material.Filled.Inventory2),
-        new("Budget", "/barony/budget", Icons.Material.Filled.Paid),
-        new("Projects", "/barony/projects", Icons.Material.Filled.Engineering),
-        new("Buildings", "/barony/buildings", Icons.Material.Filled.Foundation),
-        new("Offices", "/barony/offices", Icons.Material.Filled.Groups),
-        new("Terrain", "/barony/terrain", Icons.Material.Filled.Map),
-        new("Baron Card", "/barony/character-card", Icons.Material.Filled.Shield),
+        new("domain", "Domain Panel", "/barony", Icons.Material.Filled.Dashboard),
+        new("resources", "Resources", "/barony/resources", Icons.Material.Filled.Inventory2),
+        new("budget", "Budget", "/barony/budget", Icons.Material.Filled.Paid),
+        new("projects", "Projects", "/barony/projects", Icons.Material.Filled.Engineering),
+        new("buildings", "Buildings", "/barony/buildings", Icons.Material.Filled.Foundation),
+        new("offices", "Offices", "/barony/offices", Icons.Material.Filled.Groups),
+        new("terrain", "Terrain", "/barony/terrain", Icons.Material.Filled.Map),
+        new("character-card", "Baron Card", "/barony/character-card", Icons.Material.Filled.Shield),
+        new("relations", "Relations", "/barony/relations", Icons.Material.Filled.Handshake),
     };
 
-    protected override void OnInitialized()
+    private List<TabItem> _orderedTabs = DefaultTabs.ToList();
+    private string? _dragKey;
+    private string? _dropTargetKey;
+    private string? _lastHoverKey;
+    private bool _orderChanged;
+    private bool _suppressNextClick;
+
+    protected override async Task OnInitializedAsync()
     {
         _navigationManager.LocationChanged += OnLocationChanged;
+        await LoadOrderAsync();
+    }
+
+    private async Task LoadOrderAsync()
+    {
+        try
+        {
+            var json = await _userService.GetBaronyTabOrderJson();
+            _orderedTabs = ApplySavedOrder(json);
+        }
+        catch
+        {
+            _orderedTabs = DefaultTabs.ToList();
+        }
+    }
+
+    private static List<TabItem> ApplySavedOrder(string? json)
+    {
+        var byKey = DefaultTabs.ToDictionary(t => t.Key, StringComparer.Ordinal);
+        var result = new List<TabItem>();
+
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                var keys = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json);
+                if (keys is not null)
+                {
+                    foreach (var key in keys)
+                    {
+                        if (byKey.Remove(key, out var tab))
+                            result.Add(tab);
+                    }
+                }
+            }
+            catch
+            {
+                // fall through
+            }
+        }
+
+        foreach (var tab in DefaultTabs)
+        {
+            if (byKey.Remove(tab.Key, out var leftover))
+                result.Add(leftover);
+        }
+
+        return result.Count > 0 ? result : DefaultTabs.ToList();
+    }
+
+    private async Task PersistOrderAsync()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(_orderedTabs.Select(t => t.Key).ToList());
+        try
+        {
+            await _userService.SetBaronyTabOrderJson(json);
+        }
+        catch
+        {
+            // Ignore persistence failures.
+        }
+    }
+
+    private void OnDragStart(DragEventArgs e, string key)
+    {
+        _dragKey = key;
+        _dropTargetKey = null;
+        _lastHoverKey = null;
+        _orderChanged = false;
+        _suppressNextClick = false;
+        e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void OnNavDragOver(DragEventArgs e) => e.DataTransfer.DropEffect = "move";
+
+    private void RememberHover(string key)
+    {
+        if (_dragKey is null || _dragKey == key)
+            return;
+        _dropTargetKey = key;
+        _lastHoverKey = key;
+    }
+
+    private void OnItemDragOver(DragEventArgs e, string key)
+    {
+        e.DataTransfer.DropEffect = "move";
+        RememberHover(key);
+    }
+
+    private void OnDragEnter(DragEventArgs e, string key)
+    {
+        e.DataTransfer.DropEffect = "move";
+        RememberHover(key);
+    }
+
+    private void OnDragLeave(string key)
+    {
+        // Only clear highlight — keep _lastHoverKey for dragend fallback.
+        if (_dropTargetKey == key)
+            _dropTargetKey = null;
+    }
+
+    private void OnDrop(DragEventArgs e, string targetKey)
+    {
+        _lastHoverKey = targetKey;
+        ApplyMove(_dragKey, targetKey);
+        _suppressNextClick = true;
+    }
+
+    private void ApplyMove(string? dragKey, string? targetKey)
+    {
+        if (dragKey is null || targetKey is null)
+            return;
+        if (MoveTab(dragKey, targetKey))
+            _orderChanged = true;
+    }
+
+    /// <summary>
+    /// Moves <paramref name="dragKey"/> to the slot of <paramref name="targetKey"/>.
+    /// </summary>
+    private bool MoveTab(string dragKey, string targetKey)
+    {
+        if (string.Equals(dragKey, targetKey, StringComparison.Ordinal))
+            return false;
+
+        var from = _orderedTabs.FindIndex(t => t.Key == dragKey);
+        var to = _orderedTabs.FindIndex(t => t.Key == targetKey);
+        if (from < 0 || to < 0 || from == to)
+            return false;
+
+        var item = _orderedTabs[from];
+        _orderedTabs.RemoveAt(from);
+        // Do not decrement `to` when moving right — that would no-op on an adjacent tab.
+        _orderedTabs.Insert(to, item);
+        return true;
+    }
+
+    private async Task OnDragEndAsync()
+    {
+        // Browsers / Blazor sometimes skip drop; commit using last hover target.
+        if (!_orderChanged)
+            ApplyMove(_dragKey, _lastHoverKey);
+
+        if (_orderChanged)
+        {
+            _suppressNextClick = true;
+            await PersistOrderAsync();
+        }
+
+        _dragKey = null;
+        _dropTargetKey = null;
+        _lastHoverKey = null;
+        _orderChanged = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnTabActivate(string href)
+    {
+        if (_suppressNextClick)
+        {
+            _suppressNextClick = false;
+            return;
+        }
+
+        if (!IsActive(href))
+            _navigationManager.NavigateTo(href);
+    }
+
+    private void OnTabKeyDown(KeyboardEventArgs e, string href)
+    {
+        if (e.Key is "Enter" or " ")
+            OnTabActivate(href);
     }
 
     private bool IsActive(string href)

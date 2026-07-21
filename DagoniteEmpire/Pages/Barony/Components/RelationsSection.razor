@@ -1,0 +1,371 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<BaronySection Title="@Category">
+    <Summary>
+        <span class="projects-summary__item">@Ordered.Count contact@(Ordered.Count == 1 ? "" : "s")</span>
+    </Summary>
+    <ChildContent>
+        @if (Ordered.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No contacts in this section.
+                @if (CanManage)
+                {
+                    <text> Add one below.</text>
+                }
+            </MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--lined relations-table">
+                    <colgroup>
+                        <col class="relations-col-group" />
+                        <col class="relations-col-name" />
+                        <col class="relations-col-title" />
+                        <col class="relations-col-age" />
+                        <col class="relations-col-desc" />
+                        <col class="relations-col-troops" />
+                        <col class="relations-col-attitude" />
+                        <col class="relations-col-mods" />
+                        <col class="relations-col-notes" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="relations-col-group">Group</th>
+                            <th class="relations-col-name">Name</th>
+                            <th class="relations-col-title">Title</th>
+                            <th class="relations-col-age">Age</th>
+                            <th class="relations-col-desc">Description</th>
+                            <th class="relations-col-troops">Troops</th>
+                            <th class="relations-col-attitude">Attitude</th>
+                            <th class="relations-col-mods">Modifiers</th>
+                            <th class="relations-col-notes">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in Groups)
+                        {
+                            @for (var i = 0; i < group.Items.Count; i++)
+                            {
+                                var item = group.Items[i];
+                                var showGroup = i == 0;
+                                <tr>
+                                    @if (showGroup)
+                                    {
+                                        <td class="relations-col-group relations-group-cell" rowspan="@group.Items.Count">
+                                            @(string.IsNullOrWhiteSpace(group.Name) ? "—" : group.Name)
+                                        </td>
+                                    }
+                                    <td class="relations-col-name">
+                                        <div class="city-building-name-cell">
+                                            <span class="city-building-name-text">@item.Name</span>
+                                            @if (CanManage)
+                                            {
+                                                <span class="city-building-name-actions">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                   Size="Size.Small"
+                                                                   title="Edit relation"
+                                                                   OnClick="@(() => EditAsync(item))" />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Size="Size.Small"
+                                                                   Color="Color.Error"
+                                                                   title="Remove relation"
+                                                                   OnClick="@(() => DeleteAsync(item))" />
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="relations-col-title">@(string.IsNullOrWhiteSpace(item.Title) ? "—" : item.Title)</td>
+                                    <td class="relations-col-age">@(item.Age?.ToString() ?? "—")</td>
+                                    <td class="relations-col-desc">
+                                        @if (!string.IsNullOrWhiteSpace(item.Description))
+                                        {
+                                            <BaronyTooltip Title="Description" Text="@item.Description">
+                                                <span class="relations-ellipsis">@item.Description</span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            <span>—</span>
+                                        }
+                                    </td>
+                                    <td class="relations-col-troops">@item.TroopCount</td>
+                                    <td class="relations-col-attitude">
+                                        <BaronyTooltip Title="Attitude" Text="@ModifiersTooltip(item)">
+                                            <span class="@AttitudeClass(item.Attitude)">
+                                                <span class="relations-attitude-score">@FormatAttitude(item.Attitude)</span>
+                                                <span class="relations-attitude-label">@item.AttitudeLabel</span>
+                                            </span>
+                                        </BaronyTooltip>
+                                    </td>
+                                    <td class="relations-col-mods">
+                                        <div class="relations-mods-cell">
+                                            <BaronyTooltip Title="Modifiers" Text="@ModifiersTooltip(item)">
+                                                <span class="relations-mods-count">@item.Modifiers.Count</span>
+                                            </BaronyTooltip>
+                                            @if (CanManage)
+                                            {
+                                                <MudIconButton Icon="@Icons.Material.Filled.Tune"
+                                                               Size="Size.Small"
+                                                               title="Edit modifiers"
+                                                               OnClick="@(() => EditModifiersAsync(item))" />
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="relations-col-notes">
+                                        <div class="relations-notes-cell">
+                                            @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                            {
+                                                <BaronyTooltip Title="Notes" Text="@item.Notes">
+                                                    <span class="relations-ellipsis">@item.Notes</span>
+                                                </BaronyTooltip>
+                                            }
+                                            else
+                                            {
+                                                <span class="relations-notes-empty">—</span>
+                                            }
+                                            @if (CanEdit)
+                                            {
+                                                <MudIconButton Icon="@Icons.Material.Filled.EditNote"
+                                                               Size="Size.Small"
+                                                               title="Edit notes"
+                                                               OnClick="@(() => EditNotesAsync(item))" />
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (CanManage)
+        {
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddAsync">
+                    Add…
+                </MudButton>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public string Category { get; set; } = RelationCategory.Acquaintances;
+    [Parameter] public List<BaronyRelationDTO> Relations { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private List<BaronyRelationDTO> Ordered =>
+        Relations
+            .Where(r => string.Equals(r.Category, Category, StringComparison.Ordinal))
+            .OrderBy(r => r.SortOrder)
+            .ThenBy(r => r.GroupName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private IEnumerable<RelationGroup> Groups =>
+        Ordered
+            .GroupBy(r => r.GroupName ?? "", StringComparer.OrdinalIgnoreCase)
+            .Select(g => new RelationGroup(g.Key, g.ToList()));
+
+    private async Task AddAsync()
+    {
+        var draft = new BaronyRelationDTO
+        {
+            BaronyId = BaronyId,
+            Category = Category,
+            SortOrder = Ordered.Count == 0 ? 0 : Ordered.Max(r => r.SortOrder) + 1,
+        };
+        await OpenEditAsync(draft, isNew: true);
+    }
+
+    private async Task EditAsync(BaronyRelationDTO item) => await OpenEditAsync(Clone(item), isNew: false);
+
+    private async Task OpenEditAsync(BaronyRelationDTO draft, bool isNew)
+    {
+        var parameters = new DialogParameters<RelationEditDialog>
+        {
+            { x => x.Relation, draft },
+            { x => x.AllRelations, Relations },
+        };
+
+        var dialog = await _dialogService.ShowAsync<RelationEditDialog>(
+            isNew ? "Add Relation" : "Edit Relation",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyRelationDTO saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveRelation(saved);
+            _snackBar.Add(isNew ? "Relation added." : "Relation updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save relation: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EditNotesAsync(BaronyRelationDTO item)
+    {
+        var parameters = new DialogParameters<RelationNotesDialog>
+        {
+            { x => x.RelationId, item.Id },
+            { x => x.PersonName, item.Name },
+            { x => x.Notes, item.Notes },
+        };
+
+        var dialog = await _dialogService.ShowAsync<RelationNotesDialog>(
+            "Edit Notes",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Large,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string notes)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveRelationNotes(item.Id, string.IsNullOrWhiteSpace(notes) ? null : notes);
+            _snackBar.Add("Notes updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save notes: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EditModifiersAsync(BaronyRelationDTO item)
+    {
+        var draft = Clone(item);
+        var parameters = new DialogParameters<RelationModifiersDialog>
+        {
+            { x => x.PersonName, item.Name },
+            { x => x.Modifiers, draft.Modifiers },
+        };
+
+        var dialog = await _dialogService.ShowAsync<RelationModifiersDialog>(
+            "Edit Modifiers",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not List<BaronyRelationModifierDTO> modifiers)
+            return;
+
+        draft.Modifiers = modifiers;
+
+        try
+        {
+            await _baronyRepo.SaveRelation(draft);
+            _snackBar.Add("Modifiers updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save modifiers: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(BaronyRelationDTO item)
+    {
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Remove relation",
+            $"Remove “{item.Name}”?",
+            yesText: "Remove",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteRelation(item.Id);
+            _snackBar.Add("Relation removed.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not remove relation: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static string ModifiersTooltip(BaronyRelationDTO item)
+    {
+        if (item.Modifiers is null || item.Modifiers.Count == 0)
+            return "No modifiers.";
+
+        return string.Join("\n", item.Modifiers
+            .OrderBy(m => m.SortOrder)
+            .Select(m =>
+            {
+                var sign = m.Value > 0 ? "+" : "";
+                var desc = string.IsNullOrWhiteSpace(m.Description) ? "(unnamed)" : m.Description.Trim();
+                return $"{desc}: {sign}{m.Value}";
+            }));
+    }
+
+    private static string AttitudeClass(int attitude) =>
+        attitude > 0 ? "relations-attitude relations-attitude--pos"
+        : attitude < 0 ? "relations-attitude relations-attitude--neg"
+        : "relations-attitude";
+
+    private static string FormatAttitude(int attitude) =>
+        attitude > 0 ? $"+{attitude}" : attitude.ToString();
+
+    private static BaronyRelationDTO Clone(BaronyRelationDTO source) => new()
+    {
+        Id = source.Id,
+        BaronyId = source.BaronyId,
+        Category = source.Category,
+        GroupName = source.GroupName,
+        Name = source.Name,
+        Title = source.Title,
+        Age = source.Age,
+        Description = source.Description,
+        TroopCount = source.TroopCount,
+        RelationDescription = source.RelationDescription,
+        Notes = source.Notes,
+        SortOrder = source.SortOrder,
+        Modifiers = (source.Modifiers ?? new())
+            .Select(m => new BaronyRelationModifierDTO
+            {
+                Id = m.Id,
+                Description = m.Description,
+                Value = m.Value,
+                SortOrder = m.SortOrder,
+            }).ToList(),
+    };
+
+    private sealed record RelationGroup(string Name, List<BaronyRelationDTO> Items);
+}

@@ -73,6 +73,8 @@ namespace DA_DataAccess.Data
         public DbSet<TerrainMapDomain> TerrainMapDomains { get; set; }
         public DbSet<TerrainImprovement> TerrainImprovements { get; set; }
         public DbSet<BaronyProject> BaronyProjects { get; set; }
+        public DbSet<BaronyRelation> BaronyRelations { get; set; }
+        public DbSet<BaronyRelationModifier> BaronyRelationModifiers { get; set; }
         public DbSet<BaronyResourceSource> BaronyResourceSources { get; set; }
         public DbSet<BaronPurseSource> BaronPurseSources { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
@@ -88,6 +90,14 @@ namespace DA_DataAccess.Data
                 // Enable pgvector extension for SCRIBE (PostgreSQL only)
                 modelBuilder.HasPostgresExtension("vector");
             }
+
+            modelBuilder.Entity<BaronyRelationModifier>(entity =>
+            {
+                entity.HasOne(m => m.Relation)
+                    .WithMany(r => r.Modifiers)
+                    .HasForeignKey(m => m.RelationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // Configure SCRIBE entities
             modelBuilder.Entity<ScribeChunk>(entity =>

@@ -16,6 +16,7 @@ namespace DA_Models.BaronyModels
         public List<FiefDTO> Fiefs { get; set; } = new();
         public List<TerrainTileDTO> Tiles { get; set; } = new();
         public List<BaronyProjectDTO> Projects { get; set; } = new();
+        public List<BaronyRelationDTO> Relations { get; set; } = new();
         public List<BaronyResourceSourceDTO> ResourceSources { get; set; } = new();
         public List<BaronPurseSourceDTO> PurseSources { get; set; } = new();
 

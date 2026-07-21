@@ -14,6 +14,7 @@ using Abp.Collections.Extensions;
 using Microsoft.JSInterop;
 using DagoniteEmpire.Helper;
 using DA_DataAccess.BaronyData;
+using DA_Business.Repository.BaronyRepos;
 
 namespace DagoniteEmpire.Service
 {
@@ -2840,7 +2841,8 @@ namespace DagoniteEmpire.Service
 
                 contex.SaveChanges();
 
-               
+                await SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex);
+                await OrganizationsSeeder.EnsureForAllBaroniesAsync(contex);
             }
             catch (Exception ex)
             {

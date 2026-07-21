@@ -133,6 +133,8 @@ namespace DA_Business.Repository.BaronyRepos
                 SeedTerrainGrid(ctx, added.Entity.Id);
                 SeedPrimaryMapDomain(ctx, added.Entity.Id, added.Entity.Name, character.NPCName ?? "Baron");
                 SeedPrimaryFief(ctx, added.Entity.Id, character.NPCName ?? "Baron");
+                SeniorHousesSeeder.EnsureForBarony(ctx, added.Entity.Id);
+                OrganizationsSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 await ctx.SaveChangesAsync();
 
                 return ToDTO(added.Entity);
@@ -209,6 +211,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Improvements = improvementDtos,
                     Decrees = (await ctx.Decrees.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Events = (await ctx.BaronyEvents.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    Relations = (await ctx.BaronyRelations.AsNoTracking().Include(x => x.Modifiers).Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     CommunityModifiers = (await ctx.CommunityModifiers.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Fiefs = (await ctx.Fiefs.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Tiles = tiles.Select(ToDTO).ToList(),
@@ -353,6 +356,80 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         public Task<int> DeleteEvent(int id) => Delete(ctx => ctx.BaronyEvents, id, nameof(DeleteEvent));
+
+        // ---------------- Relations ----------------
+        public async Task<List<BaronyRelationDTO>> GetRelations(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var list = await ctx.BaronyRelations.AsNoTracking()
+                    .Include(x => x.Modifiers)
+                    .Where(x => x.BaronyId == baronyId)
+                    .ToListAsync();
+                return list.Select(ToDTO).ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetRelations)); }
+        }
+
+        public async Task<BaronyRelationDTO> SaveRelation(BaronyRelationDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                BaronyRelation e;
+                if (dto.Id > 0)
+                {
+                    e = await ctx.BaronyRelations.Include(x => x.Modifiers).FirstOrDefaultAsync(x => x.Id == dto.Id)
+                        ?? throw new InvalidOperationException($"Relation {dto.Id} not found.");
+                    ApplyRelation(e, dto);
+                    ctx.BaronyRelationModifiers.RemoveRange(e.Modifiers);
+                    e.Modifiers.Clear();
+                }
+                else
+                {
+                    e = new BaronyRelation();
+                    ApplyRelation(e, dto);
+                    ctx.BaronyRelations.Add(e);
+                }
+
+                foreach (var m in (dto.Modifiers ?? new()).OrderBy(x => x.SortOrder))
+                {
+                    e.Modifiers.Add(new BaronyRelationModifier
+                    {
+                        Description = m.Description ?? "",
+                        Value = m.Value,
+                        SortOrder = m.SortOrder,
+                    });
+                }
+
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveRelation));
+            }
+        }
+
+        public Task<int> DeleteRelation(int id) =>
+            Delete(ctx => ctx.BaronyRelations, id, nameof(DeleteRelation));
+
+        public async Task SaveRelationNotes(int relationId, string? notes)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyRelations.FirstOrDefaultAsync(x => x.Id == relationId)
+                    ?? throw new InvalidOperationException($"Relation {relationId} not found.");
+                e.Notes = notes;
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveRelationNotes));
+            }
+        }
 
         // ---------------- Community modifiers ----------------
         public async Task<List<CommunityModifierDTO>> GetCommunityModifiers(int baronyId) =>
@@ -1195,6 +1272,47 @@ namespace DA_Business.Repository.BaronyRepos
             e.BaronyId = d.BaronyId; e.Name = d.Name;
             e.StartTurn = d.StartTurn; e.EndTurn = d.EndTurn;
             e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent); e.Description = d.Description;
+        }
+
+        // ---------------- Mapping: Relation ----------------
+        private static BaronyRelationDTO ToDTO(BaronyRelation e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Category = e.Category ?? "",
+            GroupName = e.GroupName ?? "",
+            Name = e.Name ?? "",
+            Title = e.Title ?? "",
+            Age = e.Age,
+            Description = e.Description ?? "",
+            TroopCount = e.TroopCount,
+            RelationDescription = e.RelationDescription ?? "",
+            Notes = e.Notes,
+            SortOrder = e.SortOrder,
+            Modifiers = (e.Modifiers ?? new List<BaronyRelationModifier>())
+                .OrderBy(m => m.SortOrder)
+                .Select(m => new BaronyRelationModifierDTO
+                {
+                    Id = m.Id,
+                    Description = m.Description ?? "",
+                    Value = m.Value,
+                    SortOrder = m.SortOrder,
+                }).ToList(),
+        };
+
+        private static void ApplyRelation(BaronyRelation e, BaronyRelationDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Category = d.Category ?? "";
+            e.GroupName = d.GroupName ?? "";
+            e.Name = d.Name ?? "";
+            e.Title = d.Title ?? "";
+            e.Age = d.Age;
+            e.Description = d.Description ?? "";
+            e.TroopCount = d.TroopCount;
+            e.RelationDescription = d.RelationDescription ?? "";
+            e.Notes = d.Notes;
+            e.SortOrder = d.SortOrder;
         }
 
         // ---------------- Mapping: Community ----------------

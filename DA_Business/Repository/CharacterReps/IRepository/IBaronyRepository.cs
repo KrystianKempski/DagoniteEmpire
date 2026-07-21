@@ -41,6 +41,12 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyEventDTO> SaveEvent(BaronyEventDTO dto);
         Task<int> DeleteEvent(int id);
 
+        // --- Relacje ---
+        Task<List<BaronyRelationDTO>> GetRelations(int baronyId);
+        Task<BaronyRelationDTO> SaveRelation(BaronyRelationDTO dto);
+        Task<int> DeleteRelation(int id);
+        Task SaveRelationNotes(int relationId, string? notes);
+
         // --- Kary/bonusy społeczności ---
         Task<List<CommunityModifierDTO>> GetCommunityModifiers(int baronyId);
         Task<CommunityModifierDTO> SaveCommunityModifier(CommunityModifierDTO dto);

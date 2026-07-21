@@ -438,6 +438,86 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("BaronyProjects");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyRelation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("Age")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("GroupName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RelationDescription")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TroopCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BaronyRelations");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyRelationModifier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("RelationId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RelationId");
+
+                    b.ToTable("BaronyRelationModifiers");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyResourceSource", b =>
                 {
                     b.Property<int>("Id")
@@ -2394,6 +2474,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int?>("BadgeContent")
                         .HasColumnType("integer");
 
+                    b.Property<string>("BaronyTabOrderJson")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -2405,6 +2488,17 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("boolean");
 
                     b.HasDiscriminator().HasValue("ApplicationUser");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyRelationModifier", b =>
+                {
+                    b.HasOne("DA_DataAccess.BaronyData.BaronyRelation", "Relation")
+                        .WithMany("Modifiers")
+                        .HasForeignKey("RelationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Relation");
                 });
 
             modelBuilder.Entity("CampaignCharacter", b =>
@@ -2745,6 +2839,11 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("WealthLog");
 
                     b.Navigation("Wounds");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyRelation", b =>
+                {
+                    b.Navigation("Modifiers");
                 });
 
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Equipment", b =>

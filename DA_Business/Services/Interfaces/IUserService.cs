@@ -13,5 +13,9 @@ namespace DA_Business.Services.Interfaces
         public Task SetSelectedCharId(int charId);
         public Task<bool> IsAuthenticated();
         public Task LogOut();
+
+        /// <summary>Persisted barony tab order (tab keys), or null/empty for default.</summary>
+        public Task<string?> GetBaronyTabOrderJson();
+        public Task SetBaronyTabOrderJson(string? json);
     }
 }

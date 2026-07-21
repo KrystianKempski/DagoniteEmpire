@@ -1,0 +1,283 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog relation-edit-dialog">
+            <MudSelect T="string"
+                       Value="_category"
+                       ValueChanged="OnCategoryChanged"
+                       Label="Section"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                @foreach (var cat in RelationCategory.All)
+                {
+                    <MudSelectItem Value="@cat">@cat</MudSelectItem>
+                }
+            </MudSelect>
+            @if (ExistingGroups.Count > 0)
+            {
+                <MudSelect T="string"
+                           Value="_groupPick"
+                           ValueChanged="OnGroupPickChanged"
+                           Label="Group"
+                           HelperText="Pick an existing house/organization, or create a new one."
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Class="baron-influence-field">
+                    <MudSelectItem Value="@NewGroupValue">(new group…)</MudSelectItem>
+                    @foreach (var group in ExistingGroups)
+                    {
+                        <MudSelectItem Value="@group">@group</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            @if (_groupPick == NewGroupValue || ExistingGroups.Count == 0)
+            {
+                <MudTextField @bind-Value="_groupName"
+                              Label="@(ExistingGroups.Count > 0 ? "New group name" : "Group")"
+                              HelperText="House or organization name (shared across people for rowspan)."
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="baron-influence-field" />
+            }
+            <MudTextField @bind-Value="_name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Class="baron-influence-field" />
+            <MudTextField @bind-Value="_title"
+                          Label="Title"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field" />
+            <MudNumericField T="int?"
+                             @bind-Value="_age"
+                             Label="Age"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Class="baron-influence-field" />
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="3"
+                          Class="baron-influence-field" />
+            <MudNumericField T="int"
+                             @bind-Value="_troopCount"
+                             Label="Troops"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Class="baron-influence-field" />
+            <MudTextField @bind-Value="_notes"
+                          Label="Notes"
+                          HelperText="Also editable by the baron."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="baron-influence-field" />
+            <MudNumericField T="int"
+                             @bind-Value="_sortOrder"
+                             Label="Sort order"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Class="baron-influence-field" />
+
+            <div class="relation-modifiers">
+                <div class="relation-modifiers__header">
+                    <span class="relation-modifiers__title">Attitude modifiers</span>
+                    <span class="relation-modifiers__sum @AttitudeSumClass">
+                        Sum: @FormatAttitude(AttitudeSum) (@RelationCategory.AttitudeLabel(AttitudeSum))
+                    </span>
+                </div>
+                @if (_modifiers.Count == 0)
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No modifiers yet.</MudText>
+                }
+                else
+                {
+                    @for (var i = 0; i < _modifiers.Count; i++)
+                    {
+                        var index = i;
+                        <div class="relation-modifiers__row">
+                            <MudTextField @bind-Value="_modifiers[index].Description"
+                                          Label="Description"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Class="baron-influence-field relation-modifiers__desc" />
+                            <MudNumericField T="int"
+                                             @bind-Value="_modifiers[index].Value"
+                                             Label="Value"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Class="baron-influence-field relation-modifiers__value" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           title="Remove modifier"
+                                           OnClick="@(() => RemoveModifier(index))" />
+                        </div>
+                    }
+                }
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddModifier">
+                    Add modifier
+                </MudButton>
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyRelationDTO Relation { get; set; } = new();
+    /// <summary>All relations for the barony — used to offer existing group names per section.</summary>
+    [Parameter] public IReadOnlyList<BaronyRelationDTO> AllRelations { get; set; } = Array.Empty<BaronyRelationDTO>();
+
+    private const string NewGroupValue = "__new__";
+
+    private string _category = RelationCategory.Acquaintances;
+    private string _groupPick = NewGroupValue;
+    private string _groupName = string.Empty;
+    private string _name = string.Empty;
+    private string _title = string.Empty;
+    private int? _age;
+    private string _description = string.Empty;
+    private int _troopCount;
+    private string? _notes;
+    private int _sortOrder;
+    private List<ModifierRow> _modifiers = new();
+
+    private IReadOnlyList<string> ExistingGroups =>
+        AllRelations
+            .Where(r => string.Equals(r.Category, _category, StringComparison.Ordinal))
+            .Select(r => (r.GroupName ?? "").Trim())
+            .Where(g => g.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private int AttitudeSum => Math.Clamp(_modifiers.Sum(m => m.Value), -200, 200);
+    private string AttitudeSumClass =>
+        AttitudeSum > 0 ? "relations-attitude--pos"
+        : AttitudeSum < 0 ? "relations-attitude--neg"
+        : "";
+
+    protected override void OnInitialized()
+    {
+        _category = string.IsNullOrWhiteSpace(Relation.Category)
+            ? RelationCategory.Acquaintances
+            : Relation.Category;
+        _groupName = Relation.GroupName ?? "";
+        _name = Relation.Name ?? "";
+        _title = Relation.Title ?? "";
+        _age = Relation.Age;
+        _description = Relation.Description ?? "";
+        _troopCount = Relation.TroopCount;
+        _notes = Relation.Notes;
+        _sortOrder = Relation.SortOrder;
+        _modifiers = (Relation.Modifiers ?? new())
+            .OrderBy(m => m.SortOrder)
+            .Select(m => new ModifierRow
+            {
+                Description = m.Description ?? "",
+                Value = m.Value,
+            }).ToList();
+
+        SyncGroupPickFromName();
+    }
+
+    private void OnCategoryChanged(string value)
+    {
+        _category = value;
+        SyncGroupPickFromName();
+    }
+
+    private void OnGroupPickChanged(string value)
+    {
+        _groupPick = value;
+        if (value != NewGroupValue)
+            _groupName = value;
+    }
+
+    private void SyncGroupPickFromName()
+    {
+        var trimmed = (_groupName ?? "").Trim();
+        var match = ExistingGroups.FirstOrDefault(g =>
+            string.Equals(g, trimmed, StringComparison.OrdinalIgnoreCase));
+        if (match is not null)
+        {
+            _groupPick = match;
+            _groupName = match;
+        }
+        else
+        {
+            _groupPick = NewGroupValue;
+        }
+    }
+
+    private void AddModifier() => _modifiers.Add(new ModifierRow());
+
+    private void RemoveModifier(int index)
+    {
+        if (index < 0 || index >= _modifiers.Count)
+            return;
+        _modifiers.RemoveAt(index);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        var groupName = _groupPick == NewGroupValue || ExistingGroups.Count == 0
+            ? (_groupName ?? "").Trim()
+            : _groupPick.Trim();
+
+        Relation.Category = _category;
+        Relation.GroupName = groupName;
+        Relation.Name = _name.Trim();
+        Relation.Title = (_title ?? "").Trim();
+        Relation.Age = _age;
+        Relation.Description = (_description ?? "").Trim();
+        Relation.TroopCount = Math.Max(0, _troopCount);
+        Relation.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
+        Relation.SortOrder = _sortOrder;
+        Relation.Modifiers = _modifiers
+            .Select((m, i) => new BaronyRelationModifierDTO
+            {
+                Description = (m.Description ?? "").Trim(),
+                Value = m.Value,
+                SortOrder = i,
+            }).ToList();
+
+        MudDialog.Close(DialogResult.Ok(Relation));
+    }
+
+    private static string FormatAttitude(int attitude) =>
+        attitude > 0 ? $"+{attitude}" : attitude.ToString();
+
+    private sealed class ModifierRow
+    {
+        public string Description { get; set; } = string.Empty;
+        public int Value { get; set; }
+    }
+}

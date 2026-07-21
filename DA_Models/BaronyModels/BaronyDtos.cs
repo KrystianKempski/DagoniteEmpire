@@ -381,6 +381,43 @@ namespace DA_Models.BaronyModels
         }
     }
 
+    public class BaronyRelationModifierDTO
+    {
+        public int Id { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public int Value { get; set; }
+        public int SortOrder { get; set; }
+    }
+
+    public class BaronyRelationDTO
+    {
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+        public string Category { get; set; } = DA_Common.Barony.RelationCategory.Acquaintances;
+        public string GroupName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public int? Age { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public int TroopCount { get; set; }
+        public string RelationDescription { get; set; } = string.Empty;
+        public string? Notes { get; set; }
+        public int SortOrder { get; set; }
+        public List<BaronyRelationModifierDTO> Modifiers { get; set; } = new();
+
+        /// <summary>Sum of modifier values, clamped to −200…200.</summary>
+        public int Attitude
+        {
+            get
+            {
+                var sum = Modifiers?.Sum(m => m.Value) ?? 0;
+                return Math.Clamp(sum, -200, 200);
+            }
+        }
+
+        public string AttitudeLabel => DA_Common.Barony.RelationCategory.AttitudeLabel(Attitude);
+    }
+
     public class BuildingTemplateDTO
     {
         public int Id { get; set; }

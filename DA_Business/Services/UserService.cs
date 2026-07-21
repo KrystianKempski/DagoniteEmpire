@@ -305,5 +305,36 @@ namespace DA_Business.Services
             user.SelectedCharacterId = 0;
             await context.SaveChangesAsync();
         }
+
+        public async Task<string?> GetBaronyTabOrderJson()
+        {
+            var auth = await _authState.GetAuthenticationStateAsync();
+            var userId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+                return null;
+
+            await using var context = await _db.CreateDbContextAsync();
+            return await context.Users.OfType<ApplicationUser>()
+                .AsNoTracking()
+                .Where(u => u.Id == userId)
+                .Select(u => u.BaronyTabOrderJson)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task SetBaronyTabOrderJson(string? json)
+        {
+            var auth = await _authState.GetAuthenticationStateAsync();
+            var userId = auth.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+                return;
+
+            await using var context = await _db.CreateDbContextAsync();
+            var user = await context.Users.OfType<ApplicationUser>().FirstOrDefaultAsync(u => u.Id == userId);
+            if (user is null)
+                return;
+
+            user.BaronyTabOrderJson = string.IsNullOrWhiteSpace(json) ? null : json.Trim();
+            await context.SaveChangesAsync();
+        }
     }
 }

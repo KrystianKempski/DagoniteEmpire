@@ -1,0 +1,44 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog relation-notes-dialog">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">@PersonName</MudText>
+            <MudTextField @bind-Value="_notes"
+                          Label="Notes"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="16"
+                          Class="baron-influence-field relation-notes-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int RelationId { get; set; }
+    [Parameter] public string PersonName { get; set; } = string.Empty;
+    [Parameter] public string? Notes { get; set; }
+
+    private string? _notes;
+
+    protected override void OnInitialized()
+    {
+        _notes = Notes;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        var value = string.IsNullOrWhiteSpace(_notes) ? "" : _notes.Trim();
+        MudDialog.Close(DialogResult.Ok(value));
+    }
+}
