@@ -1,0 +1,82 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="Reputation Effects on the Barony">
+    <Summary>
+        <div class="baron-php-summary">
+            <PhpMetricChip Metric="PhpMetric.Prestige" Value="@PrestigeScore" />
+            <PhpMetricChip Metric="PhpMetric.Honor" Value="@HonorScore" />
+            <PhpMetricChip Metric="PhpMetric.Fear" Value="@FearScore" />
+        </div>
+    </Summary>
+    <ChildContent>
+        <div class="baron-reputation-grid">
+            @RenderTrack(PhpMetric.Prestige, PrestigeScore, BaronReputationTiers.Prestige)
+            @RenderTrack(PhpMetric.Honor, HonorScore, BaronReputationTiers.Honor)
+            @RenderTrack(PhpMetric.Fear, FearScore, BaronReputationTiers.Fear)
+        </div>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int PrestigeScore { get; set; }
+    [Parameter] public int HonorScore { get; set; }
+    [Parameter] public int FearScore { get; set; }
+
+    private RenderFragment RenderTrack(
+        PhpMetric metric,
+        int score,
+        IReadOnlyList<ReputationTier> tiers) => __builder =>
+    {
+        var current = BaronReputationTiers.Resolve(tiers, score);
+        <div class="@($"baron-reputation-track {BaronPhpVisuals.CssClass(metric)}")">
+            <header class="baron-reputation-track__header">
+                <div>
+                    <div class="baron-reputation-track__title">
+                        <PhpMetricHeading Metric="@metric" />
+                    </div>
+                    <div class="baron-reputation-track__tier">@current.Name</div>
+                </div>
+                <div class="@($"baron-reputation-track__score {BaronPhpVisuals.CssClass(metric)}")"
+                     title="Current score">@FormatScore(score)</div>
+            </header>
+
+            <div class="baron-reputation-steps" role="list">
+                @foreach (var tier in tiers)
+                {
+                    var isCurrent = ReferenceEquals(tier, current) || tier.Name == current.Name;
+                    var reached = score >= tier.MinRequired || tier.MinRequired == int.MinValue;
+                    <div class="@StepClass(isCurrent, reached)" role="listitem" title="@TierTooltip(tier)">
+                        <span class="baron-reputation-step__name">@tier.Name</span>
+                        <span class="baron-reputation-step__req">@tier.ThresholdLabel</span>
+                    </div>
+                }
+            </div>
+
+            <div class="baron-reputation-bonuses">
+                <div class="baron-reputation-bonuses__label">Barony bonuses</div>
+                <div class="baron-reputation-bonuses__text">@BaronReputationTiers.FormatBaronyBonus(current.BaronyBonus)</div>
+                @if (!string.IsNullOrWhiteSpace(current.SkillBonusText))
+                {
+                    <div class="baron-reputation-bonuses__skills">
+                        <div class="baron-reputation-bonuses__label">Character traits</div>
+                        @current.SkillBonusText
+                        <span class="baron-reputation-bonuses__note">Applied on the Character sheet as “@TraitLabel(current)”</span>
+                    </div>
+                }
+            </div>
+        </div>
+    };
+
+    private static string StepClass(bool isCurrent, bool reached) =>
+        "baron-reputation-step"
+        + (isCurrent ? " baron-reputation-step--current" : "")
+        + (reached && !isCurrent ? " baron-reputation-step--reached" : "");
+
+    private static string TierTooltip(ReputationTier tier) =>
+        $"{tier.Name}\nRequired: {tier.ThresholdLabel}\n{tier.BonusSummary}";
+
+    private static string TraitLabel(ReputationTier tier) => $"{tier.Name}!";
+
+    private static string FormatScore(int value) =>
+        value > 0 ? $"+{value}" : value.ToString();
+}

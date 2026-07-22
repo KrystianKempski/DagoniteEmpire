@@ -1,3 +1,4 @@
+using DA_Common;
 using DA_Common.Barony;
 using DA_Models.BaronyModels;
 using DA_Models.CharacterModels;
@@ -60,7 +61,8 @@ namespace DagoniteEmpire.Pages.Barony
             BaronyDTO barony,
             CharacterDTO? character,
             IEnumerable<BaronInfluenceModifierDTO>? baronModifiers,
-            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null)
+            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null,
+            int managementJc = BaronTimeRules.RequiredManagementJc)
         {
             var modsByAdvisor = (advisorModifiers ?? Enumerable.Empty<AdvisorInfluenceModifierDTO>())
                 .GroupBy(m => m.AdvisorId)
@@ -78,7 +80,8 @@ namespace DagoniteEmpire.Pages.Barony
                 .ToList();
 
             var existingBaron = advisors?.FirstOrDefault(a => a.IsBaron);
-            offices.Insert(0, BuildBaronAdvisorRow(barony, character, baronModifiers, existingBaron));
+            offices.Insert(0, BuildBaronAdvisorRow(
+                barony, character, baronModifiers, existingBaron, managementJc));
             return offices;
         }
 
@@ -102,20 +105,27 @@ namespace DagoniteEmpire.Pages.Barony
             BaronyDTO barony,
             CharacterDTO? character,
             IEnumerable<BaronInfluenceModifierDTO>? baronModifiers,
-            AdvisorDTO? existingBaronAdvisor = null)
+            AdvisorDTO? existingBaronAdvisor = null,
+            int managementJc = BaronTimeRules.RequiredManagementJc)
         {
             var skillInfluence = InfluenceFromSkills(character);
-            var skillBasedAdditive = BaronSkillPpbFormulas.MapToAdvisorAdditive(skillInfluence);
-            var skillBasedPercent = BaronSkillPpbFormulas.MapToAdvisorPercent(skillInfluence);
+            var effectiveSkills = ApplyManagementSkillFactor(skillInfluence, managementJc);
+            var skillBasedAdditive = BaronSkillPpbFormulas.MapToAdvisorAdditive(effectiveSkills);
+            var skillBasedPercent = BaronSkillPpbFormulas.MapToAdvisorPercent(effectiveSkills);
             var customAdditive = PpbVector.Sum((baronModifiers ?? Enumerable.Empty<BaronInfluenceModifierDTO>())
                 .Select(m => m.Additive));
             skillBasedAdditive.AddInPlace(customAdditive);
+            skillBasedAdditive.AddInPlace(
+                BaronReputationTiers.InfluenceFromScores(barony.Prestige, barony.Honor, barony.Fear));
 
             var name = !string.IsNullOrWhiteSpace(character?.NPCName)
                 ? character!.NPCName
                 : !string.IsNullOrWhiteSpace(existingBaronAdvisor?.PersonName)
                     ? existingBaronAdvisor!.PersonName
                     : "Baron";
+
+            var factor = BaronTimeRules.ManagementSkillFactor(managementJc);
+            var factorPct = decimal.Round(factor * 100m, 0, MidpointRounding.AwayFromZero);
 
             return new AdvisorDTO
             {
@@ -127,7 +137,10 @@ namespace DagoniteEmpire.Pages.Barony
                 IsBaron = true,
                 Additive = skillBasedAdditive,
                 Percent = skillBasedPercent,
-                Description = BaronSkillPpbFormulas.BaronAdvisorNameTooltip,
+                Description = BaronSkillPpbFormulas.BaronAdvisorNameTooltip
+                    + (factor < 1m
+                        ? $" Skill PPB applied at {factorPct}% ({managementJc}/{BaronTimeRules.RequiredManagementJc} management JC)."
+                        : ""),
             };
         }
 
@@ -278,7 +291,7 @@ namespace DagoniteEmpire.Pages.Barony
             var rows = CoreCityBuildings(baronyId)
                 .Select(b => Row(b.Name, b.Additive, b.Percent, null, b.Description))
                 .ToList();
-            if (seat?.Rooms is { Count: > 0 })
+            if (seat is not null)
                 rows.Add(LordsSeatSummaryRow(seat.Rooms, purposes));
             rows.AddRange(TownPopulationRows(improvements));
             rows.AddRange(BuildingRows(saved));
@@ -315,7 +328,7 @@ namespace DagoniteEmpire.Pages.Barony
             var vectors = CoreCityBuildings(baronyId).Select(b => b.Additive)
                 .Concat(ActiveTowns(improvements).Select(t => t.Additive))
                 .Concat(saved.Select(b => b.Additive));
-            if (seat?.Rooms is { Count: > 0 })
+            if (seat is not null)
             {
                 vectors = vectors.Concat(
                     seat.Rooms.Where(r => r.ContributesPpb)
@@ -336,7 +349,7 @@ namespace DagoniteEmpire.Pages.Barony
             var vectors = CoreCityBuildings(baronyId).Select(b => b.Percent)
                 .Concat(ActiveTowns(improvements).Select(t => t.Percent))
                 .Concat(saved.Select(b => b.Percent));
-            if (seat?.Rooms is { Count: > 0 })
+            if (seat is not null)
             {
                 vectors = vectors.Concat(
                     seat.Rooms.Where(r => r.ContributesPpb)
@@ -427,6 +440,8 @@ namespace DagoniteEmpire.Pages.Barony
             => improvements
                 .Where(ShowsOnDomainPanel)
                 .Where(i => i.IsActive)
+                .OrderByDescending(IsVillage)
+                .ThenBy(ImprovementDisplayLabel, StringComparer.OrdinalIgnoreCase)
                 .Select(i => Row(ImprovementDisplayLabel(i), i.Additive, i.Percent, i.FormulaText, i.Description))
                 .ToList();
 
@@ -580,10 +595,11 @@ namespace DagoniteEmpire.Pages.Barony
             BaronyOverviewDTO ov,
             CharacterDTO? character = null,
             IEnumerable<BaronInfluenceModifierDTO>? baronModifiers = null,
-            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null)
+            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null,
+            int managementJc = BaronTimeRules.RequiredManagementJc)
         {
             var advisors = AdvisorsForDomainPanel(
-                ov.Advisors, ov.Barony, character, baronModifiers, advisorModifiers);
+                ov.Advisors, ov.Barony, character, baronModifiers, advisorModifiers, managementJc);
             var advisorRows = AdvisorRows(advisors);
             var buildingRows = CityBuildingSectionRows(
                 ov.Barony.Id, ov.Buildings, ov.Improvements, ov.Seat, ov.SeatPurposeTemplates);
@@ -641,8 +657,9 @@ namespace DagoniteEmpire.Pages.Barony
             BaronyOverviewDTO ov,
             CharacterDTO? character = null,
             IEnumerable<BaronInfluenceModifierDTO>? baronModifiers = null,
-            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null)
-            => BuildDomainPanelRows(ov, character, baronModifiers, advisorModifiers).GrandTotal;
+            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null,
+            int managementJc = BaronTimeRules.RequiredManagementJc)
+            => BuildDomainPanelRows(ov, character, baronModifiers, advisorModifiers, managementJc).GrandTotal;
 
         public sealed class DomainPanelRowSet
         {
@@ -664,26 +681,50 @@ namespace DagoniteEmpire.Pages.Barony
             CharacterDTO? character,
             int prestige,
             int honor,
-            IEnumerable<BaronInfluenceModifierDTO>? customModifiers)
+            int fear,
+            IEnumerable<BaronInfluenceModifierDTO>? customModifiers,
+            int managementJc = BaronTimeRules.RequiredManagementJc)
         {
+            var skills = InfluenceFromSkills(character);
             var rows = new List<BaronInfluenceRow>
             {
                 new()
                 {
                     Source = BaronInfluenceSource.FromSkills,
-                    Values = InfluenceFromSkills(character),
+                    Values = skills,
                     IsSystem = true,
                     Description = BaronSkillPpbFormulas.CatalogDescription,
                     ValueTooltip = BaronSkillPpbFormulas.ExplainAdditive,
                 },
-                new()
-                {
-                    Source = BaronInfluenceSource.FromPrestigeHonor,
-                    Values = InfluenceFromPrestigeHonor(prestige, honor),
-                    IsSystem = true,
-                    Formula = "Bonuses from prestige and honor [TO BE COMPLETED]",
-                },
             };
+
+            var penalty = ManagementSkillPenalty(skills, managementJc);
+            if (!penalty.IsEmpty)
+            {
+                var factor = BaronTimeRules.ManagementSkillFactor(managementJc);
+                var factorPct = decimal.Round(factor * 100m, 0, MidpointRounding.AwayFromZero);
+                rows.Add(new BaronInfluenceRow
+                {
+                    Source = BaronInfluenceSource.FromManagementTime,
+                    Values = penalty,
+                    IsSystem = true,
+                    Description =
+                        $"Skill PPB scaled by management JC. "
+                        + $"{managementJc}/{BaronTimeRules.RequiredManagementJc} JC = {factorPct}% of From Skills. "
+                        + "Penalty values are rounded to whole numbers.",
+                    Formula =
+                        $"management JC {managementJc}/{BaronTimeRules.RequiredManagementJc} → {factorPct}% skills",
+                });
+            }
+
+            rows.Add(new BaronInfluenceRow
+            {
+                Source = BaronInfluenceSource.FromPrestigeHonor,
+                Values = InfluenceFromPrestigeHonorFear(prestige, honor, fear),
+                IsSystem = true,
+                Description = BaronReputationTiers.DescribeActiveTiers(prestige, honor, fear),
+                Formula = "Reputation tier bonuses from Prestige, Honor, and Fear",
+            });
 
             foreach (var modifier in customModifiers ?? Enumerable.Empty<BaronInfluenceModifierDTO>())
             {
@@ -707,6 +748,47 @@ namespace DagoniteEmpire.Pages.Barony
             foreach (var row in rows)
                 sum.AddInPlace(row.Values);
             return sum;
+        }
+
+        public static int ManagementJcSpent(IEnumerable<BaronTimeActionDTO>? actions) =>
+            (actions ?? Enumerable.Empty<BaronTimeActionDTO>())
+                .Where(a => string.Equals(a.Kind, BaronTimeActionKind.Management, StringComparison.OrdinalIgnoreCase))
+                .Sum(a => a.CostJc);
+
+        /// <summary>Scale each PPB component by factor and round to whole numbers.</summary>
+        public static PpbVector ScalePpbToIntegers(PpbVector source, decimal factor)
+        {
+            var result = new PpbVector();
+            if (source is null)
+                return result;
+
+            source.EnsureSize();
+            for (int i = 0; i < PpbCatalog.Count; i++)
+            {
+                result.Values[i] = decimal.Round(
+                    source.Values[i] * factor,
+                    0,
+                    MidpointRounding.AwayFromZero);
+            }
+
+            return result;
+        }
+
+        /// <summary>Effective skill PPB after management JC factor (0–100%).</summary>
+        public static PpbVector ApplyManagementSkillFactor(PpbVector skills, int managementJc) =>
+            ScalePpbToIntegers(skills ?? new PpbVector(), BaronTimeRules.ManagementSkillFactor(managementJc));
+
+        /// <summary>
+        /// Integer penalty so that From Skills + penalty ≈ skills × (managementJc/100).
+        /// Each component: Round(full × (factor − 1)).
+        /// </summary>
+        public static PpbVector ManagementSkillPenalty(PpbVector fullSkills, int managementJc)
+        {
+            var factor = BaronTimeRules.ManagementSkillFactor(managementJc);
+            if (factor >= 1m || fullSkills is null)
+                return new PpbVector();
+
+            return ScalePpbToIntegers(fullSkills, factor - 1m);
         }
 
         public static PpbVector InfluenceFromSkills(CharacterDTO? character)
@@ -755,16 +837,304 @@ namespace DagoniteEmpire.Pages.Barony
             return BaronSkillPpbFormulas.Compute(Special, Base, Attr);
         }
 
-        public static PpbVector InfluenceFromPrestigeHonor(int prestige, int honor)
+        public static PpbVector InfluenceFromPrestigeHonorFear(int prestige, int honor, int fear) =>
+            BaronReputationTiers.InfluenceFromScores(prestige, honor, fear);
+
+        // --- Baron Card: Prestige / Honor / Fear ---
+
+        /// <summary>
+        /// Lord's Seat contribution to PHP. Prestige = Σ (multiplier × purpose AdditivePrestige)
+        /// for active rooms with a purpose. Honor/Fear reserved for future purpose fields.
+        /// </summary>
+        public static PhpTotals SeatPhpContribution(
+            BaronySeatDTO? seat,
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates)
         {
-            var values = new PpbVector();
-            values[Ppb.Loyalty] = prestige / 2;
-            values[Ppb.Culture] = prestige / 3;
-            values[Ppb.Stability] = honor / 2;
-            values[Ppb.Law] = honor / 3;
-            values[Ppb.Defense] = honor / 4;
-            return values;
+            if (seat?.Rooms is null || seat.Rooms.Count == 0)
+                return PhpTotals.Zero;
+
+            var purposes = (purposeTemplates ?? Enumerable.Empty<SeatPurposeTemplateDTO>())
+                .ToDictionary(p => p.Id);
+
+            decimal prestige = 0m;
+            foreach (var room in seat.Rooms)
+            {
+                if (room.IsRuin)
+                    continue;
+                if (room.PurposeTemplateId is not int pid || !purposes.TryGetValue(pid, out var purpose))
+                    continue;
+
+                prestige += room.PrestigeMultiplier * purpose.AdditivePrestige;
+            }
+
+            return new PhpTotals(
+                Prestige: (int)Math.Round(prestige, MidpointRounding.AwayFromZero),
+                Honor: 0,
+                Fear: 0);
         }
+
+        public static List<BaronPhpRow> BuildPhpRows(
+            PhpTotals seatContribution,
+            PhpTotals itemsContribution,
+            IEnumerable<BaronPhpSourceDTO>? customSources)
+        {
+            var rows = new List<BaronPhpRow>
+            {
+                new()
+                {
+                    Source = BaronPhpSourceLabel.FromSeat,
+                    Prestige = seatContribution.Prestige,
+                    Honor = seatContribution.Honor,
+                    Fear = seatContribution.Fear,
+                    IsSystem = true,
+                    Description =
+                        "Sum of chamber prestige from Lord's Seat (purpose prestige × chamber multiplier). "
+                        + "Honor and Fear from the seat will appear when purpose templates define them.",
+                },
+                new()
+                {
+                    Source = BaronPhpSourceLabel.FromItems,
+                    Prestige = itemsContribution.Prestige,
+                    Honor = itemsContribution.Honor,
+                    Fear = itemsContribution.Fear,
+                    IsSystem = true,
+                    Description =
+                        "Trophies, treasures and artifacts: each item's Prestige / Honor / Fear "
+                        + "× the chamber prestige multiplier of the room where it is displayed "
+                        + "(×1 if not placed).",
+                },
+            };
+
+            foreach (var source in customSources ?? Enumerable.Empty<BaronPhpSourceDTO>())
+            {
+                rows.Add(new BaronPhpRow
+                {
+                    Source = source.Source,
+                    Prestige = source.Prestige,
+                    Honor = source.Honor,
+                    Fear = source.Fear,
+                    IsSystem = false,
+                    SourceId = source.Id,
+                    Description = source.Description,
+                });
+            }
+
+            return rows;
+        }
+
+        /// <summary>
+        /// Artifacts contribution: Σ (base PHP × chamber PrestigeMultiplier).
+        /// Unplaced items use multiplier 1.
+        /// </summary>
+        public static PhpTotals ArtifactsPhpContribution(
+            IEnumerable<BaronArtifactDTO>? artifacts,
+            BaronySeatDTO? seat)
+        {
+            var rooms = seat?.Rooms?
+                .Where(r => !r.IsRuin)
+                .ToDictionary(r => r.Id)
+                ?? new Dictionary<int, SeatRoomDTO>();
+
+            decimal prestige = 0m, honor = 0m, fear = 0m;
+            foreach (var item in artifacts ?? Enumerable.Empty<BaronArtifactDTO>())
+            {
+                var mult = 1m;
+                if (item.SeatRoomId is int roomId && rooms.TryGetValue(roomId, out var room))
+                    mult = room.PrestigeMultiplier <= 0 ? 1m : room.PrestigeMultiplier;
+
+                prestige += item.Prestige * mult;
+                honor += item.Honor * mult;
+                fear += item.Fear * mult;
+            }
+
+            return new PhpTotals(
+                Prestige: (int)Math.Round(prestige, MidpointRounding.AwayFromZero),
+                Honor: (int)Math.Round(honor, MidpointRounding.AwayFromZero),
+                Fear: (int)Math.Round(fear, MidpointRounding.AwayFromZero));
+        }
+
+        /// <summary>Effective chamber multiplier for an artifact (1 if unplaced / ruin / missing).</summary>
+        public static decimal ArtifactChamberBonus(BaronArtifactDTO item, BaronySeatDTO? seat)
+        {
+            if (item.SeatRoomId is not int roomId || seat?.Rooms is null)
+                return 1m;
+
+            var room = seat.Rooms.FirstOrDefault(r => r.Id == roomId && !r.IsRuin);
+            if (room is null)
+                return 1m;
+
+            return room.PrestigeMultiplier <= 0 ? 1m : room.PrestigeMultiplier;
+        }
+
+        public static string ArtifactRoomLabel(BaronArtifactDTO item, BaronySeatDTO? seat)
+        {
+            if (item.SeatRoomId is not int roomId || seat?.Rooms is null)
+                return "—";
+
+            var room = seat.Rooms.FirstOrDefault(r => r.Id == roomId);
+            return room is null ? "—" : (string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name);
+        }
+
+        /// <summary>Chamber name with prestige multiplier, e.g. <c>Great Hall ×1.5</c>.</summary>
+        public static string ArtifactLocationLabel(BaronArtifactDTO item, BaronySeatDTO? seat)
+        {
+            var roomName = ArtifactRoomLabel(item, seat);
+            if (roomName == "—")
+                return "—";
+
+            var mult = ArtifactChamberBonus(item, seat);
+            return $"{roomName} ×{mult:0.##}";
+        }
+
+        public static string ArtifactLocationTooltip(BaronArtifactDTO item, BaronySeatDTO? seat)
+        {
+            if (item.SeatRoomId is not int roomId || seat?.Rooms is null)
+            {
+                return "Not placed in a Lord's Seat chamber. Prestige, Honor and Fear use ×1 "
+                    + "(no chamber multiplier).";
+            }
+
+            var room = seat.Rooms.FirstOrDefault(r => r.Id == roomId);
+            if (room is null)
+            {
+                return "Chamber not found. Prestige, Honor and Fear use ×1.";
+            }
+
+            var name = string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name;
+            var mult = room.IsRuin
+                ? 1m
+                : (room.PrestigeMultiplier <= 0 ? 1m : room.PrestigeMultiplier);
+            var size = room.SizeCategory;
+            var capacity = BaronArtifactCapacity.LimitLabel(size);
+            var lines = new List<string>
+            {
+                $"Location: {name}",
+                $"Size: {size} (artifact capacity {capacity})",
+                $"Chamber prestige multiplier: ×{mult:0.##}",
+                "This multiplier is applied to the item's Prestige, Honor and Fear.",
+            };
+            if (room.IsRuin)
+                lines.Add("This chamber is a ruin — multiplier treated as ×1.");
+            return string.Join("\n", lines);
+        }
+
+        /// <summary>
+        /// How many artifacts already occupy a chamber (optionally excluding one being edited).
+        /// </summary>
+        public static int ArtifactCountInRoom(
+            IEnumerable<BaronArtifactDTO>? artifacts,
+            int roomId,
+            int? excludeArtifactId = null)
+        {
+            return (artifacts ?? Enumerable.Empty<BaronArtifactDTO>())
+                .Count(a => a.SeatRoomId == roomId
+                    && (excludeArtifactId is null || a.Id != excludeArtifactId.Value));
+        }
+
+        /// <summary>
+        /// Returns an error message if placing into the room would exceed capacity; otherwise null.
+        /// </summary>
+        public static string? ArtifactCapacityError(
+            SeatRoomDTO? room,
+            IEnumerable<BaronArtifactDTO>? artifacts,
+            int? excludeArtifactId = null)
+        {
+            if (room is null || room.IsRuin)
+                return "Choose an active chamber, or leave location empty.";
+
+            var max = BaronArtifactCapacity.MaxForSize(room.SizeCategory);
+            if (max is null)
+                return null;
+
+            var used = ArtifactCountInRoom(artifacts, room.Id, excludeArtifactId);
+            if (used >= max.Value)
+            {
+                return $"{room.Name} is full ({used}/{max} artifacts for {room.SizeCategory} chambers). "
+                    + "Remove an item or choose another room.";
+            }
+
+            return null;
+        }
+
+        public static PhpTotals SumPhpRows(IEnumerable<BaronPhpRow>? rows)
+        {
+            var total = PhpTotals.Zero;
+            if (rows is null)
+                return total;
+
+            foreach (var row in rows)
+                total = total.Add(row.Prestige, row.Honor, row.Fear);
+
+            return total;
+        }
+
+        // --- Baron Card: Time (JC) ---
+
+        /// <summary>
+        /// Attribute score used for JC pool (same base as health: SumAbsolute).
+        /// </summary>
+        public static int AttributeSumAbsolute(CharacterDTO? character, string attributeName)
+        {
+            if (character?.Attributes is null)
+                return 0;
+
+            foreach (var a in character.Attributes)
+            {
+                if (string.Equals(a.Name, attributeName, StringComparison.OrdinalIgnoreCase))
+                    return a.SumAbsolute;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// JC pool: (Endurance + Willpower) × 10, then ± percent modifiers.
+        /// Management = sum of Management actions; Adventure weeks = Adventure JC / 25.
+        /// </summary>
+        public static BaronTimeBudget BuildTimeBudget(
+            CharacterDTO? character,
+            IEnumerable<BaronTimeModifierDTO>? modifiers,
+            IEnumerable<BaronTimeActionDTO>? actions)
+        {
+            var endurance = AttributeSumAbsolute(character, SD.Attributes.Endurance);
+            var willpower = AttributeSumAbsolute(character, SD.Attributes.Willpower);
+            var baseJc = (endurance + willpower) * BaronTimeRules.AttributeFactor;
+
+            var modList = modifiers?.ToList() ?? new List<BaronTimeModifierDTO>();
+            var percent = modList.Sum(m => m.Percent);
+            var totalJc = (int)Math.Round(
+                baseJc * (1m + percent / 100m),
+                MidpointRounding.AwayFromZero);
+
+            var actionList = actions?.ToList() ?? new List<BaronTimeActionDTO>();
+            var spent = actionList.Sum(a => a.CostJc);
+            var management = actionList
+                .Where(a => string.Equals(a.Kind, BaronTimeActionKind.Management, StringComparison.OrdinalIgnoreCase))
+                .Sum(a => a.CostJc);
+            var adventure = actionList
+                .Where(a => string.Equals(a.Kind, BaronTimeActionKind.Adventure, StringComparison.OrdinalIgnoreCase))
+                .Sum(a => a.CostJc);
+            var weeks = adventure / (decimal)BaronTimeRules.WeeklyExpeditionJc;
+
+            return new BaronTimeBudget(
+                Endurance: endurance,
+                Willpower: willpower,
+                BaseJc: baseJc,
+                ModifierPercent: percent,
+                TotalJc: totalJc,
+                SpentJc: spent,
+                RemainingJc: totalJc - spent,
+                ManagementJc: management,
+                AdventureJc: adventure,
+                ExpeditionWeeks: weeks);
+        }
+
+        public static string FormatJc(int value) => $"{value} JC";
+
+        public static string FormatPercent(decimal percent) =>
+            percent > 0 ? $"+{percent:0.##}%"
+            : percent < 0 ? $"{percent:0.##}%"
+            : "±0%";
 
         // --- Offices: advisor influence on barony ---
 

@@ -4,6 +4,7 @@ namespace DA_Common.Barony
     public readonly struct BaronInfluenceSource
     {
         public const string FromSkills = "From Skills";
-        public const string FromPrestigeHonor = "From Prestige and Honor";
+        public const string FromManagementTime = "From management time";
+        public const string FromPrestigeHonor = "From Prestige, Honor and Fear";
     }
 }

@@ -1,0 +1,389 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IDialogService _dialogService
+
+<BaronySection Title="Baron's Time">
+    <Summary>
+        <div class="baron-php-summary">
+            <span class="baron-php-chip">Pool @_budget.TotalJc JC</span>
+            <span class="baron-php-chip">Spent @_budget.SpentJc</span>
+            <span class="baron-php-chip @(_budget.RemainingJc < 0 ? "baron-time-chip--warn" : "")">
+                Left @_budget.RemainingJc
+            </span>
+        </div>
+    </Summary>
+    <ChildContent>
+        <div class="baron-time-budget">
+            <div class="baron-time-budget__formula">
+                <BaronyTooltip Title="JC pool"
+                               Text="@PoolTooltip()">
+                    <span>
+                        (Endurance @_budget.Endurance + Willpower @_budget.Willpower) × @BaronTimeRules.AttributeFactor
+                        = @_budget.BaseJc JC
+                        @if (_budget.ModifierPercent != 0m)
+                        {
+                            <text> · modifiers @BaronyCalc.FormatPercent(_budget.ModifierPercent) → <b>@_budget.TotalJc JC</b></text>
+                        }
+                        else
+                        {
+                            <text> → <b>@_budget.TotalJc JC</b></text>
+                        }
+                    </span>
+                </BaronyTooltip>
+            </div>
+
+            <div class="baron-time-bars">
+                <div class="baron-time-bar">
+                    <div class="baron-time-bar__label">
+                        <span>Turn allocation</span>
+                        <span>@_budget.SpentJc / @_budget.TotalJc JC</span>
+                    </div>
+                    <div class="baron-time-bar__track">
+                        <div class="baron-time-bar__fill @UsedBarClass()"
+                             style="@($"width:{UsedWidth()}%")"></div>
+                    </div>
+                </div>
+                <div class="baron-time-bar">
+                    <div class="baron-time-bar__label">
+                        <span>Barony management</span>
+                        <span>@_budget.ManagementJc / @BaronTimeRules.RequiredManagementJc JC</span>
+                    </div>
+                    <div class="baron-time-bar__track">
+                        <div class="baron-time-bar__fill @ManagementBarClass()"
+                             style="@($"width:{ManagementWidth()}%")"></div>
+                        <div class="baron-time-bar__marker"
+                             title="Required @BaronTimeRules.RequiredManagementJc JC"
+                             style="left:100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            @if (_budget.IsManagementShort || _budget.IsExpeditionOverLimit || _budget.IsOverspent)
+            {
+                <div class="baron-time-warnings">
+                    @if (_budget.IsManagementShort)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1">
+                            Management shortfall: @_budget.ManagementJc / @BaronTimeRules.RequiredManagementJc JC.
+                            Expect penalties to stability, loyalty, income, etc.
+                        </MudAlert>
+                    }
+                    @if (_budget.IsExpeditionOverLimit)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1">
+                            Expeditions: @_budget.ExpeditionWeeks.ToString("0.##") weeks
+                            (@_budget.AdventureJc JC). Safe limit is @BaronTimeRules.MaxSafeExpeditionWeeks weeks
+                            (@BaronTimeRules.MaxSafeExpeditionJc JC) without extra management penalties.
+                        </MudAlert>
+                    }
+                    @if (_budget.IsOverspent)
+                    {
+                        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-1">
+                            Overspent by @Math.Abs(_budget.RemainingJc) JC this turn.
+                        </MudAlert>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="baron-time-block">
+            <div class="baron-time-block__title">Actions this turn</div>
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table">
+                    <thead>
+                        <tr>
+                            <th class="ppb-row-label source-col">Action</th>
+                            <th>Type</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var action in _actions)
+                        {
+                            <tr class="@(action.IsSystem ? "source-row--system" : "")">
+                                <td class="ppb-row-label source-col">
+                                    <div class="source-cell">
+                                        @if (!string.IsNullOrWhiteSpace(action.Description))
+                                        {
+                                            <BaronyTooltip Title="Description" Text="@action.Description">
+                                                <span class="source-cell__name">@action.Name</span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            <span class="source-cell__name">@action.Name</span>
+                                        }
+                                        @if (CanEdit)
+                                        {
+                                            <span class="source-cell__actions">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditActionAsync(action))" />
+                                                @if (!action.IsSystem)
+                                                {
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteActionAsync(action))" />
+                                                }
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>@action.Kind</td>
+                                <td class="baron-time-cost">@action.CostJc JC</td>
+                            </tr>
+                        }
+                        <tr class="ppb-summary-row">
+                            <td class="ppb-row-label" colspan="2">Σ spent</td>
+                            <td class="baron-time-cost"><b>@_budget.SpentJc JC</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            @if (CanEdit)
+            {
+                <MudButton Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.Add" OnClick="AddActionAsync">
+                    Add Action
+                </MudButton>
+            }
+        </div>
+
+        <div class="baron-time-block">
+            <div class="baron-time-block__title">Pool modifiers (%)</div>
+            @if (_modifiers.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                    No modifiers. Effects that raise or lower available time (illness, blessings, events) go here.
+                </MudText>
+            }
+            else
+            {
+                <div style="overflow-x:auto;">
+                    <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table">
+                        <thead>
+                            <tr>
+                                <th class="ppb-row-label source-col">Source</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var mod in _modifiers)
+                            {
+                                <tr>
+                                    <td class="ppb-row-label source-col">
+                                        <div class="source-cell">
+                                            @if (!string.IsNullOrWhiteSpace(mod.Description))
+                                            {
+                                                <BaronyTooltip Title="Description" Text="@mod.Description">
+                                                    <span class="source-cell__name">@mod.Source</span>
+                                                </BaronyTooltip>
+                                            }
+                                            else
+                                            {
+                                                <span class="source-cell__name">@mod.Source</span>
+                                            }
+                                            @if (CanEdit)
+                                            {
+                                                <span class="source-cell__actions">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditModifierAsync(mod))" />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteModifierAsync(mod))" />
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="@PercentClass(mod.Percent)">@BaronyCalc.FormatPercent(mod.Percent)</td>
+                                </tr>
+                            }
+                            <tr class="ppb-summary-row">
+                                <td class="ppb-row-label">Σ modifiers</td>
+                                <td class="@PercentClass(_budget.ModifierPercent)"><b>@BaronyCalc.FormatPercent(_budget.ModifierPercent)</b></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            }
+            @if (CanEdit)
+            {
+                <MudButton Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.Add" OnClick="AddModifierAsync">
+                    Add Modifier
+                </MudButton>
+            }
+        </div>
+
+        <MudText Typo="Typo.caption" Class="mt-3" Style="color:var(--barony-muted);">
+            One turn = one quarter. Weekly expedition / adventure = @BaronTimeRules.WeeklyExpeditionJc JC
+            (up to @BaronTimeRules.MaxSafeExpeditionWeeks weeks / @BaronTimeRules.MaxSafeExpeditionJc JC without extra management penalties).
+            Great Hunt: @BaronTimeSuggestedCosts.GreatHuntJc JC (baron or officer) + @BaronTimeSuggestedCosts.GreatHuntProduction Production + @BaronTimeSuggestedCosts.GreatHuntGold gold;
+            food from the lead hunter’s Tracking, at a cost to forest fauna.
+            Other costs are set during play.
+        </MudText>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public BaronyDTO Barony { get; set; } = new();
+    [Parameter] public CharacterDTO? Character { get; set; }
+    [Parameter] public List<BaronTimeActionDTO> Actions { get; set; } = new();
+    [Parameter] public List<BaronTimeModifierDTO> Modifiers { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
+    [Inject] private ISnackbar _snackBar { get; set; } = default!;
+
+    private List<BaronTimeActionDTO> _actions = new();
+    private List<BaronTimeModifierDTO> _modifiers = new();
+    private BaronTimeBudget _budget;
+
+    protected override void OnParametersSet()
+    {
+        _actions = (Actions ?? new())
+            .OrderBy(a => a.IsSystem ? 0 : 1)
+            .ThenBy(a => a.SortOrder)
+            .ThenBy(a => a.Id)
+            .ToList();
+        _modifiers = (Modifiers ?? new())
+            .OrderBy(m => m.SortOrder)
+            .ThenBy(m => m.Id)
+            .ToList();
+        _budget = BaronyCalc.BuildTimeBudget(Character, _modifiers, _actions);
+    }
+
+    private string PoolTooltip() =>
+        $"Base JC = (Endurance + Willpower) × {BaronTimeRules.AttributeFactor}.\n"
+        + $"Endurance {_budget.Endurance}, Willpower {_budget.Willpower} → base {_budget.BaseJc}.\n"
+        + $"Percent modifiers: {BaronyCalc.FormatPercent(_budget.ModifierPercent)} → pool {_budget.TotalJc} JC.";
+
+    private double UsedWidth() =>
+        _budget.TotalJc <= 0 ? 0 : Math.Min(100d, (double)_budget.SpentJc * 100d / _budget.TotalJc);
+
+    private double ManagementWidth() =>
+        Math.Min(100d, (double)_budget.ManagementJc * 100d / BaronTimeRules.RequiredManagementJc);
+
+    private string UsedBarClass() =>
+        _budget.IsOverspent ? "baron-time-bar__fill--over"
+        : _budget.UsedPercent >= 95m ? "baron-time-bar__fill--full"
+        : "baron-time-bar__fill--ok";
+
+    private string ManagementBarClass() =>
+        _budget.IsManagementShort ? "baron-time-bar__fill--short"
+        : "baron-time-bar__fill--mgmt";
+
+    private static string PercentClass(decimal percent) =>
+        percent > 0 ? "php-cell php-cell--pos"
+        : percent < 0 ? "php-cell php-cell--neg"
+        : "php-cell";
+
+    private async Task AddActionAsync() =>
+        await OpenActionDialog(new BaronTimeActionDTO
+        {
+            BaronyId = Barony.Id,
+            Kind = BaronTimeActionKind.Other,
+            CostJc = BaronTimeRules.WeeklyExpeditionJc,
+            SortOrder = _actions.Count == 0 ? 1 : _actions.Max(a => a.SortOrder) + 1,
+        });
+
+    private async Task EditActionAsync(BaronTimeActionDTO item) =>
+        await OpenActionDialog(CloneAction(item));
+
+    private async Task OpenActionDialog(BaronTimeActionDTO draft)
+    {
+        var isNew = draft.Id <= 0;
+        var parameters = new DialogParameters<BaronTimeActionEditDialog>
+        {
+            { x => x.Action, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<BaronTimeActionEditDialog>(
+            isNew ? "Add Action" : "Edit Action",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronTimeActionDTO saved)
+            return;
+
+        if (string.IsNullOrWhiteSpace(saved.Name))
+        {
+            _snackBar.Add("Action name is required.", Severity.Warning);
+            return;
+        }
+
+        await _baronyRepo.SaveBaronTimeAction(saved);
+        _snackBar.Add("Action saved.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task DeleteActionAsync(BaronTimeActionDTO item)
+    {
+        if (item.Id <= 0 || item.IsSystem)
+            return;
+
+        await _baronyRepo.DeleteBaronTimeAction(item.Id);
+        _snackBar.Add("Action removed.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task AddModifierAsync() =>
+        await OpenModifierDialog(new BaronTimeModifierDTO
+        {
+            BaronyId = Barony.Id,
+            SortOrder = _modifiers.Count == 0 ? 0 : _modifiers.Max(m => m.SortOrder) + 1,
+        });
+
+    private async Task EditModifierAsync(BaronTimeModifierDTO item) =>
+        await OpenModifierDialog(new BaronTimeModifierDTO
+        {
+            Id = item.Id,
+            BaronyId = item.BaronyId,
+            Source = item.Source,
+            Percent = item.Percent,
+            Description = item.Description,
+            SortOrder = item.SortOrder,
+        });
+
+    private async Task OpenModifierDialog(BaronTimeModifierDTO draft)
+    {
+        var isNew = draft.Id <= 0;
+        var parameters = new DialogParameters<BaronTimeModifierEditDialog>
+        {
+            { x => x.Modifier, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<BaronTimeModifierEditDialog>(
+            isNew ? "Add Modifier" : "Edit Modifier",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronTimeModifierDTO saved)
+            return;
+
+        if (string.IsNullOrWhiteSpace(saved.Source))
+        {
+            _snackBar.Add("Source is required.", Severity.Warning);
+            return;
+        }
+
+        await _baronyRepo.SaveBaronTimeModifier(saved);
+        _snackBar.Add("Modifier saved.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task DeleteModifierAsync(BaronTimeModifierDTO item)
+    {
+        if (item.Id <= 0)
+            return;
+
+        await _baronyRepo.DeleteBaronTimeModifier(item.Id);
+        _snackBar.Add("Modifier removed.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private static BaronTimeActionDTO CloneAction(BaronTimeActionDTO a) => new()
+    {
+        Id = a.Id,
+        BaronyId = a.BaronyId,
+        Name = a.Name,
+        Kind = a.Kind,
+        CostJc = a.CostJc,
+        Description = a.Description,
+        SortOrder = a.SortOrder,
+        IsSystem = a.IsSystem,
+    };
+}

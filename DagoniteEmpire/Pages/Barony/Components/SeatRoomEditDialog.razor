@@ -24,20 +24,32 @@
                 }
             </MudSelect>
             <div class="seat-room-edit-dialog__grid-fields">
-                <MudNumericField T="int" @bind-Value="_room.GridX" Label="Grid X" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
-                <MudNumericField T="int" @bind-Value="_room.GridY" Label="Grid Y" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
-                <MudNumericField T="int" @bind-Value="_room.GridW" Label="Width (tiles)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
-                <MudNumericField T="int" @bind-Value="_room.GridH" Label="Height (tiles)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
+                <MudNumericField T="int" Value="_room.GridX" ValueChanged="OnGridXChanged" Label="Grid X" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
+                <MudNumericField T="int" Value="_room.GridY" ValueChanged="OnGridYChanged" Label="Grid Y" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
+                <MudNumericField T="int" Value="_room.GridW" ValueChanged="OnGridWChanged" Label="Width (tiles)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
+                <MudNumericField T="int" Value="_room.GridH" ValueChanged="OnGridHChanged" Label="Height (tiles)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
             </div>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                Size: @_room.SizeCategory (@_room.TileCount tiles) — thresholds configurable later.
+                Size: @SeatRoomSizeCategory.OptionLabel(_room.SizeCategory) (@_room.TileCount tiles)
             </MudText>
-            <MudSelect T="string" @bind-Value="_room.Material" Label="Material" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field">
+            <MudSelect T="string"
+                       Value="_room.Material"
+                       ValueChanged="OnMaterialChanged"
+                       Label="Material"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
                 @foreach (var m in SeatRoomMaterial.All)
                 {
-                    <MudSelectItem Value="@m">@m</MudSelectItem>
+                    <MudSelectItem Value="@m">@SeatRoomMaterial.OptionLabel(m)</MudSelectItem>
                 }
             </MudSelect>
+            <MudText Typo="Typo.caption" Class="seat-room-prestige-hint">
+                Prestige multiplier = material bonus + size bonus (added, not multiplied).
+                Example: Bricks (1.3) + Large (1.5) = 2.8.
+                Current suggestion: <strong>@SeatRoomPrestige.FormulaHint(_room.Material, _room.TileCount)</strong>.
+                Changing material or chamber size updates the field; you can still override it manually.
+            </MudText>
             <MudSelect T="string" @bind-Value="_room.Status" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field">
                 @foreach (var s in SeatRoomStatus.All)
                 {
@@ -51,7 +63,8 @@
                              Margin="Margin.Dense"
                              Min="0.1m"
                              Step="0.1m"
-                             Class="baron-influence-field" />
+                             Class="baron-influence-field"
+                             HelperText="@($"Suggested from material + size: {_suggested:0.##}")" />
             <MudNumericField T="int"
                              @bind-Value="_room.SortOrder"
                              Label="Sort order"
@@ -124,6 +137,8 @@
 
     private SeatRoomDTO _room = new();
 
+    private decimal _suggested => SeatRoomPrestige.Suggested(_room.Material, _room.TileCount);
+
     private IEnumerable<int> LevelOptions
     {
         get
@@ -156,7 +171,7 @@
             GridY = Room.GridY,
             GridW = Room.GridW,
             GridH = Room.GridH,
-            Material = Room.Material,
+            Material = string.IsNullOrWhiteSpace(Room.Material) ? SeatRoomMaterial.Stone : Room.Material,
             PrestigeMultiplier = Room.PrestigeMultiplier,
             Status = Room.Status,
             Additive = Room.Additive.Clone(),
@@ -171,7 +186,36 @@
                 SortOrder = t.SortOrder,
             }).ToList(),
         };
+
+        // New chambers start from the suggested material + size total.
+        if (_room.Id <= 0)
+            ApplySuggestedPrestige();
     }
+
+    private void OnMaterialChanged(string material)
+    {
+        _room.Material = material;
+        ApplySuggestedPrestige();
+    }
+
+    private void OnGridXChanged(int value) => _room.GridX = value;
+
+    private void OnGridYChanged(int value) => _room.GridY = value;
+
+    private void OnGridWChanged(int value)
+    {
+        _room.GridW = value;
+        ApplySuggestedPrestige();
+    }
+
+    private void OnGridHChanged(int value)
+    {
+        _room.GridH = value;
+        ApplySuggestedPrestige();
+    }
+
+    private void ApplySuggestedPrestige() =>
+        _room.PrestigeMultiplier = SeatRoomPrestige.Suggested(_room.Material, _room.TileCount);
 
     private void OnPurposeChanged(int? purposeId) => _room.PurposeTemplateId = purposeId;
 

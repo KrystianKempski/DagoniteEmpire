@@ -45,13 +45,17 @@ namespace DA_Business.Repository.BaronyRepos
         ];
 
         /// <summary>
-        /// Adds any missing default senior-house relations for <paramref name="baronyId"/>.
-        /// Idempotent: skips entries whose Name already exists in Senior Houses for that barony.
+        /// Adds any missing default senior-house relations for <paramref name="baronyId"/>
+        /// and ensures every Senior Houses contact has +10 “ally, empire vassal”.
         /// </summary>
         public static void EnsureForBarony(ApplicationDbContext ctx, int baronyId)
         {
-            var existingNames = ctx.BaronyRelations
+            var existing = ctx.BaronyRelations
+                .Include(r => r.Modifiers)
                 .Where(r => r.BaronyId == baronyId && r.Category == RelationCategory.SeniorHouses)
+                .ToList();
+
+            var existingNames = existing
                 .Select(r => r.Name)
                 .ToList();
 
@@ -60,7 +64,7 @@ namespace DA_Business.Repository.BaronyRepos
                 if (existingNames.Any(n => string.Equals(n, entry.Name, StringComparison.OrdinalIgnoreCase)))
                     continue;
 
-                ctx.BaronyRelations.Add(new BaronyRelation
+                var relation = new BaronyRelation
                 {
                     BaronyId = baronyId,
                     Category = RelationCategory.SeniorHouses,
@@ -73,8 +77,13 @@ namespace DA_Business.Repository.BaronyRepos
                     RelationDescription = string.Empty,
                     Notes = null,
                     SortOrder = entry.SortOrder,
-                });
+                };
+                ctx.BaronyRelations.Add(relation);
+                existing.Add(relation);
             }
+
+            foreach (var relation in existing)
+                EnsureAllyEmpireVassalModifier(relation);
         }
 
         public static async Task EnsureForAllBaroniesAsync(ApplicationDbContext ctx)
@@ -83,6 +92,28 @@ namespace DA_Business.Repository.BaronyRepos
             foreach (var id in baronyIds)
                 EnsureForBarony(ctx, id);
             await ctx.SaveChangesAsync();
+        }
+
+        private static void EnsureAllyEmpireVassalModifier(BaronyRelation relation)
+        {
+            relation.Modifiers ??= new List<BaronyRelationModifier>();
+            var existing = relation.Modifiers.FirstOrDefault(m =>
+                string.Equals(
+                    m.Description,
+                    RelationSeniorDefaults.AllyEmpireVassalModifier,
+                    StringComparison.OrdinalIgnoreCase));
+            if (existing is not null)
+            {
+                existing.Value = RelationSeniorDefaults.AllyEmpireVassalAttitude;
+                return;
+            }
+
+            relation.Modifiers.Add(new BaronyRelationModifier
+            {
+                Description = RelationSeniorDefaults.AllyEmpireVassalModifier,
+                Value = RelationSeniorDefaults.AllyEmpireVassalAttitude,
+                SortOrder = 0,
+            });
         }
     }
 }

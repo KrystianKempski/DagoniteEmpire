@@ -16,6 +16,11 @@
     <CascadingValue Value="@_viewOptions">
         <BaronyResourceHud />
         @Body
+        <AuthorizeView Roles="@SD.Role_DukePlayer">
+            <Authorized>
+                <BaronLetterInboxFab />
+            </Authorized>
+        </AuthorizeView>
     </CascadingValue>
 
     <AuthorizeView Roles="@BaronRoles">

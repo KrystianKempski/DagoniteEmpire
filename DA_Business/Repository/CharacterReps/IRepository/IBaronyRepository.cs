@@ -70,6 +70,33 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronInfluenceModifierDTO> SaveBaronInfluenceModifier(BaronInfluenceModifierDTO dto);
         Task<int> DeleteBaronInfluenceModifier(int id);
 
+        // --- Baron Card PHP (Prestige / Honor / Fear) ---
+        Task<List<BaronPhpSourceDTO>> GetBaronPhpSources(int baronyId);
+        Task<BaronPhpSourceDTO> SaveBaronPhpSource(BaronPhpSourceDTO dto);
+        Task<int> DeleteBaronPhpSource(int id);
+
+        // --- Baron Card artifacts ---
+        Task<List<BaronArtifactDTO>> GetBaronArtifacts(int baronyId);
+        Task<BaronArtifactDTO> SaveBaronArtifact(BaronArtifactDTO dto);
+        Task<int> DeleteBaronArtifact(int id);
+
+        // --- Baron Card time (JC) ---
+        Task EnsureBaronTimeDefaults(int baronyId);
+        Task<List<BaronTimeModifierDTO>> GetBaronTimeModifiers(int baronyId);
+        Task<BaronTimeModifierDTO> SaveBaronTimeModifier(BaronTimeModifierDTO dto);
+        Task<int> DeleteBaronTimeModifier(int id);
+        Task<List<BaronTimeActionDTO>> GetBaronTimeActions(int baronyId);
+        Task<BaronTimeActionDTO> SaveBaronTimeAction(BaronTimeActionDTO dto);
+        Task<int> DeleteBaronTimeAction(int id);
+
+        // --- Baron letters (threads + messages) ---
+        Task<List<BaronLetterThreadDTO>> GetLetterThreads(int baronyId);
+        Task<BaronLetterThreadDTO> SaveLetterThread(BaronLetterThreadDTO dto);
+        Task<int> DeleteLetterThread(int id);
+        Task<BaronLetterMessageDTO> SaveLetterMessage(BaronLetterMessageDTO dto);
+        Task<int> DeleteLetterMessage(int id);
+        Task MarkLetterThreadSeenByBaron(int threadId);
+
         // --- Offices influence ---
         Task<List<AdvisorInfluenceModifierDTO>> GetAdvisorInfluenceModifiers(int baronyId);
         Task<AdvisorInfluenceModifierDTO> SaveAdvisorInfluenceModifier(AdvisorInfluenceModifierDTO dto);

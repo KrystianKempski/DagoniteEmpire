@@ -28,6 +28,7 @@
     [Parameter] public BaronyDTO Barony { get; set; } = new();
     [Parameter] public CharacterDTO? Character { get; set; }
     [Parameter] public List<BaronInfluenceModifierDTO> CustomModifiers { get; set; } = new();
+    [Parameter] public List<BaronTimeActionDTO> TimeActions { get; set; } = new();
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
@@ -41,7 +42,9 @@
 
     private void RebuildRows()
     {
-        _rows = BaronyCalc.BuildInfluenceRows(Character, Barony.Prestige, Barony.Honor, CustomModifiers);
+        var managementJc = BaronyCalc.ManagementJcSpent(TimeActions);
+        _rows = BaronyCalc.BuildInfluenceRows(
+            Character, Barony.Prestige, Barony.Honor, Barony.Fear, CustomModifiers, managementJc);
         _total = BaronyCalc.SumInfluenceRows(_rows);
     }
 

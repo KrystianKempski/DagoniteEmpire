@@ -28,6 +28,9 @@ namespace DA_DataAccess.BaronyData
 
         public int SortOrder { get; set; }
 
+        /// <summary>When set, this Vassals contact is synced from a terrain fief.</summary>
+        public int? FiefId { get; set; }
+
         public List<BaronyRelationModifier> Modifiers { get; set; } = new();
     }
 

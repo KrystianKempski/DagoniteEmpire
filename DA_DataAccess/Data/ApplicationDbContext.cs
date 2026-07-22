@@ -82,6 +82,12 @@ namespace DA_DataAccess.Data
         public DbSet<SeatPurposeTemplate> SeatPurposeTemplates { get; set; }
         public DbSet<BaronyResourceSource> BaronyResourceSources { get; set; }
         public DbSet<BaronPurseSource> BaronPurseSources { get; set; }
+        public DbSet<BaronPhpSource> BaronPhpSources { get; set; }
+        public DbSet<BaronArtifact> BaronArtifacts { get; set; }
+        public DbSet<BaronTimeModifier> BaronTimeModifiers { get; set; }
+        public DbSet<BaronTimeAction> BaronTimeActions { get; set; }
+        public DbSet<BaronLetterThread> BaronLetterThreads { get; set; }
+        public DbSet<BaronLetterMessage> BaronLetterMessages { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -102,6 +108,47 @@ namespace DA_DataAccess.Data
                     .WithMany(r => r.Modifiers)
                     .HasForeignKey(m => m.RelationId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<BaronyRelation>(entity =>
+            {
+                entity.HasIndex(e => e.FiefId);
+            });
+
+            modelBuilder.Entity<BaronPhpSource>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+            });
+
+            modelBuilder.Entity<BaronArtifact>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => e.SeatRoomId);
+            });
+
+            modelBuilder.Entity<BaronTimeModifier>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+            });
+
+            modelBuilder.Entity<BaronTimeAction>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+            });
+
+            modelBuilder.Entity<BaronLetterThread>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => e.RelationId);
+                entity.HasMany(e => e.Messages)
+                    .WithOne(e => e.Thread!)
+                    .HasForeignKey(e => e.ThreadId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<BaronLetterMessage>(entity =>
+            {
+                entity.HasIndex(e => e.ThreadId);
             });
 
             // Configure SCRIBE entities

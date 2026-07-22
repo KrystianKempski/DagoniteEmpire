@@ -1,0 +1,199 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+
+            <MudSelect T="string"
+                       @bind-Value="_kind"
+                       Label="Type"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field"
+                       Dense="true">
+                @foreach (var kind in BaronArtifactKind.All)
+                {
+                    <MudSelectItem Value="@kind">@kind</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="string"
+                       @bind-Value="_origin"
+                       Label="Source"
+                       HelperText="How the item was obtained"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field"
+                       Dense="true">
+                @foreach (var origin in BaronArtifactOrigin.All)
+                {
+                    <MudSelectItem Value="@origin">@origin</MudSelectItem>
+                }
+            </MudSelect>
+
+            <div class="baron-php-edit-fields">
+                <MudNumericField @bind-Value="_prestige"
+                                 Label="Prestige"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Class="baron-influence-field php-field php-field--prestige" />
+                <MudNumericField @bind-Value="_honor"
+                                 Label="Honor"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Class="baron-influence-field php-field php-field--honor" />
+                <MudNumericField @bind-Value="_fear"
+                                 Label="Fear"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Class="baron-influence-field php-field php-field--fear" />
+            </div>
+
+            <MudSelect T="int?"
+                       Value="_seatRoomId"
+                       ValueChanged="OnRoomChanged"
+                       Label="Location"
+                       HelperText="@_roomHelper"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field"
+                       Dense="true"
+                       Clearable="true">
+                @foreach (var room in _rooms)
+                {
+                    <MudSelectItem T="int?" Value="@room.Id">@RoomOptionLabel(room)</MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (_selectedRoom is not null)
+            {
+                <MudText Typo="Typo.caption" Class="mt-1" Style="color:var(--barony-muted);">
+                    Chamber bonus: ×@_selectedRoom.PrestigeMultiplier.ToString("0.##")
+                    · Capacity: @_capacityUsed / @BaronArtifactCapacity.LimitLabel(_selectedRoom.SizeCategory)
+                    (@_selectedRoom.SizeCategory)
+                </MudText>
+            }
+
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          HelperText="Optional. Shown on hover over the name in the table."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="3"
+                          Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronArtifactDTO Artifact { get; set; } = new();
+    [Parameter] public BaronySeatDTO? Seat { get; set; }
+    [Parameter] public List<BaronArtifactDTO> ExistingArtifacts { get; set; } = new();
+
+    private string _name = string.Empty;
+    private string _kind = BaronArtifactKind.Other;
+    private string _origin = BaronArtifactOrigin.Acquired;
+    private int _prestige;
+    private int _honor;
+    private int _fear;
+    private int? _seatRoomId;
+    private string? _description;
+    private List<SeatRoomDTO> _rooms = new();
+    private string _roomHelper = "Chamber where the item is displayed (applies prestige multiplier).";
+
+    private SeatRoomDTO? _selectedRoom =>
+        _seatRoomId is int id ? _rooms.FirstOrDefault(r => r.Id == id) : null;
+
+    private int _capacityUsed =>
+        _selectedRoom is null
+            ? 0
+            : BaronyCalc.ArtifactCountInRoom(
+                ExistingArtifacts,
+                _selectedRoom.Id,
+                Artifact.Id > 0 ? Artifact.Id : null)
+              + 1;
+
+    protected override void OnInitialized()
+    {
+        _name = Artifact.Name;
+        _kind = string.IsNullOrWhiteSpace(Artifact.Kind) ? BaronArtifactKind.Other : Artifact.Kind;
+        _origin = string.IsNullOrWhiteSpace(Artifact.Origin) ? BaronArtifactOrigin.Acquired : Artifact.Origin;
+        _prestige = Artifact.Prestige;
+        _honor = Artifact.Honor;
+        _fear = Artifact.Fear;
+        _seatRoomId = Artifact.SeatRoomId;
+        _description = Artifact.Description;
+        _rooms = (Seat?.Rooms ?? new())
+            .Where(r => !r.IsRuin)
+            .OrderBy(r => r.SortOrder)
+            .ThenBy(r => r.Name)
+            .ToList();
+    }
+
+    private Task OnRoomChanged(int? roomId)
+    {
+        _seatRoomId = roomId;
+        return Task.CompletedTask;
+    }
+
+    private string RoomOptionLabel(SeatRoomDTO room)
+    {
+        var used = BaronyCalc.ArtifactCountInRoom(
+            ExistingArtifacts,
+            room.Id,
+            Artifact.Id > 0 ? Artifact.Id : null);
+        var limit = BaronArtifactCapacity.LimitLabel(room.SizeCategory);
+        var name = string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name;
+        return $"{name} (×{room.PrestigeMultiplier:0.##}, {used}/{limit})";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        if (_seatRoomId is int roomId)
+        {
+            var room = _rooms.FirstOrDefault(r => r.Id == roomId);
+            var capacityError = BaronyCalc.ArtifactCapacityError(
+                room,
+                ExistingArtifacts,
+                Artifact.Id > 0 ? Artifact.Id : null);
+            if (capacityError is not null)
+            {
+                _snackBar.Add(capacityError, Severity.Warning);
+                return;
+            }
+        }
+
+        Artifact.Name = _name.Trim();
+        Artifact.Kind = string.IsNullOrWhiteSpace(_kind) ? BaronArtifactKind.Other : _kind;
+        Artifact.Origin = string.IsNullOrWhiteSpace(_origin) ? BaronArtifactOrigin.Acquired : _origin;
+        Artifact.Prestige = _prestige;
+        Artifact.Honor = _honor;
+        Artifact.Fear = _fear;
+        Artifact.SeatRoomId = _seatRoomId;
+        Artifact.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        MudDialog.Close(DialogResult.Ok(Artifact));
+    }
+}

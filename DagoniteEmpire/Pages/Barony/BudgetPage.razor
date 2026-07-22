@@ -203,6 +203,7 @@ else if (_overview is not null)
     private CharacterDTO? _character;
     private List<BaronInfluenceModifierDTO> _baronModifiers = new();
     private List<AdvisorInfluenceModifierDTO> _advisorModifiers = new();
+    private int _managementJc = BaronTimeRules.RequiredManagementJc;
     private List<BudgetLine> _incomeLines = new();
     private List<BudgetLine> _expenseLines = new();
     private List<BaronPurseSourceDTO> _purseSources = new();
@@ -235,6 +236,8 @@ else if (_overview is not null)
         _character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
         _baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
         _advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+        _managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
 
         BuildBudget();
         NotifyResourceHud();
@@ -244,7 +247,7 @@ else if (_overview is not null)
     private void BuildBudget()
     {
         var panel = BaronyCalc.BuildDomainPanelRows(
-            _overview!, _character, _baronModifiers, _advisorModifiers);
+            _overview!, _character, _baronModifiers, _advisorModifiers, _managementJc);
         var goldFinal = panel.GrandTotal[Ppb.Treasury];
         var goldAdditive = BaronyCalc.SumAdditive(panel.AllRows)[Ppb.Treasury];
         var goldScaling = PpbFormat.Round(goldFinal - goldAdditive);

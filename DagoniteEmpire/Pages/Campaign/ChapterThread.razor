@@ -31,6 +31,7 @@
 @inject CallbackService _callbackService
 @inject IWikiLinkService _wikiLinkService
 @inject ILogger<ChapterThread> Logger
+@inject IBaronyRepository _baronyRepo
 @implements IAsyncDisposable
 
 <PageTitle>Dagonie Empire | Thread</PageTitle>
@@ -1096,6 +1097,7 @@ else
         allParams.Races = ApprovedRacesCache.ToList();
 
         allParams.SpecialSkills.AddRelatedParametes();
+        await BaronReputationCharacterOverlay.ApplyAsync(allParams, _baronyRepo, id);
         allParams.AllTraitsChange();
         allParams.Profession.CalculateClassParams(allParams.Attributes.GetAll());
         ICollection<WoundDTO> wounds = (await woundsTask).ToList();

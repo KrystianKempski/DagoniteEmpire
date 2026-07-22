@@ -1,4 +1,4 @@
-﻿using Abp.Collections.Extensions;
+using Abp.Collections.Extensions;
 using Castle.Core;
 using DA_Common;
 using DA_DataAccess.CharacterClasses;
@@ -45,8 +45,14 @@ namespace DA_Models.ComponentModels
         public string States =>
             CombatStateString.Format(TraitsTemporary.Select(t => new CombatStateEntry(t.Name, t.TraitValue)));
 
+        /// <summary>
+        /// Extra special-skill TempBonuses applied after temporary traits
+        /// (e.g. baron Prestige/Honor/Fear reputation). Not persisted.
+        /// </summary>
+        public IReadOnlyDictionary<string, int> ExternalSpecialSkillTempBonuses { get; set; } =
+            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-    public bool IsAdminOrMG { get; set; } = false;
+        public bool IsAdminOrMG { get; set; } = false;
 
         public int GetMaxLanguageSlots()
         {
@@ -97,6 +103,22 @@ namespace DA_Models.ComponentModels
                 ProfTraitsChange();
         }
 
+        /// <summary>Adds <see cref="ExternalSpecialSkillTempBonuses"/> into special-skill TempBonuses.</summary>
+        public void ApplyExternalSpecialSkillTempBonuses()
+        {
+            if (ExternalSpecialSkillTempBonuses is null || ExternalSpecialSkillTempBonuses.Count == 0)
+                return;
+
+            foreach (var (name, value) in ExternalSpecialSkillTempBonuses)
+            {
+                if (value == 0 || string.IsNullOrWhiteSpace(name))
+                    continue;
+                var skill = SpecialSkills.Get(name);
+                if (skill is not null)
+                    skill.TempBonuses += value;
+            }
+        }
+
         public IEnumerable<FeatureDTO>[] GetAllFeatures()
         {
             IEnumerable<FeatureDTO>[] allFeatures = { Attributes.GetAllArray(), BaseSkills, SpecialSkills.GetAllArray(), BattleProperties.GetAllArray() };
@@ -144,6 +166,7 @@ namespace DA_Models.ComponentModels
             }
             // calculate all traits adv
             CalculateTraits(TraitsTemporary, SD.TraitType_Temporary);
+            ApplyExternalSpecialSkillTempBonuses();
         }
 
         public void RaceTraitsChange()

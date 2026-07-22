@@ -1,0 +1,119 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@implements IAsyncDisposable
+@inject IUserService _userService
+@inject IBaronyRepository _baronyRepo
+@inject NavigationManager _nav
+
+@if (_visible && _unreadCount > 0)
+{
+    <div class="baron-letter-inbox-fab">
+        <MudBadge Content="@_unreadCount" Color="Color.Error" Overlap="true" Bordered="true">
+            <MudFab Color="Color.Primary"
+                    Size="Size.Medium"
+                    StartIcon="@Icons.Material.Filled.Mail"
+                    title="@($"New letters: {_unreadCount}")"
+                    OnClick="OpenInboxAsync"
+                    Class="baron-letter-inbox-fab__btn" />
+        </MudBadge>
+    </div>
+}
+
+@code {
+    private bool _visible;
+    private int _baronyId;
+    private int _unreadCount;
+    private int? _latestThreadId;
+    private CancellationTokenSource? _cts;
+    private PeriodicTimer? _timer;
+    private Task? _loop;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await _userService.GetUserInfo();
+        // Inbox badge is for the playing baron only — not Admin/GM.
+        _visible = user?.Role == SD.Role_DukePlayer && user.IsAdminOrMG != true;
+        if (!_visible)
+            return;
+
+        var characterId = user?.SelectedCharacter?.Id ?? 0;
+        if (characterId <= 0)
+            return;
+
+        var barony = await _baronyRepo.GetByCharacterId(characterId);
+        if (barony is null)
+            return;
+
+        _baronyId = barony.Id;
+        await RefreshAsync();
+
+        _cts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(45));
+        _loop = PollLoopAsync(_cts.Token);
+        _nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
+        _ = InvokeAsync(RefreshAsync);
+
+    private async Task PollLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await _timer!.WaitForNextTickAsync(ct))
+                await InvokeAsync(RefreshAsync);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (!_visible || _baronyId <= 0)
+            return;
+
+        try
+        {
+            var threads = await _baronyRepo.GetLetterThreads(_baronyId);
+            var unreadThreads = threads
+                .Where(t => t.HasUnreadForBaron)
+                .OrderByDescending(t => t.UpdatedAtUtc)
+                .ThenByDescending(t => t.Id)
+                .ToList();
+
+            _unreadCount = unreadThreads
+                .SelectMany(t => t.Messages)
+                .Count(m => m.HasUnreadForBaron);
+            _latestThreadId = unreadThreads.FirstOrDefault()?.Id;
+            StateHasChanged();
+        }
+        catch
+        {
+            // Keep last known badge state on transient errors.
+        }
+    }
+
+    private Task OpenInboxAsync()
+    {
+        var url = _latestThreadId is int id
+            ? $"/barony/letters?thread={id}"
+            : "/barony/letters";
+        _nav.NavigateTo(url);
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _nav.LocationChanged -= OnLocationChanged;
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
+
+        _timer?.Dispose();
+        if (_loop is not null)
+        {
+            try { await _loop; }
+            catch (OperationCanceledException) { }
+        }
+    }
+}

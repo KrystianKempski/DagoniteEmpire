@@ -152,7 +152,8 @@
 
     private List<TerrainImprovementDTO> VisibleImprovements =>
         Improvements.Where(BaronyCalc.ShowsOnDomainPanel)
-            .OrderBy(DisplayLabel, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(BaronyCalc.IsVillage)
+            .ThenBy(DisplayLabel, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
     private IEnumerable<TerrainImprovementDTO> ActiveImprovements =>
@@ -165,19 +166,24 @@
 
     private static string DisplayLabel(TerrainImprovementDTO item) => BaronyCalc.ImprovementDisplayLabel(item);
 
-    private static string? NameTooltip(TerrainImprovementDTO item)
+    private string? NameTooltip(TerrainImprovementDTO item)
     {
         if (BaronyCalc.IsVillage(item))
         {
-            var parts = new List<string> { VillagePpbFormulas.CatalogDescription };
+            var palisade = item.HasPalisade
+                ? "surrounded by a palisade"
+                : "without a palisade";
+            var owner = VillageOwnerName(item);
+            var text = $"A village {palisade}, owned by lord {owner}.";
             if (!item.IsActive)
             {
-                parts.Add(string.IsNullOrWhiteSpace(item.InactiveReason)
+                var inactive = string.IsNullOrWhiteSpace(item.InactiveReason)
                     ? "Inactive — excluded from totals."
-                    : item.InactiveReason.Trim());
+                    : item.InactiveReason.Trim();
+                text = $"{text}\n\n{inactive}";
             }
 
-            return string.Join("\n\n", parts);
+            return text;
         }
 
         if (item.IsActive)
@@ -185,6 +191,20 @@
         return string.IsNullOrWhiteSpace(item.InactiveReason)
             ? "Inactive — excluded from totals."
             : item.InactiveReason.Trim();
+    }
+
+    private string VillageOwnerName(TerrainImprovementDTO item)
+    {
+        if (item.TileId is int tileId
+            && TilesById.TryGetValue(tileId, out var tile)
+            && tile.FiefId is int fiefId
+            && FiefsById.TryGetValue(fiefId, out var fief)
+            && !string.IsNullOrWhiteSpace(fief.LiegeName))
+        {
+            return fief.LiegeName.Trim();
+        }
+
+        return "unknown";
     }
 
     private static string? VillageAdditiveTooltip(TerrainImprovementDTO item, Ppb key)

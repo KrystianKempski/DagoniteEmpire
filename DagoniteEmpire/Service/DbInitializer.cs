@@ -2843,6 +2843,7 @@ namespace DagoniteEmpire.Service
 
                 await SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex);
                 await OrganizationsSeeder.EnsureForAllBaroniesAsync(contex);
+                await VassalsFromFiefsSeeder.EnsureForAllBaroniesAsync(contex);
                 await SeatPurposeTemplatesSeeder.EnsureDefaultsAsync(contex);
             }
             catch (Exception ex)

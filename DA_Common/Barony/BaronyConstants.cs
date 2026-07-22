@@ -490,6 +490,21 @@ namespace DA_Common.Barony
         }
     }
 
+    /// <summary>Defaults for vassals auto-synced from terrain fiefs.</summary>
+    public static class RelationVassalDefaults
+    {
+        public const string BaronetTitle = "Baronet";
+        public const string DirectVassalModifier = "direct vassal";
+        public const int DirectVassalAttitude = 30;
+    }
+
+    /// <summary>Defaults for Senior Houses relations.</summary>
+    public static class RelationSeniorDefaults
+    {
+        public const string AllyEmpireVassalModifier = "ally, empire vassal";
+        public const int AllyEmpireVassalAttitude = 10;
+    }
+
     /// <summary>Budget page source labels (treasury gold column).</summary>
     public readonly struct BudgetSource
     {
@@ -573,6 +588,26 @@ namespace DA_Common.Barony
         {
             WeakWood, HardWood, Bricks, Stone, Granite, Tarnit,
         };
+
+        public static string DisplayName(string material) => material switch
+        {
+            WeakWood => "Wood",
+            _ => material,
+        };
+
+        public static decimal PrestigeBonus(string? material) => material switch
+        {
+            WeakWood => 1.0m,
+            HardWood => 1.1m,
+            Bricks => 1.3m,
+            Stone => 1.5m,
+            Granite => 1.8m,
+            Tarnit => 2.5m,
+            _ => 1.0m,
+        };
+
+        public static string OptionLabel(string material) =>
+            $"{DisplayName(material)} ({PrestigeBonus(material):0.#} prestige multiplier)";
     }
 
     /// <summary>Room size tier derived from tile count (thresholds may change).</summary>
@@ -604,8 +639,42 @@ namespace DA_Common.Barony
             _ => 0,
         };
 
+        public static decimal PrestigeBonus(string? category) => category switch
+        {
+            Small => 0.5m,
+            Medium => 1.0m,
+            Large => 1.5m,
+            Huge => 2.0m,
+            _ => 0.5m,
+        };
+
+        public static decimal PrestigeBonusFromTiles(int tiles) =>
+            PrestigeBonus(FromTileCount(tiles));
+
+        public static string OptionLabel(string category) =>
+            $"{category} ({PrestigeBonus(category):0.#} prestige multiplier)";
+
         public static bool MeetsMinimum(int tileCount, string minCategory) =>
             Rank(FromTileCount(tileCount)) >= Rank(minCategory);
+    }
+
+    /// <summary>Suggested chamber prestige multiplier = material bonus + size bonus.</summary>
+    public static class SeatRoomPrestige
+    {
+        public static decimal Suggested(string? material, string? sizeCategory) =>
+            SeatRoomMaterial.PrestigeBonus(material) + SeatRoomSizeCategory.PrestigeBonus(sizeCategory);
+
+        public static decimal Suggested(string? material, int tileCount) =>
+            Suggested(material, SeatRoomSizeCategory.FromTileCount(tileCount));
+
+        public static string FormulaHint(string? material, int tileCount)
+        {
+            var size = SeatRoomSizeCategory.FromTileCount(tileCount);
+            var matBonus = SeatRoomMaterial.PrestigeBonus(material);
+            var sizeBonus = SeatRoomSizeCategory.PrestigeBonus(size);
+            var total = matBonus + sizeBonus;
+            return $"{SeatRoomMaterial.DisplayName(material ?? SeatRoomMaterial.WeakWood)} {matBonus:0.#} + {size} {sizeBonus:0.#} = {total:0.#}";
+        }
     }
 
     /// <summary>Advantage / disadvantage text trait on a room.</summary>
@@ -641,15 +710,47 @@ namespace DA_Common.Barony
     {
         public const string Wall = "Wall";
         public const string Ground = "Ground";
+        public const string Water = "Water";
+
+        /// <summary>Legacy alias kept for older painted tiles.</summary>
         public const string Space = "Space";
 
-        public static readonly string[] All = { Wall, Ground, Space };
+        public static readonly string[] All = { Wall, Ground, Water };
 
-        public static string Label(string kind) => kind switch
+        public static bool IsKnown(string? kind)
+        {
+            if (string.IsNullOrWhiteSpace(kind))
+                return false;
+
+            var trimmed = kind.Trim();
+            return string.Equals(trimmed, Wall, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(trimmed, Ground, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(trimmed, Water, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(trimmed, Space, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static string Normalize(string? kind)
+        {
+            if (string.IsNullOrWhiteSpace(kind))
+                return Ground;
+
+            var trimmed = kind.Trim();
+            if (string.Equals(trimmed, Space, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(trimmed, Water, StringComparison.OrdinalIgnoreCase))
+                return Water;
+            if (string.Equals(trimmed, Wall, StringComparison.OrdinalIgnoreCase))
+                return Wall;
+            if (string.Equals(trimmed, Ground, StringComparison.OrdinalIgnoreCase))
+                return Ground;
+
+            return Ground;
+        }
+
+        public static string Label(string kind) => Normalize(kind) switch
         {
             Wall => "Wall / fortification",
             Ground => "Earth / ground",
-            Space => "Open space",
+            Water => "Water",
             _ => kind,
         };
     }

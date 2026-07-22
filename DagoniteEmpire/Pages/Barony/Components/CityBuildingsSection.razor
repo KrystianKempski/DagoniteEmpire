@@ -57,6 +57,25 @@
                         </tr>
                     }
 
+                    @if (LordsSeatRow is { } seatRow)
+                    {
+                        <tr class="city-building-row--lords-seat">
+                            <td class="city-building-col-name">
+                                <div class="city-building-name-cell">
+                                    <BaronyTooltip Title="Lord's Seat" Text="@(seatRow.Note ?? seatRow.Formula)">
+                                        <a class="city-building-name-text city-building-name-text--link" href="/barony/lords-seat">@seatRow.Label</a>
+                                    </BaronyTooltip>
+                                </div>
+                            </td>
+                            <td class="@PopulationCellClass(0)">@FmtAdd(0)</td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@PpbCellStyle.ValueClass(info.Key, seatRow.Additive[info.Key])">@FmtAdd(seatRow.Additive[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key, seatRow.Percent[info.Key])">@FmtPct(seatRow.Percent[info.Key])</td>
+                            }
+                        </tr>
+                    }
+
                     @foreach (var town in Towns)
                     {
                         var inactive = !town.IsActive;
@@ -175,6 +194,11 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private IReadOnlyList<BaronyBuildingDTO> CoreBuildings => BaronyCalc.CoreCityBuildings(BaronyId);
+
+    private PpbModifierRow? LordsSeatRow =>
+        Seat is null
+            ? null
+            : BaronyCalc.LordsSeatSummaryRow(Seat.Rooms, BaronyCalc.PurposeLookup(PurposeTemplates));
 
     private List<TerrainImprovementDTO> Towns =>
         Improvements.Where(BaronyCalc.IsTown)

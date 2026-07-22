@@ -1,0 +1,170 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IDialogService _dialogService
+
+<BaronySection Title="Prestige, Honor &amp; Fear">
+    <Summary>
+        <div class="baron-php-summary">
+            <PhpMetricChip Metric="PhpMetric.Prestige" Value="@_total.Prestige" />
+            <PhpMetricChip Metric="PhpMetric.Honor" Value="@_total.Honor" />
+            <PhpMetricChip Metric="PhpMetric.Fear" Value="@_total.Fear" />
+        </div>
+    </Summary>
+    <ChildContent>
+        <div style="overflow-x:auto;">
+            <table class="ppb-table ppb-table--source ppb-table--lined baron-php-table">
+                <thead>
+                    <tr>
+                        <th class="ppb-row-label source-col">Source</th>
+                        <th class="php-col php-col--prestige"><PhpMetricHeading Metric="PhpMetric.Prestige" /></th>
+                        <th class="php-col php-col--honor"><PhpMetricHeading Metric="PhpMetric.Honor" /></th>
+                        <th class="php-col php-col--fear"><PhpMetricHeading Metric="PhpMetric.Fear" /></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _rows)
+                    {
+                        <tr class="@(row.IsSystem ? "source-row--system" : "")">
+                            <td class="ppb-row-label source-col">
+                                <div class="source-cell">
+                                    @if (!string.IsNullOrWhiteSpace(row.Description))
+                                    {
+                                        <BaronyTooltip Title="Description" Text="@row.Description">
+                                            <span class="source-cell__name">@row.Source</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        <span class="source-cell__name">@row.Source</span>
+                                    }
+                                    @if (!row.IsSystem && CanEdit)
+                                    {
+                                        <span class="source-cell__actions">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditRowAsync(row))" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteRowAsync(row))" />
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="@ScoreClass(PhpMetric.Prestige, row.Prestige)">@FormatScore(row.Prestige)</td>
+                            <td class="@ScoreClass(PhpMetric.Honor, row.Honor)">@FormatScore(row.Honor)</td>
+                            <td class="@ScoreClass(PhpMetric.Fear, row.Fear)">@FormatScore(row.Fear)</td>
+                        </tr>
+                    }
+                    <tr class="ppb-summary-row">
+                        <td class="ppb-row-label">Σ total</td>
+                        <td class="@ScoreClass(PhpMetric.Prestige, _total.Prestige)"><b>@FormatScore(_total.Prestige)</b></td>
+                        <td class="@ScoreClass(PhpMetric.Honor, _total.Honor)"><b>@FormatScore(_total.Honor)</b></td>
+                        <td class="@ScoreClass(PhpMetric.Fear, _total.Fear)"><b>@FormatScore(_total.Fear)</b></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        @if (CanEdit)
+        {
+            <MudButton Variant="Variant.Outlined" Class="mt-3" StartIcon="@Icons.Material.Filled.Add" OnClick="AddRowAsync">
+                Add Source
+            </MudButton>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public BaronyDTO Barony { get; set; } = new();
+    [Parameter] public BaronySeatDTO? Seat { get; set; }
+    [Parameter] public List<SeatPurposeTemplateDTO> PurposeTemplates { get; set; } = new();
+    [Parameter] public List<BaronPhpSourceDTO> CustomSources { get; set; } = new();
+    [Parameter] public List<BaronArtifactDTO> Artifacts { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
+    [Inject] private ISnackbar _snackBar { get; set; } = default!;
+
+    private List<BaronPhpRow> _rows = new();
+    private PhpTotals _total = PhpTotals.Zero;
+
+    protected override void OnParametersSet() => RebuildRows();
+
+    private void RebuildRows()
+    {
+        var seat = BaronyCalc.SeatPhpContribution(Seat, PurposeTemplates);
+        var items = BaronyCalc.ArtifactsPhpContribution(Artifacts, Seat);
+        _rows = BaronyCalc.BuildPhpRows(seat, items, CustomSources);
+        _total = BaronyCalc.SumPhpRows(_rows);
+    }
+
+    private async Task AddRowAsync() =>
+        await OpenEditDialog(new BaronPhpSourceDTO { BaronyId = Barony.Id });
+
+    private async Task EditRowAsync(BaronPhpRow row)
+    {
+        if (row.IsSystem || row.SourceId is null)
+            return;
+
+        var source = CustomSources.FirstOrDefault(s => s.Id == row.SourceId);
+        if (source is null)
+            return;
+
+        await OpenEditDialog(new BaronPhpSourceDTO
+        {
+            Id = source.Id,
+            BaronyId = source.BaronyId,
+            Source = source.Source,
+            Description = source.Description,
+            Prestige = source.Prestige,
+            Honor = source.Honor,
+            Fear = source.Fear,
+        });
+    }
+
+    private async Task OpenEditDialog(BaronPhpSourceDTO draft)
+    {
+        var isNew = draft.Id <= 0;
+        var parameters = new DialogParameters<BaronPhpEditDialog>
+        {
+            { x => x.Source, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<BaronPhpEditDialog>(
+            isNew ? "Add Source" : "Edit Source",
+            parameters,
+            new DialogOptions
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                CloseOnEscapeKey = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronPhpSourceDTO saved)
+            return;
+
+        if (string.IsNullOrWhiteSpace(saved.Source))
+        {
+            _snackBar.Add("Source name is required.", Severity.Warning);
+            return;
+        }
+
+        await _baronyRepo.SaveBaronPhpSource(saved);
+        _snackBar.Add("Source saved.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task DeleteRowAsync(BaronPhpRow row)
+    {
+        if (row.SourceId is null or <= 0)
+            return;
+
+        await _baronyRepo.DeleteBaronPhpSource(row.SourceId.Value);
+        _snackBar.Add("Source removed.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private static string FormatScore(int value) =>
+        value > 0 ? $"+{value}" : value.ToString();
+
+    private static string ScoreClass(PhpMetric metric, int value) =>
+        $"php-cell {BaronPhpVisuals.CssClass(metric)}"
+        + (value > 0 ? " php-cell--pos" : value < 0 ? " php-cell--neg" : "");
+}

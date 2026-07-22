@@ -1,4 +1,4 @@
-﻿@page "/character/create"
+@page "/character/create"
 @page "/character/edit/{id:int}"
 @implements IDisposable
 @inject ICharacterRepository _characterRepository
@@ -15,6 +15,7 @@
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IEquipmentRepository _equipmentRepository
+@inject IBaronyRepository _baronyRepo
 @inject CallbackService _callbackService
 @inject IUserService _userService
 @inject IJSRuntime _jsRuntime
@@ -342,6 +343,7 @@
             AllParams.IsAdminOrMG = UserInfo?.IsAdminOrMG == true;
             AllParams.SpecialSkills.AddRelatedParametes();
             CurrentDate = new DateModel(AllParams.Character.CurrentDate);
+            await BaronReputationCharacterOverlay.ApplyAsync(AllParams, _baronyRepo, Id);
             AllParams.AllTraitsChange();
 
             await ChangeProfRelatedAttribute();
@@ -504,6 +506,8 @@
                 // create character traits 
                 foreach (var obj in AllParams.TraitsCharacter)
                 {
+                    if (BaronReputationCharacterOverlay.IsReputationTrait(obj))
+                        continue;
                     TraitCharacterDTO traitChar = new(obj, charac.Id);
                     await _traitCharacterRepository.Create(traitChar);
                 }
@@ -587,6 +591,8 @@
                 // update Character traits
                 foreach (TraitCharacterDTO obj in AllParams.TraitsCharacter)
                 {
+                    if (BaronReputationCharacterOverlay.IsReputationTrait(obj))
+                        continue;
                     obj.CharacterId = Id;
                     await _traitCharacterRepository.Update(obj);
                 }

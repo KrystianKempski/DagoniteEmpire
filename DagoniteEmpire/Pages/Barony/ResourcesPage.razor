@@ -100,8 +100,10 @@ else if (_overview is not null)
         var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
         var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
         var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+        var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
         _expectedIncome = ResourceCatalog.Slice(
-            BaronyCalc.GrandTotal(_overview, character, baronModifiers, advisorModifiers));
+            BaronyCalc.GrandTotal(_overview, character, baronModifiers, advisorModifiers, managementJc));
 
         BuildTables();
         NotifyResourceHud();

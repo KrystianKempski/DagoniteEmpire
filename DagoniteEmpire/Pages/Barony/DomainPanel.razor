@@ -192,8 +192,10 @@ else if (_overview is not null)
         var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
         var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
         var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+        var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
         var panel = BaronyCalc.BuildDomainPanelRows(
-            _overview, character, baronModifiers, advisorModifiers);
+            _overview, character, baronModifiers, advisorModifiers, managementJc);
 
         _advisorsForSection = panel.Advisors;
         _advisorRows = panel.AdvisorRows;
@@ -224,8 +226,10 @@ else if (_overview is not null)
         var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
         var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
         var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+        var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
         var panel = BaronyCalc.BuildDomainPanelRows(
-            _overview, character, baronModifiers, advisorModifiers);
+            _overview, character, baronModifiers, advisorModifiers, managementJc);
 
         _advisorsForSection = panel.Advisors;
         _advisorRows = panel.AdvisorRows;

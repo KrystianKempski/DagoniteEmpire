@@ -21,13 +21,45 @@ else if (Barony is not null)
     <BaronInfluenceSection Barony="@Barony"
                            Character="@_character"
                            CustomModifiers="@_customModifiers"
+                           TimeActions="@_timeActions"
                            CanEdit="@CanEdit"
                            OnChanged="ReloadAsync" />
+
+    <BaronPhpSection Barony="@Barony"
+                     Seat="@_seat"
+                     PurposeTemplates="@_purposeTemplates"
+                     CustomSources="@_phpSources"
+                     Artifacts="@_artifacts"
+                     CanEdit="@CanEdit"
+                     OnChanged="ReloadAsync" />
+
+    <BaronTimeSection Barony="@Barony"
+                      Character="@_character"
+                      Actions="@_timeActions"
+                      Modifiers="@_timeModifiers"
+                      CanEdit="@CanEdit"
+                      OnChanged="ReloadAsync" />
+
+    <BaronArtifactsSection Barony="@Barony"
+                           Seat="@_seat"
+                           Artifacts="@_artifacts"
+                           CanEdit="@CanEdit"
+                           OnChanged="ReloadAsync" />
+
+    <BaronReputationEffectsSection PrestigeScore="@Barony.Prestige"
+                                   HonorScore="@Barony.Honor"
+                                   FearScore="@Barony.Fear" />
 }
 
 @code {
     private CharacterDTO? _character;
     private List<BaronInfluenceModifierDTO> _customModifiers = new();
+    private List<BaronPhpSourceDTO> _phpSources = new();
+    private List<BaronArtifactDTO> _artifacts = new();
+    private List<BaronTimeActionDTO> _timeActions = new();
+    private List<BaronTimeModifierDTO> _timeModifiers = new();
+    private BaronySeatDTO? _seat;
+    private List<SeatPurposeTemplateDTO> _purposeTemplates = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -46,6 +78,36 @@ else if (Barony is not null)
         _character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
         Barony = await _baronyRepo.GetById(Barony.Id) ?? Barony;
         _customModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+        _phpSources = await _baronyRepo.GetBaronPhpSources(Barony.Id);
+        _artifacts = await _baronyRepo.GetBaronArtifacts(Barony.Id);
+        await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+        _timeActions = await _baronyRepo.GetBaronTimeActions(Barony.Id);
+        _timeModifiers = await _baronyRepo.GetBaronTimeModifiers(Barony.Id);
+        _seat = await _baronyRepo.EnsureSeat(Barony.Id);
+        _purposeTemplates = await _baronyRepo.GetSeatPurposeTemplates(Barony.Id);
+
+        await PersistPhpTotalsAsync();
         StateHasChanged();
+    }
+
+    /// <summary>Write summed Prestige/Honor/Fear into Barony so Influence and Domain Panel stay in sync.</summary>
+    private async Task PersistPhpTotalsAsync()
+    {
+        if (Barony is null)
+            return;
+
+        var seat = BaronyCalc.SeatPhpContribution(_seat, _purposeTemplates);
+        var items = BaronyCalc.ArtifactsPhpContribution(_artifacts, _seat);
+        var total = BaronyCalc.SumPhpRows(BaronyCalc.BuildPhpRows(seat, items, _phpSources));
+
+        if (Barony.Prestige == total.Prestige
+            && Barony.Honor == total.Honor
+            && Barony.Fear == total.Fear)
+            return;
+
+        Barony.Prestige = total.Prestige;
+        Barony.Honor = total.Honor;
+        Barony.Fear = total.Fear;
+        Barony = await _baronyRepo.UpdateBarony(Barony);
     }
 }

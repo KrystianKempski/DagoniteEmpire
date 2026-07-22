@@ -188,6 +188,56 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("AvailableAdvisors");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronArtifact", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Fear")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Honor")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Prestige")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SeatRoomId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.HasIndex("SeatRoomId");
+
+                    b.ToTable("BaronArtifacts");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronInfluenceModifier", b =>
                 {
                     b.Property<int>("Id")
@@ -218,6 +268,144 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("BaronInfluenceModifiers");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronLetterThread", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CorrespondentCategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CorrespondentName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CorrespondentTitle")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("RelationId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReplyRegion")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.HasIndex("RelationId");
+
+                    b.ToTable("BaronLetterThreads");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronLetterMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BodyHtml")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<bool>("IsInbound")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Season")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("SeenByBaron")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("SentAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ThreadId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TurnNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ThreadId");
+
+                    b.ToTable("BaronLetterMessages");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronPhpSource", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Fear")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Honor")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Prestige")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.ToTable("BaronPhpSources");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronPurseSource", b =>
                 {
                     b.Property<int>("Id")
@@ -242,6 +430,75 @@ namespace DA_DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("BaronPurseSources");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronTimeAction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CostJc")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.ToTable("BaronTimeActions");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronTimeModifier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Percent")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.ToTable("BaronTimeModifiers");
                 });
 
             modelBuilder.Entity("DA_DataAccess.BaronyData.Barony", b =>
@@ -486,6 +743,9 @@ namespace DA_DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("FiefId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("GroupName")
                         .IsRequired()
                         .HasColumnType("text");
@@ -512,6 +772,8 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FiefId");
 
                     b.ToTable("BaronyRelations");
                 });
@@ -2747,6 +3009,17 @@ namespace DA_DataAccess.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronLetterMessage", b =>
+                {
+                    b.HasOne("DA_DataAccess.BaronyData.BaronLetterThread", "Thread")
+                        .WithMany("Messages")
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Thread");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyRelationModifier", b =>
                 {
                     b.HasOne("DA_DataAccess.BaronyData.BaronyRelation", "Relation")
@@ -3133,6 +3406,11 @@ namespace DA_DataAccess.Migrations
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Trait", b =>
                 {
                     b.Navigation("Bonuses");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronLetterThread", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("DA_DataAccess.Chat.Campaign", b =>

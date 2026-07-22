@@ -17,7 +17,8 @@ else
                 @bind-Visible="_visible">
         <ChildContent>
             <span @ref="_anchor"
-                  class="barony-tip-anchor"
+                  class="@AnchorClass()"
+                  style="@Style"
                   @onpointerenter="ShowAsync"
                   @onpointerleave="Hide"
                   @onpointercancel="Hide">
@@ -39,6 +40,8 @@ else
 @code {
     [Parameter] public string? Title { get; set; }
     [Parameter] public string? Text { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
     [Parameter] public Placement Placement { get; set; } = Placement.Right;
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -48,6 +51,9 @@ else
     private int _hoverToken;
     private readonly Guid _instanceId = Guid.NewGuid();
     private DotNetObjectReference<BaronyTooltip>? _dotNetRef;
+
+    private string AnchorClass() =>
+        string.IsNullOrWhiteSpace(Class) ? "barony-tip-anchor" : $"barony-tip-anchor {Class}";
 
     protected override void OnInitialized()
     {

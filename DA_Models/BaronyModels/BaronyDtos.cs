@@ -403,6 +403,8 @@ namespace DA_Models.BaronyModels
         public string RelationDescription { get; set; } = string.Empty;
         public string? Notes { get; set; }
         public int SortOrder { get; set; }
+        /// <summary>Terrain fief this Vassals contact is synced from (null = manual entry).</summary>
+        public int? FiefId { get; set; }
         public List<BaronyRelationModifierDTO> Modifiers { get; set; } = new();
 
         /// <summary>Sum of modifier values, clamped to −200…200.</summary>

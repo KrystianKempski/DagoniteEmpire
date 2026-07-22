@@ -1,0 +1,16 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<span class="php-metric-icon @BaronPhpVisuals.CssClass(Metric)"
+      style="@MaskStyle"
+      title="@TitleOrDefault"
+      aria-hidden="true"></span>
+
+@code {
+    [Parameter] public PhpMetric Metric { get; set; }
+    [Parameter] public string? Title { get; set; }
+
+    private string TitleOrDefault => Title ?? BaronPhpVisuals.Name(Metric);
+
+    private string MaskStyle =>
+        $"--php-icon-url: url('{BaronPhpVisuals.IconUrl(Metric)}');";
+}

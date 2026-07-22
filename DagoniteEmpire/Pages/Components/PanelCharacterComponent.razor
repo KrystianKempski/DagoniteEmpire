@@ -14,6 +14,7 @@
 @inject IProfessionRepository _professionRepository
 @inject IEquipmentSlotRepository _equipmentSlotRepository
 @inject IUserService _userService
+@inject IBaronyRepository _baronyRepo
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager _navigationManager
@@ -723,6 +724,7 @@
             if (shouldRecalculateDerivedState)
             {
                 AllParams.SpecialSkills.AddRelatedParametes();
+                await BaronReputationCharacterOverlay.ApplyAsync(AllParams, _baronyRepo, Id);
                 AllParams.AllTraitsChange();
                 AllParams.Profession.CalculateClassParams(AllParams.Attributes.GetAll());
                 AllParams.Health.UpdateHealthBonusesInAttributes();

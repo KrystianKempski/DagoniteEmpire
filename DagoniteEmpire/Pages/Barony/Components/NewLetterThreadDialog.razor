@@ -1,0 +1,159 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog" ContentClass="baron-influence-dialog-content" ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_title"
+                          Label="Thread title"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+
+            <MudSelect T="int?"
+                       Value="_relationId"
+                       ValueChanged="OnRelationChanged"
+                       Label="@(IsInbound ? "Sender (relation)" : "Recipient (relation)")"
+                       HelperText="Pick a contact from Relations, or leave empty and type a name"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true"
+                       Clearable="true"
+                       Class="baron-influence-field">
+                @foreach (var rel in Relations.OrderBy(r => r.Name))
+                {
+                    <MudSelectItem T="int?" Value="@rel.Id">
+                        @rel.Name@(string.IsNullOrWhiteSpace(rel.Title) ? "" : $" — {rel.Title}")
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_correspondentName"
+                          Label="@(IsInbound ? "Sender name" : "Recipient name")"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+
+            <MudTextField @bind-Value="_correspondentTitle"
+                          Label="Title"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field" />
+
+            <MudSelect T="string"
+                       @bind-Value="_replyRegion"
+                       Label="Correspondent region"
+                       HelperText="@($"Max {BaronLetterRules.MaxLettersFromSameCorrespondentPerTurn} letters/turn from the same person (to the baron)")"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true"
+                       Class="baron-influence-field">
+                @foreach (var region in BaronLetterReplyRegion.All)
+                {
+                    <MudSelectItem Value="@region">@region</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="@_busy">
+            Create thread
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyDTO Barony { get; set; } = new();
+    [Parameter] public List<BaronyRelationDTO> Relations { get; set; } = new();
+    [Parameter] public bool IsInbound { get; set; }
+
+    [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
+
+    private string _title = string.Empty;
+    private int? _relationId;
+    private string _correspondentName = string.Empty;
+    private string? _correspondentTitle;
+    private string? _correspondentCategory;
+    private string _replyRegion = BaronLetterReplyRegion.EasternMarch;
+    private bool _busy;
+
+    private Task OnRelationChanged(int? relationId)
+    {
+        _relationId = relationId;
+        if (relationId is int id)
+        {
+            var rel = Relations.FirstOrDefault(r => r.Id == id);
+            if (rel is not null)
+            {
+                _correspondentName = rel.Name;
+                _correspondentTitle = rel.Title;
+                _correspondentCategory = rel.Category;
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task CreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            _snackBar.Add("Thread title is required.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_correspondentName))
+        {
+            _snackBar.Add(IsInbound ? "Sender name is required." : "Recipient name is required.", Severity.Warning);
+            return;
+        }
+
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var thread = await _baronyRepo.SaveLetterThread(new BaronLetterThreadDTO
+            {
+                BaronyId = Barony.Id,
+                Title = _title.Trim(),
+                RelationId = _relationId,
+                CorrespondentName = _correspondentName.Trim(),
+                CorrespondentTitle = string.IsNullOrWhiteSpace(_correspondentTitle) ? null : _correspondentTitle.Trim(),
+                CorrespondentCategory = _correspondentCategory,
+                ReplyRegion = _replyRegion,
+            });
+
+            // Seed an empty draft so the composer has something to edit immediately.
+            var draft = await _baronyRepo.SaveLetterMessage(new BaronLetterMessageDTO
+            {
+                ThreadId = thread.Id,
+                BodyHtml = "<p></p>",
+                Status = BaronLetterStatus.Draft,
+                IsInbound = IsInbound,
+                TurnNumber = Barony.TurnNumber,
+                Year = Barony.Year,
+                Month = Barony.Month,
+                Season = Barony.Season,
+                SeenByBaron = true,
+            });
+
+            thread.Messages = new List<BaronLetterMessageDTO> { draft };
+            MudDialog.Close(DialogResult.Ok(thread));
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not create thread: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

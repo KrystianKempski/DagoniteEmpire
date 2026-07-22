@@ -214,4 +214,132 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Gold delta. Positive = income, negative = expense.</summary>
         public decimal Amount { get; set; }
     }
+
+    /// <summary>Manual Prestige / Honor / Fear source on the Baron Card (traits, adventures, etc.).</summary>
+    public class BaronPhpSource
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        public string Source { get; set; } = string.Empty;
+        public string? Description { get; set; }
+
+        public int Prestige { get; set; }
+        public int Honor { get; set; }
+        public int Fear { get; set; }
+    }
+
+    /// <summary>Trophy, treasure, or artifact displayed in the Lord's Seat (Baron Card).</summary>
+    public class BaronArtifact
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary><see cref="DA_Common.Barony.BaronArtifactKind"/>.</summary>
+        public string Kind { get; set; } = DA_Common.Barony.BaronArtifactKind.Other;
+
+        /// <summary><see cref="DA_Common.Barony.BaronArtifactOrigin"/>.</summary>
+        public string Origin { get; set; } = DA_Common.Barony.BaronArtifactOrigin.Acquired;
+
+        public int Prestige { get; set; }
+        public int Honor { get; set; }
+        public int Fear { get; set; }
+
+        /// <summary>Lord's Seat chamber where the item is displayed (optional).</summary>
+        public int? SeatRoomId { get; set; }
+
+        public string? Description { get; set; }
+        public int SortOrder { get; set; }
+    }
+
+    /// <summary>Percent modifier to the baron's JC (time unit) pool for a turn.</summary>
+    public class BaronTimeModifier
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        public string Source { get; set; } = string.Empty;
+        public decimal Percent { get; set; }
+        public string? Description { get; set; }
+        public int SortOrder { get; set; }
+    }
+
+    /// <summary>Activity the baron spends JC on during the current turn.</summary>
+    public class BaronTimeAction
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary><see cref="DA_Common.Barony.BaronTimeActionKind"/>.</summary>
+        public string Kind { get; set; } = DA_Common.Barony.BaronTimeActionKind.Other;
+
+        public int CostJc { get; set; }
+        public string? Description { get; set; }
+        public int SortOrder { get; set; }
+
+        /// <summary>Built-in row (e.g. Barony management) — cannot be deleted from UI.</summary>
+        public bool IsSystem { get; set; }
+    }
+
+    /// <summary>A correspondence thread (title + correspondent). Messages live in <see cref="BaronLetterMessage"/>.</summary>
+    public class BaronLetterThread
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        public string Title { get; set; } = string.Empty;
+
+        public int? RelationId { get; set; }
+        public string CorrespondentName { get; set; } = string.Empty;
+        public string? CorrespondentTitle { get; set; }
+        public string? CorrespondentCategory { get; set; }
+
+        /// <summary><see cref="DA_Common.Barony.BaronLetterReplyRegion"/>.</summary>
+        public string ReplyRegion { get; set; } = DA_Common.Barony.BaronLetterReplyRegion.EasternMarch;
+
+        public DateTime CreatedAtUtc { get; set; }
+        public DateTime UpdatedAtUtc { get; set; }
+
+        public List<BaronLetterMessage> Messages { get; set; } = new();
+    }
+
+    /// <summary>A single letter/post inside a <see cref="BaronLetterThread"/>.</summary>
+    public class BaronLetterMessage
+    {
+        [Key]
+        public int Id { get; set; }
+        public int ThreadId { get; set; }
+
+        public string BodyHtml { get; set; } = string.Empty;
+
+        /// <summary><see cref="DA_Common.Barony.BaronLetterStatus"/>.</summary>
+        public string Status { get; set; } = DA_Common.Barony.BaronLetterStatus.Draft;
+
+        /// <summary>True = from correspondent (GM) to baron; false = from baron to correspondent.</summary>
+        public bool IsInbound { get; set; }
+
+        public int TurnNumber { get; set; }
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public string Season { get; set; } = "Winter";
+
+        /// <summary>False until the baron opens this delivered inbound message.</summary>
+        public bool SeenByBaron { get; set; } = true;
+
+        public int SortOrder { get; set; }
+        public DateTime CreatedAtUtc { get; set; }
+        public DateTime UpdatedAtUtc { get; set; }
+        public DateTime? SentAtUtc { get; set; }
+
+        public BaronLetterThread? Thread { get; set; }
+    }
 }

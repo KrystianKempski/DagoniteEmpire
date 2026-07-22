@@ -135,6 +135,7 @@ namespace DA_Business.Repository.BaronyRepos
                 SeedPrimaryFief(ctx, added.Entity.Id, character.NPCName ?? "Baron");
                 SeniorHousesSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 OrganizationsSeeder.EnsureForBarony(ctx, added.Entity.Id);
+                VassalsFromFiefsSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 await ctx.SaveChangesAsync();
 
                 return ToDTO(added.Entity);
@@ -202,6 +203,10 @@ namespace DA_Business.Repository.BaronyRepos
                     .Select(e => ToImprovementDto(e, tiles, taxRates))
                     .ToList();
 
+                VassalsFromFiefsSeeder.EnsureForBarony(ctx, baronyId);
+                SeniorHousesSeeder.EnsureForBarony(ctx, baronyId);
+                await ctx.SaveChangesAsync();
+
                 return new BaronyOverviewDTO
                 {
                     Barony = ToDTO(barony),
@@ -212,7 +217,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Decrees = (await ctx.Decrees.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Events = (await ctx.BaronyEvents.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Relations = (await ctx.BaronyRelations.AsNoTracking().Include(x => x.Modifiers).Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
-                    Seat = await LoadSeatDtoAsync(ctx, baronyId),
+                    Seat = await EnsureSeatDtoAsync(ctx, baronyId),
                     SeatPurposeTemplates = await LoadPurposeTemplatesAsync(ctx, baronyId),
                     CommunityModifiers = (await ctx.CommunityModifiers.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Fiefs = (await ctx.Fiefs.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
@@ -365,6 +370,10 @@ namespace DA_Business.Repository.BaronyRepos
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
+                VassalsFromFiefsSeeder.EnsureForBarony(ctx, baronyId);
+                SeniorHousesSeeder.EnsureForBarony(ctx, baronyId);
+                await ctx.SaveChangesAsync();
+
                 var list = await ctx.BaronyRelations.AsNoTracking()
                     .Include(x => x.Modifiers)
                     .Where(x => x.BaronyId == baronyId)
@@ -562,9 +571,10 @@ namespace DA_Business.Repository.BaronyRepos
                     return;
                 }
 
-                var normalized = SeatTileKind.All.FirstOrDefault(k =>
-                    string.Equals(k, kind.Trim(), StringComparison.OrdinalIgnoreCase))
-                    ?? throw new InvalidOperationException($"Unknown tile kind '{kind}'.");
+                if (!SeatTileKind.IsKnown(kind))
+                    throw new InvalidOperationException($"Unknown tile kind '{kind}'.");
+
+                var normalized = SeatTileKind.Normalize(kind);
 
                 if (existing is null)
                 {
@@ -771,6 +781,279 @@ namespace DA_Business.Repository.BaronyRepos
         public Task<int> DeleteBaronInfluenceModifier(int id) =>
             Delete(ctx => ctx.BaronInfluenceModifiers, id, nameof(DeleteBaronInfluenceModifier));
 
+        // ---------------- Baron PHP sources ----------------
+        public async Task<List<BaronPhpSourceDTO>> GetBaronPhpSources(int baronyId) =>
+            await GetList(ctx => ctx.BaronPhpSources, baronyId, ToDTO, nameof(GetBaronPhpSources));
+
+        public async Task<BaronPhpSourceDTO> SaveBaronPhpSource(BaronPhpSourceDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0 ? await ctx.BaronPhpSources.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                if (e is null) { e = ToEntity(dto); ctx.BaronPhpSources.Add(e); }
+                else { ApplyBaronPhp(e, dto); }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveBaronPhpSource)); }
+        }
+
+        public Task<int> DeleteBaronPhpSource(int id) =>
+            Delete(ctx => ctx.BaronPhpSources, id, nameof(DeleteBaronPhpSource));
+
+        // ---------------- Baron artifacts ----------------
+        public async Task<List<BaronArtifactDTO>> GetBaronArtifacts(int baronyId) =>
+            await GetList(ctx => ctx.BaronArtifacts, baronyId, ToDTO, nameof(GetBaronArtifacts));
+
+        public async Task<BaronArtifactDTO> SaveBaronArtifact(BaronArtifactDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0 ? await ctx.BaronArtifacts.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                if (e is null) { e = ToEntity(dto); ctx.BaronArtifacts.Add(e); }
+                else { ApplyBaronArtifact(e, dto); }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveBaronArtifact)); }
+        }
+
+        public Task<int> DeleteBaronArtifact(int id) =>
+            Delete(ctx => ctx.BaronArtifacts, id, nameof(DeleteBaronArtifact));
+
+        // ---------------- Baron time (JC) ----------------
+        public async Task EnsureBaronTimeDefaults(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var hasManagement = await ctx.BaronTimeActions.AnyAsync(a =>
+                    a.BaronyId == baronyId
+                    && a.IsSystem
+                    && a.Kind == BaronTimeActionKind.Management);
+
+                if (hasManagement)
+                    return;
+
+                ctx.BaronTimeActions.Add(new BaronTimeAction
+                {
+                    BaronyId = baronyId,
+                    Name = BaronTimeRules.ManagementActionName,
+                    Kind = BaronTimeActionKind.Management,
+                    CostJc = BaronTimeRules.RequiredManagementJc,
+                    Description =
+                        "Essential governance each turn. Spending fewer than "
+                        + $"{BaronTimeRules.RequiredManagementJc} JC causes management penalties "
+                        + "(stability, loyalty, income, etc.).",
+                    SortOrder = 0,
+                    IsSystem = true,
+                });
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(EnsureBaronTimeDefaults)); }
+        }
+
+        public async Task<List<BaronTimeModifierDTO>> GetBaronTimeModifiers(int baronyId) =>
+            await GetList(ctx => ctx.BaronTimeModifiers, baronyId, ToDTO, nameof(GetBaronTimeModifiers));
+
+        public async Task<BaronTimeModifierDTO> SaveBaronTimeModifier(BaronTimeModifierDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0 ? await ctx.BaronTimeModifiers.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                if (e is null) { e = ToEntity(dto); ctx.BaronTimeModifiers.Add(e); }
+                else { ApplyBaronTimeModifier(e, dto); }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveBaronTimeModifier)); }
+        }
+
+        public Task<int> DeleteBaronTimeModifier(int id) =>
+            Delete(ctx => ctx.BaronTimeModifiers, id, nameof(DeleteBaronTimeModifier));
+
+        public async Task<List<BaronTimeActionDTO>> GetBaronTimeActions(int baronyId) =>
+            await GetList(ctx => ctx.BaronTimeActions, baronyId, ToDTO, nameof(GetBaronTimeActions));
+
+        public async Task<BaronTimeActionDTO> SaveBaronTimeAction(BaronTimeActionDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0 ? await ctx.BaronTimeActions.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                if (e is null) { e = ToEntity(dto); ctx.BaronTimeActions.Add(e); }
+                else { ApplyBaronTimeAction(e, dto); }
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveBaronTimeAction)); }
+        }
+
+        public async Task<int> DeleteBaronTimeAction(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronTimeActions.FirstOrDefaultAsync(x => x.Id == id);
+                if (e is null) return 0;
+                if (e.IsSystem)
+                    throw new InvalidOperationException("Cannot delete the system Barony management action.");
+                ctx.BaronTimeActions.Remove(e);
+                await ctx.SaveChangesAsync();
+                return id;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteBaronTimeAction)); }
+        }
+
+        // ---------------- Baron letters (threads + messages) ----------------
+        public async Task<List<BaronLetterThreadDTO>> GetLetterThreads(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var threads = await ctx.BaronLetterThreads.AsNoTracking()
+                    .Where(t => t.BaronyId == baronyId)
+                    .OrderByDescending(t => t.UpdatedAtUtc)
+                    .ThenByDescending(t => t.Id)
+                    .ToListAsync();
+
+                var threadIds = threads.Select(t => t.Id).ToList();
+                var messages = threadIds.Count == 0
+                    ? new List<BaronLetterMessage>()
+                    : await ctx.BaronLetterMessages.AsNoTracking()
+                        .Where(m => threadIds.Contains(m.ThreadId))
+                        .OrderBy(m => m.SortOrder)
+                        .ThenBy(m => m.Id)
+                        .ToListAsync();
+
+                var byThread = messages.GroupBy(m => m.ThreadId)
+                    .ToDictionary(g => g.Key, g => g.Select(ToDTO).ToList());
+
+                return threads.Select(t =>
+                {
+                    var dto = ToDTO(t);
+                    dto.Messages = byThread.TryGetValue(t.Id, out var msgs) ? msgs : new List<BaronLetterMessageDTO>();
+                    return dto;
+                }).ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetLetterThreads)); }
+        }
+
+        public async Task<BaronLetterThreadDTO> SaveLetterThread(BaronLetterThreadDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var now = DateTime.UtcNow;
+                var e = dto.Id > 0
+                    ? await ctx.BaronLetterThreads.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                    : null;
+
+                if (e is null)
+                {
+                    e = ToEntity(dto);
+                    e.CreatedAtUtc = now;
+                    e.UpdatedAtUtc = now;
+                    ctx.BaronLetterThreads.Add(e);
+                }
+                else
+                {
+                    ApplyLetterThread(e, dto);
+                    e.UpdatedAtUtc = now;
+                }
+
+                await ctx.SaveChangesAsync();
+                var result = ToDTO(e);
+                result.Messages = dto.Messages ?? new List<BaronLetterMessageDTO>();
+                return result;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveLetterThread)); }
+        }
+
+        public async Task<int> DeleteLetterThread(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronLetterThreads.FirstOrDefaultAsync(x => x.Id == id);
+                if (e is null) return 0;
+                ctx.BaronLetterThreads.Remove(e);
+                await ctx.SaveChangesAsync();
+                return id;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteLetterThread)); }
+        }
+
+        public async Task<BaronLetterMessageDTO> SaveLetterMessage(BaronLetterMessageDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var now = DateTime.UtcNow;
+                var e = dto.Id > 0
+                    ? await ctx.BaronLetterMessages.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                    : null;
+
+                if (e is null)
+                {
+                    e = ToEntity(dto);
+                    e.CreatedAtUtc = now;
+                    e.UpdatedAtUtc = now;
+                    if (e.SortOrder <= 0)
+                    {
+                        var max = await ctx.BaronLetterMessages
+                            .Where(m => m.ThreadId == e.ThreadId)
+                            .Select(m => (int?)m.SortOrder)
+                            .MaxAsync() ?? 0;
+                        e.SortOrder = max + 1;
+                    }
+                    ctx.BaronLetterMessages.Add(e);
+                }
+                else
+                {
+                    ApplyLetterMessage(e, dto);
+                    e.UpdatedAtUtc = now;
+                }
+
+                var thread = await ctx.BaronLetterThreads.FirstOrDefaultAsync(t => t.Id == e.ThreadId);
+                if (thread is not null)
+                    thread.UpdatedAtUtc = now;
+
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveLetterMessage)); }
+        }
+
+        public Task<int> DeleteLetterMessage(int id) =>
+            Delete(ctx => ctx.BaronLetterMessages, id, nameof(DeleteLetterMessage));
+
+        public async Task MarkLetterThreadSeenByBaron(int threadId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var unread = await ctx.BaronLetterMessages
+                    .Where(m => m.ThreadId == threadId
+                        && !m.SeenByBaron
+                        && m.IsInbound
+                        && m.Status != BaronLetterStatus.Draft)
+                    .ToListAsync();
+
+                if (unread.Count == 0)
+                    return;
+
+                foreach (var m in unread)
+                    m.SeenByBaron = true;
+
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(MarkLetterThreadSeenByBaron)); }
+        }
+
         // ---------------- Offices influence ----------------
         public async Task<List<AdvisorInfluenceModifierDTO>> GetAdvisorInfluenceModifiers(int baronyId)
         {
@@ -822,12 +1105,35 @@ namespace DA_Business.Repository.BaronyRepos
                 if (e is null) { e = ToEntity(dto); ctx.Fiefs.Add(e); }
                 else { ApplyFief(e, dto); }
                 await ctx.SaveChangesAsync();
+                VassalsFromFiefsSeeder.EnsureForBarony(ctx, e.BaronyId);
+                await ctx.SaveChangesAsync();
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveFief)); }
         }
 
-        public Task<int> DeleteFief(int id) => Delete(ctx => ctx.Fiefs, id, nameof(DeleteFief));
+        public async Task<int> DeleteFief(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Fiefs.FirstOrDefaultAsync(x => x.Id == id);
+                if (e is null)
+                    return 0;
+
+                var linked = await ctx.BaronyRelations
+                    .Include(r => r.Modifiers)
+                    .Where(r => r.FiefId == id)
+                    .ToListAsync();
+                if (linked.Count > 0)
+                    ctx.BaronyRelations.RemoveRange(linked);
+
+                ctx.Fiefs.Remove(e);
+                await ctx.SaveChangesAsync();
+                return id;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteFief)); }
+        }
 
         // ---------------- Tiles ----------------
         public async Task<List<TerrainTileDTO>> GetTiles(int baronyId) =>
@@ -1588,6 +1894,7 @@ namespace DA_Business.Repository.BaronyRepos
             RelationDescription = e.RelationDescription ?? "",
             Notes = e.Notes,
             SortOrder = e.SortOrder,
+            FiefId = e.FiefId,
             Modifiers = (e.Modifiers ?? new List<BaronyRelationModifier>())
                 .OrderBy(m => m.SortOrder)
                 .Select(m => new BaronyRelationModifierDTO
@@ -1612,6 +1919,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.RelationDescription = d.RelationDescription ?? "";
             e.Notes = d.Notes;
             e.SortOrder = d.SortOrder;
+            e.FiefId = d.FiefId;
         }
 
         // ---------------- Mapping: Community ----------------
@@ -1655,6 +1963,214 @@ namespace DA_Business.Repository.BaronyRepos
             e.AdditiveJson = Ser(d.Additive);
             e.FormulaText = d.FormulaText;
             e.Description = d.Description;
+        }
+
+        // ---------------- Mapping: Baron PHP source ----------------
+        private static BaronPhpSourceDTO ToDTO(BaronPhpSource e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Source = e.Source,
+            Description = e.Description,
+            Prestige = e.Prestige,
+            Honor = e.Honor,
+            Fear = e.Fear,
+        };
+
+        private static BaronPhpSource ToEntity(BaronPhpSourceDTO d)
+        {
+            var e = new BaronPhpSource();
+            ApplyBaronPhp(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyBaronPhp(BaronPhpSource e, BaronPhpSourceDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Source = d.Source ?? "";
+            e.Description = d.Description;
+            e.Prestige = d.Prestige;
+            e.Honor = d.Honor;
+            e.Fear = d.Fear;
+        }
+
+        // ---------------- Mapping: Baron artifact ----------------
+        private static BaronArtifactDTO ToDTO(BaronArtifact e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Name = e.Name ?? "",
+            Kind = e.Kind ?? BaronArtifactKind.Other,
+            Origin = e.Origin ?? BaronArtifactOrigin.Acquired,
+            Prestige = e.Prestige,
+            Honor = e.Honor,
+            Fear = e.Fear,
+            SeatRoomId = e.SeatRoomId,
+            Description = e.Description,
+            SortOrder = e.SortOrder,
+        };
+
+        private static BaronArtifact ToEntity(BaronArtifactDTO d)
+        {
+            var e = new BaronArtifact();
+            ApplyBaronArtifact(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyBaronArtifact(BaronArtifact e, BaronArtifactDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Name = d.Name ?? "";
+            e.Kind = string.IsNullOrWhiteSpace(d.Kind) ? BaronArtifactKind.Other : d.Kind.Trim();
+            e.Origin = string.IsNullOrWhiteSpace(d.Origin) ? BaronArtifactOrigin.Acquired : d.Origin.Trim();
+            e.Prestige = d.Prestige;
+            e.Honor = d.Honor;
+            e.Fear = d.Fear;
+            e.SeatRoomId = d.SeatRoomId;
+            e.Description = d.Description;
+            e.SortOrder = d.SortOrder;
+        }
+
+        // ---------------- Mapping: Baron time ----------------
+        private static BaronTimeModifierDTO ToDTO(BaronTimeModifier e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Source = e.Source ?? "",
+            Percent = e.Percent,
+            Description = e.Description,
+            SortOrder = e.SortOrder,
+        };
+
+        private static BaronTimeModifier ToEntity(BaronTimeModifierDTO d)
+        {
+            var e = new BaronTimeModifier();
+            ApplyBaronTimeModifier(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyBaronTimeModifier(BaronTimeModifier e, BaronTimeModifierDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Source = d.Source ?? "";
+            e.Percent = d.Percent;
+            e.Description = d.Description;
+            e.SortOrder = d.SortOrder;
+        }
+
+        private static BaronTimeActionDTO ToDTO(BaronTimeAction e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Name = e.Name ?? "",
+            Kind = e.Kind ?? BaronTimeActionKind.Other,
+            CostJc = e.CostJc,
+            Description = e.Description,
+            SortOrder = e.SortOrder,
+            IsSystem = e.IsSystem,
+        };
+
+        private static BaronTimeAction ToEntity(BaronTimeActionDTO d)
+        {
+            var e = new BaronTimeAction();
+            ApplyBaronTimeAction(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyBaronTimeAction(BaronTimeAction e, BaronTimeActionDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Name = d.Name ?? "";
+            e.Kind = string.IsNullOrWhiteSpace(d.Kind) ? BaronTimeActionKind.Other : d.Kind.Trim();
+            e.CostJc = d.CostJc;
+            e.Description = d.Description;
+            e.SortOrder = d.SortOrder;
+            e.IsSystem = d.IsSystem;
+        }
+
+        // ---------------- Mapping: Baron letter threads / messages ----------------
+        private static BaronLetterThreadDTO ToDTO(BaronLetterThread e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Title = e.Title ?? "",
+            RelationId = e.RelationId,
+            CorrespondentName = e.CorrespondentName ?? "",
+            CorrespondentTitle = e.CorrespondentTitle,
+            CorrespondentCategory = e.CorrespondentCategory,
+            ReplyRegion = e.ReplyRegion ?? BaronLetterReplyRegion.EasternMarch,
+            CreatedAtUtc = e.CreatedAtUtc,
+            UpdatedAtUtc = e.UpdatedAtUtc,
+        };
+
+        private static BaronLetterMessageDTO ToDTO(BaronLetterMessage e) => new()
+        {
+            Id = e.Id,
+            ThreadId = e.ThreadId,
+            BodyHtml = e.BodyHtml ?? "",
+            Status = e.Status ?? BaronLetterStatus.Draft,
+            IsInbound = e.IsInbound,
+            TurnNumber = e.TurnNumber,
+            Year = e.Year,
+            Month = e.Month,
+            Season = e.Season ?? "Winter",
+            SeenByBaron = e.SeenByBaron,
+            SortOrder = e.SortOrder,
+            CreatedAtUtc = e.CreatedAtUtc,
+            UpdatedAtUtc = e.UpdatedAtUtc,
+            SentAtUtc = e.SentAtUtc,
+        };
+
+        private static BaronLetterThread ToEntity(BaronLetterThreadDTO d)
+        {
+            var e = new BaronLetterThread();
+            ApplyLetterThread(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static BaronLetterMessage ToEntity(BaronLetterMessageDTO d)
+        {
+            var e = new BaronLetterMessage();
+            ApplyLetterMessage(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyLetterThread(BaronLetterThread e, BaronLetterThreadDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Title = d.Title?.Trim() ?? "";
+            e.RelationId = d.RelationId;
+            e.CorrespondentName = d.CorrespondentName?.Trim() ?? "";
+            e.CorrespondentTitle = string.IsNullOrWhiteSpace(d.CorrespondentTitle) ? null : d.CorrespondentTitle.Trim();
+            e.CorrespondentCategory = d.CorrespondentCategory;
+            e.ReplyRegion = string.IsNullOrWhiteSpace(d.ReplyRegion)
+                ? BaronLetterReplyRegion.EasternMarch
+                : d.ReplyRegion.Trim();
+            if (d.CreatedAtUtc != default)
+                e.CreatedAtUtc = d.CreatedAtUtc;
+        }
+
+        private static void ApplyLetterMessage(BaronLetterMessage e, BaronLetterMessageDTO d)
+        {
+            e.ThreadId = d.ThreadId;
+            e.BodyHtml = d.BodyHtml ?? "";
+            e.Status = string.IsNullOrWhiteSpace(d.Status) ? BaronLetterStatus.Draft : d.Status.Trim();
+            e.IsInbound = d.IsInbound;
+            e.TurnNumber = d.TurnNumber;
+            e.Year = d.Year;
+            e.Month = d.Month;
+            e.Season = string.IsNullOrWhiteSpace(d.Season) ? "Winter" : d.Season;
+            e.SeenByBaron = d.SeenByBaron;
+            e.SortOrder = d.SortOrder;
+            e.SentAtUtc = d.SentAtUtc;
+            if (d.CreatedAtUtc != default)
+                e.CreatedAtUtc = d.CreatedAtUtc;
         }
 
         // ---------------- Mapping: Advisor influence ----------------
@@ -1984,6 +2500,18 @@ namespace DA_Business.Repository.BaronyRepos
             return seat is null ? null : ToDTO(seat, baronyId);
         }
 
+        private static async Task<BaronySeatDTO> EnsureSeatDtoAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var existing = await LoadSeatDtoAsync(ctx, baronyId);
+            if (existing is not null)
+                return existing;
+
+            var seat = new BaronySeat { BaronyId = baronyId, ActiveLevelsJson = "[0]" };
+            ctx.BaronySeats.Add(seat);
+            await ctx.SaveChangesAsync();
+            return ToDTO(seat, baronyId);
+        }
+
         private static async Task<List<SeatPurposeTemplateDTO>> LoadPurposeTemplatesAsync(ApplicationDbContext ctx, int baronyId) =>
             (await ctx.SeatPurposeTemplates.AsNoTracking()
                 .Where(t => t.IsUniversal || t.BaronyId == baronyId)
@@ -2022,7 +2550,7 @@ namespace DA_Business.Repository.BaronyRepos
             Level = e.Level,
             X = e.X,
             Y = e.Y,
-            Kind = e.Kind ?? SeatTileKind.Ground,
+            Kind = SeatTileKind.Normalize(e.Kind),
         };
 
         private static SeatRoomDTO ToDTO(SeatRoom e, int baronyId) => new()
