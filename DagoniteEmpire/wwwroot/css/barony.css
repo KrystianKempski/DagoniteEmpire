@@ -3270,7 +3270,7 @@
 
 .relations-table th,
 .relations-table td {
-    vertical-align: top;
+    vertical-align: middle;
 }
 
 .relations-table col.relations-col-group { width: 150px; }
@@ -3382,7 +3382,7 @@
 .relations-mods-cell,
 .relations-notes-cell {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 2px;
 }
 
@@ -3459,4 +3459,318 @@
 .ppb-table--catalog .catalog-sort-indicator {
     font-size: 0.65rem;
     opacity: 0.85;
+}
+
+/* ---- Lord's Seat tab ---- */
+.lords-seat-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.lords-seat-plan-wrap {
+    overflow-x: auto;
+    margin-bottom: 16px;
+}
+
+.lords-seat-plan {
+    --seat-tile: 32px;
+    display: grid;
+    grid-template-columns: repeat(var(--seat-cols, 12), var(--seat-tile));
+    grid-template-rows: repeat(var(--seat-rows, 8), var(--seat-tile));
+    gap: 2px;
+    width: max-content;
+    max-width: 100%;
+    padding: 8px;
+    background: var(--barony-surface-2);
+    border: 1px solid var(--barony-border);
+    border-radius: 6px;
+    position: relative;
+}
+
+.lords-seat-plan--editable {
+    user-select: none;
+}
+
+.lords-seat-placement-hint {
+    margin-bottom: 8px;
+    color: var(--barony-muted);
+}
+
+.lords-seat-plan__cell {
+    z-index: 0;
+    width: var(--seat-tile);
+    height: var(--seat-tile);
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+}
+
+.lords-seat-plan__cell--placement {
+    cursor: crosshair;
+}
+
+.lords-seat-plan__cell--placement:hover {
+    background: color-mix(in srgb, var(--barony-accent-soft) 45%, transparent);
+}
+
+.lords-seat-plan__cell--drop-target {
+    background: transparent;
+}
+
+.lords-seat-plan__ghost {
+    z-index: 2;
+    pointer-events: none;
+    border-radius: 4px;
+    border: 2px dashed transparent;
+    box-sizing: border-box;
+}
+
+.lords-seat-plan__ghost--valid {
+    background: color-mix(in srgb, #2a8 22%, transparent);
+    border-color: color-mix(in srgb, #2a8 70%, transparent);
+}
+
+.lords-seat-plan__ghost--invalid {
+    background: color-mix(in srgb, #c44 22%, transparent);
+    border-color: #b33;
+}
+
+.lords-seat-plan__ghost--overlap {
+    background: repeating-linear-gradient(
+        -45deg,
+        color-mix(in srgb, #c44 18%, transparent),
+        color-mix(in srgb, #c44 18%, transparent) 5px,
+        color-mix(in srgb, #a22 28%, transparent) 5px,
+        color-mix(in srgb, #a22 28%, transparent) 10px
+    );
+    border-color: #a22;
+}
+
+.lords-seat-plan__room {
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 4px;
+    overflow: hidden;
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 4px;
+    background: var(--barony-accent-soft);
+    color: var(--barony-ink);
+    font-size: 0.72rem;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.lords-seat-plan--editable .lords-seat-plan__room {
+    cursor: grab;
+}
+
+.lords-seat-plan--editable .lords-seat-plan__room:active {
+    cursor: grabbing;
+}
+
+.lords-seat-plan__room--dragging {
+    opacity: 0.55;
+}
+
+.lords-seat-plan__room--layout-valid {
+    border-color: color-mix(in srgb, var(--barony-ink) 25%, var(--barony-border-strong));
+}
+
+.lords-seat-plan__room--layout-invalid {
+    background: color-mix(in srgb, #c44 18%, var(--barony-accent-soft));
+    border-color: #b33;
+    color: color-mix(in srgb, #822 70%, var(--barony-ink));
+}
+
+.lords-seat-plan__room--layout-overlap {
+    background: repeating-linear-gradient(
+        -45deg,
+        color-mix(in srgb, #c44 14%, var(--barony-accent-soft)),
+        color-mix(in srgb, #c44 14%, var(--barony-accent-soft)) 5px,
+        color-mix(in srgb, #a22 24%, var(--barony-accent-soft)) 5px,
+        color-mix(in srgb, #a22 24%, var(--barony-accent-soft)) 10px
+    );
+    border-color: #a22;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #c44 35%, transparent);
+}
+
+.lords-seat-plan__room--ruin {
+    background: repeating-linear-gradient(
+        -45deg,
+        color-mix(in srgb, var(--barony-muted) 12%, transparent),
+        color-mix(in srgb, var(--barony-muted) 12%, transparent) 6px,
+        color-mix(in srgb, var(--barony-muted) 22%, transparent) 6px,
+        color-mix(in srgb, var(--barony-muted) 22%, transparent) 12px
+    );
+    border-style: dashed;
+    opacity: 0.85;
+}
+
+.lords-seat-plan__room-name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.lords-seat-plan__room-meta {
+    font-size: 0.65rem;
+    color: var(--barony-muted);
+}
+
+.lords-seat-table-wrap {
+    overflow-x: auto;
+}
+
+.lords-seat-table {
+    min-width: 1100px;
+    table-layout: fixed;
+    width: 100%;
+}
+
+.lords-seat-table th,
+.lords-seat-table td {
+    vertical-align: middle;
+    text-align: left;
+}
+
+.lords-seat-col-name { width: 12%; }
+.lords-seat-col-purpose { width: 14%; }
+.lords-seat-col-size { width: 8%; white-space: nowrap; }
+.lords-seat-col-desc { width: 18%; }
+.lords-seat-col-prestige { width: 6%; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.lords-seat-col-actions { width: 88px; }
+
+.lords-seat-table th.lords-seat-col-name,
+.lords-seat-table td.lords-seat-col-name,
+.lords-seat-table th.lords-seat-col-purpose,
+.lords-seat-table td.lords-seat-col-purpose,
+.lords-seat-table th.lords-seat-col-desc,
+.lords-seat-table td.lords-seat-col-desc {
+    text-align: left;
+    white-space: normal;
+    overflow: hidden;
+    max-width: 0;
+}
+
+.lords-seat-ellipsis {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
+    line-height: 1.35;
+}
+
+.lords-seat-col-desc > .mud-tooltip-root,
+.lords-seat-col-purpose > .mud-tooltip-root {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.lords-seat-row--ruin {
+    color: var(--barony-muted);
+}
+
+.lords-seat-row--layout-invalid {
+    background: color-mix(in srgb, #c44 6%, transparent);
+}
+
+.lords-seat-row--layout-overlap {
+    background: color-mix(in srgb, #c44 10%, transparent);
+}
+
+.lords-seat-row--ruin .city-building-name-text {
+    font-style: italic;
+}
+
+.lords-seat-table .lords-seat-row--ruin .ppb-cell-struck {
+    text-decoration: line-through;
+}
+
+.lords-seat-status--ruin {
+    color: var(--barony-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+}
+
+.lords-seat-tiles {
+    color: var(--barony-muted);
+    font-size: 0.78em;
+}
+
+.lords-seat-muted {
+    color: var(--barony-muted);
+}
+
+.lords-seat-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    justify-content: flex-end;
+}
+
+.lords-seat-ppb-summary {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--barony-line, rgba(0, 0, 0, 0.12));
+}
+
+.seat-room-edit-dialog__grid-fields {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+@media (max-width: 700px) {
+    .seat-room-edit-dialog__grid-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.seat-room-traits {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--barony-line, rgba(0, 0, 0, 0.12));
+}
+
+.seat-room-traits__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.seat-room-traits__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.seat-room-traits__kind {
+    flex: 0 0 140px;
+}
+
+.seat-room-traits__text {
+    flex: 1 1 auto;
+}
+
+.lords-seat-templates-table {
+    min-width: 640px;
 }

@@ -75,6 +75,10 @@ namespace DA_DataAccess.Data
         public DbSet<BaronyProject> BaronyProjects { get; set; }
         public DbSet<BaronyRelation> BaronyRelations { get; set; }
         public DbSet<BaronyRelationModifier> BaronyRelationModifiers { get; set; }
+        public DbSet<BaronySeat> BaronySeats { get; set; }
+        public DbSet<SeatRoom> SeatRooms { get; set; }
+        public DbSet<SeatRoomTrait> SeatRoomTraits { get; set; }
+        public DbSet<SeatPurposeTemplate> SeatPurposeTemplates { get; set; }
         public DbSet<BaronyResourceSource> BaronyResourceSources { get; set; }
         public DbSet<BaronPurseSource> BaronPurseSources { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }

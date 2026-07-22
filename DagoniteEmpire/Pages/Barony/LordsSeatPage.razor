@@ -1,0 +1,70 @@
+@page "/barony/lords-seat"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+
+<PageTitle>Dagonite Empire | Lord's Seat</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading lord's seat...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (_seat is not null)
+{
+    <BaronyPageHeader Title="Lord's Seat">
+        <Summary>
+            <span class="projects-summary">
+                <span class="projects-summary__item">@_seat.Rooms.Count chamber@(_seat.Rooms.Count == 1 ? "" : "s")</span>
+                @if (_seat.Rooms.Any(r => r.IsRuin))
+                {
+                    <span class="projects-summary__item">@_seat.Rooms.Count(r => r.IsRuin) ruin(s)</span>
+                }
+            </span>
+        </Summary>
+    </BaronyPageHeader>
+
+    <LordsSeatSection Seat="@_seat"
+                      PurposeTemplates="@_purposeTemplates"
+                      Advisors="@_advisors"
+                      CanEdit="@CanEdit"
+                      CanManage="@CanManageAsMg"
+                      OnChanged="ReloadAsync" />
+
+    @if (CanManageAsMg)
+    {
+        <SeatPurposeTemplatesSection BaronyId="@BaronyId"
+                                    Templates="@_purposeTemplates"
+                                    OnChanged="ReloadAsync" />
+    }
+}
+
+@code {
+    private BaronySeatDTO? _seat;
+    private List<SeatPurposeTemplateDTO> _purposeTemplates = new();
+    private List<AdvisorDTO> _advisors = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _seat = await _baronyRepo.EnsureSeat(Barony.Id);
+        _purposeTemplates = await _baronyRepo.GetSeatPurposeTemplates(Barony.Id);
+        _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
+        NotifyResourceHud();
+        await InvokeAsync(StateHasChanged);
+    }
+}

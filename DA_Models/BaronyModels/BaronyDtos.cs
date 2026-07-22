@@ -431,4 +431,75 @@ namespace DA_Models.BaronyModels
         public string? Description { get; set; }
         public string? TerrainRequirement { get; set; }
     }
+
+    public class BaronySeatDTO
+    {
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+        public string Name { get; set; } = "Lord's Seat";
+        public int GridWidth { get; set; } = 12;
+        public int GridHeight { get; set; } = 8;
+        public List<SeatRoomDTO> Rooms { get; set; } = new();
+    }
+
+    public class SeatRoomTraitDTO
+    {
+        public int Id { get; set; }
+        public string Kind { get; set; } = SeatRoomTraitKind.Advantage;
+        public string Text { get; set; } = string.Empty;
+        public int SortOrder { get; set; }
+    }
+
+    public class SeatRoomDTO
+    {
+        public int Id { get; set; }
+        public int SeatId { get; set; }
+        public int BaronyId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int GridX { get; set; }
+        public int GridY { get; set; }
+        public int GridW { get; set; } = 1;
+        public int GridH { get; set; } = 1;
+        public string Material { get; set; } = SeatRoomMaterial.Stone;
+        public decimal PrestigeMultiplier { get; set; } = 1m;
+        public string Status { get; set; } = SeatRoomStatus.Active;
+        public PpbVector Additive { get; set; } = new();
+        public PpbVector Percent { get; set; } = new();
+        public int? PurposeTemplateId { get; set; }
+        public int? OccupantAdvisorId { get; set; }
+        public string OccupantCustom { get; set; } = string.Empty;
+        public int SortOrder { get; set; }
+        public List<SeatRoomTraitDTO> Traits { get; set; } = new();
+
+        public int TileCount => Math.Max(0, GridW) * Math.Max(0, GridH);
+
+        public string SizeCategory => SeatRoomSizeCategory.FromTileCount(TileCount);
+
+        public bool IsRuin => string.Equals(Status, SeatRoomStatus.Ruin, StringComparison.Ordinal);
+
+        public bool ContributesPpb => !IsRuin;
+    }
+
+    public class SeatRoomPurposeAssignmentDTO
+    {
+        public int? PurposeTemplateId { get; set; }
+        public int? OccupantAdvisorId { get; set; }
+        public string? OccupantCustom { get; set; }
+    }
+
+    public class SeatPurposeTemplateDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string MinSizeCategory { get; set; } = SeatRoomSizeCategory.Small;
+        public string WhoOccupies { get; set; } = string.Empty;
+        public int SleepCapacity { get; set; }
+        public decimal AdditivePrestige { get; set; }
+        public PpbVector Additive { get; set; } = new();
+        public PpbVector Percent { get; set; } = new();
+        public bool IsUniversal { get; set; } = true;
+        public int? BaronyId { get; set; }
+        public int SortOrder { get; set; }
+    }
 }

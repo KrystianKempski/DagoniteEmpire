@@ -1,0 +1,156 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<BaronySection Title="Purpose templates">
+    <Summary>
+        <span class="projects-summary__item">@Templates.Count template@(Templates.Count == 1 ? "" : "s")</span>
+    </Summary>
+    <ChildContent>
+        <div style="overflow-x:auto;">
+            <table class="ppb-table ppb-table--lined lords-seat-templates-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Min size</th>
+                        <th>Who occupies</th>
+                        <th>Sleep</th>
+                        <th>Prestige +</th>
+                        <th>Scope</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Ordered)
+                    {
+                        <tr>
+                            <td>
+                                <BaronyTooltip Title="@t.Name" Text="@TemplateTooltip(t)">
+                                    <span>@t.Name</span>
+                                </BaronyTooltip>
+                            </td>
+                            <td>@t.MinSizeCategory</td>
+                            <td>@(string.IsNullOrWhiteSpace(t.WhoOccupies) ? "—" : t.WhoOccupies)</td>
+                            <td>@(t.SleepCapacity > 0 ? t.SleepCapacity.ToString() : "—")</td>
+                            <td>@t.AdditivePrestige.ToString("0.##")</td>
+                            <td>@(t.IsUniversal ? "All baronies" : "This barony")</td>
+                            <td>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Size="Size.Small"
+                                               title="Edit template"
+                                               OnClick="@(() => EditAsync(t))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               title="Delete template"
+                                               OnClick="@(() => DeleteAsync(t))" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <MudButton Variant="Variant.Outlined"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Class="mt-2"
+                   OnClick="AddAsync">
+            Add purpose template
+        </MudButton>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public List<SeatPurposeTemplateDTO> Templates { get; set; } = new();
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private IEnumerable<SeatPurposeTemplateDTO> Ordered =>
+        Templates.OrderBy(t => t.SortOrder).ThenBy(t => t.Name, StringComparer.OrdinalIgnoreCase);
+
+    private static string TemplateTooltip(SeatPurposeTemplateDTO t)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(t.Description))
+            parts.Add(t.Description.Trim());
+        parts.Add($"Min chamber size: {t.MinSizeCategory}");
+        if (!string.IsNullOrWhiteSpace(t.WhoOccupies))
+            parts.Add($"Occupied by: {t.WhoOccupies}");
+        if (t.SleepCapacity > 0)
+            parts.Add($"Sleep capacity: {t.SleepCapacity}");
+        return string.Join("\n\n", parts);
+    }
+
+    private Task AddAsync() => OpenDialog(new SeatPurposeTemplateDTO { IsUniversal = true, BaronyId = BaronyId }, isNew: true);
+
+    private Task EditAsync(SeatPurposeTemplateDTO t) => OpenDialog(Clone(t), isNew: false);
+
+    private async Task OpenDialog(SeatPurposeTemplateDTO draft, bool isNew)
+    {
+        var parameters = new DialogParameters<SeatPurposeTemplateEditDialog>
+        {
+            { x => x.Template, draft },
+            { x => x.BaronyId, BaronyId },
+        };
+
+        var dialog = await _dialogService.ShowAsync<SeatPurposeTemplateEditDialog>(
+            isNew ? "Add purpose template" : "Edit purpose template",
+            parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not SeatPurposeTemplateDTO saved)
+            return;
+
+        if (string.IsNullOrWhiteSpace(saved.Name))
+        {
+            _snackBar.Add("Template name is required.", Severity.Warning);
+            return;
+        }
+
+        if (!saved.IsUniversal)
+            saved.BaronyId = BaronyId;
+
+        try
+        {
+            await _baronyRepo.SaveSeatPurposeTemplate(saved);
+            _snackBar.Add(isNew ? "Template added." : "Template updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save template: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(SeatPurposeTemplateDTO t)
+    {
+        try
+        {
+            await _baronyRepo.DeleteSeatPurposeTemplate(t.Id);
+            _snackBar.Add("Template removed.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not delete template: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static SeatPurposeTemplateDTO Clone(SeatPurposeTemplateDTO s) => new()
+    {
+        Id = s.Id,
+        Name = s.Name,
+        Description = s.Description,
+        MinSizeCategory = s.MinSizeCategory,
+        WhoOccupies = s.WhoOccupies,
+        SleepCapacity = s.SleepCapacity,
+        AdditivePrestige = s.AdditivePrestige,
+        Additive = s.Additive.Clone(),
+        Percent = s.Percent.Clone(),
+        IsUniversal = s.IsUniversal,
+        BaronyId = s.BaronyId,
+        SortOrder = s.SortOrder,
+    };
+}

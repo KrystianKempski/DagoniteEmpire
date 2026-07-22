@@ -168,6 +168,8 @@
     [Parameter] public int BaronyId { get; set; }
     [Parameter] public List<BaronyBuildingDTO> SavedBuildings { get; set; } = new();
     [Parameter] public List<TerrainImprovementDTO> Improvements { get; set; } = new();
+    [Parameter] public BaronySeatDTO? Seat { get; set; }
+    [Parameter] public List<SeatPurposeTemplateDTO> PurposeTemplates { get; set; } = new();
     [Parameter] public List<BuildingTemplateDTO> Catalog { get; set; } = new();
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
@@ -179,9 +181,9 @@
             .OrderBy(BaronyCalc.TownPopulationLabel, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-    private PpbVector AdditiveSum => BaronyCalc.SumCityBuildings(BaronyId, SavedBuildings, Improvements);
-    private PpbVector PercentSum => BaronyCalc.SumCityBuildingsPercent(BaronyId, SavedBuildings, Improvements);
-    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.CityBuildingSectionRows(BaronyId, SavedBuildings, Improvements));
+    private PpbVector AdditiveSum => BaronyCalc.SumCityBuildings(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates);
+    private PpbVector PercentSum => BaronyCalc.SumCityBuildingsPercent(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates);
+    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.CityBuildingSectionRows(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates));
     private int PopulationSum => BaronyCalc.SumCityPopulation(BaronyId, SavedBuildings, Improvements);
 
     private static string? TownNameTooltip(TerrainImprovementDTO town)

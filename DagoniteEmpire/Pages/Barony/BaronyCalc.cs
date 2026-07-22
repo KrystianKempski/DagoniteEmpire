@@ -197,27 +197,89 @@ namespace DagoniteEmpire.Pages.Barony
                     Additive = A(treasury: 1),
                     Description = "Roadside inn and lodgings for travelers.",
                 },
-                new BaronyBuildingDTO
-                {
-                    BaronyId = baronyId,
-                    Name = "Ruler's Seat",
-                    Kind = BuildingKind.Building,
-                    Additive = A(food: 1, economy: -0.5m, production: 1, loyalty: 1, stability: 2, law: 2,
-                        corruption: 2, science: 1, culture: 1, defense: 2, treasury: 5),
-                    Description = "Upkeep: -30 gold per turn. Treasury income about +4–5.",
-                },
             };
         }
+
+        public static IReadOnlyDictionary<int, SeatPurposeTemplateDTO> PurposeLookup(
+            IEnumerable<SeatPurposeTemplateDTO>? templates) =>
+            (templates ?? Enumerable.Empty<SeatPurposeTemplateDTO>())
+                .ToDictionary(t => t.Id);
+
+        public static (PpbVector Additive, PpbVector Percent) SeatRoomEffectivePpb(
+            SeatRoomDTO room,
+            IReadOnlyDictionary<int, SeatPurposeTemplateDTO> purposes)
+        {
+            if (!room.ContributesPpb)
+                return (new PpbVector(), new PpbVector());
+
+            var add = room.Additive.Clone();
+            var pct = room.Percent.Clone();
+            if (room.PurposeTemplateId is int pid && purposes.TryGetValue(pid, out var purpose))
+            {
+                add = PpbVector.Sum(new[] { add, purpose.Additive });
+                pct = PpbVector.Sum(new[] { pct, purpose.Percent });
+            }
+
+            return (add, pct);
+        }
+
+        public static PpbModifierRow LordsSeatSummaryRow(
+            IEnumerable<SeatRoomDTO> rooms,
+            IReadOnlyDictionary<int, SeatPurposeTemplateDTO> purposes)
+        {
+            var active = rooms.Where(r => r.ContributesPpb).ToList();
+            if (active.Count == 0)
+            {
+                return Row("Lord's Seat", new PpbVector(), new PpbVector(), null,
+                    "No active chambers. Ruins and unassigned rooms contribute nothing until restored.");
+            }
+
+            var add = PpbVector.Sum(active.Select(r => SeatRoomEffectivePpb(r, purposes).Additive));
+            var pct = PpbVector.Sum(active.Select(r => SeatRoomEffectivePpb(r, purposes).Percent));
+            var lines = active.Select(r =>
+            {
+                var purposeName = r.PurposeTemplateId is int pid && purposes.TryGetValue(pid, out var p)
+                    ? p.Name
+                    : "Unassigned";
+                return $"• {r.Name} — {purposeName} ({r.SizeCategory}, {r.TileCount} tiles)";
+            });
+            return Row("Lord's Seat", add, pct, null, string.Join("\n", lines));
+        }
+
+        public static List<PpbModifierRow> LordsSeatDetailRows(
+            IEnumerable<SeatRoomDTO> rooms,
+            IReadOnlyDictionary<int, SeatPurposeTemplateDTO> purposes) =>
+            rooms
+                .OrderBy(r => r.SortOrder)
+                .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(r =>
+                {
+                    var (add, pct) = SeatRoomEffectivePpb(r, purposes);
+                    var purposeName = r.PurposeTemplateId is int pid && purposes.TryGetValue(pid, out var p)
+                        ? p.Name
+                        : "—";
+                    var label = r.IsRuin ? $"{r.Name} (ruin)" : r.Name;
+                    var desc = $"{purposeName} · {r.SizeCategory} · {r.Material}";
+                    if (r.IsRuin)
+                        desc = "Ruin — excluded from PPB.\n" + desc;
+                    return Row(label, add, pct, null, desc);
+                })
+                .ToList();
 
         /// <summary>Core buildings plus map towns and catalog instances saved for the barony.</summary>
         public static List<PpbModifierRow> CityBuildingSectionRows(
             int baronyId,
             IEnumerable<BaronyBuildingDTO> saved,
-            IEnumerable<TerrainImprovementDTO>? improvements = null)
+            IEnumerable<TerrainImprovementDTO>? improvements = null,
+            BaronySeatDTO? seat = null,
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null)
         {
+            var purposes = PurposeLookup(purposeTemplates);
             var rows = CoreCityBuildings(baronyId)
                 .Select(b => Row(b.Name, b.Additive, b.Percent, null, b.Description))
                 .ToList();
+            if (seat?.Rooms is { Count: > 0 })
+                rows.Add(LordsSeatSummaryRow(seat.Rooms, purposes));
             rows.AddRange(TownPopulationRows(improvements));
             rows.AddRange(BuildingRows(saved));
             return rows;
@@ -245,22 +307,42 @@ namespace DagoniteEmpire.Pages.Barony
         public static PpbVector SumCityBuildings(
             int baronyId,
             IEnumerable<BaronyBuildingDTO> saved,
-            IEnumerable<TerrainImprovementDTO>? improvements = null)
+            IEnumerable<TerrainImprovementDTO>? improvements = null,
+            BaronySeatDTO? seat = null,
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null)
         {
+            var purposes = PurposeLookup(purposeTemplates);
             var vectors = CoreCityBuildings(baronyId).Select(b => b.Additive)
                 .Concat(ActiveTowns(improvements).Select(t => t.Additive))
                 .Concat(saved.Select(b => b.Additive));
+            if (seat?.Rooms is { Count: > 0 })
+            {
+                vectors = vectors.Concat(
+                    seat.Rooms.Where(r => r.ContributesPpb)
+                        .Select(r => SeatRoomEffectivePpb(r, purposes).Additive));
+            }
+
             return PpbVector.Sum(vectors);
         }
 
         public static PpbVector SumCityBuildingsPercent(
             int baronyId,
             IEnumerable<BaronyBuildingDTO> saved,
-            IEnumerable<TerrainImprovementDTO>? improvements = null)
+            IEnumerable<TerrainImprovementDTO>? improvements = null,
+            BaronySeatDTO? seat = null,
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null)
         {
+            var purposes = PurposeLookup(purposeTemplates);
             var vectors = CoreCityBuildings(baronyId).Select(b => b.Percent)
                 .Concat(ActiveTowns(improvements).Select(t => t.Percent))
                 .Concat(saved.Select(b => b.Percent));
+            if (seat?.Rooms is { Count: > 0 })
+            {
+                vectors = vectors.Concat(
+                    seat.Rooms.Where(r => r.ContributesPpb)
+                        .Select(r => SeatRoomEffectivePpb(r, purposes).Percent));
+            }
+
             return PpbVector.Sum(vectors);
         }
 
@@ -503,7 +585,8 @@ namespace DagoniteEmpire.Pages.Barony
             var advisors = AdvisorsForDomainPanel(
                 ov.Advisors, ov.Barony, character, baronModifiers, advisorModifiers);
             var advisorRows = AdvisorRows(advisors);
-            var buildingRows = CityBuildingSectionRows(ov.Barony.Id, ov.Buildings, ov.Improvements);
+            var buildingRows = CityBuildingSectionRows(
+                ov.Barony.Id, ov.Buildings, ov.Improvements, ov.Seat, ov.SeatPurposeTemplates);
             var socialRows = SocialRows(ov.Barony.Id, ov.SocialRelations);
             var improvementRows = ImprovementRows(ov.Improvements);
             var decreeRows = DecreeRows(ov.Decrees);

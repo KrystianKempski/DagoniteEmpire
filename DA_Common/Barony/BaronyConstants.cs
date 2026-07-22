@@ -549,4 +549,71 @@ namespace DA_Common.Barony
         public const int Size = 15;
         public const int CellCount = Size * Size;
     }
+
+    /// <summary>Lord's Seat room lifecycle.</summary>
+    public readonly struct SeatRoomStatus
+    {
+        public const string Active = "Active";
+        public const string Ruin = "Ruin";
+
+        public static readonly string[] All = { Active, Ruin };
+    }
+
+    /// <summary>Room construction material.</summary>
+    public readonly struct SeatRoomMaterial
+    {
+        public const string WeakWood = "Weak wood";
+        public const string HardWood = "Hard wood";
+        public const string Bricks = "Bricks";
+        public const string Stone = "Stone";
+        public const string Granite = "Granite";
+        public const string Tarnit = "Tarnit";
+
+        public static readonly string[] All =
+        {
+            WeakWood, HardWood, Bricks, Stone, Granite, Tarnit,
+        };
+    }
+
+    /// <summary>Room size tier derived from tile count (thresholds may change).</summary>
+    public readonly struct SeatRoomSizeCategory
+    {
+        public const string Small = "Small";
+        public const string Medium = "Medium";
+        public const string Large = "Large";
+        public const string Huge = "Huge";
+
+        public static readonly string[] All = { Small, Medium, Large, Huge };
+
+        /// <summary>Tile-count thresholds — tune later without schema changes.</summary>
+        public static string FromTileCount(int tiles) => tiles switch
+        {
+            <= 0 => Small,
+            <= 4 => Small,
+            <= 9 => Medium,
+            <= 16 => Large,
+            _ => Huge,
+        };
+
+        public static int Rank(string category) => category switch
+        {
+            Small => 0,
+            Medium => 1,
+            Large => 2,
+            Huge => 3,
+            _ => 0,
+        };
+
+        public static bool MeetsMinimum(int tileCount, string minCategory) =>
+            Rank(FromTileCount(tileCount)) >= Rank(minCategory);
+    }
+
+    /// <summary>Advantage / disadvantage text trait on a room.</summary>
+    public readonly struct SeatRoomTraitKind
+    {
+        public const string Advantage = "Advantage";
+        public const string Disadvantage = "Disadvantage";
+
+        public static readonly string[] All = { Advantage, Disadvantage };
+    }
 }

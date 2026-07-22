@@ -212,6 +212,8 @@ namespace DA_Business.Repository.BaronyRepos
                     Decrees = (await ctx.Decrees.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Events = (await ctx.BaronyEvents.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Relations = (await ctx.BaronyRelations.AsNoTracking().Include(x => x.Modifiers).Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    Seat = await LoadSeatDtoAsync(ctx, baronyId),
+                    SeatPurposeTemplates = await LoadPurposeTemplatesAsync(ctx, baronyId),
                     CommunityModifiers = (await ctx.CommunityModifiers.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Fiefs = (await ctx.Fiefs.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Tiles = tiles.Select(ToDTO).ToList(),
@@ -430,6 +432,213 @@ namespace DA_Business.Repository.BaronyRepos
                 throw Err(ex, nameof(SaveRelationNotes));
             }
         }
+
+        // ---------------- Lord's Seat ----------------
+        public async Task<BaronySeatDTO> EnsureSeat(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var seat = await ctx.BaronySeats
+                    .Include(s => s.Rooms)
+                    .ThenInclude(r => r.Traits)
+                    .FirstOrDefaultAsync(s => s.BaronyId == baronyId);
+
+                if (seat is null)
+                {
+                    seat = new BaronySeat { BaronyId = baronyId };
+                    ctx.BaronySeats.Add(seat);
+                    await ctx.SaveChangesAsync();
+                }
+
+                return ToDTO(seat, baronyId);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(EnsureSeat)); }
+        }
+
+        public async Task<BaronySeatDTO?> GetSeat(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                return await LoadSeatDtoAsync(ctx, baronyId);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetSeat)); }
+        }
+
+        public async Task<BaronySeatDTO> SaveSeat(BaronySeatDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0
+                    ? await ctx.BaronySeats.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                    : await ctx.BaronySeats.FirstOrDefaultAsync(x => x.BaronyId == dto.BaronyId);
+
+                if (e is null)
+                {
+                    e = new BaronySeat { BaronyId = dto.BaronyId };
+                    ctx.BaronySeats.Add(e);
+                }
+
+                ApplySeat(e, dto);
+                await ctx.SaveChangesAsync();
+                dto.Id = e.Id;
+                return await EnsureSeat(dto.BaronyId);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveSeat)); }
+        }
+
+        public async Task<SeatRoomDTO> SaveSeatRoom(SeatRoomDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                SeatRoom e;
+                if (dto.Id > 0)
+                {
+                    e = await ctx.SeatRooms.Include(x => x.Traits).FirstOrDefaultAsync(x => x.Id == dto.Id)
+                        ?? throw new InvalidOperationException($"Seat room {dto.Id} not found.");
+                    ApplySeatRoom(e, dto);
+                    ctx.SeatRoomTraits.RemoveRange(e.Traits);
+                    e.Traits.Clear();
+                }
+                else
+                {
+                    e = new SeatRoom();
+                    ApplySeatRoom(e, dto);
+                    ctx.SeatRooms.Add(e);
+                }
+
+                foreach (var t in (dto.Traits ?? new()).OrderBy(x => x.SortOrder))
+                {
+                    e.Traits.Add(new SeatRoomTrait
+                    {
+                        Kind = t.Kind ?? SeatRoomTraitKind.Advantage,
+                        Text = t.Text ?? "",
+                        SortOrder = t.SortOrder,
+                    });
+                }
+
+                await ctx.SaveChangesAsync();
+                var baronyId = await ctx.BaronySeats.AsNoTracking()
+                    .Where(s => s.Id == e.SeatId)
+                    .Select(s => s.BaronyId)
+                    .FirstAsync();
+                return ToDTO(e, baronyId);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveSeatRoom));
+            }
+        }
+
+        public Task<int> DeleteSeatRoom(int id) => Delete(ctx => ctx.SeatRooms, id, nameof(DeleteSeatRoom));
+
+        public async Task SetSeatRoomPurpose(
+            int roomId,
+            int? purposeTemplateId,
+            int? occupantAdvisorId = null,
+            string? occupantCustom = null)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var room = await ctx.SeatRooms.FirstOrDefaultAsync(x => x.Id == roomId)
+                    ?? throw new InvalidOperationException($"Seat room {roomId} not found.");
+
+                var baronyId = await ctx.BaronySeats.AsNoTracking()
+                    .Where(s => s.Id == room.SeatId)
+                    .Select(s => s.BaronyId)
+                    .FirstAsync();
+
+                if (purposeTemplateId is int pid)
+                {
+                    var template = await ctx.SeatPurposeTemplates.AsNoTracking()
+                        .FirstOrDefaultAsync(t => t.Id == pid)
+                        ?? throw new InvalidOperationException($"Purpose template {pid} not found.");
+                    if (!template.IsUniversal && template.BaronyId != baronyId)
+                        throw new InvalidOperationException("Purpose template is not available for this barony.");
+
+                    var tileCount = Math.Max(0, room.GridW) * Math.Max(0, room.GridH);
+                    if (!SeatRoomSizeCategory.MeetsMinimum(tileCount, template.MinSizeCategory))
+                        throw new InvalidOperationException(
+                            $"Room size ({SeatRoomSizeCategory.FromTileCount(tileCount)}) is below required {template.MinSizeCategory}.");
+                }
+
+                var custom = string.IsNullOrWhiteSpace(occupantCustom) ? null : occupantCustom.Trim();
+                if (purposeTemplateId is null)
+                {
+                    room.PurposeTemplateId = null;
+                    room.OccupantAdvisorId = null;
+                    room.OccupantCustom = string.Empty;
+                }
+                else if (custom is not null)
+                {
+                    room.PurposeTemplateId = purposeTemplateId;
+                    room.OccupantAdvisorId = null;
+                    room.OccupantCustom = custom;
+                }
+                else if (occupantAdvisorId is int aid)
+                {
+                    var advisor = await ctx.Advisors.AsNoTracking()
+                        .FirstOrDefaultAsync(a => a.Id == aid && a.BaronyId == baronyId)
+                        ?? throw new InvalidOperationException("Selected occupant is not available for this barony.");
+                    if (string.IsNullOrWhiteSpace(advisor.PersonName))
+                        throw new InvalidOperationException("Selected occupant has no assigned person.");
+
+                    room.PurposeTemplateId = purposeTemplateId;
+                    room.OccupantAdvisorId = aid;
+                    room.OccupantCustom = string.Empty;
+                }
+                else
+                {
+                    room.PurposeTemplateId = purposeTemplateId;
+                    room.OccupantAdvisorId = null;
+                    room.OccupantCustom = string.Empty;
+                }
+
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SetSeatRoomPurpose));
+            }
+        }
+
+        public async Task<List<SeatPurposeTemplateDTO>> GetSeatPurposeTemplates(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                return await LoadPurposeTemplatesAsync(ctx, baronyId);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetSeatPurposeTemplates)); }
+        }
+
+        public async Task<SeatPurposeTemplateDTO> SaveSeatPurposeTemplate(SeatPurposeTemplateDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0
+                    ? await ctx.SeatPurposeTemplates.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                    : null;
+                if (e is null)
+                {
+                    e = new SeatPurposeTemplate();
+                    ctx.SeatPurposeTemplates.Add(e);
+                }
+
+                ApplyPurposeTemplate(e, dto);
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveSeatPurposeTemplate)); }
+        }
+
+        public Task<int> DeleteSeatPurposeTemplate(int id) =>
+            Delete(ctx => ctx.SeatPurposeTemplates, id, nameof(DeleteSeatPurposeTemplate));
 
         // ---------------- Community modifiers ----------------
         public async Task<List<CommunityModifierDTO>> GetCommunityModifiers(int baronyId) =>
@@ -1672,6 +1881,129 @@ namespace DA_Business.Repository.BaronyRepos
             e.GoldCost = d.GoldCost; e.ProductionCost = d.ProductionCost;
             e.EffectAdditiveJson = Ser(d.EffectAdditive); e.EffectPercentJson = Ser(d.EffectPercent);
             e.Description = d.Description; e.TerrainRequirement = d.TerrainRequirement;
+        }
+
+        // ---------------- Mapping: Lord's Seat ----------------
+        private static async Task<BaronySeatDTO?> LoadSeatDtoAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var seat = await ctx.BaronySeats.AsNoTracking()
+                .Include(s => s.Rooms)
+                .ThenInclude(r => r.Traits)
+                .FirstOrDefaultAsync(s => s.BaronyId == baronyId);
+            return seat is null ? null : ToDTO(seat, baronyId);
+        }
+
+        private static async Task<List<SeatPurposeTemplateDTO>> LoadPurposeTemplatesAsync(ApplicationDbContext ctx, int baronyId) =>
+            (await ctx.SeatPurposeTemplates.AsNoTracking()
+                .Where(t => t.IsUniversal || t.BaronyId == baronyId)
+                .OrderBy(t => t.SortOrder)
+                .ThenBy(t => t.Name)
+                .ToListAsync())
+            .Select(ToDTO)
+            .ToList();
+
+        private static BaronySeatDTO ToDTO(BaronySeat e, int baronyId) => new()
+        {
+            Id = e.Id,
+            BaronyId = baronyId,
+            Name = e.Name ?? "Lord's Seat",
+            GridWidth = e.GridWidth,
+            GridHeight = e.GridHeight,
+            Rooms = (e.Rooms ?? new List<SeatRoom>())
+                .OrderBy(r => r.SortOrder)
+                .ThenBy(r => r.Name)
+                .Select(r => ToDTO(r, baronyId))
+                .ToList(),
+        };
+
+        private static SeatRoomDTO ToDTO(SeatRoom e, int baronyId) => new()
+        {
+            Id = e.Id,
+            SeatId = e.SeatId,
+            BaronyId = baronyId,
+            Name = e.Name ?? "",
+            GridX = e.GridX,
+            GridY = e.GridY,
+            GridW = e.GridW,
+            GridH = e.GridH,
+            Material = e.Material ?? SeatRoomMaterial.Stone,
+            PrestigeMultiplier = e.PrestigeMultiplier,
+            Status = e.Status ?? SeatRoomStatus.Active,
+            Additive = De(e.AdditiveJson),
+            Percent = De(e.PercentJson),
+            PurposeTemplateId = e.PurposeTemplateId,
+            OccupantAdvisorId = e.OccupantAdvisorId,
+            OccupantCustom = e.OccupantCustom ?? "",
+            SortOrder = e.SortOrder,
+            Traits = (e.Traits ?? new List<SeatRoomTrait>())
+                .OrderBy(t => t.SortOrder)
+                .Select(t => new SeatRoomTraitDTO
+                {
+                    Id = t.Id,
+                    Kind = t.Kind ?? SeatRoomTraitKind.Advantage,
+                    Text = t.Text ?? "",
+                    SortOrder = t.SortOrder,
+                }).ToList(),
+        };
+
+        private static SeatPurposeTemplateDTO ToDTO(SeatPurposeTemplate e) => new()
+        {
+            Id = e.Id,
+            Name = e.Name ?? "",
+            Description = e.Description ?? "",
+            MinSizeCategory = e.MinSizeCategory ?? SeatRoomSizeCategory.Small,
+            WhoOccupies = e.WhoOccupies ?? "",
+            SleepCapacity = e.SleepCapacity,
+            AdditivePrestige = e.AdditivePrestige,
+            Additive = De(e.AdditiveJson),
+            Percent = De(e.PercentJson),
+            IsUniversal = e.IsUniversal,
+            BaronyId = e.BaronyId,
+            SortOrder = e.SortOrder,
+        };
+
+        private static void ApplySeat(BaronySeat e, BaronySeatDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Name = string.IsNullOrWhiteSpace(d.Name) ? "Lord's Seat" : d.Name.Trim();
+            e.GridWidth = Math.Max(1, d.GridWidth);
+            e.GridHeight = Math.Max(1, d.GridHeight);
+        }
+
+        private static void ApplySeatRoom(SeatRoom e, SeatRoomDTO d)
+        {
+            e.SeatId = d.SeatId;
+            e.Name = d.Name ?? "";
+            e.GridX = Math.Max(0, d.GridX);
+            e.GridY = Math.Max(0, d.GridY);
+            e.GridW = Math.Max(0, d.GridW);
+            e.GridH = Math.Max(0, d.GridH);
+            e.Material = string.IsNullOrWhiteSpace(d.Material) ? SeatRoomMaterial.Stone : d.Material;
+            e.PrestigeMultiplier = d.PrestigeMultiplier <= 0 ? 1m : d.PrestigeMultiplier;
+            e.Status = string.IsNullOrWhiteSpace(d.Status) ? SeatRoomStatus.Active : d.Status;
+            e.AdditiveJson = Ser(d.Additive);
+            e.PercentJson = Ser(d.Percent);
+            e.PurposeTemplateId = d.PurposeTemplateId;
+            e.OccupantAdvisorId = d.OccupantAdvisorId;
+            e.OccupantCustom = d.OccupantCustom ?? "";
+            e.SortOrder = d.SortOrder;
+        }
+
+        private static void ApplyPurposeTemplate(SeatPurposeTemplate e, SeatPurposeTemplateDTO d)
+        {
+            e.Name = d.Name ?? "";
+            e.Description = d.Description ?? "";
+            e.MinSizeCategory = string.IsNullOrWhiteSpace(d.MinSizeCategory)
+                ? SeatRoomSizeCategory.Small
+                : d.MinSizeCategory;
+            e.WhoOccupies = d.WhoOccupies ?? "";
+            e.SleepCapacity = Math.Max(0, d.SleepCapacity);
+            e.AdditivePrestige = d.AdditivePrestige;
+            e.AdditiveJson = Ser(d.Additive);
+            e.PercentJson = Ser(d.Percent);
+            e.IsUniversal = d.IsUniversal;
+            e.BaronyId = d.IsUniversal ? null : d.BaronyId;
+            e.SortOrder = d.SortOrder;
         }
     }
 }

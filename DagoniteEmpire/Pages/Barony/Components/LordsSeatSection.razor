@@ -1,0 +1,825 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<BaronySection Title="Chambers">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        @if (CanManage)
+        {
+            <div class="lords-seat-toolbar">
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.GridOn"
+                           OnClick="EditGridAsync">
+                    Grid (@Seat.GridWidth×@Seat.GridHeight)
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddRoomAsync">
+                    Add chamber
+                </MudButton>
+            </div>
+        }
+
+        @if (CanManage || Seat.Rooms.Any(r => r.GridW > 0 && r.GridH > 0))
+        {
+            <div class="lords-seat-plan-wrap">
+                @if (CanManage && _placementMode)
+                {
+                    <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
+                        Click a grid cell to place a new chamber (2×2). Drag chambers to move them.
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelPlacementMode">Cancel</MudButton>
+                    </MudText>
+                }
+                else if (CanManage)
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="lords-seat-placement-hint">
+                        Drag chambers to reposition. Red = outside grid or overlapping.
+                    </MudText>
+                }
+                <div class="lords-seat-plan @(CanManage ? "lords-seat-plan--editable" : null)"
+                     style="--seat-cols:@Seat.GridWidth; --seat-rows:@Seat.GridHeight;"
+                     @ondragover="OnPlanDragOver"
+                     @ondragover:preventDefault>
+                    @if (CanManage)
+                    {
+                        @for (var y = 0; y < Seat.GridHeight; y++)
+                        {
+                            for (var x = 0; x < Seat.GridWidth; x++)
+                            {
+                                var cellX = x;
+                                var cellY = y;
+                                <div class="lords-seat-plan__cell @CellDropClass(cellX, cellY)"
+                                     style="grid-column:@(cellX + 1); grid-row:@(cellY + 1);"
+                                     @ondragenter="() => OnCellDragEnter(cellX, cellY)"
+                                     @ondragleave="() => OnCellDragLeave(cellX, cellY)"
+                                     @ondragover="e => OnCellDragOver(e, cellX, cellY)"
+                                     @ondragover:preventDefault
+                                     @ondrop="e => OnCellDrop(e, cellX, cellY)"
+                                     @ondrop:preventDefault
+                                     @onclick="() => OnCellClick(cellX, cellY)">
+                                </div>
+                            }
+                        }
+                    }
+                    @foreach (var room in PlacedRooms)
+                    {
+                        var layoutIssue = GetLayoutIssue(room);
+                        <div draggable="@(CanManage ? "true" : "false")"
+                             class="lords-seat-plan__room @RoomPlanClass(room, layoutIssue) @(_dragRoomId == room.Id ? "lords-seat-plan__room--dragging" : null)"
+                             style="grid-column:@(room.GridX + 1) / span @room.GridW; grid-row:@(room.GridY + 1) / span @room.GridH;"
+                             title="@RoomPlanTooltip(room, layoutIssue)"
+                             @onclick:stopPropagation="true"
+                             @ondragstart="e => OnRoomDragStart(e, room)"
+                             @ondragend="OnRoomDragEndAsync">
+                            <span class="lords-seat-plan__room-name">@room.Name</span>
+                            <span class="lords-seat-plan__room-meta">@room.SizeCategory</span>
+                        </div>
+                    }
+                    @if (DropPreview is { } preview)
+                    {
+                        <div class="lords-seat-plan__ghost @preview.CssClass"
+                             style="grid-column:@(preview.X + 1) / span @preview.W; grid-row:@(preview.Y + 1) / span @preview.H;"
+                             aria-hidden="true">
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (Seat.Rooms.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No chambers yet.
+                @if (CanManage)
+                {
+                    <text> Use “Add chamber” to create the lord's seat layout.</text>
+                }
+            </MudText>
+        }
+        else
+        {
+            <div class="lords-seat-table-wrap">
+                <table class="ppb-table ppb-table--advisors ppb-table--lined lords-seat-table">
+                    <colgroup>
+                        <col class="lords-seat-col-name" />
+                        <col class="lords-seat-col-purpose" />
+                        <col class="lords-seat-col-size" />
+                        <col class="lords-seat-col-desc" />
+                        <col class="lords-seat-col-prestige" />
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <col class="ppb-pair-col" />
+                            <col class="ppb-pair-col" />
+                        }
+                        <col class="lords-seat-col-actions" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="ppb-row-label lords-seat-col-name">Chamber</th>
+                            <th rowspan="2" class="ppb-row-label lords-seat-col-purpose">Purpose</th>
+                            <th rowspan="2" class="lords-seat-col-size">Size</th>
+                            <th rowspan="2" class="lords-seat-col-desc">Description</th>
+                            <th rowspan="2" class="lords-seat-col-prestige">Prestige</th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                            }
+                            <th rowspan="2" class="lords-seat-col-actions"></th>
+                        </tr>
+                        <tr>
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <th class="ppb-subcol ppb-subcol--add">+</th>
+                                <th class="ppb-subcol ppb-subcol--pct">%</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var room in OrderedRooms)
+                        {
+                            var (additive, percent) = RoomPpbValues(room);
+                            <tr class="@RowClass(room)">
+                                <td class="lords-seat-col-name">
+                                    <BaronyTooltip Title="Chamber" Text="@RoomTooltip(room, GetLayoutIssue(room))">
+                                        <span class="city-building-name-text">@room.Name</span>
+                                    </BaronyTooltip>
+                                </td>
+                                <td class="lords-seat-col-purpose">
+                                    <BaronyTooltip Title="Purpose" Text="@PurposeTooltip(room)">
+                                        <span class="lords-seat-ellipsis">@PurposeLabel(room)</span>
+                                    </BaronyTooltip>
+                                </td>
+                                <td class="lords-seat-col-size" title="@($"{room.TileCount} tiles")">
+                                    @room.SizeCategory
+                                    <span class="lords-seat-tiles">(@room.TileCount)</span>
+                                </td>
+                                <td class="lords-seat-col-desc">
+                                    @{
+                                        var desc = DescriptionText(room);
+                                    }
+                                    @if (string.IsNullOrWhiteSpace(desc))
+                                    {
+                                        <span class="lords-seat-muted">—</span>
+                                    }
+                                    else
+                                    {
+                                        <BaronyTooltip Title="Description" Text="@desc">
+                                            <span class="lords-seat-ellipsis">@desc</span>
+                                        </BaronyTooltip>
+                                    }
+                                </td>
+                                <td class="lords-seat-col-prestige">
+                                    @{
+                                        var prestige = RoomPrestigeValue(room);
+                                    }
+                                    @if (prestige == 0m)
+                                    {
+                                        <span class="lords-seat-muted">—</span>
+                                    }
+                                    else
+                                    {
+                                        <BaronyTooltip Title="Prestige" Text="@PrestigeTooltip(room, prestige)">
+                                            <span>@prestige.ToString("0.##")</span>
+                                        </BaronyTooltip>
+                                    }
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@($"{PpbCellStyle.ValueClass(info.Key, additive[info.Key])}{(room.IsRuin ? " ppb-cell-struck" : "")}")">@FmtAdd(additive[info.Key])</td>
+                                    <td class="@($"{PpbCellStyle.ValueClass(info.Key, percent[info.Key])}{(room.IsRuin ? " ppb-cell-struck" : "")}")">@FmtPct(percent[info.Key])</td>
+                                }
+                                <td class="lords-seat-col-actions">
+                                    <div class="lords-seat-actions">
+                                        @if (CanEdit && !room.IsRuin)
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.SwapHoriz"
+                                                           Size="Size.Small"
+                                                           title="Assign purpose"
+                                                           OnClick="@(() => AssignPurposeAsync(room))" />
+                                        }
+                                        @if (CanManage)
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Size="Size.Small"
+                                                           title="Edit chamber"
+                                                           OnClick="@(() => EditRoomAsync(room))" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Size="Size.Small"
+                                                           Color="Color.Error"
+                                                           title="Remove chamber"
+                                                           OnClick="@(() => DeleteRoomAsync(room))" />
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        @if (OrderedRooms.Any())
+                        {
+                            <tr class="ppb-summary-row">
+                                <td class="ppb-row-label" colspan="5">Σ Lord's Seat</td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                                }
+                                <td class="lords-seat-col-actions"></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public BaronySeatDTO Seat { get; set; } = new();
+    [Parameter] public List<SeatPurposeTemplateDTO> PurposeTemplates { get; set; } = new();
+    [Parameter] public List<AdvisorDTO> Advisors { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private bool _placementMode;
+    private int? _dragRoomId;
+    private int _dragRoomW = 1;
+    private int _dragRoomH = 1;
+    private int? _dropCellX;
+    private int? _dropCellY;
+    private int? _lastDropCellX;
+    private int? _lastDropCellY;
+    private bool _layoutMovePending;
+
+    private sealed record DropPreviewInfo(int X, int Y, int W, int H, string CssClass);
+
+    private DropPreviewInfo? DropPreview
+    {
+        get
+        {
+            if (_dragRoomId is null || _dropCellX is not int x || _dropCellY is not int y)
+                return null;
+
+            var issue = SeatRoomLayout.GetIssue(
+                _dragRoomId.Value,
+                x,
+                y,
+                _dragRoomW,
+                _dragRoomH,
+                RoomFootprints,
+                Seat.GridWidth,
+                Seat.GridHeight);
+
+            var css = issue switch
+            {
+                SeatRoomLayoutIssue.Overlap => "lords-seat-plan__ghost--overlap",
+                SeatRoomLayoutIssue.OutOfBounds => "lords-seat-plan__ghost--invalid",
+                _ => "lords-seat-plan__ghost--valid",
+            };
+            return new DropPreviewInfo(x, y, _dragRoomW, _dragRoomH, css);
+        }
+    }
+
+    private IEnumerable<SeatRoomDTO> PlacedRooms =>
+        Seat.Rooms.Where(r => r.GridW > 0 && r.GridH > 0);
+
+    private IEnumerable<(int Id, int X, int Y, int W, int H)> RoomFootprints =>
+        Seat.Rooms.Select(r => (r.Id, r.GridX, r.GridY, r.GridW, r.GridH));
+
+    private IReadOnlyDictionary<int, SeatPurposeTemplateDTO> PurposeLookup =>
+        BaronyCalc.PurposeLookup(PurposeTemplates);
+
+    private IReadOnlyDictionary<int, AdvisorDTO> AdvisorLookup =>
+        Advisors.ToDictionary(a => a.Id);
+
+    private IEnumerable<SeatRoomDTO> OrderedRooms =>
+        Seat.Rooms.OrderBy(r => r.SortOrder).ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase);
+
+    private PpbVector Glance =>
+        BaronyCalc.SectionGlance(BaronyCalc.LordsSeatDetailRows(Seat.Rooms, PurposeLookup));
+
+    private PpbVector AdditiveSum =>
+        PpbVector.Sum(Seat.Rooms.Where(r => r.ContributesPpb)
+            .Select(r => RoomEffectivePpb(r).Additive));
+
+    private PpbVector PercentSum =>
+        PpbVector.Sum(Seat.Rooms.Where(r => r.ContributesPpb)
+            .Select(r => RoomEffectivePpb(r).Percent));
+
+    private (PpbVector Additive, PpbVector Percent) RoomEffectivePpb(SeatRoomDTO room) =>
+        BaronyCalc.SeatRoomEffectivePpb(room, PurposeLookup);
+
+    private (PpbVector Additive, PpbVector Percent) RoomPpbValues(SeatRoomDTO room)
+    {
+        var add = room.Additive.Clone();
+        var pct = room.Percent.Clone();
+        if (room.PurposeTemplateId is int pid && PurposeLookup.TryGetValue(pid, out var purpose))
+        {
+            add = PpbVector.Sum(new[] { add, purpose.Additive });
+            pct = PpbVector.Sum(new[] { pct, purpose.Percent });
+        }
+
+        return (add, pct);
+    }
+
+    private string PurposeLabel(SeatRoomDTO room)
+    {
+        if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var p))
+            return "—";
+
+        var occupant = OccupantSubtitle(room);
+        if (!string.IsNullOrWhiteSpace(occupant))
+            return $"{p.Name} ({occupant})";
+        if (!string.IsNullOrWhiteSpace(p.WhoOccupies))
+            return $"{p.Name} ({p.WhoOccupies})";
+        return p.Name;
+    }
+
+    private string? OccupantSubtitle(SeatRoomDTO room)
+    {
+        if (!string.IsNullOrWhiteSpace(room.OccupantCustom))
+            return room.OccupantCustom.Trim();
+
+        if (room.OccupantAdvisorId is not int aid || !AdvisorLookup.TryGetValue(aid, out var advisor))
+            return null;
+
+        return OccupantDisplayName(advisor);
+    }
+
+    private static string OccupantDisplayName(AdvisorDTO advisor)
+    {
+        var name = advisor.PersonName.Trim();
+        if (!string.IsNullOrWhiteSpace(advisor.Title))
+            return $"{name} — {advisor.Title}";
+        if (!advisor.IsBaron)
+        {
+            var role = BaronyCalc.AdvisorRoleLabel(advisor);
+            if (!string.IsNullOrWhiteSpace(role))
+                return $"{name} — {role}";
+        }
+
+        return name;
+    }
+
+    private string PurposeTooltip(SeatRoomDTO room)
+    {
+        if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var p))
+            return "No purpose assigned.";
+
+        var lines = new List<string> { p.Name };
+        var occupant = OccupantSubtitle(room);
+        if (!string.IsNullOrWhiteSpace(occupant))
+            lines.Add($"Assigned: {occupant}");
+        else if (!string.IsNullOrWhiteSpace(p.WhoOccupies))
+            lines.Add($"Typical occupant: {p.WhoOccupies}");
+        if (p.SleepCapacity > 0)
+            lines.Add($"Sleep capacity: {p.SleepCapacity}");
+        if (!string.IsNullOrWhiteSpace(p.Description))
+            lines.Add(p.Description);
+        return string.Join("\n", lines);
+    }
+
+    private string DescriptionText(SeatRoomDTO room)
+    {
+        var parts = new List<string>();
+        if (room.PurposeTemplateId is int pid && PurposeLookup.TryGetValue(pid, out var p)
+            && !string.IsNullOrWhiteSpace(p.Description))
+        {
+            parts.Add(p.Description);
+        }
+
+        foreach (var trait in room.Traits.OrderBy(t => t.SortOrder))
+            parts.Add($"[{trait.Kind}] {trait.Text}");
+
+        return string.Join(" ", parts);
+    }
+
+    private static decimal RoomPrestigeValue(SeatRoomDTO room, SeatPurposeTemplateDTO? purpose)
+    {
+        if (purpose is null)
+            return 0m;
+
+        return room.PrestigeMultiplier * purpose.AdditivePrestige;
+    }
+
+    private decimal RoomPrestigeValue(SeatRoomDTO room)
+    {
+        PurposeLookup.TryGetValue(room.PurposeTemplateId ?? -1, out var purpose);
+        return RoomPrestigeValue(room, purpose);
+    }
+
+    private static string PrestigeTooltip(SeatRoomDTO room, decimal total, SeatPurposeTemplateDTO? purpose)
+    {
+        if (purpose is null || purpose.AdditivePrestige == 0m)
+            return $"Room multiplier: ×{room.PrestigeMultiplier:0.##}";
+
+        return $"×{room.PrestigeMultiplier:0.##} room × {purpose.AdditivePrestige:0.##} purpose = {total:0.##}";
+    }
+
+    private string PrestigeTooltip(SeatRoomDTO room, decimal total)
+    {
+        PurposeLookup.TryGetValue(room.PurposeTemplateId ?? -1, out var purpose);
+        return PrestigeTooltip(room, total, purpose);
+    }
+
+    private static string RoomTooltip(SeatRoomDTO room, SeatRoomLayoutIssue layoutIssue = SeatRoomLayoutIssue.None)
+    {
+        var lines = new List<string>
+        {
+            $"Tiles: {room.TileCount} ({room.SizeCategory})",
+            $"Material: {room.Material}",
+            room.IsRuin ? "Inactive (ruin) — excluded from totals." : "Active",
+            $"Prestige multiplier: ×{room.PrestigeMultiplier:0.##}",
+        };
+        if (room.GridW > 0 && room.GridH > 0)
+            lines.Add($"Grid: ({room.GridX},{room.GridY}) {room.GridW}×{room.GridH}");
+        if (layoutIssue != SeatRoomLayoutIssue.None)
+            lines.Add($"Layout: {SeatRoomLayout.IssueLabel(layoutIssue)}");
+        return string.Join("\n", lines);
+    }
+
+    private SeatRoomLayoutIssue GetLayoutIssue(SeatRoomDTO room) =>
+        SeatRoomLayout.GetIssue(
+            room.Id,
+            room.GridX,
+            room.GridY,
+            room.GridW,
+            room.GridH,
+            RoomFootprints,
+            Seat.GridWidth,
+            Seat.GridHeight);
+
+    private string? RowClass(SeatRoomDTO room)
+    {
+        var classes = new List<string>();
+        if (room.IsRuin)
+            classes.Add("lords-seat-row--ruin");
+        var issue = GetLayoutIssue(room);
+        if (issue == SeatRoomLayoutIssue.OutOfBounds)
+            classes.Add("lords-seat-row--layout-invalid");
+        else if (issue == SeatRoomLayoutIssue.Overlap)
+            classes.Add("lords-seat-row--layout-overlap");
+        return classes.Count == 0 ? null : string.Join(' ', classes);
+    }
+
+    private static string RoomPlanClass(SeatRoomDTO room, SeatRoomLayoutIssue layoutIssue)
+    {
+        var classes = new List<string>();
+        if (room.IsRuin)
+            classes.Add("lords-seat-plan__room--ruin");
+        if (layoutIssue != SeatRoomLayoutIssue.None)
+            classes.Add(layoutIssue == SeatRoomLayoutIssue.Overlap
+                ? "lords-seat-plan__room--layout-overlap"
+                : "lords-seat-plan__room--layout-invalid");
+        if (!room.IsRuin && layoutIssue == SeatRoomLayoutIssue.None)
+            classes.Add("lords-seat-plan__room--layout-valid");
+        return string.Join(' ', classes);
+    }
+
+    private string RoomPlanTooltip(SeatRoomDTO room, SeatRoomLayoutIssue layoutIssue) =>
+        RoomTooltip(room, layoutIssue);
+
+    private string CellDropClass(int x, int y)
+    {
+        if (_dragRoomId is not null
+            && _dropCellX is int ox
+            && _dropCellY is int oy
+            && x >= ox && x < ox + _dragRoomW
+            && y >= oy && y < oy + _dragRoomH)
+        {
+            return "lords-seat-plan__cell--drop-target";
+        }
+
+        if (_placementMode)
+            return "lords-seat-plan__cell--placement";
+        return string.Empty;
+    }
+
+    private void OnPlanDragOver(DragEventArgs e) => e.DataTransfer.DropEffect = "move";
+
+    private void OnRoomDragStart(DragEventArgs e, SeatRoomDTO room)
+    {
+        _placementMode = false;
+        _dragRoomId = room.Id;
+        _dragRoomW = Math.Max(1, room.GridW);
+        _dragRoomH = Math.Max(1, room.GridH);
+        _dropCellX = null;
+        _dropCellY = null;
+        _lastDropCellX = null;
+        _lastDropCellY = null;
+        _layoutMovePending = false;
+        e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void RememberDropCell(int x, int y)
+    {
+        if (_dragRoomId is null)
+            return;
+        if (_dropCellX == x && _dropCellY == y)
+            return;
+        _dropCellX = x;
+        _dropCellY = y;
+        _lastDropCellX = x;
+        _lastDropCellY = y;
+    }
+
+    private void OnCellDragEnter(int x, int y) => RememberDropCell(x, y);
+
+    private void OnCellDragOver(DragEventArgs e, int x, int y)
+    {
+        e.DataTransfer.DropEffect = "move";
+        RememberDropCell(x, y);
+    }
+
+    private void OnCellDragLeave(int x, int y)
+    {
+        // Keep the footprint preview while moving across its own cells.
+    }
+
+    private async Task OnCellDrop(DragEventArgs e, int x, int y)
+    {
+        _lastDropCellX = x;
+        _lastDropCellY = y;
+        _layoutMovePending = true;
+        await ApplyRoomMoveAsync(x, y);
+    }
+
+    private async Task OnRoomDragEndAsync()
+    {
+        if (_dragRoomId is not null
+            && _lastDropCellX is int x
+            && _lastDropCellY is int y
+            && !_layoutMovePending)
+        {
+            await ApplyRoomMoveAsync(x, y);
+        }
+
+        _dragRoomId = null;
+        _dragRoomW = 1;
+        _dragRoomH = 1;
+        _dropCellX = null;
+        _dropCellY = null;
+        _lastDropCellX = null;
+        _lastDropCellY = null;
+        _layoutMovePending = false;
+    }
+
+    private async Task ApplyRoomMoveAsync(int x, int y)
+    {
+        if (_dragRoomId is not int roomId)
+            return;
+
+        var room = Seat.Rooms.FirstOrDefault(r => r.Id == roomId);
+        if (room is null || (room.GridX == x && room.GridY == y))
+            return;
+
+        var draft = CloneRoom(room);
+        draft.GridX = x;
+        draft.GridY = y;
+
+        var others = Seat.Rooms
+            .Where(r => r.Id != roomId)
+            .Select(r => (r.Id, r.GridX, r.GridY, r.GridW, r.GridH));
+        var issue = SeatRoomLayout.GetIssue(
+            draft.Id,
+            draft.GridX,
+            draft.GridY,
+            draft.GridW,
+            draft.GridH,
+            others,
+            Seat.GridWidth,
+            Seat.GridHeight);
+
+        try
+        {
+            await _baronyRepo.SaveSeatRoom(draft);
+            if (issue == SeatRoomLayoutIssue.None)
+                _snackBar.Add("Chamber moved.", Severity.Success);
+            else
+                _snackBar.Add($"Chamber moved — {SeatRoomLayout.IssueLabel(issue)}.", Severity.Warning);
+
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not move chamber: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private void CancelPlacementMode() => _placementMode = false;
+
+    private async Task OnCellClick(int x, int y)
+    {
+        if (!CanManage || _dragRoomId is not null)
+            return;
+
+        if (_placementMode)
+        {
+            _placementMode = false;
+            await OpenRoomDialog(new SeatRoomDTO
+            {
+                SeatId = Seat.Id,
+                BaronyId = Seat.BaronyId,
+                GridX = x,
+                GridY = y,
+                GridW = 2,
+                GridH = 2,
+            }, isNew: true);
+        }
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
+
+    private async Task EditGridAsync()
+    {
+        var draft = new BaronySeatDTO
+        {
+            Id = Seat.Id,
+            BaronyId = Seat.BaronyId,
+            Name = Seat.Name,
+            GridWidth = Seat.GridWidth,
+            GridHeight = Seat.GridHeight,
+        };
+
+        var parameters = new DialogParameters<SeatGridEditDialog>
+        {
+            { x => x.Seat, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<SeatGridEditDialog>(
+            "Seat grid",
+            parameters,
+            DialogOptions());
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronySeatDTO saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveSeat(saved);
+            _snackBar.Add("Grid updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save grid: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private Task AddRoomAsync()
+    {
+        _placementMode = true;
+        return Task.CompletedTask;
+    }
+
+    private Task EditRoomAsync(SeatRoomDTO room) =>
+        OpenRoomDialog(CloneRoom(room), isNew: false);
+
+    private async Task OpenRoomDialog(SeatRoomDTO draft, bool isNew)
+    {
+        var parameters = new DialogParameters<SeatRoomEditDialog>
+        {
+            { x => x.Room, draft },
+            { x => x.Seat, Seat },
+            { x => x.PurposeTemplates, PurposeTemplates },
+        };
+
+        var dialog = await _dialogService.ShowAsync<SeatRoomEditDialog>(
+            isNew ? "Add chamber" : "Edit chamber",
+            parameters,
+            DialogOptions());
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not SeatRoomDTO saved)
+            return;
+
+        if (string.IsNullOrWhiteSpace(saved.Name))
+        {
+            _snackBar.Add("Chamber name is required.", Severity.Warning);
+            return;
+        }
+
+        saved.SeatId = Seat.Id;
+        saved.BaronyId = Seat.BaronyId;
+
+        try
+        {
+            await _baronyRepo.SaveSeatRoom(saved);
+            _snackBar.Add(isNew ? "Chamber added." : "Chamber updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save chamber: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AssignPurposeAsync(SeatRoomDTO room)
+    {
+        var parameters = new DialogParameters<SeatPurposeAssignDialog>
+        {
+            { x => x.Room, room },
+            { x => x.Templates, PurposeTemplates },
+            { x => x.Advisors, Advisors },
+        };
+
+        var dialog = await _dialogService.ShowAsync<SeatPurposeAssignDialog>(
+            "Assign purpose",
+            parameters,
+            DialogOptions());
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not SeatRoomPurposeAssignmentDTO assignment)
+            return;
+
+        try
+        {
+            await _baronyRepo.SetSeatRoomPurpose(
+                room.Id,
+                assignment.PurposeTemplateId,
+                assignment.OccupantAdvisorId,
+                assignment.OccupantCustom);
+            _snackBar.Add("Purpose updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not assign purpose: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteRoomAsync(SeatRoomDTO room)
+    {
+        try
+        {
+            await _baronyRepo.DeleteSeatRoom(room.Id);
+            _snackBar.Add("Chamber removed.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not delete chamber: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static SeatRoomDTO CloneRoom(SeatRoomDTO source) => new()
+    {
+        Id = source.Id,
+        SeatId = source.SeatId,
+        BaronyId = source.BaronyId,
+        Name = source.Name,
+        GridX = source.GridX,
+        GridY = source.GridY,
+        GridW = source.GridW,
+        GridH = source.GridH,
+        Material = source.Material,
+        PrestigeMultiplier = source.PrestigeMultiplier,
+        Status = source.Status,
+        Additive = source.Additive.Clone(),
+        Percent = source.Percent.Clone(),
+        PurposeTemplateId = source.PurposeTemplateId,
+        OccupantAdvisorId = source.OccupantAdvisorId,
+        OccupantCustom = source.OccupantCustom,
+        SortOrder = source.SortOrder,
+        Traits = source.Traits.Select(t => new SeatRoomTraitDTO
+        {
+            Id = t.Id,
+            Kind = t.Kind,
+            Text = t.Text,
+            SortOrder = t.SortOrder,
+        }).ToList(),
+    };
+
+    private static DialogOptions DialogOptions() => new()
+    {
+        CloseOnEscapeKey = true,
+        MaxWidth = MaxWidth.Medium,
+        FullWidth = true,
+    };
+}

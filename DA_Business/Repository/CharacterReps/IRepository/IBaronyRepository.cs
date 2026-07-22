@@ -47,6 +47,17 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<int> DeleteRelation(int id);
         Task SaveRelationNotes(int relationId, string? notes);
 
+        // --- Lord's Seat ---
+        Task<BaronySeatDTO> EnsureSeat(int baronyId);
+        Task<BaronySeatDTO?> GetSeat(int baronyId);
+        Task<BaronySeatDTO> SaveSeat(BaronySeatDTO dto);
+        Task<SeatRoomDTO> SaveSeatRoom(SeatRoomDTO dto);
+        Task<int> DeleteSeatRoom(int id);
+        Task SetSeatRoomPurpose(int roomId, int? purposeTemplateId, int? occupantAdvisorId = null, string? occupantCustom = null);
+        Task<List<SeatPurposeTemplateDTO>> GetSeatPurposeTemplates(int baronyId);
+        Task<SeatPurposeTemplateDTO> SaveSeatPurposeTemplate(SeatPurposeTemplateDTO dto);
+        Task<int> DeleteSeatPurposeTemplate(int id);
+
         // --- Kary/bonusy społeczności ---
         Task<List<CommunityModifierDTO>> GetCommunityModifiers(int baronyId);
         Task<CommunityModifierDTO> SaveCommunityModifier(CommunityModifierDTO dto);
