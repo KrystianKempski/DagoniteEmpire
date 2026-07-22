@@ -579,6 +579,10 @@ namespace DA_DataAccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ActiveLevelsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("BaronyId")
                         .HasColumnType("integer");
 
@@ -825,6 +829,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("GridY")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Material")
                         .IsRequired()
                         .HasColumnType("text");
@@ -894,6 +901,38 @@ namespace DA_DataAccess.Migrations
                     b.HasIndex("RoomId");
 
                     b.ToTable("SeatRoomTraits");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.SeatTile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SeatId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("X")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Y")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SeatId", "Level", "X", "Y")
+                        .IsUnique();
+
+                    b.ToTable("SeatTiles");
                 });
 
             modelBuilder.Entity("DA_DataAccess.BaronyData.SocialGroupRelation", b =>
@@ -2741,6 +2780,17 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.SeatTile", b =>
+                {
+                    b.HasOne("DA_DataAccess.BaronyData.BaronySeat", "Seat")
+                        .WithMany("Tiles")
+                        .HasForeignKey("SeatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Seat");
+                });
+
             modelBuilder.Entity("DA_DataAccess.CharacterClasses.Attribute", b =>
                 {
                     b.HasOne("DA_DataAccess.CharacterClasses.Character", "Character")
@@ -3027,6 +3077,8 @@ namespace DA_DataAccess.Migrations
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronySeat", b =>
                 {
                     b.Navigation("Rooms");
+
+                    b.Navigation("Tiles");
                 });
 
             modelBuilder.Entity("DA_DataAccess.BaronyData.SeatRoom", b =>

@@ -8,44 +8,88 @@
         <span class="projects-summary__item">@Templates.Count template@(Templates.Count == 1 ? "" : "s")</span>
     </Summary>
     <ChildContent>
-        <div style="overflow-x:auto;">
-            <table class="ppb-table ppb-table--lined lords-seat-templates-table">
+        <div class="lords-seat-templates-wrap">
+            <table class="ppb-table ppb-table--advisors ppb-table--lined lords-seat-templates-table">
+                <colgroup>
+                    <col class="lords-seat-templates-col-name" />
+                    <col class="lords-seat-templates-col-size" />
+                    <col class="lords-seat-templates-col-desc" />
+                    <col class="lords-seat-templates-col-prestige" />
+                    @foreach (var _ in PpbCatalog.All)
+                    {
+                        <col class="ppb-pair-col" />
+                        <col class="ppb-pair-col" />
+                    }
+                </colgroup>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Min size</th>
-                        <th>Who occupies</th>
-                        <th>Sleep</th>
-                        <th>Prestige +</th>
-                        <th>Scope</th>
-                        <th></th>
+                        <th rowspan="2" class="ppb-row-label lords-seat-templates-col-name">Name</th>
+                        <th rowspan="2" class="lords-seat-templates-col-size">Min size</th>
+                        <th rowspan="2" class="lords-seat-templates-col-desc">Description</th>
+                        <th rowspan="2" class="lords-seat-templates-col-prestige">Prestige +</th>
+                        @foreach (var info in PpbCatalog.All)
+                        {
+                            <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                        }
+                    </tr>
+                    <tr>
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <th class="ppb-subcol ppb-subcol--add">+</th>
+                            <th class="ppb-subcol ppb-subcol--pct">%</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var t in Ordered)
                     {
                         <tr>
-                            <td>
-                                <BaronyTooltip Title="@t.Name" Text="@TemplateTooltip(t)">
-                                    <span>@t.Name</span>
-                                </BaronyTooltip>
+                            <td class="lords-seat-templates-col-name">
+                                <div class="city-building-name-cell">
+                                    <BaronyTooltip Title="@t.Name" Text="@TemplateTooltip(t)">
+                                        <span class="city-building-name-text">@t.Name</span>
+                                    </BaronyTooltip>
+                                    <span class="city-building-name-actions">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                       Size="Size.Small"
+                                                       title="Edit template"
+                                                       OnClick="@(() => EditAsync(t))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                       Size="Size.Small"
+                                                       Color="Color.Error"
+                                                       title="Delete template"
+                                                       OnClick="@(() => DeleteAsync(t))" />
+                                    </span>
+                                </div>
                             </td>
-                            <td>@t.MinSizeCategory</td>
-                            <td>@(string.IsNullOrWhiteSpace(t.WhoOccupies) ? "—" : t.WhoOccupies)</td>
-                            <td>@(t.SleepCapacity > 0 ? t.SleepCapacity.ToString() : "—")</td>
-                            <td>@t.AdditivePrestige.ToString("0.##")</td>
-                            <td>@(t.IsUniversal ? "All baronies" : "This barony")</td>
-                            <td>
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                               Size="Size.Small"
-                                               title="Edit template"
-                                               OnClick="@(() => EditAsync(t))" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                               Size="Size.Small"
-                                               Color="Color.Error"
-                                               title="Delete template"
-                                               OnClick="@(() => DeleteAsync(t))" />
+                            <td class="lords-seat-templates-col-size">@t.MinSizeCategory</td>
+                            <td class="lords-seat-templates-col-desc">
+                                @if (string.IsNullOrWhiteSpace(t.Description))
+                                {
+                                    <span class="lords-seat-muted">—</span>
+                                }
+                                else
+                                {
+                                    <BaronyTooltip Title="Description" Text="@t.Description">
+                                        <span class="lords-seat-ellipsis">@t.Description</span>
+                                    </BaronyTooltip>
+                                }
                             </td>
+                            <td class="lords-seat-templates-col-prestige @PpbCellStyle.ValueClassStandard(t.AdditivePrestige)">
+                                @if (t.AdditivePrestige == 0m)
+                                {
+                                    <span class="lords-seat-muted">—</span>
+                                }
+                                else
+                                {
+                                    @FmtAdd(t.AdditivePrestige)
+                                }
+                            </td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@PpbCellStyle.ValueClass(info.Key, t.Additive[info.Key])">@FmtAdd(t.Additive[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key, t.Percent[info.Key])">@FmtPct(t.Percent[info.Key])</td>
+                            }
                         </tr>
                     }
                 </tbody>
@@ -79,8 +123,31 @@
             parts.Add($"Occupied by: {t.WhoOccupies}");
         if (t.SleepCapacity > 0)
             parts.Add($"Sleep capacity: {t.SleepCapacity}");
+        parts.Add(t.IsUniversal ? "Scope: all baronies" : "Scope: this barony");
         return string.Join("\n\n", parts);
     }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
 
     private Task AddAsync() => OpenDialog(new SeatPurposeTemplateDTO { IsUniversal = true, BaronyId = BaronyId }, isNew: true);
 

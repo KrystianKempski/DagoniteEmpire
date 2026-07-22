@@ -3469,6 +3469,82 @@
     margin-bottom: 12px;
 }
 
+.lords-seat-levelbar,
+.lords-seat-paintbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.lords-seat-levelbar__label {
+    font-size: 0.78rem;
+    color: var(--barony-muted);
+    margin-right: 4px;
+}
+
+.lords-seat-levelchip,
+.lords-seat-paintchip {
+    border: 1px solid var(--barony-border);
+    background: var(--barony-surface);
+    color: var(--barony-ink);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.lords-seat-levelchip--active,
+.lords-seat-paintchip--active {
+    border-color: var(--barony-border-strong);
+    box-shadow: inset 0 0 0 1px var(--barony-border-strong);
+    font-weight: 600;
+}
+
+.lords-seat-paintchip--wall {
+    background: #5c5852;
+    color: #f4f1ea;
+}
+
+.lords-seat-paintchip--ground {
+    background: #8a6a45;
+    color: #f7f1e4;
+}
+
+.lords-seat-paintchip--space {
+    background: #c9d6e2;
+    color: #2f3a44;
+}
+
+.lords-seat-plan__cell--wall {
+    background: #5c5852;
+}
+
+.lords-seat-plan__cell--ground {
+    background: #8a6a45;
+}
+
+.lords-seat-plan__cell--space {
+    background:
+        repeating-linear-gradient(
+            45deg,
+            #d7e3ee,
+            #d7e3ee 4px,
+            #c5d4e2 4px,
+            #c5d4e2 8px
+        );
+}
+
+.lords-seat-plan--painting .lords-seat-plan__cell {
+    cursor: crosshair;
+}
+
+.lords-seat-plan--painting .lords-seat-plan__room {
+    pointer-events: none;
+}
+
 .lords-seat-plan-wrap {
     overflow-x: auto;
     margin-bottom: 16px;
@@ -3491,6 +3567,10 @@
 
 .lords-seat-plan--editable {
     user-select: none;
+}
+
+.lords-seat-plan--dragging .lords-seat-plan__room {
+    pointer-events: none;
 }
 
 .lords-seat-placement-hint {
@@ -3569,12 +3649,45 @@
     cursor: grab;
 }
 
+.lords-seat-plan__room--clickable {
+    cursor: pointer;
+}
+
+.lords-seat-plan--editable .lords-seat-plan__room--clickable {
+    cursor: grab;
+}
+
 .lords-seat-plan--editable .lords-seat-plan__room:active {
     cursor: grabbing;
 }
 
 .lords-seat-plan__room--dragging {
     opacity: 0.55;
+}
+
+.lords-seat-plan__room-purpose {
+    font-weight: 700;
+    font-size: 0.72rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    line-height: 1.15;
+}
+
+.lords-seat-plan__room-name {
+    font-weight: 500;
+    font-size: 0.68rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    opacity: 0.9;
+}
+
+.lords-seat-plan__room-meta {
+    font-size: 0.6rem;
+    color: var(--barony-muted);
 }
 
 .lords-seat-plan__room--layout-valid {
@@ -3611,57 +3724,167 @@
     opacity: 0.85;
 }
 
-.lords-seat-plan__room-name {
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
-}
-
-.lords-seat-plan__room-meta {
-    font-size: 0.65rem;
-    color: var(--barony-muted);
-}
-
 .lords-seat-table-wrap {
     overflow-x: auto;
 }
 
-.lords-seat-table {
-    min-width: 1100px;
+/* Lord's Seat tables: shared pre-PPB width so PPB columns start aligned (Domain Panel pattern). */
+.lords-seat-table,
+.lords-seat-templates-table {
+    --barony-pre-ppb-width: 550px;
+    --barony-ppb-subcol-width: 28px;
+    --lords-seat-size-width: 72px;
+    --lords-seat-prestige-width: 56px;
     table-layout: fixed;
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
+}
+
+.lords-seat-table {
+    --lords-seat-name-width: 140px;
+    --lords-seat-purpose-width: 140px;
+    --lords-seat-level-width: 48px;
+    --lords-seat-desc-width: calc(
+        var(--barony-pre-ppb-width)
+        - var(--lords-seat-name-width)
+        - var(--lords-seat-purpose-width)
+        - var(--lords-seat-level-width)
+        - var(--lords-seat-size-width)
+        - var(--lords-seat-prestige-width)
+    );
+}
+
+.lords-seat-templates-table {
+    --lords-seat-name-width: 168px;
+    --lords-seat-desc-width: calc(
+        var(--barony-pre-ppb-width)
+        - var(--lords-seat-name-width)
+        - var(--lords-seat-size-width)
+        - var(--lords-seat-prestige-width)
+    );
 }
 
 .lords-seat-table th,
-.lords-seat-table td {
+.lords-seat-table td,
+.lords-seat-templates-table th,
+.lords-seat-templates-table td {
     vertical-align: middle;
-    text-align: left;
+    box-sizing: border-box;
 }
 
-.lords-seat-col-name { width: 12%; }
-.lords-seat-col-purpose { width: 14%; }
-.lords-seat-col-size { width: 8%; white-space: nowrap; }
-.lords-seat-col-desc { width: 18%; }
-.lords-seat-col-prestige { width: 6%; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
-.lords-seat-col-actions { width: 88px; }
+.lords-seat-table col.lords-seat-col-name,
+.lords-seat-templates-table col.lords-seat-templates-col-name {
+    width: var(--lords-seat-name-width);
+}
+
+.lords-seat-table col.lords-seat-col-purpose {
+    width: var(--lords-seat-purpose-width);
+}
+
+.lords-seat-table col.lords-seat-col-level {
+    width: var(--lords-seat-level-width);
+}
+
+.lords-seat-table col.lords-seat-col-size,
+.lords-seat-templates-table col.lords-seat-templates-col-size {
+    width: var(--lords-seat-size-width);
+}
+
+.lords-seat-table col.lords-seat-col-desc,
+.lords-seat-templates-table col.lords-seat-templates-col-desc {
+    width: var(--lords-seat-desc-width);
+}
+
+.lords-seat-table col.lords-seat-col-prestige,
+.lords-seat-templates-table col.lords-seat-templates-col-prestige {
+    width: var(--lords-seat-prestige-width);
+}
+
+.lords-seat-table col.ppb-pair-col,
+.lords-seat-templates-table col.ppb-pair-col {
+    width: var(--barony-ppb-subcol-width);
+}
 
 .lords-seat-table th.lords-seat-col-name,
 .lords-seat-table td.lords-seat-col-name,
+.lords-seat-templates-table th.lords-seat-templates-col-name,
+.lords-seat-templates-table td.lords-seat-templates-col-name {
+    min-width: var(--lords-seat-name-width);
+    width: var(--lords-seat-name-width);
+    max-width: var(--lords-seat-name-width);
+    text-align: left;
+    overflow: hidden;
+}
+
 .lords-seat-table th.lords-seat-col-purpose,
-.lords-seat-table td.lords-seat-col-purpose,
+.lords-seat-table td.lords-seat-col-purpose {
+    min-width: var(--lords-seat-purpose-width);
+    width: var(--lords-seat-purpose-width);
+    max-width: var(--lords-seat-purpose-width);
+    text-align: left;
+    overflow: hidden;
+}
+
+.lords-seat-table th.lords-seat-col-level,
+.lords-seat-table td.lords-seat-col-level {
+    min-width: var(--lords-seat-level-width);
+    width: var(--lords-seat-level-width);
+    max-width: var(--lords-seat-level-width);
+    white-space: nowrap;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.lords-seat-table th.lords-seat-col-size,
+.lords-seat-table td.lords-seat-col-size,
+.lords-seat-templates-table th.lords-seat-templates-col-size,
+.lords-seat-templates-table td.lords-seat-templates-col-size {
+    min-width: var(--lords-seat-size-width);
+    width: var(--lords-seat-size-width);
+    max-width: var(--lords-seat-size-width);
+    white-space: nowrap;
+}
+
 .lords-seat-table th.lords-seat-col-desc,
-.lords-seat-table td.lords-seat-col-desc {
+.lords-seat-table td.lords-seat-col-desc,
+.lords-seat-templates-table th.lords-seat-templates-col-desc,
+.lords-seat-templates-table td.lords-seat-templates-col-desc {
+    min-width: var(--lords-seat-desc-width);
+    width: var(--lords-seat-desc-width);
+    max-width: var(--lords-seat-desc-width);
     text-align: left;
     white-space: normal;
     overflow: hidden;
-    max-width: 0;
+}
+
+.lords-seat-table th.lords-seat-col-prestige,
+.lords-seat-table td.lords-seat-col-prestige,
+.lords-seat-templates-table th.lords-seat-templates-col-prestige,
+.lords-seat-templates-table td.lords-seat-templates-col-prestige {
+    min-width: var(--lords-seat-prestige-width);
+    width: var(--lords-seat-prestige-width);
+    max-width: var(--lords-seat-prestige-width);
+    white-space: nowrap;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.lords-seat-table .ppb-subcol,
+.lords-seat-templates-table .ppb-subcol,
+.lords-seat-table tbody td:nth-child(n+7),
+.lords-seat-templates-table tbody td:nth-child(n+5) {
+    width: var(--barony-ppb-subcol-width);
+    min-width: var(--barony-ppb-subcol-width);
+    max-width: var(--barony-ppb-subcol-width);
+    white-space: nowrap;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
 }
 
 .lords-seat-ellipsis {
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3673,11 +3896,34 @@
 }
 
 .lords-seat-col-desc > .mud-tooltip-root,
-.lords-seat-col-purpose > .mud-tooltip-root {
+.lords-seat-templates-col-desc > .mud-tooltip-root {
     display: block;
     max-width: 100%;
     min-width: 0;
     overflow: hidden;
+}
+
+.lords-seat-col-name .city-building-name-cell,
+.lords-seat-col-purpose .city-building-name-cell,
+.lords-seat-templates-col-name .city-building-name-cell {
+    width: 100%;
+    justify-content: flex-start;
+}
+
+.lords-seat-col-name .city-building-name-cell > .mud-tooltip-root,
+.lords-seat-col-purpose .city-building-name-cell > .mud-tooltip-root,
+.lords-seat-templates-col-name .city-building-name-cell > .mud-tooltip-root {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-align: left;
+}
+
+.lords-seat-col-name .city-building-name-text,
+.lords-seat-col-purpose .city-building-name-text,
+.lords-seat-templates-col-name .city-building-name-text {
+    text-align: left;
 }
 
 .lords-seat-row--ruin {
@@ -3713,8 +3959,10 @@
     font-size: 0.78em;
 }
 
-.lords-seat-muted {
+.lords-seat-prestige-mult {
     color: var(--barony-muted);
+    font-weight: 500;
+    margin-left: 2px;
 }
 
 .lords-seat-actions {
@@ -3771,6 +4019,6 @@
     flex: 1 1 auto;
 }
 
-.lords-seat-templates-table {
-    min-width: 640px;
+.lords-seat-templates-wrap {
+    overflow-x: auto;
 }

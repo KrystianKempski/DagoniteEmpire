@@ -12,6 +12,17 @@
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
+            <MudSelect T="int"
+                       @bind-Value="_room.Level"
+                       Label="Floor level"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                @foreach (var level in LevelOptions)
+                {
+                    <MudSelectItem Value="@level">@SeatFloorLevel.Label(level)</MudSelectItem>
+                }
+            </MudSelect>
             <div class="seat-room-edit-dialog__grid-fields">
                 <MudNumericField T="int" @bind-Value="_room.GridX" Label="Grid X" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
                 <MudNumericField T="int" @bind-Value="_room.GridY" Label="Grid Y" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
@@ -113,6 +124,19 @@
 
     private SeatRoomDTO _room = new();
 
+    private IEnumerable<int> LevelOptions
+    {
+        get
+        {
+            var levels = Seat.ActiveLevels is { Count: > 0 }
+                ? Seat.ActiveLevels
+                : new List<int> { SeatFloorLevel.Ground };
+            if (!levels.Contains(_room.Level))
+                levels = levels.Append(_room.Level).OrderBy(l => l).ToList();
+            return levels;
+        }
+    }
+
     private IEnumerable<SeatPurposeTemplateDTO> EligiblePurposes =>
         PurposeTemplates
             .Where(t => SeatRoomSizeCategory.MeetsMinimum(_room.TileCount, t.MinSizeCategory))
@@ -127,6 +151,7 @@
             SeatId = Room.SeatId,
             BaronyId = Room.BaronyId,
             Name = Room.Name,
+            Level = Room.Level,
             GridX = Room.GridX,
             GridY = Room.GridY,
             GridW = Room.GridW,

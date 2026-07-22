@@ -54,6 +54,8 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<SeatRoomDTO> SaveSeatRoom(SeatRoomDTO dto);
         Task<int> DeleteSeatRoom(int id);
         Task SetSeatRoomPurpose(int roomId, int? purposeTemplateId, int? occupantAdvisorId = null, string? occupantCustom = null);
+        Task SetSeatTile(int seatId, int level, int x, int y, string? kind);
+        Task SaveSeatActiveLevels(int seatId, IReadOnlyList<int> levels);
         Task<List<SeatPurposeTemplateDTO>> GetSeatPurposeTemplates(int baronyId);
         Task<SeatPurposeTemplateDTO> SaveSeatPurposeTemplate(SeatPurposeTemplateDTO dto);
         Task<int> DeleteSeatPurposeTemplate(int id);

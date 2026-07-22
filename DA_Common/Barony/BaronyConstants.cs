@@ -616,4 +616,41 @@ namespace DA_Common.Barony
 
         public static readonly string[] All = { Advantage, Disadvantage };
     }
+
+    /// <summary>Vertical floor index for the lord's seat plan (-3 underground … 5 above ground).</summary>
+    public static class SeatFloorLevel
+    {
+        public const int Min = -3;
+        public const int Max = 5;
+        public const int Ground = 0;
+
+        public static bool IsValid(int level) => level >= Min && level <= Max;
+
+        public static int Clamp(int level) => Math.Clamp(level, Min, Max);
+
+        public static string Label(int level) => level switch
+        {
+            < Ground => $"Level {level} (below)",
+            Ground => "Level 0 (ground)",
+            _ => $"Level {level} (above)",
+        };
+    }
+
+    /// <summary>Painted map cell that is not a chamber.</summary>
+    public readonly struct SeatTileKind
+    {
+        public const string Wall = "Wall";
+        public const string Ground = "Ground";
+        public const string Space = "Space";
+
+        public static readonly string[] All = { Wall, Ground, Space };
+
+        public static string Label(string kind) => kind switch
+        {
+            Wall => "Wall / fortification",
+            Ground => "Earth / ground",
+            Space => "Open space",
+            _ => kind,
+        };
+    }
 }

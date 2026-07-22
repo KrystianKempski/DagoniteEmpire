@@ -17,7 +17,34 @@ namespace DA_DataAccess.BaronyData
 
         public int GridHeight { get; set; } = 8;
 
+        /// <summary>JSON array of active floor levels (e.g. <c>[0,1,-1]</c>). Always includes ground (0) when empty.</summary>
+        public string ActiveLevelsJson { get; set; } = "[0]";
+
         public List<SeatRoom> Rooms { get; set; } = new();
+
+        public List<SeatTile> Tiles { get; set; } = new();
+    }
+
+    /// <summary>Painted terrain cell on a seat floor (wall / ground / open space).</summary>
+    public class SeatTile
+    {
+        [Key]
+        public int Id { get; set; }
+
+        public int SeatId { get; set; }
+
+        [ForeignKey(nameof(SeatId))]
+        public BaronySeat? Seat { get; set; }
+
+        /// <summary>Floor level (-3 … 5).</summary>
+        public int Level { get; set; }
+
+        public int X { get; set; }
+
+        public int Y { get; set; }
+
+        /// <see cref="DA_Common.Barony.SeatTileKind"/>
+        public string Kind { get; set; } = DA_Common.Barony.SeatTileKind.Ground;
     }
 
     /// <summary>Physical chamber within the lord's seat.</summary>
@@ -32,6 +59,9 @@ namespace DA_DataAccess.BaronyData
         public BaronySeat? Seat { get; set; }
 
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>Floor level (-3 … 5). Default ground.</summary>
+        public int Level { get; set; }
 
         public int GridX { get; set; }
 

@@ -78,6 +78,7 @@ namespace DA_DataAccess.Data
         public DbSet<BaronySeat> BaronySeats { get; set; }
         public DbSet<SeatRoom> SeatRooms { get; set; }
         public DbSet<SeatRoomTrait> SeatRoomTraits { get; set; }
+        public DbSet<SeatTile> SeatTiles { get; set; }
         public DbSet<SeatPurposeTemplate> SeatPurposeTemplates { get; set; }
         public DbSet<BaronyResourceSource> BaronyResourceSources { get; set; }
         public DbSet<BaronPurseSource> BaronPurseSources { get; set; }
@@ -140,6 +141,11 @@ namespace DA_DataAccess.Data
             modelBuilder.Entity<TerrainTile>(entity =>
             {
                 entity.HasIndex(e => new { e.BaronyId, e.X, e.Y }).IsUnique();
+            });
+
+            modelBuilder.Entity<SeatTile>(entity =>
+            {
+                entity.HasIndex(e => new { e.SeatId, e.Level, e.X, e.Y }).IsUnique();
             });
 
             //modelBuilder.Entity<ProfessionSkill>()

@@ -24,59 +24,141 @@
                     Add chamber
                 </MudButton>
             </div>
+            <div class="lords-seat-levelbar">
+                <span class="lords-seat-levelbar__label">Floor</span>
+                @foreach (var level in ActiveLevels)
+                {
+                    <button type="button"
+                            class="@LevelChipClass(level)"
+                            @onclick="() => SelectLevel(level)">
+                        @level
+                    </button>
+                }
+                <MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                    <ActivatorContent>
+                        <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                       Size="Size.Small"
+                                       title="Add floor level"
+                                       Disabled="@(!AvailableLevelsToAdd.Any())" />
+                    </ActivatorContent>
+                    <ChildContent>
+                        @foreach (var level in AvailableLevelsToAdd)
+                        {
+                            <MudMenuItem OnClick="@(() => AddLevelAsync(level))">@SeatFloorLevel.Label(level)</MudMenuItem>
+                        }
+                    </ChildContent>
+                </MudMenu>
+                <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                               Size="Size.Small"
+                               title="Remove current floor"
+                               Disabled="@(_currentLevel == SeatFloorLevel.Ground || ActiveLevels.Count <= 1)"
+                               OnClick="RemoveCurrentLevelAsync" />
+            </div>
+            <div class="lords-seat-paintbar">
+                <span class="lords-seat-levelbar__label">Paint</span>
+                <button type="button"
+                        class="@PaintChipClassWall()"
+                        title="@SeatTileKind.Label(SeatTileKind.Wall)"
+                        @onclick="PaintWall">Wall</button>
+                <button type="button"
+                        class="@PaintChipClassGround()"
+                        title="@SeatTileKind.Label(SeatTileKind.Ground)"
+                        @onclick="PaintGround">Ground</button>
+                <button type="button"
+                        class="@PaintChipClassSpace()"
+                        title="@SeatTileKind.Label(SeatTileKind.Space)"
+                        @onclick="PaintSpace">Space</button>
+                <button type="button"
+                        class="@PaintChipClassErase()"
+                        title="Erase painted tile"
+                        @onclick="PaintErase">Erase</button>
+                @if (_paintKind is not null)
+                {
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearPaintMode">Done</MudButton>
+                }
+            </div>
+        }
+        else if (ActiveLevels.Count > 1)
+        {
+            <div class="lords-seat-levelbar">
+                <span class="lords-seat-levelbar__label">Floor</span>
+                @foreach (var level in ActiveLevels)
+                {
+                    <button type="button"
+                            class="@LevelChipClass(level)"
+                            @onclick="() => SelectLevel(level)">
+                        @level
+                    </button>
+                }
+            </div>
         }
 
-        @if (CanManage || Seat.Rooms.Any(r => r.GridW > 0 && r.GridH > 0))
+        @if (CanManage || Seat.Rooms.Any(r => r.GridW > 0 && r.GridH > 0) || Seat.Tiles.Count > 0 || ActiveLevels.Count > 0)
         {
             <div class="lords-seat-plan-wrap">
                 @if (CanManage && _placementMode)
                 {
                     <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
-                        Click a grid cell to place a new chamber (2×2). Drag chambers to move them.
+                        Click a grid cell on @SeatFloorLevel.Label(_currentLevel) to place a new chamber (2×2).
                         <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelPlacementMode">Cancel</MudButton>
+                    </MudText>
+                }
+                else if (CanManage && _paintKind is not null)
+                {
+                    <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
+                        Painting @PaintModeLabel() on @SeatFloorLevel.Label(_currentLevel). Click or drag across cells.
                     </MudText>
                 }
                 else if (CanManage)
                 {
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="lords-seat-placement-hint">
-                        Drag chambers to reposition. Red = outside grid or overlapping.
+                        @SeatFloorLevel.Label(_currentLevel). Click a chamber to assign purpose. Drag to reposition. Use paint for walls, ground, and open space.
                     </MudText>
                 }
-                <div class="lords-seat-plan @(CanManage ? "lords-seat-plan--editable" : null)"
+                <div class="@PlanClass()"
                      style="--seat-cols:@Seat.GridWidth; --seat-rows:@Seat.GridHeight;"
                      @ondragover="OnPlanDragOver"
-                     @ondragover:preventDefault>
-                    @if (CanManage)
+                     @ondragover:preventDefault
+                     @onmouseup="EndPaintStroke"
+                     @onmouseleave="EndPaintStroke">
+                    @for (var y = 0; y < Seat.GridHeight; y++)
                     {
-                        @for (var y = 0; y < Seat.GridHeight; y++)
+                        for (var x = 0; x < Seat.GridWidth; x++)
                         {
-                            for (var x = 0; x < Seat.GridWidth; x++)
-                            {
-                                var cellX = x;
-                                var cellY = y;
-                                <div class="lords-seat-plan__cell @CellDropClass(cellX, cellY)"
-                                     style="grid-column:@(cellX + 1); grid-row:@(cellY + 1);"
-                                     @ondragenter="() => OnCellDragEnter(cellX, cellY)"
-                                     @ondragleave="() => OnCellDragLeave(cellX, cellY)"
-                                     @ondragover="e => OnCellDragOver(e, cellX, cellY)"
-                                     @ondragover:preventDefault
-                                     @ondrop="e => OnCellDrop(e, cellX, cellY)"
-                                     @ondrop:preventDefault
-                                     @onclick="() => OnCellClick(cellX, cellY)">
-                                </div>
-                            }
+                            var cellX = x;
+                            var cellY = y;
+                            var tileKind = TileKindAt(cellX, cellY);
+                            <div class="lords-seat-plan__cell @CellDropClass(cellX, cellY) @TileCellClass(tileKind)"
+                                 style="grid-column:@(cellX + 1); grid-row:@(cellY + 1);"
+                                 title="@(tileKind is null ? null : SeatTileKind.Label(tileKind))"
+                                 @ondragenter="() => OnCellDragEnter(cellX, cellY)"
+                                 @ondragleave="() => OnCellDragLeave(cellX, cellY)"
+                                 @ondragover="e => OnCellDragOver(e, cellX, cellY)"
+                                 @ondragover:preventDefault
+                                 @ondrop="e => OnCellDrop(e, cellX, cellY)"
+                                 @ondrop:preventDefault
+                                 @onmousedown="() => OnCellMouseDown(cellX, cellY)"
+                                 @onmouseenter="() => OnCellMouseEnter(cellX, cellY)"
+                                 @onclick="() => OnCellClick(cellX, cellY)">
+                            </div>
                         }
                     }
                     @foreach (var room in PlacedRooms)
                     {
                         var layoutIssue = GetLayoutIssue(room);
-                        <div draggable="@(CanManage ? "true" : "false")"
-                             class="lords-seat-plan__room @RoomPlanClass(room, layoutIssue) @(_dragRoomId == room.Id ? "lords-seat-plan__room--dragging" : null)"
+                        var purposeName = PurposeNameOnly(room);
+                        <div draggable="@DraggableAttr()"
+                             class="@RoomElementClass(room, layoutIssue)"
                              style="grid-column:@(room.GridX + 1) / span @room.GridW; grid-row:@(room.GridY + 1) / span @room.GridH;"
                              title="@RoomPlanTooltip(room, layoutIssue)"
                              @onclick:stopPropagation="true"
+                             @onclick="() => OnRoomClickAsync(room)"
                              @ondragstart="e => OnRoomDragStart(e, room)"
                              @ondragend="OnRoomDragEndAsync">
+                            @if (!string.IsNullOrWhiteSpace(purposeName))
+                            {
+                                <span class="lords-seat-plan__room-purpose">@purposeName</span>
+                            }
                             <span class="lords-seat-plan__room-name">@room.Name</span>
                             <span class="lords-seat-plan__room-meta">@room.SizeCategory</span>
                         </div>
@@ -109,6 +191,7 @@
                     <colgroup>
                         <col class="lords-seat-col-name" />
                         <col class="lords-seat-col-purpose" />
+                        <col class="lords-seat-col-level" />
                         <col class="lords-seat-col-size" />
                         <col class="lords-seat-col-desc" />
                         <col class="lords-seat-col-prestige" />
@@ -117,12 +200,12 @@
                             <col class="ppb-pair-col" />
                             <col class="ppb-pair-col" />
                         }
-                        <col class="lords-seat-col-actions" />
                     </colgroup>
                     <thead>
                         <tr>
                             <th rowspan="2" class="ppb-row-label lords-seat-col-name">Chamber</th>
                             <th rowspan="2" class="ppb-row-label lords-seat-col-purpose">Purpose</th>
+                            <th rowspan="2" class="lords-seat-col-level">Floor</th>
                             <th rowspan="2" class="lords-seat-col-size">Size</th>
                             <th rowspan="2" class="lords-seat-col-desc">Description</th>
                             <th rowspan="2" class="lords-seat-col-prestige">Prestige</th>
@@ -130,7 +213,6 @@
                             {
                                 <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
                             }
-                            <th rowspan="2" class="lords-seat-col-actions"></th>
                         </tr>
                         <tr>
                             @foreach (var _ in PpbCatalog.All)
@@ -146,14 +228,44 @@
                             var (additive, percent) = RoomPpbValues(room);
                             <tr class="@RowClass(room)">
                                 <td class="lords-seat-col-name">
-                                    <BaronyTooltip Title="Chamber" Text="@RoomTooltip(room, GetLayoutIssue(room))">
-                                        <span class="city-building-name-text">@room.Name</span>
-                                    </BaronyTooltip>
+                                    <div class="city-building-name-cell">
+                                        <BaronyTooltip Title="Chamber" Text="@RoomTooltip(room, GetLayoutIssue(room))">
+                                            <span class="city-building-name-text">@room.Name</span>
+                                        </BaronyTooltip>
+                                        @if (CanManage)
+                                        {
+                                            <span class="city-building-name-actions">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               title="Edit chamber"
+                                                               OnClick="@(() => EditRoomAsync(room))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                               Size="Size.Small"
+                                                               Color="Color.Error"
+                                                               title="Remove chamber"
+                                                               OnClick="@(() => DeleteRoomAsync(room))" />
+                                            </span>
+                                        }
+                                    </div>
                                 </td>
                                 <td class="lords-seat-col-purpose">
-                                    <BaronyTooltip Title="Purpose" Text="@PurposeTooltip(room)">
-                                        <span class="lords-seat-ellipsis">@PurposeLabel(room)</span>
-                                    </BaronyTooltip>
+                                    <div class="city-building-name-cell">
+                                        <BaronyTooltip Title="Purpose" Text="@PurposeTooltip(room)">
+                                            <span class="city-building-name-text">@PurposeLabel(room)</span>
+                                        </BaronyTooltip>
+                                        @if (CanEdit && !room.IsRuin)
+                                        {
+                                            <span class="city-building-name-actions">
+                                                <MudIconButton Icon="@Icons.Material.Filled.SwapHoriz"
+                                                               Size="Size.Small"
+                                                               title="Assign purpose"
+                                                               OnClick="@(() => AssignPurposeAsync(room))" />
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="lords-seat-col-level" title="@SeatFloorLevel.Label(room.Level)">
+                                    @room.Level
                                 </td>
                                 <td class="lords-seat-col-size" title="@($"{room.TileCount} tiles")">
                                     @room.SizeCategory
@@ -176,16 +288,24 @@
                                 </td>
                                 <td class="lords-seat-col-prestige">
                                     @{
-                                        var prestige = RoomPrestigeValue(room);
+                                        var prestigeTotal = RoomPrestigeTotal(room);
+                                        var mult = room.PrestigeMultiplier;
                                     }
-                                    @if (prestige == 0m)
+                                    @if (prestigeTotal is null)
                                     {
-                                        <span class="lords-seat-muted">—</span>
+                                        <BaronyTooltip Title="Prestige"
+                                                       Text="@($"Chamber multiplier: ×{mult:0.##}. Assign a purpose with prestige to see the total.")">
+                                            <span class="lords-seat-muted">— (×@mult.ToString("0.##"))</span>
+                                        </BaronyTooltip>
                                     }
                                     else
                                     {
-                                        <BaronyTooltip Title="Prestige" Text="@PrestigeTooltip(room, prestige)">
-                                            <span>@prestige.ToString("0.##")</span>
+                                        <BaronyTooltip Title="Prestige"
+                                                       Text="@PrestigeTooltip(room, prestigeTotal.Value)">
+                                            <span class="@(prestigeTotal.Value == 0m ? "lords-seat-muted" : PpbCellStyle.ValueClassStandard(prestigeTotal.Value))">
+                                                @prestigeTotal.Value.ToString("0.##")
+                                                <span class="lords-seat-prestige-mult">(×@mult.ToString("0.##"))</span>
+                                            </span>
                                         </BaronyTooltip>
                                     }
                                 </td>
@@ -194,41 +314,17 @@
                                     <td class="@($"{PpbCellStyle.ValueClass(info.Key, additive[info.Key])}{(room.IsRuin ? " ppb-cell-struck" : "")}")">@FmtAdd(additive[info.Key])</td>
                                     <td class="@($"{PpbCellStyle.ValueClass(info.Key, percent[info.Key])}{(room.IsRuin ? " ppb-cell-struck" : "")}")">@FmtPct(percent[info.Key])</td>
                                 }
-                                <td class="lords-seat-col-actions">
-                                    <div class="lords-seat-actions">
-                                        @if (CanEdit && !room.IsRuin)
-                                        {
-                                            <MudIconButton Icon="@Icons.Material.Filled.SwapHoriz"
-                                                           Size="Size.Small"
-                                                           title="Assign purpose"
-                                                           OnClick="@(() => AssignPurposeAsync(room))" />
-                                        }
-                                        @if (CanManage)
-                                        {
-                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                           Size="Size.Small"
-                                                           title="Edit chamber"
-                                                           OnClick="@(() => EditRoomAsync(room))" />
-                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                           Size="Size.Small"
-                                                           Color="Color.Error"
-                                                           title="Remove chamber"
-                                                           OnClick="@(() => DeleteRoomAsync(room))" />
-                                        }
-                                    </div>
-                                </td>
                             </tr>
                         }
                         @if (OrderedRooms.Any())
                         {
                             <tr class="ppb-summary-row">
-                                <td class="ppb-row-label" colspan="5">Σ Lord's Seat</td>
+                                <td class="ppb-row-label" colspan="6">Σ Lord's Seat</td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
                                     <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
                                     <td class="@PpbCellStyle.ValueClass(info.Key, PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
                                 }
-                                <td class="lords-seat-col-actions"></td>
                             </tr>
                         }
                     </tbody>
@@ -247,31 +343,53 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private bool _placementMode;
+    private string? _paintKind;
+    private bool _paintStrokeActive;
+    private int _currentLevel = SeatFloorLevel.Ground;
     private int? _dragRoomId;
     private int _dragRoomW = 1;
     private int _dragRoomH = 1;
-    private int? _dropCellX;
-    private int? _dropCellY;
-    private int? _lastDropCellX;
-    private int? _lastDropCellY;
+    /// <summary>Tile within the chamber that was grabbed (0,0 = top-left).</summary>
+    private int _grabOffsetX;
+    private int _grabOffsetY;
+    /// <summary>Grid cell currently under the cursor while dragging.</summary>
+    private int? _hoverCellX;
+    private int? _hoverCellY;
+    private int? _lastHoverCellX;
+    private int? _lastHoverCellY;
     private bool _layoutMovePending;
+    private bool _suppressRoomClick;
+
+    /// <summary>Matches CSS <c>--seat-tile</c> + gap on <c>.lords-seat-plan</c>.</summary>
+    private const double SeatTilePx = 32;
+    private const double SeatGapPx = 2;
 
     private sealed record DropPreviewInfo(int X, int Y, int W, int H, string CssClass);
+
+    private (int X, int Y)? DropOrigin
+    {
+        get
+        {
+            if (_hoverCellX is not int hx || _hoverCellY is not int hy)
+                return null;
+            return (hx - _grabOffsetX, hy - _grabOffsetY);
+        }
+    }
 
     private DropPreviewInfo? DropPreview
     {
         get
         {
-            if (_dragRoomId is null || _dropCellX is not int x || _dropCellY is not int y)
+            if (_dragRoomId is null || DropOrigin is not { } origin)
                 return null;
 
             var issue = SeatRoomLayout.GetIssue(
                 _dragRoomId.Value,
-                x,
-                y,
+                origin.X,
+                origin.Y,
                 _dragRoomW,
                 _dragRoomH,
-                RoomFootprints,
+                LevelFootprints,
                 Seat.GridWidth,
                 Seat.GridHeight);
 
@@ -281,15 +399,100 @@
                 SeatRoomLayoutIssue.OutOfBounds => "lords-seat-plan__ghost--invalid",
                 _ => "lords-seat-plan__ghost--valid",
             };
-            return new DropPreviewInfo(x, y, _dragRoomW, _dragRoomH, css);
+            return new DropPreviewInfo(origin.X, origin.Y, _dragRoomW, _dragRoomH, css);
         }
     }
 
-    private IEnumerable<SeatRoomDTO> PlacedRooms =>
-        Seat.Rooms.Where(r => r.GridW > 0 && r.GridH > 0);
+    private IReadOnlyList<int> ActiveLevels =>
+        Seat.ActiveLevels is { Count: > 0 }
+            ? Seat.ActiveLevels
+            : new List<int> { SeatFloorLevel.Ground };
 
-    private IEnumerable<(int Id, int X, int Y, int W, int H)> RoomFootprints =>
-        Seat.Rooms.Select(r => (r.Id, r.GridX, r.GridY, r.GridW, r.GridH));
+    private IEnumerable<int> AvailableLevelsToAdd =>
+        Enumerable.Range(SeatFloorLevel.Min, SeatFloorLevel.Max - SeatFloorLevel.Min + 1)
+            .Where(l => !ActiveLevels.Contains(l));
+
+    private IEnumerable<SeatRoomDTO> PlacedRooms =>
+        Seat.Rooms.Where(r => r.Level == _currentLevel && r.GridW > 0 && r.GridH > 0);
+
+    private IEnumerable<(int Id, int X, int Y, int W, int H)> LevelFootprints =>
+        Seat.Rooms.Where(r => r.Level == _currentLevel)
+            .Select(r => (r.Id, r.GridX, r.GridY, r.GridW, r.GridH));
+
+    private IReadOnlyDictionary<(int X, int Y), string> CurrentLevelTiles =>
+        Seat.Tiles
+            .Where(t => t.Level == _currentLevel)
+            .GroupBy(t => (t.X, t.Y))
+            .ToDictionary(g => g.Key, g => g.First().Kind);
+
+    private string? TileKindAt(int x, int y) =>
+        CurrentLevelTiles.TryGetValue((x, y), out var kind) ? kind : null;
+
+    private static string TileCellClass(string? kind) => kind switch
+    {
+        SeatTileKind.Wall => "lords-seat-plan__cell--wall",
+        SeatTileKind.Ground => "lords-seat-plan__cell--ground",
+        SeatTileKind.Space => "lords-seat-plan__cell--space",
+        _ => string.Empty,
+    };
+
+    private string LevelChipClass(int level) =>
+        _currentLevel == level
+            ? "lords-seat-levelchip lords-seat-levelchip--active"
+            : "lords-seat-levelchip";
+
+    private string PaintChipClass(string kind, string? colorClass)
+    {
+        var active = _paintKind == kind ? " lords-seat-paintchip--active" : string.Empty;
+        return string.IsNullOrEmpty(colorClass)
+            ? $"lords-seat-paintchip{active}"
+            : $"lords-seat-paintchip {colorClass}{active}";
+    }
+
+    private string PaintChipClassWall() => PaintChipClass(SeatTileKind.Wall, "lords-seat-paintchip--wall");
+    private string PaintChipClassGround() => PaintChipClass(SeatTileKind.Ground, "lords-seat-paintchip--ground");
+    private string PaintChipClassSpace() => PaintChipClass(SeatTileKind.Space, "lords-seat-paintchip--space");
+    private string PaintChipClassErase() => PaintChipClass(string.Empty, null);
+
+    private void PaintWall() => TogglePaint(SeatTileKind.Wall);
+    private void PaintGround() => TogglePaint(SeatTileKind.Ground);
+    private void PaintSpace() => TogglePaint(SeatTileKind.Space);
+    private void PaintErase() => TogglePaint(string.Empty);
+
+    private string PaintModeLabel() =>
+        string.IsNullOrEmpty(_paintKind) ? "erase" : SeatTileKind.Label(_paintKind!);
+
+    private string DraggableAttr() => CanManage ? "true" : "false";
+
+    private string PlanClass()
+    {
+        var parts = new List<string> { "lords-seat-plan" };
+        if (CanManage)
+            parts.Add("lords-seat-plan--editable");
+        if (_dragRoomId is not null)
+            parts.Add("lords-seat-plan--dragging");
+        if (_paintKind is not null)
+            parts.Add("lords-seat-plan--painting");
+        return string.Join(' ', parts);
+    }
+
+    private string RoomElementClass(SeatRoomDTO room, SeatRoomLayoutIssue layoutIssue)
+    {
+        var parts = new List<string> { "lords-seat-plan__room", RoomPlanClass(room, layoutIssue) };
+        if (_dragRoomId == room.Id)
+            parts.Add("lords-seat-plan__room--dragging");
+        if (CanEdit && !room.IsRuin)
+            parts.Add("lords-seat-plan__room--clickable");
+        return string.Join(' ', parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!ActiveLevels.Contains(_currentLevel))
+            _currentLevel = ActiveLevels.Contains(SeatFloorLevel.Ground)
+                ? SeatFloorLevel.Ground
+                : ActiveLevels[0];
+    }
 
     private IReadOnlyDictionary<int, SeatPurposeTemplateDTO> PurposeLookup =>
         BaronyCalc.PurposeLookup(PurposeTemplates);
@@ -298,7 +501,7 @@
         Advisors.ToDictionary(a => a.Id);
 
     private IEnumerable<SeatRoomDTO> OrderedRooms =>
-        Seat.Rooms.OrderBy(r => r.SortOrder).ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase);
+        Seat.Rooms.OrderBy(r => r.Level).ThenBy(r => r.SortOrder).ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase);
 
     private PpbVector Glance =>
         BaronyCalc.SectionGlance(BaronyCalc.LordsSeatDetailRows(Seat.Rooms, PurposeLookup));
@@ -325,6 +528,13 @@
         }
 
         return (add, pct);
+    }
+
+    private string PurposeNameOnly(SeatRoomDTO room)
+    {
+        if (room.PurposeTemplateId is int pid && PurposeLookup.TryGetValue(pid, out var p))
+            return p.Name;
+        return string.Empty;
     }
 
     private string PurposeLabel(SeatRoomDTO room)
@@ -399,32 +609,20 @@
         return string.Join(" ", parts);
     }
 
-    private static decimal RoomPrestigeValue(SeatRoomDTO room, SeatPurposeTemplateDTO? purpose)
+    private decimal? RoomPrestigeTotal(SeatRoomDTO room)
     {
-        if (purpose is null)
-            return 0m;
+        if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var purpose))
+            return null;
 
         return room.PrestigeMultiplier * purpose.AdditivePrestige;
     }
 
-    private decimal RoomPrestigeValue(SeatRoomDTO room)
-    {
-        PurposeLookup.TryGetValue(room.PurposeTemplateId ?? -1, out var purpose);
-        return RoomPrestigeValue(room, purpose);
-    }
-
-    private static string PrestigeTooltip(SeatRoomDTO room, decimal total, SeatPurposeTemplateDTO? purpose)
-    {
-        if (purpose is null || purpose.AdditivePrestige == 0m)
-            return $"Room multiplier: ×{room.PrestigeMultiplier:0.##}";
-
-        return $"×{room.PrestigeMultiplier:0.##} room × {purpose.AdditivePrestige:0.##} purpose = {total:0.##}";
-    }
-
     private string PrestigeTooltip(SeatRoomDTO room, decimal total)
     {
-        PurposeLookup.TryGetValue(room.PurposeTemplateId ?? -1, out var purpose);
-        return PrestigeTooltip(room, total, purpose);
+        if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var purpose))
+            return $"Chamber multiplier: ×{room.PrestigeMultiplier:0.##}.";
+
+        return $"Purpose prestige {purpose.AdditivePrestige:0.##} × chamber multiplier ×{room.PrestigeMultiplier:0.##} = {total:0.##}.";
     }
 
     private static string RoomTooltip(SeatRoomDTO room, SeatRoomLayoutIssue layoutIssue = SeatRoomLayoutIssue.None)
@@ -432,6 +630,7 @@
         var lines = new List<string>
         {
             $"Tiles: {room.TileCount} ({room.SizeCategory})",
+            SeatFloorLevel.Label(room.Level),
             $"Material: {room.Material}",
             room.IsRuin ? "Inactive (ruin) — excluded from totals." : "Active",
             $"Prestige multiplier: ×{room.PrestigeMultiplier:0.##}",
@@ -450,7 +649,8 @@
             room.GridY,
             room.GridW,
             room.GridH,
-            RoomFootprints,
+            Seat.Rooms.Where(r => r.Level == room.Level)
+                .Select(r => (r.Id, r.GridX, r.GridY, r.GridW, r.GridH)),
             Seat.GridWidth,
             Seat.GridHeight);
 
@@ -486,11 +686,9 @@
 
     private string CellDropClass(int x, int y)
     {
-        if (_dragRoomId is not null
-            && _dropCellX is int ox
-            && _dropCellY is int oy
-            && x >= ox && x < ox + _dragRoomW
-            && y >= oy && y < oy + _dragRoomH)
+        if (DropOrigin is { } origin
+            && x >= origin.X && x < origin.X + _dragRoomW
+            && y >= origin.Y && y < origin.Y + _dragRoomH)
         {
             return "lords-seat-plan__cell--drop-target";
         }
@@ -508,32 +706,35 @@
         _dragRoomId = room.Id;
         _dragRoomW = Math.Max(1, room.GridW);
         _dragRoomH = Math.Max(1, room.GridH);
-        _dropCellX = null;
-        _dropCellY = null;
-        _lastDropCellX = null;
-        _lastDropCellY = null;
+
+        var pitch = SeatTilePx + SeatGapPx;
+        _grabOffsetX = Math.Clamp((int)Math.Floor(e.OffsetX / pitch), 0, Math.Max(0, _dragRoomW - 1));
+        _grabOffsetY = Math.Clamp((int)Math.Floor(e.OffsetY / pitch), 0, Math.Max(0, _dragRoomH - 1));
+
+        // Seed hover so the ghost starts aligned with the chamber under the cursor.
+        RememberHoverCell(room.GridX + _grabOffsetX, room.GridY + _grabOffsetY);
         _layoutMovePending = false;
         e.DataTransfer.EffectAllowed = "move";
     }
 
-    private void RememberDropCell(int x, int y)
+    private void RememberHoverCell(int x, int y)
     {
         if (_dragRoomId is null)
             return;
-        if (_dropCellX == x && _dropCellY == y)
+        if (_hoverCellX == x && _hoverCellY == y)
             return;
-        _dropCellX = x;
-        _dropCellY = y;
-        _lastDropCellX = x;
-        _lastDropCellY = y;
+        _hoverCellX = x;
+        _hoverCellY = y;
+        _lastHoverCellX = x;
+        _lastHoverCellY = y;
     }
 
-    private void OnCellDragEnter(int x, int y) => RememberDropCell(x, y);
+    private void OnCellDragEnter(int x, int y) => RememberHoverCell(x, y);
 
     private void OnCellDragOver(DragEventArgs e, int x, int y)
     {
         e.DataTransfer.DropEffect = "move";
-        RememberDropCell(x, y);
+        RememberHoverCell(x, y);
     }
 
     private void OnCellDragLeave(int x, int y)
@@ -543,30 +744,48 @@
 
     private async Task OnCellDrop(DragEventArgs e, int x, int y)
     {
-        _lastDropCellX = x;
-        _lastDropCellY = y;
+        RememberHoverCell(x, y);
         _layoutMovePending = true;
-        await ApplyRoomMoveAsync(x, y);
+        if (DropOrigin is { } origin)
+            await ApplyRoomMoveAsync(origin.X, origin.Y);
     }
 
     private async Task OnRoomDragEndAsync()
     {
         if (_dragRoomId is not null
-            && _lastDropCellX is int x
-            && _lastDropCellY is int y
+            && _lastHoverCellX is int hx
+            && _lastHoverCellY is int hy
             && !_layoutMovePending)
         {
-            await ApplyRoomMoveAsync(x, y);
+            var originX = hx - _grabOffsetX;
+            var originY = hy - _grabOffsetY;
+            await ApplyRoomMoveAsync(originX, originY);
         }
 
         _dragRoomId = null;
         _dragRoomW = 1;
         _dragRoomH = 1;
-        _dropCellX = null;
-        _dropCellY = null;
-        _lastDropCellX = null;
-        _lastDropCellY = null;
+        _grabOffsetX = 0;
+        _grabOffsetY = 0;
+        _hoverCellX = null;
+        _hoverCellY = null;
+        _lastHoverCellX = null;
+        _lastHoverCellY = null;
         _layoutMovePending = false;
+    }
+
+    private async Task OnRoomClickAsync(SeatRoomDTO room)
+    {
+        if (_suppressRoomClick)
+        {
+            _suppressRoomClick = false;
+            return;
+        }
+
+        if (!CanEdit || room.IsRuin)
+            return;
+
+        await AssignPurposeAsync(room);
     }
 
     private async Task ApplyRoomMoveAsync(int x, int y)
@@ -583,7 +802,7 @@
         draft.GridY = y;
 
         var others = Seat.Rooms
-            .Where(r => r.Id != roomId)
+            .Where(r => r.Id != roomId && r.Level == draft.Level)
             .Select(r => (r.Id, r.GridX, r.GridY, r.GridW, r.GridH));
         var issue = SeatRoomLayout.GetIssue(
             draft.Id,
@@ -598,6 +817,7 @@
         try
         {
             await _baronyRepo.SaveSeatRoom(draft);
+            _suppressRoomClick = true;
             if (issue == SeatRoomLayoutIssue.None)
                 _snackBar.Add("Chamber moved.", Severity.Success);
             else
@@ -611,11 +831,111 @@
         }
     }
 
-    private void CancelPlacementMode() => _placementMode = false;
+    private void CancelPlacementMode()
+    {
+        _placementMode = false;
+    }
+
+    private void ClearPaintMode()
+    {
+        _paintKind = null;
+        _paintStrokeActive = false;
+    }
+
+    private void TogglePaint(string kind)
+    {
+        _placementMode = false;
+        _paintKind = _paintKind == kind ? null : kind;
+        _paintStrokeActive = false;
+    }
+
+    private void SelectLevel(int level)
+    {
+        _currentLevel = level;
+        _paintStrokeActive = false;
+    }
+
+    private void EndPaintStroke() => _paintStrokeActive = false;
+
+    private async Task OnCellMouseDown(int x, int y)
+    {
+        if (!CanManage || _paintKind is null || _dragRoomId is not null || _placementMode)
+            return;
+
+        _paintStrokeActive = true;
+        await PaintCellAsync(x, y);
+    }
+
+    private async Task OnCellMouseEnter(int x, int y)
+    {
+        if (!_paintStrokeActive || _paintKind is null)
+            return;
+
+        await PaintCellAsync(x, y);
+    }
+
+    private async Task PaintCellAsync(int x, int y)
+    {
+        if (!CanManage || _paintKind is null)
+            return;
+
+        try
+        {
+            var kind = string.IsNullOrEmpty(_paintKind) ? null : _paintKind;
+            await _baronyRepo.SetSeatTile(Seat.Id, _currentLevel, x, y, kind);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not paint tile: " + ex.Message, Severity.Error);
+            _paintStrokeActive = false;
+        }
+    }
+
+    private async Task AddLevelAsync(int level)
+    {
+        if (!SeatFloorLevel.IsValid(level) || ActiveLevels.Contains(level))
+            return;
+
+        var next = ActiveLevels.Append(level).ToList();
+        try
+        {
+            await _baronyRepo.SaveSeatActiveLevels(Seat.Id, next);
+            _currentLevel = level;
+            _snackBar.Add($"Added {SeatFloorLevel.Label(level)}.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not add floor: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task RemoveCurrentLevelAsync()
+    {
+        if (_currentLevel == SeatFloorLevel.Ground || ActiveLevels.Count <= 1)
+            return;
+
+        var next = ActiveLevels.Where(l => l != _currentLevel).ToList();
+        try
+        {
+            await _baronyRepo.SaveSeatActiveLevels(Seat.Id, next);
+            _currentLevel = next.Contains(SeatFloorLevel.Ground) ? SeatFloorLevel.Ground : next[0];
+            _snackBar.Add("Floor removed.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not remove floor: " + ex.Message, Severity.Error);
+        }
+    }
 
     private async Task OnCellClick(int x, int y)
     {
         if (!CanManage || _dragRoomId is not null)
+            return;
+
+        if (_paintKind is not null)
             return;
 
         if (_placementMode)
@@ -625,6 +945,7 @@
             {
                 SeatId = Seat.Id,
                 BaronyId = Seat.BaronyId,
+                Level = _currentLevel,
                 GridX = x,
                 GridY = y,
                 GridW = 2,
@@ -694,6 +1015,7 @@
 
     private Task AddRoomAsync()
     {
+        _paintKind = null;
         _placementMode = true;
         return Task.CompletedTask;
     }
@@ -794,6 +1116,7 @@
         SeatId = source.SeatId,
         BaronyId = source.BaronyId,
         Name = source.Name,
+        Level = source.Level,
         GridX = source.GridX,
         GridY = source.GridY,
         GridW = source.GridW,

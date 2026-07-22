@@ -439,7 +439,20 @@ namespace DA_Models.BaronyModels
         public string Name { get; set; } = "Lord's Seat";
         public int GridWidth { get; set; } = 12;
         public int GridHeight { get; set; } = 8;
+        /// <summary>Active floor levels, sorted ascending. Always at least ground (0).</summary>
+        public List<int> ActiveLevels { get; set; } = new() { SeatFloorLevel.Ground };
         public List<SeatRoomDTO> Rooms { get; set; } = new();
+        public List<SeatTileDTO> Tiles { get; set; } = new();
+    }
+
+    public class SeatTileDTO
+    {
+        public int Id { get; set; }
+        public int SeatId { get; set; }
+        public int Level { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public string Kind { get; set; } = SeatTileKind.Ground;
     }
 
     public class SeatRoomTraitDTO
@@ -456,6 +469,7 @@ namespace DA_Models.BaronyModels
         public int SeatId { get; set; }
         public int BaronyId { get; set; }
         public string Name { get; set; } = string.Empty;
+        public int Level { get; set; }
         public int GridX { get; set; }
         public int GridY { get; set; }
         public int GridW { get; set; } = 1;

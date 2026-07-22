@@ -442,11 +442,12 @@ namespace DA_Business.Repository.BaronyRepos
                 var seat = await ctx.BaronySeats
                     .Include(s => s.Rooms)
                     .ThenInclude(r => r.Traits)
+                    .Include(s => s.Tiles)
                     .FirstOrDefaultAsync(s => s.BaronyId == baronyId);
 
                 if (seat is null)
                 {
-                    seat = new BaronySeat { BaronyId = baronyId };
+                    seat = new BaronySeat { BaronyId = baronyId, ActiveLevelsJson = "[0]" };
                     ctx.BaronySeats.Add(seat);
                     await ctx.SaveChangesAsync();
                 }
@@ -534,6 +535,95 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         public Task<int> DeleteSeatRoom(int id) => Delete(ctx => ctx.SeatRooms, id, nameof(DeleteSeatRoom));
+
+        public async Task SetSeatTile(int seatId, int level, int x, int y, string? kind)
+        {
+            try
+            {
+                level = SeatFloorLevel.Clamp(level);
+                using var ctx = await _db.CreateDbContextAsync();
+                var seat = await ctx.BaronySeats.AsNoTracking().FirstOrDefaultAsync(s => s.Id == seatId)
+                    ?? throw new InvalidOperationException($"Seat {seatId} not found.");
+
+                if (x < 0 || y < 0 || x >= seat.GridWidth || y >= seat.GridHeight)
+                    throw new InvalidOperationException("Tile is outside the seat grid.");
+
+                var existing = await ctx.SeatTiles
+                    .FirstOrDefaultAsync(t => t.SeatId == seatId && t.Level == level && t.X == x && t.Y == y);
+
+                if (string.IsNullOrWhiteSpace(kind))
+                {
+                    if (existing is not null)
+                    {
+                        ctx.SeatTiles.Remove(existing);
+                        await ctx.SaveChangesAsync();
+                    }
+
+                    return;
+                }
+
+                var normalized = SeatTileKind.All.FirstOrDefault(k =>
+                    string.Equals(k, kind.Trim(), StringComparison.OrdinalIgnoreCase))
+                    ?? throw new InvalidOperationException($"Unknown tile kind '{kind}'.");
+
+                if (existing is null)
+                {
+                    ctx.SeatTiles.Add(new SeatTile
+                    {
+                        SeatId = seatId,
+                        Level = level,
+                        X = x,
+                        Y = y,
+                        Kind = normalized,
+                    });
+                }
+                else
+                {
+                    existing.Kind = normalized;
+                }
+
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SetSeatTile));
+            }
+        }
+
+        public async Task SaveSeatActiveLevels(int seatId, IReadOnlyList<int> levels)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var seat = await ctx.BaronySeats.FirstOrDefaultAsync(s => s.Id == seatId)
+                    ?? throw new InvalidOperationException($"Seat {seatId} not found.");
+
+                var normalized = NormalizeActiveLevels(levels);
+                var previous = ParseActiveLevels(seat.ActiveLevelsJson);
+                var removed = previous.Where(l => !normalized.Contains(l)).ToList();
+
+                if (removed.Count > 0)
+                {
+                    var roomsOnRemoved = await ctx.SeatRooms.AsNoTracking()
+                        .AnyAsync(r => r.SeatId == seatId && removed.Contains(r.Level));
+                    if (roomsOnRemoved)
+                        throw new InvalidOperationException("Cannot remove a level that still has chambers.");
+
+                    var tiles = await ctx.SeatTiles
+                        .Where(t => t.SeatId == seatId && removed.Contains(t.Level))
+                        .ToListAsync();
+                    if (tiles.Count > 0)
+                        ctx.SeatTiles.RemoveRange(tiles);
+                }
+
+                seat.ActiveLevelsJson = JsonSerializer.Serialize(normalized);
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveSeatActiveLevels));
+            }
+        }
 
         public async Task SetSeatRoomPurpose(
             int roomId,
@@ -1889,6 +1979,7 @@ namespace DA_Business.Repository.BaronyRepos
             var seat = await ctx.BaronySeats.AsNoTracking()
                 .Include(s => s.Rooms)
                 .ThenInclude(r => r.Traits)
+                .Include(s => s.Tiles)
                 .FirstOrDefaultAsync(s => s.BaronyId == baronyId);
             return seat is null ? null : ToDTO(seat, baronyId);
         }
@@ -1909,11 +2000,29 @@ namespace DA_Business.Repository.BaronyRepos
             Name = e.Name ?? "Lord's Seat",
             GridWidth = e.GridWidth,
             GridHeight = e.GridHeight,
+            ActiveLevels = ParseActiveLevels(e.ActiveLevelsJson),
             Rooms = (e.Rooms ?? new List<SeatRoom>())
-                .OrderBy(r => r.SortOrder)
+                .OrderBy(r => r.Level)
+                .ThenBy(r => r.SortOrder)
                 .ThenBy(r => r.Name)
                 .Select(r => ToDTO(r, baronyId))
                 .ToList(),
+            Tiles = (e.Tiles ?? new List<SeatTile>())
+                .OrderBy(t => t.Level)
+                .ThenBy(t => t.Y)
+                .ThenBy(t => t.X)
+                .Select(ToDTO)
+                .ToList(),
+        };
+
+        private static SeatTileDTO ToDTO(SeatTile e) => new()
+        {
+            Id = e.Id,
+            SeatId = e.SeatId,
+            Level = e.Level,
+            X = e.X,
+            Y = e.Y,
+            Kind = e.Kind ?? SeatTileKind.Ground,
         };
 
         private static SeatRoomDTO ToDTO(SeatRoom e, int baronyId) => new()
@@ -1922,6 +2031,7 @@ namespace DA_Business.Repository.BaronyRepos
             SeatId = e.SeatId,
             BaronyId = baronyId,
             Name = e.Name ?? "",
+            Level = SeatFloorLevel.Clamp(e.Level),
             GridX = e.GridX,
             GridY = e.GridY,
             GridW = e.GridW,
@@ -1968,12 +2078,14 @@ namespace DA_Business.Repository.BaronyRepos
             e.Name = string.IsNullOrWhiteSpace(d.Name) ? "Lord's Seat" : d.Name.Trim();
             e.GridWidth = Math.Max(1, d.GridWidth);
             e.GridHeight = Math.Max(1, d.GridHeight);
+            // Active levels are managed via SaveSeatActiveLevels.
         }
 
         private static void ApplySeatRoom(SeatRoom e, SeatRoomDTO d)
         {
             e.SeatId = d.SeatId;
             e.Name = d.Name ?? "";
+            e.Level = SeatFloorLevel.Clamp(d.Level);
             e.GridX = Math.Max(0, d.GridX);
             e.GridY = Math.Max(0, d.GridY);
             e.GridW = Math.Max(0, d.GridW);
@@ -1987,6 +2099,40 @@ namespace DA_Business.Repository.BaronyRepos
             e.OccupantAdvisorId = d.OccupantAdvisorId;
             e.OccupantCustom = d.OccupantCustom ?? "";
             e.SortOrder = d.SortOrder;
+        }
+
+        private static List<int> ParseActiveLevels(string? json)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(json))
+                {
+                    var parsed = JsonSerializer.Deserialize<List<int>>(json);
+                    if (parsed is { Count: > 0 })
+                        return NormalizeActiveLevels(parsed);
+                }
+            }
+            catch
+            {
+                // fall through
+            }
+
+            return new List<int> { SeatFloorLevel.Ground };
+        }
+
+        private static List<int> NormalizeActiveLevels(IEnumerable<int>? levels)
+        {
+            var set = new SortedSet<int>();
+            foreach (var level in levels ?? Enumerable.Empty<int>())
+            {
+                if (SeatFloorLevel.IsValid(level))
+                    set.Add(level);
+            }
+
+            if (set.Count == 0)
+                set.Add(SeatFloorLevel.Ground);
+
+            return set.ToList();
         }
 
         private static void ApplyPurposeTemplate(SeatPurposeTemplate e, SeatPurposeTemplateDTO d)
