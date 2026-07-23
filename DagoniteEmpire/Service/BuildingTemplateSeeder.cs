@@ -93,8 +93,18 @@ namespace DagoniteEmpire.Service
                 "The stench is foul, but it supplies quality leather for subjects and the army.",
                 Fx(economy: 2, production: 1, stability: -1, law: -1, defense: 1, treasury: 2));
             Add("Town Garrison", 1, B, 80, 100,
-                "A town guard post that keeps order and helps defend the city in wartime. Upkeep: −25 gold.",
+                "A town guard post that keeps order and helps defend the city in wartime. "
+                + "Provides one city guard unit. Can be upgraded to barracks.",
                 Fx(stability: 3, law: 2, defense: 6, treasury: -25));
+            Add("Steward's Building", 1, B, 40, 60,
+                "Steward's hut. Locals come here with their affairs before the authorities. "
+                + "Officials and tax collectors hold office here. Can be upgraded to a town hall.",
+                Fx(stability: 3, law: 3, corruption: 2,
+                    science: 2, magic: 2, intelligence: 2, treasury: -15));
+            Add("Market Square", 1, B, 30, 40,
+                "A small paved place where local producers and nearby merchants can exchange goods. "
+                + "Can be upgraded to a marketplace.",
+                Fx(economy: 3, production: 3, treasury: 10));
             Add("Quarry - Granite", 1, I, 100, 50,
                 "Extracts granite—excellent for fortifications.",
                 Fx(food: -0.3m, economy: 1, production: 6, stability: -3, law: -2, defense: 4, treasury: 20),

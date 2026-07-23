@@ -10,16 +10,24 @@
             </div>
         }
     </div>
-    @if (ShowSectionToggle && ViewOptions is not null)
-    {
-        <MudTooltip Text="Default section state: expanded / collapsed (you can still toggle each section manually).">
-            <MudSwitch T="bool"
-                       Value="ViewOptions.DefaultExpanded"
-                       ValueChanged="OnDefaultExpandedChanged"
-                       Color="Color.Default"
-                       Label="Sections expanded by default" />
-        </MudTooltip>
-    }
+    <div class="barony-page-header__trailing">
+        @if (Actions is not null)
+        {
+            <div class="barony-page-header__actions">
+                @Actions
+            </div>
+        }
+        @if (ShowSectionToggle && ViewOptions is not null)
+        {
+            <MudTooltip Text="Default section state: expanded / collapsed (you can still toggle each section manually).">
+                <MudSwitch T="bool"
+                           Value="ViewOptions.DefaultExpanded"
+                           ValueChanged="OnDefaultExpandedChanged"
+                           Color="Color.Default"
+                           Label="Sections expanded by default" />
+            </MudTooltip>
+        }
+    </div>
 </div>
 
 @code {
@@ -27,6 +35,7 @@
 
     [Parameter] public string Title { get; set; } = string.Empty;
     [Parameter] public RenderFragment? Summary { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
     [Parameter] public bool ShowSectionToggle { get; set; } = true;
 
     private void OnDefaultExpandedChanged(bool value)

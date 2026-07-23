@@ -420,14 +420,25 @@ namespace DA_Common.Barony
         public static readonly string[] All = { Building, Improvement };
     }
 
-    /// <summary>Stable keys for fixed city buildings (MG can override per barony).</summary>
+    /// <summary>Stable keys for fixed starter city buildings (seeded from Buildings catalog).</summary>
     public readonly struct CoreCityBuildingKey
     {
         public const string StewardsBuilding = "stewards-building";
         public const string Tavern = "tavern";
         public const string MarketSquare = "market-square";
+        public const string TownGarrison = "town-garrison";
 
-        public static readonly string[] All = { StewardsBuilding, Tavern, MarketSquare };
+        public static readonly string[] All = { StewardsBuilding, Tavern, MarketSquare, TownGarrison };
+
+        /// <summary>Catalog template name for each starter building.</summary>
+        public static string CatalogName(string coreKey) => coreKey switch
+        {
+            StewardsBuilding => "Steward's Building",
+            Tavern => "Tavern",
+            MarketSquare => "Market Square",
+            TownGarrison => "Town Garrison",
+            _ => coreKey,
+        };
     }
 
     /// <summary>Status projektu.</summary>
@@ -468,10 +479,11 @@ namespace DA_Common.Barony
         public const string OneTimeResources = "One-time resources";
         public const string Building = "Building";
         public const string Improvement = "Improvement";
+        public const string UnitTraining = "Unit Training";
 
         public static readonly string[] All =
         {
-            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement,
+            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement, UnitTraining,
         };
     }
 

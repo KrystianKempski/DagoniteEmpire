@@ -88,6 +88,7 @@ namespace DA_DataAccess.Data
         public DbSet<BaronTimeAction> BaronTimeActions { get; set; }
         public DbSet<BaronLetterThread> BaronLetterThreads { get; set; }
         public DbSet<BaronLetterMessage> BaronLetterMessages { get; set; }
+        public DbSet<BaronyUnit> BaronyUnits { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -149,6 +150,16 @@ namespace DA_DataAccess.Data
             modelBuilder.Entity<BaronLetterMessage>(entity =>
             {
                 entity.HasIndex(e => e.ThreadId);
+            });
+
+            modelBuilder.Entity<BaronyUnit>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+            });
+
+            modelBuilder.Entity<BaronyProject>(entity =>
+            {
+                entity.HasIndex(e => e.UnitId);
             });
 
             // Configure SCRIBE entities

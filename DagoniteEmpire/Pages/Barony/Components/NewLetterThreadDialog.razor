@@ -45,7 +45,7 @@
             <MudSelect T="string"
                        @bind-Value="_replyRegion"
                        Label="Correspondent region"
-                       HelperText="@($"Max {BaronLetterRules.MaxLettersFromSameCorrespondentPerTurn} letters/turn from the same person (to the baron)")"
+                       HelperText="@RegionHelperText"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Dense="true"
@@ -81,6 +81,9 @@
     private string? _correspondentCategory;
     private string _replyRegion = BaronLetterReplyRegion.EasternMarch;
     private bool _busy;
+
+    private string RegionHelperText =>
+        $"Max {BaronLetterRules.MaxInboundFromCorrespondent(_replyRegion)} inbound letter(s)/turn from this person (to the baron)";
 
     private Task OnRelationChanged(int? relationId)
     {

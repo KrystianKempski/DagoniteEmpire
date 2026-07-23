@@ -68,7 +68,7 @@
                                     </div>
                                 </td>
                                 <td class="city-building-col-owner">
-                                    <BaronyTooltip Text="@BaronyCalc.OwnershipTooltip(vassal)">
+                                    <BaronyTooltip Text="@BaronyCalc.OwnershipTooltip(vassal, VassalTributePercent)">
                                         @if (vassal)
                                         {
                                             <MudIcon Icon="@Icons.Material.Filled.Shield"
@@ -100,19 +100,20 @@
                                 </td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
-                                    <td class="@PpbCellClass(info.Key, item.Additive[info.Key], inactive)">
+                                    var effective = EffectiveAdditive(item);
+                                    <td class="@PpbCellClass(info.Key, effective[info.Key], inactive)">
                                         @{
-                                            var tip = VillageAdditiveTooltip(item, info.Key);
+                                            var tip = VillageAdditiveTooltip(item, info.Key, effective);
                                         }
                                         @if (tip is not null)
                                         {
                                             <BaronyTooltip Title="@info.NameEn" Text="@tip">
-                                                <span>@FmtAdd(item.Additive[info.Key])</span>
+                                                <span>@FmtAdd(effective[info.Key])</span>
                                             </BaronyTooltip>
                                         }
                                         else
                                         {
-                                            @FmtAdd(item.Additive[info.Key])
+                                            @FmtAdd(effective[info.Key])
                                         }
                                     </td>
                                     <td class="@PpbCellClass(info.Key, item.Percent[info.Key], inactive)">@FmtPct(item.Percent[info.Key])</td>
@@ -141,6 +142,7 @@
     [Parameter] public List<TerrainImprovementDTO> Improvements { get; set; } = new();
     [Parameter] public List<TerrainTileDTO> Tiles { get; set; } = new();
     [Parameter] public List<FiefDTO> Fiefs { get; set; } = new();
+    [Parameter] public decimal VassalTributePercent { get; set; } = FiefTributeFormulas.DefaultPercent;
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
@@ -159,12 +161,19 @@
     private IEnumerable<TerrainImprovementDTO> ActiveImprovements =>
         VisibleImprovements.Where(i => i.IsActive);
 
-    private PpbVector AdditiveSum => PpbVector.Sum(ActiveImprovements.Select(i => i.Additive));
-    private PpbVector PercentSum => PpbVector.Sum(ActiveImprovements.Select(i => i.Percent));
-    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.ImprovementRows(Improvements));
+    private List<PpbModifierRow> SectionRows =>
+        BaronyCalc.ImprovementRows(Improvements, Tiles, Fiefs, VassalTributePercent);
+
+    private PpbVector AdditiveSum => BaronyCalc.SumAdditive(SectionRows);
+    private PpbVector PercentSum => BaronyCalc.SumPercent(SectionRows);
+    private PpbVector Glance => BaronyCalc.SectionGlance(SectionRows);
     private int PopulationSum => ActiveImprovements.Sum(i => BaronyCalc.IsVillage(i) ? i.Population : 0);
 
     private static string DisplayLabel(TerrainImprovementDTO item) => BaronyCalc.ImprovementDisplayLabel(item);
+
+    private PpbVector EffectiveAdditive(TerrainImprovementDTO item)
+        => BaronyCalc.ApplyVassalVillageGoldShare(
+            item, TilesById, FiefsById, VassalTributePercent, out _);
 
     private string? NameTooltip(TerrainImprovementDTO item)
     {
@@ -207,11 +216,19 @@
         return "unknown";
     }
 
-    private static string? VillageAdditiveTooltip(TerrainImprovementDTO item, Ppb key)
+    private string? VillageAdditiveTooltip(TerrainImprovementDTO item, Ppb key, PpbVector effective)
     {
         if (!BaronyCalc.IsVillage(item))
             return null;
-        return VillagePpbFormulas.ExplainAdditive(key, item.HasPalisade);
+
+        var baseTip = VillagePpbFormulas.ExplainAdditive(key, item.HasPalisade);
+        if (key != Ppb.Treasury || !IsVassal(item))
+            return baseTip;
+
+        var full = item.Additive[Ppb.Treasury];
+        var kept = effective[Ppb.Treasury];
+        var shareTip = FiefTributeFormulas.ExplainVassalShare(full, VassalTributePercent, kept);
+        return string.IsNullOrWhiteSpace(baseTip) ? shareTip : $"{baseTip}\n\n{shareTip}";
     }
 
     private bool IsVassal(TerrainImprovementDTO item)

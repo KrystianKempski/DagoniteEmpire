@@ -9,6 +9,11 @@
         }
     </Summary>
     <ChildContent>
+        @if (!string.IsNullOrWhiteSpace(OfficeDescription))
+        {
+            <MudText Typo="Typo.body2" Class="advisor-office-description mb-3">@OfficeDescription</MudText>
+        }
+
         <div class="advisor-office-header">
             <div class="advisor-office-header__row">
                 <MudText Typo="Typo.subtitle1" Class="advisor-office-name">
@@ -22,9 +27,9 @@
                                    OnClick="EditProfileAsync" />
                 }
             </div>
-            @if (!string.IsNullOrWhiteSpace(Advisor.Description))
+            @if (!string.IsNullOrWhiteSpace(PersonDescription))
             {
-                <MudText Typo="Typo.body2" Class="advisor-office-description">@Advisor.Description</MudText>
+                <MudText Typo="Typo.body2" Class="advisor-person-description">@PersonDescription</MudText>
             }
         </div>
 
@@ -85,6 +90,13 @@
     private PpbVector _total = new();
     private decimal _totalCost;
     private HashSet<Ppb> _significantSkills = new();
+
+    private string? OfficeDescription => BaronyCalc.ResolveOfficeDescription(Advisor);
+    private string? PersonDescription =>
+        BaronyCalc.ResolvePersonDescription(Advisor)
+        ?? (Advisor.AvailableAdvisorId is int aid
+            ? AvailableAdvisors.FirstOrDefault(a => a.Id == aid)?.Description
+            : null);
 
     protected override void OnParametersSet() => RebuildRows();
 
@@ -239,6 +251,7 @@
         Title = Advisor.Title,
         PersonName = Advisor.PersonName,
         Description = Advisor.Description,
+        PersonDescription = Advisor.PersonDescription,
         UpkeepGold = Advisor.UpkeepGold,
         IsBaron = Advisor.IsBaron,
         Skills = Advisor.Skills.Clone(),
@@ -252,6 +265,7 @@
         Advisor.PersonName = saved.PersonName;
         Advisor.Title = saved.Title;
         Advisor.Description = saved.Description;
+        Advisor.PersonDescription = saved.PersonDescription;
         Advisor.UpkeepGold = saved.UpkeepGold;
         Advisor.AvailableAdvisorId = saved.AvailableAdvisorId;
         Advisor.Skills = saved.Skills.Clone();

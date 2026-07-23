@@ -71,10 +71,88 @@
     gap: 12px 16px;
 }
 
-.barony-page-header__summary {
+.barony-page-header__trailing {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    margin-left: auto;
 }
+
+.barony-page-header__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.barony-turn-ready-chip {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--barony-accent);
+    padding: 2px 8px;
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 4px;
+    background: var(--barony-accent-soft);
+}
+
+.barony-turn-btn.mud-button-root {
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+}
+
+.barony-turn-btn--solid.mud-button-filled {
+    background: var(--barony-accent) !important;
+    color: var(--barony-surface) !important;
+    box-shadow: none !important;
+}
+
+.barony-turn-btn--solid.mud-button-filled:hover:not(:disabled) {
+    background: #866828 !important;
+}
+
+.barony-turn-btn--solid.mud-button-filled:disabled {
+    background: color-mix(in srgb, var(--barony-accent) 45%, var(--barony-border)) !important;
+    color: color-mix(in srgb, var(--barony-surface) 70%, transparent) !important;
+}
+
+.barony-turn-btn--ghost.mud-button-outlined {
+    color: var(--barony-ink) !important;
+    border-color: var(--barony-border-strong) !important;
+    background: var(--barony-surface) !important;
+}
+
+.unit-generator__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    align-items: flex-start;
+    margin-top: 8px;
+}
+
+.unit-generator__row > * {
+    flex: 1 1 200px;
+    min-width: 180px;
+}
+
+.unit-card__attrs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    align-items: center;
+}
+
+.unit-card__attr {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: var(--barony-surface-2);
+    border: 1px solid var(--barony-border);
+    border-radius: 4px;
+}
+
 
 .offices-cost-total {
     display: inline-flex;
@@ -327,11 +405,12 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     right: 12px;
     z-index: 1051; /* below MudAppBar / MudMenu popovers (login & character selector) */
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-end;
     align-items: stretch;
     gap: 2px;
-    max-width: min(540px, calc(100vw - 24px));
+    width: max-content;
+    max-width: calc(100vw - 24px);
     padding: 4px 6px;
     border-radius: 10px;
     overflow: visible;
@@ -348,7 +427,9 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     align-items: center;
     justify-content: flex-start;
     gap: 0.1rem;
+    flex: 0 0 auto;
     min-width: 2.75rem;
+    width: max-content;
     padding: 0.25rem 0.35rem 0.28rem;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.03);
@@ -387,6 +468,7 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     text-align: center;
     width: 100%;
     min-height: 0.85em;
+    white-space: nowrap;
 }
 
 .barony-resource-hud__delta--pos { color: #8fd48a; }
@@ -408,13 +490,16 @@ button.barony-meta-bar__stat--clickable:focus-visible {
         bottom: 72px;
         right: 8px;
         left: 8px;
-        max-width: none;
+        width: auto;
+        max-width: calc(100vw - 16px);
         justify-content: space-between;
+        overflow-x: auto;
     }
 
     .barony-resource-hud__item {
-        min-width: 0;
-        flex: 1 1 0;
+        min-width: 2.5rem;
+        flex: 1 1 auto;
+        width: auto;
         padding: 0.15rem 0.15rem 0.2rem;
     }
 
@@ -460,6 +545,33 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 .ppb-table--events col.ppb-pair-col,
 .ppb-table--community col.ppb-pair-col {
     width: var(--barony-ppb-subcol-width);
+    max-width: var(--barony-ppb-subcol-width);
+}
+
+/*
+ * Clamp PPB +/% values so large numbers (esp. Gold %) don't grow the table
+ * and force a horizontal scrollbar on the section.
+ * Exclude non-pair columns that also use polarity classes (Pop, Infl., Tax, …).
+ */
+.ppb-table td.ppb-cell-pos:not(.city-building-col-pop):not(.social-group-col-influence):not(.social-group-col-tax):not(.social-group-col-relation),
+.ppb-table td.ppb-cell-neg:not(.city-building-col-pop):not(.social-group-col-influence):not(.social-group-col-tax):not(.social-group-col-relation),
+.ppb-table td.ppb-cell-zero:not(.city-building-col-pop):not(.social-group-col-influence):not(.social-group-col-tax):not(.social-group-col-relation) {
+    max-width: var(--barony-ppb-subcol-width, 34px);
+    width: var(--barony-ppb-subcol-width, 34px);
+    overflow: hidden;
+    text-overflow: clip;
+    box-sizing: border-box;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+.ppb-table td.ppb-cell-pos:not(.city-building-col-pop):not(.social-group-col-influence):not(.social-group-col-tax):not(.social-group-col-relation) > *,
+.ppb-table td.ppb-cell-neg:not(.city-building-col-pop):not(.social-group-col-influence):not(.social-group-col-tax):not(.social-group-col-relation) > *,
+.ppb-table td.ppb-cell-zero:not(.city-building-col-pop):not(.social-group-col-influence):not(.social-group-col-tax):not(.social-group-col-relation) > * {
+    display: block;
+    overflow: hidden;
+    text-overflow: clip;
+    max-width: 100%;
 }
 
 .ppb-table--advisors .advisor-col-role {
@@ -867,7 +979,15 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 }
 
 .ppb-table--summary col.summary-col-ppb {
-    width: 3.25rem;
+    width: 4.75rem;
+}
+
+.ppb-table--summary th:not(.summary-col-component),
+.ppb-table--summary td:not(.summary-col-component) {
+    min-width: 4.75rem;
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
+    box-sizing: border-box;
 }
 
 .ppb-table--summary th.ppb-row-label.summary-col-component,
@@ -2894,7 +3014,7 @@ a.city-building-name-text--link:hover {
 
 .ppb-table th,
 .ppb-table td {
-    padding: 4px 0px;
+    padding: 4px 8px;
     text-align: center;
     white-space: nowrap;
 }
@@ -3344,10 +3464,16 @@ a.city-building-name-text--link:hover {
 }
 
 .advisor-office-description,
+.advisor-person-description,
 .advisor-profile-description {
     margin-top: 4px;
     color: var(--barony-muted);
     white-space: pre-wrap;
+}
+
+.advisor-office-description {
+    opacity: 0.92;
+    line-height: 1.45;
 }
 
 .ppb-table--office .office-cost-col {

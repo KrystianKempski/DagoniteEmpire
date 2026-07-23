@@ -1,9 +1,9 @@
 namespace DA_Common.Barony
 {
-    /// <summary>Baron's Time (JC — time units) rules from the barony docs.</summary>
+    /// <summary>Baron's Time (BT — Baron Time) rules from the barony docs.</summary>
     public static class BaronTimeRules
     {
-        /// <summary>JC that must be spent on essential barony management each turn.</summary>
+        /// <summary>BT that must be spent on essential barony management each turn.</summary>
         public const int RequiredManagementJc = 100;
 
         /// <summary>One week of expedition away from the barony.</summary>
@@ -21,7 +21,7 @@ namespace DA_Common.Barony
 
         /// <summary>
         /// Share of skill PPB that applies this turn (0–1).
-        /// 100 JC management → 100%; 50 JC → 50%.
+        /// 100 BT management → 100%; 50 BT → 50%.
         /// </summary>
         public static decimal ManagementSkillFactor(int managementJc)
         {

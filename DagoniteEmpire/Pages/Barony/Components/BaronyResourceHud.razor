@@ -87,8 +87,8 @@
             var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(barony.Id));
 
             _stocks = ResourceCatalog.Slice(overview.Barony.ResourceStocks);
-            _expected = ResourceCatalog.Slice(
-                BaronyCalc.GrandTotal(overview, character, baronModifiers, advisorModifiers, managementJc));
+            _expected = BaronyCalc.ExpectedResourceIncome(
+                overview, character, baronModifiers, advisorModifiers, managementJc);
             _ready = true;
         }
         catch

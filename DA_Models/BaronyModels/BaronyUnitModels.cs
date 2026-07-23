@@ -1,0 +1,98 @@
+namespace DA_Models.BaronyModels
+{
+    public class BaronyUnitSkillLevels
+    {
+        public Dictionary<string, int> Base { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, int> Other { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    public class BaronyUnitDTO
+    {
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Status { get; set; } = DA_Common.Barony.UnitStatus.Training;
+        public int TroopCount { get; set; } = DA_Common.Barony.UnitRules.DefaultTroopCount;
+
+        public string RecruitSelectionKey { get; set; } = string.Empty;
+        public string TrainingTypeKey { get; set; } = string.Empty;
+
+        public int Wage { get; set; }
+        public decimal UpkeepFood { get; set; } = DA_Common.Barony.UnitRules.DefaultUpkeepFood;
+        public int UpkeepDefense { get; set; } = DA_Common.Barony.UnitRules.DefaultUpkeepDefense;
+
+        public int Build { get; set; }
+        public int Agility { get; set; }
+        public int Will { get; set; }
+        public int Perception { get; set; }
+        public int AttrPenaltyBuild { get; set; }
+        public int AttrPenaltyAgility { get; set; }
+        public int AttrOtherBuild { get; set; }
+        public int AttrOtherAgility { get; set; }
+        public int AttrOtherWill { get; set; }
+        public int AttrOtherPerception { get; set; }
+
+        public Dictionary<string, int> SkillBase { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, int> SkillOther { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public string? Weapon1Key { get; set; }
+        public string? Weapon2Key { get; set; }
+        public string? ArmorKey { get; set; }
+        public string? ShieldKey { get; set; }
+        public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
+        public string Weapon2Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
+
+        public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Shields;
+
+        public int CommanderAttack { get; set; }
+        public int CommanderDefense { get; set; }
+        public int OtherAttack { get; set; }
+        public int OtherDefense { get; set; }
+        public int OtherDamage { get; set; }
+        public int OtherMove { get; set; }
+        public int OtherArmor { get; set; }
+        public int OtherHp { get; set; }
+
+        public int RemainingPd { get; set; }
+        public int Discipline { get; set; } = 1;
+        public int MaxBaseSkillAtGraduation { get; set; }
+        public int FreeAttributePoints { get; set; }
+        public int CurrentHp { get; set; }
+
+        public int? TrainingProjectId { get; set; }
+        public int? TrainingTurnsRemaining { get; set; }
+
+        public int EffectiveBuild => Build + AttrPenaltyBuild + AttrOtherBuild;
+        public int EffectiveAgility => Agility + AttrPenaltyAgility + AttrOtherAgility;
+        public int EffectiveWill => Will + AttrOtherWill;
+        public int EffectivePerception => Perception + AttrOtherPerception;
+
+        public bool IsTraining =>
+            string.Equals(Status, DA_Common.Barony.UnitStatus.Training, StringComparison.OrdinalIgnoreCase);
+        public bool IsActive =>
+            string.Equals(Status, DA_Common.Barony.UnitStatus.Active, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Payload to create a training unit + Unit Training project.</summary>
+    public class StartUnitTrainingRequest
+    {
+        public int BaronyId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string RecruitSelectionKey { get; set; } = string.Empty;
+        public string TrainingTypeKey { get; set; } = string.Empty;
+        public string? Weapon1Key { get; set; }
+        public string? Weapon2Key { get; set; }
+        public string? ArmorKey { get; set; }
+        public string? ShieldKey { get; set; }
+        public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
+        public bool PayEquipmentAsDefense { get; set; }
+        public int AccelerateTurns { get; set; }
+        public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Shields;
+    }
+
+    public class StartUnitTrainingResult
+    {
+        public BaronyUnitDTO Unit { get; set; } = new();
+        public BaronyProjectDTO Project { get; set; } = new();
+    }
+}

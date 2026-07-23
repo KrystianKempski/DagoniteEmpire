@@ -13,6 +13,20 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyDTO> UpdateBarony(BaronyDTO dto);
         Task<BaronyOverviewDTO?> GetOverview(int baronyId);
 
+        /// <summary>Player marks (or clears) ready-to-end-turn for MG resolve.</summary>
+        Task<BaronyDTO> SetPlayerTurnReady(int baronyId, bool ready);
+
+        /// <summary>
+        /// Apply end-of-turn: income, project ticks/completions, unrest check, calendar, conjuncture.
+        /// <paramref name="expectedIncome"/> / loyalty / stability / population come from Domain Panel calc.
+        /// </summary>
+        Task<TurnResolveReportDTO> ResolveTurn(
+            int baronyId,
+            PpbVector expectedIncome,
+            decimal loyaltyFinal,
+            decimal stabilityFinal,
+            int settlementPopulation);
+
         // --- Advisors / urzędy ---
         Task<List<AdvisorDTO>> GetAdvisors(int baronyId);
         Task<AdvisorDTO> SaveAdvisor(AdvisorDTO dto);
@@ -80,7 +94,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronArtifactDTO> SaveBaronArtifact(BaronArtifactDTO dto);
         Task<int> DeleteBaronArtifact(int id);
 
-        // --- Baron Card time (JC) ---
+        // --- Baron Card time (BT) ---
         Task EnsureBaronTimeDefaults(int baronyId);
         Task<List<BaronTimeModifierDTO>> GetBaronTimeModifiers(int baronyId);
         Task<BaronTimeModifierDTO> SaveBaronTimeModifier(BaronTimeModifierDTO dto);
@@ -135,6 +149,12 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyProjectDTO> ClearProjectAllocations(int projectId);
         Task<BaronyProjectDTO> SetProjectCostMode(int projectId, string mode);
         Task<int> DeleteProject(int id);
+
+        // --- Army units ---
+        Task<List<BaronyUnitDTO>> GetUnits(int baronyId);
+        Task<BaronyUnitDTO> SaveUnit(BaronyUnitDTO dto);
+        Task<int> DeleteUnit(int id);
+        Task<StartUnitTrainingResult> StartUnitTraining(StartUnitTrainingRequest request);
 
         // --- Resources balance custom sources ---
         Task<List<BaronyResourceSourceDTO>> GetResourceSources(int baronyId);

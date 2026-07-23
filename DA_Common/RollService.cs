@@ -100,6 +100,13 @@ public static class RollService
         return new DiceRoll(sum, $"(2d6: {d1}+{d2}={sum})");
     }
 
+    /// <summary>Single d20: 1–20.</summary>
+    public static DiceRoll RollD20()
+    {
+        var roll = Random.Shared.Next(1, 21);
+        return new DiceRoll(roll, $"(d20: {roll})");
+    }
+
     /// <summary>Single d6: 1–6. Next(max) is exclusive, so upper bound must be 7.</summary>
     internal static int RollD6() => Random.Shared.Next(1, 7);
 

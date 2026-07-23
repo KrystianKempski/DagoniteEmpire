@@ -40,9 +40,47 @@ else if (_overview is not null)
                         <span class="barony-stat__label">Treasury Turn Balance</span>
                         <span class="barony-stat__value" style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</span>
                     </div>
-                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Income − expenses this turn</MudText>
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                        Domain Panel Gold (@Num(_domainPanelGold)) − liege tribute (@Num(_liegeTribute))
+                    </MudText>
                 </MudItem>
             </MudGrid>
+            @if (CanManageAsMg)
+            {
+                <div class="d-flex flex-wrap align-center gap-3 mt-3">
+                    <MudNumericField T="decimal"
+                                     @bind-Value="_liegeTributePercent"
+                                     Label="Liege tribute % (pay senior)"
+                                     HelperText="Share of gross gold income paid to the senior before expenses. Default 15%."
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Min="0"
+                                     Max="100"
+                                     Style="max-width:14rem;" />
+                    <MudNumericField T="decimal"
+                                     @bind-Value="_vassalTributePercent"
+                                     Label="Vassal fief % (keep from villages)"
+                                     HelperText="Share of village gold on vassal fiefs kept by the baron. Default 15%."
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Min="0"
+                                     Max="100"
+                                     Style="max-width:16rem;" />
+                    <MudButton Variant="Variant.Filled"
+                               Class="baron-influence-save-btn"
+                               Disabled="@(!_tributeRatesDirty)"
+                               OnClick="SaveTributeRatesAsync">
+                        Save rates
+                    </MudButton>
+                </div>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="mt-2" Style="color:var(--barony-muted);">
+                    Liege tribute: @_liegeTributePercent.ToString("0.#")% of gross income (@Num(_grossGoldIncome) → @Num(_liegeTribute) gold).
+                    Vassal fief share: @_vassalTributePercent.ToString("0.#")% of village gold on vassal lands.
+                </MudText>
+            }
         </ChildContent>
     </BaronySection>
 
@@ -55,15 +93,16 @@ else if (_overview is not null)
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Same Gold as Domain Panel → Barony Summary (Final Value) and Resources → Expected Income This Turn.
-                Positive Gold from each Domain Panel section goes to Income; negative Gold goes to Expenses.
+                Gold income/expenses from Domain Panel section totals (Final Gold already includes %).
+                Fief income is village gold (moved out of Improvements); Fief expense is liege tribute.
+                Turn balance = Domain Panel Final Gold − liege tribute.
             </MudText>
             <MudGrid>
                 <MudItem xs="12" md="6">
                     <div class="barony-card">
                         <div class="barony-card__title">Income</div>
                         <table class="ppb-table ppb-table--lined">
-                            <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th><th>%</th><th>After Modifier</th></tr></thead>
+                            <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th></tr></thead>
                             <tbody>
                                 @foreach (var line in _incomeLines)
                                 {
@@ -73,14 +112,11 @@ else if (_overview is not null)
                                                 <span>@line.Source</span>
                                             </BaronyTooltip>
                                         </td>
-                                        <td class="@ValueClass(line.Base)">@Fmt(line.Base)</td>
-                                        <td>@FmtPct(line.Percent)</td>
-                                        <td class="@ValueClass(line.Adjusted)"><b>@Fmt(line.Adjusted)</b></td>
+                                        <td class="@ValueClass(line.Gold)"><b>@Fmt(line.Gold)</b></td>
                                     </tr>
                                 }
                                 <tr class="ppb-summary-row">
                                     <td class="ppb-row-label">Σ income</td>
-                                    <td colspan="2"></td>
                                     <td class="ppb-cell-pos"><b>@Fmt(_totalIncome)</b></td>
                                 </tr>
                             </tbody>
@@ -91,7 +127,7 @@ else if (_overview is not null)
                     <div class="barony-card">
                         <div class="barony-card__title">Expenses</div>
                         <table class="ppb-table ppb-table--lined">
-                            <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th><th>%</th><th>After Modifier</th></tr></thead>
+                            <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th></tr></thead>
                             <tbody>
                                 @foreach (var line in _expenseLines)
                                 {
@@ -101,14 +137,11 @@ else if (_overview is not null)
                                                 <span>@line.Source</span>
                                             </BaronyTooltip>
                                         </td>
-                                        <td class="@ExpenseValueClass(line.Base)">@Fmt(line.Base)</td>
-                                        <td>@FmtPct(line.Percent)</td>
-                                        <td class="@ExpenseValueClass(line.Adjusted)"><b>@Fmt(line.Adjusted)</b></td>
+                                        <td class="@ExpenseValueClass(line.Gold)"><b>@Fmt(line.Gold)</b></td>
                                     </tr>
                                 }
                                 <tr class="ppb-summary-row">
                                     <td class="ppb-row-label">Σ expenses</td>
-                                    <td colspan="2"></td>
                                     <td class="ppb-cell-neg"><b>@Fmt(_totalExpense)</b></td>
                                 </tr>
                             </tbody>
@@ -209,11 +242,22 @@ else if (_overview is not null)
     private List<BaronPurseSourceDTO> _purseSources = new();
     private decimal _totalIncome;
     private decimal _totalExpense;
+    private decimal _domainPanelGold;
+    private decimal _grossGoldIncome;
+    private decimal _liegeTribute;
+    private decimal _liegeTributePercent = FiefTributeFormulas.DefaultPercent;
+    private decimal _liegeTributePercentSaved = FiefTributeFormulas.DefaultPercent;
+    private decimal _vassalTributePercent = FiefTributeFormulas.DefaultPercent;
+    private decimal _vassalTributePercentSaved = FiefTributeFormulas.DefaultPercent;
     private decimal _turnBalance;
     private decimal _purseBalance;
     private decimal _transferAmount;
 
-    private sealed record BudgetLine(string Source, decimal Base, decimal Percent, decimal Adjusted, string? Formula);
+    private bool _tributeRatesDirty =>
+        PpbFormat.Round(_liegeTributePercent) != PpbFormat.Round(_liegeTributePercentSaved)
+        || PpbFormat.Round(_vassalTributePercent) != PpbFormat.Round(_vassalTributePercentSaved);
+
+    private sealed record BudgetLine(string Source, decimal Gold, string? Formula);
 
     protected override async Task OnInitializedAsync()
     {
@@ -249,8 +293,6 @@ else if (_overview is not null)
         var panel = BaronyCalc.BuildDomainPanelRows(
             _overview!, _character, _baronModifiers, _advisorModifiers, _managementJc);
         var goldFinal = panel.GrandTotal[Ppb.Treasury];
-        var goldAdditive = BaronyCalc.SumAdditive(panel.AllRows)[Ppb.Treasury];
-        var goldScaling = PpbFormat.Round(goldFinal - goldAdditive);
 
         static (decimal income, decimal expense) Split(IEnumerable<PpbModifierRow> rows)
             => (SumGoldIncome(rows), SumGoldExpense(rows));
@@ -258,66 +300,88 @@ else if (_overview is not null)
         var (advIn, advEx) = Split(panel.AdvisorRows);
         var (bldIn, bldEx) = Split(panel.BuildingRows);
         var (socIn, socEx) = Split(panel.SocialRows);
-        var (impIn, impEx) = Split(panel.ImprovementRows);
+        var (impInAll, impEx) = Split(panel.ImprovementRows);
         var (decIn, decEx) = Split(panel.DecreeRows);
         var (evtIn, evtEx) = Split(panel.EventRows);
         var (comIn, comEx) = Split(panel.CommunityRows);
 
+        _liegeTributePercent = FiefTributeFormulas.ClampPercent(_overview!.Barony.LiegeTributePercent);
+        _liegeTributePercentSaved = _liegeTributePercent;
+        _vassalTributePercent = FiefTributeFormulas.ClampPercent(_overview.Barony.VassalTributePercent);
+        _vassalTributePercentSaved = _vassalTributePercent;
+
+        // Village gold is shown under Fief income, not Improvements (totals unchanged).
+        var fiefIn = BaronyCalc.VillageGoldIncome(
+            _overview.Improvements, _overview.Tiles, _overview.Fiefs, _vassalTributePercent);
+        var impIn = PpbFormat.Round(impInAll - fiefIn);
+
+        // Exact remainder so Σ income − Σ expenses (before Fief tribute) == Domain Panel Final Gold.
+        var additiveIncome = advIn + fiefIn + bldIn + socIn + impIn + decIn + evtIn + comIn;
+        var additiveExpense = advEx + bldEx + socEx + impEx + decEx + evtEx + comEx;
+        var goldScaling = goldFinal - (additiveIncome - additiveExpense);
         var scalingIncome = Math.Max(0m, goldScaling);
         var scalingExpense = Math.Max(0m, -goldScaling);
 
+        _grossGoldIncome = BaronyCalc.GrossGoldIncome(panel);
+        _liegeTribute = FiefTributeFormulas.ComputeTribute(_grossGoldIncome, _liegeTributePercent);
+        _domainPanelGold = goldFinal;
+
         _incomeLines = new List<BudgetLine>
         {
-            Line(BudgetSource.Advisors, advIn, 0, null,
+            Line(BudgetSource.Advisors, advIn,
                 "Sum of positive Gold (+) from Domain Panel → Advisors."),
-            Line(BudgetSource.Fief, 0, 0, 0,
-                "Taxes and dues from vassal fiefs. Formula not set yet."),
-            Line(BudgetSource.Buildings, bldIn, 0, null,
+            Line(BudgetSource.Fief, fiefIn,
+                "Gold from villages on the Domain Panel (Terrain Improvements), after vassal fief share "
+                + $"({_vassalTributePercent:0.#}% on vassal lands; full gold on demesne). "
+                + FiefTributeFormulas.VassalCatalogDescription),
+            Line(BudgetSource.Buildings, bldIn,
                 "Sum of positive Gold (+) from Domain Panel → City and Buildings."),
-            Line(BudgetSource.SocialGroups, socIn, 0, null,
+            Line(BudgetSource.SocialGroups, socIn,
                 "Sum of positive Gold (+) from Domain Panel → Social Groups."),
-            Line(BudgetSource.Improvements, impIn, 0, null,
-                "Sum of positive Gold (+) from Domain Panel → Terrain Improvements."),
-            Line(BudgetSource.Decrees, decIn, 0, null,
+            Line(BudgetSource.Improvements, impIn,
+                "Sum of positive Gold (+) from Domain Panel → Terrain Improvements, excluding villages "
+                + "(village gold is under Fief)."),
+            Line(BudgetSource.Decrees, decIn,
                 "Sum of positive Gold (+) from Domain Panel → Decrees and Technologies."),
-            Line(BudgetSource.Events, evtIn, 0, null,
+            Line(BudgetSource.Events, evtIn,
                 "Sum of positive Gold (+) from Domain Panel → Events active this turn."),
-            Line(BudgetSource.Community, comIn, 0, null,
-                "Sum of positive Gold (+) from Domain Panel → Community."),
-            Line(BudgetSource.PercentModifiers, scalingIncome, 0, null,
-                "Effect of Domain Panel % modifiers on Gold (final − Σ additive)."),
-            Line(BudgetSource.Other, 0, 0, 0,
+            Line(BudgetSource.Community, comIn,
+                "Sum of positive Gold (+) from Domain Panel → Community (includes net Economy profit)."),
+            Line(BudgetSource.PercentModifiers, scalingIncome,
+                "Remainder so Income − Expenses (before Fief tribute) equals Domain Panel Final Gold."),
+            Line(BudgetSource.Other, 0,
                 "Miscellaneous treasury income. Placeholder for later custom sources."),
         };
 
         _expenseLines = new List<BudgetLine>
         {
-            Line(BudgetSource.Advisors, advEx, 0, null,
+            Line(BudgetSource.Advisors, advEx,
                 "Negative Gold from Advisors (including each office’s upkeep)."),
-            Line(BudgetSource.Fief, 0, 0, 0,
-                "Obligations or losses tied to fiefs. Formula not set yet."),
-            Line(BudgetSource.Buildings, bldEx, 0, null,
+            Line(BudgetSource.Fief, _liegeTribute,
+                FiefTributeFormulas.ExplainLiege(_grossGoldIncome, _liegeTributePercent, _liegeTribute)
+                + "\n\n" + FiefTributeFormulas.LiegeCatalogDescription),
+            Line(BudgetSource.Buildings, bldEx,
                 "Sum of negative Gold (−) from Domain Panel → City and Buildings."),
-            Line(BudgetSource.SocialGroups, socEx, 0, null,
+            Line(BudgetSource.SocialGroups, socEx,
                 "Sum of negative Gold (−) from Domain Panel → Social Groups."),
-            Line(BudgetSource.Improvements, impEx, 0, null,
+            Line(BudgetSource.Improvements, impEx,
                 "Sum of negative Gold (−) from Domain Panel → Terrain Improvements."),
-            Line(BudgetSource.Decrees, decEx, 0, null,
+            Line(BudgetSource.Decrees, decEx,
                 "Sum of negative Gold (−) from Domain Panel → Decrees and Technologies."),
-            Line(BudgetSource.Events, evtEx, 0, null,
+            Line(BudgetSource.Events, evtEx,
                 "Sum of negative Gold (−) from Domain Panel → Events active this turn."),
-            Line(BudgetSource.Community, comEx, 0, null,
+            Line(BudgetSource.Community, comEx,
                 "Sum of negative Gold (−) from Domain Panel → Community."),
-            Line(BudgetSource.PercentModifiers, scalingExpense, 0, null,
-                "Effect of Domain Panel % modifiers on Gold (final − Σ additive)."),
-            Line(BudgetSource.Other, 0, 0, 0,
+            Line(BudgetSource.PercentModifiers, scalingExpense,
+                "Remainder so Income − Expenses (before Fief tribute) equals Domain Panel Final Gold."),
+            Line(BudgetSource.Other, 0,
                 "Miscellaneous treasury expenses. Placeholder for later custom sources."),
         };
 
-        _totalIncome = _incomeLines.Sum(l => l.Adjusted);
-        _totalExpense = _expenseLines.Sum(l => l.Adjusted);
-        // Same value as Domain Panel Final Gold / Resources Expected Income (Gold).
-        _turnBalance = goldFinal;
+        _totalIncome = _incomeLines.Sum(l => l.Gold);
+        _totalExpense = _expenseLines.Sum(l => l.Gold);
+        // Domain Panel Final Gold minus liege tribute (Budget Fief expense).
+        _turnBalance = PpbFormat.Round(goldFinal - _liegeTribute);
 
         _purseSources = _overview!.PurseSources
             .OrderByDescending(s => s.Id)
@@ -326,8 +390,32 @@ else if (_overview is not null)
         _purseBalance = _purseSources.Sum(s => s.Amount);
     }
 
-    private static BudgetLine Line(string source, decimal bas, decimal pct, decimal? adjusted, string? formula)
-        => new(source, bas, pct, adjusted ?? bas, formula);
+    private async Task SaveTributeRatesAsync()
+    {
+        if (_overview is null || !CanManageAsMg)
+            return;
+
+        try
+        {
+            _overview.Barony.LiegeTributePercent = FiefTributeFormulas.ClampPercent(_liegeTributePercent);
+            _overview.Barony.VassalTributePercent = FiefTributeFormulas.ClampPercent(_vassalTributePercent);
+            await _baronyRepo.UpdateBarony(_overview.Barony);
+            if (Barony is not null)
+            {
+                Barony.LiegeTributePercent = _overview.Barony.LiegeTributePercent;
+                Barony.VassalTributePercent = _overview.Barony.VassalTributePercent;
+            }
+            _snackBar.Add("Fief tribute rates saved.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save tribute rates: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static BudgetLine Line(string source, decimal gold, string? formula)
+        => new(source, gold, formula);
 
     private static string? PurseTooltip(BaronPurseSourceDTO src)
     {
@@ -524,7 +612,6 @@ else if (_overview is not null)
 
     private static string Num(decimal v) => PpbFormat.Number(v);
     private static string Fmt(decimal v) => PpbFormat.Additive(v);
-    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
     private static string ValueClass(decimal v) => v > 0 ? "ppb-cell-pos" : v < 0 ? "ppb-cell-neg" : "ppb-cell-zero";
     /// <summary>Expense amounts are stored as positive magnitudes — always show non-zero in red.</summary>
     private static string ExpenseValueClass(decimal v) => v != 0m ? "ppb-cell-neg" : "ppb-cell-zero";

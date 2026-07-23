@@ -54,6 +54,9 @@ namespace DA_DataAccess.BaronyData
 
         /// <summary>Catalog template chosen for a tile construction project.</summary>
         public int? BuildingTemplateId { get; set; }
+
+        /// <summary>Army unit produced by a Unit Training project.</summary>
+        public int? UnitId { get; set; }
     }
 
     /// <summary>

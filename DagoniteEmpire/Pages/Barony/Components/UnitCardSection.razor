@@ -1,0 +1,250 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.BaronyRepos
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+
+<BaronySection Title="@($"Unit card — {Unit.Name}")">
+    <Summary>
+        <div class="baron-php-summary">
+            <span class="baron-php-chip">Atk @_combat.Attack</span>
+            <span class="baron-php-chip">Def @_combat.Defense</span>
+            <span class="baron-php-chip">Dmg @_combat.Damage</span>
+            <span class="baron-php-chip">Armor @_combat.Armor</span>
+            <span class="baron-php-chip">Move @_combat.Move</span>
+            <span class="baron-php-chip">HP @Unit.CurrentHp/@_combat.MaxHp</span>
+            <span class="baron-php-chip">PD @Unit.RemainingPd</span>
+            <span class="baron-php-chip">Disc @Unit.Discipline</span>
+        </div>
+    </Summary>
+    <ChildContent>
+        @if (Unit.IsTraining)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                In training (@(Unit.TrainingTurnsRemaining?.ToString() ?? "?") turns left). Fund the Unit Training project on Projects.
+                PD spending unlocks when Active.
+            </MudAlert>
+        }
+
+        <div class="unit-card__gear mb-2">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                W1: @(UnitWeaponCatalog.Find(Unit.Weapon1Key)?.Name ?? "—") (@Unit.Weapon1Quality)
+                · W2: @(UnitWeaponCatalog.Find(Unit.Weapon2Key)?.Name ?? "—")
+                · Armor: @(UnitArmorCatalog.Find(Unit.ArmorKey)?.Name ?? "—")
+                · Shield: @(UnitArmorCatalog.Find(Unit.ShieldKey)?.Name ?? "—")
+                · Troops: @Unit.TroopCount · Wage: @Unit.Wage
+            </MudText>
+        </div>
+
+        <MudSelect T="string"
+                   Label="Primary defense skill"
+                   Value="@Unit.DefenseSkillKey"
+                   ValueChanged="OnDefenseSkillChanged"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true"
+                   Disabled="@(!CanEdit)"
+                   Class="baron-influence-field mb-3"
+                   Style="max-width:280px;">
+            @foreach (var key in UnitSkillKey.DefenseChoices)
+            {
+                var def = UnitSkillTree.Find(key);
+                <MudSelectItem Value="@key">@(def?.Name ?? key)</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudText Typo="Typo.subtitle2" Class="mb-1">Attributes</MudText>
+        <div class="unit-card__attrs">
+            @AttrRow("Build", Unit.Build, Unit.EffectiveBuild, () => RaiseAttrAsync(UnitAttr.Build))
+            @AttrRow("Agility", Unit.Agility, Unit.EffectiveAgility, () => RaiseAttrAsync(UnitAttr.Agility))
+            @AttrRow("Will", Unit.Will, Unit.EffectiveWill, () => RaiseAttrAsync(UnitAttr.Will))
+            @AttrRow("Perception", Unit.Perception, Unit.EffectivePerception, () => RaiseAttrAsync(UnitAttr.Perception))
+            <div class="unit-card__attr">
+                <span>Discipline</span>
+                <b>@Unit.Discipline</b>
+                @if (CanSpendPd)
+                {
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="RaiseDisciplineAsync">+1 PD</MudButton>
+                }
+            </div>
+            @if (Unit.FreeAttributePoints > 0 && Unit.IsActive && CanEdit)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-accent);">
+                    Free attribute points left: @Unit.FreeAttributePoints (use + without PD)
+                </MudText>
+            }
+        </div>
+
+        <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Skills</MudText>
+        <div style="overflow-x:auto;">
+            <table class="ppb-table ppb-table--source ppb-table--lined">
+                <thead>
+                    <tr>
+                        <th class="ppb-row-label source-col">Skill</th>
+                        <th>Base</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var def in UnitSkillTree.All)
+                    {
+                        Unit.SkillBase.TryGetValue(def.Key, out var bas);
+                        _skillTotals.TryGetValue(def.Key, out var total);
+                        <tr>
+                            <td class="ppb-row-label source-col">
+                                <span class="source-cell__name" style="@(def.IsBase ? "font-weight:600;" : "padding-left:1rem;")">
+                                    @def.Name
+                                </span>
+                            </td>
+                            <td>@bas</td>
+                            <td>@total</td>
+                            <td>
+                                @if (CanSpendPd)
+                                {
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => RaiseSkillAsync(def))">+1</MudButton>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public BaronyUnitDTO Unit { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private UnitCombatTotals _combat;
+    private Dictionary<string, int> _skillTotals = new();
+    private bool CanSpendPd => CanEdit && Unit.IsActive;
+
+    protected override void OnParametersSet()
+    {
+        _skillTotals = UnitStatHelper.BuildSkillTotals(Unit);
+        _combat = UnitStatHelper.Compute(Unit);
+    }
+
+    private RenderFragment AttrRow(string label, int baseVal, int effective, Func<Task> raise) => __builder =>
+    {
+        <div class="unit-card__attr">
+            <span>@label</span>
+            <b>@effective</b>
+            <span style="color:var(--barony-muted);font-size:0.8rem;">(base @baseVal)</span>
+            @if (CanEdit && Unit.IsActive)
+            {
+                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="raise">+1</MudButton>
+            }
+        </div>
+    };
+
+    private async Task OnDefenseSkillChanged(string key)
+    {
+        Unit.DefenseSkillKey = key;
+        await PersistAsync();
+    }
+
+    private async Task RaiseAttrAsync(string attr)
+    {
+        if (!Unit.IsActive || !CanEdit) return;
+
+        if (Unit.FreeAttributePoints > 0)
+        {
+            ApplyAttrBump(attr);
+            Unit.FreeAttributePoints--;
+            await PersistAsync();
+            return;
+        }
+
+        if (!UnitPdFormulas.CanRaiseAttribute(AttrBase(attr), Unit.RemainingPd, out var cost))
+        {
+            _snackBar.Add($"Need {cost} PD.", Severity.Warning);
+            return;
+        }
+
+        ApplyAttrBump(attr);
+        Unit.RemainingPd -= cost;
+        await PersistAsync();
+    }
+
+    private int AttrBase(string attr) => attr switch
+    {
+        UnitAttr.Build => Unit.Build,
+        UnitAttr.Agility => Unit.Agility,
+        UnitAttr.Will => Unit.Will,
+        UnitAttr.Perception => Unit.Perception,
+        _ => 0,
+    };
+
+    private void ApplyAttrBump(string attr)
+    {
+        switch (attr)
+        {
+            case UnitAttr.Build: Unit.Build++; break;
+            case UnitAttr.Agility: Unit.Agility++; break;
+            case UnitAttr.Will: Unit.Will++; break;
+            case UnitAttr.Perception: Unit.Perception++; break;
+        }
+    }
+
+    private async Task RaiseDisciplineAsync()
+    {
+        if (!UnitPdFormulas.CanRaiseDiscipline(Unit.Discipline, Unit.RemainingPd, out var cost))
+        {
+            _snackBar.Add(Unit.Discipline >= UnitRules.DisciplineMax ? "Discipline maxed." : $"Need {cost} PD.", Severity.Warning);
+            return;
+        }
+        Unit.RemainingPd -= cost;
+        Unit.Discipline++;
+        await PersistAsync();
+    }
+
+    private async Task RaiseSkillAsync(UnitSkillDef def)
+    {
+        Unit.SkillBase.TryGetValue(def.Key, out var current);
+        int cost;
+        if (def.IsBase)
+        {
+            if (!UnitPdFormulas.CanRaiseBaseSkill(current, int.MaxValue, Unit.RemainingPd, out cost))
+            {
+                _snackBar.Add($"Need {cost} PD.", Severity.Warning);
+                return;
+            }
+        }
+        else
+        {
+            var parentKey = def.ParentKey!;
+            Unit.SkillBase.TryGetValue(parentKey, out var parentBase);
+            // Parent total base ranks — Excel: special ≤ parent base skill level
+            if (!UnitPdFormulas.CanRaiseSpecialSkill(current, parentBase, Unit.RemainingPd, out cost))
+            {
+                _snackBar.Add(current + 1 > parentBase
+                    ? "Special cannot exceed parent base skill."
+                    : $"Need {cost} PD.", Severity.Warning);
+                return;
+            }
+        }
+
+        Unit.SkillBase[def.Key] = current + 1;
+        Unit.RemainingPd -= cost;
+        await PersistAsync();
+    }
+
+    private async Task PersistAsync()
+    {
+        try
+        {
+            var combat = UnitStatHelper.Compute(Unit);
+            if (Unit.CurrentHp <= 0 || Unit.CurrentHp > combat.MaxHp)
+                Unit.CurrentHp = combat.MaxHp;
+            await _baronyRepo.SaveUnit(Unit);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

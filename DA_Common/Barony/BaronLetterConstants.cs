@@ -21,13 +21,30 @@ namespace DA_Common.Barony
     public static class BaronLetterRules
     {
         /// <summary>
-        /// Max letters the baron may receive from the same correspondent in one turn.
-        /// Outbound letters from the baron are unlimited.
+        /// Default max inbound letters from the same correspondent in one turn
+        /// (Eastern March). Empire / Other use <see cref="MaxInboundFromCorrespondent"/>.
         /// </summary>
         public const int MaxLettersFromSameCorrespondentPerTurn = 3;
 
+        public const int MaxInboundEasternMarchPerTurn = 3;
+        public const int MaxInboundEmpirePerTurn = 1;
+        public const int MaxInboundOtherPerTurn = 1;
+
+        /// <summary>
+        /// Max letters the baron may receive from one correspondent this turn,
+        /// by where they live.
+        /// </summary>
+        public static int MaxInboundFromCorrespondent(string? replyRegion) =>
+            (replyRegion ?? "").Trim() switch
+            {
+                BaronLetterReplyRegion.EasternMarch => MaxInboundEasternMarchPerTurn,
+                BaronLetterReplyRegion.Empire => MaxInboundEmpirePerTurn,
+                _ => MaxInboundOtherPerTurn,
+            };
+
         /// <summary>
         /// A delivered inbound message counts as one received letter from that correspondent this turn.
+        /// Quotas reset automatically when <paramref name="currentTurn"/> advances (Resolve Turn).
         /// </summary>
         public static bool CountsAsReceivedThisTurn(
             bool isDraft,
@@ -39,6 +56,20 @@ namespace DA_Common.Barony
                 return false;
 
             return turnNumber == currentTurn;
+        }
+
+        /// <summary>
+        /// Baron is blocked from another outbound only while awaiting a reply
+        /// to a letter sent <em>this</em> turn. A new quarter unlocks communication again.
+        /// </summary>
+        public static bool BaronAwaitingReplyThisTurn(
+            bool lastIsInbound,
+            int lastTurnNumber,
+            int currentTurn)
+        {
+            if (lastIsInbound || currentTurn <= 0)
+                return false;
+            return lastTurnNumber == currentTurn;
         }
 
         public static bool SameCorrespondent(

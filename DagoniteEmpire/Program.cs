@@ -93,6 +93,9 @@ public class Program
                                         npgsqlOptions.EnableRetryOnFailure();
                                         npgsqlOptions.UseVector(); // Enable pgvector for SCRIBE
                                     });
+            // Hand-written SQL migrations update the snapshot; ignore EF's strict model-diff check.
+            options.ConfigureWarnings(w =>
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             if (builder.Environment.IsDevelopment())
             {
                 options.EnableDetailedErrors();

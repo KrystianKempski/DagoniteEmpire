@@ -7,6 +7,7 @@ namespace DA_Models.BaronyModels
     {
         public BaronyDTO Barony { get; set; } = new();
         public List<AdvisorDTO> Advisors { get; set; } = new();
+        public List<AvailableAdvisorDTO> AvailableAdvisors { get; set; } = new();
         public List<BaronyBuildingDTO> Buildings { get; set; } = new();
         public List<SocialGroupRelationDTO> SocialRelations { get; set; } = new();
         public List<TerrainImprovementDTO> Improvements { get; set; } = new();

@@ -98,8 +98,18 @@ namespace DagoniteEmpire.Pages.Barony
             SignificantSkills = source.SignificantSkills.ToList(),
             FormulaText = source.FormulaText,
             Description = source.Description,
+            PersonDescription = source.PersonDescription,
             UpkeepGold = source.UpkeepGold,
         };
+
+        /// <summary>Office flavor for tooltips / Offices page (catalog for core, stored text for custom).</summary>
+        public static string? ResolveOfficeDescription(AdvisorDTO advisor)
+            => OfficeDescriptions.For(advisor.OfficeType)
+               ?? (string.IsNullOrWhiteSpace(advisor.Description) ? null : advisor.Description.Trim());
+
+        /// <summary>Assigned person's bio (Available Advisors pool).</summary>
+        public static string? ResolvePersonDescription(AdvisorDTO advisor)
+            => string.IsNullOrWhiteSpace(advisor.PersonDescription) ? null : advisor.PersonDescription.Trim();
 
         public static AdvisorDTO BuildBaronAdvisorRow(
             BaronyDTO barony,
@@ -140,7 +150,7 @@ namespace DagoniteEmpire.Pages.Barony
                 Percent = BaronSkillPpbFormulas.MapToAdvisorPercent(totalSkills),
                 Description = BaronSkillPpbFormulas.BaronAdvisorNameTooltip
                     + (factor < 1m
-                        ? $" Skill PPB applied at {factorPct}% ({managementJc}/{BaronTimeRules.RequiredManagementJc} management JC)."
+                        ? $" Skill PPB applied at {factorPct}% ({managementJc}/{BaronTimeRules.RequiredManagementJc} management BT)."
                         : ""),
             };
         }
@@ -165,112 +175,65 @@ namespace DagoniteEmpire.Pages.Barony
         public static List<PpbModifierRow> BuildingRows(IEnumerable<BaronyBuildingDTO> buildings)
             => buildings.Select(b => Row(b.Name, b.Additive, b.Percent, null, b.Description)).ToList();
 
-        /// <summary>Default fixed city buildings. MG overrides are stored in BaronyBuildings via CoreKey.</summary>
-        public static IReadOnlyList<BaronyBuildingDTO> CoreCityBuildings(int baronyId)
-        {
-            static PpbVector A(
-                decimal? food = null, decimal? economy = null, decimal? production = null,
-                decimal? loyalty = null, decimal? stability = null, decimal? law = null,
-                decimal? corruption = null, decimal? science = null, decimal? magic = null,
-                decimal? culture = null, decimal? intelligence = null, decimal? defense = null,
-                decimal? treasury = null)
-            {
-                var v = new PpbVector();
-                if (food.HasValue) v[Ppb.Food] = food.Value;
-                if (economy.HasValue) v[Ppb.Economy] = economy.Value;
-                if (production.HasValue) v[Ppb.Production] = production.Value;
-                if (loyalty.HasValue) v[Ppb.Loyalty] = loyalty.Value;
-                if (stability.HasValue) v[Ppb.Stability] = stability.Value;
-                if (law.HasValue) v[Ppb.Law] = law.Value;
-                if (corruption.HasValue) v[Ppb.Corruption] = corruption.Value;
-                if (science.HasValue) v[Ppb.Science] = science.Value;
-                if (magic.HasValue) v[Ppb.Magic] = magic.Value;
-                if (culture.HasValue) v[Ppb.Culture] = culture.Value;
-                if (intelligence.HasValue) v[Ppb.Intelligence] = intelligence.Value;
-                if (defense.HasValue) v[Ppb.Defense] = defense.Value;
-                if (treasury.HasValue) v[Ppb.Treasury] = treasury.Value;
-                return v;
-            }
-
-            return new[]
-            {
-                new BaronyBuildingDTO
-                {
-                    BaronyId = baronyId,
-                    Name = "Steward's Building",
-                    CoreKey = CoreCityBuildingKey.StewardsBuilding,
-                    Kind = BuildingKind.Building,
-                    Additive = A(
-                        stability: 3, law: 3, corruption: 2,
-                        science: 2, culture: 2, intelligence: 2,
-                        defense: 5, treasury: -15),
-                    Description =
-                        "Steward's hut. Locals come here with their affairs before the authorities. "
-                        + "Officials and tax collectors hold office here. Can be upgraded to a town hall.",
-                },
-                new BaronyBuildingDTO
-                {
-                    BaronyId = baronyId,
-                    Name = "Tavern",
-                    CoreKey = CoreCityBuildingKey.Tavern,
-                    Kind = BuildingKind.Building,
-                    Additive = A(economy: 2, intelligence: 3, loyalty: 3),
-                    Description =
-                        "A humble tavern. Meeting place for the peasantry and a rest stop for the few "
-                        + "traveling merchants. Can be upgraded to an inn.",
-                },
-                new BaronyBuildingDTO
-                {
-                    BaronyId = baronyId,
-                    Name = "Market Square",
-                    CoreKey = CoreCityBuildingKey.MarketSquare,
-                    Kind = BuildingKind.Building,
-                    Additive = A(economy: 3, production: 3, treasury: 10),
-                    Description =
-                        "A small paved place where local producers and nearby merchants can exchange goods. "
-                        + "Can be upgraded to a marketplace.",
-                },
-            };
-        }
-
-
-        /// <summary>Core defaults merged with per-barony MG overrides (matched by CoreKey).</summary>
+        /// <summary>
+        /// Starter city buildings in display order.
+        /// Prefer saved rows with <see cref="CoreCityBuildingKey"/>; fall back to Buildings catalog templates.
+        /// </summary>
         public static IReadOnlyList<BaronyBuildingDTO> EffectiveCoreCityBuildings(
             int baronyId,
-            IEnumerable<BaronyBuildingDTO>? saved)
+            IEnumerable<BaronyBuildingDTO>? saved,
+            IEnumerable<BuildingTemplateDTO>? catalog = null)
         {
-            var overrides = (saved ?? Enumerable.Empty<BaronyBuildingDTO>())
+            var byKey = (saved ?? Enumerable.Empty<BaronyBuildingDTO>())
                 .Where(b => !string.IsNullOrWhiteSpace(b.CoreKey))
                 .GroupBy(b => b.CoreKey!, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-            return CoreCityBuildings(baronyId).Select(def =>
-            {
-                if (!overrides.TryGetValue(def.CoreKey!, out var ov))
-                    return def;
+            var catalogByName = (catalog ?? Enumerable.Empty<BuildingTemplateDTO>())
+                .Where(tpl => !string.IsNullOrWhiteSpace(tpl.Name))
+                .GroupBy(tpl => tpl.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-                return new BaronyBuildingDTO
+            var list = new List<BaronyBuildingDTO>(CoreCityBuildingKey.All.Length);
+            foreach (var key in CoreCityBuildingKey.All)
+            {
+                if (byKey.TryGetValue(key, out var row))
                 {
-                    Id = ov.Id,
-                    BaronyId = baronyId,
-                    CoreKey = def.CoreKey,
-                    TemplateId = null,
-                    Name = string.IsNullOrWhiteSpace(ov.Name) ? def.Name : ov.Name,
-                    Kind = BuildingKind.Building,
-                    Description = ov.Description,
-                    Additive = ov.Additive.Clone(),
-                    Percent = ov.Percent.Clone(),
-                    Population = ov.Population,
-                };
-            }).ToList();
+                    list.Add(row);
+                    continue;
+                }
+
+                var catalogName = CoreCityBuildingKey.CatalogName(key);
+                if (!catalogByName.TryGetValue(catalogName, out var template))
+                    continue;
+
+                list.Add(FromStarterCatalogTemplate(baronyId, key, template));
+            }
+
+            return list;
         }
 
-        /// <summary>Saved buildings that are not core overrides (catalog / custom adds).</summary>
+        public static BaronyBuildingDTO FromStarterCatalogTemplate(
+            int baronyId,
+            string coreKey,
+            BuildingTemplateDTO template) => new()
+        {
+            BaronyId = baronyId,
+            TemplateId = template.Id > 0 ? template.Id : null,
+            CoreKey = coreKey,
+            Name = template.Name,
+            Kind = BuildingKind.Building,
+            Description = template.Description,
+            Additive = template.EffectAdditive.Clone(),
+            Percent = template.EffectPercent.Clone(),
+        };
+
+        /// <summary>Saved buildings that are not starter/core rows (catalog / custom adds).</summary>
         public static IEnumerable<BaronyBuildingDTO> ExtraCityBuildings(IEnumerable<BaronyBuildingDTO>? saved)
             => (saved ?? Enumerable.Empty<BaronyBuildingDTO>())
                 .Where(b => string.IsNullOrWhiteSpace(b.CoreKey));
 
-                public static IReadOnlyDictionary<int, SeatPurposeTemplateDTO> PurposeLookup(
+        public static IReadOnlyDictionary<int, SeatPurposeTemplateDTO> PurposeLookup(
             IEnumerable<SeatPurposeTemplateDTO>? templates) =>
             (templates ?? Enumerable.Empty<SeatPurposeTemplateDTO>())
                 .ToDictionary(t => t.Id);
@@ -505,14 +468,87 @@ namespace DagoniteEmpire.Pages.Barony
         public static int SumSocialInfluencePercent(int baronyId, IEnumerable<SocialGroupRelationDTO> saved)
             => SocialGroupSectionRows(baronyId, saved).Where(r => r.IsActive).Sum(r => r.InfluencePercent);
 
-        public static List<PpbModifierRow> ImprovementRows(IEnumerable<TerrainImprovementDTO> improvements)
-            => improvements
+        public static List<PpbModifierRow> ImprovementRows(
+            IEnumerable<TerrainImprovementDTO> improvements,
+            IEnumerable<TerrainTileDTO>? tiles = null,
+            IEnumerable<FiefDTO>? fiefs = null,
+            decimal vassalTributePercent = FiefTributeFormulas.DefaultPercent)
+        {
+            var tilesById = (tiles ?? Enumerable.Empty<TerrainTileDTO>())
+                .ToDictionary(t => t.Id);
+            var fiefsById = (fiefs ?? Enumerable.Empty<FiefDTO>())
+                .ToDictionary(f => f.Id);
+            var rate = FiefTributeFormulas.ClampPercent(vassalTributePercent);
+
+            return improvements
                 .Where(ShowsOnDomainPanel)
                 .Where(i => i.IsActive)
                 .OrderByDescending(IsVillage)
                 .ThenBy(ImprovementDisplayLabel, StringComparer.OrdinalIgnoreCase)
-                .Select(i => Row(ImprovementDisplayLabel(i), i.Additive, i.Percent, i.FormulaText, i.Description))
+                .Select(i =>
+                {
+                    var additive = ApplyVassalVillageGoldShare(i, tilesById, fiefsById, rate, out var note);
+                    var formula = string.IsNullOrWhiteSpace(note)
+                        ? i.FormulaText
+                        : string.IsNullOrWhiteSpace(i.FormulaText) ? note : $"{i.FormulaText}\n\n{note}";
+                    return Row(ImprovementDisplayLabel(i), additive, i.Percent, formula, i.Description);
+                })
                 .ToList();
+        }
+
+        /// <summary>
+        /// Positive Gold from active villages (after vassal fief share). Used on Budget as Fief income.
+        /// </summary>
+        public static decimal VillageGoldIncome(
+            IEnumerable<TerrainImprovementDTO> improvements,
+            IEnumerable<TerrainTileDTO>? tiles = null,
+            IEnumerable<FiefDTO>? fiefs = null,
+            decimal vassalTributePercent = FiefTributeFormulas.DefaultPercent)
+        {
+            var tilesById = (tiles ?? Enumerable.Empty<TerrainTileDTO>())
+                .ToDictionary(t => t.Id);
+            var fiefsById = (fiefs ?? Enumerable.Empty<FiefDTO>())
+                .ToDictionary(f => f.Id);
+            var rate = FiefTributeFormulas.ClampPercent(vassalTributePercent);
+
+            var sum = improvements
+                .Where(ShowsOnDomainPanel)
+                .Where(i => i.IsActive && IsVillage(i))
+                .Sum(i =>
+                {
+                    var additive = ApplyVassalVillageGoldShare(i, tilesById, fiefsById, rate, out _);
+                    return Math.Max(0m, additive[Ppb.Treasury]);
+                });
+            return PpbFormat.Round(sum);
+        }
+
+        /// <summary>
+        /// Villages on vassal fiefs: baron keeps only <paramref name="vassalTributePercent"/>% of Treasury gold.
+        /// </summary>
+        public static PpbVector ApplyVassalVillageGoldShare(
+            TerrainImprovementDTO improvement,
+            IReadOnlyDictionary<int, TerrainTileDTO> tilesById,
+            IReadOnlyDictionary<int, FiefDTO> fiefsById,
+            decimal vassalTributePercent,
+            out string? note)
+        {
+            note = null;
+            var additive = improvement.Additive.Clone();
+            if (!IsVillage(improvement))
+                return additive;
+
+            TerrainTileDTO? tile = null;
+            if (improvement.TileId is int tid)
+                tilesById.TryGetValue(tid, out tile);
+            if (!IsVassalFiefTile(tile, fiefsById))
+                return additive;
+
+            var full = additive[Ppb.Treasury];
+            var kept = FiefTributeFormulas.ApplyVassalShare(full, vassalTributePercent);
+            additive[Ppb.Treasury] = kept;
+            note = FiefTributeFormulas.ExplainVassalShare(full, vassalTributePercent, kept);
+            return additive;
+        }
 
         /// <summary>
         /// Towns are map markers only for now.
@@ -545,10 +581,10 @@ namespace DagoniteEmpire.Pages.Barony
         public static string OwnershipLabel(bool isVassalFief) =>
             isVassalFief ? "Vassal" : "Demesne";
 
-        public static string OwnershipTooltip(bool isVassalFief) =>
+        public static string OwnershipTooltip(bool isVassalFief, decimal vassalTributePercent = FiefTributeFormulas.DefaultPercent) =>
             isVassalFief
-                ? "On a vassal’s fief — only half of treasury income goes to the baron."
-                : "On the baron’s demesne — full treasury income.";
+                ? $"On a vassal’s fief — baron keeps {FiefTributeFormulas.ClampPercent(vassalTributePercent):0.#}% of village gold."
+                : "On the baron’s demesne — full village gold.";
 
 
         public static List<PpbModifierRow> DecreeRows(IEnumerable<DecreeDTO> decrees)
@@ -706,7 +742,8 @@ namespace DagoniteEmpire.Pages.Barony
             var buildingRows = CityBuildingSectionRows(
                 ov.Barony.Id, ov.Buildings, ov.Improvements, ov.Seat, ov.SeatPurposeTemplates);
             var socialRows = SocialRows(ov.Barony.Id, ov.SocialRelations);
-            var improvementRows = ImprovementRows(ov.Improvements);
+            var improvementRows = ImprovementRows(
+                ov.Improvements, ov.Tiles, ov.Fiefs, ov.Barony.VassalTributePercent);
             var decreeRows = DecreeRows(ov.Decrees);
             var eventRows = EventRows(ov.Events, ov.Barony.TurnNumber);
             var settlementPop = SumSettlementPopulation(ov.Barony.Id, ov.Buildings, ov.Improvements);
@@ -767,6 +804,36 @@ namespace DagoniteEmpire.Pages.Barony
             int managementJc = BaronTimeRules.RequiredManagementJc)
             => BuildDomainPanelRows(ov, character, baronModifiers, advisorModifiers, managementJc).GrandTotal;
 
+        /// <summary>
+        /// Domain Panel Final Gold income before expenses, used as the base for liege tribute.
+        /// </summary>
+        public static decimal GrossGoldIncome(DomainPanelRowSet panel)
+        {
+            var pos = panel.AllRows.Sum(r => Math.Max(0m, r.Additive[Ppb.Treasury]));
+            var neg = panel.AllRows.Sum(r => Math.Max(0m, -r.Additive[Ppb.Treasury]));
+            var additiveNet = pos - neg;
+            var goldFinal = panel.GrandTotal[Ppb.Treasury];
+            // Remainder so Income − Expenses (before tribute) reconciles exactly to Domain Panel Final.
+            var scaling = goldFinal - additiveNet;
+            return PpbFormat.Round(pos + Math.Max(0m, scaling));
+        }
+
+        /// <summary>Expected resource delta for HUD / Resources: Domain Panel Final minus liege tribute on Gold.</summary>
+        public static PpbVector ExpectedResourceIncome(
+            BaronyOverviewDTO ov,
+            CharacterDTO? character = null,
+            IEnumerable<BaronInfluenceModifierDTO>? baronModifiers = null,
+            IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null,
+            int managementJc = BaronTimeRules.RequiredManagementJc)
+        {
+            var panel = BuildDomainPanelRows(ov, character, baronModifiers, advisorModifiers, managementJc);
+            var expected = ResourceCatalog.Slice(panel.GrandTotal);
+            var gross = GrossGoldIncome(panel);
+            var tribute = FiefTributeFormulas.ComputeTribute(gross, ov.Barony.LiegeTributePercent);
+            expected[Ppb.Treasury] = PpbFormat.Round(expected[Ppb.Treasury] - tribute);
+            return expected;
+        }
+
         public sealed class DomainPanelRowSet
         {
             public List<AdvisorDTO> Advisors { get; init; } = new();
@@ -815,11 +882,11 @@ namespace DagoniteEmpire.Pages.Barony
                     Values = penalty,
                     IsSystem = true,
                     Description =
-                        $"Skill PPB scaled by management JC. "
-                        + $"{managementJc}/{BaronTimeRules.RequiredManagementJc} JC = {factorPct}% of From Skills. "
+                        $"Skill PPB scaled by management BT. "
+                        + $"{managementJc}/{BaronTimeRules.RequiredManagementJc} BT = {factorPct}% of From Skills. "
                         + "Penalty values are rounded to whole numbers.",
                     Formula =
-                        $"management JC {managementJc}/{BaronTimeRules.RequiredManagementJc} → {factorPct}% skills",
+                        $"management BT {managementJc}/{BaronTimeRules.RequiredManagementJc} → {factorPct}% skills",
                 });
             }
 
@@ -880,7 +947,7 @@ namespace DagoniteEmpire.Pages.Barony
             return result;
         }
 
-        /// <summary>Effective skill PPB after management JC factor (0–100%).</summary>
+        /// <summary>Effective skill PPB after management BT factor (0–100%).</summary>
         public static PpbVector ApplyManagementSkillFactor(PpbVector skills, int managementJc) =>
             ScalePpbToIntegers(skills ?? new PpbVector(), BaronTimeRules.ManagementSkillFactor(managementJc));
 
@@ -1174,10 +1241,10 @@ namespace DagoniteEmpire.Pages.Barony
             return total;
         }
 
-        // --- Baron Card: Time (JC) ---
+        // --- Baron Card: Time (BT) ---
 
         /// <summary>
-        /// Attribute score used for JC pool (same base as health: SumAbsolute).
+        /// Attribute score used for BT pool (same base as health: SumAbsolute).
         /// </summary>
         public static int AttributeSumAbsolute(CharacterDTO? character, string attributeName)
         {
@@ -1194,8 +1261,8 @@ namespace DagoniteEmpire.Pages.Barony
         }
 
         /// <summary>
-        /// JC pool: (Endurance + Willpower) × 10, then ± percent modifiers.
-        /// Management = sum of Management actions; Adventure weeks = Adventure JC / 25.
+        /// BT pool: (Endurance + Willpower) × 10, then ± percent modifiers.
+        /// Management = sum of Management actions; Adventure weeks = Adventure BT / 25.
         /// </summary>
         public static BaronTimeBudget BuildTimeBudget(
             CharacterDTO? character,
@@ -1235,7 +1302,7 @@ namespace DagoniteEmpire.Pages.Barony
                 ExpeditionWeeks: weeks);
         }
 
-        public static string FormatJc(int value) => $"{value} JC";
+        public static string FormatBt(int value) => $"{value} BT";
 
         public static string FormatPercent(decimal percent) =>
             percent > 0 ? $"+{percent:0.##}%"

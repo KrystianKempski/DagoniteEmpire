@@ -124,6 +124,8 @@ namespace DA_Business.Repository.BaronyRepos
                     Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
                     ConjunctureDice = RollService.Roll2d6().Sum,
                     ConjunctureModifier = 0,
+                    LiegeTributePercent = FiefTributeFormulas.DefaultPercent,
+                    VassalTributePercent = FiefTributeFormulas.DefaultPercent,
                     BaseParametersJson = Ser(new PpbVector()),
                     ResourceStocksJson = Ser(new PpbVector()),
                     PreviousTurnIncomeJson = Ser(new PpbVector()),
@@ -138,6 +140,7 @@ namespace DA_Business.Repository.BaronyRepos
                 SeniorHousesSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 OrganizationsSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 VassalsFromFiefsSeeder.EnsureForBarony(ctx, added.Entity.Id);
+                await EnsureStarterCityBuildingsAsync(ctx, added.Entity.Id);
                 await ctx.SaveChangesAsync();
 
                 return ToDTO(added.Entity);
@@ -164,6 +167,371 @@ namespace DA_Business.Repository.BaronyRepos
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(UpdateBarony)); }
+        }
+
+        public async Task<BaronyDTO> SetPlayerTurnReady(int baronyId, bool ready)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+                e.PlayerTurnReady = ready;
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SetPlayerTurnReady));
+            }
+        }
+
+        public async Task<TurnResolveReportDTO> ResolveTurn(
+            int baronyId,
+            PpbVector expectedIncome,
+            decimal loyaltyFinal,
+            decimal stabilityFinal,
+            int settlementPopulation)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var report = new TurnResolveReportDTO
+                {
+                    BaronyId = baronyId,
+                    PreviousTurnNumber = barony.TurnNumber,
+                    Loyalty = loyaltyFinal,
+                    Stability = stabilityFinal,
+                    SettlementPopulation = Math.Max(0, settlementPopulation),
+                    UnrestBefore = barony.Unrest,
+                };
+
+                // 1) Apply expected resource income
+                var income = ResourceCatalog.Slice(expectedIncome);
+                var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
+                stocks[Ppb.Food] = barony.FoodInGranaries;
+                stocks[Ppb.Treasury] = barony.TreasuryGold;
+                foreach (var info in ResourceCatalog.All)
+                    stocks[info.Key] += income[info.Key];
+                stocks = ResourceCatalog.Slice(stocks);
+                barony.ResourceStocksJson = Ser(stocks);
+                barony.FoodInGranaries = stocks[Ppb.Food];
+                barony.TreasuryGold = stocks[Ppb.Treasury];
+                barony.PreviousTurnIncomeJson = Ser(income);
+                report.AppliedIncome = income.Clone();
+
+                // 2) Tick / complete funded projects
+                var projects = await ctx.BaronyProjects
+                    .Where(p => p.BaronyId == baronyId)
+                    .ToListAsync();
+                var templates = await ctx.BuildingTemplates.AsNoTracking().ToListAsync();
+                var templateById = templates.ToDictionary(t => t.Id);
+
+                foreach (var project in projects)
+                {
+                    var dto = ToDTO(project);
+                    if (dto.Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                        continue;
+                    if (dto.HasRemainingCost)
+                        continue;
+
+                    dto.TurnsRemaining = Math.Max(0, dto.TurnsRemaining - 1);
+                    if (dto.TurnsRemaining > 0)
+                    {
+                        if (dto.Status == ProjectStatus.Draft)
+                            dto.Status = ProjectStatus.InProgress;
+                        ApplyProject(project, dto);
+                        continue;
+                    }
+
+                    dto.Status = ProjectStatus.Completed;
+                    dto.TurnsRemaining = 0;
+                    ApplyProject(project, dto);
+                    report.CompletedProjects.Add(dto.Name);
+
+                    await ApplyCompletedProjectResultsAsync(ctx, barony, dto, templateById, stocks);
+                }
+
+                // Re-sync stocks after one-time resource grants from projects
+                stocks = ResourceCatalog.Slice(stocks);
+                barony.ResourceStocksJson = Ser(stocks);
+                barony.FoodInGranaries = stocks[Ppb.Food];
+                barony.TreasuryGold = stocks[Ppb.Treasury];
+
+                // 3) Size from primary-domain tiles
+                var primaryDomainId = await ctx.TerrainMapDomains.AsNoTracking()
+                    .Where(d => d.BaronyId == baronyId && d.IsPrimary)
+                    .Select(d => (int?)d.Id)
+                    .FirstOrDefaultAsync();
+                var size = primaryDomainId is int pid
+                    ? await ctx.TerrainTiles.CountAsync(t => t.BaronyId == baronyId && t.MapDomainId == pid)
+                    : await ctx.TerrainTiles.CountAsync(t => t.BaronyId == baronyId);
+                barony.Size = size;
+                report.Size = size;
+
+                // 4) Loyalty / unrest when Stability ≤ 0
+                var controlDc = ControlDcFormulas.ControlDc(size, report.SettlementPopulation);
+                report.ControlDc = controlDc;
+                if (stabilityFinal <= 0m)
+                {
+                    var d20 = RollService.RollD20().Sum;
+                    var test = ControlDcFormulas.TestResult(loyaltyFinal, d20, controlDc);
+                    var delta = ControlDcFormulas.UnrestDelta(test, controlDc);
+                    report.LoyaltyTestRan = true;
+                    report.LoyaltyD20 = d20;
+                    report.LoyaltyTestResult = test;
+                    report.UnrestDelta = delta;
+                    barony.Unrest = Math.Max(0, barony.Unrest + delta);
+                }
+
+                report.UnrestAfter = barony.Unrest;
+
+                // 5) Advance calendar
+                var cal = BaronyCalendarFormulas.AdvanceOneTurn(
+                    barony.Year, barony.Month, barony.TurnNumber, barony.Season);
+                barony.Year = cal.Year;
+                barony.Month = cal.Month;
+                barony.TurnNumber = cal.TurnNumber;
+                barony.Season = cal.Season;
+                report.NewTurnNumber = cal.TurnNumber;
+                report.NewSeason = cal.Season;
+                report.NewYear = cal.Year;
+                report.NewMonth = cal.Month;
+
+                // 6) New conjuncture
+                var conj = RollService.Roll2d6();
+                barony.ConjunctureDice = conj.Sum;
+                report.NewConjunctureDice = conj.Sum;
+                report.ConjunctureModifier = barony.ConjunctureModifier;
+
+                // 7) Reset Baron's Time allocation for the new turn
+                await ResetBaronTimeForNewTurnAsync(ctx, baronyId);
+
+                // 8) Letter inbound quotas / awaiting-reply unlock via advanced TurnNumber
+                //    (see BaronLetterRules.CountsAsReceivedThisTurn / BaronAwaitingReplyThisTurn).
+
+                // 9) Clear ready flag
+                barony.PlayerTurnReady = false;
+
+                await ctx.SaveChangesAsync();
+                report.SummaryText = BuildTurnSummary(report);
+                return report;
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(ResolveTurn));
+            }
+        }
+
+        /// <summary>
+        /// Clears spent Baron's Time actions for a new turn and restores default management spend.
+        /// Percent modifiers are kept (lasting effects).
+        /// </summary>
+        private static async Task ResetBaronTimeForNewTurnAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var actions = await ctx.BaronTimeActions
+                .Where(a => a.BaronyId == baronyId)
+                .ToListAsync();
+
+            var toRemove = actions.Where(a => !a.IsSystem).ToList();
+            if (toRemove.Count > 0)
+                ctx.BaronTimeActions.RemoveRange(toRemove);
+
+            var management = actions.FirstOrDefault(a =>
+                a.IsSystem && a.Kind == BaronTimeActionKind.Management);
+            if (management is null)
+            {
+                ctx.BaronTimeActions.Add(new BaronTimeAction
+                {
+                    BaronyId = baronyId,
+                    Name = BaronTimeRules.ManagementActionName,
+                    Kind = BaronTimeActionKind.Management,
+                    CostJc = BaronTimeRules.RequiredManagementJc,
+                    Description =
+                        "Essential governance each turn. Spending fewer than "
+                        + $"{BaronTimeRules.RequiredManagementJc} BT causes management penalties "
+                        + "(stability, loyalty, income, etc.).",
+                    SortOrder = 0,
+                    IsSystem = true,
+                });
+            }
+            else
+            {
+                management.CostJc = BaronTimeRules.RequiredManagementJc;
+                management.Name = BaronTimeRules.ManagementActionName;
+                management.Kind = BaronTimeActionKind.Management;
+            }
+        }
+
+        private static async Task ApplyCompletedProjectResultsAsync(
+            ApplicationDbContext ctx,
+            Barony barony,
+            BaronyProjectDTO project,
+            IReadOnlyDictionary<int, BuildingTemplate> templateById,
+            PpbVector stocks)
+        {
+            var kind = project.OutputKind?.Trim() ?? "";
+            if (string.Equals(kind, ProjectOutputKind.UnitTraining, StringComparison.OrdinalIgnoreCase))
+            {
+                if (project.UnitId is int unitId && unitId > 0)
+                {
+                    var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u => u.Id == unitId && u.BaronyId == barony.Id);
+                    if (unit is not null)
+                    {
+                        unit.Status = UnitStatus.Active;
+                        unit.UpdatedAtUtc = DateTime.UtcNow;
+                        if (unit.CurrentHp <= 0)
+                        {
+                            var dto = ToUnitDTO(unit);
+                            unit.CurrentHp = ComputeUnitCombat(dto).MaxHp;
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (string.Equals(kind, ProjectOutputKind.OneTimeResources, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(kind, "One-time resources", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var info in ResourceCatalog.All)
+                    stocks[info.Key] += project.ResultAdditive[info.Key];
+                return;
+            }
+
+            if (string.Equals(kind, ProjectOutputKind.DecreeOrTechnology, StringComparison.OrdinalIgnoreCase)
+                || kind.Contains("Decree", StringComparison.OrdinalIgnoreCase))
+            {
+                ctx.Decrees.Add(new Decree
+                {
+                    BaronyId = barony.Id,
+                    Name = string.IsNullOrWhiteSpace(project.Name) ? "Completed project" : project.Name.Trim(),
+                    Description = project.ResultDescription,
+                    FormulaText = null,
+                    AdditiveJson = Ser(project.ResultAdditive),
+                    PercentJson = Ser(project.ResultPercent),
+                    IsActive = true,
+                });
+                return;
+            }
+
+            if (string.Equals(kind, ProjectOutputKind.Event, StringComparison.OrdinalIgnoreCase))
+            {
+                ctx.BaronyEvents.Add(new BaronyEvent
+                {
+                    BaronyId = barony.Id,
+                    Name = string.IsNullOrWhiteSpace(project.Name) ? "Completed project" : project.Name.Trim(),
+                    Description = project.ResultDescription,
+                    StartTurn = barony.TurnNumber,
+                    EndTurn = barony.TurnNumber,
+                    AdditiveJson = Ser(project.ResultAdditive),
+                    PercentJson = Ser(project.ResultPercent),
+                });
+                return;
+            }
+
+            BuildingTemplate? template = null;
+            if (project.BuildingTemplateId is int tid && templateById.TryGetValue(tid, out var t))
+                template = t;
+
+            // Map construction (crane projects): always land on the tile.
+            if (project.TileId is int tileId && tileId > 0)
+            {
+                var existing = await ctx.TerrainImprovements
+                    .FirstOrDefaultAsync(i => i.BaronyId == barony.Id && i.TileId == tileId);
+                var name = template?.Name
+                    ?? (string.IsNullOrWhiteSpace(project.Name) ? "Improvement" : project.Name.Trim());
+                var additive = template is not null ? De(template.EffectAdditiveJson) : project.ResultAdditive.Clone();
+                var percent = template is not null ? De(template.EffectPercentJson) : project.ResultPercent.Clone();
+                var description = !string.IsNullOrWhiteSpace(project.ResultDescription)
+                    ? project.ResultDescription
+                    : template?.Description;
+
+                if (existing is null)
+                {
+                    ctx.TerrainImprovements.Add(new TerrainImprovement
+                    {
+                        BaronyId = barony.Id,
+                        TileId = tileId,
+                        TemplateId = template?.Id,
+                        Name = name,
+                        Description = description,
+                        FormulaText = template?.Description,
+                        AdditiveJson = Ser(additive),
+                        PercentJson = Ser(percent),
+                        IsActive = true,
+                    });
+                }
+                else
+                {
+                    existing.TemplateId = template?.Id ?? existing.TemplateId;
+                    existing.Name = name;
+                    existing.Description = description;
+                    existing.FormulaText = template?.Description ?? existing.FormulaText;
+                    existing.AdditiveJson = Ser(additive);
+                    existing.PercentJson = Ser(percent);
+                    existing.IsActive = true;
+                    existing.InactiveReason = null;
+                }
+                return;
+            }
+
+            if (string.Equals(kind, ProjectOutputKind.Building, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(kind, ProjectOutputKind.Improvement, StringComparison.OrdinalIgnoreCase))
+            {
+                var name = template?.Name
+                    ?? (string.IsNullOrWhiteSpace(project.Name) ? "Building" : project.Name.Trim());
+                var additive = template is not null ? De(template.EffectAdditiveJson) : project.ResultAdditive.Clone();
+                var percent = template is not null ? De(template.EffectPercentJson) : project.ResultPercent.Clone();
+                ctx.BaronyBuildings.Add(new BaronyBuilding
+                {
+                    BaronyId = barony.Id,
+                    TemplateId = template?.Id,
+                    Name = name,
+                    Kind = string.Equals(kind, ProjectOutputKind.Improvement, StringComparison.OrdinalIgnoreCase)
+                        ? BuildingKind.Improvement
+                        : BuildingKind.Building,
+                    Description = !string.IsNullOrWhiteSpace(project.ResultDescription)
+                        ? project.ResultDescription
+                        : template?.Description,
+                    AdditiveJson = Ser(additive),
+                    PercentJson = Ser(percent),
+                });
+            }
+        }
+
+        private static string BuildTurnSummary(TurnResolveReportDTO r)
+        {
+            var lines = new List<string>
+            {
+                $"Turn {r.PreviousTurnNumber} resolved → Turn {r.NewTurnNumber} ({r.NewSeason} {r.NewYear}).",
+                $"Resource income applied. Size {r.Size}. Control DC {r.ControlDc} (population {r.SettlementPopulation}).",
+            };
+            if (r.CompletedProjects.Count > 0)
+                lines.Add("Completed: " + string.Join(", ", r.CompletedProjects) + ".");
+            else
+                lines.Add("No projects completed.");
+
+            if (r.LoyaltyTestRan)
+            {
+                lines.Add(
+                    $"Loyalty test: {PpbFormat.Number(r.Loyalty)} + d20({r.LoyaltyD20}) − DC {r.ControlDc} = {r.LoyaltyTestResult}. "
+                    + $"Unrest {r.UnrestBefore} → {r.UnrestAfter} (Δ {r.UnrestDelta}).");
+            }
+            else
+            {
+                lines.Add($"Stability {PpbFormat.Number(r.Stability)} > 0 — no loyalty test. Unrest stays {r.UnrestAfter}.");
+            }
+
+            lines.Add(
+                $"New conjuncture dice: {r.NewConjunctureDice}"
+                + (r.ConjunctureModifier != 0
+                    ? $" (modifier {r.ConjunctureModifier:+0;-0}, effective {r.NewConjunctureDice + r.ConjunctureModifier})"
+                    : "")
+                + ".");
+            return string.Join("\n", lines);
         }
 
         public async Task<BaronyOverviewDTO?> GetOverview(int baronyId)
@@ -207,12 +575,28 @@ namespace DA_Business.Repository.BaronyRepos
 
                 VassalsFromFiefsSeeder.EnsureForBarony(ctx, baronyId);
                 SeniorHousesSeeder.EnsureForBarony(ctx, baronyId);
+                await EnsureCoreOfficeDescriptionsAsync(ctx, baronyId);
+                await EnsureStarterCityBuildingsAsync(ctx, baronyId);
                 await ctx.SaveChangesAsync();
+
+                var availableAdvisors = (await ctx.AvailableAdvisors.AsNoTracking()
+                        .Where(x => x.BaronyId == baronyId)
+                        .ToListAsync())
+                    .Select(ToDTO)
+                    .ToList();
+                var personById = availableAdvisors.ToDictionary(a => a.Id);
+
+                var advisors = (await ctx.Advisors.AsNoTracking()
+                        .Where(x => x.BaronyId == baronyId)
+                        .ToListAsync())
+                    .Select(e => ToAdvisorDto(e, personById))
+                    .ToList();
 
                 return new BaronyOverviewDTO
                 {
                     Barony = ToDTO(barony),
-                    Advisors = (await ctx.Advisors.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    Advisors = advisors,
+                    AvailableAdvisors = availableAdvisors,
                     Buildings = (await ctx.BaronyBuildings.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     SocialRelations = (await ctx.SocialGroupRelations.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Improvements = improvementDtos,
@@ -233,11 +617,91 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         // ---------------- Advisors ----------------
-        public async Task<List<AdvisorDTO>> GetAdvisors(int baronyId) =>
-            await GetList(ctx => ctx.Advisors, baronyId, ToDTO, nameof(GetAdvisors));
+        public async Task<List<AdvisorDTO>> GetAdvisors(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                await EnsureCoreOfficeDescriptionsAsync(ctx, baronyId);
+                await ctx.SaveChangesAsync();
+
+                var personById = (await ctx.AvailableAdvisors.AsNoTracking()
+                        .Where(x => x.BaronyId == baronyId)
+                        .ToListAsync())
+                    .ToDictionary(a => a.Id, ToDTO);
+
+                return (await ctx.Advisors.AsNoTracking()
+                        .Where(x => x.BaronyId == baronyId)
+                        .ToListAsync())
+                    .Select(e => ToAdvisorDto(e, personById))
+                    .ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetAdvisors)); }
+        }
 
         public async Task<List<AvailableAdvisorDTO>> GetAvailableAdvisors(int baronyId) =>
             await GetList(ctx => ctx.AvailableAdvisors, baronyId, ToDTO, nameof(GetAvailableAdvisors));
+
+        /// <summary>Restore catalog office flavor text when assignment overwrote Description with a person bio.</summary>
+        private static async Task EnsureCoreOfficeDescriptionsAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var core = await ctx.Advisors
+                .Where(a => a.BaronyId == baronyId && !a.IsBaron)
+                .ToListAsync();
+            foreach (var a in core)
+            {
+                var catalog = OfficeDescriptions.For(a.OfficeType);
+                if (catalog is null)
+                    continue;
+                if (!string.Equals(a.Description, catalog, StringComparison.Ordinal))
+                    a.Description = catalog;
+            }
+        }
+
+        /// <summary>
+        /// Insert missing starter city buildings from the Buildings catalog (CoreKey + TemplateId).
+        /// </summary>
+        private static async Task EnsureStarterCityBuildingsAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var existingKeys = await ctx.BaronyBuildings
+                .AsNoTracking()
+                .Where(b => b.BaronyId == baronyId && b.CoreKey != null && b.CoreKey != "")
+                .Select(b => b.CoreKey!)
+                .ToListAsync();
+            var have = new HashSet<string>(existingKeys, StringComparer.OrdinalIgnoreCase);
+
+            var missingKeys = CoreCityBuildingKey.All.Where(k => !have.Contains(k)).ToList();
+            if (missingKeys.Count == 0)
+                return;
+
+            var catalogNames = missingKeys.Select(CoreCityBuildingKey.CatalogName).ToList();
+            var templates = await ctx.BuildingTemplates
+                .AsNoTracking()
+                .Where(t => catalogNames.Contains(t.Name))
+                .ToListAsync();
+            var byName = templates.ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var key in missingKeys)
+            {
+                var name = CoreCityBuildingKey.CatalogName(key);
+                if (!byName.TryGetValue(name, out var template))
+                    continue;
+
+                ctx.BaronyBuildings.Add(new BaronyBuilding
+                {
+                    BaronyId = baronyId,
+                    TemplateId = template.Id,
+                    CoreKey = key,
+                    Name = template.Name,
+                    Kind = BuildingKind.Building,
+                    Description = template.Description,
+                    AdditiveJson = template.EffectAdditiveJson,
+                    PercentJson = string.IsNullOrWhiteSpace(template.EffectPercentJson)
+                        ? "{}"
+                        : template.EffectPercentJson,
+                });
+            }
+        }
 
         public async Task<AdvisorDTO> SaveAdvisor(AdvisorDTO dto)
         {
@@ -825,7 +1289,7 @@ namespace DA_Business.Repository.BaronyRepos
         public Task<int> DeleteBaronArtifact(int id) =>
             Delete(ctx => ctx.BaronArtifacts, id, nameof(DeleteBaronArtifact));
 
-        // ---------------- Baron time (JC) ----------------
+        // ---------------- Baron time (BT) ----------------
         public async Task EnsureBaronTimeDefaults(int baronyId)
         {
             try
@@ -847,7 +1311,7 @@ namespace DA_Business.Repository.BaronyRepos
                     CostJc = BaronTimeRules.RequiredManagementJc,
                     Description =
                         "Essential governance each turn. Spending fewer than "
-                        + $"{BaronTimeRules.RequiredManagementJc} JC causes management penalties "
+                        + $"{BaronTimeRules.RequiredManagementJc} BT causes management penalties "
                         + "(stability, loyalty, income, etc.).",
                     SortOrder = 0,
                     IsSystem = true,
@@ -1396,6 +1860,209 @@ namespace DA_Business.Repository.BaronyRepos
 
         public Task<int> DeleteProject(int id) => Delete(ctx => ctx.BaronyProjects, id, nameof(DeleteProject));
 
+        // ---------------- Army units ----------------
+        public async Task<List<BaronyUnitDTO>> GetUnits(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var units = await ctx.BaronyUnits.AsNoTracking()
+                    .Where(u => u.BaronyId == baronyId)
+                    .OrderBy(u => u.Name)
+                    .ThenBy(u => u.Id)
+                    .ToListAsync();
+                var projects = await ctx.BaronyProjects.AsNoTracking()
+                    .Where(p => p.BaronyId == baronyId && p.UnitId != null
+                        && p.Status != ProjectStatus.Completed
+                        && p.Status != ProjectStatus.Cancelled)
+                    .ToListAsync();
+                var byUnit = projects
+                    .Where(p => p.UnitId is int)
+                    .GroupBy(p => p.UnitId!.Value)
+                    .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.Id).First());
+
+                return units.Select(u =>
+                {
+                    var dto = ToUnitDTO(u);
+                    if (byUnit.TryGetValue(u.Id, out var proj))
+                    {
+                        dto.TrainingProjectId = proj.Id;
+                        dto.TrainingTurnsRemaining = proj.TurnsRemaining;
+                    }
+                    return dto;
+                }).ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetUnits)); }
+        }
+
+        public async Task<BaronyUnitDTO> SaveUnit(BaronyUnitDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = dto.Id > 0
+                    ? await ctx.BaronyUnits.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                    : null;
+                if (e is null)
+                {
+                    e = ToUnitEntity(dto);
+                    e.CreatedAtUtc = DateTime.UtcNow;
+                    e.UpdatedAtUtc = e.CreatedAtUtc;
+                    ctx.BaronyUnits.Add(e);
+                }
+                else
+                {
+                    ApplyUnit(e, dto);
+                    e.UpdatedAtUtc = DateTime.UtcNow;
+                }
+                await ctx.SaveChangesAsync();
+                return ToUnitDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveUnit)); }
+        }
+
+        public Task<int> DeleteUnit(int id) => Delete(ctx => ctx.BaronyUnits, id, nameof(DeleteUnit));
+
+        public async Task<StartUnitTrainingResult> StartUnitTraining(StartUnitTrainingRequest request)
+        {
+            try
+            {
+                if (request.BaronyId <= 0)
+                    throw new InvalidOperationException("Barony is required.");
+                if (string.IsNullOrWhiteSpace(request.Name))
+                    throw new InvalidOperationException("Unit name is required.");
+
+                var recruit = UnitRecruitSelectionCatalog.Find(request.RecruitSelectionKey)
+                    ?? throw new InvalidOperationException("Unknown recruit selection.");
+                var training = UnitTrainingTypeCatalog.Find(request.TrainingTypeKey)
+                    ?? throw new InvalidOperationException("Unknown training type.");
+                var weapon1 = UnitWeaponCatalog.Find(request.Weapon1Key);
+                var weapon2 = UnitWeaponCatalog.Find(request.Weapon2Key);
+                var armor = UnitArmorCatalog.Find(request.ArmorKey);
+                var shield = UnitArmorCatalog.Find(request.ShieldKey);
+                if (weapon1 is null)
+                    throw new InvalidOperationException("Primary weapon is required.");
+
+                var costs = UnitTrainingCostFormulas.Compute(
+                    recruit, training, weapon1, weapon2, armor, shield,
+                    request.PayEquipmentAsDefense, request.AccelerateTurns);
+
+                using var ctx = await _db.CreateDbContextAsync();
+                _ = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == request.BaronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var now = DateTime.UtcNow;
+                var attr = recruit.AttributeScore;
+                var unit = new BaronyUnit
+                {
+                    BaronyId = request.BaronyId,
+                    Name = request.Name.Trim(),
+                    Status = UnitStatus.Training,
+                    TroopCount = UnitRules.DefaultTroopCount,
+                    RecruitSelectionKey = recruit.Key,
+                    TrainingTypeKey = training.Key,
+                    Wage = costs.Wage,
+                    UpkeepFood = UnitRules.DefaultUpkeepFood,
+                    UpkeepDefense = UnitRules.DefaultUpkeepDefense,
+                    Build = attr,
+                    Agility = attr,
+                    Will = attr,
+                    Perception = attr,
+                    SkillsJson = "{}",
+                    SkillOtherJson = "{}",
+                    Weapon1Key = weapon1.Key,
+                    Weapon2Key = weapon2?.Key,
+                    ArmorKey = armor?.Key,
+                    ShieldKey = shield?.Key,
+                    Weapon1Quality = string.IsNullOrWhiteSpace(request.Weapon1Quality)
+                        ? UnitWeaponQuality.Normal
+                        : request.Weapon1Quality.Trim(),
+                    Weapon2Quality = UnitWeaponQuality.Normal,
+                    DefenseSkillKey = string.IsNullOrWhiteSpace(request.DefenseSkillKey)
+                        ? UnitSkillKey.Shields
+                        : request.DefenseSkillKey.Trim(),
+                    RemainingPd = costs.Pd,
+                    Discipline = costs.StartingDiscipline,
+                    MaxBaseSkillAtGraduation = costs.MaxBaseSkill,
+                    FreeAttributePoints = costs.FreeAttributePoints,
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now,
+                };
+
+                var unitDtoPreview = ToUnitDTO(unit);
+                // Apply armor agility penalty to the attribute penalty column (Excel Ks).
+                unit.AttrPenaltyAgility = (armor?.AgilityPenalty ?? 0) + (shield?.AgilityPenalty ?? 0);
+                unitDtoPreview.AttrPenaltyAgility = unit.AttrPenaltyAgility;
+                unit.CurrentHp = ComputeUnitCombat(unitDtoPreview).MaxHp;
+
+                ctx.BaronyUnits.Add(unit);
+                await ctx.SaveChangesAsync();
+
+                var goldCost = new PpbVector();
+                goldCost[Ppb.Treasury] = costs.GoldTotal;
+                goldCost[Ppb.Production] = costs.Production;
+
+                var defenseCost = new PpbVector();
+                defenseCost[Ppb.Defense] = costs.DefenseTotal;
+
+                var hasGoldTrack = costs.GoldTotal > 0 || costs.Production > 0;
+                var hasDefTrack = costs.DefenseTotal > 0;
+                var allowed = (hasGoldTrack, hasDefTrack) switch
+                {
+                    (true, true) => ProjectAllowedCostModes.PlayerChoice,
+                    (false, true) => ProjectAllowedCostModes.MaterialsOnly,
+                    _ => ProjectAllowedCostModes.GoldProductionOnly,
+                };
+
+                var project = new BaronyProject
+                {
+                    BaronyId = request.BaronyId,
+                    Name = $"Train: {unit.Name}",
+                    Description = $"Unit training — {recruit.Name}, {training.Name}.",
+                    OutputKind = ProjectOutputKind.UnitTraining,
+                    UnitId = unit.Id,
+                    Status = ProjectStatus.Draft,
+                    TurnsRemaining = costs.Turns,
+                    AllowedCostModes = allowed,
+                    SelectedCostMode = hasGoldTrack
+                        ? ProjectCostMode.GoldProduction
+                        : ProjectCostMode.Materials,
+                    CostGoldProductionJson = Ser(ProjectCostCatalog.SliceGoldProduction(goldCost)),
+                    CostMaterialsJson = Ser(ProjectCostCatalog.SliceMaterials(defenseCost)),
+                    CostJson = Ser(MergeLegacyCost(goldCost, defenseCost)),
+                    ResultJson = "{}",
+                    ResultPercentJson = "{}",
+                    AllocatedJson = "{}",
+                    ResultDescription = $"Activates unit #{unit.Id} ({unit.Name}).",
+                    Notes = request.PayEquipmentAsDefense
+                        ? "Equipment paid as Defense."
+                        : null,
+                };
+
+                // Zero-cost express: still a draft project so MG/player can see it; auto-complete when turns=0 and no cost on fund.
+                if (!hasGoldTrack && !hasDefTrack && costs.Turns <= 0)
+                {
+                    unit.Status = UnitStatus.Active;
+                    unit.UpdatedAtUtc = DateTime.UtcNow;
+                    project.Status = ProjectStatus.Completed;
+                    project.TurnsRemaining = 0;
+                }
+
+                ctx.BaronyProjects.Add(project);
+                await ctx.SaveChangesAsync();
+
+                return new StartUnitTrainingResult
+                {
+                    Unit = ToUnitDTO(unit),
+                    Project = ToDTO(project),
+                };
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(StartUnitTraining));
+            }
+        }
+
         public async Task<BaronyProjectDTO> SetProjectCostMode(int projectId, string mode)
         {
             try
@@ -1662,23 +2329,9 @@ namespace DA_Business.Repository.BaronyRepos
             var captainSkills = new PpbVector();
             var stewardSkills = new PpbVector();
 
-            const string chancellorDescription =
-                "One of the barony's most important offices. The chancellor manages relations between the ruler " +
-                "and both vassals and liege lords, reads the loyalty and mood of subjects toward the government, " +
-                "and shapes opinion by many means. The office also oversees cultural development. A chancellor may " +
-                "rule through love—easing conflicts and appealing to reason—through fear, threats, and harsh " +
-                "punishment for disobedience, or through a blend of both approaches.";
-
-            const string guardCaptainDescription =
-                "The Guard Captain is essential in the smallest administrative units. Keeper of the law, " +
-                "commander, and guardian of the baron's person and lands. Later, most of these duties pass to " +
-                "the general, border warden, chief judge, and others—but until the barony grows into a " +
-                "principality, the Guard Captain alone can handle them.";
-
-            const string stewardDescription =
-                "The Steward oversees everything tied to revenue, construction, provisions, and tax collection. " +
-                "From harvests and storehouses to new works and the flow of coin into the treasury, this office " +
-                "keeps the barony fed, built, and solvent.";
+            const string chancellorDescription = OfficeDescriptions.Chancellor;
+            const string guardCaptainDescription = OfficeDescriptions.GuardCaptain;
+            const string stewardDescription = OfficeDescriptions.Steward;
 
             var chancellorSignificant = AdvisorSignificantSkills.DefaultForOffice(OfficeType.Chancellor);
             var captainSignificant = AdvisorSignificantSkills.DefaultForOffice(OfficeType.GuardCaptain);
@@ -1808,11 +2461,14 @@ namespace DA_Business.Repository.BaronyRepos
                 Unrest = e.Unrest,
                 ConjunctureDice = e.ConjunctureDice,
                 ConjunctureModifier = e.ConjunctureModifier,
+                LiegeTributePercent = e.LiegeTributePercent,
+                VassalTributePercent = e.VassalTributePercent,
                 Prestige = e.Prestige,
                 Honor = e.Honor,
                 Fear = e.Fear,
                 BaseParameters = De(e.BaseParametersJson),
                 Notes = e.Notes,
+                PlayerTurnReady = e.PlayerTurnReady,
             };
         }
 
@@ -1837,11 +2493,14 @@ namespace DA_Business.Repository.BaronyRepos
             e.Unrest = d.Unrest;
             e.ConjunctureDice = d.ConjunctureDice;
             e.ConjunctureModifier = d.ConjunctureModifier;
+            e.LiegeTributePercent = FiefTributeFormulas.ClampPercent(d.LiegeTributePercent);
+            e.VassalTributePercent = FiefTributeFormulas.ClampPercent(d.VassalTributePercent);
             e.Prestige = d.Prestige;
             e.Honor = d.Honor;
             e.Fear = d.Fear;
             e.BaseParametersJson = Ser(d.BaseParameters);
             e.Notes = d.Notes;
+            e.PlayerTurnReady = d.PlayerTurnReady;
 
             var stocks = ResourceCatalog.Slice(d.ResourceStocks);
             // Keep Food/Gold scalars and vector in sync (Budget may update scalars only).
@@ -1854,6 +2513,18 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         // ---------------- Mapping: Advisor ----------------
+        private static AdvisorDTO ToAdvisorDto(Advisor e, IReadOnlyDictionary<int, AvailableAdvisorDTO> personById)
+        {
+            var dto = ToDTO(e);
+            if (e.AvailableAdvisorId is int aid && personById.TryGetValue(aid, out var person))
+                dto.PersonDescription = person.Description;
+            // Prefer catalog text for core offices (Description may still be a stale person bio until Ensure runs).
+            var catalog = OfficeDescriptions.For(e.OfficeType);
+            if (catalog is not null)
+                dto.Description = catalog;
+            return dto;
+        }
+
         private static AdvisorDTO ToDTO(Advisor e) => new()
         {
             Id = e.Id, BaronyId = e.BaronyId, OfficeType = e.OfficeType, Title = e.Title,
@@ -1873,7 +2544,10 @@ namespace DA_Business.Repository.BaronyRepos
             e.SkillsJson = Ser(d.Skills);
             e.SignificantSkillsJson = AdvisorSignificantSkills.Serialize(d.SignificantSkills);
             e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent);
-            e.FormulaText = d.FormulaText; e.Description = d.Description; e.UpkeepGold = d.UpkeepGold;
+            e.FormulaText = d.FormulaText;
+            // Never persist person bios as office Description for core offices.
+            e.Description = OfficeDescriptions.For(d.OfficeType) ?? d.Description;
+            e.UpkeepGold = d.UpkeepGold;
         }
 
         private static AvailableAdvisorDTO ToDTO(AvailableAdvisor e) => new()
@@ -2485,6 +3159,7 @@ namespace DA_Business.Repository.BaronyRepos
                 Notes = e.Notes,
                 TileId = e.TileId,
                 BuildingTemplateId = e.BuildingTemplateId,
+                UnitId = e.UnitId,
             };
         }
 
@@ -2514,6 +3189,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.Notes = d.Notes;
             e.TileId = d.TileId is > 0 ? d.TileId : null;
             e.BuildingTemplateId = d.BuildingTemplateId is > 0 ? d.BuildingTemplateId : null;
+            e.UnitId = d.UnitId is > 0 ? d.UnitId : null;
         }
 
         private static PpbVector MergeLegacyCost(PpbVector goldProduction, PpbVector materials)
@@ -2523,6 +3199,137 @@ namespace DA_Business.Repository.BaronyRepos
                 merged[info.Key] = materials[info.Key];
             return merged;
         }
+
+        // ---------------- Mapping: Army unit ----------------
+        private static BaronyUnitDTO ToUnitDTO(BaronyUnit e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Name = e.Name,
+            Status = e.Status,
+            TroopCount = e.TroopCount,
+            RecruitSelectionKey = e.RecruitSelectionKey,
+            TrainingTypeKey = e.TrainingTypeKey,
+            Wage = e.Wage,
+            UpkeepFood = e.UpkeepFood,
+            UpkeepDefense = e.UpkeepDefense,
+            Build = e.Build,
+            Agility = e.Agility,
+            Will = e.Will,
+            Perception = e.Perception,
+            AttrPenaltyBuild = e.AttrPenaltyBuild,
+            AttrPenaltyAgility = e.AttrPenaltyAgility,
+            AttrOtherBuild = e.AttrOtherBuild,
+            AttrOtherAgility = e.AttrOtherAgility,
+            AttrOtherWill = e.AttrOtherWill,
+            AttrOtherPerception = e.AttrOtherPerception,
+            SkillBase = DeIntDict(e.SkillsJson),
+            SkillOther = DeIntDict(e.SkillOtherJson),
+            Weapon1Key = e.Weapon1Key,
+            Weapon2Key = e.Weapon2Key,
+            ArmorKey = e.ArmorKey,
+            ShieldKey = e.ShieldKey,
+            Weapon1Quality = e.Weapon1Quality,
+            Weapon2Quality = e.Weapon2Quality,
+            DefenseSkillKey = e.DefenseSkillKey,
+            CommanderAttack = e.CommanderAttack,
+            CommanderDefense = e.CommanderDefense,
+            OtherAttack = e.OtherAttack,
+            OtherDefense = e.OtherDefense,
+            OtherDamage = e.OtherDamage,
+            OtherMove = e.OtherMove,
+            OtherArmor = e.OtherArmor,
+            OtherHp = e.OtherHp,
+            RemainingPd = e.RemainingPd,
+            Discipline = e.Discipline,
+            MaxBaseSkillAtGraduation = e.MaxBaseSkillAtGraduation,
+            FreeAttributePoints = e.FreeAttributePoints,
+            CurrentHp = e.CurrentHp,
+        };
+
+        private static BaronyUnit ToUnitEntity(BaronyUnitDTO d)
+        {
+            var e = new BaronyUnit();
+            ApplyUnit(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyUnit(BaronyUnit e, BaronyUnitDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Name = d.Name?.Trim() ?? string.Empty;
+            e.Status = string.IsNullOrWhiteSpace(d.Status) ? UnitStatus.Training : d.Status.Trim();
+            e.TroopCount = d.TroopCount > 0 ? d.TroopCount : UnitRules.DefaultTroopCount;
+            e.RecruitSelectionKey = d.RecruitSelectionKey ?? string.Empty;
+            e.TrainingTypeKey = d.TrainingTypeKey ?? string.Empty;
+            e.Wage = d.Wage;
+            e.UpkeepFood = d.UpkeepFood;
+            e.UpkeepDefense = d.UpkeepDefense;
+            e.Build = d.Build;
+            e.Agility = d.Agility;
+            e.Will = d.Will;
+            e.Perception = d.Perception;
+            e.AttrPenaltyBuild = d.AttrPenaltyBuild;
+            e.AttrPenaltyAgility = d.AttrPenaltyAgility;
+            e.AttrOtherBuild = d.AttrOtherBuild;
+            e.AttrOtherAgility = d.AttrOtherAgility;
+            e.AttrOtherWill = d.AttrOtherWill;
+            e.AttrOtherPerception = d.AttrOtherPerception;
+            e.SkillsJson = SerIntDict(d.SkillBase);
+            e.SkillOtherJson = SerIntDict(d.SkillOther);
+            e.Weapon1Key = string.IsNullOrWhiteSpace(d.Weapon1Key) ? null : d.Weapon1Key.Trim();
+            e.Weapon2Key = string.IsNullOrWhiteSpace(d.Weapon2Key) ? null : d.Weapon2Key.Trim();
+            e.ArmorKey = string.IsNullOrWhiteSpace(d.ArmorKey) ? null : d.ArmorKey.Trim();
+            e.ShieldKey = string.IsNullOrWhiteSpace(d.ShieldKey) ? null : d.ShieldKey.Trim();
+            e.Weapon1Quality = string.IsNullOrWhiteSpace(d.Weapon1Quality)
+                ? UnitWeaponQuality.Normal
+                : d.Weapon1Quality.Trim();
+            e.Weapon2Quality = string.IsNullOrWhiteSpace(d.Weapon2Quality)
+                ? UnitWeaponQuality.Normal
+                : d.Weapon2Quality.Trim();
+            e.DefenseSkillKey = string.IsNullOrWhiteSpace(d.DefenseSkillKey)
+                ? UnitSkillKey.Shields
+                : d.DefenseSkillKey.Trim();
+            e.CommanderAttack = d.CommanderAttack;
+            e.CommanderDefense = d.CommanderDefense;
+            e.OtherAttack = d.OtherAttack;
+            e.OtherDefense = d.OtherDefense;
+            e.OtherDamage = d.OtherDamage;
+            e.OtherMove = d.OtherMove;
+            e.OtherArmor = d.OtherArmor;
+            e.OtherHp = d.OtherHp;
+            e.RemainingPd = d.RemainingPd;
+            e.Discipline = Math.Clamp(d.Discipline, UnitRules.DisciplineMin, UnitRules.DisciplineMax);
+            e.MaxBaseSkillAtGraduation = d.MaxBaseSkillAtGraduation;
+            e.FreeAttributePoints = Math.Max(0, d.FreeAttributePoints);
+            e.CurrentHp = d.CurrentHp;
+        }
+
+        private static string SerIntDict(Dictionary<string, int>? map)
+        {
+            map ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            return JsonSerializer.Serialize(map, JsonOptions);
+        }
+
+        private static Dictionary<string, int> DeIntDict(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                var dict = JsonSerializer.Deserialize<Dictionary<string, int>>(json, JsonOptions)
+                    ?? new Dictionary<string, int>();
+                return new Dictionary<string, int>(dict, StringComparer.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        internal static UnitCombatTotals ComputeUnitCombat(BaronyUnitDTO dto) =>
+            UnitStatHelper.Compute(dto);
 
         // ---------------- Mapping: Resource source ----------------
         private static BaronyResourceSourceDTO ToDTO(BaronyResourceSource e) => new()

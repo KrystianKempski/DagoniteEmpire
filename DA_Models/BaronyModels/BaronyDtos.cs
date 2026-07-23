@@ -35,6 +35,12 @@ namespace DA_Models.BaronyModels
         /// <summary>Effective conjuncture this turn: Dice + Modifier.</summary>
         public int Conjuncture => ConjunctureDice + ConjunctureModifier;
 
+        /// <summary>Share of gross gold income paid to the senior (default 15%). MG-editable on Budget.</summary>
+        public decimal LiegeTributePercent { get; set; } = 15m;
+
+        /// <summary>Share of village gold on vassal fiefs kept by the baron (default 15%). MG-editable on Budget.</summary>
+        public decimal VassalTributePercent { get; set; } = 15m;
+
         public int Prestige { get; set; }
         public int Honor { get; set; }
         public int Fear { get; set; }
@@ -42,6 +48,9 @@ namespace DA_Models.BaronyModels
         public PpbVector BaseParameters { get; set; } = new();
 
         public string? Notes { get; set; }
+
+        /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
+        public bool PlayerTurnReady { get; set; }
     }
 
     /// <summary>Lightweight barony row for MG list / selector.</summary>
@@ -69,7 +78,10 @@ namespace DA_Models.BaronyModels
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();
         public string? FormulaText { get; set; }
+        /// <summary>Office flavor text (custom offices). Core offices use <see cref="DA_Common.Barony.OfficeDescriptions"/>.</summary>
         public string? Description { get; set; }
+        /// <summary>Assigned person's bio (from Available Advisors pool; not persisted on Advisor).</summary>
+        public string? PersonDescription { get; set; }
         public decimal UpkeepGold { get; set; }
     }
 
@@ -88,7 +100,7 @@ namespace DA_Models.BaronyModels
         public int BaronyId { get; set; }
         public int? TemplateId { get; set; }
 
-        /// <summary>When set, this row overrides the matching fixed core city building.</summary>
+        /// <summary>When set, marks a starter/core city building seeded from the Buildings catalog.</summary>
         public string? CoreKey { get; set; }
 
         public string Name { get; set; } = string.Empty;
@@ -279,6 +291,9 @@ namespace DA_Models.BaronyModels
 
         /// <summary>Building/improvement catalog entry used for map construction costs &amp; effects.</summary>
         public int? BuildingTemplateId { get; set; }
+
+        /// <summary>Army unit linked to a Unit Training project.</summary>
+        public int? UnitId { get; set; }
 
         /// <summary>True while a map construction project is still active (shows crane on the tile).</summary>
         public bool IsActiveMapConstruction =>
@@ -541,5 +556,32 @@ namespace DA_Models.BaronyModels
         public bool IsUniversal { get; set; } = true;
         public int? BaronyId { get; set; }
         public int SortOrder { get; set; }
+    }
+
+    /// <summary>Result of MG resolving a barony turn.</summary>
+    public class TurnResolveReportDTO
+    {
+        public int BaronyId { get; set; }
+        public int PreviousTurnNumber { get; set; }
+        public int NewTurnNumber { get; set; }
+        public string NewSeason { get; set; } = string.Empty;
+        public int NewYear { get; set; }
+        public int NewMonth { get; set; }
+        public PpbVector AppliedIncome { get; set; } = new();
+        public List<string> CompletedProjects { get; set; } = new();
+        public int Size { get; set; }
+        public int ControlDc { get; set; }
+        public int SettlementPopulation { get; set; }
+        public bool LoyaltyTestRan { get; set; }
+        public decimal Loyalty { get; set; }
+        public decimal Stability { get; set; }
+        public int? LoyaltyD20 { get; set; }
+        public int? LoyaltyTestResult { get; set; }
+        public int UnrestBefore { get; set; }
+        public int UnrestAfter { get; set; }
+        public int UnrestDelta { get; set; }
+        public int NewConjunctureDice { get; set; }
+        public int ConjunctureModifier { get; set; }
+        public string SummaryText { get; set; } = string.Empty;
     }
 }

@@ -259,7 +259,7 @@ namespace DA_DataAccess.BaronyData
         public int SortOrder { get; set; }
     }
 
-    /// <summary>Percent modifier to the baron's JC (time unit) pool for a turn.</summary>
+    /// <summary>Percent modifier to the baron's BT (time unit) pool for a turn.</summary>
     public class BaronTimeModifier
     {
         [Key]
@@ -272,7 +272,7 @@ namespace DA_DataAccess.BaronyData
         public int SortOrder { get; set; }
     }
 
-    /// <summary>Activity the baron spends JC on during the current turn.</summary>
+    /// <summary>Activity the baron spends BT on during the current turn.</summary>
     public class BaronTimeAction
     {
         [Key]

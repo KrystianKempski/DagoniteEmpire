@@ -203,7 +203,7 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private IReadOnlyList<BaronyBuildingDTO> CoreBuildings =>
-        BaronyCalc.EffectiveCoreCityBuildings(BaronyId, SavedBuildings);
+        BaronyCalc.EffectiveCoreCityBuildings(BaronyId, SavedBuildings, Catalog);
 
     private IEnumerable<BaronyBuildingDTO> ExtraBuildings =>
         BaronyCalc.ExtraCityBuildings(SavedBuildings);
@@ -376,8 +376,15 @@
         if (isCore)
         {
             saved.CoreKey = coreKey ?? saved.CoreKey;
-            saved.TemplateId = null;
             saved.Kind = BuildingKind.Building;
+            if (saved.TemplateId is null or <= 0)
+            {
+                var catalogName = CoreCityBuildingKey.CatalogName(saved.CoreKey ?? "");
+                var match = Catalog.FirstOrDefault(t =>
+                    string.Equals(t.Name, catalogName, StringComparison.OrdinalIgnoreCase));
+                if (match is not null)
+                    saved.TemplateId = match.Id;
+            }
         }
 
         try
@@ -394,13 +401,26 @@
 
     private async Task ResetCoreBuildingAsync(BaronyBuildingDTO building)
     {
-        if (building.Id <= 0)
+        if (string.IsNullOrWhiteSpace(building.CoreKey))
             return;
+
+        var catalogName = CoreCityBuildingKey.CatalogName(building.CoreKey);
+        var template = Catalog.FirstOrDefault(t =>
+            string.Equals(t.Name, catalogName, StringComparison.OrdinalIgnoreCase));
+        if (template is null)
+        {
+            _snackBar.Add($"Catalog entry “{catalogName}” not found.", Severity.Warning);
+            return;
+        }
 
         try
         {
-            await _baronyRepo.DeleteBuilding(building.Id);
-            _snackBar.Add("Core building restored to default.", Severity.Success);
+            if (building.Id > 0)
+                await _baronyRepo.DeleteBuilding(building.Id);
+
+            var restored = BaronyCalc.FromStarterCatalogTemplate(BaronyId, building.CoreKey, template);
+            await _baronyRepo.SaveBuilding(restored);
+            _snackBar.Add("Core building restored from catalog.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)

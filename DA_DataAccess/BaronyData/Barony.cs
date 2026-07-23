@@ -50,6 +50,16 @@ namespace DA_DataAccess.BaronyData
         /// <summary>MG-only modifier added to <see cref="ConjunctureDice"/> (war, harvest, etc.).</summary>
         public int ConjunctureModifier { get; set; }
 
+        /// <summary>
+        /// Share of gross gold income paid to the senior (Budget Fief expense). Default 15.
+        /// </summary>
+        public decimal LiegeTributePercent { get; set; } = 15m;
+
+        /// <summary>
+        /// Share of village gold on vassal fiefs kept by the baron. Default 15.
+        /// </summary>
+        public decimal VassalTributePercent { get; set; } = 15m;
+
         public int Prestige { get; set; }
         public int Honor { get; set; }
         public int Fear { get; set; }
@@ -58,5 +68,8 @@ namespace DA_DataAccess.BaronyData
         public string BaseParametersJson { get; set; } = "{}";
 
         public string? Notes { get; set; }
+
+        /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
+        public bool PlayerTurnReady { get; set; }
     }
 }

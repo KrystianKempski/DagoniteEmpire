@@ -34,7 +34,7 @@ namespace DA_Common.Barony
                 $"Economic conjuncture this turn: {effective} (2d6 = {dice}, {modText}).\n"
                 + "Rolled at turn start. Feeds Community Economy: "
                 + $"(1) net Gold profit (Economy + Conjuncture) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}; "
-                + "(2) (Conjuncture − 7) in the % formula on Gold, Production, Culture, Science, and Defense.";
+                + "(2) (Conjuncture − 7) in the % formula on Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.";
         }
 
         public static string MetaPpbTurnTotal(Ppb key, decimal value)

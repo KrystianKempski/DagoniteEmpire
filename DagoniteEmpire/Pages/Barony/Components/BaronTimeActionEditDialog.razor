@@ -29,7 +29,7 @@
             </MudSelect>
 
             <MudNumericField @bind-Value="_costJc"
-                             Label="Cost (JC)"
+                             Label="Cost (BT)"
                              HelperText="@CostHint"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
@@ -67,14 +67,14 @@
 
     private string CostHint =>
         _kind == BaronTimeActionKind.Adventure
-            ? $"Weekly adventure ≈ {BaronTimeRules.WeeklyExpeditionJc} JC "
-              + $"(safe max {BaronTimeRules.MaxSafeExpeditionWeeks} weeks / {BaronTimeRules.MaxSafeExpeditionJc} JC)."
+            ? $"Weekly adventure ≈ {BaronTimeRules.WeeklyExpeditionJc} BT "
+              + $"(safe max {BaronTimeRules.MaxSafeExpeditionWeeks} weeks / {BaronTimeRules.MaxSafeExpeditionJc} BT)."
             : _kind == BaronTimeActionKind.Hunt
-                ? $"Great Hunt: at least {BaronTimeSuggestedCosts.GreatHuntJc} JC + "
+                ? $"Great Hunt: at least {BaronTimeSuggestedCosts.GreatHuntJc} BT + "
                   + $"{BaronTimeSuggestedCosts.GreatHuntProduction} Production + {BaronTimeSuggestedCosts.GreatHuntGold} gold."
             : _kind == BaronTimeActionKind.Management
-                ? $"Required each turn: {BaronTimeRules.RequiredManagementJc} JC."
-                : "JC spent on this action this turn.";
+                ? $"Required each turn: {BaronTimeRules.RequiredManagementJc} BT."
+                : "BT spent on this action this turn.";
 
     protected override void OnInitialized()
     {

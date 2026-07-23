@@ -3,8 +3,8 @@ namespace DA_Common.Barony
     /// <summary>
     /// Domain Panel community row: Economy vs population (conjuncture).
     /// Gold (net profit) = (Economy + Conjuncture) × 2.
-    /// % = clamp(50·(Economy/(2×Population)−1) + (Conjuncture − 7), −40, +40) applied to
-    /// Gold, Production, Culture, Science, and Defense.
+    /// % = 50·(Economy/(2×Population)−1) + (Conjuncture − 7), soft-capped for extremes,
+    /// applied to Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.
     /// Conjuncture = 2d6 (turn roll) + MG modifier.
     /// </summary>
     public static class EconomyConjunctureFormulas
@@ -21,6 +21,9 @@ namespace DA_Common.Barony
         {
             Ppb.Treasury,
             Ppb.Production,
+            Ppb.Loyalty,
+            Ppb.Stability,
+            Ppb.Magic,
             Ppb.Culture,
             Ppb.Science,
             Ppb.Defense,
@@ -81,6 +84,7 @@ namespace DA_Common.Barony
             return v;
         }
 
+        /// <summary>This-turn inputs for the Economy row name tooltip (no formulas).</summary>
         public static string FormulaSummary(
             decimal economyAdditive,
             int population,
@@ -88,15 +92,11 @@ namespace DA_Common.Barony
             int conjunctureModifier)
         {
             var conj = EffectiveConjuncture(conjunctureDice, conjunctureModifier);
-            var gold = ComputeNetProfitGold(economyAdditive, conjunctureDice, conjunctureModifier);
-            var pct = ComputePercent(economyAdditive, population, conjunctureDice, conjunctureModifier);
-            var breakEven = EconomyPerPopulation * Math.Max(0, population);
+            var modSign = conjunctureModifier >= 0 ? "+" : "";
             return
-                $"Economy={PpbFormat.Number(economyAdditive)}, Population={population} "
-                + $"(need {PpbFormat.Number(breakEven)} Economy at break-even). "
-                + $"Conjuncture={conj} (2d6 {conjunctureDice}{(conjunctureModifier >= 0 ? "+" : "")}{conjunctureModifier}). "
-                + $"Net Gold profit (Economy + Conjuncture) × {NetProfitGoldFactor:0} = {PpbFormat.Additive(gold)}. "
-                + $"Result {PpbFormat.Percent(pct)}.";
+                $"This turn: Economy {PpbFormat.Number(economyAdditive)}, "
+                + $"Population {population}, "
+                + $"Conjuncture {conj} (2d6 {conjunctureDice}{modSign}{conjunctureModifier}).";
         }
 
         public static string? ExplainPercent(Ppb key)
@@ -105,10 +105,11 @@ namespace DA_Common.Barony
                 return null;
 
             return
-                $"= clamp( {RatioScale:0} × (Economy / ({EconomyPerPopulation:0} × Population) − 1) + (Conjuncture − {ConjunctureNeutral}), −{Cap:0}, +{Cap:0} )\n"
+                $"= {RatioScale:0} × (Economy / ({EconomyPerPopulation:0} × Population) − 1) "
+                + $"+ (Conjuncture − {ConjunctureNeutral})\n"
                 + "Economy = additive before this row; Population = settlement population; "
-                + "Conjuncture = 2d6 turn roll + MG modifier. "
-                + "Affects Gold, Production, Culture, Science, Defense.";
+                + "Conjuncture = 2d6 turn roll + MG modifier.\n"
+                + "Same % applies to Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.";
         }
 
         public static string? ExplainAdditive(Ppb key)
@@ -118,15 +119,14 @@ namespace DA_Common.Barony
 
             return
                 $"= (Economy + Conjuncture) × {NetProfitGoldFactor:0}\n"
-                + "Economy = additive before this row; Conjuncture = 2d6 turn roll + MG modifier. "
-                + "Net gold profit from economy.";
+                + "Economy = additive before this row; Conjuncture = 2d6 turn roll + MG modifier.\n"
+                + "Net gold profit from the economy.";
         }
 
         public static string CatalogDescription =>
-            "Economy vs population (2 Economy per 1 Population). "
-            + "Bonus above break-even, penalty below. "
-            + $"Conjuncture (2d6 + MG mod, centered on {ConjunctureNeutral}) adds fortune. "
-            + $"Capped at ±{Cap:0}%. Applies % to Gold, Production, Culture, Science, Defense. "
-            + $"Net Gold profit = (Economy + Conjuncture) × {NetProfitGoldFactor:0}.";
+            "Economy is a vital part of the barony. It is produced by the population and shapes many resources. "
+            + "It also depends on outside circumstances and a measure of chance. "
+            + "Depending on its condition, it can strengthen resource output or weaken it. "
+            + "Keeping Economy high is well worth the effort.";
     }
 }

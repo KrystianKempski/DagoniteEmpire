@@ -101,18 +101,23 @@
         if (_selectedAvailableId <= 0)
         {
             Advisor.PersonName = string.Empty;
-            Advisor.Description = null;
+            Advisor.PersonDescription = null;
             Advisor.Skills = new PpbVector();
             Advisor.AvailableAdvisorId = null;
         }
         else if (SelectedPerson is not null)
         {
             Advisor.PersonName = SelectedPerson.Name;
-            Advisor.Description = SelectedPerson.Description;
+            Advisor.PersonDescription = SelectedPerson.Description;
             Advisor.Skills = SelectedPerson.Skills.Clone();
             Advisor.Skills[Ppb.Treasury] = 0m;
             Advisor.AvailableAdvisorId = SelectedPerson.Id;
         }
+
+        // Keep / restore office flavor — never replace with the person's bio.
+        var catalog = OfficeDescriptions.For(Advisor.OfficeType);
+        if (catalog is not null)
+            Advisor.Description = catalog;
 
         MudDialog.Close(DialogResult.Ok(Advisor));
     }

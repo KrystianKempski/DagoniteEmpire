@@ -22,7 +22,7 @@ else if (Barony is not null)
             <span class="projects-summary">
                 <span class="projects-summary__item">@_threads.Count thread@(_threads.Count == 1 ? "" : "s")</span>
                 <span class="projects-summary__item">
-                    Max @BaronLetterRules.MaxLettersFromSameCorrespondentPerTurn / correspondent / turn
+                    Inbound / turn: Eastern March @BaronLetterRules.MaxInboundEasternMarchPerTurn · Empire/Other @BaronLetterRules.MaxInboundEmpirePerTurn
                 </span>
             </span>
         </Summary>
@@ -146,7 +146,7 @@ else if (Barony is not null)
                             {
                                 <text> · @_selected.CorrespondentTitle</text>
                             }
-                            · @_receivedThisTurn/@BaronLetterRules.MaxLettersFromSameCorrespondentPerTurn from this person this turn
+                            · @_receivedThisTurn/@MaxInboundForSelected from this person this turn
                         </div>
                     </div>
                     <div class="baron-mail__header-actions">
@@ -655,14 +655,22 @@ else if (Barony is not null)
             .ThenBy(m => m.Id)
             .LastOrDefault();
 
-    /// <summary>Baron already sent the last letter and has not received a reply yet.</summary>
+    /// <summary>Baron already sent the last letter this turn and has not received a reply yet.</summary>
     private bool BaronIsAwaitingReply(BaronLetterThreadDTO thread)
     {
-        if (!CanWriteAsBaron || CanWriteAsGm)
+        if (!CanWriteAsBaron || CanWriteAsGm || Barony is null)
             return false;
         var last = LastDelivered(thread);
-        return last is not null && !last.IsInbound;
+        if (last is null)
+            return false;
+        return BaronLetterRules.BaronAwaitingReplyThisTurn(
+            last.IsInbound, last.TurnNumber, Barony.TurnNumber);
     }
+
+    private int MaxInboundForSelected =>
+        _selected is null
+            ? BaronLetterRules.MaxLettersFromSameCorrespondentPerTurn
+            : BaronLetterRules.MaxInboundFromCorrespondent(_selected.ReplyRegion);
 
     private async Task DiscardOrphanOutboundDraftsAsync(BaronLetterThreadDTO thread)
     {
@@ -841,10 +849,11 @@ else if (Barony is not null)
         if (_composeInbound)
         {
             RefreshReceivedCount();
-            if (_receivedThisTurn >= BaronLetterRules.MaxLettersFromSameCorrespondentPerTurn)
+            var maxInbound = BaronLetterRules.MaxInboundFromCorrespondent(_selected.ReplyRegion);
+            if (_receivedThisTurn >= maxInbound)
             {
                 _snackBar.Add(
-                    $"This correspondent already sent {_receivedThisTurn}/{BaronLetterRules.MaxLettersFromSameCorrespondentPerTurn} letters this turn.",
+                    $"This correspondent already sent {_receivedThisTurn}/{maxInbound} letters this turn.",
                     Severity.Warning);
                 return;
             }

@@ -1,18 +1,18 @@
 namespace DA_Models.BaronyModels
 {
-    /// <summary>Percent modifier to the baron's JC pool for the current turn.</summary>
+    /// <summary>Percent modifier to the baron's BT pool for the current turn.</summary>
     public class BaronTimeModifierDTO
     {
         public int Id { get; set; }
         public int BaronyId { get; set; }
         public string Source { get; set; } = string.Empty;
-        /// <summary>Percent change to base JC (e.g. +20 or -10).</summary>
+        /// <summary>Percent change to base BT (e.g. +20 or -10).</summary>
         public decimal Percent { get; set; }
         public string? Description { get; set; }
         public int SortOrder { get; set; }
     }
 
-    /// <summary>One activity the baron spends JC on this turn.</summary>
+    /// <summary>One activity the baron spends BT on this turn.</summary>
     public class BaronTimeActionDTO
     {
         public int Id { get; set; }
@@ -25,7 +25,7 @@ namespace DA_Models.BaronyModels
         public bool IsSystem { get; set; }
     }
 
-    /// <summary>Computed JC budget for the current turn.</summary>
+    /// <summary>Computed BT budget for the current turn.</summary>
     public readonly record struct BaronTimeBudget(
         int Endurance,
         int Willpower,

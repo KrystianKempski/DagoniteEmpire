@@ -52,7 +52,21 @@
                                     }
                                     else
                                     {
-                                        <BaronyTooltip Title="Description" Text="@RoleTitle(advisor)">
+                                        var officeTip = OfficeTooltip(advisor);
+                                        @if (!string.IsNullOrWhiteSpace(officeTip))
+                                        {
+                                            <BaronyTooltip Title="@BaronyCalc.AdvisorRoleLabel(advisor)" Text="@officeTip">
+                                                <span>
+                                                    @BaronyCalc.AdvisorRoleLabel(advisor)
+                                                    @if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
+                                                    {
+                                                        <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
+                                                    }
+                                                </span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
                                             <span>
                                                 @BaronyCalc.AdvisorRoleLabel(advisor)
                                                 @if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
@@ -60,7 +74,7 @@
                                                     <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
                                                 }
                                             </span>
-                                        </BaronyTooltip>
+                                        }
                                     }
                                 </td>
                                 <td class="advisor-col-name">
@@ -72,7 +86,17 @@
                                     }
                                     else
                                     {
-                                        @DisplayName(advisor)
+                                        var personTip = BaronyCalc.ResolvePersonDescription(advisor);
+                                        @if (!string.IsNullOrWhiteSpace(personTip))
+                                        {
+                                            <BaronyTooltip Title="@DisplayName(advisor)" Text="@personTip">
+                                                <span>@DisplayName(advisor)</span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            @DisplayName(advisor)
+                                        }
                                     }
                                 </td>
                                 @foreach (var info in PpbCatalog.All)
@@ -138,14 +162,15 @@
     private static string DisplayName(AdvisorDTO advisor)
         => string.IsNullOrWhiteSpace(advisor.PersonName) ? "Unassigned" : advisor.PersonName;
 
-    private static string RoleTitle(AdvisorDTO advisor)
+    private static string OfficeTooltip(AdvisorDTO advisor)
     {
         var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(advisor.Description))
-            parts.Add(advisor.Description);
+        var office = BaronyCalc.ResolveOfficeDescription(advisor);
+        if (!string.IsNullOrWhiteSpace(office))
+            parts.Add(office);
         if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
             parts.Add(advisor.FormulaText);
-        return parts.Count == 0 ? string.Empty : string.Join(" | ", parts);
+        return parts.Count == 0 ? string.Empty : string.Join("\n\n", parts);
     }
 
     private static string PpbShort(Ppb p) => p switch

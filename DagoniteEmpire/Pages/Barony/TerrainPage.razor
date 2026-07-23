@@ -1051,7 +1051,6 @@ else
                 dto.Additive = draft.Additive.Clone();
                 dto.Percent = draft.Percent.Clone();
                 dto.FormulaText = null;
-                ApplyVassalTreasuryHalf(dto, tile);
             }
             else if (TerrainImprovementCatalogMap.IsCatalogBacked(nextName))
             {
@@ -1076,7 +1075,6 @@ else
                     dto.Additive = TownPpbFormulas.Compute(dto.Population);
                     dto.Percent = new PpbVector();
                     dto.FormulaText = TownPpbFormulas.CatalogDescription;
-                    ApplyVassalTreasuryHalf(dto, tile);
                 }
             }
 
@@ -1146,8 +1144,8 @@ else
             }
         }
 
-        ApplyVassalTreasuryHalf(dto, tile);
-
+        // Vassal gold share is applied at Domain Panel / Budget calc time (Barony.VassalTributePercent),
+        // not stored into Additive — keep full village/town yields on the map entity.
         return true;
     }
 
@@ -1174,8 +1172,6 @@ else
             return;
         }
 
-        ApplyVassalTreasuryHalf(improvement, tile);
-
         try
         {
             var saved = await _baronyRepo.SaveImprovement(improvement);
@@ -1185,19 +1181,6 @@ else
         {
             _snackBar.Add("Failed to refresh settlement PPB: " + ex.Message, Severity.Error);
         }
-    }
-
-    private void ApplyVassalTreasuryHalf(TerrainImprovementDTO dto, TerrainTileDTO tile)
-    {
-        if (IsOnVassalFief(tile) && dto.Additive[Ppb.Treasury] > 0)
-            dto.Additive[Ppb.Treasury] = PpbFormat.Round(dto.Additive[Ppb.Treasury] / 2m);
-    }
-
-    private bool IsOnVassalFief(TerrainTileDTO tile)
-    {
-        if (tile.FiefId is not int fiefId || !_fiefIndex.TryGetValue(fiefId, out var fief))
-            return false;
-        return !TerrainMapVisuals.UsesLordTitle(fief);
     }
 
     private async Task ClearDomainFromTilesAsync(int domainId)

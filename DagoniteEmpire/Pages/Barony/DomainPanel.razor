@@ -97,7 +97,63 @@ else if (_overview is not null)
         </div>
     </div>
 
-    <BaronyPageHeader Title="Domain Panel" />
+    <BaronyPageHeader Title="Domain Panel">
+        <Actions>
+            @if (_overview is not null && _overview.Barony.PlayerTurnReady)
+            {
+                <span class="barony-turn-ready-chip" title="Player marked this turn finished">Ready for MG</span>
+            }
+            @if (CanEdit && !CanManageAsMg)
+            {
+                @if (_overview?.Barony.PlayerTurnReady == true)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               OnClick="UndoEndTurnAsync">
+                        Undo End Turn
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               OnClick="EndTurnAsync">
+                        End Turn
+                    </MudButton>
+                }
+            }
+            @if (CanManageAsMg)
+            {
+                @if (_overview?.Barony.PlayerTurnReady == true)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               OnClick="UndoEndTurnAsync">
+                        Clear ready
+                    </MudButton>
+                }
+                else if (CanEdit)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               OnClick="EndTurnAsync">
+                        End Turn
+                    </MudButton>
+                }
+                <MudButton Variant="Variant.Filled"
+                           Size="Size.Small"
+                           Class="barony-turn-btn barony-turn-btn--solid"
+                           Disabled="@(_resolvingTurn)"
+                           OnClick="ResolveTurnAsync">
+                    Resolve Turn
+                </MudButton>
+            }
+        </Actions>
+    </BaronyPageHeader>
 
     @* --- Modifier sections (PPB tables) --- *@
     <AdvisorSection Advisors="@_advisorsForSection" />
@@ -116,6 +172,7 @@ else if (_overview is not null)
     <TerrainImprovementsSection Improvements="@_overview.Improvements"
                                 Tiles="@_overview.Tiles"
                                 Fiefs="@_overview.Fiefs"
+                                VassalTributePercent="@_overview.Barony.VassalTributePercent"
                                 CanManage="@CanManageAsMg"
                                 OnChanged="ReloadOverviewAsync" />
     <DecreesSection BaronyId="@BaronyId"
@@ -201,6 +258,7 @@ else if (_overview is not null)
 
     private List<PpbModifierRow> _totalBreakdown = new();
     private PpbVector _grandTotal = new();
+    private bool _resolvingTurn;
 
     protected override async Task OnInitializedAsync()
     {
@@ -328,6 +386,119 @@ else if (_overview is not null)
         catch (Exception ex)
         {
             _snackBar.Add("Could not save conjuncture: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EndTurnAsync()
+    {
+        if (Barony is null || !CanEdit)
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "End turn?",
+            "Confirm that you have nothing left to do this turn. The Game Master can then resolve the turn.",
+            yesText: "End Turn",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.SetPlayerTurnReady(Barony.Id, true);
+            if (_overview is not null)
+                _overview.Barony.PlayerTurnReady = true;
+            Barony.PlayerTurnReady = true;
+            _snackBar.Add("Turn marked finished — waiting for the Game Master.", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not end turn: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task UndoEndTurnAsync()
+    {
+        if (Barony is null || !CanEdit)
+            return;
+
+        try
+        {
+            await _baronyRepo.SetPlayerTurnReady(Barony.Id, false);
+            if (_overview is not null)
+                _overview.Barony.PlayerTurnReady = false;
+            Barony.PlayerTurnReady = false;
+            _snackBar.Add("End-turn mark cleared.", Severity.Info);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not clear ready flag: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ResolveTurnAsync()
+    {
+        if (Barony is null || _overview is null || !CanManageAsMg || _resolvingTurn)
+            return;
+
+        var ready = _overview.Barony.PlayerTurnReady;
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Resolve turn?",
+            ready
+                ? "Apply income, complete ready projects, roll conjuncture, and advance the calendar."
+                : "The player has not marked End Turn yet. Resolve anyway?",
+            yesText: "Resolve Turn",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        _resolvingTurn = true;
+        try
+        {
+            var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+            var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+            var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+            await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+            var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+            var panel = BaronyCalc.BuildDomainPanelRows(
+                _overview, character, baronModifiers, advisorModifiers, managementJc);
+            var income = BaronyCalc.ExpectedResourceIncome(
+                _overview, character, baronModifiers, advisorModifiers, managementJc);
+            var population = BaronyCalc.SumSettlementPopulation(
+                Barony.Id, _overview.Buildings, _overview.Improvements);
+
+            var report = await _baronyRepo.ResolveTurn(
+                Barony.Id,
+                income,
+                panel.GrandTotal[Ppb.Loyalty],
+                panel.GrandTotal[Ppb.Stability],
+                population);
+
+            Barony.PlayerTurnReady = false;
+            Barony.TurnNumber = report.NewTurnNumber;
+            Barony.Season = report.NewSeason;
+            Barony.Year = report.NewYear;
+            Barony.Month = report.NewMonth;
+            Barony.Unrest = report.UnrestAfter;
+            Barony.ConjunctureDice = report.NewConjunctureDice;
+            Barony.Size = report.Size;
+
+            await ReloadOverviewAsync();
+
+            var parameters = new DialogParameters<TurnResolveReportDialog>
+            {
+                { x => x.Report, report },
+            };
+            await _dialogService.ShowAsync<TurnResolveReportDialog>("Turn resolved", parameters);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not resolve turn: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _resolvingTurn = false;
         }
     }
 

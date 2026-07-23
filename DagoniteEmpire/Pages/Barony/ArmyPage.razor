@@ -1,0 +1,82 @@
+@page "/barony/army"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject ISnackbar _snackBar
+
+<PageTitle>Dagonite Empire | Army</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading army...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (Barony is not null)
+{
+    <BaronyPageHeader Title="Army">
+        <Summary>
+            <span class="projects-summary">
+                <span class="projects-summary__item">@_units.Count unit@(_units.Count == 1 ? "" : "s")</span>
+                <span class="projects-summary__item">@_units.Count(u => u.IsTraining) in training</span>
+                <span class="projects-summary__item">@_units.Count(u => u.IsActive) active</span>
+            </span>
+        </Summary>
+    </BaronyPageHeader>
+
+    <UnitGeneratorSection BaronyId="@Barony.Id"
+                          CanEdit="@CanEdit"
+                          OnStarted="OnTrainingStarted" />
+
+    <UnitsListSection Units="@_units"
+                      SelectedId="@_selectedId"
+                      OnSelect="SelectUnit"
+                      OnChanged="ReloadAsync" />
+
+    @if (_selected is not null)
+    {
+        <UnitCardSection Unit="@_selected"
+                         CanEdit="@CanEdit"
+                         OnChanged="ReloadAsync" />
+    }
+}
+
+@code {
+    private List<BaronyUnitDTO> _units = new();
+    private int? _selectedId;
+    private BaronyUnitDTO? _selected =>
+        _selectedId is int id ? _units.FirstOrDefault(u => u.Id == id) : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+        _units = await _baronyRepo.GetUnits(Barony.Id);
+        if (_selectedId is int id && _units.All(u => u.Id != id))
+            _selectedId = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void SelectUnit(int id) => _selectedId = id;
+
+    private async Task OnTrainingStarted(StartUnitTrainingResult result)
+    {
+        await ReloadAsync();
+        _selectedId = result.Unit.Id;
+        _snackBar.Add(
+            result.Unit.IsActive
+                ? $"Unit “{result.Unit.Name}” ready."
+                : $"Training project “{result.Project.Name}” created — fund it on Projects.",
+            Severity.Success);
+    }
+}

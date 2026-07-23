@@ -672,6 +672,7 @@ namespace DA_Common
         public const string Compass = "icons/compass.svg";
         public const string TwoCoins = "icons/two-coins.svg";
         public const string Trade = "icons/trade.svg";
+        public const string WoodenCrate = "icons/wooden-crate.svg";
         public const string WoodCabinBlack = "icons/wood-cabin-black.svg";
         public const string GearHammer = "icons/gear-hammer.svg";
         public const string Crane = "icons/crane.svg";

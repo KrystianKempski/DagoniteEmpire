@@ -507,6 +507,159 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("BaronTimeModifiers");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyUnit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Agility")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ArmorKey")
+                        .HasColumnType("text");
+
+                    b.Property<int>("AttrOtherAgility")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AttrOtherBuild")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AttrOtherPerception")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AttrOtherWill")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AttrPenaltyAgility")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AttrPenaltyBuild")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Build")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CommanderAttack")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CommanderDefense")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurrentHp")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DefenseSkillKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Discipline")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FreeAttributePoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxBaseSkillAtGraduation")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("OtherArmor")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OtherAttack")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OtherDamage")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OtherDefense")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OtherHp")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OtherMove")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Perception")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RecruitSelectionKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("RemainingPd")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ShieldKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SkillOtherJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SkillsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TrainingTypeKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TroopCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UpkeepDefense")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UpkeepFood")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("Wage")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Weapon1Key")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Weapon1Quality")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Weapon2Key")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Weapon2Quality")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Will")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.ToTable("BaronyUnits");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.Barony", b =>
                 {
                     b.Property<int>("Id")
@@ -576,6 +729,15 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<int>("ConjunctureModifier")
                         .HasColumnType("integer");
+
+                    b.Property<decimal>("LiegeTributePercent")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("VassalTributePercent")
+                        .HasColumnType("numeric");
+
+                    b.Property<bool>("PlayerTurnReady")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Year")
                         .HasColumnType("integer");
@@ -737,7 +899,12 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("TurnsRemaining")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("UnitId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UnitId");
 
                     b.ToTable("BaronyProjects");
                 });

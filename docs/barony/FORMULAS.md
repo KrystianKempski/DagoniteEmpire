@@ -118,7 +118,41 @@ PPB balances **before** Community rows (Hunger / Crime / Corruption / Unrest / E
 ### Economy (conjuncture) — `EconomyConjunctureFormulas`
 - Inputs: `Economy` = Economy additive sum **before** Community rows; `Population` = settlement population; `Conjuncture` = 2d6 + MG modifier
 - **Net Gold profit** = `(Economy + Conjuncture) × 2`
-- `% Gold/Production/Culture/Science/Defense` = `clamp(50 × (Economy / (2 × Population) − 1) + (Conjuncture − 7), −40, +40)`
+- `% Gold/Production/Loyalty/Stability/Magic/Culture/Science/Defense` = `clamp(50 × (Economy / (2 × Population) − 1) + (Conjuncture − 7), −40, +40)`
+
+### Liege tribute (Budget Fief) — `FiefTributeFormulas`
+- Gross gold income = Domain Panel positive Gold (+ % remainder) **before** expenses
+- `Tribute = GrossIncome × (LiegeTributePercent / 100)` (default **15%**, MG-editable on Budget)
+- Treasury turn balance = Domain Panel Final Gold − Tribute
+
+### Vassal fief dues (village gold) — `FiefTributeFormulas`
+- Villages on vassal fiefs (not baron demesne / domain-default) keep only a share of **Treasury** for the baron
+- `Kept = FullVillageGold × (VassalTributePercent / 100)` (default **15%**, MG-editable on Budget)
+- Applied in Domain Panel / Budget via `BaronyCalc.ImprovementRows` (full yield stays stored on the improvement)
+
+### End of turn — `BaronyRepository.ResolveTurn`
+Pipeline (player End Turn flag → MG Resolve Turn):
+1. Apply `ExpectedResourceIncome` to stocks; store as `PreviousTurnIncome`
+2. Funded projects: `TurnsRemaining = max(0, TurnsRemaining − 1)`; if `TurnsRemaining == 0` → Complete + apply `OutputKind` results (Building / Improvement / Decree / Event / resources / **Unit Training** → set linked unit Active)
+3. Sync `Size` = primary-domain tile count
+4. If Final Stability ≤ 0 → loyalty test (below)
+5. Advance calendar one season (`BaronyCalendarFormulas`); re-roll Conjuncture 2d6
+6. Reset Baron's Time: remove non-system actions; restore management to `RequiredManagementJc` (100 BT). Percent time modifiers are kept.
+7. Letter communication quotas refresh with the new turn number (inbound caps per correspondent/region; awaiting-reply lock is only for the current turn).
+8. Clear `PlayerTurnReady`
+
+### Letters — inbound caps / turn — `BaronLetterRules`
+- Eastern March: max **3** inbound letters from the same correspondent per turn
+- Empire / Other: max **1** inbound letter from the same correspondent per turn
+- Outbound from the baron is unlimited (except one unanswered outbound per thread **this turn**)
+- Caps and “awaiting reply” unlock automatically when turn advances on Resolve Turn
+
+### Control DC & loyalty test — `ControlDcFormulas`
+- `ControlDc = Size + 2 × Population + 5` (Population = settlement population)
+- When Stability ≤ 0: `result = Loyalty + d20 − ControlDc`
+  - `result ≥ 0` → Unrest unchanged
+  - `result < 0` → Unrest +1
+  - `result ≤ −(2 × first digit of ControlDc)` → Unrest +2
 
 ---
 
@@ -149,7 +183,7 @@ PL → catalog mapping: Dowodzenie → **Inspire**, Dworskie maniery → **Diplo
 
 Logic: `BaronyCalc.BuildBaronAdvisorRow`.
 
-**X** = sum of skill-PPB units from the Baron Card: **From Skills** (± management JC) + Prestige/Honor/Fear + custom `BaronInfluenceModifierDTO`.  
+**X** = sum of skill-PPB units from the Baron Card: **From Skills** (± management BT) + Prestige/Honor/Fear + custom `BaronInfluenceModifierDTO`.  
 Same total as Σ on the Baron Card (`BuildInfluenceRows` / `SumInfluenceRows`).
 
 Then for each PPB: Additive/Percent from the mapping formulas below — custom sources are **not** added as raw Additive outside that map.
@@ -198,3 +232,35 @@ Then Additive/Percent like the baron from X — customs are **not** injected as 
 | Percent | MapToAdvisorPercent(X) | same |
 
 Cell tooltips: `ExplainOfficeAdvisorAdditive` / `ExplainOfficeAdvisorPercent` (format `= {ppb} skill`, `/60` for Food/Economy/Production/Defense).
+
+---
+
+## Army units — `UnitCombatFormulas` / `UnitTrainingCostFormulas`
+
+One unit = **50** troops (default). Training is a project (`ProjectOutputKind.UnitTraining`).
+
+### Creation costs
+- Gear Production/Gold = sum of weapon1 + weapon2 + armor + shield catalog costs
+- Optional pay gear as Defense = `2 × market gold` (clears Prod/Gold gear)
+- Recruit Defense cost from selection catalog
+- Accelerate: −1 turn / **50** Defense (max = training turns)
+- Project gold track = gear gold + (`GoldPerTurn × remaining turns`); Defense track = recruit + gear-as-defense + accelerate
+- Wage (stored, Budget later) = recruit wage + training wage
+- PD / starting Discipline / max base skill from training ∩ recruit
+
+### Combat totals
+- **Attack** = weapon-type skill total + weapon At ± quality + commander + other  
+  Quality: Good +1 / Poor −1 to At and Dm
+- **Defense** = chosen defense skill (Shields / Dodges / Armor) + weapon Ob + armor Ob + shield Ob + commander + other
+- **Damage** = weapon Dm ± quality + other
+- **Move** = `3 + floor((Agility + Run)/2)` + gear Kr + other
+- **Armor** = armor Pc + shield Pc + other (reduces incoming damage)
+- **Max HP** = `Build×2 + Will×2 + Endurance skill + Discipline×3 + other`
+
+Skill total = linked attribute + base level + other.
+
+### PD spend (Active units)
+- Attribute → level×10
+- Base skill → level×3
+- Special skill → level×1 and ≤ parent base
+- Discipline (1–18) → cost = current level

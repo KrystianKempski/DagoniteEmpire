@@ -137,7 +137,7 @@
       "title": "Economy (conjuncture)",
       "category": "community-penalty",
       "implementation": "DA_Common/Barony/EconomyConjunctureFormulas.cs",
-      "notes": "Economy = Economy additive before Community rows. Population = settlement population (towns + city buildings + villages). Conjuncture = 2d6 turn roll + MG modifier. Net Gold profit is additive; % applies to Gold, Production, Culture, Science, Defense.",
+      "notes": "Economy = Economy additive before Community rows. Population = settlement population (towns + city buildings + villages). Conjuncture = 2d6 turn roll + MG modifier. Net Gold profit is additive; % applies to Gold, Production, Loyalty, Stability, Magic, Culture, Science, Defense.",
       "inputs": [
         {
           "name": "Economy",
@@ -162,9 +162,93 @@
       "percent": {
         "Treasury": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
         "Production": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
+        "Loyalty": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
+        "Stability": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
+        "Magic": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
         "Culture": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
         "Science": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
         "Defense": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)"
+      }
+    },
+    {
+      "id": "budget.liege-tribute",
+      "title": "Liege tribute (Fief dues)",
+      "category": "budget",
+      "implementation": "DA_Common/Barony/FiefTributeFormulas.cs",
+      "notes": "Barons pay their senior a share of gross gold income before expenses. Rate stored on Barony.LiegeTributePercent (MG-editable on Budget). Treasury turn balance = Domain Panel Final Gold − Tribute.",
+      "inputs": [
+        {
+          "name": "GrossIncome",
+          "type": "decimal",
+          "description": "Domain Panel positive Gold income including % remainder, before expenses"
+        },
+        {
+          "name": "LiegeTributePercent",
+          "type": "decimal",
+          "min": 0,
+          "max": 100,
+          "description": "Default 15"
+        }
+      ],
+      "additive": {
+        "Treasury": "-GrossIncome * (LiegeTributePercent / 100)"
+      }
+    },
+    {
+      "id": "budget.vassal-fief-dues",
+      "title": "Vassal fief dues (village gold)",
+      "category": "budget",
+      "implementation": "DA_Common/Barony/FiefTributeFormulas.cs",
+      "notes": "Villages on vassal fiefs contribute only this share of their gold to the baron. Rate stored on Barony.VassalTributePercent (MG-editable on Budget). Applied in BaronyCalc.ImprovementRows; other village PPB unchanged.",
+      "inputs": [
+        {
+          "name": "FullVillageGold",
+          "type": "decimal",
+          "description": "Village Additive Treasury before vassal share"
+        },
+        {
+          "name": "VassalTributePercent",
+          "type": "decimal",
+          "min": 0,
+          "max": 100,
+          "description": "Default 15"
+        }
+      ],
+      "additive": {
+        "Treasury": "FullVillageGold * (VassalTributePercent / 100)"
+      }
+    },
+    {
+      "id": "turn.control-dc",
+      "title": "Control DC and loyalty test",
+      "category": "turn",
+      "implementation": "DA_Common/Barony/ControlDcFormulas.cs",
+      "notes": "Run at Resolve Turn when Domain Panel Final Stability ≤ 0. Size synced from primary-domain tiles. Population = settlement population.",
+      "inputs": [
+        {
+          "name": "Size",
+          "type": "int",
+          "description": "Primary domain tile count"
+        },
+        {
+          "name": "Population",
+          "type": "int",
+          "description": "Settlement population"
+        },
+        {
+          "name": "Loyalty",
+          "type": "decimal",
+          "description": "Domain Panel Final Loyalty"
+        },
+        {
+          "name": "d20",
+          "type": "int",
+          "min": 1,
+          "max": 20
+        }
+      ],
+      "additive": {
+        "Unrest": "0 if (Loyalty+d20-ControlDc)>=0; +2 if result<=-(2*firstDigit(ControlDc)); else +1"
       }
     },
     {

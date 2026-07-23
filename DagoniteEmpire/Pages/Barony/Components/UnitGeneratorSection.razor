@@ -1,0 +1,259 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+
+<BaronySection Title="Unit generator">
+    <Summary>
+        <div class="baron-php-summary">
+            <span class="baron-php-chip">Prod @_costs.Production</span>
+            <span class="baron-php-chip">Gold @_costs.GoldTotal</span>
+            <span class="baron-php-chip">Defense @_costs.DefenseTotal</span>
+            <span class="baron-php-chip">@_costs.Turns turn@(_costs.Turns == 1 ? "" : "s")</span>
+            <span class="baron-php-chip">@_costs.Pd PD</span>
+        </div>
+    </Summary>
+    <ChildContent>
+        <div class="unit-generator">
+            <MudTextField @bind-Value="_name"
+                          Label="Unit name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Disabled="@(!CanEdit)"
+                          Class="baron-influence-field mb-2" />
+
+            <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">Recruit selection</MudText>
+            <MudRadioGroup T="string" Value="_recruitKey" ValueChanged="OnRecruitChanged" Disabled="@(!CanEdit)">
+                @foreach (var r in UnitRecruitSelectionCatalog.All)
+                {
+                    <MudRadio T="string" Value="@r.Key" Dense="true">
+                        @r.Name — attrs @r.AttributeScore, max skill @r.MaxBaseSkill, wage @r.Wage, Defense @r.DefenseCost
+                    </MudRadio>
+                }
+            </MudRadioGroup>
+
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Training</MudText>
+            <MudRadioGroup T="string" Value="_trainingKey" ValueChanged="OnTrainingChanged" Disabled="@(!CanEdit)">
+                @foreach (var t in UnitTrainingTypeCatalog.All)
+                {
+                    <MudRadio T="string" Value="@t.Key" Dense="true">
+                        @t.Name — @t.Pd PD, @t.Turns turns, @t.GoldPerTurn gold/turn, discipline @t.StartingDiscipline
+                        @if (!string.IsNullOrWhiteSpace(t.Notes))
+                        {
+                            <text> (@t.Notes)</text>
+                        }
+                    </MudRadio>
+                }
+            </MudRadioGroup>
+
+            <div class="unit-generator__row mt-3">
+                <MudSelect T="string"
+                           Label="Weapon 1"
+                           Value="_weapon1"
+                           ValueChanged="OnWeapon1Changed"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Dense="true"
+                           Disabled="@(!CanEdit)"
+                           Class="baron-influence-field">
+                    @foreach (var w in UnitWeaponCatalog.All)
+                    {
+                        <MudSelectItem Value="@w.Key">@w.Name (@w.Category) — P @w.ProductionCost / Z @w.GoldCost</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="string"
+                           Label="Weapon 1 quality"
+                           @bind-Value="_quality"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Dense="true"
+                           Disabled="@(!CanEdit)"
+                           Class="baron-influence-field">
+                    @foreach (var q in UnitWeaponQuality.All)
+                    {
+                        <MudSelectItem Value="@q">@q</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+
+            <div class="unit-generator__row">
+                <MudSelect T="string"
+                           Label="Weapon 2 (optional)"
+                           Value="_weapon2"
+                           ValueChanged="OnWeapon2Changed"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Dense="true"
+                           Clearable="true"
+                           Disabled="@(!CanEdit)"
+                           Class="baron-influence-field">
+                    @foreach (var w in UnitWeaponCatalog.All)
+                    {
+                        <MudSelectItem Value="@w.Key">@w.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="string"
+                           Label="Armor"
+                           Value="_armor"
+                           ValueChanged="OnArmorChanged"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Dense="true"
+                           Clearable="true"
+                           Disabled="@(!CanEdit)"
+                           Class="baron-influence-field">
+                    @foreach (var a in UnitArmorCatalog.BodyArmor)
+                    {
+                        <MudSelectItem Value="@a.Key">@a.Name — Pc @a.ArmorValue</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="string"
+                           Label="Shield"
+                           Value="_shield"
+                           ValueChanged="OnShieldChanged"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Dense="true"
+                           Clearable="true"
+                           Disabled="@(!CanEdit)"
+                           Class="baron-influence-field">
+                    @foreach (var a in UnitArmorCatalog.Shields)
+                    {
+                        <MudSelectItem Value="@a.Key">@a.Name — Ob @a.Defense</MudSelectItem>
+                    }
+                </MudSelect>
+            </div>
+
+            <div class="unit-generator__row mt-2">
+                <MudCheckBox T="bool"
+                             Value="_payAsDefense"
+                             ValueChanged="OnPayDefenseChanged"
+                             Label="Pay gear as Defense (2× market)"
+                             Dense="true"
+                             Disabled="@(!CanEdit)" />
+                <MudNumericField T="int"
+                                 Value="_accelerate"
+                                 ValueChanged="OnAccelerateChanged"
+                                 Label="Accelerate turns (−50 Def each)"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="0"
+                                 Max="@_maxAccel"
+                                 Disabled="@(!CanEdit)"
+                                 Class="baron-influence-field"
+                                 Style="max-width:220px;" />
+            </div>
+
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-2">
+                Wage @_costs.Wage / turn (Budget later) · Starting discipline @_costs.StartingDiscipline · Max base skill @_costs.MaxBaseSkill
+                @if (_costs.FreeAttributePoints > 0)
+                {
+                    <text> · @_costs.FreeAttributePoints free attribute point(s) after graduation</text>
+                }
+            </MudText>
+
+            @if (CanEdit)
+            {
+                <div class="mt-3">
+                    <MudButton Class="barony-turn-btn barony-turn-btn--solid"
+                               Variant="Variant.Filled"
+                               Disabled="@_busy"
+                               OnClick="StartAsync">
+                        Start training
+                    </MudButton>
+                </div>
+            }
+        </div>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback<StartUnitTrainingResult> OnStarted { get; set; }
+
+    private string _name = string.Empty;
+    private string _recruitKey = UnitRecruitSelectionCatalog.Volunteers.Key;
+    private string _trainingKey = UnitTrainingTypeCatalog.Standard.Key;
+    private string _weapon1 = "longswords";
+    private string? _weapon2 = "simple-bows";
+    private string? _armor = "mail-and-gambeson";
+    private string? _shield = "studded-medium-shield";
+    private string _quality = UnitWeaponQuality.Normal;
+    private bool _payAsDefense;
+    private int _accelerate;
+    private bool _busy;
+    private UnitTrainingCostSummary _costs = UnitTrainingCostFormulas.Compute(
+        UnitRecruitSelectionCatalog.Volunteers,
+        UnitTrainingTypeCatalog.Standard,
+        UnitWeaponCatalog.Find("longswords"),
+        UnitWeaponCatalog.Find("simple-bows"),
+        UnitArmorCatalog.Find("mail-and-gambeson"),
+        UnitArmorCatalog.Find("studded-medium-shield"),
+        false, 0);
+
+    private int _maxAccel =>
+        UnitTrainingTypeCatalog.Find(_trainingKey)?.Turns ?? 0;
+
+    protected override void OnParametersSet() => Recalc();
+
+    private Task OnRecruitChanged(string v) { _recruitKey = v; Recalc(); return Task.CompletedTask; }
+    private Task OnTrainingChanged(string v) { _trainingKey = v; _accelerate = Math.Min(_accelerate, _maxAccel); Recalc(); return Task.CompletedTask; }
+    private Task OnWeapon1Changed(string v) { _weapon1 = v; Recalc(); return Task.CompletedTask; }
+    private Task OnWeapon2Changed(string v) { _weapon2 = string.IsNullOrWhiteSpace(v) ? null : v; Recalc(); return Task.CompletedTask; }
+    private Task OnArmorChanged(string v) { _armor = string.IsNullOrWhiteSpace(v) ? null : v; Recalc(); return Task.CompletedTask; }
+    private Task OnShieldChanged(string v) { _shield = string.IsNullOrWhiteSpace(v) ? null : v; Recalc(); return Task.CompletedTask; }
+    private Task OnPayDefenseChanged(bool v) { _payAsDefense = v; Recalc(); return Task.CompletedTask; }
+    private Task OnAccelerateChanged(int v) { _accelerate = Math.Clamp(v, 0, _maxAccel); Recalc(); return Task.CompletedTask; }
+
+    private void Recalc()
+    {
+        var recruit = UnitRecruitSelectionCatalog.Find(_recruitKey) ?? UnitRecruitSelectionCatalog.Volunteers;
+        var training = UnitTrainingTypeCatalog.Find(_trainingKey) ?? UnitTrainingTypeCatalog.Standard;
+        _costs = UnitTrainingCostFormulas.Compute(
+            recruit, training,
+            UnitWeaponCatalog.Find(_weapon1),
+            UnitWeaponCatalog.Find(_weapon2),
+            UnitArmorCatalog.Find(_armor),
+            UnitArmorCatalog.Find(_shield),
+            _payAsDefense, _accelerate);
+    }
+
+    private async Task StartAsync()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name the unit first.", Severity.Warning);
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var result = await _baronyRepo.StartUnitTraining(new StartUnitTrainingRequest
+            {
+                BaronyId = BaronyId,
+                Name = _name.Trim(),
+                RecruitSelectionKey = _recruitKey,
+                TrainingTypeKey = _trainingKey,
+                Weapon1Key = _weapon1,
+                Weapon2Key = _weapon2,
+                ArmorKey = _armor,
+                ShieldKey = _shield,
+                Weapon1Quality = _quality,
+                PayEquipmentAsDefense = _payAsDefense,
+                AccelerateTurns = _accelerate,
+            });
+            _name = string.Empty;
+            await OnStarted.InvokeAsync(result);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
