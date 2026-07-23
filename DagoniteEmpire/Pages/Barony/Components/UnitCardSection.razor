@@ -61,10 +61,6 @@
             <div class="unit-card__attr">
                 <span>Discipline</span>
                 <b>@Unit.Discipline</b>
-                @if (CanSpendPd)
-                {
-                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="RaiseDisciplineAsync">+1 PD</MudButton>
-                }
             </div>
             @if (Unit.FreeAttributePoints > 0 && Unit.IsActive && CanEdit)
             {
@@ -75,55 +71,29 @@
         </div>
 
         <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Skills</MudText>
-        <div style="overflow-x:auto;">
-            <table class="ppb-table ppb-table--source ppb-table--lined">
-                <thead>
-                    <tr>
-                        <th class="ppb-row-label source-col">Skill</th>
-                        <th>Base</th>
-                        <th>Total</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var def in UnitSkillTree.All)
-                    {
-                        Unit.SkillBase.TryGetValue(def.Key, out var bas);
-                        _skillTotals.TryGetValue(def.Key, out var total);
-                        <tr>
-                            <td class="ppb-row-label source-col">
-                                <span class="source-cell__name" style="@(def.IsBase ? "font-weight:600;" : "padding-left:1rem;")">
-                                    @def.Name
-                                </span>
-                            </td>
-                            <td>@bas</td>
-                            <td>@total</td>
-                            <td>
-                                @if (CanSpendPd)
-                                {
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => RaiseSkillAsync(def))">+1</MudButton>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
+            Base Total = Base+Other · Special Total = parent+From+Base+Other.
+            @(CanManageAsMg ? "Click Base/Other to edit (MG). " : "")
+            @(CanSpendPd ? "Click Base to spend PD." : "PD spending unlocks when Active.")
+        </MudText>
+        <UnitSkillTiles Unit="@Unit"
+                        CanManageAsMg="@CanManageAsMg"
+                        CanSpendPd="@CanSpendPd"
+                        OnChanged="PersistFromSkillsAsync" />
     </ChildContent>
 </BaronySection>
 
 @code {
     [Parameter] public BaronyUnitDTO Unit { get; set; } = new();
     [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManageAsMg { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private UnitCombatTotals _combat;
-    private Dictionary<string, int> _skillTotals = new();
     private bool CanSpendPd => CanEdit && Unit.IsActive;
 
     protected override void OnParametersSet()
     {
-        _skillTotals = UnitStatHelper.BuildSkillTotals(Unit);
         _combat = UnitStatHelper.Compute(Unit);
     }
 
@@ -189,46 +159,8 @@
         }
     }
 
-    private async Task RaiseDisciplineAsync()
+    private async Task PersistFromSkillsAsync()
     {
-        if (!UnitPdFormulas.CanRaiseDiscipline(Unit.Discipline, Unit.RemainingPd, out var cost))
-        {
-            _snackBar.Add(Unit.Discipline >= UnitRules.DisciplineMax ? "Discipline maxed." : $"Need {cost} PD.", Severity.Warning);
-            return;
-        }
-        Unit.RemainingPd -= cost;
-        Unit.Discipline++;
-        await PersistAsync();
-    }
-
-    private async Task RaiseSkillAsync(UnitSkillDef def)
-    {
-        Unit.SkillBase.TryGetValue(def.Key, out var current);
-        int cost;
-        if (def.IsBase)
-        {
-            if (!UnitPdFormulas.CanRaiseBaseSkill(current, int.MaxValue, Unit.RemainingPd, out cost))
-            {
-                _snackBar.Add($"Need {cost} PD.", Severity.Warning);
-                return;
-            }
-        }
-        else
-        {
-            var parentKey = def.ParentKey!;
-            Unit.SkillBase.TryGetValue(parentKey, out var parentBase);
-            // Parent total base ranks — Excel: special ≤ parent base skill level
-            if (!UnitPdFormulas.CanRaiseSpecialSkill(current, parentBase, Unit.RemainingPd, out cost))
-            {
-                _snackBar.Add(current + 1 > parentBase
-                    ? "Special cannot exceed parent base skill."
-                    : $"Need {cost} PD.", Severity.Warning);
-                return;
-            }
-        }
-
-        Unit.SkillBase[def.Key] = current + 1;
-        Unit.RemainingPd -= cost;
         await PersistAsync();
     }
 

@@ -1,167 +1,337 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.BaronyRepos
 @inject IBaronyRepository _baronyRepo
 @inject ISnackbar _snackBar
 
 <BaronySection Title="Unit generator">
     <Summary>
-        <div class="baron-php-summary">
-            <span class="baron-php-chip">Prod @_costs.Production</span>
-            <span class="baron-php-chip">Gold @_costs.GoldTotal</span>
-            <span class="baron-php-chip">Defense @_costs.DefenseTotal</span>
-            <span class="baron-php-chip">@_costs.Turns turn@(_costs.Turns == 1 ? "" : "s")</span>
-            <span class="baron-php-chip">@_costs.Pd PD</span>
-        </div>
+        <span class="projects-summary">
+            <span class="projects-summary__item">Live preview updates with every selector</span>
+        </span>
     </Summary>
     <ChildContent>
-        <div class="unit-generator">
-            <MudTextField @bind-Value="_name"
-                          Label="Unit name"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Disabled="@(!CanEdit)"
-                          Class="baron-influence-field mb-2" />
-
-            <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">Recruit selection</MudText>
-            <MudRadioGroup T="string" Value="_recruitKey" ValueChanged="OnRecruitChanged" Disabled="@(!CanEdit)">
-                @foreach (var r in UnitRecruitSelectionCatalog.All)
-                {
-                    <MudRadio T="string" Value="@r.Key" Dense="true">
-                        @r.Name — attrs @r.AttributeScore, max skill @r.MaxBaseSkill, wage @r.Wage, Defense @r.DefenseCost
-                    </MudRadio>
-                }
-            </MudRadioGroup>
-
-            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Training</MudText>
-            <MudRadioGroup T="string" Value="_trainingKey" ValueChanged="OnTrainingChanged" Disabled="@(!CanEdit)">
-                @foreach (var t in UnitTrainingTypeCatalog.All)
-                {
-                    <MudRadio T="string" Value="@t.Key" Dense="true">
-                        @t.Name — @t.Pd PD, @t.Turns turns, @t.GoldPerTurn gold/turn, discipline @t.StartingDiscipline
-                        @if (!string.IsNullOrWhiteSpace(t.Notes))
-                        {
-                            <text> (@t.Notes)</text>
-                        }
-                    </MudRadio>
-                }
-            </MudRadioGroup>
-
-            <div class="unit-generator__row mt-3">
-                <MudSelect T="string"
-                           Label="Weapon 1"
-                           Value="_weapon1"
-                           ValueChanged="OnWeapon1Changed"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Dense="true"
-                           Disabled="@(!CanEdit)"
-                           Class="baron-influence-field">
-                    @foreach (var w in UnitWeaponCatalog.All)
-                    {
-                        <MudSelectItem Value="@w.Key">@w.Name (@w.Category) — P @w.ProductionCost / Z @w.GoldCost</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudSelect T="string"
-                           Label="Weapon 1 quality"
-                           @bind-Value="_quality"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Dense="true"
-                           Disabled="@(!CanEdit)"
-                           Class="baron-influence-field">
-                    @foreach (var q in UnitWeaponQuality.All)
-                    {
-                        <MudSelectItem Value="@q">@q</MudSelectItem>
-                    }
-                </MudSelect>
-            </div>
-
-            <div class="unit-generator__row">
-                <MudSelect T="string"
-                           Label="Weapon 2 (optional)"
-                           Value="_weapon2"
-                           ValueChanged="OnWeapon2Changed"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Dense="true"
-                           Clearable="true"
-                           Disabled="@(!CanEdit)"
-                           Class="baron-influence-field">
-                    @foreach (var w in UnitWeaponCatalog.All)
-                    {
-                        <MudSelectItem Value="@w.Key">@w.Name</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudSelect T="string"
-                           Label="Armor"
-                           Value="_armor"
-                           ValueChanged="OnArmorChanged"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Dense="true"
-                           Clearable="true"
-                           Disabled="@(!CanEdit)"
-                           Class="baron-influence-field">
-                    @foreach (var a in UnitArmorCatalog.BodyArmor)
-                    {
-                        <MudSelectItem Value="@a.Key">@a.Name — Pc @a.ArmorValue</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudSelect T="string"
-                           Label="Shield"
-                           Value="_shield"
-                           ValueChanged="OnShieldChanged"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Dense="true"
-                           Clearable="true"
-                           Disabled="@(!CanEdit)"
-                           Class="baron-influence-field">
-                    @foreach (var a in UnitArmorCatalog.Shields)
-                    {
-                        <MudSelectItem Value="@a.Key">@a.Name — Ob @a.Defense</MudSelectItem>
-                    }
-                </MudSelect>
-            </div>
-
-            <div class="unit-generator__row mt-2">
-                <MudCheckBox T="bool"
-                             Value="_payAsDefense"
-                             ValueChanged="OnPayDefenseChanged"
-                             Label="Pay gear as Defense (2× market)"
-                             Dense="true"
-                             Disabled="@(!CanEdit)" />
-                <MudNumericField T="int"
-                                 Value="_accelerate"
-                                 ValueChanged="OnAccelerateChanged"
-                                 Label="Accelerate turns (−50 Def each)"
-                                 Variant="Variant.Outlined"
-                                 Margin="Margin.Dense"
-                                 Min="0"
-                                 Max="@_maxAccel"
-                                 Disabled="@(!CanEdit)"
-                                 Class="baron-influence-field"
-                                 Style="max-width:220px;" />
-            </div>
-
-            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-2">
-                Wage @_costs.Wage / turn (Budget later) · Starting discipline @_costs.StartingDiscipline · Max base skill @_costs.MaxBaseSkill
-                @if (_costs.FreeAttributePoints > 0)
-                {
-                    <text> · @_costs.FreeAttributePoints free attribute point(s) after graduation</text>
-                }
-            </MudText>
-
-            @if (CanEdit)
-            {
-                <div class="mt-3">
-                    <MudButton Class="barony-turn-btn barony-turn-btn--solid"
-                               Variant="Variant.Filled"
-                               Disabled="@_busy"
-                               OnClick="StartAsync">
-                        Start training
-                    </MudButton>
+        <div class="unit-workshop">
+            @* ---- Total cost bar (Excel “KOSZT CAŁKOWITY”) ---- *@
+            <div class="unit-workshop__costs">
+                <div class="unit-workshop__costs-title">Total cost</div>
+                <div class="unit-workshop__cost-grid">
+                    <BaronyTooltip Title="Production"
+                                   Text="Production to equip the unit (weapons &amp; armor). Cleared when paying gear as Defense.">
+                        <div class="unit-workshop__cost">
+                            <span class="unit-workshop__cost-label">Production</span>
+                            <span class="unit-workshop__cost-value">@_costs.Production</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Gold (equipment)"
+                                   Text="Gold for weapons &amp; armor at creation. Cleared when paying gear as Defense.">
+                        <div class="unit-workshop__cost">
+                            <span class="unit-workshop__cost-label">Gold (gear)</span>
+                            <span class="unit-workshop__cost-value">@_costs.GoldEquipment</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Defense"
+                                   Text="Recruit selection + optional gear-as-Defense (2× market gold) + accelerate (50 Defense per turn saved).">
+                        <div class="unit-workshop__cost">
+                            <span class="unit-workshop__cost-label">Defense</span>
+                            <span class="unit-workshop__cost-value">@_costs.DefenseTotal</span>
+                            <span class="unit-workshop__cost-sub">
+                                rec @_costs.DefenseRecruit · gear @_costs.DefenseEquipment · accel @_costs.DefenseAccelerate
+                            </span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Time"
+                                   Text="Training turns after acceleration. Express can finish in 0 turns.">
+                        <div class="unit-workshop__cost">
+                            <span class="unit-workshop__cost-label">Time (turns)</span>
+                            <span class="unit-workshop__cost-value">@_costs.Turns</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Gold per turn"
+                                   Text="Training upkeep in gold each turn while the project runs.">
+                        <div class="unit-workshop__cost">
+                            <span class="unit-workshop__cost-label">Gold / turn</span>
+                            <span class="unit-workshop__cost-value">@_goldPerTurn</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Gold total"
+                                   Text="Equipment gold + (gold/turn × remaining turns after accelerate).">
+                        <div class="unit-workshop__cost">
+                            <span class="unit-workshop__cost-label">Gold total</span>
+                            <span class="unit-workshop__cost-value">@_costs.GoldTotal</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Wage"
+                                   Text="Wage after graduation = recruit wage + training wage. Each unit also costs 0.5 Food and 5 Defense / turn. Budget integration comes later.">
+                        <div class="unit-workshop__cost">
+                            <span class="unit-workshop__cost-label">Wage</span>
+                            <span class="unit-workshop__cost-value">@_costs.Wage</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="PD"
+                                   Text="PD granted when training finishes. Attribute raise = next level × 10; base skill = level × 3; special = level × 1 (≤ parent); discipline = current level.">
+                        <div class="unit-workshop__cost">
+                            <span class="unit-workshop__cost-label">PD</span>
+                            <span class="unit-workshop__cost-value">@_costs.Pd</span>
+                        </div>
+                    </BaronyTooltip>
                 </div>
-            }
+                <MudText Typo="Typo.caption" Class="unit-workshop__howto">
+                    Start with recruit selection, then training, weapons, armor and shield. Watch resource costs —
+                    gear Production/Gold can be paid as Defense (2× market). Selectors drive the calculated fields on the
+                    unit card; spend PD only after the unit graduates. Max units ≈ Society; each unit is 50 troops.
+                </MudText>
+            </div>
+
+            <div class="unit-workshop__body">
+                @* ---- Left: selectors ---- *@
+                <div class="unit-workshop__left">
+                    <MudTextField @bind-Value="_name"
+                                  @bind-Value:after="Recalc"
+                                  Immediate="true"
+                                  Label="Unit name"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Disabled="@(!CanEdit)"
+                                  Class="baron-influence-field" />
+
+                    <section class="unit-workshop__block">
+                        <BaronyTooltip Title="Recruit selection"
+                                       Text="Sets starting attributes (A) and the max base skill (U) during training. Also adds Defense cost (O) and wage (Ż).">
+                            <h3 class="unit-workshop__heading">Recruit selection</h3>
+                        </BaronyTooltip>
+                        <MudRadioGroup T="string"
+                                       Value="_recruitKey"
+                                       ValueChanged="OnRecruitChanged"
+                                       Disabled="@(!CanEdit)">
+                            <table class="ppb-table ppb-table--source ppb-table--lined unit-workshop__table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th class="ppb-row-label">Option</th>
+                                        <th title="Attribute level">A</th>
+                                        <th title="Defense cost">O</th>
+                                        <th title="Max base skill">U</th>
+                                        <th title="Wage">Ż</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var r in UnitRecruitSelectionCatalog.All)
+                                    {
+                                        <tr class="@(_recruitKey == r.Key ? "unit-workshop__row--active" : null)"
+                                            @onclick="() => SelectRecruit(r.Key)">
+                                            <td><MudRadio T="string" Value="@r.Key" Dense="true" /></td>
+                                            <td class="ppb-row-label">@r.Name</td>
+                                            <td>@r.AttributeScore</td>
+                                            <td>@r.DefenseCost</td>
+                                            <td>@r.MaxBaseSkill</td>
+                                            <td>@r.Wage</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </MudRadioGroup>
+                        <MudText Typo="Typo.caption" Class="unit-workshop__note">
+                            Humans: +1 to two base skills (add later under Other on the unit card). Good weapon quality +1 At/Dm; Poor −1 At/Dm.
+                        </MudText>
+                    </section>
+
+                    <section class="unit-workshop__block">
+                        <BaronyTooltip Title="Training"
+                                       Text="Grants PD, sets training turns (T) &amp; gold/turn (Z), starting discipline (D), max skill during training (U), and wage (Ż). Elite/Standard grant free attribute points after graduation.">
+                            <h3 class="unit-workshop__heading">Training</h3>
+                        </BaronyTooltip>
+                        <MudRadioGroup T="string"
+                                       Value="_trainingKey"
+                                       ValueChanged="OnTrainingChanged"
+                                       Disabled="@(!CanEdit)">
+                            <table class="ppb-table ppb-table--source ppb-table--lined unit-workshop__table">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th class="ppb-row-label">Type</th>
+                                        <th>PD</th>
+                                        <th title="Gold per turn">Z</th>
+                                        <th title="Turns">T</th>
+                                        <th title="Max base skill">U</th>
+                                        <th title="Starting discipline">D</th>
+                                        <th title="Wage">Ż</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var t in UnitTrainingTypeCatalog.All)
+                                    {
+                                        <tr class="@(_trainingKey == t.Key ? "unit-workshop__row--active" : null)"
+                                            @onclick="() => SelectTraining(t.Key)">
+                                            <td><MudRadio T="string" Value="@t.Key" Dense="true" /></td>
+                                            <td class="ppb-row-label">@t.Name</td>
+                                            <td>@t.Pd</td>
+                                            <td>@t.GoldPerTurn</td>
+                                            <td>@t.Turns</td>
+                                            <td>@t.MaxBaseSkill</td>
+                                            <td>@t.StartingDiscipline</td>
+                                            <td>@t.Wage</td>
+                                            <td class="unit-workshop__notes-cell">@(t.Notes ?? "—")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </MudRadioGroup>
+
+                        <div class="unit-generator__row mt-2">
+                            <BaronyTooltip Title="Accelerate"
+                                           Text="Spend 50 Defense to cut one training turn. Set here when creating the project.">
+                                <MudNumericField T="int"
+                                                 Value="_accelerate"
+                                                 ValueChanged="OnAccelerateChanged"
+                                                 Label="Accelerate (−50 Def / turn)"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense"
+                                                 Min="0"
+                                                 Max="@_maxAccel"
+                                                 Disabled="@(!CanEdit)"
+                                                 Class="baron-influence-field" />
+                            </BaronyTooltip>
+                        </div>
+                    </section>
+
+                    <section class="unit-workshop__block">
+                        <h3 class="unit-workshop__heading">Arms &amp; armor</h3>
+                        <div class="unit-generator__row">
+                            <MudSelect T="string"
+                                       Label="Weapon 1"
+                                       Value="_weapon1"
+                                       ValueChanged="OnWeapon1Changed"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       Disabled="@(!CanEdit)"
+                                       Class="baron-influence-field">
+                                @foreach (var group in UnitWeaponCatalog.All.GroupBy(w => w.Category))
+                                {
+                                    <MudSelectItem Value="@($"__hdr_{group.Key}")" Disabled="true">— @group.Key —</MudSelectItem>
+                                    @foreach (var w in group)
+                                    {
+                                        <MudSelectItem Value="@w.Key">@w.Name (P @w.ProductionCost / Z @w.GoldCost / R @w.MarketGold)</MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                            <MudSelect T="string"
+                                       Label="Weapon 1 quality"
+                                       Value="_quality"
+                                       ValueChanged="OnQualityChanged"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       Disabled="@(!CanEdit)"
+                                       Class="baron-influence-field">
+                                @foreach (var q in UnitWeaponQuality.All)
+                                {
+                                    <MudSelectItem Value="@q">@q</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </div>
+                        @if (_w1 is not null)
+                        {
+                            <MudText Typo="Typo.caption" Class="unit-workshop__note">
+                                @_w1.Name · @_w1.WeaponType · At @_w1.Attack Dm @_w1.Damage Ob @_w1.Defense Prz @_w1.Pierce
+                                @if (_w1.Range > 0)
+                                {
+                                    <text> · range @_w1.Range (double −4, triple −8)</text>
+                                }
+                                · req Build @_w1.RequiredBuild / Agility @_w1.RequiredAgility
+                                @(_w1.OneHanded ? " · 1H" : " · 2H")
+                            </MudText>
+                        }
+
+                        <div class="unit-generator__row">
+                            <MudSelect T="string"
+                                       Label="Weapon 2 (optional)"
+                                       Value="_weapon2"
+                                       ValueChanged="OnWeapon2Changed"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       Clearable="true"
+                                       Disabled="@(!CanEdit)"
+                                       Class="baron-influence-field">
+                                @foreach (var w in UnitWeaponCatalog.All)
+                                {
+                                    <MudSelectItem Value="@w.Key">@w.Name</MudSelectItem>
+                                }
+                            </MudSelect>
+                            <MudSelect T="string"
+                                       Label="Armor"
+                                       Value="_armorKey"
+                                       ValueChanged="OnArmorChanged"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       Clearable="true"
+                                       Disabled="@(!CanEdit)"
+                                       Class="baron-influence-field">
+                                @foreach (var a in UnitArmorCatalog.BodyArmor)
+                                {
+                                    <MudSelectItem Value="@a.Key">@a.Name (Pc @a.ArmorValue · P @a.ProductionCost)</MudSelectItem>
+                                }
+                            </MudSelect>
+                            <MudSelect T="string"
+                                       Label="Shield"
+                                       Value="_shieldKey"
+                                       ValueChanged="OnShieldChanged"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       Clearable="true"
+                                       Disabled="@(!CanEdit)"
+                                       Class="baron-influence-field">
+                                @foreach (var a in UnitArmorCatalog.Shields)
+                                {
+                                    <MudSelectItem Value="@a.Key">@a.Name (Ob @a.Defense · P @a.ProductionCost)</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </div>
+                        @if (_armorDef is not null || _shieldDef is not null)
+                        {
+                            <MudText Typo="Typo.caption" Class="unit-workshop__note">
+                                @if (_armorDef is not null)
+                                {
+                                    <text>Armor @_armorDef.Name: Ob @_armorDef.Defense Pc @_armorDef.ArmorValue Ks @_armorDef.AgilityPenalty Kr @_armorDef.MovePenalty (req Armor skill @_armorDef.RequiredArmorSkill). </text>
+                                }
+                                @if (_shieldDef is not null)
+                                {
+                                    <text>Shield @_shieldDef.Name: Ob @_shieldDef.Defense Pc @_shieldDef.ArmorValue Kr @_shieldDef.MovePenalty.</text>
+                                }
+                            </MudText>
+                        }
+
+                        <MudCheckBox T="bool"
+                                     Value="_payAsDefense"
+                                     ValueChanged="OnPayDefenseChanged"
+                                     Label="Pay gear as Defense (2 × market gold)"
+                                     Dense="true"
+                                     Class="mt-2"
+                                     Disabled="@(!CanEdit)" />
+                    </section>
+
+                    @if (CanEdit)
+                    {
+                        <MudButton Class="barony-turn-btn barony-turn-btn--solid mt-2"
+                                   Variant="Variant.Filled"
+                                   Disabled="@_busy"
+                                   OnClick="StartAsync">
+                            Start training project
+                        </MudButton>
+                    }
+                </div>
+
+                @* ---- Right: live unit card (Excel “FORMOWANY ODDZIAŁ”) ---- *@
+                <div class="unit-workshop__right">
+                    <UnitDraftCardPreview Unit="@_draft"
+                                          CanManageAsMg="@CanManageAsMg"
+                                          SkillsChanged="OnDraftSkillsChanged" />
+                </div>
+            </div>
         </div>
     </ChildContent>
 </BaronySection>
@@ -169,39 +339,67 @@
 @code {
     [Parameter] public int BaronyId { get; set; }
     [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManageAsMg { get; set; }
     [Parameter] public EventCallback<StartUnitTrainingResult> OnStarted { get; set; }
 
     private string _name = string.Empty;
-    private string _recruitKey = UnitRecruitSelectionCatalog.Volunteers.Key;
+    private string _recruitKey = UnitRecruitSelectionCatalog.BestAvailable.Key;
     private string _trainingKey = UnitTrainingTypeCatalog.Standard.Key;
     private string _weapon1 = "longswords";
     private string? _weapon2 = "simple-bows";
-    private string? _armor = "mail-and-gambeson";
-    private string? _shield = "studded-medium-shield";
+    private string? _armorKey = "mail-and-gambeson";
+    private string? _shieldKey = "studded-medium-shield";
     private string _quality = UnitWeaponQuality.Normal;
     private bool _payAsDefense;
     private int _accelerate;
     private bool _busy;
-    private UnitTrainingCostSummary _costs = UnitTrainingCostFormulas.Compute(
-        UnitRecruitSelectionCatalog.Volunteers,
-        UnitTrainingTypeCatalog.Standard,
-        UnitWeaponCatalog.Find("longswords"),
-        UnitWeaponCatalog.Find("simple-bows"),
-        UnitArmorCatalog.Find("mail-and-gambeson"),
-        UnitArmorCatalog.Find("studded-medium-shield"),
-        false, 0);
 
-    private int _maxAccel =>
-        UnitTrainingTypeCatalog.Find(_trainingKey)?.Turns ?? 0;
+    private UnitTrainingCostSummary _costs = default!;
+    private BaronyUnitDTO _draft = new();
+    private UnitWeaponDef? _w1;
+    private UnitArmorDef? _armorDef;
+    private UnitArmorDef? _shieldDef;
 
-    protected override void OnParametersSet() => Recalc();
+    private int _maxAccel => UnitTrainingTypeCatalog.Find(_trainingKey)?.Turns ?? 0;
+    private int _goldPerTurn => UnitTrainingTypeCatalog.Find(_trainingKey)?.GoldPerTurn ?? 0;
+
+    protected override void OnInitialized() => Recalc();
+
+    private void SelectRecruit(string key)
+    {
+        if (!CanEdit) return;
+        _recruitKey = key;
+        Recalc();
+    }
+
+    private void SelectTraining(string key)
+    {
+        if (!CanEdit) return;
+        _trainingKey = key;
+        _accelerate = Math.Min(_accelerate, _maxAccel);
+        Recalc();
+    }
 
     private Task OnRecruitChanged(string v) { _recruitKey = v; Recalc(); return Task.CompletedTask; }
-    private Task OnTrainingChanged(string v) { _trainingKey = v; _accelerate = Math.Min(_accelerate, _maxAccel); Recalc(); return Task.CompletedTask; }
-    private Task OnWeapon1Changed(string v) { _weapon1 = v; Recalc(); return Task.CompletedTask; }
+    private Task OnTrainingChanged(string v)
+    {
+        _trainingKey = v;
+        _accelerate = Math.Min(_accelerate, _maxAccel);
+        Recalc();
+        return Task.CompletedTask;
+    }
+    private Task OnWeapon1Changed(string v)
+    {
+        if (v?.StartsWith("__hdr_", StringComparison.Ordinal) == true)
+            return Task.CompletedTask;
+        _weapon1 = v;
+        Recalc();
+        return Task.CompletedTask;
+    }
     private Task OnWeapon2Changed(string v) { _weapon2 = string.IsNullOrWhiteSpace(v) ? null : v; Recalc(); return Task.CompletedTask; }
-    private Task OnArmorChanged(string v) { _armor = string.IsNullOrWhiteSpace(v) ? null : v; Recalc(); return Task.CompletedTask; }
-    private Task OnShieldChanged(string v) { _shield = string.IsNullOrWhiteSpace(v) ? null : v; Recalc(); return Task.CompletedTask; }
+    private Task OnArmorChanged(string v) { _armorKey = string.IsNullOrWhiteSpace(v) ? null : v; Recalc(); return Task.CompletedTask; }
+    private Task OnShieldChanged(string v) { _shieldKey = string.IsNullOrWhiteSpace(v) ? null : v; Recalc(); return Task.CompletedTask; }
+    private Task OnQualityChanged(string v) { _quality = v; Recalc(); return Task.CompletedTask; }
     private Task OnPayDefenseChanged(bool v) { _payAsDefense = v; Recalc(); return Task.CompletedTask; }
     private Task OnAccelerateChanged(int v) { _accelerate = Math.Clamp(v, 0, _maxAccel); Recalc(); return Task.CompletedTask; }
 
@@ -209,14 +407,34 @@
     {
         var recruit = UnitRecruitSelectionCatalog.Find(_recruitKey) ?? UnitRecruitSelectionCatalog.Volunteers;
         var training = UnitTrainingTypeCatalog.Find(_trainingKey) ?? UnitTrainingTypeCatalog.Standard;
+        _w1 = UnitWeaponCatalog.Find(_weapon1);
+        _armorDef = UnitArmorCatalog.Find(_armorKey);
+        _shieldDef = UnitArmorCatalog.Find(_shieldKey);
+
         _costs = UnitTrainingCostFormulas.Compute(
             recruit, training,
-            UnitWeaponCatalog.Find(_weapon1),
+            _w1,
             UnitWeaponCatalog.Find(_weapon2),
-            UnitArmorCatalog.Find(_armor),
-            UnitArmorCatalog.Find(_shield),
+            _armorDef,
+            _shieldDef,
             _payAsDefense, _accelerate);
+
+        // Preserve MG/Baron skill edits across selector changes; defaults come from the factory.
+        var keepBase = new Dictionary<string, int>(_draft.SkillBase, StringComparer.OrdinalIgnoreCase);
+        var keepOther = new Dictionary<string, int>(_draft.SkillOther, StringComparer.OrdinalIgnoreCase);
+
+        _draft = UnitDraftFactory.FromGenerator(
+            _name, _recruitKey, _trainingKey,
+            _weapon1, _weapon2, _armorKey, _shieldKey, _quality,
+            defenseSkillKey: null,
+            _costs);
+        foreach (var (key, value) in keepBase)
+            _draft.SkillBase[key] = value;
+        foreach (var (key, value) in keepOther)
+            _draft.SkillOther[key] = value;
     }
+
+    private Task OnDraftSkillsChanged() => InvokeAsync(StateHasChanged);
 
     private async Task StartAsync()
     {
@@ -238,13 +456,19 @@
                 TrainingTypeKey = _trainingKey,
                 Weapon1Key = _weapon1,
                 Weapon2Key = _weapon2,
-                ArmorKey = _armor,
-                ShieldKey = _shield,
+                ArmorKey = _armorKey,
+                ShieldKey = _shieldKey,
                 Weapon1Quality = _quality,
                 PayEquipmentAsDefense = _payAsDefense,
                 AccelerateTurns = _accelerate,
+                DefenseSkillKey = _draft.DefenseSkillKey,
+                SkillBase = new Dictionary<string, int>(_draft.SkillBase, StringComparer.OrdinalIgnoreCase),
+                SkillOther = new Dictionary<string, int>(_draft.SkillOther, StringComparer.OrdinalIgnoreCase),
             });
             _name = string.Empty;
+            _draft.SkillBase.Clear();
+            _draft.SkillOther.Clear();
+            Recalc();
             await OnStarted.InvokeAsync(result);
         }
         catch (Exception ex)

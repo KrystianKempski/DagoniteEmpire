@@ -1,0 +1,173 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.BaronyRepos
+
+@* Read-only live preview of the unit being formed (Excel right-hand card). *@
+<div class="unit-draft-card">
+    <div class="unit-draft-card__title">
+        <span>Forming unit</span>
+        <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
+    </div>
+
+    <div class="unit-draft-card__meta">
+        <span><em>Wage</em> <b>@Unit.Wage</b></span>
+        <span><em>Food</em> <b>@Unit.UpkeepFood.ToString("0.#")</b></span>
+        <span><em>Def/t</em> <b>@Unit.UpkeepDefense</b></span>
+        <span><em>PD</em> <b>@Unit.RemainingPd</b></span>
+        <span><em>Troops</em> <b>@Unit.TroopCount</b></span>
+    </div>
+
+    <div class="unit-draft-card__combat">
+        <div class="unit-draft-stat" title="Um @_combat.AttackSkill · Br @_combat.WeaponAttackBonus">
+            <span class="unit-draft-stat__label">Atk</span>
+            <b class="unit-draft-stat__value">@_combat.Attack</b>
+        </div>
+        <div class="unit-draft-stat" title="Um @_combat.DefenseSkill · Br @_combat.WeaponDefenseBonus">
+            <span class="unit-draft-stat__label">Def</span>
+            <b class="unit-draft-stat__value">@_combat.Defense</b>
+        </div>
+        <div class="unit-draft-stat" title="Br @_combat.WeaponDamageBonus">
+            <span class="unit-draft-stat__label">Dmg</span>
+            <b class="unit-draft-stat__value">@_combat.Damage</b>
+        </div>
+        <div class="unit-draft-stat" title="gear @_combat.EquipmentMovePenalty">
+            <span class="unit-draft-stat__label">Mov</span>
+            <b class="unit-draft-stat__value">@_combat.Move</b>
+        </div>
+        <div class="unit-draft-stat" title="Pc reduces damage">
+            <span class="unit-draft-stat__label">Arm</span>
+            <b class="unit-draft-stat__value">@_combat.Armor</b>
+        </div>
+        <div class="unit-draft-stat" title="Build×2 + Will×2 + End + Disc×3">
+            <span class="unit-draft-stat__label">HP</span>
+            <b class="unit-draft-stat__value">@_combat.MaxHp</b>
+        </div>
+    </div>
+
+    <div class="unit-draft-card__section">
+        <div class="unit-draft-card__section-title">Attributes</div>
+        <div class="unit-card__attrs unit-card__attrs--compact">
+            <div class="unit-card__attr"><span>Bld</span><b>@Unit.EffectiveBuild</b></div>
+            <div class="unit-card__attr"><span>Agi</span><b>@Unit.EffectiveAgility</b>
+                @if (Unit.AttrPenaltyAgility != 0)
+                {
+                    <span class="unit-card__attr-note">(@Unit.AttrPenaltyAgility)</span>
+                }
+            </div>
+            <div class="unit-card__attr"><span>Wil</span><b>@Unit.EffectiveWill</b></div>
+            <div class="unit-card__attr"><span>Per</span><b>@Unit.EffectivePerception</b></div>
+            <div class="unit-card__attr"><span>Disc</span><b>@Unit.Discipline</b></div>
+        </div>
+    </div>
+
+    <div class="unit-draft-card__section">
+        <div class="unit-draft-card__section-title">
+            Skills
+            <span class="unit-draft-card__section-hint">
+                base Total = Base+Other · special Total = parent+From+Base+Other
+                @(CanManageAsMg ? " · click Base/Other to edit" : "")
+            </span>
+        </div>
+        <UnitSkillTiles Unit="@Unit"
+                        CanManageAsMg="@CanManageAsMg"
+                        CanSpendPd="false"
+                        OnChanged="HandleSkillsChanged" />
+    </div>
+
+    <div class="unit-draft-card__section">
+        <div class="unit-draft-card__section-title">Equipment</div>
+        <table class="unit-draft-equip unit-draft-equip--cols">
+            <thead>
+                <tr>
+                    <th>Weapon 1</th>
+                    <th>Weapon 2</th>
+                    <th>Armor</th>
+                    <th>Shield</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="unit-draft-equip__names">
+                    <td>
+                        @(_w1?.Name ?? "—")
+                        @if (_w1 is not null && Unit.Weapon1Quality != UnitWeaponQuality.Normal)
+                        {
+                            <span class="unit-draft-equip__qual">@Unit.Weapon1Quality</span>
+                        }
+                    </td>
+                    <td>@(_w2?.Name ?? "—")</td>
+                    <td>@(_armor?.Name ?? "—")</td>
+                    <td>@(_shield?.Name ?? "—")</td>
+                </tr>
+                <tr class="unit-draft-equip__stats">
+                    <td>
+                        @if (_w1 is not null)
+                        {
+                            <text>At @_w1.Attack · Dm @_w1.Damage · Ob @_w1.Defense · Prz @_w1.Pierce</text>
+                            @if (_w1.Range > 0) { <text> · Za @_w1.Range</text> }
+                            @if (_w1.MovePenalty != 0) { <text> · Kr @_w1.MovePenalty</text> }
+                        }
+                        else { <text>—</text> }
+                    </td>
+                    <td>
+                        @if (_w2 is not null)
+                        {
+                            <text>At @_w2.Attack · Dm @_w2.Damage · Za @_w2.Range</text>
+                        }
+                        else { <text>—</text> }
+                    </td>
+                    <td>
+                        @if (_armor is not null)
+                        {
+                            <text>Ob @_armor.Defense · Pc @_armor.ArmorValue · Ks @_armor.AgilityPenalty · Kr @_armor.MovePenalty</text>
+                        }
+                        else { <text>—</text> }
+                    </td>
+                    <td>
+                        @if (_shield is not null)
+                        {
+                            <text>Ob @_shield.Defense · Pc @_shield.ArmorValue · Kr @_shield.MovePenalty</text>
+                        }
+                        else { <text>—</text> }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="unit-draft-card__section unit-draft-card__section--tight">
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+            Max skill <b>@Unit.MaxBaseSkillAtGraduation</b>
+            · Def skill <b>@(UnitSkillTree.Find(Unit.DefenseSkillKey)?.Name ?? Unit.DefenseSkillKey)</b>
+            @if (Unit.FreeAttributePoints > 0)
+            {
+                <text> · Free attrs <b>@Unit.FreeAttributePoints</b></text>
+            }
+        </MudText>
+    </div>
+</div>
+
+@code {
+    [Parameter] public BaronyUnitDTO Unit { get; set; } = new();
+    [Parameter] public bool CanManageAsMg { get; set; }
+    [Parameter] public EventCallback SkillsChanged { get; set; }
+
+    private UnitCombatTotals _combat;
+    private UnitWeaponDef? _w1;
+    private UnitWeaponDef? _w2;
+    private UnitArmorDef? _armor;
+    private UnitArmorDef? _shield;
+
+    protected override void OnParametersSet()
+    {
+        _combat = UnitStatHelper.Compute(Unit);
+        _w1 = UnitWeaponCatalog.Find(Unit.Weapon1Key);
+        _w2 = UnitWeaponCatalog.Find(Unit.Weapon2Key);
+        _armor = UnitArmorCatalog.Find(Unit.ArmorKey);
+        _shield = UnitArmorCatalog.Find(Unit.ShieldKey);
+    }
+
+    private async Task HandleSkillsChanged()
+    {
+        _combat = UnitStatHelper.Compute(Unit);
+        await SkillsChanged.InvokeAsync();
+    }
+}

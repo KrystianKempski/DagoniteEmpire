@@ -88,6 +88,8 @@ namespace DA_Models.BaronyModels
         public bool PayEquipmentAsDefense { get; set; }
         public int AccelerateTurns { get; set; }
         public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Shields;
+        public Dictionary<string, int> SkillBase { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, int> SkillOther { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
     public class StartUnitTrainingResult

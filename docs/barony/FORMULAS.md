@@ -257,10 +257,19 @@ One unit = **50** troops (default). Training is a project (`ProjectOutputKind.Un
 - **Armor** = armor Pc + shield Pc + other (reduces incoming damage)
 - **Max HP** = `Build×2 + Will×2 + Endurance skill + Discipline×3 + other`
 
-Skill total = linked attribute + base level + other.
+### Skill totals (Excel Generator / Oddziały)
+- **Base skills** (Melee, Ranged, Athletics, Agility, Urban, Scout): `Razem = Bazowo + Inne` — **no** attribute.
+- **Starting Bazowo** (same for every unit, Excel Generator/Oddziały): Melee 3, Ranged 3, Athletics 2, Agility 2, Urban 1, Scout 2. Riding starts at 0. Raised later with PD / MG edit.
+- **Specializations**: `Razem = parent Razem + linked attr + Bazowo + Inne` (specialization Bazowo starts at 0).
+- **Riding**: treated as a Melee specialization (`parent = Melee Razem + Agility + base + other`), shown on its own row.
+- Attr letters: B Build / A Agility / W Will / P Perception (Excel S = Sprawność).
+- Linked attribute only appears on specializations (and Riding); changing recruit attributes updates those totals live.
+
+Skill total (legacy one-liner, specializations only) = parent + linked attribute + base level + other.
 
 ### PD spend (Active units)
 - Attribute → level×10
 - Base skill → level×3
 - Special skill → level×1 and ≤ parent base
 - Discipline (1–18) → cost = current level
+- MG may set Base / Other freely; Baron raises Base with PD when Active.

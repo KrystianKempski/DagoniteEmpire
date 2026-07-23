@@ -110,4 +110,32 @@ namespace DA_Common.Barony
         public static int SpecialSkillRaiseCost(int targetLevel) => Math.Max(1, targetLevel);
         public static int DisciplineRaiseCost(int currentLevel) => Math.Max(1, currentLevel);
     }
+
+    /// <summary>
+    /// Excel starting <c>Bazowo</c> for base skills — same for every unit until PD / MG changes them.
+    /// Melee/Ranged 3, Athletics/Agility 2, Urban 1, Scout 2 (Generator / Oddziały sheets).
+    /// </summary>
+    public static class UnitSkillDefaults
+    {
+        public static readonly IReadOnlyDictionary<string, int> BaseSkillLevels =
+            new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                [UnitSkillKey.Melee] = 3,
+                [UnitSkillKey.Ranged] = 3,
+                [UnitSkillKey.Athletics] = 2,
+                [UnitSkillKey.AgilitySkill] = 2,
+                [UnitSkillKey.Urban] = 1,
+                [UnitSkillKey.Scout] = 2,
+            };
+
+        public static Dictionary<string, int> CreateSkillBase(
+            IReadOnlyDictionary<string, int>? overlay = null)
+        {
+            var map = new Dictionary<string, int>(BaseSkillLevels, StringComparer.OrdinalIgnoreCase);
+            if (overlay is null) return map;
+            foreach (var (key, value) in overlay)
+                map[key] = value;
+            return map;
+        }
+    }
 }
