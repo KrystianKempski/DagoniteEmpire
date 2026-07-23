@@ -93,8 +93,8 @@ namespace DagoniteEmpire.Service
                 "The stench is foul, but it supplies quality leather for subjects and the army.",
                 Fx(economy: 2, production: 1, stability: -1, law: -1, defense: 1, treasury: 2));
             Add("Town Garrison", 1, B, 80, 100,
-                "A large town guard post that keeps order and defends the city in war; employs 50 guards (their upkeep is included in the build cost). Guards handle criminals in a small town easily, though they sometimes take harmless bribes. Upkeep: -25.",
-                Fx(production: -1, loyalty: 2, stability: 6, law: 4, corruption: 1, defense: 5, treasury: 50));
+                "A town guard post that keeps order and helps defend the city in wartime. Upkeep: −25 gold.",
+                Fx(stability: 3, law: 2, defense: 6, treasury: -25));
             Add("Quarry - Granite", 1, I, 100, 50,
                 "Extracts granite—excellent for fortifications.",
                 Fx(food: -0.3m, economy: 1, production: 6, stability: -3, law: -2, defense: 4, treasury: 20),
@@ -119,8 +119,11 @@ namespace DagoniteEmpire.Service
                 "A place of worship; bonuses depend on the god honored.",
                 Fx(treasury: -2));
             Add("Tavern", 1, B, 40, 80,
-                "A small inn where travelers can sleep and everyone can drink and eat.",
-                Fx(economy: 2, loyalty: 3, stability: 3, law: -1, science: 1, defense: 4, corruption: 3, treasury: 7));
+                "A humble tavern. Meeting place for the peasantry and a rest stop for the few traveling merchants. Can be upgraded to an inn.",
+                Fx(economy: 2, intelligence: 3, loyalty: 3));
+            Add("Inn", 1, B, 80, 120,
+                "A proper inn for travelers and townsfolk—better rooms, better drink, and louder talk.",
+                Fx(economy: 4, loyalty: 6, stability: 2, law: -1, intelligence: 5, treasury: 15));
             Add("Mine - precious gems (luxury)", 3, I, 120, 120,
                 "Mines extremely valuable gemstones.",
                 Fx(food: -0.3m, economy: 7, production: 1, stability: -3, law: -7, corruption: -4, science: 3, defense: 3, treasury: 300),
@@ -190,8 +193,8 @@ namespace DagoniteEmpire.Service
             Add("Fishing Pier", 1, I, 50, 30,
                 "Boats and fisher huts providing food from the catch. Requires coast or river. If the tile also has a Fishery deposit: +1 Food and +10 Treasury. Distance from the city makes it vulnerable.",
                 Fx(food: 1, economy: 1, defense: -0.5m, treasury: 10));
-            Add("Market Square", 1, B, 50, 50,
-                "A crowded square of merchants, buyers, and pickpockets.",
+            Add("Marketplace", 1, B, 50, 50,
+                "A crowded square of merchants, buyers, and pickpockets—the upgraded market of the town.",
                 Fx(food: 1, economy: 5, production: 2, law: -2, corruption: 0.5m, science: 2, culture: 3, defense: 3, treasury: 5));
             Add("Orphanage", 1, B, 150, 100,
                 "A home for street children, unwanted youths, and bastards—proof of the ruler's mercy.",
@@ -263,8 +266,8 @@ namespace DagoniteEmpire.Service
                 @"A spy network letting the baron hire spies (for gold or intelligence). Each mission costs extra. Examples: listen for rumors (5 imp./20 intel), steal information (15 imp./50 intel), plant a spy (40–100 imp.), sabotage (40–80 imp.). No assassinations. Upkeep: -5.",
                 Fx(loyalty: 2, law: -1, corruption: 2, science: 12, defense: 5, treasury: -5));
             Add("Barracks", 1, B, 200, 100,
-                "Barracks for professional soldiers. Garrisons 3 units and allows recruiting an extra unit. Garrisoned soldiers gain +3 experience per turn. Upkeep: -10.",
-                Fx(food: -1, stability: 4, law: 1, corruption: 1, defense: 5, treasury: 20));
+                "Barracks for housing and training professional soldiers. Can billet up to 3 military units and provides a free city guard unit.",
+                Fx(food: -1, stability: 6, law: 4, corruption: 1, defense: 20, treasury: -60));
             Add("Builders' Guild", 1, B, 150, 150,
                 "Allows building one extra structure per turn, plus bridges and complex works requiring an architect. Upkeep: -5.",
                 Fx(economy: 2, production: 10, law: 1, science: 5, culture: 3, defense: 2, treasury: -5));

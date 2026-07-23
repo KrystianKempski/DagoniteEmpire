@@ -23,9 +23,10 @@
 
                         <div role="button"
                              tabindex="0"
-                             class="barony-terrain-cell @(hovered ? "barony-terrain-cell--hovered" : "")"
+                             class="barony-terrain-cell @(hovered ? "barony-terrain-cell--hovered" : "") @(ClickEnabled ? "barony-terrain-cell--clickable" : "")"
                              @onmousedown="() => OnCellMouseDownAsync(cx, cy)"
                              @onmousedown:preventDefault="@PaintEnabled"
+                             @onclick="() => OnCellClickAsync(cx, cy)"
                              @onmouseenter="() => OnCellMouseEnterAsync(cx, cy)">
                             <span class="barony-terrain-cell__layer barony-terrain-cell__fertility"
                                   style="background-color: @TerrainMapVisuals.CellBackgroundColor(tile, showFertility)">
@@ -124,6 +125,15 @@
                                     }
                                 </span>
                             }
+                            else if (ShowLayer(TerrainMapLayer.Improvements) && GetConstruction(tile?.Id) is { } construction)
+                            {
+                                <span class="barony-terrain-cell__layer barony-terrain-cell__improvement">
+                                    <img src="@MapImprovement.ConstructionIconUrl"
+                                         alt="@construction.Name"
+                                         title="@construction.Name"
+                                         class="barony-terrain-cell__improvement-icon barony-terrain-cell__improvement-icon--construction" />
+                                </span>
+                            }
                         </div>
                     }
                 }
@@ -155,6 +165,9 @@
         = new Dictionary<int, FiefDTO>();
     [Parameter] public IReadOnlyDictionary<int, TerrainImprovementDTO> ImprovementsByTileId { get; set; }
         = new Dictionary<int, TerrainImprovementDTO>();
+    /// <summary>Active map construction projects keyed by tile id (crane overlay).</summary>
+    [Parameter] public IReadOnlyDictionary<int, BaronyProjectDTO> ConstructionsByTileId { get; set; }
+        = new Dictionary<int, BaronyProjectDTO>();
     [Parameter] public IReadOnlyDictionary<int, TerrainMapDomainDTO> DomainsById { get; set; }
         = new Dictionary<int, TerrainMapDomainDTO>();
     [Parameter] public IReadOnlySet<TerrainMapLayer> VisibleLayers { get; set; }
@@ -163,8 +176,15 @@
     [Parameter] public int? HoveredY { get; set; }
     [Parameter] public IReadOnlyList<string> HoverLines { get; set; } = Array.Empty<string>();
     [Parameter] public bool PaintEnabled { get; set; }
+    /// <summary>When true and not painting, cell click fires <see cref="OnCellClick"/>.</summary>
+    [Parameter] public bool ClickEnabled { get; set; }
     [Parameter] public EventCallback<(int? X, int? Y)> OnCellHover { get; set; }
-    [Parameter] public EventCallback<(int X, int Y)> OnCellPaint { get; set; }
+    /// <summary>
+    /// Paint a cell. <c>ContinuingStroke</c> is false on mousedown (new stroke),
+    /// true when dragging across further cells — so naming dialogs can reuse one answer.
+    /// </summary>
+    [Parameter] public EventCallback<(int X, int Y, bool ContinuingStroke)> OnCellPaint { get; set; }
+    [Parameter] public EventCallback<(int X, int Y)> OnCellClick { get; set; }
     [Parameter] public EventCallback OnPaintStrokeEnd { get; set; }
 
     private bool _dragPainting;
@@ -175,7 +195,15 @@
             return;
 
         _dragPainting = true;
-        await OnCellPaint.InvokeAsync((x, y));
+        await OnCellPaint.InvokeAsync((x, y, ContinuingStroke: false));
+    }
+
+    private async Task OnCellClickAsync(int x, int y)
+    {
+        if (!ClickEnabled || PaintEnabled)
+            return;
+
+        await OnCellClick.InvokeAsync((x, y));
     }
 
     private async Task OnCellMouseEnterAsync(int x, int y)
@@ -183,7 +211,7 @@
         await OnCellHover.InvokeAsync((x, y));
 
         if (PaintEnabled && _dragPainting)
-            await OnCellPaint.InvokeAsync((x, y));
+            await OnCellPaint.InvokeAsync((x, y, ContinuingStroke: true));
     }
 
     private async Task OnMapMouseLeaveAsync()
@@ -228,6 +256,9 @@
 
     private TerrainImprovementDTO? GetImprovement(int? tileId)
         => tileId is int id && ImprovementsByTileId.TryGetValue(id, out var imp) ? imp : null;
+
+    private BaronyProjectDTO? GetConstruction(int? tileId)
+        => tileId is int id && ConstructionsByTileId.TryGetValue(id, out var project) ? project : null;
 
     private TerrainMapDomainDTO? GetDomain(int? domainId)
         => domainId is int id && DomainsById.TryGetValue(id, out var domain) ? domain : null;

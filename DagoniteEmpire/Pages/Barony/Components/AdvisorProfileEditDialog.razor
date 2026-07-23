@@ -34,13 +34,16 @@
                               Class="baron-influence-field mt-2"
                               Required="true" />
             }
-            <MudNumericField T="decimal"
-                             @bind-Value="_upkeepGold"
-                             Label="Upkeep cost (gold / turn)"
-                             Variant="Variant.Outlined"
-                             Margin="Margin.Dense"
-                             Min="0"
-                             Class="baron-influence-field mt-2" />
+            @if (AllowUpkeepEdit)
+            {
+                <MudNumericField T="decimal"
+                                 @bind-Value="_upkeepGold"
+                                 Label="Upkeep cost (gold / turn)"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="0"
+                                 Class="baron-influence-field mt-2" />
+            }
         </div>
     </DialogContent>
     <DialogActions>
@@ -54,6 +57,8 @@
 
     [Parameter] public AdvisorDTO Advisor { get; set; } = new();
     [Parameter] public bool AllowTitleEdit { get; set; }
+    /// <summary>MG/Admin only — baron only assigns / dismisses people.</summary>
+    [Parameter] public bool AllowUpkeepEdit { get; set; }
     [Parameter] public List<AvailableAdvisorDTO> AvailableAdvisors { get; set; } = new();
     [Parameter] public HashSet<int> OccupiedAvailableAdvisorIds { get; set; } = new();
 
@@ -88,7 +93,8 @@
             return;
         }
 
-        Advisor.UpkeepGold = _upkeepGold;
+        if (AllowUpkeepEdit)
+            Advisor.UpkeepGold = _upkeepGold;
         if (AllowTitleEdit)
             Advisor.Title = _title.Trim();
 

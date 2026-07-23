@@ -91,6 +91,15 @@ public static class RollService
         return new OppositeRollResult(firstWins, isTie, text);
     }
 
+    /// <summary>2d6 for economic conjuncture (sum 2–12).</summary>
+    public static DiceRoll Roll2d6()
+    {
+        var d1 = RollD6();
+        var d2 = RollD6();
+        var sum = d1 + d2;
+        return new DiceRoll(sum, $"(2d6: {d1}+{d2}={sum})");
+    }
+
     /// <summary>Single d6: 1–6. Next(max) is exclusive, so upper bound must be 7.</summary>
     internal static int RollD6() => Random.Shared.Next(1, 7);
 

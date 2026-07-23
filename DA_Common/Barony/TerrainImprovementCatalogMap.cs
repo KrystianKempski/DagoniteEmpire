@@ -83,6 +83,67 @@ namespace DA_Common.Barony
         public static bool HasFisheryBonus(string? resource) =>
             string.Equals(resource, TerrainResource.Fishery, StringComparison.Ordinal);
 
+        /// <summary>No map improvements may be placed on water tiles.</summary>
+        public static bool IsWaterTile(string? baseType) => TerrainBaseType.IsWater(baseType);
+
+        /// <summary>
+        /// Catalog template names that are valid to build / paint on this tile
+        /// (same rules as the improvement brush). Empty on water.
+        /// </summary>
+        public static HashSet<string> AllowedCatalogTemplateNames(
+            int fertility,
+            string? resource,
+            int featuresMask = 0,
+            string? baseType = null)
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (IsWaterTile(baseType))
+                return set;
+
+            foreach (var mapKind in new[]
+                     {
+                         MapImprovement.Farm,
+                         MapImprovement.Mine,
+                         MapImprovement.Sawmill,
+                         MapImprovement.HuntersLodge,
+                         MapImprovement.FishingHarbor,
+                         MapImprovement.Village,
+                     })
+            {
+                var name = ResolveTemplateName(mapKind, fertility, resource, featuresMask, baseType);
+                if (!string.IsNullOrWhiteSpace(name))
+                    set.Add(name);
+            }
+
+            return set;
+        }
+
+        /// <summary>
+        /// Whether a map brush kind may be placed here (water ban + catalog rules when applicable).
+        /// Town / Custom only require non-water.
+        /// </summary>
+        public static bool CanPlaceMapImprovement(
+            string? mapKind,
+            int fertility,
+            string? resource,
+            int featuresMask = 0,
+            string? baseType = null)
+        {
+            if (IsWaterTile(baseType))
+                return false;
+
+            if (string.IsNullOrWhiteSpace(mapKind))
+                return false;
+
+            if (mapKind is MapImprovement.Town or MapImprovement.Custom)
+                return true;
+
+            if (!IsCatalogBacked(mapKind))
+                return true;
+
+            return ResolveTemplateName(mapKind, fertility, resource, featuresMask, baseType) is not null;
+        }
+
         /// <summary>Human-readable reason when ResolveTemplateName returns null for a catalog-backed kind.</summary>
         public static string? FailureReason(
             string? mapKind,
@@ -91,6 +152,9 @@ namespace DA_Common.Barony
             int featuresMask = 0,
             string? baseType = null)
         {
+            if (IsWaterTile(baseType))
+                return "Cannot place improvements on water.";
+
             if (mapKind == MapImprovement.Farm && !TerrainBaseType.SupportsFertility(baseType))
                 return "Farms require plains or hills.";
 

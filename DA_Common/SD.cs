@@ -667,6 +667,16 @@ namespace DA_Common
         public const string Anvil = "icons/anvil.svg";
         public const string Helm = "icons/barbute.svg";
         public const string Chest = "icons/chest.svg";
+        public const string JewelCrownWhite = "icons/jewel-crown_white.svg";
+        public const string JewelCrown = "icons/jewel-crown.svg";
+        public const string Compass = "icons/compass.svg";
+        public const string TwoCoins = "icons/two-coins.svg";
+        public const string Trade = "icons/trade.svg";
+        public const string WoodCabinBlack = "icons/wood-cabin-black.svg";
+        public const string GearHammer = "icons/gear-hammer.svg";
+        public const string Crane = "icons/crane.svg";
+        public const string WaxSeal = "icons/wax-seal.svg";
+        public const string TiedScroll = "icons/tied-scroll.svg";
         public const string Goblin = "icons/goblin.svg";
         public const string Attack = "icons/sword-clash.svg";
         public const string AttackWhite = "icons/sword-clash-white.svg";

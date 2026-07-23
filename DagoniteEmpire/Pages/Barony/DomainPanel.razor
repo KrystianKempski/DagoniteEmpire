@@ -3,6 +3,7 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject ICharacterRepository _characterRepo
+@inject IDialogService _dialogService
 
 <PageTitle>Dagonite Empire | Domain Panel</PageTitle>
 
@@ -75,6 +76,24 @@ else if (_overview is not null)
                     <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
                 </span>
             </BaronyHudTip>
+            <BaronyHudTip Title="Conjuncture" Text="@BaronyUiTooltips.MetaConjuncture(_overview.Barony.ConjunctureDice, _overview.Barony.ConjunctureModifier)">
+                @if (CanManageAsMg)
+                {
+                    <button type="button"
+                            class="barony-meta-bar__stat barony-meta-bar__stat--centered barony-meta-bar__stat--clickable"
+                            @onclick="EditConjunctureAsync">
+                        <span class="barony-meta-bar__label">Conjuncture</span>
+                        <span class="barony-meta-bar__value @ConjunctureSignedClass(_overview.Barony.Conjuncture)">@_overview.Barony.Conjuncture</span>
+                    </button>
+                }
+                else
+                {
+                    <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                        <span class="barony-meta-bar__label">Conjuncture</span>
+                        <span class="barony-meta-bar__value @ConjunctureSignedClass(_overview.Barony.Conjuncture)">@_overview.Barony.Conjuncture</span>
+                    </span>
+                }
+            </BaronyHudTip>
         </div>
     </div>
 
@@ -117,7 +136,8 @@ else if (_overview is not null)
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                final = Σ additive + scalable_additive × (Σ percent / 100). Percent scales positive additives (negative for Corruption).
+                final = Σ additive + scalable_additive × (Σ percent / 100).
+                Percent scales positive additives only (negative for Corruption).
             </MudText>
             <div style="overflow-x:auto;">
                 <table class="ppb-table ppb-table--summary ppb-table--lined">
@@ -140,21 +160,24 @@ else if (_overview is not null)
                     <tbody>
                         @foreach (var row in _totalBreakdown)
                         {
-                            <tr>
+                            var isFinal = row.Label == "Final Value";
+                            <tr class="@(isFinal ? "ppb-summary-row" : null)">
                                 <td class="ppb-row-label summary-col-component">@row.Label</td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
-                                    <td class="@SummaryCellClass(row, info.Key)">@SummaryCellText(row, info.Key)</td>
+                                    <td class="@SummaryCellClass(row, info.Key)">
+                                        @if (isFinal)
+                                        {
+                                            <b>@SummaryCellText(row, info.Key)</b>
+                                        }
+                                        else
+                                        {
+                                            @SummaryCellText(row, info.Key)
+                                        }
+                                    </td>
                                 }
                             </tr>
                         }
-                        <tr class="ppb-summary-row">
-                            <td class="ppb-row-label summary-col-component">Final Value</td>
-                            @foreach (var info in PpbCatalog.All)
-                            {
-                                <td class="@PpbCellStyle.ValueClass(info.Key, _grandTotal[info.Key])"><b>@FmtAdd(_grandTotal[info.Key])</b></td>
-                            }
-                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -247,15 +270,7 @@ else if (_overview is not null)
 
     private void ApplyPanelTotals(BaronyCalc.DomainPanelRowSet panel)
     {
-        var additive = BaronyCalc.SumAdditive(panel.AllRows);
-        var percent = BaronyCalc.SumPercent(panel.AllRows);
-
-        _totalBreakdown = new List<PpbModifierRow>
-        {
-            new() { Label = "Σ additive (all sections)", Additive = additive },
-            new() { Label = "Σ percent (all sections)", Percent = percent },
-        };
-
+        _totalBreakdown = BaronyCalc.BuildBaronySummaryRows(panel);
         _grandTotal = panel.GrandTotal;
     }
 
@@ -264,6 +279,58 @@ else if (_overview is not null)
         => v > 0m ? "barony-meta-bar__value--pos"
             : v < 0m ? "barony-meta-bar__value--neg"
             : "";
+
+    private static string ConjunctureSignedClass(int conj)
+        => conj > EconomyConjunctureFormulas.ConjunctureNeutral ? "barony-meta-bar__value--pos"
+            : conj < EconomyConjunctureFormulas.ConjunctureNeutral ? "barony-meta-bar__value--neg"
+            : "";
+
+    private async Task EditConjunctureAsync()
+    {
+        if (!CanManageAsMg || _overview is null)
+            return;
+
+        var parameters = new DialogParameters<ConjunctureEditDialog>
+        {
+            { x => x.ConjunctureDice, _overview.Barony.ConjunctureDice },
+            { x => x.ConjunctureModifier, _overview.Barony.ConjunctureModifier },
+        };
+
+        var dialog = await _dialogService.ShowAsync<ConjunctureEditDialog>(
+            "Conjuncture",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not ConjunctureEditDialog.ConjunctureEditResult data)
+            return;
+
+        var dice = data.Dice;
+        var modifier = data.Modifier;
+        try
+        {
+            _overview.Barony.ConjunctureDice = Math.Clamp(dice, 2, 12);
+            _overview.Barony.ConjunctureModifier = modifier;
+            await _baronyRepo.UpdateBarony(_overview.Barony);
+            if (Barony is not null)
+            {
+                Barony.ConjunctureDice = _overview.Barony.ConjunctureDice;
+                Barony.ConjunctureModifier = _overview.Barony.ConjunctureModifier;
+            }
+            _snackBar.Add("Conjuncture updated.", Severity.Success);
+            await ReloadOverviewAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save conjuncture: " + ex.Message, Severity.Error);
+        }
+    }
+
     private static string FmtPct(decimal v) => PpbFormat.Percent(v);
 
     private static string SummaryCellText(PpbModifierRow row, Ppb p)

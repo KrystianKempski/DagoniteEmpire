@@ -122,7 +122,8 @@ namespace DA_Common.Barony
         }
 
         /// <summary>
-        /// Domain Panel — additive column. Linked From Skills value per PPB, except Food/Economy/Production/Defense.
+        /// Domain Panel — additive column from skill-unit total X (skills + bonus sources).
+        /// Identity for PPBs with additive; Food/Economy/Production/Defense excluded (percent only).
         /// Corruption is stored signed (negative reduces corruption). Treasury excluded.
         /// </summary>
         public static PpbVector MapToAdvisorAdditive(PpbVector skillInfluence)
@@ -142,8 +143,9 @@ namespace DA_Common.Barony
         private const decimal AdvisorPercentDivisorSixty = 60m;
 
         /// <summary>
-        /// Domain Panel — percent column: linked From Skills value scaled to percent points (Treasury excluded).
-        /// Food, Economy, Production, Defense use X/60; others X/100. Corruption stored signed.
+        /// Domain Panel — percent column from skill-unit total X (skills + bonus sources).
+        /// Food, Economy, Production, Defense use X/60; others X/100. Treasury excluded.
+        /// Corruption stored signed.
         /// </summary>
         public static PpbVector MapToAdvisorPercent(PpbVector skillInfluence) =>
             MapSkillInfluenceToAdvisorPercent(skillInfluence);

@@ -26,7 +26,7 @@ else
 
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="terrain-page__intro">
             @GridSize×@GridSize domain map. Toggle layers to inspect terrain.
-            @(CanManageAsMg ? " Select a brush tab to paint tiles." : " Hover a tile to inspect it.")
+            @(CanManageAsMg ? " Select a brush tab to paint tiles." : " Click a tile in your domain to start a building project.")
         </MudText>
 
         @if (CanManageAsMg)
@@ -119,14 +119,17 @@ else
                         Tiles="@_tileIndex"
                         Fiefs="@_fiefIndex"
                         ImprovementsByTileId="@_improvementByTileId"
+                        ConstructionsByTileId="@_constructionByTileId"
                         DomainsById="@_domainsById"
                         VisibleLayers="@_visibleLayers"
                         HoveredX="@_hoverX"
                         HoveredY="@_hoverY"
                         HoverLines="@_hoverTileLines"
                         PaintEnabled="@(CanManageAsMg && PaintMode != TerrainPaintMode.None)"
+                        ClickEnabled="@CanProposeConstruction"
                         OnCellHover="HoverCellAsync"
                         OnCellPaint="PaintCellAsync"
+                        OnCellClick="OnTileClickAsync"
                         OnPaintStrokeEnd="OnPaintStrokeEndAsync" />
     </div>
 }
@@ -157,6 +160,7 @@ else
     private Dictionary<int, FiefDTO> _fiefIndex = new();
     private List<FiefDTO> _fiefs = new();
     private Dictionary<int, TerrainImprovementDTO> _improvementByTileId = new();
+    private Dictionary<int, BaronyProjectDTO> _constructionByTileId = new();
     private Dictionary<int, TerrainMapDomainDTO> _domainsById = new();
     private List<TerrainMapDomainDTO> _mapDomains = new();
     private HashSet<TerrainMapLayer> _visibleLayers = new(
@@ -180,6 +184,10 @@ else
     private int? _selectedDomainId;
     private int? _selectedFiefId;
     private int? _playerPrimaryDomainId;
+
+    /// <summary>Baron (or MG with brush off) may propose a construction project on domain tiles.</summary>
+    private bool CanProposeConstruction =>
+        CanEdit && !(CanManageAsMg && PaintMode != TerrainPaintMode.None);
 
     private TerrainPaintMode PaintMode => _brushTabIndex switch
     {
@@ -215,12 +223,97 @@ else
             .GroupBy(i => i.TileId!.Value)
             .ToDictionary(g => g.Key, g => g.First());
 
+        var projects = await _baronyRepo.GetProjects(Barony.Id);
+        _constructionByTileId = projects
+            .Where(p => p.IsActiveMapConstruction && p.TileId is int)
+            .GroupBy(p => p.TileId!.Value)
+            .ToDictionary(g => g.Key, g => g.First());
+
         _improvementTemplates = (await _baronyRepo.GetBuildingTemplates())
             .Where(t => t.Kind == BuildingKind.Improvement)
             .ToList();
 
         await EnsurePlayerDomainAsync();
         await EnsurePlayerFiefAsync();
+    }
+
+    private async Task OnTileClickAsync((int X, int Y) cell)
+    {
+        if (!CanProposeConstruction || Barony is null)
+            return;
+
+        if (!_tileIndex.TryGetValue((cell.X, cell.Y), out var tile) || tile.Id <= 0)
+        {
+            _snackBar.Add("This tile is not ready yet.", Severity.Warning);
+            return;
+        }
+
+        if (_playerPrimaryDomainId is not int primaryId || tile.MapDomainId != primaryId)
+        {
+            _snackBar.Add("You can only start construction on tiles in your domain.", Severity.Info);
+            return;
+        }
+
+        if (_improvementByTileId.ContainsKey(tile.Id))
+        {
+            _snackBar.Add("This tile already has an improvement.", Severity.Info);
+            return;
+        }
+
+        if (_constructionByTileId.TryGetValue(tile.Id, out var existing))
+        {
+            _snackBar.Add($"A construction project is already planned here: {existing.Name}.", Severity.Info);
+            return;
+        }
+
+        if (TerrainImprovementCatalogMap.IsWaterTile(tile.BaseType))
+        {
+            _snackBar.Add("Cannot place improvements on water.", Severity.Warning);
+            return;
+        }
+
+        var allowedNames = TerrainImprovementCatalogMap.AllowedCatalogTemplateNames(
+            tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType);
+        var placeable = _improvementTemplates
+            .Where(t => allowedNames.Contains(t.Name))
+            .ToList();
+
+        if (placeable.Count == 0)
+        {
+            _snackBar.Add(
+                "Nothing from the improvement catalog can be built on this tile (check terrain, features, and resources).",
+                Severity.Info);
+            return;
+        }
+
+        var parameters = new DialogParameters<CreateBuildingProjectDialog>
+        {
+            { x => x.BaronyId, Barony.Id },
+            { x => x.Tile, tile },
+            { x => x.Templates, placeable },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CreateBuildingProjectDialog>(
+            "New building project",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyProjectDTO project)
+            return;
+
+        try
+        {
+            var saved = await _baronyRepo.SaveProject(project);
+            if (saved.TileId is int tid)
+                _constructionByTileId[tid] = saved;
+            _snackBar.Add("Building project added — see the Projects tab.", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not create project: " + ex.Message, Severity.Error);
+        }
     }
 
     private async Task EnsurePlayerDomainAsync()
@@ -612,14 +705,14 @@ else
         return Task.CompletedTask;
     }
 
-    private Task PaintCellAsync((int X, int Y) cell) => PaintMode switch
+    private Task PaintCellAsync((int X, int Y, bool ContinuingStroke) cell) => PaintMode switch
     {
-        TerrainPaintMode.Fertility => PaintFertilityAsync(cell),
-        TerrainPaintMode.TerrainType => PaintTerrainTypeAsync(cell),
-        TerrainPaintMode.Domain => PaintDomainAsync(cell),
-        TerrainPaintMode.Fief => PaintFiefAsync(cell),
-        TerrainPaintMode.Resource => PaintResourceAsync(cell),
-        TerrainPaintMode.Improvement => PaintImprovementAsync(cell),
+        TerrainPaintMode.Fertility => PaintFertilityAsync((cell.X, cell.Y)),
+        TerrainPaintMode.TerrainType => PaintTerrainTypeAsync((cell.X, cell.Y)),
+        TerrainPaintMode.Domain => PaintDomainAsync((cell.X, cell.Y)),
+        TerrainPaintMode.Fief => PaintFiefAsync((cell.X, cell.Y)),
+        TerrainPaintMode.Resource => PaintResourceAsync((cell.X, cell.Y)),
+        TerrainPaintMode.Improvement => PaintImprovementAsync((cell.X, cell.Y), cell.ContinuingStroke),
         _ => Task.CompletedTask,
     };
 
@@ -776,13 +869,22 @@ else
         return Task.CompletedTask;
     }
 
-    private async Task PaintImprovementAsync((int X, int Y) cell)
+    private async Task PaintImprovementAsync((int X, int Y) cell, bool continuingStroke)
     {
         if (Barony is null || !CanManageAsMg || PaintMode != TerrainPaintMode.Improvement)
             return;
 
         if (_improvementNamingInProgress)
             return;
+
+        // Fresh click (not drag continuation): always ask for name / custom details again.
+        // Otherwise a mouseup during the previous dialog leaves the stroke set and the next
+        // town becomes a silent clone of the last one.
+        if (!continuingStroke)
+        {
+            _improvementPlaceNameStroke = null;
+            _customPlacementStroke = null;
+        }
 
         var key = (cell.X, cell.Y);
         var tile = GetOrCreateTile(cell.X, cell.Y);
@@ -791,6 +893,12 @@ else
 
         if (tile.Id <= 0)
             return;
+
+        if (TerrainImprovementCatalogMap.IsWaterTile(tile.BaseType))
+        {
+            _snackBar.Add("Cannot place improvements on water.", Severity.Warning);
+            return;
+        }
 
         _improvementByTileId.TryGetValue(tile.Id, out var existing);
         var nextName = string.IsNullOrWhiteSpace(_brushImprovement) ? null : _brushImprovement;
@@ -912,9 +1020,8 @@ else
 
         if (TerrainImprovementCatalogMap.IsCatalogBacked(nextName))
         {
-            var templateName = TerrainImprovementCatalogMap.ResolveTemplateName(
-                nextName, tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType);
-            if (templateName is null)
+            if (!TerrainImprovementCatalogMap.CanPlaceMapImprovement(
+                    nextName, tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType))
             {
                 var reason = TerrainImprovementCatalogMap.FailureReason(
                     nextName, tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType)
@@ -1280,6 +1387,10 @@ else
                 ? MapImprovement.DisplayName(improvement.Name)
                 : improvement.Description.Trim();
             title = $"[{x}, {y}] {name}";
+        }
+        else if (tile.Id > 0 && _constructionByTileId.TryGetValue(tile.Id, out var construction))
+        {
+            title = $"[{x}, {y}] Under construction: {construction.Name}";
         }
 
         return new[] { title, BuildTileProse(tile) };

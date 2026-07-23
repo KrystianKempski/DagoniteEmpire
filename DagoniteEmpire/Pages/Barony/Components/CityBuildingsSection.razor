@@ -46,6 +46,15 @@
                                     <BaronyTooltip Title="Description" Text="@core.Description">
                                         <span class="city-building-name-text">@(string.IsNullOrWhiteSpace(core.Name) ? "—" : core.Name)</span>
                                     </BaronyTooltip>
+                                    @if (CanManage)
+                                    {
+                                        <span class="city-building-name-actions">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Size="Size.Small"
+                                                           title="Edit core building"
+                                                           OnClick="@(() => EditCoreBuildingAsync(core))" />
+                                        </span>
+                                    }
                                 </div>
                             </td>
                             <td class="@PopulationCellClass(core.Population)">@FmtAdd(core.Population)</td>
@@ -124,7 +133,7 @@
                         </tr>
                     }
 
-                    @foreach (var building in SavedBuildings)
+                    @foreach (var building in ExtraBuildings)
                     {
                         <tr>
                             <td class="city-building-col-name">
@@ -193,7 +202,11 @@
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private IReadOnlyList<BaronyBuildingDTO> CoreBuildings => BaronyCalc.CoreCityBuildings(BaronyId);
+    private IReadOnlyList<BaronyBuildingDTO> CoreBuildings =>
+        BaronyCalc.EffectiveCoreCityBuildings(BaronyId, SavedBuildings);
+
+    private IEnumerable<BaronyBuildingDTO> ExtraBuildings =>
+        BaronyCalc.ExtraCityBuildings(SavedBuildings);
 
     private PpbModifierRow? LordsSeatRow =>
         Seat is null
@@ -328,18 +341,24 @@
     }
 
     private Task EditBuildingAsync(BaronyBuildingDTO building)
-        => OpenBuildingDialog(CloneBuilding(building), isNew: false);
+        => OpenBuildingDialog(CloneBuilding(building), isNew: false, isCore: false);
 
-    private async Task OpenBuildingDialog(BaronyBuildingDTO draft, bool isNew)
+    private Task EditCoreBuildingAsync(BaronyBuildingDTO building)
+        => OpenBuildingDialog(CloneBuilding(building), isNew: building.Id <= 0, isCore: true);
+
+    private async Task OpenBuildingDialog(BaronyBuildingDTO draft, bool isNew, bool isCore = false)
     {
+        var coreKey = draft.CoreKey;
         var parameters = new DialogParameters<CityBuildingEditDialog>
         {
             { x => x.Building, draft },
             { x => x.Catalog, Catalog },
+            { x => x.IsCoreBuilding, isCore },
+            { x => x.OnReset, EventCallback.Factory.Create(this, () => ResetCoreBuildingAsync(draft)) },
         };
 
         var dialog = await _dialogService.ShowAsync<CityBuildingEditDialog>(
-            isNew ? "Add Building" : "Edit Building",
+            isCore ? "Edit core building" : (isNew ? "Add Building" : "Edit Building"),
             parameters,
             DialogOptions());
 
@@ -354,11 +373,17 @@
         }
 
         saved.BaronyId = BaronyId;
+        if (isCore)
+        {
+            saved.CoreKey = coreKey ?? saved.CoreKey;
+            saved.TemplateId = null;
+            saved.Kind = BuildingKind.Building;
+        }
 
         try
         {
             await _baronyRepo.SaveBuilding(saved);
-            _snackBar.Add(isNew ? "Building added." : "Building updated.", Severity.Success);
+            _snackBar.Add(isCore ? "Core building updated." : (isNew ? "Building added." : "Building updated."), Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -367,9 +392,26 @@
         }
     }
 
-    private async Task DeleteBuildingAsync(BaronyBuildingDTO building)
+    private async Task ResetCoreBuildingAsync(BaronyBuildingDTO building)
     {
         if (building.Id <= 0)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteBuilding(building.Id);
+            _snackBar.Add("Core building restored to default.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not reset building: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteBuildingAsync(BaronyBuildingDTO building)
+    {
+        if (building.Id <= 0 || !string.IsNullOrWhiteSpace(building.CoreKey))
             return;
 
         try
@@ -389,11 +431,13 @@
         Id = source.Id,
         BaronyId = source.BaronyId,
         TemplateId = source.TemplateId,
+        CoreKey = source.CoreKey,
         Name = source.Name,
         Kind = source.Kind,
         Description = source.Description,
         Additive = source.Additive.Clone(),
         Percent = source.Percent.Clone(),
+        Population = source.Population,
     };
 
     private static DialogOptions DialogOptions() => new()

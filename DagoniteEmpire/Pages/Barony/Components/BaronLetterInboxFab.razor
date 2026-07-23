@@ -8,21 +8,23 @@
 {
     <div class="baron-letter-inbox-fab">
         <MudBadge Content="@_unreadCount" Color="Color.Error" Overlap="true" Bordered="true">
-            <MudFab Color="Color.Primary"
-                    Size="Size.Medium"
-                    StartIcon="@Icons.Material.Filled.Mail"
+            <button type="button"
+                    class="baron-letter-inbox-fab__btn"
                     title="@($"New letters: {_unreadCount}")"
-                    OnClick="OpenInboxAsync"
-                    Class="baron-letter-inbox-fab__btn" />
+                    @onclick="OpenInboxAsync">
+                <img src="@($"/{MyIcon.TiedScroll}")" alt="" class="baron-letter-inbox-fab__icon" />
+            </button>
         </MudBadge>
     </div>
 }
 
 @code {
     private bool _visible;
+    private bool _asGm;
     private int _baronyId;
     private int _unreadCount;
     private int? _latestThreadId;
+    private int? _latestCharacterId;
     private CancellationTokenSource? _cts;
     private PeriodicTimer? _timer;
     private Task? _loop;
@@ -30,26 +32,21 @@
     protected override async Task OnInitializedAsync()
     {
         var user = await _userService.GetUserInfo();
-        // Inbox badge is for the playing baron only — not Admin/GM.
-        _visible = user?.Role == SD.Role_DukePlayer && user.IsAdminOrMG != true;
+        _asGm = user?.IsAdminOrMG == true
+            || user?.Role == SD.Role_Admin
+            || user?.Role == SD.Role_GameMaster;
+        var isBaron = user?.Role == SD.Role_DukePlayer && !_asGm;
+        _visible = isBaron || _asGm;
         if (!_visible)
             return;
 
-        var characterId = user?.SelectedCharacter?.Id ?? 0;
-        if (characterId <= 0)
-            return;
-
-        var barony = await _baronyRepo.GetByCharacterId(characterId);
-        if (barony is null)
-            return;
-
-        _baronyId = barony.Id;
-        await RefreshAsync();
-
+        // Always poll — barony/character may resolve after BaronySwitcher runs.
         _cts = new CancellationTokenSource();
         _timer = new PeriodicTimer(TimeSpan.FromSeconds(45));
         _loop = PollLoopAsync(_cts.Token);
         _nav.LocationChanged += OnLocationChanged;
+
+        await RefreshAsync();
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
@@ -67,22 +64,49 @@
 
     private async Task RefreshAsync()
     {
-        if (!_visible || _baronyId <= 0)
+        if (!_visible)
             return;
 
         try
         {
-            var threads = await _baronyRepo.GetLetterThreads(_baronyId);
-            var unreadThreads = threads
-                .Where(t => t.HasUnreadForBaron)
-                .OrderByDescending(t => t.UpdatedAtUtc)
-                .ThenByDescending(t => t.Id)
-                .ToList();
+            if (_asGm)
+            {
+                var badge = await _baronyRepo.GetLetterInboxBadgeForGm();
+                _unreadCount = badge.UnreadCount;
+                _latestThreadId = badge.LatestThreadId;
+                _latestCharacterId = badge.CharacterId;
+                _baronyId = badge.BaronyId ?? 0;
+            }
+            else
+            {
+                if (_baronyId <= 0)
+                {
+                    var user = await _userService.GetUserInfo();
+                    var characterId = user?.SelectedCharacter?.Id ?? 0;
+                    if (characterId <= 0)
+                    {
+                        _unreadCount = 0;
+                        StateHasChanged();
+                        return;
+                    }
 
-            _unreadCount = unreadThreads
-                .SelectMany(t => t.Messages)
-                .Count(m => m.HasUnreadForBaron);
-            _latestThreadId = unreadThreads.FirstOrDefault()?.Id;
+                    var barony = await _baronyRepo.GetByCharacterId(characterId);
+                    if (barony is null)
+                    {
+                        _unreadCount = 0;
+                        StateHasChanged();
+                        return;
+                    }
+
+                    _baronyId = barony.Id;
+                }
+
+                var badge = await _baronyRepo.GetLetterInboxBadgeForBaron(_baronyId);
+                _unreadCount = badge.UnreadCount;
+                _latestThreadId = badge.LatestThreadId;
+                _latestCharacterId = null;
+            }
+
             StateHasChanged();
         }
         catch
@@ -91,13 +115,24 @@
         }
     }
 
-    private Task OpenInboxAsync()
+    private async Task OpenInboxAsync()
     {
         var url = _latestThreadId is int id
             ? $"/barony/letters?thread={id}"
             : "/barony/letters";
+
+        if (_asGm && _latestCharacterId is int charId and > 0)
+        {
+            var user = await _userService.GetUserInfo();
+            if (user?.SelectedCharacter?.Id != charId)
+            {
+                await _userService.SetSelectedCharId(charId);
+                _nav.NavigateTo(url, forceLoad: true);
+                return;
+            }
+        }
+
         _nav.NavigateTo(url);
-        return Task.CompletedTask;
     }
 
     public async ValueTask DisposeAsync()

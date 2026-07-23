@@ -122,6 +122,8 @@ namespace DA_Business.Repository.BaronyRepos
                     CharacterId = characterId,
                     Name = string.IsNullOrWhiteSpace(name) ? "Nowa Baronia" : name.Trim(),
                     Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
+                    ConjunctureDice = RollService.Roll2d6().Sum,
+                    ConjunctureModifier = 0,
                     BaseParametersJson = Ser(new PpbVector()),
                     ResourceStocksJson = Ser(new PpbVector()),
                     PreviousTurnIncomeJson = Ser(new PpbVector()),
@@ -916,8 +918,8 @@ namespace DA_Business.Repository.BaronyRepos
                 using var ctx = await _db.CreateDbContextAsync();
                 var threads = await ctx.BaronLetterThreads.AsNoTracking()
                     .Where(t => t.BaronyId == baronyId)
-                    .OrderByDescending(t => t.UpdatedAtUtc)
-                    .ThenByDescending(t => t.Id)
+                    .OrderBy(t => t.CreatedAtUtc)
+                    .ThenBy(t => t.Id)
                     .ToListAsync();
 
                 var threadIds = threads.Select(t => t.Id).ToList();
@@ -1014,12 +1016,24 @@ namespace DA_Business.Repository.BaronyRepos
                 }
                 else
                 {
+                    // Never let a stale autosave demote a delivered letter back to Draft.
+                    var incomingDraft = string.Equals(
+                        dto.Status, BaronLetterStatus.Draft, StringComparison.OrdinalIgnoreCase);
+                    var existingSent = string.Equals(
+                        e.Status, BaronLetterStatus.Sent, StringComparison.OrdinalIgnoreCase);
+                    if (incomingDraft && existingSent)
+                        return ToDTO(e);
+
                     ApplyLetterMessage(e, dto);
                     e.UpdatedAtUtc = now;
                 }
 
+                // Draft autosave must not bump thread activity — that reordered the sidebar on click.
+                var bumpThreadActivity = !string.Equals(
+                    e.Status, BaronLetterStatus.Draft, StringComparison.OrdinalIgnoreCase);
+
                 var thread = await ctx.BaronLetterThreads.FirstOrDefaultAsync(t => t.Id == e.ThreadId);
-                if (thread is not null)
+                if (thread is not null && bumpThreadActivity)
                     thread.UpdatedAtUtc = now;
 
                 await ctx.SaveChangesAsync();
@@ -1052,6 +1066,84 @@ namespace DA_Business.Repository.BaronyRepos
                 await ctx.SaveChangesAsync();
             }
             catch (System.Exception ex) { throw Err(ex, nameof(MarkLetterThreadSeenByBaron)); }
+        }
+
+        public async Task MarkLetterThreadSeenByGm(int threadId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var unread = await ctx.BaronLetterMessages
+                    .Where(m => m.ThreadId == threadId
+                        && !m.SeenByGm
+                        && !m.IsInbound
+                        && m.Status != BaronLetterStatus.Draft)
+                    .ToListAsync();
+
+                if (unread.Count == 0)
+                    return;
+
+                foreach (var m in unread)
+                    m.SeenByGm = true;
+
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(MarkLetterThreadSeenByGm)); }
+        }
+
+        public async Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForBaron(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var rows = await (
+                    from m in ctx.BaronLetterMessages.AsNoTracking()
+                    join t in ctx.BaronLetterThreads.AsNoTracking() on m.ThreadId equals t.Id
+                    where t.BaronyId == baronyId
+                        && !m.SeenByBaron
+                        && m.IsInbound
+                        && m.Status != BaronLetterStatus.Draft
+                    orderby (m.SentAtUtc ?? m.UpdatedAtUtc) descending, m.Id descending
+                    select new { m.ThreadId, t.BaronyId }
+                ).ToListAsync();
+
+                var latest = rows.FirstOrDefault();
+                return new BaronLetterInboxBadgeDTO
+                {
+                    UnreadCount = rows.Count,
+                    LatestThreadId = latest?.ThreadId,
+                    BaronyId = latest?.BaronyId ?? baronyId,
+                };
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetLetterInboxBadgeForBaron)); }
+        }
+
+        public async Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForGm()
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var rows = await (
+                    from m in ctx.BaronLetterMessages.AsNoTracking()
+                    join t in ctx.BaronLetterThreads.AsNoTracking() on m.ThreadId equals t.Id
+                    join b in ctx.Baronies.AsNoTracking() on t.BaronyId equals b.Id
+                    where !m.SeenByGm
+                        && !m.IsInbound
+                        && m.Status != BaronLetterStatus.Draft
+                    orderby (m.SentAtUtc ?? m.UpdatedAtUtc) descending, m.Id descending
+                    select new { m.ThreadId, t.BaronyId, b.CharacterId }
+                ).ToListAsync();
+
+                var latest = rows.FirstOrDefault();
+                return new BaronLetterInboxBadgeDTO
+                {
+                    UnreadCount = rows.Count,
+                    LatestThreadId = latest?.ThreadId,
+                    BaronyId = latest?.BaronyId,
+                    CharacterId = latest?.CharacterId,
+                };
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetLetterInboxBadgeForGm)); }
         }
 
         // ---------------- Offices influence ----------------
@@ -1714,6 +1806,8 @@ namespace DA_Business.Repository.BaronyRepos
                 ResourceStocks = stocks,
                 PreviousTurnIncome = De(e.PreviousTurnIncomeJson),
                 Unrest = e.Unrest,
+                ConjunctureDice = e.ConjunctureDice,
+                ConjunctureModifier = e.ConjunctureModifier,
                 Prestige = e.Prestige,
                 Honor = e.Honor,
                 Fear = e.Fear,
@@ -1741,6 +1835,8 @@ namespace DA_Business.Repository.BaronyRepos
             e.Season = d.Season;
             e.BaronPurseGold = d.BaronPurseGold;
             e.Unrest = d.Unrest;
+            e.ConjunctureDice = d.ConjunctureDice;
+            e.ConjunctureModifier = d.ConjunctureModifier;
             e.Prestige = d.Prestige;
             e.Honor = d.Honor;
             e.Fear = d.Fear;
@@ -1808,7 +1904,8 @@ namespace DA_Business.Repository.BaronyRepos
         // ---------------- Mapping: Building ----------------
         private static BaronyBuildingDTO ToDTO(BaronyBuilding e) => new()
         {
-            Id = e.Id, BaronyId = e.BaronyId, TemplateId = e.TemplateId, Name = e.Name, Kind = e.Kind,
+            Id = e.Id, BaronyId = e.BaronyId, TemplateId = e.TemplateId, CoreKey = e.CoreKey,
+            Name = e.Name, Kind = e.Kind,
             Additive = De(e.AdditiveJson), Percent = De(e.PercentJson), Description = e.Description,
         };
 
@@ -1816,7 +1913,8 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static void ApplyBuilding(BaronyBuilding e, BaronyBuildingDTO d)
         {
-            e.BaronyId = d.BaronyId; e.TemplateId = d.TemplateId; e.Name = d.Name; e.Kind = d.Kind;
+            e.BaronyId = d.BaronyId; e.TemplateId = d.TemplateId; e.CoreKey = d.CoreKey;
+            e.Name = d.Name; e.Kind = d.Kind;
             e.AdditiveJson = Ser(d.Additive); e.PercentJson = Ser(d.Percent); e.Description = d.Description;
         }
 
@@ -2117,8 +2215,10 @@ namespace DA_Business.Repository.BaronyRepos
             TurnNumber = e.TurnNumber,
             Year = e.Year,
             Month = e.Month,
+            Day = e.Day,
             Season = e.Season ?? "Winter",
             SeenByBaron = e.SeenByBaron,
+            SeenByGm = e.SeenByGm,
             SortOrder = e.SortOrder,
             CreatedAtUtc = e.CreatedAtUtc,
             UpdatedAtUtc = e.UpdatedAtUtc,
@@ -2165,8 +2265,10 @@ namespace DA_Business.Repository.BaronyRepos
             e.TurnNumber = d.TurnNumber;
             e.Year = d.Year;
             e.Month = d.Month;
+            e.Day = d.Day;
             e.Season = string.IsNullOrWhiteSpace(d.Season) ? "Winter" : d.Season;
             e.SeenByBaron = d.SeenByBaron;
+            e.SeenByGm = d.SeenByGm;
             e.SortOrder = d.SortOrder;
             e.SentAtUtc = d.SentAtUtc;
             if (d.CreatedAtUtc != default)
@@ -2381,6 +2483,8 @@ namespace DA_Business.Repository.BaronyRepos
                 Status = e.Status,
                 TurnsRemaining = e.TurnsRemaining,
                 Notes = e.Notes,
+                TileId = e.TileId,
+                BuildingTemplateId = e.BuildingTemplateId,
             };
         }
 
@@ -2408,6 +2512,8 @@ namespace DA_Business.Repository.BaronyRepos
             e.Status = d.Status;
             e.TurnsRemaining = d.TurnsRemaining;
             e.Notes = d.Notes;
+            e.TileId = d.TileId is > 0 ? d.TileId : null;
+            e.BuildingTemplateId = d.BuildingTemplateId is > 0 ? d.BuildingTemplateId : null;
         }
 
         private static PpbVector MergeLegacyCost(PpbVector goldProduction, PpbVector materials)

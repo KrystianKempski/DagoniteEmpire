@@ -36,7 +36,7 @@
                                         SummaryCost="@_totalCost"
                                         SummaryLabel="Σ total influence"
                                         SignificantSkills="@_significantSkills"
-                                        CanEdit="@CanEdit"
+                                        CanEdit="@CanManage"
                                         OnEdit="EditRowAsync"
                                         OnDelete="DeleteRowAsync" />
             }
@@ -48,7 +48,7 @@
             }
         </div>
 
-        @if (CanEdit)
+        @if (CanManage)
         {
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddRowAsync">
@@ -74,6 +74,8 @@
     [Parameter] public List<AvailableAdvisorDTO> AvailableAdvisors { get; set; } = new();
     [Parameter] public IEnumerable<AdvisorDTO>? AllAdvisors { get; set; }
     [Parameter] public bool CanEdit { get; set; }
+    /// <summary>MG/Admin — bonus sources, office CRUD. Baron uses CanEdit only to assign/dismiss.</summary>
+    [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
     [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
@@ -104,7 +106,8 @@
         var parameters = new DialogParameters<AdvisorProfileEditDialog>
         {
             { x => x.Advisor, CloneAdvisor() },
-            { x => x.AllowTitleEdit, !BaronyCalc.IsCoreOffice(Advisor) },
+            { x => x.AllowTitleEdit, CanManage && !BaronyCalc.IsCoreOffice(Advisor) },
+            { x => x.AllowUpkeepEdit, CanManage },
             { x => x.AvailableAdvisors, AvailableAdvisors },
             { x => x.OccupiedAvailableAdvisorIds, occupiedIds },
         };
@@ -124,7 +127,7 @@
 
     private async Task EditRowAsync(AdvisorInfluenceRow row)
     {
-        if (row.IsSystem || row.ModifierId is null)
+        if (!CanManage || row.IsSystem || row.ModifierId is null)
             return;
 
         var modifier = CustomModifiers.FirstOrDefault(m => m.Id == row.ModifierId);
@@ -144,10 +147,14 @@
     }
 
     private async Task AddRowAsync()
-        => await OpenModifierDialog(new AdvisorInfluenceModifierDTO { AdvisorId = Advisor.Id });
+    {
+        if (!CanManage) return;
+        await OpenModifierDialog(new AdvisorInfluenceModifierDTO { AdvisorId = Advisor.Id });
+    }
 
     private async Task OpenModifierDialog(AdvisorInfluenceModifierDTO draft)
     {
+        if (!CanManage) return;
         var isNew = draft.Id <= 0;
         var parameters = new DialogParameters<AdvisorInfluenceEditDialog>
         {
@@ -191,7 +198,7 @@
 
     private async Task DeleteRowAsync(AdvisorInfluenceRow row)
     {
-        if (row.ModifierId is null or <= 0)
+        if (!CanManage || row.ModifierId is null or <= 0)
             return;
 
         await _baronyRepo.DeleteAdvisorInfluenceModifier(row.ModifierId.Value);
@@ -204,7 +211,7 @@
 
     private async Task DeleteOfficeAsync()
     {
-        if (BaronyCalc.IsCoreOffice(Advisor))
+        if (!CanManage || BaronyCalc.IsCoreOffice(Advisor))
             return;
 
         foreach (var modifier in CustomModifiers)
@@ -227,6 +234,7 @@
     {
         Id = Advisor.Id,
         BaronyId = Advisor.BaronyId,
+        AvailableAdvisorId = Advisor.AvailableAdvisorId,
         OfficeType = Advisor.OfficeType,
         Title = Advisor.Title,
         PersonName = Advisor.PersonName,

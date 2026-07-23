@@ -20,6 +20,10 @@
     --php-honor: #3a5f8a;
     --php-fear: #7a3030;
 
+    /* Letter handwriting (baron vs correspondent) */
+    --baron-letter-font-baron: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
+    --baron-letter-font-correspondent: 'Pinyon Script', 'Segoe Script', 'Brush Script MT', cursive;
+
     color: var(--barony-ink);
     background: var(--barony-bg);
     min-height: calc(100vh - 64px);
@@ -106,7 +110,7 @@
     position: fixed;
     top: 70px;
     left: 12px;
-    z-index: 1400;
+    z-index: 1050; /* below MudAppBar / MudMenu popovers (login & character selector) */
     display: inline-flex;
     flex-wrap: wrap;
     align-items: stretch;
@@ -163,6 +167,24 @@
     min-width: 2.4rem;
 }
 
+button.barony-meta-bar__stat--clickable {
+    appearance: none;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    font-family: inherit;
+}
+
+button.barony-meta-bar__stat--clickable:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+button.barony-meta-bar__stat--clickable:focus-visible {
+    outline: 1px solid rgba(247, 241, 228, 0.45);
+    outline-offset: 1px;
+}
+
 .barony-meta-bar__label {
     font-size: 0.58rem;
     font-weight: 700;
@@ -205,7 +227,7 @@
 .barony-hud-tip__popup {
     position: absolute;
     top: calc(100% + 6px);
-    z-index: 1600;
+    z-index: 1060; /* above HUD chips, still below MudMenu popovers */
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
@@ -223,10 +245,17 @@
     display: block;
 }
 
+/* Hover, or keyboard focus — not mouse-click :focus-within (keeps tip stuck over dialogs). */
 .barony-hud-tip:hover .barony-hud-tip__popup,
-.barony-hud-tip:focus-within .barony-hud-tip__popup {
+.barony-hud-tip:has(:focus-visible) .barony-hud-tip__popup {
     visibility: visible;
     opacity: 1;
+}
+
+/* Hide on pointerdown until leave — avoids stuck :hover when a dialog opens. */
+.barony-hud-tip--suppressed .barony-hud-tip__popup {
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
 .barony-hud-tip--center .barony-hud-tip__popup {
@@ -296,7 +325,7 @@
     position: fixed;
     top: 70px;
     right: 12px;
-    z-index: 1401;
+    z-index: 1051; /* below MudAppBar / MudMenu popovers (login & character selector) */
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -2168,7 +2197,36 @@ a.city-building-name-text--link:hover {
 }
 
 .baron-letter-inbox-fab__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 22%, transparent);
+    border-radius: 50%;
+    background: linear-gradient(180deg, #f7f1e4, #e8dfc8);
+    cursor: pointer;
     box-shadow: 0 4px 14px rgba(40, 28, 12, 0.28);
+}
+
+.baron-letter-inbox-fab__btn:hover {
+    background: linear-gradient(180deg, #fff8ea, #efe4c8);
+}
+
+.baron-letter-inbox-fab__icon {
+    width: 1.65rem;
+    height: 1.65rem;
+    display: block;
+    pointer-events: none;
+}
+
+.barony-tabbar__svg-icon {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex-shrink: 0;
+    display: block;
+    opacity: 0.9;
 }
 
 /* --- Letters mailbox (Gmail-like) --- */
@@ -2209,6 +2267,53 @@ a.city-building-name-text--link:hover {
     min-height: 0;
 }
 
+.baron-mail__folder {
+    border-bottom: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 10%, transparent);
+}
+
+.baron-mail__folder-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+    border: 0;
+    background: color-mix(in srgb, var(--barony-ink, #3a2e1f) 4%, transparent);
+    padding: 0.55rem 0.75rem;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+.baron-mail__folder--current > .baron-mail__folder-summary {
+    background: color-mix(in srgb, var(--barony-accent, #8b5a2b) 12%, transparent);
+    font-weight: 600;
+}
+
+.baron-mail__folder-chevron {
+    width: 0.9rem;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.baron-mail__folder-title {
+    flex: 1;
+    font-size: 0.82rem;
+    color: var(--barony-ink, #3a2e1f);
+}
+
+.baron-mail__folder-count {
+    font-size: 0.72rem;
+    color: var(--barony-muted, #6f6656);
+    min-width: 1.25rem;
+    text-align: right;
+}
+
+.baron-mail__folder-body {
+    display: flex;
+    flex-direction: column;
+}
+
 .baron-mail__thread {
     display: block;
     width: 100%;
@@ -2216,7 +2321,7 @@ a.city-building-name-text--link:hover {
     border: 0;
     border-bottom: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 10%, transparent);
     background: transparent;
-    padding: 0.7rem 0.85rem;
+    padding: 0.7rem 0.85rem 0.7rem 1.35rem;
     cursor: pointer;
     color: inherit;
     font: inherit;
@@ -2232,6 +2337,14 @@ a.city-building-name-text--link:hover {
 
 .baron-mail__thread--unread .baron-mail__thread-title {
     font-weight: 700;
+}
+
+.baron-mail__thread-num {
+    font-family: var(--barony-font-body, Georgia, serif);
+    font-size: 0.82em;
+    font-weight: 600;
+    opacity: 0.7;
+    flex-shrink: 0;
 }
 
 .baron-mail__thread-title {
@@ -2350,8 +2463,25 @@ a.city-building-name-text--link:hover {
 
 .baron-mail__post-body .ql-editor {
     padding: 0;
-    font-size: 0.95rem;
     min-height: 0;
+}
+
+/* Baron’s hand — clear, brisk script */
+.baron-mail__post--outbound .baron-mail__post-body .ql-editor,
+.baron-mail__hand--baron .ql-editor {
+    font-family: var(--baron-letter-font-baron);
+    font-size: 1.28rem;
+    line-height: 1.42;
+    letter-spacing: 0.01em;
+}
+
+/* Correspondent’s hand — more formal, flowing script */
+.baron-mail__post--inbound .baron-mail__post-body .ql-editor,
+.baron-mail__hand--correspondent .ql-editor {
+    font-family: var(--baron-letter-font-correspondent);
+    font-size: 1.22rem;
+    line-height: 1.48;
+    letter-spacing: 0.02em;
 }
 
 .baron-mail__composer {
@@ -2360,8 +2490,13 @@ a.city-building-name-text--link:hover {
     background: color-mix(in srgb, var(--barony-paper, #f7f1e4) 75%, #ebe3d2);
 }
 
-.baron-mail__composer--readonly {
-    padding: 0.75rem 1rem;
+.baron-mail__composer--waiting {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    padding: 0.85rem 1rem;
+    color: var(--barony-muted, #6f6656);
 }
 
 .baron-mail__composer-label {
@@ -2374,8 +2509,24 @@ a.city-building-name-text--link:hover {
     opacity: 0.8;
 }
 
+.baron-mail__editor.baron-letter-editor {
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+}
+
+.baron-mail__editor .ql-toolbar.ql-snow {
+    flex-shrink: 0;
+}
+
 .baron-mail__editor .ql-container {
-    min-height: 7.5rem;
+    flex: 1 1 auto;
+    min-height: 220px;
+    height: auto !important;
+}
+
+.baron-mail__editor .ql-editor {
+    min-height: 220px;
 }
 
 .baron-mail__composer-actions {
@@ -2743,7 +2894,7 @@ a.city-building-name-text--link:hover {
 
 .ppb-table th,
 .ppb-table td {
-    padding: 4px 8px;
+    padding: 4px 0px;
     text-align: center;
     white-space: nowrap;
 }
@@ -3090,6 +3241,21 @@ a.city-building-name-text--link:hover {
     color: #2f2a24;
 }
 
+/* Align MudSelect value left like MudTextField (Mud defaults to centered). */
+.baron-influence-dialog .baron-influence-field.mud-select .mud-input-slot,
+.baron-influence-dialog .baron-influence-field.mud-select .mud-select-input,
+.baron-influence-dialog .baron-influence-field.mud-select input {
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+.baron-influence-dialog .baron-influence-field.mud-select .mud-input-slot {
+    padding-inline-start: 0;
+}
+.baron-influence-dialog .baron-influence-field.mud-select .mud-select-input {
+    padding-left: 6px;
+    margin-top: 0;
+}
+
 .baron-influence-dialog .mud-input-helper-text {
     color: #6f6656;
 }
@@ -3241,6 +3407,14 @@ a.city-building-name-text--link:hover {
     box-shadow: 0 -2px 6px rgba(47, 42, 36, 0.12);
 }
 
+/* Above fixed barony tab bar (z-index 1500) and clear of its height. */
+.mud-snackbar-location-bottom-right,
+.mud-snackbar-location-bottom-left,
+.mud-snackbar-location-bottom-center {
+    z-index: 2000 !important;
+    bottom: 3.25rem !important;
+}
+
 .barony-tabbar__tab {
     display: inline-flex;
     align-items: center;
@@ -3295,7 +3469,8 @@ a.city-building-name-text--link:hover {
 
 .barony-terrain-grid {
     display: grid;
-    gap: 2px;
+    gap: 1px;
+    background: color-mix(in srgb, var(--barony-border) 55%, transparent);
     /* column count is set inline (repeat() count cannot be a CSS variable) */
     width: max-content;
     box-sizing: border-box;
@@ -3318,8 +3493,8 @@ a.city-building-name-text--link:hover {
     height: var(--terrain-cell-size, 60px);
     box-sizing: border-box;
     padding: 0;
-    border: 1px solid var(--barony-border-strong);
-    border-radius: 4px;
+    border: none;
+    border-radius: 0;
     cursor: pointer;
     overflow: hidden;
     background: var(--barony-surface);
@@ -3529,6 +3704,23 @@ a.city-building-name-text--link:hover {
 .barony-terrain-cell__improvement-icon--village {
     width: 1.352rem;
     height: 1.352rem;
+}
+
+.barony-terrain-cell__improvement-icon--construction {
+    width: 1.69rem;
+    height: 1.69rem;
+}
+
+.barony-terrain-cell--clickable {
+    cursor: pointer;
+}
+
+.terrain-build-project-cost {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+    color: var(--barony-ink);
 }
 
 .barony-terrain-cell__improvement-name {
@@ -3958,7 +4150,7 @@ a.city-building-name-text--link:hover {
 }
 
 .barony-terrain-tooltip {
-    --tooltip-gap: 2px;
+    --tooltip-gap: 1px;
     position: absolute;
     z-index: 30;
     left: calc(var(--tooltip-x) * (var(--terrain-cell-size) + var(--tooltip-gap)) + var(--terrain-cell-size) / 2);

@@ -48,6 +48,12 @@ namespace DA_DataAccess.BaronyData
         public int TurnsRemaining { get; set; }
 
         public string? Notes { get; set; }
+
+        /// <summary>Terrain tile this building/improvement project targets (map construction).</summary>
+        public int? TileId { get; set; }
+
+        /// <summary>Catalog template chosen for a tile construction project.</summary>
+        public int? BuildingTemplateId { get; set; }
     }
 
     /// <summary>

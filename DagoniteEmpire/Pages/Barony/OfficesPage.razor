@@ -32,16 +32,17 @@ else if (Barony is not null)
                             AvailableAdvisors="@_availableAdvisors"
                             AllAdvisors="@_offices"
                             CanEdit="@CanEdit"
+                            CanManage="@CanManageAsMg"
                             OnChanged="ReloadAsync" />
     }
 
     <AvailableAdvisorsSection Advisors="@_availableAdvisors"
-                              CanEdit="@CanEdit"
+                              CanManage="@CanManageAsMg"
                               OnEdit="EditAvailableAdvisorAsync"
                               OnDelete="DeleteAvailableAdvisorAsync"
                               OnAdd="AddAvailableAdvisorAsync" />
 
-    @if (CanEdit)
+    @if (CanManageAsMg)
     {
         <MudButton Variant="Variant.Outlined"
                    Class="mt-2"
@@ -87,7 +88,7 @@ else if (Barony is not null)
 
     private async Task AddOfficeAsync()
     {
-        if (Barony is null)
+        if (Barony is null || !CanManageAsMg)
             return;
 
         var parameters = new DialogParameters<AddOfficeDialog>
@@ -111,12 +112,14 @@ else if (Barony is not null)
 
     private async Task AddAvailableAdvisorAsync()
     {
-        if (Barony is null) return;
+        if (Barony is null || !CanManageAsMg) return;
         await OpenAvailableAdvisorDialog(new AvailableAdvisorDTO { BaronyId = Barony.Id });
     }
 
     private async Task EditAvailableAdvisorAsync(AvailableAdvisorDTO person)
-        => await OpenAvailableAdvisorDialog(new AvailableAdvisorDTO
+    {
+        if (!CanManageAsMg) return;
+        await OpenAvailableAdvisorDialog(new AvailableAdvisorDTO
         {
             Id = person.Id,
             BaronyId = person.BaronyId,
@@ -124,9 +127,11 @@ else if (Barony is not null)
             Description = person.Description,
             Skills = person.Skills.Clone(),
         });
+    }
 
     private async Task OpenAvailableAdvisorDialog(AvailableAdvisorDTO draft)
     {
+        if (!CanManageAsMg) return;
         var dialog = await _dialogService.ShowAsync<AvailableAdvisorEditDialog>(
             draft.Id > 0 ? "Edit Available Advisor" : "Add Available Advisor",
             new DialogParameters<AvailableAdvisorEditDialog> { { x => x.Advisor, draft } },
@@ -143,7 +148,7 @@ else if (Barony is not null)
 
     private async Task DeleteAvailableAdvisorAsync(AvailableAdvisorDTO person)
     {
-        if (person.Id <= 0) return;
+        if (!CanManageAsMg || person.Id <= 0) return;
         await _baronyRepo.DeleteAvailableAdvisor(person.Id);
         _snackBar.Add("Available advisor removed.", Severity.Success);
         await ReloadAsync();

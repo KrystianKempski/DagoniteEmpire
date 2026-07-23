@@ -330,6 +330,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<int>("Day")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsInbound")
                         .HasColumnType("boolean");
 
@@ -341,6 +344,9 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("SeenByBaron")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("SeenByGm")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("SentAtUtc")
@@ -565,6 +571,12 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("Unrest")
                         .HasColumnType("integer");
 
+                    b.Property<int>("ConjunctureDice")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ConjunctureModifier")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Year")
                         .HasColumnType("integer");
 
@@ -605,6 +617,9 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<int?>("TemplateId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("CoreKey")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -667,6 +682,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("BaronyId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("BuildingTemplateId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("CostGoldProductionJson")
                         .IsRequired()
                         .HasColumnType("text");
@@ -712,6 +730,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("TileId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("TurnsRemaining")
                         .HasColumnType("integer");

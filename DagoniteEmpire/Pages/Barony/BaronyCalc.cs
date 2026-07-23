@@ -108,15 +108,16 @@ namespace DagoniteEmpire.Pages.Barony
             AdvisorDTO? existingBaronAdvisor = null,
             int managementJc = BaronTimeRules.RequiredManagementJc)
         {
-            var skillInfluence = InfluenceFromSkills(character);
-            var effectiveSkills = ApplyManagementSkillFactor(skillInfluence, managementJc);
-            var skillBasedAdditive = BaronSkillPpbFormulas.MapToAdvisorAdditive(effectiveSkills);
-            var skillBasedPercent = BaronSkillPpbFormulas.MapToAdvisorPercent(effectiveSkills);
-            var customAdditive = PpbVector.Sum((baronModifiers ?? Enumerable.Empty<BaronInfluenceModifierDTO>())
-                .Select(m => m.Additive));
-            skillBasedAdditive.AddInPlace(customAdditive);
-            skillBasedAdditive.AddInPlace(
-                BaronReputationTiers.InfluenceFromScores(barony.Prestige, barony.Honor, barony.Fear));
+            // Same skill-unit total as Baron Card (skills ± management + PHP + custom sources),
+            // then Domain Panel Additive/Percent from the skill→PPB formulas.
+            var influenceRows = BuildInfluenceRows(
+                character,
+                barony.Prestige,
+                barony.Honor,
+                barony.Fear,
+                baronModifiers,
+                managementJc);
+            var totalSkills = SumInfluenceRows(influenceRows);
 
             var name = !string.IsNullOrWhiteSpace(character?.NPCName)
                 ? character!.NPCName
@@ -135,8 +136,8 @@ namespace DagoniteEmpire.Pages.Barony
                 Title = "Baron",
                 PersonName = name,
                 IsBaron = true,
-                Additive = skillBasedAdditive,
-                Percent = skillBasedPercent,
+                Additive = BaronSkillPpbFormulas.MapToAdvisorAdditive(totalSkills),
+                Percent = BaronSkillPpbFormulas.MapToAdvisorPercent(totalSkills),
                 Description = BaronSkillPpbFormulas.BaronAdvisorNameTooltip
                     + (factor < 1m
                         ? $" Skill PPB applied at {factorPct}% ({managementJc}/{BaronTimeRules.RequiredManagementJc} management JC)."
@@ -164,7 +165,7 @@ namespace DagoniteEmpire.Pages.Barony
         public static List<PpbModifierRow> BuildingRows(IEnumerable<BaronyBuildingDTO> buildings)
             => buildings.Select(b => Row(b.Name, b.Additive, b.Percent, null, b.Description)).ToList();
 
-        /// <summary>Fixed city buildings present in every barony (not stored in DB).</summary>
+        /// <summary>Default fixed city buildings. MG overrides are stored in BaronyBuildings via CoreKey.</summary>
         public static IReadOnlyList<BaronyBuildingDTO> CoreCityBuildings(int baronyId)
         {
             static PpbVector A(
@@ -197,23 +198,79 @@ namespace DagoniteEmpire.Pages.Barony
                 {
                     BaronyId = baronyId,
                     Name = "Steward's Building",
+                    CoreKey = CoreCityBuildingKey.StewardsBuilding,
                     Kind = BuildingKind.Building,
-                    Additive = A(production: 2, loyalty: 2, stability: 3, law: 1, corruption: 1,
-                        science: 1, culture: 1, intelligence: 1, defense: 1, treasury: 15),
-                    Description = "Upkeep: -15 gold per turn.",
+                    Additive = A(
+                        stability: 3, law: 3, corruption: 2,
+                        science: 2, culture: 2, intelligence: 2,
+                        defense: 5, treasury: -15),
+                    Description =
+                        "Steward's hut. Locals come here with their affairs before the authorities. "
+                        + "Officials and tax collectors hold office here. Can be upgraded to a town hall.",
                 },
                 new BaronyBuildingDTO
                 {
                     BaronyId = baronyId,
-                    Name = "Inn and Lodging",
+                    Name = "Tavern",
+                    CoreKey = CoreCityBuildingKey.Tavern,
                     Kind = BuildingKind.Building,
-                    Additive = A(treasury: 1),
-                    Description = "Roadside inn and lodgings for travelers.",
+                    Additive = A(economy: 2, intelligence: 3, loyalty: 3),
+                    Description =
+                        "A humble tavern. Meeting place for the peasantry and a rest stop for the few "
+                        + "traveling merchants. Can be upgraded to an inn.",
+                },
+                new BaronyBuildingDTO
+                {
+                    BaronyId = baronyId,
+                    Name = "Market Square",
+                    CoreKey = CoreCityBuildingKey.MarketSquare,
+                    Kind = BuildingKind.Building,
+                    Additive = A(economy: 3, production: 3, treasury: 10),
+                    Description =
+                        "A small paved place where local producers and nearby merchants can exchange goods. "
+                        + "Can be upgraded to a marketplace.",
                 },
             };
         }
 
-        public static IReadOnlyDictionary<int, SeatPurposeTemplateDTO> PurposeLookup(
+
+        /// <summary>Core defaults merged with per-barony MG overrides (matched by CoreKey).</summary>
+        public static IReadOnlyList<BaronyBuildingDTO> EffectiveCoreCityBuildings(
+            int baronyId,
+            IEnumerable<BaronyBuildingDTO>? saved)
+        {
+            var overrides = (saved ?? Enumerable.Empty<BaronyBuildingDTO>())
+                .Where(b => !string.IsNullOrWhiteSpace(b.CoreKey))
+                .GroupBy(b => b.CoreKey!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+            return CoreCityBuildings(baronyId).Select(def =>
+            {
+                if (!overrides.TryGetValue(def.CoreKey!, out var ov))
+                    return def;
+
+                return new BaronyBuildingDTO
+                {
+                    Id = ov.Id,
+                    BaronyId = baronyId,
+                    CoreKey = def.CoreKey,
+                    TemplateId = null,
+                    Name = string.IsNullOrWhiteSpace(ov.Name) ? def.Name : ov.Name,
+                    Kind = BuildingKind.Building,
+                    Description = ov.Description,
+                    Additive = ov.Additive.Clone(),
+                    Percent = ov.Percent.Clone(),
+                    Population = ov.Population,
+                };
+            }).ToList();
+        }
+
+        /// <summary>Saved buildings that are not core overrides (catalog / custom adds).</summary>
+        public static IEnumerable<BaronyBuildingDTO> ExtraCityBuildings(IEnumerable<BaronyBuildingDTO>? saved)
+            => (saved ?? Enumerable.Empty<BaronyBuildingDTO>())
+                .Where(b => string.IsNullOrWhiteSpace(b.CoreKey));
+
+                public static IReadOnlyDictionary<int, SeatPurposeTemplateDTO> PurposeLookup(
             IEnumerable<SeatPurposeTemplateDTO>? templates) =>
             (templates ?? Enumerable.Empty<SeatPurposeTemplateDTO>())
                 .ToDictionary(t => t.Id);
@@ -288,13 +345,13 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null)
         {
             var purposes = PurposeLookup(purposeTemplates);
-            var rows = CoreCityBuildings(baronyId)
+            var rows = EffectiveCoreCityBuildings(baronyId, saved)
                 .Select(b => Row(b.Name, b.Additive, b.Percent, null, b.Description))
                 .ToList();
             if (seat is not null)
                 rows.Add(LordsSeatSummaryRow(seat.Rooms, purposes));
             rows.AddRange(TownPopulationRows(improvements));
-            rows.AddRange(BuildingRows(saved));
+            rows.AddRange(BuildingRows(ExtraCityBuildings(saved)));
             return rows;
         }
 
@@ -325,9 +382,9 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null)
         {
             var purposes = PurposeLookup(purposeTemplates);
-            var vectors = CoreCityBuildings(baronyId).Select(b => b.Additive)
+            var vectors = EffectiveCoreCityBuildings(baronyId, saved).Select(b => b.Additive)
                 .Concat(ActiveTowns(improvements).Select(t => t.Additive))
-                .Concat(saved.Select(b => b.Additive));
+                .Concat(ExtraCityBuildings(saved).Select(b => b.Additive));
             if (seat is not null)
             {
                 vectors = vectors.Concat(
@@ -346,9 +403,9 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null)
         {
             var purposes = PurposeLookup(purposeTemplates);
-            var vectors = CoreCityBuildings(baronyId).Select(b => b.Percent)
+            var vectors = EffectiveCoreCityBuildings(baronyId, saved).Select(b => b.Percent)
                 .Concat(ActiveTowns(improvements).Select(t => t.Percent))
-                .Concat(saved.Select(b => b.Percent));
+                .Concat(ExtraCityBuildings(saved).Select(b => b.Percent));
             if (seat is not null)
             {
                 vectors = vectors.Concat(
@@ -363,9 +420,21 @@ namespace DagoniteEmpire.Pages.Barony
             int baronyId,
             IEnumerable<BaronyBuildingDTO> saved,
             IEnumerable<TerrainImprovementDTO>? improvements = null) =>
-            CoreCityBuildings(baronyId).Sum(b => b.Population)
+            EffectiveCoreCityBuildings(baronyId, saved).Sum(b => b.Population)
             + ActiveTowns(improvements).Sum(t => t.Population)
-            + saved.Sum(b => b.Population);
+            + ExtraCityBuildings(saved).Sum(b => b.Population);
+
+        /// <summary>Towns, city buildings, and villages — population for Economy conjuncture.</summary>
+        public static int SumSettlementPopulation(
+            int baronyId,
+            IEnumerable<BaronyBuildingDTO> saved,
+            IEnumerable<TerrainImprovementDTO>? improvements = null) =>
+            SumCityPopulation(baronyId, saved, improvements)
+            + ActiveVillages(improvements).Sum(v => v.Population);
+
+        public static IEnumerable<TerrainImprovementDTO> ActiveVillages(IEnumerable<TerrainImprovementDTO>? improvements) =>
+            (improvements ?? Enumerable.Empty<TerrainImprovementDTO>())
+                .Where(i => IsVillage(i) && i.IsActive);
 
         public static List<PpbModifierRow> SocialRows(int baronyId, IEnumerable<SocialGroupRelationDTO> relations)
             => SocialGroupSectionRows(baronyId, relations)
@@ -504,7 +573,10 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<PpbModifierRow> improvementRows,
             IEnumerable<PpbModifierRow> decreeRows,
             IEnumerable<PpbModifierRow> eventRows,
-            int unrest)
+            int unrest,
+            int settlementPopulation,
+            int conjunctureDice,
+            int conjunctureModifier)
         {
             var preCommunity = new List<PpbModifierRow>();
             preCommunity.AddRange(advisorRows);
@@ -519,6 +591,7 @@ namespace DagoniteEmpire.Pages.Barony
             var crime = CrimePpbFormulas.FromLawBalance(preAdd[Ppb.Law]);
             var corruption = CorruptionPpbFormulas.FromCorruptionBalance(preAdd[Ppb.Corruption]);
             var unrestValue = Math.Max(0m, unrest);
+            var economyE = preAdd[Ppb.Economy];
 
             return new List<PpbModifierRow>
             {
@@ -526,6 +599,15 @@ namespace DagoniteEmpire.Pages.Barony
                 Row(CommunitySource.Crime, CrimePpbFormulas.ComputeAdditive(crime), CrimePpbFormulas.ComputePercent(crime)),
                 Row(CommunitySource.Corruption, CorruptionPpbFormulas.ComputeAdditive(corruption), CorruptionPpbFormulas.ComputePercent(corruption)),
                 Row(CommunitySource.Unrest, UnrestPpbFormulas.ComputeAdditive(unrestValue), UnrestPpbFormulas.ComputePercent(unrestValue)),
+                Row(
+                    CommunitySource.Economy,
+                    EconomyConjunctureFormulas.ComputeAdditive(
+                        economyE, conjunctureDice, conjunctureModifier),
+                    EconomyConjunctureFormulas.ComputePercentVector(
+                        economyE, settlementPopulation, conjunctureDice, conjunctureModifier),
+                    EconomyConjunctureFormulas.FormulaSummary(
+                        economyE, settlementPopulation, conjunctureDice, conjunctureModifier),
+                    EconomyConjunctureFormulas.CatalogDescription),
             };
         }
 
@@ -576,16 +658,36 @@ namespace DagoniteEmpire.Pages.Barony
         }
 
         /// <summary>
-        /// Simplified section "glance vector" for chips in collapsed headers:
-        /// additive sum + percent sum (informational only).
+        /// Barony Summary table rows: global Σ additive / Σ percent, scalable, percent effect, Final.
+        /// </summary>
+        public static List<PpbModifierRow> BuildBaronySummaryRows(DomainPanelRowSet panel)
+        {
+            var all = panel.AllRows;
+            var additive = SumAdditive(all);
+            var percent = SumPercent(all);
+            var scalable = SumScalableAdditive(all);
+            var percentEffect = new PpbVector();
+            scalable.EnsureSize();
+            percent.EnsureSize();
+            percentEffect.EnsureSize();
+            for (int i = 0; i < PpbCatalog.Count; i++)
+                percentEffect.Values[i] = PpbFormat.Round(scalable.Values[i] * (percent.Values[i] / 100m));
+
+            return new List<PpbModifierRow>
+            {
+                new() { Label = "Σ additive (all sections)", Additive = additive },
+                new() { Label = "Σ percent (all sections)", Percent = percent },
+                new() { Label = "Scalable additive", Additive = scalable },
+                new() { Label = "Percent effect", Additive = percentEffect },
+                new() { Label = "Final Value", Additive = panel.GrandTotal },
+            };
+        }
+
+        /// <summary>
+        /// Collapsed-header chips: additive section sum only (do not mix % points into PPB units).
         /// </summary>
         public static PpbVector SectionGlance(IEnumerable<PpbModifierRow> rows)
-        {
-            var list = rows.ToList();
-            var glance = SumAdditive(list);
-            glance.AddInPlace(SumPercent(list));
-            return glance;
-        }
+            => SumAdditive(rows);
 
         /// <summary>
         /// Same section rows as Domain Panel (including core buildings + towns under City and Buildings).
@@ -607,9 +709,13 @@ namespace DagoniteEmpire.Pages.Barony
             var improvementRows = ImprovementRows(ov.Improvements);
             var decreeRows = DecreeRows(ov.Decrees);
             var eventRows = EventRows(ov.Events, ov.Barony.TurnNumber);
+            var settlementPop = SumSettlementPopulation(ov.Barony.Id, ov.Buildings, ov.Improvements);
             var communityRows = CommunityRows(
                 advisorRows, buildingRows, socialRows, improvementRows, decreeRows, eventRows,
-                ov.Barony.Unrest);
+                ov.Barony.Unrest,
+                settlementPop,
+                ov.Barony.ConjunctureDice,
+                ov.Barony.ConjunctureModifier);
 
             var allRows = new List<PpbModifierRow>();
             allRows.AddRange(advisorRows);
@@ -1199,7 +1305,10 @@ namespace DagoniteEmpire.Pages.Barony
                     IsSystem = false,
                     ModifierId = modifier.Id,
                     Formula = modifier.FormulaText,
-                    Description = modifier.Description,
+                    Description = string.IsNullOrWhiteSpace(modifier.Description)
+                        ? "Skill-unit bonus. Counts toward the office skill total (active skills only), "
+                          + "then Domain Panel Additive/Percent from the skill→PPB formulas."
+                        : modifier.Description,
                     Cost = modifier.CostGold,
                 });
             }
@@ -1214,17 +1323,17 @@ namespace DagoniteEmpire.Pages.Barony
             var sum = new PpbVector();
             foreach (var row in rows)
             {
-                if (row.SystemKind == AdvisorInfluenceSystemKind.Skills && significantSkills is not null)
-                    sum.AddInPlace(AdvisorSignificantSkills.MaskToSignificant(row.Values, significantSkills));
-                else
-                    sum.AddInPlace(row.Values);
+                var values = significantSkills is not null
+                    ? AdvisorSignificantSkills.MaskToSignificant(row.Values, significantSkills)
+                    : row.Values;
+                sum.AddInPlace(values);
             }
             return sum;
         }
 
         /// <summary>
-        /// Maps office holder skills (significant only) to Domain Panel additive/percent, same rules as baron.
-        /// Custom modifiers add to additive only.
+        /// Domain Panel office row: sum skills + bonus sources (skill units), mask to active skills,
+        /// then map that total through the skill→PPB Additive/Percent formulas.
         /// </summary>
         public static void ApplyAdvisorSkillInfluence(
             AdvisorDTO advisor,
@@ -1233,21 +1342,13 @@ namespace DagoniteEmpire.Pages.Barony
             if (advisor.IsBaron)
                 return;
 
-            if (IsOfficeAssigned(advisor))
-            {
-                var active = EffectiveSignificantSkills(advisor);
-                var masked = AdvisorSignificantSkills.MaskToSignificant(advisor.Skills, active);
-                advisor.Additive = BaronSkillPpbFormulas.MapToAdvisorAdditive(masked);
-                advisor.Percent = BaronSkillPpbFormulas.MapToAdvisorPercent(masked);
-            }
-            else
-            {
-                advisor.Additive = new PpbVector();
-                advisor.Percent = new PpbVector();
-            }
+            var active = EffectiveSignificantSkills(advisor);
+            var totalSkills = SumAdvisorInfluenceRows(
+                BuildAdvisorInfluenceRows(advisor, customModifiers),
+                active);
 
-            foreach (var modifier in customModifiers ?? Enumerable.Empty<AdvisorInfluenceModifierDTO>())
-                advisor.Additive.AddInPlace(modifier.Additive);
+            advisor.Additive = BaronSkillPpbFormulas.MapToAdvisorAdditive(totalSkills);
+            advisor.Percent = BaronSkillPpbFormulas.MapToAdvisorPercent(totalSkills);
         }
 
         public static void SyncAdvisorAdditive(

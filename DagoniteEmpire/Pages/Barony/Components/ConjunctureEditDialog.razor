@@ -1,0 +1,80 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudText Typo="Typo.body2" Class="mb-2" Style="color:var(--barony-muted);">
+                Conjuncture = 2d6 + MG modifier. Rolled at turn start.
+                Net Gold profit = (Economy + Conjuncture) × 2; also shifts Community Economy %.
+            </MudText>
+            <MudNumericField @bind-Value="_dice"
+                             Label="2d6 roll"
+                             HelperText="Raw dice total (2–12). Use Re-roll to draw a new turn value."
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="2"
+                             Max="12"
+                             Class="baron-influence-field" />
+            <MudNumericField @bind-Value="_modifier"
+                             Label="MG modifier"
+                             HelperText="Only MG. War −3, good harvest +2, etc."
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Class="baron-influence-field" />
+            <MudText Typo="Typo.subtitle2" Class="mt-2">
+                Effective: @_dice + @_modifier = <b>@(_dice + _modifier)</b>
+                (Gold uses Economy + Conjuncture; % uses Conjuncture − 7 = @(_dice + _modifier - 7))
+            </MudText>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Reroll">Re-roll 2d6</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int ConjunctureDice { get; set; } = 7;
+    [Parameter] public int ConjunctureModifier { get; set; }
+
+    private int _dice;
+    private int _modifier;
+
+    protected override void OnInitialized()
+    {
+        _dice = Math.Clamp(ConjunctureDice, 2, 12);
+        _modifier = ConjunctureModifier;
+    }
+
+    private void Reroll()
+    {
+        var roll = RollService.Roll2d6();
+        _dice = roll.Sum;
+        _snackBar.Add($"Rolled {roll.Text}", Severity.Info);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        _dice = Math.Clamp(_dice, 2, 12);
+        MudDialog.Close(DialogResult.Ok(new ConjunctureEditResult
+        {
+            Dice = _dice,
+            Modifier = _modifier,
+        }));
+    }
+
+    public sealed class ConjunctureEditResult
+    {
+        public int Dice { get; set; }
+        public int Modifier { get; set; }
+    }
+}

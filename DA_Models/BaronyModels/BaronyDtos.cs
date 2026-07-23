@@ -26,6 +26,15 @@ namespace DA_Models.BaronyModels
 
         public int Unrest { get; set; }
 
+        /// <summary>Raw 2d6 at turn start (2–12).</summary>
+        public int ConjunctureDice { get; set; } = 7;
+
+        /// <summary>MG fortune modifier added to the dice (war −3, good harvest +2, …).</summary>
+        public int ConjunctureModifier { get; set; }
+
+        /// <summary>Effective conjuncture this turn: Dice + Modifier.</summary>
+        public int Conjuncture => ConjunctureDice + ConjunctureModifier;
+
         public int Prestige { get; set; }
         public int Honor { get; set; }
         public int Fear { get; set; }
@@ -78,6 +87,10 @@ namespace DA_Models.BaronyModels
         public int Id { get; set; }
         public int BaronyId { get; set; }
         public int? TemplateId { get; set; }
+
+        /// <summary>When set, this row overrides the matching fixed core city building.</summary>
+        public string? CoreKey { get; set; }
+
         public string Name { get; set; } = string.Empty;
         public string Kind { get; set; } = DA_Common.Barony.BuildingKind.Building;
         public PpbVector Additive { get; set; } = new();
@@ -260,6 +273,17 @@ namespace DA_Models.BaronyModels
         public string Status { get; set; } = DA_Common.Barony.ProjectStatus.Draft;
         public int TurnsRemaining { get; set; }
         public string? Notes { get; set; }
+
+        /// <summary>When set, this project is a map construction on that terrain tile.</summary>
+        public int? TileId { get; set; }
+
+        /// <summary>Building/improvement catalog entry used for map construction costs &amp; effects.</summary>
+        public int? BuildingTemplateId { get; set; }
+
+        /// <summary>True while a map construction project is still active (shows crane on the tile).</summary>
+        public bool IsActiveMapConstruction =>
+            TileId is > 0
+            && Status is not (DA_Common.Barony.ProjectStatus.Completed or DA_Common.Barony.ProjectStatus.Cancelled);
 
         /// <summary>Active payment track after GM rules and player selection.</summary>
         public string EffectiveCostMode => ResolveEffectiveCostMode();

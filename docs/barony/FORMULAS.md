@@ -1,41 +1,47 @@
-# Barony — katalog formuł PPB
+# Barony — PPB formula catalog
 
-> **Źródło prawdy w runtime:** klasy C# w `DA_Common/Barony/*PpbFormulas.cs` oraz `DagoniteEmpire/Pages/Barony/BaronyCalc.cs`.  
-> **Strukturalny zapis:** [`formulas.json`](./formulas.json).  
-> **Tooltipy Domain Panel:** treść komórek = `ExplainAdditive` / `ExplainPercent` / `ExplainAdvisor*` w tych samych klasach (format `= …`).
+> **Runtime source of truth:** C# classes in `DA_Common/Barony/*PpbFormulas.cs` and `DagoniteEmpire/Pages/Barony/BaronyCalc.cs`.  
+> **Structured dump:** [`formulas.json`](./formulas.json).  
+> **Domain Panel tooltips:** cell text = `ExplainAdditive` / `ExplainPercent` / `ExplainAdvisor*` in those same classes (format `= …`).
 
-Konwencje:
-- `Pop` / `Population` = ludność osady (wioska/miasto).
-- `Fertility` = `TerrainTile.Fertility` (−1 = nieznana, 0–5).
-- `HasPalisade` = opcjonalna palisada **tylko** wioski.
-- Umiejętności barona = `SumBonus` ze specjalizacji / bazowych; atrybut = `ModifierAbsolute`.
-- Wyniki barona zaokrąglane w dół do liczb całkowitych (`Math.Floor` na końcu).
+Conventions:
+- `Population` = settlement population (village / town).
+- `Fertility` = `TerrainTile.Fertility` (−1 = unknown, 0–5).
+- `HasPalisade` = optional palisade on villages only.
+- Baron skills = specialization / base `SumBonus`; attribute = `ModifierAbsolute`.
+- Baron skill results are floored to integers (`Math.Floor` at the end).
 
 ---
 
-## Podsumowanie panelu (globalne)
+## Domain Panel summary (Barony Summary)
+
+Logic: `BaronyCalc.SummarizeSections` / `PpbMath.Summarize`.  
+Sources: all Domain Panel sections (Baron and Advisors, City and Buildings, Social Groups,
+Terrain Improvements, Decrees, Events, Community) — both **+** and **%** columns.
 
 ```
-final[ppb] = (base[ppb] + Σ Additive[ppb]) × (1 + Σ Percent[ppb] / 100)
+scalable_additive = Σ positive Additive per row  (Corruption: Σ negative)
+percent_effect    = scalable_additive × (Σ Percent / 100)
+final             = Σ Additive + percent_effect
 ```
 
-`base` na razie zwykle 0. `Percent` w punktach procentowych (10 = +10%).
+`Percent` is in percentage points (10 = +10%). There is no separate “base” — only what appears in the sections counts.
 
 ---
 
 ## Social Groups — Tax
 
-- Domyślne stawki: `SocialGroup.DefaultTax` — Nobility 5%, Burghers 15%, Peasants 30%.
-- Kolumna **Tax** w sekcji Social Groups; edycja w dialogu relacji.
-- Town / Village **Treasury** używa `TownTaxRates.FromRelations`.
+- Default rates: `SocialGroup.DefaultTax` — Nobility 5%, Burghers 15%, Peasants 30%.
+- **Tax** column in Social Groups; edited in the relation dialog.
+- Town / Village **Treasury** uses `TownTaxRates.FromRelations`.
 
 ---
 
 ## Terrain — Village
 
-Klasa: `VillagePpbFormulas`. Katalog nie ma stałych bonusów PPB.
+Class: `VillagePpbFormulas`. The catalog has no fixed PPB bonuses.
 
-### Food — baza jak farma (żyzność)
+### Food — farm baseline (fertility)
 
 | Fertility | FarmFood |
 |----------:|---------:|
@@ -43,33 +49,33 @@ Klasa: `VillagePpbFormulas`. Katalog nie ma stałych bonusów PPB.
 | 3 | 1.5 |
 | 4 | 2 |
 | 5 | 3 |
-| inne | 0 |
+| other | 0 |
 
 ### PPB (additive)
 
-| PPB | Formuła |
+| PPB | Formula |
 |-----|---------|
 | Food | `FarmFood(Fertility) − Population` |
 | Economy | `Population / 2` |
 | Production | `Population` |
 | Loyalty | `−Population` |
-| Stability | `−2 × Population` (+3 jeśli palisada) |
-| Law | `−Population / 2` (+1 jeśli palisada) |
+| Stability | `−2 × Population` (+3 if palisade) |
+| Law | `−Population / 2` (+1 if palisade) |
 | Corruption | `Population / 4` |
 | Science / Culture | `Population / 4` |
 | Magic | `Population / 8` |
-| Defense | `Population` (+5 jeśli palisada) |
-| Treasury | `(Nob%/100)×Pop×5 + (Burg%/100)×Pop×5 + (Peas%/100)×Pop×15` |
+| Defense | `Population` (+5 if palisade) |
+| Treasury | `(Nob%/100)×Population×5 + (Burg%/100)×Population×5 + (Peas%/100)×Population×15` |
 
-Palisada: Defense +5, Stability +3, Law +1.
+Palisade: Defense +5, Stability +3, Law +1.
 
 ---
 
 ## Terrain — Town
 
-Klasa: `TownPpbFormulas`. Wiersz „Population of \<city\>” w City and Buildings.
+Class: `TownPpbFormulas`. Row “Population of \<city\>” under City and Buildings.
 
-| PPB | Formuła |
+| PPB | Formula |
 |-----|---------|
 | Food | `−Population` |
 | Economy | `Population` |
@@ -81,13 +87,13 @@ Klasa: `TownPpbFormulas`. Wiersz „Population of \<city\>” w City and Buildin
 | Science / Culture | `Population / 2` |
 | Magic | `Population / 4` |
 | Defense | `2 × Population` |
-| Treasury | `(Nob%/100)×Pop×20 + (Burg%/100)×Pop×25 + (Peas%/100)×Pop×10` |
+| Treasury | `(Nob%/100)×Population×20 + (Burg%/100)×Population×25 + (Peas%/100)×Population×10` |
 
 ---
 
 ## Community Penalties
 
-Bilanse PPB **przed** wierszami Community (Hunger/Crime/Corruption/Unrest).
+PPB balances **before** Community rows (Hunger / Crime / Corruption / Unrest / Economy).
 
 ### Hunger — `HungerPpbFormulas`
 - `Hunger = max(0, −FoodBalance)`
@@ -109,13 +115,18 @@ Bilanse PPB **przed** wierszami Community (Hunger/Crime/Corruption/Unrest).
 - `% Economy/Production = −Unrest×15`
 - `+ Loyalty/Stability/Law = −Unrest×3`
 
+### Economy (conjuncture) — `EconomyConjunctureFormulas`
+- Inputs: `Economy` = Economy additive sum **before** Community rows; `Population` = settlement population; `Conjuncture` = 2d6 + MG modifier
+- **Net Gold profit** = `(Economy + Conjuncture) × 2`
+- `% Gold/Production/Culture/Science/Defense` = `clamp(50 × (Economy / (2 × Population) − 1) + (Conjuncture − 7), −40, +40)`
+
 ---
 
 ## Baron Card — From Skills
 
-Klasa: `BaronSkillPpbFormulas`. Wpływ ze **wszystkich** umiejętności postaci (Baron Card).
+Class: `BaronSkillPpbFormulas`. Influence from **all** character skills (Baron Card).
 
-| PPB | Formuła (`Compute`, floored) |
+| PPB | Formula (`Compute`, floored) |
 |-----|------------------------------|
 | Food | `(Plants and mushrooms + Animals care + Beasts) / 3` |
 | Economy | `(Mathematics and logic + Races and nations + Trade) / 3` |
@@ -130,55 +141,60 @@ Klasa: `BaronSkillPpbFormulas`. Wpływ ze **wszystkich** umiejętności postaci 
 | Intelligence | `Perception/2 + Survival/2 + Deceit` |
 | Defense | `(Strategy and tactics + Inspire + Geography) / 3` |
 
-Mapowanie PL → katalog: Dowodzenie → **Inspire**, Dworskie maniery → **Diplomacy**, Magia → custom **Magic** (Knowledge).
+PL → catalog mapping: Dowodzenie → **Inspire**, Dworskie maniery → **Diplomacy**, Magia → custom **Magic** (Knowledge).
 
 ---
 
-## Baron and Advisors — wiersz barona (Domain Panel)
+## Baron and Advisors — baron row (Domain Panel)
 
-Logika: `BaronyCalc.BuildBaronAdvisorRow`. Każdy PPB baronii bierze wartość ze **swojej** kolumny w wierszu **From Skills** na Baron Card (ta sama mapowanie umiejętności → PPB co wyżej).
+Logic: `BaronyCalc.BuildBaronAdvisorRow`.
+
+**X** = sum of skill-PPB units from the Baron Card: **From Skills** (± management JC) + Prestige/Honor/Fear + custom `BaronInfluenceModifierDTO`.  
+Same total as Σ on the Baron Card (`BuildInfluenceRows` / `SumInfluenceRows`).
+
+Then for each PPB: Additive/Percent from the mapping formulas below — custom sources are **not** added as raw Additive outside that map.
 
 ### Additive (+)
 
-| PPB | Źródło | Tooltip |
+| PPB | Source | Tooltip |
 |-----|--------|---------|
-| Loyalty, Stability, Law, Science, Magic, Culture, Intelligence | wartość From Skills dla tego PPB | `= {ppb} skill` |
-| Corruption | From Skills Corruption (ujemna) | `= corruption skill` |
-| Food, Economy, Production, Defense | brak (tylko %) | *(brak)* |
-| Treasury (Gold) | brak | *(brak)* |
+| Loyalty, Stability, Law, Science, Magic, Culture, Intelligence | X for that PPB | `= {ppb} skill` |
+| Corruption | X Corruption (negative) | `= corruption skill` |
+| Food, Economy, Production, Defense | none (percent only) | *(none)* |
+| Treasury (Gold) | none | *(none)* |
 
 ### Percent (%)
 
-Dla każdego PPB: `X` = wartość **tego samego** PPB z From Skills.
+For each PPB: `X` = that same PPB value from the Baron Card sum (skills + sources).
 
-| PPB | Formuła | Tooltip |
+| PPB | Formula | Tooltip |
 |-----|---------|---------|
-| Food, Economy, Production, Defense | `(1 + X/60)` | `= {ppb} skill/60` (zaokr. do 0,1 pp) |
-| pozostałe oprócz Gold | `(1 + X/100)` | `= {ppb} skill/100` |
-| Corruption | `(1 + X/100)` (X ujemne) | `= corruption skill/100` |
-| Treasury (Gold) | brak | *(brak)* |
+| Food, Economy, Production, Defense | `(1 + X/60)` | `= {ppb} skill/60` (rounded to 0.1 pp) |
+| all others except Gold | `(1 + X/100)` | `= {ppb} skill/100` |
+| Corruption | `(1 + X/100)` (X negative) | `= corruption skill/100` |
+| Treasury (Gold) | none | *(none)* |
 
-W kolumnie % w UI widać **efektywny** procent (np. skill 30 → +50% przy dzielniku 60; wynik `/60` zaokrąglany do 0,1).
+The % column in the UI shows the **effective** percent (e.g. skill 30 → +50% with divisor 60; `/60` rounded to 0.1).
 
-Tooltip na **imieniu barona**: `BaronSkillPpbFormulas.BaronAdvisorNameTooltip`.  
-Szczegółowe formuły umiejętności — tylko na **Baron Card → From Skills** (`ExplainAdditive`).
+Tooltip on the **baron name**: `BaronSkillPpbFormulas.BaronAdvisorNameTooltip`.  
+Detailed skill formulas — only on **Baron Card → From Skills** (`ExplainAdditive`).
 
 ---
 
-## Baron and Advisors — wiersze doradców (Domain Panel)
+## Baron and Advisors — advisor rows (Domain Panel)
 
-Logika: `BaronyCalc.ApplyAdvisorSkillInfluence`. Umiejętności urzędnika zapisane w `Advisor.Skills` (Offices → Skills).
+Logic: `BaronyCalc.ApplyAdvisorSkillInfluence`.
 
-**Active skill** = wpis w `SignificantSkills` urzędu (domyślnie per `AdvisorSignificantSkills.DefaultForOffice`).
+**Active skill** = entry in the office `SignificantSkills` (defaults from `AdvisorSignificantSkills.DefaultForOffice`).
 
-Mapowanie na PPB jak u barona, ale **tylko** dla active skills. **Korupcja** w `Advisor.Skills` jest ze znakiem (ujemna = redukcja), bez dodatkowej inwersji przy mapowaniu.
+**X** = sum of skill-PPB units from Offices: `Advisor.Skills` + custom `AdvisorInfluenceModifierDTO`, then masked to active skills (`SumAdvisorInfluenceRows`).  
+Then Additive/Percent like the baron from X — customs are **not** injected as raw Additive outside the map.
 
-| | Baron's rule | Advisor |
+| | Baron | Advisor |
 |---|--------------|---------|
-| Źródło wartości | Baron Card From Skills | `Advisor.Skills` (masked) |
-| Zakres PPB | wszystkie oprócz Gold | tylko SignificantSkills |
-| Additive | jak baron (bez Food/Econ/Prod/Def) | jak baron |
-| Percent | jak baron (/60 lub /100) | jak baron |
-| Custom bonus | `BaronInfluenceModifierDTO` | `AdvisorInfluenceModifierDTO` (+ only) |
+| X source | Σ Baron Card (skills ± management + PHP + custom) | Σ Offices (skills + custom), masked |
+| PPB scope | all except Gold | SignificantSkills only |
+| Additive | MapToAdvisorAdditive(X) | same |
+| Percent | MapToAdvisorPercent(X) | same |
 
-Tooltipy komórek: `ExplainOfficeAdvisorAdditive` / `ExplainOfficeAdvisorPercent` (format `= {ppb} skill`, `/60` dla Food/Economy/Production/Defense).
+Cell tooltips: `ExplainOfficeAdvisorAdditive` / `ExplainOfficeAdvisorPercent` (format `= {ppb} skill`, `/60` for Food/Economy/Production/Defense).

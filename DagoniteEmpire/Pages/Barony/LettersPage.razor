@@ -61,28 +61,50 @@ else if (Barony is not null)
             else
             {
                 <div class="baron-mail__thread-list">
-                    @foreach (var thread in _threads)
+                    @foreach (var folder in ThreadFolders())
                     {
-                        var selected = _selected?.Id == thread.Id;
-                        <button type="button"
-                                class="baron-mail__thread @(selected ? "baron-mail__thread--active" : "") @(thread.HasUnreadForBaron ? "baron-mail__thread--unread" : "")"
-                                @onclick="@(() => SelectThreadAsync(thread.Id))">
-                            <div class="baron-mail__thread-title">
-                                @if (thread.HasUnreadForBaron)
-                                {
-                                    <span class="baron-mail__dot" title="Unread"></span>
-                                }
-                                <span>@(string.IsNullOrWhiteSpace(thread.Title) ? "(no title)" : thread.Title)</span>
-                            </div>
-                            <div class="baron-mail__thread-meta">
-                                @thread.CorrespondentName
-                                · @VisibleMessageCount(thread) letter@(VisibleMessageCount(thread) == 1 ? "" : "s")
-                                @if (thread.LastTurnNumber is int lt)
-                                {
-                                    <text> · T@lt</text>
-                                }
-                            </div>
-                        </button>
+                        var isOpen = folder.IsCurrent || _expandedFolders.Contains(folder.Turn);
+                        <div class="baron-mail__folder @(folder.IsCurrent ? "baron-mail__folder--current" : "") @(isOpen ? "baron-mail__folder--open" : "")">
+                            <button type="button"
+                                    class="baron-mail__folder-summary"
+                                    @onclick="@(() => ToggleFolder(folder.Turn, folder.IsCurrent))">
+                                <span class="baron-mail__folder-chevron">@(isOpen ? "▾" : "▸")</span>
+                                <span class="baron-mail__folder-title">@folder.Label</span>
+                                <span class="baron-mail__folder-count">@folder.Threads.Count</span>
+                            </button>
+                            @if (isOpen)
+                            {
+                                <div class="baron-mail__folder-body">
+                                    @foreach (var thread in folder.Threads)
+                                    {
+                                        var selected = _selected?.Id == thread.Id;
+                                        var unread = CanWriteAsGm ? thread.HasUnreadForGm : thread.HasUnreadForBaron;
+                                        <button type="button"
+                                                class="baron-mail__thread @(selected ? "baron-mail__thread--active" : "") @(unread ? "baron-mail__thread--unread" : "")"
+                                                @onclick="@(() => SelectThreadAsync(thread.Id))">
+                                            <div class="baron-mail__thread-title">
+                                                @if (unread)
+                                                {
+                                                    <span class="baron-mail__dot" title="Unread"></span>
+                                                }
+                                                <span>@(string.IsNullOrWhiteSpace(thread.Title) ? "(no title)" : thread.Title)</span>
+                                            </div>
+                                            <div class="baron-mail__thread-meta">
+                                                @thread.CorrespondentName
+                                                · @VisibleMessageCount(thread) letter@(VisibleMessageCount(thread) == 1 ? "" : "s")
+                                                @{
+                                                    var last = thread.LastDeliveredMessage;
+                                                }
+                                                @if (last is not null)
+                                                {
+                                                    <text> · @last.FormatInWorldDate()</text>
+                                                }
+                                            </div>
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </div>
                     }
                 </div>
             }
@@ -149,6 +171,10 @@ else if (Barony is not null)
                 <div class="baron-mail__posts" @ref="_postsPane">
                     @foreach (var post in VisiblePosts(_selected))
                     {
+                        var isLastOutbound = CanWriteAsBaron
+                            && BaronIsAwaitingReply(_selected)
+                            && !post.IsInbound
+                            && post.Id == LastDelivered(_selected)?.Id;
                         <article class="baron-mail__post @(post.IsInbound ? "baron-mail__post--inbound" : "baron-mail__post--outbound") @(post.IsDraft ? "baron-mail__post--draft" : "")">
                             <header class="baron-mail__post-head">
                                 <span class="baron-mail__post-dir">@(post.IsInbound ? "→ Baron" : "Baron →")</span>
@@ -159,9 +185,16 @@ else if (Barony is not null)
                                     }
                                     else
                                     {
-                                        <text>Turn @post.TurnNumber · @post.Season @post.Year · @MonthName(post.Month)</text>
+                                        <text>@post.FormatInWorldDate() · Turn @post.TurnNumber</text>
                                     }
                                 </span>
+                                @if (isLastOutbound && !_editingLastLetter)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Size="Size.Small"
+                                                   title="Edit letter"
+                                                   OnClick="BeginEditLastLetterAsync" />
+                                }
                                 @if (CanWriteAsGm && post.IsDraft)
                                 {
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
@@ -193,33 +226,75 @@ else if (Barony is not null)
                     }
                 </div>
 
-                @if (_canCompose)
+                @if (_showWaitingForReplyPanel)
                 {
-                    <div class="baron-mail__composer">
+                    <div class="baron-mail__composer baron-mail__composer--waiting">
+                        <MudText Typo="Typo.body2">
+                            Waiting for a reply — you can’t send another letter in this thread yet.
+                        </MudText>
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Edit"
+                                   Class="mt-2"
+                                   OnClick="BeginEditLastLetterAsync"
+                                   Disabled="@_busy">
+                            Edit last letter
+                        </MudButton>
+                    </div>
+                }
+                else if (_showComposerEditor)
+                {
+                    <div class="baron-mail__composer @ComposerHandClass">
                         <div class="baron-mail__composer-label">
-                            @(_composeInbound ? "Write to the baron…" : "Write as the baron…")
+                            @if (_editingLastLetter)
+                            {
+                                <text>Editing your last letter…</text>
+                            }
+                            else if (_composeInbound)
+                            {
+                                <text>Write to the baron…</text>
+                            }
+                            else
+                            {
+                                <text>Write as the baron…</text>
+                            }
                             @if (_saveHint is not null)
                             {
                                 <span class="baron-mail__save-hint"> · @_saveHint</span>
                             }
                         </div>
-                        <div class="baron-letter-editor baron-mail__editor">
-                            <BlazoredTextEditor @ref="_editor" Placeholder="Write your letter…">
+                        <div class="baron-letter-editor baron-mail__editor @ComposerHandClass">
+                            <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="Write your letter…">
                                 <ToolbarContent>@Toolbar()</ToolbarContent>
                                 <EditorContent></EditorContent>
                             </BlazoredTextEditor>
                         </div>
                         <div class="baron-mail__composer-actions">
-                            <MudButton Class="baron-influence-save-btn"
-                                       Variant="Variant.Filled"
-                                       OnClick="SendAsync"
-                                       Disabled="@_busy">
-                                Send
-                            </MudButton>
+                            @if (_editingLastLetter)
+                            {
+                                <MudButton Variant="Variant.Outlined" OnClick="CancelEditLastLetterAsync" Disabled="@_busy">
+                                    Cancel
+                                </MudButton>
+                                <MudButton Class="baron-influence-save-btn"
+                                           Variant="Variant.Filled"
+                                           OnClick="SaveEditAsync"
+                                           Disabled="@_busy">
+                                    Save
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <MudButton Class="baron-influence-save-btn"
+                                           Variant="Variant.Filled"
+                                           OnClick="SendAsync"
+                                           Disabled="@_busy">
+                                    Send
+                                </MudButton>
+                            }
                         </div>
                     </div>
                 }
-                else
+                else if (_selected is not null)
                 {
                     <div class="baron-mail__composer baron-mail__composer--readonly">
                         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
@@ -239,17 +314,33 @@ else if (Barony is not null)
     private List<BaronyRelationDTO> _relations = new();
     private BaronLetterThreadDTO? _selected;
     private BaronLetterMessageDTO? _draft;
+    private bool _editingLastLetter;
+    private readonly HashSet<int> _expandedFolders = new();
+
+    private sealed record ThreadFolder(int Turn, string Label, bool IsCurrent, List<BaronLetterThreadDTO> Threads);
 
     private bool CanWriteAsBaron => CanEdit && !CanManageAsMg;
     private bool CanWriteAsGm => CanManageAsMg;
     private bool _composeInbound => CanWriteAsGm;
-    private bool _canCompose => _selected is not null && (CanWriteAsBaron || CanWriteAsGm);
+    private bool _canUseComposer => _selected is not null && (CanWriteAsGm || CanWriteAsBaron);
+    private bool _showWaitingForReplyPanel =>
+        _selected is not null && CanWriteAsBaron && !_editingLastLetter && BaronIsAwaitingReply(_selected);
+    private bool _showComposerEditor =>
+        _canUseComposer && !_showWaitingForReplyPanel;
+
+    /// <summary>CSS hook: baron hand vs correspondent hand in the letter composer.</summary>
+    private string ComposerHandClass =>
+        _composeInbound && !_editingLastLetter
+            ? "baron-mail__hand--correspondent"
+            : "baron-mail__hand--baron";
 
     private BlazoredTextEditor? _editor;
     private bool _shouldLoadEditor;
     private int _loadAttempts;
+    private int _editorEpoch;
+    private bool _skipNextDraftPersist;
     private const int MaxLoadAttempts = 12;
-    private const int EditorJsTimeoutMs = 2000;
+    private const int EditorJsTimeoutMs = 4000;
 
     private bool _busy;
     private bool _autoSaveInFlight;
@@ -373,17 +464,73 @@ else if (Barony is not null)
 
     private IEnumerable<BaronLetterMessageDTO> VisiblePosts(BaronLetterThreadDTO thread)
     {
-        // Draft currently being edited stays in the composer, not duplicated in the feed.
+        // Delivered letters always stay in the feed (including while editing).
         return thread.Messages
-            .Where(m => _draft is null || m.Id != _draft.Id)
-            .OrderBy(m => m.SortOrder)
+            .Where(m => !m.IsDraft)
+            .OrderBy(m => m.Year)
+            .ThenBy(m => m.Month)
+            .ThenBy(m => m.Day)
+            .ThenBy(m => m.SortOrder)
             .ThenBy(m => m.Id);
     }
 
     private int VisibleMessageCount(BaronLetterThreadDTO thread) =>
-        CanWriteAsGm
-            ? thread.Messages.Count
-            : thread.Messages.Count(m => !(m.IsInbound && m.IsDraft));
+        thread.Messages.Count(m => !m.IsDraft);
+
+    private IEnumerable<ThreadFolder> ThreadFolders()
+    {
+        if (Barony is null)
+            yield break;
+
+        var currentTurn = Barony.TurnNumber;
+        var groups = _threads
+            .GroupBy(t =>
+            {
+                var turn = t.ActivityTurn;
+                return turn <= 0 ? currentTurn : turn;
+            })
+            .OrderByDescending(g => g.Key == currentTurn) // current first
+            .ThenByDescending(g => g.Key);
+
+        foreach (var g in groups)
+        {
+            var turn = g.Key;
+            var isCurrent = turn == currentTurn;
+            var sample = g.SelectMany(t => t.Messages.Where(m => !m.IsDraft && m.TurnNumber == turn))
+                .OrderByDescending(m => m.Id)
+                .FirstOrDefault();
+            var season = sample?.Season ?? (isCurrent ? Barony.Season : "");
+            var year = sample?.Year > 0 ? sample.Year : (isCurrent ? Barony.Year : 0);
+            var seasonLabel = string.IsNullOrWhiteSpace(season)
+                ? ""
+                : $" · {SeasonLabel(season)}{(year > 0 ? $" {year}" : "")}";
+            var label = isCurrent
+                ? $"This turn (T{turn}){seasonLabel}"
+                : $"Turn {turn}{seasonLabel}";
+
+            var threads = g
+                .OrderBy(t => t.CreatedAtUtc)
+                .ThenBy(t => t.Id)
+                .ToList();
+
+            yield return new ThreadFolder(turn, label, isCurrent, threads);
+        }
+    }
+
+    private void ToggleFolder(int turn, bool isCurrent)
+    {
+        if (isCurrent)
+            return; // current turn stays open
+
+        if (!_expandedFolders.Add(turn))
+            _expandedFolders.Remove(turn);
+    }
+
+    private static string SeasonLabel(string season) => season.Trim() switch
+    {
+        "Fall" => "Autumn",
+        _ => season.Trim(),
+    };
 
     private async Task SelectThreadAsync(int threadId, bool reload = true)
     {
@@ -398,22 +545,39 @@ else if (Barony is not null)
             return;
 
         await StopAutoSaveAsync();
-        if (_draft is not null && _canCompose)
-            await PersistDraftAsync(silent: true);
+        if (!_skipNextDraftPersist && _draft is not null && _canUseComposer)
+            await PersistComposerAsync(silent: true);
+        _skipNextDraftPersist = false;
 
         _selected = thread;
         _editingTitle = false;
         _titleEdit = thread.Title;
+        _editingLastLetter = false;
         RefreshReceivedCount();
 
-        _draft = FindOrNullDraft(thread);
-        if (_draft is null && _canCompose)
+        if (CanWriteAsBaron && BaronIsAwaitingReply(thread))
         {
-            _draft = await EnsureDraftAsync(thread);
-            thread.Messages.Add(_draft);
+            // Waiting for a reply: letter stays in the feed; composer shows waiting panel.
+            await DiscardOrphanOutboundDraftsAsync(thread);
+            _draft = null;
+        }
+        else if (_canUseComposer)
+        {
+            _draft = FindOrNullDraft(thread);
+            if (_draft is null)
+            {
+                _draft = await EnsureDraftAsync(thread);
+                if (!thread.Messages.Any(m => m.Id == _draft.Id))
+                    thread.Messages.Add(_draft);
+            }
+        }
+        else
+        {
+            _draft = null;
         }
 
-        _shouldLoadEditor = _canCompose;
+        _editorEpoch++;
+        _shouldLoadEditor = _showComposerEditor;
         _loadAttempts = 0;
         _editor = null;
         _saveHint = null;
@@ -428,8 +592,18 @@ else if (Barony is not null)
             }
             catch { /* ignore */ }
         }
+        else if (CanWriteAsGm && thread.HasUnreadForGm)
+        {
+            try
+            {
+                await _baronyRepo.MarkLetterThreadSeenByGm(thread.Id);
+                foreach (var m in thread.Messages.Where(m => m.HasUnreadForGm))
+                    m.SeenByGm = true;
+            }
+            catch { /* ignore */ }
+        }
 
-        if (_canCompose)
+        if (_showComposerEditor)
             StartAutoSaveLoop();
 
         // Deep-link friendly URL without full navigation.
@@ -437,6 +611,71 @@ else if (Barony is not null)
         _navigationManager.NavigateTo(uri, replace: true);
 
         StateHasChanged();
+    }
+
+    private async Task BeginEditLastLetterAsync()
+    {
+        if (_selected is null || !CanWriteAsBaron || !BaronIsAwaitingReply(_selected))
+            return;
+
+        var last = LastDelivered(_selected);
+        if (last is null || last.IsInbound)
+            return;
+
+        await StopAutoSaveAsync();
+        _editingLastLetter = true;
+        _draft = CloneMessage(last);
+        _editorEpoch++;
+        _shouldLoadEditor = true;
+        _loadAttempts = 0;
+        _editor = null;
+        _saveHint = null;
+        StartAutoSaveLoop();
+        StateHasChanged();
+    }
+
+    private async Task CancelEditLastLetterAsync()
+    {
+        await StopAutoSaveAsync();
+        _editingLastLetter = false;
+        _draft = null;
+        _editor = null;
+        _shouldLoadEditor = false;
+        _saveHint = null;
+        StateHasChanged();
+    }
+
+    private static BaronLetterMessageDTO? LastDelivered(BaronLetterThreadDTO thread) =>
+        thread.Messages
+            .Where(m => !m.IsDraft)
+            .OrderBy(m => m.Year)
+            .ThenBy(m => m.Month)
+            .ThenBy(m => m.Day)
+            .ThenBy(m => m.SortOrder)
+            .ThenBy(m => m.Id)
+            .LastOrDefault();
+
+    /// <summary>Baron already sent the last letter and has not received a reply yet.</summary>
+    private bool BaronIsAwaitingReply(BaronLetterThreadDTO thread)
+    {
+        if (!CanWriteAsBaron || CanWriteAsGm)
+            return false;
+        var last = LastDelivered(thread);
+        return last is not null && !last.IsInbound;
+    }
+
+    private async Task DiscardOrphanOutboundDraftsAsync(BaronLetterThreadDTO thread)
+    {
+        var orphans = thread.Messages.Where(m => m.IsDraft && !m.IsInbound).ToList();
+        foreach (var o in orphans)
+        {
+            try
+            {
+                await _baronyRepo.DeleteLetterMessage(o.Id);
+                thread.Messages.RemoveAll(m => m.Id == o.Id);
+            }
+            catch { /* ignore */ }
+        }
     }
 
     private BaronLetterMessageDTO? FindOrNullDraft(BaronLetterThreadDTO thread) =>
@@ -455,6 +694,7 @@ else if (Barony is not null)
             Month = Barony.Month,
             Season = Barony.Season,
             SeenByBaron = true,
+            SeenByGm = true,
         });
     }
 
@@ -572,14 +812,10 @@ else if (Barony is not null)
             if (_draft?.Id == message.Id)
             {
                 _draft = null;
-                if (_canCompose)
-                {
-                    _draft = await EnsureDraftAsync(_selected);
-                    _selected.Messages.Add(_draft);
-                    _shouldLoadEditor = true;
-                    _loadAttempts = 0;
-                    _editor = null;
-                }
+                _editingLastLetter = false;
+                _skipNextDraftPersist = true;
+                await SelectThreadAsync(_selected.Id, reload: true);
+                return;
             }
             StateHasChanged();
         }
@@ -591,8 +827,14 @@ else if (Barony is not null)
 
     private async Task SendAsync()
     {
-        if (_selected is null || _draft is null || Barony is null || !_canCompose)
+        if (_selected is null || _draft is null || Barony is null || !_canUseComposer || _editingLastLetter)
             return;
+
+        if (CanWriteAsBaron && BaronIsAwaitingReply(_selected))
+        {
+            _snackBar.Add("Wait for a reply before sending another letter in this thread.", Severity.Warning);
+            return;
+        }
 
         if (_busy) return;
 
@@ -608,45 +850,115 @@ else if (Barony is not null)
             }
         }
 
+        // Stop autosave and wait out any in-flight draft write so it cannot overwrite Sent → Draft.
         await StopAutoSaveAsync();
+        await WaitForAutoSaveIdleAsync();
+
         _busy = true;
         try
         {
-            _draft.BodyHtml = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
+            var html = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
+            if (IsEffectivelyEmptyHtml(html))
+            {
+                _snackBar.Add("Write something before sending.", Severity.Warning);
+                StartAutoSaveLoop();
+                return;
+            }
+
+            _draft.BodyHtml = html;
             _draft.Status = BaronLetterStatus.Sent;
             _draft.SentAtUtc = DateTime.UtcNow;
             _draft.TurnNumber = Barony.TurnNumber;
-            _draft.Year = Barony.Year;
-            _draft.Month = Barony.Month;
             _draft.Season = Barony.Season;
             _draft.IsInbound = _composeInbound;
             if (_composeInbound)
+            {
                 _draft.SeenByBaron = false;
+                _draft.SeenByGm = true;
+            }
+            else
+            {
+                _draft.SeenByBaron = true;
+                _draft.SeenByGm = false;
+            }
 
-            _draft = await _baronyRepo.SaveLetterMessage(_draft);
+            var letterDate = BaronLetterCalendar.AssignNext(
+                Barony.Season,
+                Barony.Year,
+                _selected.ReplyRegion,
+                _selected.Messages.Where(m => !m.IsDraft && m.Id != _draft.Id)
+                    .Select(m => new BaronLetterCalendar.PriorLetter(
+                        m.Day, m.Month, m.Year, m.IsInbound)),
+                nextIsInbound: _composeInbound);
+            _draft.Day = letterDate.Day;
+            _draft.Month = letterDate.Month;
+            _draft.Year = letterDate.Year;
 
-            // Replace in thread list
-            var idx = _selected.Messages.FindIndex(m => m.Id == _draft.Id);
-            if (idx >= 0) _selected.Messages[idx] = CloneMessage(_draft);
-            else _selected.Messages.Add(CloneMessage(_draft));
+            var sent = await _baronyRepo.SaveLetterMessage(_draft);
+            if (sent.IsDraft)
+            {
+                _snackBar.Add("Send failed: message stayed as draft.", Severity.Error);
+                StartAutoSaveLoop();
+                return;
+            }
 
+            // Baron: reload into edit-last-letter mode. GM: reload may create a new inbound draft.
+            _skipNextDraftPersist = true;
             _snackBar.Add("Letter sent.", Severity.Success);
-
-            // Fresh draft for the next message in this thread.
-            _draft = await EnsureDraftAsync(_selected);
-            _selected.Messages.Add(_draft);
-            _shouldLoadEditor = true;
-            _loadAttempts = 0;
-            _editor = null;
-            _saveHint = null;
-            RefreshReceivedCount();
-            StartAutoSaveLoop();
             await ReloadAsync(selectThreadId: _selected.Id);
         }
         catch (Exception ex)
         {
             _snackBar.Add("Send failed: " + ex.Message, Severity.Error);
-            if (_canCompose) StartAutoSaveLoop();
+            if (_canUseComposer) StartAutoSaveLoop();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task SaveEditAsync()
+    {
+        if (_selected is null || _draft is null || !_editingLastLetter || !_canUseComposer)
+            return;
+        if (_busy) return;
+
+        await StopAutoSaveAsync();
+        await WaitForAutoSaveIdleAsync();
+
+        _busy = true;
+        try
+        {
+            var html = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
+            if (IsEffectivelyEmptyHtml(html))
+            {
+                _snackBar.Add("Letter cannot be empty.", Severity.Warning);
+                StartAutoSaveLoop();
+                return;
+            }
+
+            _draft.BodyHtml = html;
+            _draft.Status = BaronLetterStatus.Sent;
+            // Keep original in-world date / turn — this is an edit, not a new letter.
+            var saved = await _baronyRepo.SaveLetterMessage(_draft);
+
+            var idx = _selected.Messages.FindIndex(m => m.Id == saved.Id);
+            if (idx >= 0) _selected.Messages[idx] = CloneMessage(saved);
+
+            await StopAutoSaveAsync();
+            _editingLastLetter = false;
+            _draft = null;
+            _editor = null;
+            _shouldLoadEditor = false;
+            _saveHint = null;
+            _snackBar.Add("Letter updated.", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Save failed: " + ex.Message, Severity.Error);
+            StartAutoSaveLoop();
         }
         finally
         {
@@ -671,54 +983,77 @@ else if (Barony is not null)
         {
             while (await _autoSaveTimer!.WaitForNextTickAsync(ct))
             {
-                if (_draft?.IsDraft == true)
-                    await PersistDraftAsync(silent: true);
+                if (_draft is not null)
+                    await PersistComposerAsync(silent: true);
             }
         }
         catch (OperationCanceledException) { }
     }
 
-    private async Task PersistDraftAsync(bool silent)
+    private async Task PersistComposerAsync(bool silent)
     {
-        if (_draft is null || !_draft.IsDraft || !_canCompose)
+        if (_draft is null || !_canUseComposer)
             return;
 
         if (silent)
         {
             if (_autoSaveInFlight || _busy) return;
             _autoSaveInFlight = true;
-            try { await PersistDraftCoreAsync(silent: true); }
+            try { await PersistComposerCoreAsync(silent: true); }
             finally { _autoSaveInFlight = false; }
             return;
         }
 
         if (_busy) return;
         _busy = true;
-        try { await PersistDraftCoreAsync(silent: false); }
+        try { await PersistComposerCoreAsync(silent: false); }
         finally { _busy = false; }
     }
 
-    private async Task PersistDraftCoreAsync(bool silent)
+    private async Task PersistComposerCoreAsync(bool silent)
     {
-        if (_draft is null || !_draft.IsDraft) return;
+        var msg = _draft;
+        if (msg is null) return;
+        var msgId = msg.Id;
+        var editing = _editingLastLetter;
 
-        _draft.BodyHtml = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
-        _draft.Status = BaronLetterStatus.Draft;
-        _draft.IsInbound = _composeInbound;
-        if (Barony is not null && _draft.TurnNumber <= 0)
+        var html = await TryGetEditorHtmlAsync(_editor, msg.BodyHtml) ?? msg.BodyHtml;
+
+        if (_draft is null || _draft.Id != msgId || _editingLastLetter != editing)
+            return;
+
+        if (editing)
         {
-            _draft.TurnNumber = Barony.TurnNumber;
-            _draft.Year = Barony.Year;
-            _draft.Month = Barony.Month;
-            _draft.Season = Barony.Season;
+            // Autosave an already-sent letter the baron is still allowed to tweak.
+            if (_draft.IsDraft) return;
+            _draft.BodyHtml = html;
+            _draft.Status = BaronLetterStatus.Sent;
+            _draft = await _baronyRepo.SaveLetterMessage(_draft);
+        }
+        else
+        {
+            if (!_draft.IsDraft) return;
+            _draft.BodyHtml = html;
+            _draft.Status = BaronLetterStatus.Draft;
+            _draft.IsInbound = _composeInbound;
+            if (Barony is not null && _draft.TurnNumber <= 0)
+            {
+                _draft.TurnNumber = Barony.TurnNumber;
+                _draft.Year = Barony.Year;
+                _draft.Month = Barony.Month;
+                _draft.Season = Barony.Season;
+            }
+
+            _draft = await _baronyRepo.SaveLetterMessage(_draft);
+            if (_draft.IsDraft == false)
+                return;
         }
 
-        _draft = await _baronyRepo.SaveLetterMessage(_draft);
         if (_selected is not null)
         {
             var idx = _selected.Messages.FindIndex(m => m.Id == _draft.Id);
             if (idx >= 0) _selected.Messages[idx] = CloneMessage(_draft);
-            else _selected.Messages.Add(CloneMessage(_draft));
+            else if (_draft.IsDraft) _selected.Messages.Add(CloneMessage(_draft));
         }
 
         _saveHint = silent ? $"auto-saved {DateTime.Now:HH:mm:ss}" : $"saved {DateTime.Now:HH:mm:ss}";
@@ -743,6 +1078,15 @@ else if (Barony is not null)
             catch (OperationCanceledException) { }
             _autoSaveLoop = null;
         }
+
+        await WaitForAutoSaveIdleAsync();
+    }
+
+    private async Task WaitForAutoSaveIdleAsync()
+    {
+        var spins = 0;
+        while (_autoSaveInFlight && spins++ < 50)
+            await Task.Delay(50);
     }
 
     private async Task<string?> TryGetEditorHtmlAsync(BlazoredTextEditor? editor, string? fallback)
@@ -758,10 +1102,12 @@ else if (Barony is not null)
         catch { return fallback; }
     }
 
-    private static string MonthName(int month) =>
-        month is >= 1 and <= 12
-            ? System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month)
-            : month.ToString();
+    private static bool IsEffectivelyEmptyHtml(string? html)
+    {
+        if (string.IsNullOrWhiteSpace(html)) return true;
+        var t = html.Trim();
+        return t is "<p></p>" or "<p><br></p>" or "<p><br/></p>" or "<br>" or "<div><br></div>";
+    }
 
     private static BaronLetterThreadDTO CloneThread(BaronLetterThreadDTO t) => new()
     {
@@ -788,8 +1134,10 @@ else if (Barony is not null)
         TurnNumber = m.TurnNumber,
         Year = m.Year,
         Month = m.Month,
+        Day = m.Day,
         Season = m.Season,
         SeenByBaron = m.SeenByBaron,
+        SeenByGm = m.SeenByGm,
         SortOrder = m.SortOrder,
         CreatedAtUtc = m.CreatedAtUtc,
         UpdatedAtUtc = m.UpdatedAtUtc,
@@ -800,8 +1148,8 @@ else if (Barony is not null)
     {
         try
         {
-            if (_draft?.IsDraft == true && _canCompose)
-                await PersistDraftAsync(silent: true);
+            if (_draft is not null && _canUseComposer)
+                await PersistComposerAsync(silent: true);
         }
         catch { /* ignore on dispose */ }
 

@@ -44,6 +44,12 @@ namespace DA_DataAccess.BaronyData
 
         public int Unrest { get; set; }
 
+        /// <summary>Raw 2d6 rolled at turn start for economic conjuncture (typically 2–12).</summary>
+        public int ConjunctureDice { get; set; } = 7;
+
+        /// <summary>MG-only modifier added to <see cref="ConjunctureDice"/> (war, harvest, etc.).</summary>
+        public int ConjunctureModifier { get; set; }
+
         public int Prestige { get; set; }
         public int Honor { get; set; }
         public int Fear { get; set; }

@@ -51,7 +51,7 @@
                 </td>
                 @foreach (var info in SkillColumns)
                 {
-                    var inactive = IsSkillsCellInactive(row, info.Key);
+                    var inactive = IsColumnInactive(info.Key);
                     <td class="@CellClass(info.Key, row.Values[info.Key], inactive)">@Fmt(row.Values[info.Key])</td>
                 }
                 <td class="office-cost-col @CostClass(row.Cost)">@FmtCost(row.Cost)</td>
@@ -122,9 +122,6 @@
 
     private bool IsColumnInactive(Ppb key)
         => SignificantSkills is { Count: > 0 } && !SignificantSkills.Contains(key);
-
-    private bool IsSkillsCellInactive(AdvisorInfluenceRow row, Ppb key)
-        => row.SystemKind == AdvisorInfluenceSystemKind.Skills && IsColumnInactive(key);
 
     private static string HeaderClass(bool inactive)
         => inactive ? "ppb-col-inactive" : string.Empty;

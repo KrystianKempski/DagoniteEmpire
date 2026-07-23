@@ -96,6 +96,11 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronLetterMessageDTO> SaveLetterMessage(BaronLetterMessageDTO dto);
         Task<int> DeleteLetterMessage(int id);
         Task MarkLetterThreadSeenByBaron(int threadId);
+        Task MarkLetterThreadSeenByGm(int threadId);
+        /// <summary>Unread inbound letters for the baron of this barony.</summary>
+        Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForBaron(int baronyId);
+        /// <summary>Unread outbound (baron→) letters across all baronies — for MG/Admin FAB.</summary>
+        Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForGm();
 
         // --- Offices influence ---
         Task<List<AdvisorInfluenceModifierDTO>> GetAdvisorInfluenceModifiers(int baronyId);

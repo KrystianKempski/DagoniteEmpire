@@ -2,6 +2,14 @@
   "version": 1,
   "items": [
     {
+      "id": "domain.summary",
+      "title": "Barony Summary (Domain Panel grand total)",
+      "category": "domain-panel",
+      "implementation": "BaronyCalc.SummarizeSections / PpbMath.Summarize",
+      "notes": "All Domain Panel sections contribute Additive and Percent. final = Σ Additive + SumScalableAdditive × (Σ Percent / 100). Scalable = positive Additive per row (negative for Corruption). No separate base row.",
+      "formula": "final = Σadd + scalable_add × (Σpct / 100)"
+    },
+    {
       "id": "terrain.village.unfortified",
       "title": "Unfortified Village",
       "category": "terrain-improvement",
@@ -125,6 +133,41 @@
       }
     },
     {
+      "id": "community.economy",
+      "title": "Economy (conjuncture)",
+      "category": "community-penalty",
+      "implementation": "DA_Common/Barony/EconomyConjunctureFormulas.cs",
+      "notes": "Economy = Economy additive before Community rows. Population = settlement population (towns + city buildings + villages). Conjuncture = 2d6 turn roll + MG modifier. Net Gold profit is additive; % applies to Gold, Production, Culture, Science, Defense.",
+      "inputs": [
+        {
+          "name": "Economy",
+          "type": "decimal",
+          "description": "Sum of Economy additive from sections before Community"
+        },
+        {
+          "name": "Population",
+          "type": "int",
+          "min": 0,
+          "description": "Settlement population"
+        },
+        {
+          "name": "Conjuncture",
+          "type": "int",
+          "description": "ConjunctureDice + ConjunctureModifier"
+        }
+      ],
+      "additive": {
+        "Treasury": "(Economy + Conjuncture) * 2"
+      },
+      "percent": {
+        "Treasury": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
+        "Production": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
+        "Culture": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
+        "Science": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)",
+        "Defense": "clamp(50 * (Economy / (2 * Population) - 1) + (Conjuncture - 7), -40, 40)"
+      }
+    },
+    {
       "id": "baron.skills",
       "title": "From Skills",
       "category": "baron-influence",
@@ -150,16 +193,16 @@
       "title": "Baron and Advisors — baron row",
       "category": "baron-influence",
       "implementation": "DagoniteEmpire/Pages/Barony/BaronyCalc.cs (BuildBaronAdvisorRow)",
-      "notes": "Percent: each PPB uses its linked From Skills value. Additive: same except Food/Economy/Production/Defense (percent only). Corruption stored signed (negative reduces corruption) for baron and office skills. Treasury excluded.",
+      "notes": "X = SumInfluenceRows(BuildInfluenceRows): From Skills ± management + Prestige/Honor/Fear + BaronInfluenceModifier skill-unit sources. Then Additive = MapToAdvisorAdditive(X), Percent = MapToAdvisorPercent(X). Food/Economy/Production/Defense are percent-only. Corruption stored signed. Treasury excluded. Custom sources are never injected as raw Additive after the map.",
       "additive": {
-        "Loyalty": "From Skills: Loyalty",
-        "Stability": "From Skills: Stability",
-        "Law": "From Skills: Law",
-        "Science": "From Skills: Science",
-        "Magic": "From Skills: Magic",
-        "Culture": "From Skills: Culture",
-        "Intelligence": "From Skills: Intelligence",
-        "Corruption": "From Skills: Corruption (negative on Baron Card)",
+        "Loyalty": "X: Loyalty",
+        "Stability": "X: Stability",
+        "Law": "X: Law",
+        "Science": "X: Science",
+        "Magic": "X: Magic",
+        "Culture": "X: Culture",
+        "Intelligence": "X: Intelligence",
+        "Corruption": "X: Corruption (negative on Baron Card)",
         "Food": "none (percent only)",
         "Economy": "none (percent only)",
         "Production": "none (percent only)",
@@ -175,18 +218,18 @@
         "Treasury": "none"
       },
       "percent": {
-        "Food": "+X/60 (X = Food skill; rounded to 0.1 pp)",
-        "Economy": "+X/60 (X = Economy skill; rounded to 0.1 pp)",
-        "Production": "+X/60 (X = Production skill; rounded to 0.1 pp)",
-        "Defense": "+X/60 (X = Defense skill; rounded to 0.1 pp)",
-        "Loyalty": "+X/100 (X = Loyalty skill)",
-        "Stability": "+X/100 (X = Stability skill)",
-        "Law": "+X/100 (X = Law skill)",
-        "Corruption": "X/100 (X = Corruption skill; negative on Baron Card)",
-        "Science": "+X/100 (X = Science skill)",
-        "Magic": "+X/100 (X = Magic skill)",
-        "Culture": "+X/100 (X = Culture skill)",
-        "Intelligence": "+X/100 (X = Intelligence skill)",
+        "Food": "+X/60 (X = Food skill total; rounded to 0.1 pp)",
+        "Economy": "+X/60 (X = Economy skill total; rounded to 0.1 pp)",
+        "Production": "+X/60 (X = Production skill total; rounded to 0.1 pp)",
+        "Defense": "+X/60 (X = Defense skill total; rounded to 0.1 pp)",
+        "Loyalty": "+X/100 (X = Loyalty skill total)",
+        "Stability": "+X/100 (X = Stability skill total)",
+        "Law": "+X/100 (X = Law skill total)",
+        "Corruption": "X/100 (X = Corruption skill total; negative on Baron Card)",
+        "Science": "+X/100 (X = Science skill total)",
+        "Magic": "+X/100 (X = Magic skill total)",
+        "Culture": "+X/100 (X = Culture skill total)",
+        "Intelligence": "+X/100 (X = Intelligence skill total)",
         "Treasury": "none"
       },
       "percentTooltips": {
@@ -204,7 +247,7 @@
       "title": "Baron and Advisors — office holder rows",
       "category": "baron-influence",
       "implementation": "BaronyCalc.ApplyAdvisorSkillInfluence",
-      "notes": "Same mapping as baron.advisor-row but only SignificantSkills (active skills) from Advisor.Skills. Custom AdvisorInfluenceModifier additive only.",
+      "notes": "X = SumAdvisorInfluenceRows(BuildAdvisorInfluenceRows): Advisor.Skills + AdvisorInfluenceModifier skill-unit sources, masked to SignificantSkills. Then Additive/Percent = MapToAdvisor*(X) same as baron.advisor-row. Custom sources are never injected as raw Additive after the map.",
       "activeSkills": {
         "Chancellor": ["Loyalty", "Stability", "Culture"],
         "GuardCaptain": ["Law", "Corruption", "Defense"],

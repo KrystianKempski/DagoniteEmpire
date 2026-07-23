@@ -63,6 +63,9 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Powiązanie z katalogiem (opcjonalne).</summary>
         public int? TemplateId { get; set; }
 
+        /// <summary>Stable key when this row overrides a fixed core city building.</summary>
+        public string? CoreKey { get; set; }
+
         public string Name { get; set; } = string.Empty;
         public string Kind { get; set; } = DA_Common.Barony.BuildingKind.Building;
 
@@ -330,10 +333,15 @@ namespace DA_DataAccess.BaronyData
         public int TurnNumber { get; set; }
         public int Year { get; set; }
         public int Month { get; set; }
+        /// <summary>Day of month in the campaign calendar (1–31). 0 = legacy / unset.</summary>
+        public int Day { get; set; }
         public string Season { get; set; } = "Winter";
 
         /// <summary>False until the baron opens this delivered inbound message.</summary>
         public bool SeenByBaron { get; set; } = true;
+
+        /// <summary>False until the GM opens this delivered outbound (baron→) message.</summary>
+        public bool SeenByGm { get; set; } = true;
 
         public int SortOrder { get; set; }
         public DateTime CreatedAtUtc { get; set; }

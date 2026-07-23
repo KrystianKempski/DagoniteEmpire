@@ -2899,6 +2899,9 @@ namespace DagoniteEmpire.Service
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - fertile")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - bountiful")
                 || await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Dagonite")
+                || await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Market Square")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Marketplace")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Inn")
                 || await ctx.BuildingTemplates.AnyAsync(t =>
                     t.Name == "Fishing Pier"
                     && (t.EffectAdditiveJson == null || !t.EffectAdditiveJson.Contains("-0.5,10")))
@@ -2911,7 +2914,14 @@ namespace DagoniteEmpire.Service
                     t.Name == "Hunter's Lodge"
                     && (t.EffectAdditiveJson == null
                         || t.EffectAdditiveJson.Contains("2,0,0,0,0,3,5")
-                        || !t.EffectAdditiveJson.Contains("0,0,0,0,0,0,3,5")));
+                        || !t.EffectAdditiveJson.Contains("0,0,0,0,0,0,3,5")))
+                // Barracks: Defense 20, Treasury −60; Town Garrison: Defense 6, Treasury −25.
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Barracks"
+                    && (t.EffectAdditiveJson == null || !t.EffectAdditiveJson.Contains("20,-60")))
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Town Garrison"
+                    && (t.EffectAdditiveJson == null || !t.EffectAdditiveJson.Contains("6,-25")));
 
             if (!needsReseed)
                 return;

@@ -24,12 +24,34 @@ namespace DA_Common.Barony
         public const string MetaUnrest =
             "Community unrest level. Feeds the Community section and penalizes Loyalty, Stability, Law, Economy, and Production.";
 
+        public static string MetaConjuncture(int dice, int modifier)
+        {
+            var effective = dice + modifier;
+            var modText = modifier == 0
+                ? "no MG modifier"
+                : $"MG modifier {(modifier > 0 ? "+" : "")}{modifier}";
+            return
+                $"Economic conjuncture this turn: {effective} (2d6 = {dice}, {modText}).\n"
+                + "Rolled at turn start. Feeds Community Economy: "
+                + $"(1) net Gold profit (Economy + Conjuncture) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}; "
+                + "(2) (Conjuncture − 7) in the % formula on Gold, Production, Culture, Science, and Defense.";
+        }
+
         public static string MetaPpbTurnTotal(Ppb key, decimal value)
         {
             var name = PpbCatalog.NameEnglish(key);
-            return
+            var baseTip =
                 $"Domain Panel grand total for {name} this turn: {PpbFormat.Additive(value)}.\n" +
                 "Sum of additive modifiers from all sections (before percent scaling).";
+
+            if (key == Ppb.Economy)
+            {
+                return baseTip + "\n"
+                    + $"Community net Gold uses pre-Community Economy additive: "
+                    + $"(Economy + Conjuncture) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}.";
+            }
+
+            return baseTip;
         }
 
         public static string ResourceHud(Ppb key, decimal stock, decimal delta)

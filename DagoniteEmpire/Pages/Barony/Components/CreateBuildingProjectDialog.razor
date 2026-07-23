@@ -1,0 +1,159 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Tile (@Tile.X, @Tile.Y) — construction project (Building), paid with Gold &amp; Production only.
+            </MudText>
+
+            @if (Templates.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">
+                    No catalog improvements fit this tile (same rules as the improvement brush).
+                </MudAlert>
+            }
+            else
+            {
+                <MudSelect T="int"
+                           Label="Improvement"
+                           Value="_templateId"
+                           ValueChanged="OnTemplateChanged"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Class="baron-influence-field"
+                           Required="true">
+                    @foreach (var template in Templates.OrderBy(t => t.Name))
+                    {
+                        <MudSelectItem Value="@template.Id">@($"{template.Name} ({Fmt(template.GoldCost)} gold / {Fmt(template.ProductionCost)} prod)")</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudTextField @bind-Value="_name"
+                              Label="Project name"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              Class="baron-influence-field mt-2" />
+                <MudTextField @bind-Value="_description"
+                              Label="Description"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="2"
+                              Class="baron-influence-field" />
+
+                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Cost (forced)</MudText>
+                <div class="terrain-build-project-cost">
+                    <span>Gold: <b>@Fmt(_goldCost)</b></span>
+                    <span>Production: <b>@Fmt(_productionCost)</b></span>
+                </div>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
+                    Output type: @ProjectOutputKind.Building · Payment: Gold &amp; Production only
+                </MudText>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Close</MudButton>
+        <MudButton Class="baron-influence-save-btn"
+                   Variant="Variant.Filled"
+                   OnClick="MakeProject"
+                   Disabled="@(Templates.Count == 0)">
+            Make project
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public TerrainTileDTO Tile { get; set; } = new();
+    [Parameter] public List<BuildingTemplateDTO> Templates { get; set; } = new();
+
+    private int _templateId;
+    private string _name = string.Empty;
+    private string? _description;
+    private decimal _goldCost;
+    private decimal _productionCost;
+    private PpbVector _resultAdditive = new();
+    private PpbVector _resultPercent = new();
+
+    protected override void OnInitialized()
+    {
+        var first = Templates.OrderBy(t => t.Name).FirstOrDefault();
+        if (first is not null)
+            ApplyTemplate(first);
+    }
+
+    private void OnTemplateChanged(int id)
+    {
+        var template = Templates.FirstOrDefault(t => t.Id == id);
+        if (template is null)
+            return;
+        ApplyTemplate(template);
+    }
+
+    private void ApplyTemplate(BuildingTemplateDTO template)
+    {
+        _templateId = template.Id;
+        _name = $"Build {template.Name}";
+        _description = template.Description;
+        _goldCost = template.GoldCost;
+        _productionCost = template.ProductionCost;
+        _resultAdditive = template.EffectAdditive.Clone();
+        _resultPercent = template.EffectPercent.Clone();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void MakeProject()
+    {
+        if (_templateId <= 0)
+        {
+            _snackBar.Add("Choose an improvement from the catalog.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Project name is required.", Severity.Warning);
+            return;
+        }
+
+        if (Tile.Id <= 0)
+        {
+            _snackBar.Add("This tile is not ready yet.", Severity.Warning);
+            return;
+        }
+
+        var cost = new PpbVector();
+        cost[Ppb.Treasury] = Math.Max(0m, _goldCost);
+        cost[Ppb.Production] = Math.Max(0m, _productionCost);
+
+        var project = new BaronyProjectDTO
+        {
+            BaronyId = BaronyId,
+            Name = _name.Trim(),
+            Description = string.IsNullOrWhiteSpace(_description) ? string.Empty : _description.Trim(),
+            OutputKind = ProjectOutputKind.Building,
+            AllowedCostModes = ProjectAllowedCostModes.GoldProductionOnly,
+            SelectedCostMode = ProjectCostMode.GoldProduction,
+            CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(cost),
+            CostMaterials = new(),
+            ResultAdditive = _resultAdditive.Clone(),
+            ResultPercent = _resultPercent.Clone(),
+            ResultDescription = $"Construct {_name.Trim()} at ({Tile.X}, {Tile.Y}).",
+            Status = ProjectStatus.Draft,
+            TileId = Tile.Id,
+            BuildingTemplateId = _templateId,
+        };
+
+        MudDialog.Close(DialogResult.Ok(project));
+    }
+
+    private static string Fmt(decimal v) => PpbFormat.Number(v);
+}

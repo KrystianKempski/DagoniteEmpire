@@ -114,6 +114,9 @@ namespace DA_Common.Barony
         public static bool IsKnown(string? baseType) =>
             baseType == Water || baseType == Plains || baseType == Hills || baseType == Mountains;
 
+        public static bool IsWater(string? baseType) =>
+            string.Equals(baseType, Water, StringComparison.OrdinalIgnoreCase);
+
         public static string DisplayName(string? baseType) => baseType switch
         {
             Water => "Water",
@@ -398,6 +401,8 @@ namespace DA_Common.Barony
             _ => "/icons/wood-cabin.svg",
         };
 
+        public const string ConstructionIconUrl = "/icons/crane.svg";
+
         /// <summary>Uses a stored custom icon when set; otherwise the map-kind default.</summary>
         public static string ResolveIconUrl(string? mapKind, string? iconUrl) =>
             !string.IsNullOrWhiteSpace(iconUrl) ? iconUrl.Trim() : IconUrl(mapKind);
@@ -413,6 +418,16 @@ namespace DA_Common.Barony
         public const string Improvement = "Improvement";
 
         public static readonly string[] All = { Building, Improvement };
+    }
+
+    /// <summary>Stable keys for fixed city buildings (MG can override per barony).</summary>
+    public readonly struct CoreCityBuildingKey
+    {
+        public const string StewardsBuilding = "stewards-building";
+        public const string Tavern = "tavern";
+        public const string MarketSquare = "market-square";
+
+        public static readonly string[] All = { StewardsBuilding, Tavern, MarketSquare };
     }
 
     /// <summary>Status projektu.</summary>
@@ -538,8 +553,9 @@ namespace DA_Common.Barony
         public const string Crime = "Crime";
         public const string Corruption = "Corruption";
         public const string Unrest = "Unrest";
+        public const string Economy = "Economy";
 
-        public static readonly string[] All = { Society, Hunger, Crime, Corruption, Unrest };
+        public static readonly string[] All = { Society, Hunger, Crime, Corruption, Unrest, Economy };
 
         public static string NormalizeKey(string? raw)
         {
@@ -553,6 +569,7 @@ namespace DA_Common.Barony
                 "przestępczość" or "przestepczosc" or "crime" => Crime,
                 "korupcja" or "corruption" => Corruption,
                 "niepokój" or "niepokoj" or "unrest" => Unrest,
+                "ekonomia" or "economy" or "conjuncture" or "koniunktura" => Economy,
                 _ => raw.Trim(),
             };
         }

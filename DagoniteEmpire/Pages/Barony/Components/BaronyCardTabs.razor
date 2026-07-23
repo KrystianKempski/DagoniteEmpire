@@ -25,26 +25,34 @@
              @ondragend="OnDragEndAsync"
              @onclick="() => OnTabActivate(tab.Href)"
              @onkeydown="e => OnTabKeyDown(e, tab.Href)">
-            <MudIcon Icon="@tab.Icon" Size="Size.Small" />
+            @if (!string.IsNullOrEmpty(tab.SvgIcon))
+            {
+                <img src="@tab.SvgIcon" class="barony-tabbar__svg-icon" alt="" />
+            }
+            else if (!string.IsNullOrEmpty(tab.Icon))
+            {
+                var mudIcon = tab.Icon;
+                <MudIcon Icon="@mudIcon" Size="Size.Small" />
+            }
             @tab.Label
         </div>
     }
 </nav>
 
 @code {
-    private sealed record TabItem(string Key, string Label, string Href, string Icon);
+    private sealed record TabItem(string Key, string Label, string Href, string? Icon = null, string? SvgIcon = null);
 
     private static readonly TabItem[] DefaultTabs =
     {
         new("domain", "Domain Panel", "/barony", Icons.Material.Filled.Dashboard),
-        new("resources", "Resources", "/barony/resources", Icons.Material.Filled.Inventory2),
-        new("budget", "Budget", "/barony/budget", Icons.Material.Filled.Paid),
-        new("projects", "Projects", "/barony/projects", Icons.Material.Filled.Engineering),
-        new("buildings", "Buildings", "/barony/buildings", Icons.Material.Filled.Foundation),
+        new("resources", "Resources", "/barony/resources", SvgIcon: "/" + MyIcon.Trade),
+        new("budget", "Budget", "/barony/budget", SvgIcon: "/" + MyIcon.TwoCoins),
+        new("projects", "Projects", "/barony/projects", SvgIcon: "/" + MyIcon.GearHammer),
+        new("buildings", "Buildings", "/barony/buildings", SvgIcon: "/" + MyIcon.WoodCabinBlack),
         new("offices", "Offices", "/barony/offices", Icons.Material.Filled.Groups),
-        new("terrain", "Terrain", "/barony/terrain", Icons.Material.Filled.Map),
-        new("character-card", "Baron Card", "/barony/character-card", Icons.Material.Filled.Shield),
-        new("letters", "Letters", "/barony/letters", Icons.Material.Filled.Mail),
+        new("terrain", "Terrain", "/barony/terrain", SvgIcon: "/" + MyIcon.Compass),
+        new("character-card", "Baron Card", "/barony/character-card", SvgIcon: "/" + MyIcon.JewelCrown),
+        new("letters", "Letters", "/barony/letters", SvgIcon: "/" + MyIcon.WaxSeal),
         new("lords-seat", "Lord's Seat", "/barony/lords-seat", Icons.Material.Filled.Castle),
         new("relations", "Relations", "/barony/relations", Icons.Material.Filled.Handshake),
     };
