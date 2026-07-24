@@ -15,19 +15,12 @@ namespace DA_Business.Repository.BaronyRepos
             string? armorKey,
             string? shieldKey,
             string weaponQuality,
-            string? defenseSkillKey,
             UnitTrainingCostSummary costs)
         {
             var recruit = UnitRecruitSelectionCatalog.Find(recruitKey) ?? UnitRecruitSelectionCatalog.Volunteers;
             var armor = UnitArmorCatalog.Find(armorKey);
             var shield = UnitArmorCatalog.Find(shieldKey);
             var attr = costs.AttributeScore;
-
-            var defenseSkill = !string.IsNullOrWhiteSpace(defenseSkillKey)
-                ? defenseSkillKey!
-                : shield is not null
-                    ? UnitSkillKey.Shields
-                    : UnitSkillKey.Dodges;
 
             var dto = new BaronyUnitDTO
             {
@@ -36,6 +29,7 @@ namespace DA_Business.Repository.BaronyRepos
                 TroopCount = UnitRules.DefaultTroopCount,
                 RecruitSelectionKey = recruit.Key,
                 TrainingTypeKey = trainingKey,
+                RaceKey = UnitRaceKey.Human,
                 Wage = costs.Wage,
                 UpkeepFood = UnitRules.DefaultUpkeepFood,
                 UpkeepDefense = UnitRules.DefaultUpkeepDefense,
@@ -51,7 +45,7 @@ namespace DA_Business.Repository.BaronyRepos
                 Weapon1Quality = string.IsNullOrWhiteSpace(weaponQuality)
                     ? UnitWeaponQuality.Normal
                     : weaponQuality,
-                DefenseSkillKey = defenseSkill,
+                DefenseSkillKey = UnitSkillKey.Dodges,
                 RemainingPd = costs.Pd,
                 Discipline = costs.StartingDiscipline,
                 MaxBaseSkillAtGraduation = costs.MaxBaseSkill,

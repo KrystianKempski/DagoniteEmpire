@@ -91,8 +91,56 @@ namespace DA_Common.Barony
 
         public const string Riding = "riding";
 
-        /// <summary>Which skills can be chosen as primary defense skill.</summary>
+        /// <summary>Defense skill candidates (auto-picked by highest total; Shields needs a shield, Armor needs armor).</summary>
         public static readonly string[] DefenseChoices = { Shields, Dodges, ArmorSkill };
+    }
+
+    public readonly struct UnitRaceKey
+    {
+        public const string Human = "human";
+    }
+
+    /// <summary>Army unit race (Excel race move / racial starting skills).</summary>
+    public sealed class UnitRaceDef
+    {
+        public string Key { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+        /// <summary>Added into Move base: race + floor((Agility + Run)/2).</summary>
+        public int MoveBonus { get; init; }
+        /// <summary>How many base skills get a racial Other bonus the player may assign.</summary>
+        public int BonusBaseSkillPicks { get; init; }
+        /// <summary>Value of each racial base-skill Other bonus.</summary>
+        public int BonusBaseSkillAmount { get; init; }
+        /// <summary>Tooltip / catalog blurb (move + base skill defaults).</summary>
+        public string Description { get; init; } = string.Empty;
+    }
+
+    public static class UnitRaceCatalog
+    {
+        public static readonly UnitRaceDef Human = new()
+        {
+            Key = UnitRaceKey.Human,
+            Name = "Human",
+            MoveBonus = 3,
+            BonusBaseSkillPicks = 2,
+            BonusBaseSkillAmount = 1,
+            Description =
+                "Move +3. Base skills: Melee 3, Ranged 3, Athletics 2, Agility 2, Urban 1, Scout 2. "
+                + "+1 Other to two base skills (player picks).",
+        };
+
+        public static readonly IReadOnlyList<UnitRaceDef> All = new[] { Human };
+
+        public static UnitRaceDef Default => Human;
+
+        public static UnitRaceDef Find(string? key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                return Default;
+            return All.FirstOrDefault(r =>
+                       string.Equals(r.Key, key.Trim(), StringComparison.OrdinalIgnoreCase))
+                   ?? Default;
+        }
     }
 
     public static class UnitRules
@@ -100,6 +148,7 @@ namespace DA_Common.Barony
         public const int DefaultTroopCount = 50;
         public const decimal DefaultUpkeepFood = 0.5m;
         public const int DefaultUpkeepDefense = 5;
+        /// <summary>Legacy alias — prefer <see cref="UnitRaceCatalog.Human"/>.MoveBonus.</summary>
         public const int RaceMoveBonus = 3; // Humans
         public const int DisciplineMin = 1;
         public const int DisciplineMax = 18;
@@ -112,7 +161,7 @@ namespace DA_Common.Barony
     }
 
     /// <summary>
-    /// Excel starting <c>Bazowo</c> for base skills — same for every unit until PD / MG changes them.
+    /// Excel starting <c>Bazowo</c> for base skills — same for every unit until XP / MG changes them.
     /// Melee/Ranged 3, Athletics/Agility 2, Urban 1, Scout 2 (Generator / Oddziały sheets).
     /// </summary>
     public static class UnitSkillDefaults
@@ -136,6 +185,82 @@ namespace DA_Common.Barony
             foreach (var (key, value) in overlay)
                 map[key] = value;
             return map;
+        }
+    }
+
+    /// <summary>
+    /// Racial +N Other on chosen base skills (Humans: +1 to two base skills).
+    /// Stored as named SkillOtherSources entries with <see cref="OtherLabel"/>.
+    /// </summary>
+    public static class UnitRaceSkillBonus
+    {
+        public const string OtherLabel = "Race";
+
+        public static IReadOnlyList<UnitSkillDef> EligibleBaseSkills { get; } =
+            UnitSkillTree.All
+                .Where(d => d.IsBase && d.Key != UnitSkillKey.Riding)
+                .ToList();
+
+        public static bool IsRaceEntry(UnitCombatModifierEntry e) =>
+            string.Equals(e.Label?.Trim(), OtherLabel, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>Remove all Race Other entries, then apply +amount to each distinct pick.</summary>
+        public static void ApplyPicks(
+            Dictionary<string, List<UnitCombatModifierEntry>> skillOtherSources,
+            Dictionary<string, int> skillOther,
+            UnitRaceDef race,
+            params string?[] picks)
+        {
+            ClearRaceEntries(skillOtherSources, skillOther);
+
+            if (race.BonusBaseSkillPicks <= 0 || race.BonusBaseSkillAmount == 0)
+                return;
+
+            var chosen = picks
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Select(k => k!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(k => EligibleBaseSkills.Any(d =>
+                    string.Equals(d.Key, k, StringComparison.OrdinalIgnoreCase)))
+                .Take(race.BonusBaseSkillPicks)
+                .ToList();
+
+            foreach (var key in chosen)
+            {
+                if (!skillOtherSources.TryGetValue(key, out var list) || list is null)
+                {
+                    list = new List<UnitCombatModifierEntry>();
+                    skillOtherSources[key] = list;
+                }
+
+                list.Add(new UnitCombatModifierEntry
+                {
+                    Label = OtherLabel,
+                    Value = race.BonusBaseSkillAmount,
+                });
+                skillOther[key] = UnitCombatOtherFormulas.Sum(list);
+            }
+        }
+
+        public static void ClearRaceEntries(
+            Dictionary<string, List<UnitCombatModifierEntry>> skillOtherSources,
+            Dictionary<string, int> skillOther)
+        {
+            foreach (var key in skillOtherSources.Keys.ToList())
+            {
+                var list = skillOtherSources[key];
+                if (list is null) continue;
+                list.RemoveAll(IsRaceEntry);
+                if (list.Count == 0)
+                {
+                    skillOtherSources.Remove(key);
+                    skillOther.Remove(key);
+                }
+                else
+                {
+                    skillOther[key] = UnitCombatOtherFormulas.Sum(list);
+                }
+            }
         }
     }
 }

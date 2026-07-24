@@ -3,85 +3,67 @@
 @inject IBaronyRepository _baronyRepo
 @inject ISnackbar _snackBar
 
-<BaronySection Title="@($"Unit card — {Unit.Name}")">
-    <Summary>
-        <div class="baron-php-summary">
-            <span class="baron-php-chip">Atk @_combat.Attack</span>
-            <span class="baron-php-chip">Def @_combat.Defense</span>
-            <span class="baron-php-chip">Dmg @_combat.Damage</span>
-            <span class="baron-php-chip">Armor @_combat.Armor</span>
-            <span class="baron-php-chip">Move @_combat.Move</span>
-            <span class="baron-php-chip">HP @Unit.CurrentHp/@_combat.MaxHp</span>
-            <span class="baron-php-chip">PD @Unit.RemainingPd</span>
-            <span class="baron-php-chip">Disc @Unit.Discipline</span>
-        </div>
-    </Summary>
-    <ChildContent>
-        @if (Unit.IsTraining)
-        {
-            <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
-                In training (@(Unit.TrainingTurnsRemaining?.ToString() ?? "?") turns left). Fund the Unit Training project on Projects.
-                PD spending unlocks when Active.
-            </MudAlert>
-        }
-
-        <div class="unit-card__gear mb-2">
-            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                W1: @(UnitWeaponCatalog.Find(Unit.Weapon1Key)?.Name ?? "—") (@Unit.Weapon1Quality)
-                · W2: @(UnitWeaponCatalog.Find(Unit.Weapon2Key)?.Name ?? "—")
-                · Armor: @(UnitArmorCatalog.Find(Unit.ArmorKey)?.Name ?? "—")
-                · Shield: @(UnitArmorCatalog.Find(Unit.ShieldKey)?.Name ?? "—")
-                · Troops: @Unit.TroopCount · Wage: @Unit.Wage
-            </MudText>
-        </div>
-
-        <MudSelect T="string"
-                   Label="Primary defense skill"
-                   Value="@Unit.DefenseSkillKey"
-                   ValueChanged="OnDefenseSkillChanged"
-                   Variant="Variant.Outlined"
-                   Margin="Margin.Dense"
-                   Dense="true"
-                   Disabled="@(!CanEdit)"
-                   Class="baron-influence-field mb-3"
-                   Style="max-width:280px;">
-            @foreach (var key in UnitSkillKey.DefenseChoices)
+<div class="unit-roster-card @(_xpDirty ? "unit-roster-card--dirty" : null)">
+    @if (Unit.IsTraining)
+    {
+        <div class="unit-roster-card__banner">
+            <span>
+                In training (@(Unit.TrainingTurnsRemaining?.ToString() ?? "?") turns left).
+                @if (Unit.TrainingProjectId is int pid)
+                {
+                    <text> <a href="/barony/projects">Project #@pid</a>.</text>
+                }
+            </span>
+            @if (CanManageAsMg)
             {
-                var def = UnitSkillTree.Find(key);
-                <MudSelectItem Value="@key">@(def?.Name ?? key)</MudSelectItem>
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Filled"
+                           Class="barony-turn-btn barony-turn-btn--solid"
+                           Disabled="@_busy"
+                           OnClick="ActivateUnitAsync">
+                    Make active (MG)
+                </MudButton>
             }
-        </MudSelect>
+        </div>
+    }
 
-        <MudText Typo="Typo.subtitle2" Class="mb-1">Attributes</MudText>
-        <div class="unit-card__attrs">
-            @AttrRow("Build", Unit.Build, Unit.EffectiveBuild, () => RaiseAttrAsync(UnitAttr.Build))
-            @AttrRow("Agility", Unit.Agility, Unit.EffectiveAgility, () => RaiseAttrAsync(UnitAttr.Agility))
-            @AttrRow("Will", Unit.Will, Unit.EffectiveWill, () => RaiseAttrAsync(UnitAttr.Will))
-            @AttrRow("Perception", Unit.Perception, Unit.EffectivePerception, () => RaiseAttrAsync(UnitAttr.Perception))
-            <div class="unit-card__attr">
-                <span>Discipline</span>
-                <b>@Unit.Discipline</b>
+    @if (_xpDirty)
+    {
+        <div class="unit-xp-bar">
+            <span class="unit-xp-bar__text">
+                Pending XP: <b>@XpSpentPending</b>
+                · left <b>@Unit.RemainingPd</b>
+                @if (FreeAttrsSpentPending > 0)
+                {
+                    <text> · free attrs <b>@FreeAttrsSpentPending</b></text>
+                }
+            </span>
+            <div class="unit-xp-bar__actions">
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Filled"
+                           Class="barony-turn-btn barony-turn-btn--solid"
+                           Disabled="@_busy"
+                           OnClick="SaveXpDraftAsync">
+                    Save
+                </MudButton>
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Outlined"
+                           Class="barony-turn-btn barony-turn-btn--ghost"
+                           Disabled="@_busy"
+                           OnClick="UndoXpDraft">
+                    Undo
+                </MudButton>
             </div>
-            @if (Unit.FreeAttributePoints > 0 && Unit.IsActive && CanEdit)
-            {
-                <MudText Typo="Typo.caption" Style="color:var(--barony-accent);">
-                    Free attribute points left: @Unit.FreeAttributePoints (use + without PD)
-                </MudText>
-            }
         </div>
+    }
 
-        <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Skills</MudText>
-        <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-            Base Total = Base+Other · Special Total = parent+From+Base+Other.
-            @(CanManageAsMg ? "Click Base/Other to edit (MG). " : "")
-            @(CanSpendPd ? "Click Base to spend PD." : "PD spending unlocks when Active.")
-        </MudText>
-        <UnitSkillTiles Unit="@Unit"
-                        CanManageAsMg="@CanManageAsMg"
-                        CanSpendPd="@CanSpendPd"
-                        OnChanged="PersistFromSkillsAsync" />
-    </ChildContent>
-</BaronySection>
+    <UnitDraftCardPreview Unit="@Unit"
+                          CanManageAsMg="@CanManageAsMg"
+                          CanSpendPd="@CanSpendPd"
+                          ShowCurrentHp="true"
+                          SkillsChanged="PersistFromCardAsync"
+                          OnXpDraftChanged="OnXpDraftFromCardAsync" />
+</div>
 
 @code {
     [Parameter] public BaronyUnitDTO Unit { get; set; } = new();
@@ -89,79 +71,105 @@
     [Parameter] public bool CanManageAsMg { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private UnitCombatTotals _combat;
     private bool CanSpendPd => CanEdit && Unit.IsActive;
+
+    private bool _xpDirty;
+    private bool _busy;
+    private int _baselineUnitId = int.MinValue;
+    private XpBaseline? _baseline;
+
+    private int XpSpentPending =>
+        _baseline is null ? 0 : Math.Max(0, _baseline.RemainingPd - Unit.RemainingPd);
+
+    private int FreeAttrsSpentPending =>
+        _baseline is null ? 0 : Math.Max(0, _baseline.FreeAttributePoints - Unit.FreeAttributePoints);
 
     protected override void OnParametersSet()
     {
-        _combat = UnitStatHelper.Compute(Unit);
-    }
-
-    private RenderFragment AttrRow(string label, int baseVal, int effective, Func<Task> raise) => __builder =>
-    {
-        <div class="unit-card__attr">
-            <span>@label</span>
-            <b>@effective</b>
-            <span style="color:var(--barony-muted);font-size:0.8rem;">(base @baseVal)</span>
-            @if (CanEdit && Unit.IsActive)
-            {
-                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="raise">+1</MudButton>
-            }
-        </div>
-    };
-
-    private async Task OnDefenseSkillChanged(string key)
-    {
-        Unit.DefenseSkillKey = key;
-        await PersistAsync();
-    }
-
-    private async Task RaiseAttrAsync(string attr)
-    {
-        if (!Unit.IsActive || !CanEdit) return;
-
-        if (Unit.FreeAttributePoints > 0)
+        if (Unit.Id != _baselineUnitId)
         {
-            ApplyAttrBump(attr);
-            Unit.FreeAttributePoints--;
+            _baselineUnitId = Unit.Id;
+            _baseline = null;
+            _xpDirty = false;
+        }
+    }
+
+    private void EnsureXpBaseline()
+    {
+        if (_baseline is not null) return;
+        _baseline = XpBaseline.Capture(Unit);
+    }
+
+    private Task OnXpDraftFromCardAsync()
+    {
+        EnsureXpBaseline();
+        _xpDirty = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task SaveXpDraftAsync()
+    {
+        if (!_xpDirty || _busy) return;
+        _busy = true;
+        try
+        {
             await PersistAsync();
-            return;
+            _baseline = XpBaseline.Capture(Unit);
+            _xpDirty = false;
+            _snackBar.Add("XP spend saved.", Severity.Success);
         }
-
-        if (!UnitPdFormulas.CanRaiseAttribute(AttrBase(attr), Unit.RemainingPd, out var cost))
+        finally
         {
-            _snackBar.Add($"Need {cost} PD.", Severity.Warning);
-            return;
-        }
-
-        ApplyAttrBump(attr);
-        Unit.RemainingPd -= cost;
-        await PersistAsync();
-    }
-
-    private int AttrBase(string attr) => attr switch
-    {
-        UnitAttr.Build => Unit.Build,
-        UnitAttr.Agility => Unit.Agility,
-        UnitAttr.Will => Unit.Will,
-        UnitAttr.Perception => Unit.Perception,
-        _ => 0,
-    };
-
-    private void ApplyAttrBump(string attr)
-    {
-        switch (attr)
-        {
-            case UnitAttr.Build: Unit.Build++; break;
-            case UnitAttr.Agility: Unit.Agility++; break;
-            case UnitAttr.Will: Unit.Will++; break;
-            case UnitAttr.Perception: Unit.Perception++; break;
+            _busy = false;
         }
     }
 
-    private async Task PersistFromSkillsAsync()
+    private void UndoXpDraft()
+    {
+        if (_baseline is null || _busy) return;
+        _baseline.Restore(Unit);
+        _baseline = null;
+        _xpDirty = false;
+        _snackBar.Add("XP spend undone.", Severity.Info);
+    }
+
+    private async Task ActivateUnitAsync()
+    {
+        if (!CanManageAsMg || !Unit.IsTraining || _busy) return;
+        _busy = true;
+        try
+        {
+            if (_xpDirty)
+                UndoXpDraft();
+
+            var updated = await _baronyRepo.ActivateUnit(Unit.Id);
+            Unit.Status = updated.Status;
+            Unit.CurrentHp = updated.CurrentHp;
+            Unit.TrainingTurnsRemaining = updated.TrainingTurnsRemaining;
+            Unit.TrainingProjectId = updated.TrainingProjectId;
+            _baseline = null;
+            _xpDirty = false;
+            _snackBar.Add($"Unit “{Unit.Name}” is now Active.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task PersistFromCardAsync()
     {
         await PersistAsync();
+        if (_xpDirty)
+        {
+            _baseline = XpBaseline.Capture(Unit);
+            _xpDirty = false;
+        }
     }
 
     private async Task PersistAsync()
@@ -177,6 +185,44 @@
         catch (Exception ex)
         {
             _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private sealed class XpBaseline
+    {
+        public int Build { get; init; }
+        public int Agility { get; init; }
+        public int Will { get; init; }
+        public int Perception { get; init; }
+        public int Discipline { get; init; }
+        public int RemainingPd { get; init; }
+        public int FreeAttributePoints { get; init; }
+        public Dictionary<string, int> SkillBase { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public static XpBaseline Capture(BaronyUnitDTO u) => new()
+        {
+            Build = u.Build,
+            Agility = u.Agility,
+            Will = u.Will,
+            Perception = u.Perception,
+            Discipline = u.Discipline,
+            RemainingPd = u.RemainingPd,
+            FreeAttributePoints = u.FreeAttributePoints,
+            SkillBase = new Dictionary<string, int>(u.SkillBase, StringComparer.OrdinalIgnoreCase),
+        };
+
+        public void Restore(BaronyUnitDTO u)
+        {
+            u.Build = Build;
+            u.Agility = Agility;
+            u.Will = Will;
+            u.Perception = Perception;
+            u.Discipline = Discipline;
+            u.RemainingPd = RemainingPd;
+            u.FreeAttributePoints = FreeAttributePoints;
+            u.SkillBase.Clear();
+            foreach (var (k, v) in SkillBase)
+                u.SkillBase[k] = v;
         }
     }
 }

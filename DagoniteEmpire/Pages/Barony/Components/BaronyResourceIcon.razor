@@ -1,0 +1,24 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+@* Masked HUD resource icon (same assets/colors as BaronyResourceHud). *@
+<span class="barony-res-icon barony-res-icon--@SizeClass"
+      style="@IconStyle"
+      aria-hidden="true"></span>
+
+@code {
+    [Parameter] public Ppb Resource { get; set; }
+    /// <summary>xs ≈ table header, sm ≈ cost bar, md ≈ HUD.</summary>
+    [Parameter] public string Size { get; set; } = "sm";
+
+    private string SizeClass => Size switch
+    {
+        "xs" => "xs",
+        "md" => "md",
+        _ => "sm",
+    };
+
+    private string IconStyle =>
+        $"--resource-color:{ResourceCatalog.ColorHex(Resource)};" +
+        $"-webkit-mask-image:url('{ResourceCatalog.IconUrl(Resource)}');" +
+        $"mask-image:url('{ResourceCatalog.IconUrl(Resource)}');";
+}

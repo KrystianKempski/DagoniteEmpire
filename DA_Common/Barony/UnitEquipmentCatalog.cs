@@ -62,6 +62,17 @@ namespace DA_Common.Barony
 
         public static UnitWeaponDef? Find(string? key) =>
             All.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+
+        public static IEnumerable<UnitWeaponDef> ByCategory(string category) =>
+            All.Where(x => string.Equals(x.Category, category, StringComparison.OrdinalIgnoreCase));
+
+        public static string CategoryLabel(string category) => category switch
+        {
+            "simple" => "Simple weapons",
+            "military" => "Military weapons",
+            "powder" => "Powder weapons",
+            _ => category,
+        };
     }
 
     public sealed record UnitArmorDef(
@@ -117,5 +128,69 @@ namespace DA_Common.Barony
 
         public static IEnumerable<UnitArmorDef> Shields => All.Where(x => x.IsShield);
         public static IEnumerable<UnitArmorDef> BodyArmor => All.Where(x => !x.IsShield);
+
+        /// <summary>Excel “PANCERZE PROSTE / ŚREDNIE / CIĘŻKIE” groupings (shields + body).</summary>
+        public static readonly IReadOnlyList<(string Title, string[] Keys)> ExcelTiers = new[]
+        {
+            ("Simple armor", new[]
+            {
+                "wooden-buckler", "wooden-medium-shield", "wooden-large-shield",
+                "light-leather", "heavy-leather",
+            }),
+            ("Medium armor", new[]
+            {
+                "studded-buckler", "studded-medium-shield", "studded-large-shield",
+                "mail-and-gambeson", "mail-and-cuirass",
+            }),
+            ("Heavy armor", new[]
+            {
+                "metal-buckler", "metal-medium-shield", "metal-large-shield",
+                "lamellar", "half-plate", "full-plate",
+            }),
+        };
+
+        public static IEnumerable<UnitArmorDef> TierItems(string[] keys) =>
+            keys.Select(Find).Where(x => x is not null).Cast<UnitArmorDef>();
+    }
+
+    /// <summary>Build / Agility / Armor-skill gates for unit gear (Excel Bld / Agi / Ask).</summary>
+    public static class UnitEquipmentRequirements
+    {
+        public static bool MeetsWeapon(UnitWeaponDef w, int build, int agility, out string reason)
+        {
+            if (build < w.RequiredBuild)
+            {
+                reason = $"{w.Name}: need Build {w.RequiredBuild} (have {build}).";
+                return false;
+            }
+            if (agility < w.RequiredAgility)
+            {
+                reason = $"{w.Name}: need Agility {w.RequiredAgility} (have {agility}).";
+                return false;
+            }
+            reason = string.Empty;
+            return true;
+        }
+
+        public static bool MeetsArmor(UnitArmorDef a, int build, int armorSkill, out string reason)
+        {
+            if (build < a.RequiredBuild)
+            {
+                reason = $"{a.Name}: need Build {a.RequiredBuild} (have {build}).";
+                return false;
+            }
+            if (armorSkill < a.RequiredArmorSkill)
+            {
+                reason = $"{a.Name}: need Armor skill {a.RequiredArmorSkill} (have {armorSkill}).";
+                return false;
+            }
+            reason = string.Empty;
+            return true;
+        }
+
+        public static string? FirstEligibleWeaponKey(int build, int agility) =>
+            UnitWeaponCatalog.All
+                .FirstOrDefault(w => MeetsWeapon(w, build, agility, out _))
+                ?.Key;
     }
 }

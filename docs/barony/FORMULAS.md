@@ -240,26 +240,33 @@ Cell tooltips: `ExplainOfficeAdvisorAdditive` / `ExplainOfficeAdvisorPercent` (f
 One unit = **50** troops (default). Training is a project (`ProjectOutputKind.UnitTraining`).
 
 ### Creation costs
-- Gear Production/Gold = sum of weapon1 + weapon2 + armor + shield catalog costs
-- Optional pay gear as Defense = `2 × market gold` (clears Prod/Gold gear)
+- Recruit cost from selection catalog: usually Defense; **Mercenaries** = **80** gold (0 Defense); **Forced hire** = 0/0 and creates event **Forced hire** (Loyalty −7, Stability −7 for 3 turns) when training starts
+- Per-item acquire mode:
+  - **Craft** = Production + catalog Gold
+  - **Buy** = Market gold (`Mkt`) only (no Production)
+  - **Defense** = `2 × Mkt` as Defense (clears that item’s Prod/Gold)
 - Recruit Defense cost from selection catalog
 - Accelerate: −1 turn / **50** Defense (max = training turns)
-- Project gold track = gear gold + (`GoldPerTurn × remaining turns`); Defense track = recruit + gear-as-defense + accelerate
+- Training gold = one-time fee by type: Express **10**, Accelerated **20**, Standard **40**, Elite **75** (not per turn)
+- Project gold track = gear gold + training gold; Defense track = recruit + gear-as-defense + accelerate
+- Gear can be paid entirely as Defense; training gold remains a gold fee unless covered separately
+- XP / starting Discipline / max base skill from training ∩ recruit — **max base skill** = `min(recruit.Skl, training.Skl)` (lower wins). Cap blocks raising **Base** above that while Training / in the generator; lifted after Active graduation.
 - Wage (stored, Budget later) = recruit wage + training wage
-- PD / starting Discipline / max base skill from training ∩ recruit
+- **Human race**: Move +3; player picks **two** base skills for **+1 Other** each (`SkillOtherSources` label `Race`)
 
 ### Combat totals
-- **Attack** = weapon-type skill total + weapon At ± quality + commander + other  
-  Quality: Good +1 / Poor −1 to At and Dm
-- **Defense** = chosen defense skill (Shields / Dodges / Armor) + weapon Ob + armor Ob + shield Ob + commander + other
-- **Damage** = weapon Dm ± quality + other
-- **Move** = `3 + floor((Agility + Run)/2)` + gear Kr + other
-- **Armor** = armor Pc + shield Pc + other (reduces incoming damage)
-- **Max HP** = `Build×2 + Will×2 + Endurance skill + Discipline×3 + other`
+- **Attack** = Skl (weapon-type skill) + Gear (weapon Atk ± quality) + Cmd + Oth  
+  Quality: Good +1 / Poor −1 to Atk and Dmg
+- **Defense** = Skl (highest eligible among Dodges always; Shields if shield equipped; Armor if armor equipped) + Gear (weapon/armor/shield Def) + Cmd + Oth
+- **Damage** = Gear (weapon Dmg ± quality) + Oth
+- **Move** = Race (`UnitRaceCatalog`, Humans **+3**) + `floor((Agility + Run)/2)` + Gear (Mov penalties) + Oth
+  Only Human race is playable for now; `RaceKey` on the unit defaults to `human`.
+- **Armor** = Gear (armor/shield Arm) + Oth
+- Combat **Oth** / skill **Other** = sum of named sources (MG dialog). Persist in `CombatOtherJson` / `SkillOtherSourcesJson`; totals synced to `OtherAttack`… / `SkillOther`.
 
 ### Skill totals (Excel Generator / Oddziały)
 - **Base skills** (Melee, Ranged, Athletics, Agility, Urban, Scout): `Razem = Bazowo + Inne` — **no** attribute.
-- **Starting Bazowo** (same for every unit, Excel Generator/Oddziały): Melee 3, Ranged 3, Athletics 2, Agility 2, Urban 1, Scout 2. Riding starts at 0. Raised later with PD / MG edit.
+- **Starting Bazowo** (same for every unit, Excel Generator/Oddziały): Melee 3, Ranged 3, Athletics 2, Agility 2, Urban 1, Scout 2. Riding starts at 0. Raised later with XP / MG edit.
 - **Specializations**: `Razem = parent Razem + linked attr + Bazowo + Inne` (specialization Bazowo starts at 0).
 - **Riding**: treated as a Melee specialization (`parent = Melee Razem + Agility + base + other`), shown on its own row.
 - Attr letters: B Build / A Agility / W Will / P Perception (Excel S = Sprawność).
@@ -267,9 +274,9 @@ One unit = **50** troops (default). Training is a project (`ProjectOutputKind.Un
 
 Skill total (legacy one-liner, specializations only) = parent + linked attribute + base level + other.
 
-### PD spend (Active units)
+### XP spend (Active units)
 - Attribute → level×10
 - Base skill → level×3
 - Special skill → level×1 and ≤ parent base
 - Discipline (1–18) → cost = current level
-- MG may set Base / Other freely; Baron raises Base with PD when Active.
+- MG may set Base / Other freely; Baron raises Base with XP when Active.

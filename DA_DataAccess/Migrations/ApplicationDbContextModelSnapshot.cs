@@ -545,6 +545,18 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("Build")
                         .HasColumnType("integer");
 
+                    b.Property<string>("CombatOtherJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("AttrOtherSourcesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SkillOtherSourcesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("CommanderAttack")
                         .HasColumnType("integer");
 
@@ -596,6 +608,10 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("RecruitSelectionKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RaceKey")
                         .IsRequired()
                         .HasColumnType("text");
 

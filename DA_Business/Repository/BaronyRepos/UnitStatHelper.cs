@@ -59,7 +59,7 @@ namespace DA_Business.Repository.BaronyRepos
         public static UnitCombatTotals Compute(BaronyUnitDTO dto)
         {
             var skillTotals = BuildSkillTotals(dto);
-            return UnitCombatFormulas.Compute(
+            var combat = UnitCombatFormulas.Compute(
                 dto.EffectiveBuild, dto.EffectiveAgility, dto.EffectiveWill, dto.EffectivePerception,
                 dto.Discipline,
                 skillTotals,
@@ -67,9 +67,12 @@ namespace DA_Business.Repository.BaronyRepos
                 UnitArmorCatalog.Find(dto.ArmorKey),
                 UnitArmorCatalog.Find(dto.ShieldKey),
                 dto.Weapon1Quality,
-                dto.DefenseSkillKey,
                 dto.CommanderAttack, dto.CommanderDefense,
-                dto.OtherAttack, dto.OtherDefense, dto.OtherDamage, dto.OtherMove, dto.OtherArmor, dto.OtherHp);
+                dto.OtherAttack, dto.OtherDefense, dto.OtherDamage, dto.OtherMove, dto.OtherArmor, dto.OtherHp,
+                UnitRaceCatalog.Find(dto.RaceKey).MoveBonus);
+            if (!string.IsNullOrWhiteSpace(combat.DefenseSkillKeyUsed))
+                dto.DefenseSkillKey = combat.DefenseSkillKeyUsed;
+            return combat;
         }
     }
 }

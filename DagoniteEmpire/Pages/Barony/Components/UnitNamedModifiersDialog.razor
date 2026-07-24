@@ -1,0 +1,117 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog relation-modifiers-dialog">
+            <div class="relation-modifiers__header mb-2">
+                <span class="relation-modifiers__title">@Title</span>
+                <span class="relation-modifiers__sum">Sum: @FormatSum(Sum)</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Hint))
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">@Hint</MudText>
+            }
+
+            @if (_rows.Count == 0)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">No sources yet.</MudText>
+            }
+            else
+            {
+                @for (var i = 0; i < _rows.Count; i++)
+                {
+                    var index = i;
+                    <div class="relation-modifiers__row">
+                        <MudTextField @bind-Value="_rows[index].Label"
+                                      Label="Source"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Class="baron-influence-field relation-modifiers__desc" />
+                        <MudNumericField T="int"
+                                         @bind-Value="_rows[index].Value"
+                                         Label="Value"
+                                         Variant="Variant.Outlined"
+                                         Margin="Margin.Dense"
+                                         Class="baron-influence-field relation-modifiers__value" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       title="Remove"
+                                       OnClick="@(() => RemoveRow(index))" />
+                    </div>
+                }
+            }
+
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Class="mt-1"
+                       OnClick="AddRow">
+                Add source
+            </MudButton>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string Title { get; set; } = "Other modifiers";
+    [Parameter] public string? Hint { get; set; } =
+        "Each row is a named source. The sum fills the Other column.";
+    [Parameter] public List<UnitCombatModifierEntry> Modifiers { get; set; } = new();
+
+    private List<ModifierRow> _rows = new();
+
+    private int Sum => _rows.Sum(r => r.Value);
+
+    protected override void OnInitialized()
+    {
+        _rows = (Modifiers ?? new())
+            .Select(m => new ModifierRow
+            {
+                Label = m.Label ?? string.Empty,
+                Value = m.Value,
+            })
+            .ToList();
+        if (_rows.Count == 0)
+            _rows.Add(new ModifierRow());
+    }
+
+    private void AddRow() => _rows.Add(new ModifierRow());
+
+    private void RemoveRow(int index)
+    {
+        if (index < 0 || index >= _rows.Count) return;
+        _rows.RemoveAt(index);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        var result = _rows
+            .Select(m => new UnitCombatModifierEntry
+            {
+                Label = (m.Label ?? string.Empty).Trim(),
+                Value = m.Value,
+            })
+            .Where(m => !string.IsNullOrWhiteSpace(m.Label) || m.Value != 0)
+            .ToList();
+        MudDialog.Close(DialogResult.Ok(result));
+    }
+
+    private static string FormatSum(int sum) => sum > 0 ? $"+{sum}" : sum.ToString();
+
+    private sealed class ModifierRow
+    {
+        public string Label { get; set; } = string.Empty;
+        public int Value { get; set; }
+    }
+}

@@ -1923,6 +1923,58 @@ namespace DA_Business.Repository.BaronyRepos
 
         public Task<int> DeleteUnit(int id) => Delete(ctx => ctx.BaronyUnits, id, nameof(DeleteUnit));
 
+        public async Task<BaronyUnitDTO> ActivateUnit(int unitId)
+        {
+            try
+            {
+                if (unitId <= 0)
+                    throw new InvalidOperationException("Unit is required.");
+
+                using var ctx = await _db.CreateDbContextAsync();
+                var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u => u.Id == unitId)
+                    ?? throw new InvalidOperationException("Unit not found.");
+
+                if (string.Equals(unit.Status, UnitStatus.Active, StringComparison.OrdinalIgnoreCase))
+                    return ToUnitDTO(unit);
+
+                if (string.Equals(unit.Status, UnitStatus.Disbanded, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Disbanded units cannot be activated.");
+
+                unit.Status = UnitStatus.Active;
+                unit.UpdatedAtUtc = DateTime.UtcNow;
+                if (unit.CurrentHp <= 0)
+                {
+                    var preview = ToUnitDTO(unit);
+                    unit.CurrentHp = ComputeUnitCombat(preview).MaxHp;
+                }
+
+                var openProjects = await ctx.BaronyProjects
+                    .Where(p => p.BaronyId == unit.BaronyId
+                                && p.UnitId == unit.Id
+                                && p.Status != ProjectStatus.Completed
+                                && p.Status != ProjectStatus.Cancelled)
+                    .ToListAsync();
+                foreach (var project in openProjects)
+                {
+                    project.Status = ProjectStatus.Completed;
+                    project.TurnsRemaining = 0;
+                    if (string.IsNullOrWhiteSpace(project.ResultDescription))
+                        project.ResultDescription = $"Activates unit #{unit.Id} ({unit.Name}).";
+                }
+
+                await ctx.SaveChangesAsync();
+
+                var dto = ToUnitDTO(unit);
+                if (openProjects.Count > 0)
+                {
+                    dto.TrainingProjectId = openProjects[0].Id;
+                    dto.TrainingTurnsRemaining = 0;
+                }
+                return dto;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(ActivateUnit)); }
+        }
+
         public async Task<StartUnitTrainingResult> StartUnitTraining(StartUnitTrainingRequest request)
         {
             try
@@ -1945,10 +1997,21 @@ namespace DA_Business.Repository.BaronyRepos
 
                 var costs = UnitTrainingCostFormulas.Compute(
                     recruit, training, weapon1, weapon2, armor, shield,
-                    request.PayEquipmentAsDefense, request.AccelerateTurns);
+                    new UnitEquipmentPayModes(
+                        UnitEquipmentAcquireMode.Normalize(request.Weapon1AcquireMode),
+                        weapon2 is null
+                            ? UnitEquipmentAcquireMode.Craft
+                            : UnitEquipmentAcquireMode.Normalize(request.Weapon2AcquireMode),
+                        armor is null
+                            ? UnitEquipmentAcquireMode.Craft
+                            : UnitEquipmentAcquireMode.Normalize(request.ArmorAcquireMode),
+                        shield is null
+                            ? UnitEquipmentAcquireMode.Craft
+                            : UnitEquipmentAcquireMode.Normalize(request.ShieldAcquireMode)),
+                    request.AccelerateTurns);
 
                 using var ctx = await _db.CreateDbContextAsync();
-                _ = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == request.BaronyId)
+                var barony = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == request.BaronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
 
                 var now = DateTime.UtcNow;
@@ -1961,15 +2024,20 @@ namespace DA_Business.Repository.BaronyRepos
                     TroopCount = UnitRules.DefaultTroopCount,
                     RecruitSelectionKey = recruit.Key,
                     TrainingTypeKey = training.Key,
+                    RaceKey = string.IsNullOrWhiteSpace(request.RaceKey)
+                        ? UnitRaceKey.Human
+                        : request.RaceKey.Trim(),
                     Wage = costs.Wage,
                     UpkeepFood = UnitRules.DefaultUpkeepFood,
                     UpkeepDefense = UnitRules.DefaultUpkeepDefense,
-                    Build = attr,
-                    Agility = attr,
-                    Will = attr,
-                    Perception = attr,
+                    Build = Math.Max(attr, request.Build ?? attr),
+                    Agility = Math.Max(attr, request.Agility ?? attr),
+                    Will = Math.Max(attr, request.Will ?? attr),
+                    Perception = Math.Max(attr, request.Perception ?? attr),
                     SkillsJson = SerIntDict(UnitSkillDefaults.CreateSkillBase(request.SkillBase)),
-                    SkillOtherJson = SerIntDict(request.SkillOther),
+                    SkillOtherJson = SerIntDict(SyncSkillOtherCopy(request.SkillOther, request.SkillOtherSources)),
+                    SkillOtherSourcesJson = SerCombatOther(request.SkillOtherSources),
+                    CombatOtherJson = SerCombatOther(request.CombatOther),
                     Weapon1Key = weapon1.Key,
                     Weapon2Key = weapon2?.Key,
                     ArmorKey = armor?.Key,
@@ -1978,22 +2046,30 @@ namespace DA_Business.Repository.BaronyRepos
                         ? UnitWeaponQuality.Normal
                         : request.Weapon1Quality.Trim(),
                     Weapon2Quality = UnitWeaponQuality.Normal,
-                    DefenseSkillKey = string.IsNullOrWhiteSpace(request.DefenseSkillKey)
-                        ? UnitSkillKey.Shields
-                        : request.DefenseSkillKey.Trim(),
-                    RemainingPd = costs.Pd,
-                    Discipline = costs.StartingDiscipline,
+                    DefenseSkillKey = UnitSkillKey.Dodges,
+                    RemainingPd = Math.Clamp(request.RemainingPd ?? costs.Pd, 0, costs.Pd),
+                    Discipline = Math.Clamp(
+                        request.Discipline ?? costs.StartingDiscipline,
+                        UnitRules.DisciplineMin,
+                        UnitRules.DisciplineMax),
                     MaxBaseSkillAtGraduation = costs.MaxBaseSkill,
-                    FreeAttributePoints = costs.FreeAttributePoints,
+                    FreeAttributePoints = Math.Clamp(
+                        request.FreeAttributePoints ?? costs.FreeAttributePoints,
+                        0,
+                        costs.FreeAttributePoints),
                     CreatedAtUtc = now,
                     UpdatedAtUtc = now,
                 };
+                ApplyCombatOtherFromMap(unit, request.CombatOther);
+                ApplyAttrOtherFromMap(unit, request.AttrOtherSources);
 
                 var unitDtoPreview = ToUnitDTO(unit);
                 // Apply armor agility penalty to the attribute penalty column (Excel Ks).
                 unit.AttrPenaltyAgility = (armor?.AgilityPenalty ?? 0) + (shield?.AgilityPenalty ?? 0);
                 unitDtoPreview.AttrPenaltyAgility = unit.AttrPenaltyAgility;
-                unit.CurrentHp = ComputeUnitCombat(unitDtoPreview).MaxHp;
+                var combatPreview = ComputeUnitCombat(unitDtoPreview);
+                unit.DefenseSkillKey = unitDtoPreview.DefenseSkillKey;
+                unit.CurrentHp = combatPreview.MaxHp;
 
                 ctx.BaronyUnits.Add(unit);
                 await ctx.SaveChangesAsync();
@@ -2014,11 +2090,15 @@ namespace DA_Business.Repository.BaronyRepos
                     _ => ProjectAllowedCostModes.GoldProductionOnly,
                 };
 
+                var recruitNote = recruit.EventEffect is not null
+                    ? $" Adds event “{recruit.EventEffect.Name}” ({recruit.EventEffect.DurationTurns} turns)."
+                    : string.IsNullOrWhiteSpace(recruit.Notes) ? string.Empty : $" {recruit.Notes}";
+
                 var project = new BaronyProject
                 {
                     BaronyId = request.BaronyId,
                     Name = $"Train: {unit.Name}",
-                    Description = $"Unit training — {recruit.Name}, {training.Name}.",
+                    Description = $"Unit training — {recruit.Name}, {training.Name}.{recruitNote}",
                     OutputKind = ProjectOutputKind.UnitTraining,
                     UnitId = unit.Id,
                     Status = ProjectStatus.Draft,
@@ -2034,9 +2114,7 @@ namespace DA_Business.Repository.BaronyRepos
                     ResultPercentJson = "{}",
                     AllocatedJson = "{}",
                     ResultDescription = $"Activates unit #{unit.Id} ({unit.Name}).",
-                    Notes = request.PayEquipmentAsDefense
-                        ? "Equipment paid as Defense."
-                        : null,
+                    Notes = BuildGearDefenseNote(request),
                 };
 
                 // Zero-cost express: still a draft project so MG/player can see it; auto-complete when turns=0 and no cost on fund.
@@ -2046,6 +2124,25 @@ namespace DA_Business.Repository.BaronyRepos
                     unit.UpdatedAtUtc = DateTime.UtcNow;
                     project.Status = ProjectStatus.Completed;
                     project.TurnsRemaining = 0;
+                }
+
+                if (recruit.EventEffect is { } fx)
+                {
+                    var startTurn = Math.Max(1, barony.TurnNumber);
+                    var additive = new PpbVector();
+                    additive[Ppb.Loyalty] = fx.Loyalty;
+                    additive[Ppb.Stability] = fx.Stability;
+                    ctx.BaronyEvents.Add(new BaronyEvent
+                    {
+                        BaronyId = request.BaronyId,
+                        Name = fx.Name,
+                        Description = fx.Description
+                            ?? $"From recruiting {unit.Name} ({recruit.Name}).",
+                        StartTurn = startTurn,
+                        EndTurn = startTurn + Math.Max(1, fx.DurationTurns) - 1,
+                        AdditiveJson = Ser(additive),
+                        PercentJson = "{}",
+                    });
                 }
 
                 ctx.BaronyProjects.Add(project);
@@ -3210,6 +3307,7 @@ namespace DA_Business.Repository.BaronyRepos
             TroopCount = e.TroopCount,
             RecruitSelectionKey = e.RecruitSelectionKey,
             TrainingTypeKey = e.TrainingTypeKey,
+            RaceKey = string.IsNullOrWhiteSpace(e.RaceKey) ? UnitRaceKey.Human : e.RaceKey,
             Wage = e.Wage,
             UpkeepFood = e.UpkeepFood,
             UpkeepDefense = e.UpkeepDefense,
@@ -3223,8 +3321,11 @@ namespace DA_Business.Repository.BaronyRepos
             AttrOtherAgility = e.AttrOtherAgility,
             AttrOtherWill = e.AttrOtherWill,
             AttrOtherPerception = e.AttrOtherPerception,
+            AttrOtherSources = DeCombatOther(e.AttrOtherSourcesJson),
             SkillBase = DeIntDict(e.SkillsJson),
             SkillOther = DeIntDict(e.SkillOtherJson),
+            CombatOther = DeCombatOther(e.CombatOtherJson),
+            SkillOtherSources = DeCombatOther(e.SkillOtherSourcesJson),
             Weapon1Key = e.Weapon1Key,
             Weapon2Key = e.Weapon2Key,
             ArmorKey = e.ArmorKey,
@@ -3257,12 +3358,16 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static void ApplyUnit(BaronyUnit e, BaronyUnitDTO d)
         {
+            // Keep DefenseSkillKey in sync with auto-pick (highest eligible vs gear).
+            _ = UnitStatHelper.Compute(d);
+
             e.BaronyId = d.BaronyId;
             e.Name = d.Name?.Trim() ?? string.Empty;
             e.Status = string.IsNullOrWhiteSpace(d.Status) ? UnitStatus.Training : d.Status.Trim();
             e.TroopCount = d.TroopCount > 0 ? d.TroopCount : UnitRules.DefaultTroopCount;
             e.RecruitSelectionKey = d.RecruitSelectionKey ?? string.Empty;
             e.TrainingTypeKey = d.TrainingTypeKey ?? string.Empty;
+            e.RaceKey = string.IsNullOrWhiteSpace(d.RaceKey) ? UnitRaceKey.Human : d.RaceKey.Trim();
             e.Wage = d.Wage;
             e.UpkeepFood = d.UpkeepFood;
             e.UpkeepDefense = d.UpkeepDefense;
@@ -3272,12 +3377,18 @@ namespace DA_Business.Repository.BaronyRepos
             e.Perception = d.Perception;
             e.AttrPenaltyBuild = d.AttrPenaltyBuild;
             e.AttrPenaltyAgility = d.AttrPenaltyAgility;
+            SyncAttrOtherFromSources(d);
             e.AttrOtherBuild = d.AttrOtherBuild;
             e.AttrOtherAgility = d.AttrOtherAgility;
             e.AttrOtherWill = d.AttrOtherWill;
             e.AttrOtherPerception = d.AttrOtherPerception;
+            e.AttrOtherSourcesJson = SerCombatOther(d.AttrOtherSources);
             e.SkillsJson = SerIntDict(d.SkillBase);
+            SyncSkillOtherFromSources(d);
             e.SkillOtherJson = SerIntDict(d.SkillOther);
+            SyncCombatOtherTotals(d);
+            e.CombatOtherJson = SerCombatOther(d.CombatOther);
+            e.SkillOtherSourcesJson = SerCombatOther(d.SkillOtherSources);
             e.Weapon1Key = string.IsNullOrWhiteSpace(d.Weapon1Key) ? null : d.Weapon1Key.Trim();
             e.Weapon2Key = string.IsNullOrWhiteSpace(d.Weapon2Key) ? null : d.Weapon2Key.Trim();
             e.ArmorKey = string.IsNullOrWhiteSpace(d.ArmorKey) ? null : d.ArmorKey.Trim();
@@ -3289,7 +3400,7 @@ namespace DA_Business.Repository.BaronyRepos
                 ? UnitWeaponQuality.Normal
                 : d.Weapon2Quality.Trim();
             e.DefenseSkillKey = string.IsNullOrWhiteSpace(d.DefenseSkillKey)
-                ? UnitSkillKey.Shields
+                ? UnitSkillKey.Dodges
                 : d.DefenseSkillKey.Trim();
             e.CommanderAttack = d.CommanderAttack;
             e.CommanderDefense = d.CommanderDefense;
@@ -3304,6 +3415,26 @@ namespace DA_Business.Repository.BaronyRepos
             e.MaxBaseSkillAtGraduation = d.MaxBaseSkillAtGraduation;
             e.FreeAttributePoints = Math.Max(0, d.FreeAttributePoints);
             e.CurrentHp = d.CurrentHp;
+        }
+
+        private static string? BuildGearDefenseNote(StartUnitTrainingRequest request)
+        {
+            var parts = new List<string>();
+            void Add(string slot, string? itemKey, string mode)
+            {
+                if (string.IsNullOrWhiteSpace(itemKey)) return;
+                var m = UnitEquipmentAcquireMode.Normalize(mode);
+                if (m == UnitEquipmentAcquireMode.Craft) return;
+                parts.Add($"{slot}={UnitEquipmentAcquireMode.Label(m)}");
+            }
+
+            Add("W1", request.Weapon1Key, request.Weapon1AcquireMode);
+            Add("W2", request.Weapon2Key, request.Weapon2AcquireMode);
+            Add("armor", request.ArmorKey, request.ArmorAcquireMode);
+            Add("shield", request.ShieldKey, request.ShieldAcquireMode);
+            return parts.Count == 0
+                ? null
+                : $"Gear acquire: {string.Join(", ", parts)} (Buy = Mkt gold; Defense = 2×Mkt).";
         }
 
         private static string SerIntDict(Dictionary<string, int>? map)
@@ -3326,6 +3457,127 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 return new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             }
+        }
+
+        private static void SyncCombatOtherTotals(BaronyUnitDTO d)
+        {
+            d.CombatOther ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+            var (atk, def, dmg, mov, arm, hp) = UnitCombatOtherFormulas.SumAll(d.CombatOther);
+            d.OtherAttack = atk;
+            d.OtherDefense = def;
+            d.OtherDamage = dmg;
+            d.OtherMove = mov;
+            d.OtherArmor = arm;
+            d.OtherHp = hp;
+        }
+
+        private static void SyncSkillOtherFromSources(BaronyUnitDTO d)
+        {
+            d.SkillOther ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            d.SkillOtherSources ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+            UnitCombatOtherFormulas.ApplySkillOtherTotals(d.SkillOtherSources, d.SkillOther);
+        }
+
+        private static void SyncAttrOtherFromSources(BaronyUnitDTO d)
+        {
+            d.AttrOtherSources ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+            UnitCombatOtherFormulas.ApplyAttrOtherTotals(
+                d.AttrOtherSources,
+                out var build, out var agility, out var will, out var perception);
+            d.AttrOtherBuild = build;
+            d.AttrOtherAgility = agility;
+            d.AttrOtherWill = will;
+            d.AttrOtherPerception = perception;
+        }
+
+        private static void ApplyAttrOtherFromMap(
+            BaronyUnit e,
+            Dictionary<string, List<UnitCombatModifierEntry>>? map)
+        {
+            map ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+            e.AttrOtherSourcesJson = SerCombatOther(map);
+            UnitCombatOtherFormulas.ApplyAttrOtherTotals(
+                map, out var build, out var agility, out var will, out var perception);
+            e.AttrOtherBuild = build;
+            e.AttrOtherAgility = agility;
+            e.AttrOtherWill = will;
+            e.AttrOtherPerception = perception;
+        }
+
+        private static Dictionary<string, int> SyncSkillOtherCopy(
+            Dictionary<string, int>? skillOther,
+            Dictionary<string, List<UnitCombatModifierEntry>>? sources)
+        {
+            var result = new Dictionary<string, int>(
+                skillOther ?? new Dictionary<string, int>(),
+                StringComparer.OrdinalIgnoreCase);
+            UnitCombatOtherFormulas.ApplySkillOtherTotals(
+                sources ?? new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase),
+                result);
+            return result;
+        }
+
+        private static void ApplyCombatOtherFromMap(
+            BaronyUnit e,
+            Dictionary<string, List<UnitCombatModifierEntry>>? map)
+        {
+            map ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+            e.CombatOtherJson = SerCombatOther(map);
+            var (atk, def, dmg, mov, arm, hp) = UnitCombatOtherFormulas.SumAll(map);
+            e.OtherAttack = atk;
+            e.OtherDefense = def;
+            e.OtherDamage = dmg;
+            e.OtherMove = mov;
+            e.OtherArmor = arm;
+            e.OtherHp = hp;
+        }
+
+        private static string SerCombatOther(Dictionary<string, List<UnitCombatModifierEntry>>? map)
+        {
+            map ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+            var clean = new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (key, list) in map)
+            {
+                if (string.IsNullOrWhiteSpace(key) || list is null || list.Count == 0)
+                    continue;
+                clean[key.Trim()] = list
+                    .Select(m => new UnitCombatModifierEntry
+                    {
+                        Label = (m.Label ?? string.Empty).Trim(),
+                        Value = m.Value,
+                    })
+                    .Where(m => !string.IsNullOrWhiteSpace(m.Label) || m.Value != 0)
+                    .ToList();
+            }
+            return JsonSerializer.Serialize(clean, JsonOptions);
+        }
+
+        private static Dictionary<string, List<UnitCombatModifierEntry>> DeCombatOther(string? json)
+        {
+            var result = new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(json))
+                return result;
+            try
+            {
+                var dict = JsonSerializer.Deserialize<Dictionary<string, List<UnitCombatModifierEntry>>>(json, JsonOptions);
+                if (dict is null) return result;
+                foreach (var (key, list) in dict)
+                {
+                    if (string.IsNullOrWhiteSpace(key) || list is null) continue;
+                    result[key.Trim()] = list
+                        .Select(m => new UnitCombatModifierEntry
+                        {
+                            Label = m.Label ?? string.Empty,
+                            Value = m.Value,
+                        })
+                        .ToList();
+                }
+            }
+            catch
+            {
+                // ignore corrupt JSON
+            }
+            return result;
         }
 
         internal static UnitCombatTotals ComputeUnitCombat(BaronyUnitDTO dto) =>

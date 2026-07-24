@@ -1,21 +1,25 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @using DA_Business.Repository.BaronyRepos
+@using DA_Common.Barony
 @inject ISnackbar _snackBar
+@inject IDialogService _dialogService
 
 @* Excel skill columns: Attr · From attr · Base · Other · Total. Base skills skip Attr/From. *@
-<div class="unit-draft-skills__legend unit-draft-skill-tile__cols unit-draft-skill-tile__cols--legend">
-    <span>Skill</span>
-    <span title="Linked attribute (specializations only): B Build, A Agility, W Will, P Perception">Attr</span>
-    <span title="Value contributed by the linked attribute">From</span>
-    <span title="Base rank — Baron spends PD; MG can set freely">Base</span>
-    <span title="Other — manual bonus (MG)">Other</span>
-    <span title="Total">Total</span>
-</div>
 <div class="unit-draft-skills">
-    @foreach (var baseDef in _baseSkillGroups)
-    {
-        @SkillTile(baseDef, UnitSkillTree.All.Where(s => s.ParentKey == baseDef.Key).ToList())
-    }
+    <div class="unit-draft-skills__col">
+        @SkillLegend()
+        @foreach (var baseDef in _leftSkillGroups)
+        {
+            @SkillTile(baseDef, UnitSkillTree.All.Where(s => s.ParentKey == baseDef.Key).ToList())
+        }
+    </div>
+    <div class="unit-draft-skills__col">
+        @SkillLegend()
+        @foreach (var baseDef in _rightSkillGroups)
+        {
+            @SkillTile(baseDef, UnitSkillTree.All.Where(s => s.ParentKey == baseDef.Key).ToList())
+        }
+    </div>
 </div>
 @if (_riding is not null)
 {
@@ -23,13 +27,20 @@
         @SkillTile(_riding, Array.Empty<UnitSkillDef>())
         <div class="unit-draft-skill-tile unit-draft-skill-tile--solo">
             <div class="unit-draft-skill-tile__cols unit-draft-skill-tile__cols--head">
-                <span class="unit-draft-skill-tile__name">Discipline</span>
+                <span class="unit-draft-skill-tile__name-row">
+                    <BaronyTooltip Title="Discipline"
+                                   Text="Unit discipline (1–18). Starting value from training. Raising costs XP equal to the current level."
+                                   Placement="Placement.Right">
+                        <span class="unit-draft-skill-tile__name">Discipline</span>
+                    </BaronyTooltip>
+                    @XpPlusDiscipline()
+                </span>
                 <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">—</span>
                 <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">—</span>
                 @EditableCell(
                     value: Unit.Discipline,
-                    title: CanSpendPd ? "Raise discipline (+PD)" : "Discipline",
-                    canClick: CanSpendPd || CanManageAsMg,
+                    title: CanManageAsMg ? "Edit discipline (MG)" : "Discipline",
+                    canClick: CanManageAsMg,
                     onClick: OnDisciplineClickAsync)
                 <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">—</span>
                 <b class="unit-draft-skill-tile__col unit-draft-skill-tile__total">@Unit.Discipline</b>
@@ -59,6 +70,8 @@
     [Parameter] public bool CanManageAsMg { get; set; }
     [Parameter] public bool CanSpendPd { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
+    /// <summary>XP raises applied in-memory; parent shows Save / Undo.</summary>
+    [Parameter] public EventCallback OnXpDraftChanged { get; set; }
 
     private Dictionary<string, int> _skillTotals = new();
     private HashSet<string> _hotSkills = new(StringComparer.OrdinalIgnoreCase);
@@ -71,12 +84,20 @@
     };
 
     private List<UnitSkillDef> _baseSkillGroups = new();
+    private List<UnitSkillDef> _leftSkillGroups = new();
+    private List<UnitSkillDef> _rightSkillGroups = new();
     private UnitSkillDef? _riding;
 
     private string? _editKey;
     private string _editName = string.Empty;
     private string _editField = "Base";
     private int _editValue;
+
+    /// <summary>Max base skill while Training/draft; lifted after Active graduation.</summary>
+    private int BaseSkillRaiseCap =>
+        Unit.IsActive || Unit.MaxBaseSkillAtGraduation <= 0
+            ? int.MaxValue
+            : Unit.MaxBaseSkillAtGraduation;
 
     protected override void OnParametersSet()
     {
@@ -86,6 +107,8 @@
             .Where(d => d is not null)
             .Cast<UnitSkillDef>()
             .ToList();
+        _leftSkillGroups = _baseSkillGroups.Where((_, i) => i % 2 == 0).ToList();
+        _rightSkillGroups = _baseSkillGroups.Where((_, i) => i % 2 == 1).ToList();
         _riding = UnitSkillTree.Find(UnitSkillKey.Riding);
 
         _hotSkills.Clear();
@@ -108,6 +131,34 @@
     }
 
     private bool IsHighlighted(string key) => _hotSkills.Contains(key);
+
+    private RenderFragment SkillLegend() => __builder =>
+    {
+        <div class="unit-draft-skills__legend unit-draft-skill-tile__cols unit-draft-skill-tile__cols--legend">
+            <span>Skill</span>
+            <BaronyTooltip Title="Attribute" Text="Linked attribute for specializations only: B Build, A Agility, W Will, P Perception." Placement="Placement.Top">
+                <span>Attr</span>
+            </BaronyTooltip>
+            <BaronyTooltip Title="From attribute" Text="Value contributed by the linked attribute (specializations and Riding)." Placement="Placement.Top">
+                <span>From</span>
+            </BaronyTooltip>
+            <BaronyTooltip Title="Base"
+                           Text="Base rank. Baron spends XP after graduation (base skill = level × 3; specialization = level × 1). MG can set freely."
+                           Placement="Placement.Top">
+                <span>Base</span>
+            </BaronyTooltip>
+            <BaronyTooltip Title="Other"
+                           Text="Named Other sources (MG). Click a cell to add name + value; the sum fills this column. Hover for the source list."
+                           Placement="Placement.Top">
+                <span>Other</span>
+            </BaronyTooltip>
+            <BaronyTooltip Title="Total"
+                           Text="Base skills: Base + Other. Specializations: parent Total + From + Base + Other."
+                           Placement="Placement.Top">
+                <span>Total</span>
+            </BaronyTooltip>
+        </div>
+    };
 
     /// <summary>True for specializations + Riding — they use Attr / From columns.</summary>
     private static bool UsesAttrColumns(UnitSkillDef def) =>
@@ -151,24 +202,28 @@
         var fromAttr = usesAttr ? UnitStatHelper.SkillAttrContribution(Unit, def) : 0;
         var rowHot = IsHighlighted(def.Key);
 
-        var canEditBase = CanManageAsMg || CanSpendPd;
-        var canEditOther = CanManageAsMg;
-        var baseTitle = CanManageAsMg
-            ? "Edit base (MG)"
-            : CanSpendPd ? "Raise base (+PD)" : "Base";
-        var otherTitle = CanManageAsMg ? "Edit other (MG)" : "Other";
+        var canEditBase = CanManageAsMg;
+        var baseTitle = CanManageAsMg ? "Edit base (MG)" : "Base";
 
         <div class="unit-draft-skill-tile__cols @(isHeader ? "unit-draft-skill-tile__cols--head" : null) @(rowHot ? "unit-draft-skill-tile__row--hot" : null)">
-            <span class="@(isHeader ? "unit-draft-skill-tile__name" : "unit-draft-skill-tile__child")"
-                  title="@(usesAttr ? AttrTitle(def.LinkedAttr) : def.Name)">
-                @def.Name
+            <span class="unit-draft-skill-tile__name-row">
+                <BaronyTooltip Title="@def.Name"
+                               Text="@(usesAttr ? AttrTitle(def.LinkedAttr) : (isHeader ? "Base skill — Total = Base + Other (no attribute)." : "Specialization — Total = parent + From + Base + Other."))"
+                               Placement="Placement.Right">
+                    <span class="@(isHeader ? "unit-draft-skill-tile__name" : "unit-draft-skill-tile__child")">
+                        @def.Name
+                    </span>
+                </BaronyTooltip>
+                @XpPlusSkill(def, bas)
             </span>
             @if (usesAttr)
             {
-                <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted"
-                      title="@AttrTitle(def.LinkedAttr)">@AttrLetter(def.LinkedAttr)</span>
-                <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted"
-                      title="From @UnitAttr.Label(def.LinkedAttr)">@fromAttr</span>
+                <BaronyTooltip Title="Attribute" Text="@AttrTitle(def.LinkedAttr)" Placement="Placement.Top">
+                    <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">@AttrLetter(def.LinkedAttr)</span>
+                </BaronyTooltip>
+                <BaronyTooltip Title="From attribute" Text="@($"From {UnitAttr.Label(def.LinkedAttr)}")" Placement="Placement.Top">
+                    <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">@fromAttr</span>
+                </BaronyTooltip>
             }
             else
             {
@@ -176,67 +231,176 @@
                 <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">—</span>
             }
             @EditableCell(bas, baseTitle, canEditBase, () => OnBaseClickAsync(def))
-            @EditableCell(oth, otherTitle, canEditOther, () => OnOtherClickAsync(def))
+            @OtherCell(def, oth)
             <b class="unit-draft-skill-tile__col unit-draft-skill-tile__total">@total</b>
         </div>
+    };
+
+    private RenderFragment XpPlusSkill(UnitSkillDef def, int currentBase) => __builder =>
+    {
+        if (!CanSpendPd) return;
+
+        int cost;
+        bool canRaise;
+        string tip;
+        if (def.IsBase && def.Key != UnitSkillKey.Riding)
+        {
+            var maxBase = BaseSkillRaiseCap;
+            if (!UnitPdFormulas.CanRaiseBaseSkill(currentBase, maxBase, Unit.RemainingPd, out cost))
+                return;
+            canRaise = true;
+            tip = $"Raise {def.Name} base to {currentBase + 1} — costs {cost} XP"
+                + (maxBase < int.MaxValue ? $" (cap {maxBase})." : ".");
+        }
+        else
+        {
+            var parentKey = def.Key == UnitSkillKey.Riding ? UnitSkillKey.Melee : def.ParentKey!;
+            Unit.SkillBase.TryGetValue(parentKey, out var parentBase);
+            cost = UnitRules.SpecialSkillRaiseCost(currentBase + 1);
+            canRaise = currentBase + 1 <= parentBase && Unit.RemainingPd >= cost;
+            tip = currentBase + 1 > parentBase
+                ? $"{def.Name} cannot exceed parent base ({parentBase})."
+                : $"Raise {def.Name} base to {currentBase + 1} — costs {cost} XP.";
+        }
+
+        if (!canRaise) return;
+
+        <BaronyTooltip Title="Spend XP" Text="@tip" Placement="Placement.Top">
+            <button type="button"
+                    class="unit-xp-plus"
+                    @onclick="@(() => RaiseBaseAsync(def))">+</button>
+        </BaronyTooltip>
+    };
+
+    private RenderFragment XpPlusDiscipline() => __builder =>
+    {
+        if (!CanSpendPd) return;
+
+        var cost = UnitRules.DisciplineRaiseCost(Unit.Discipline);
+        var canRaise = Unit.Discipline < UnitRules.DisciplineMax && Unit.RemainingPd >= cost;
+        if (!canRaise) return;
+
+        var tip = $"Raise Discipline to {Unit.Discipline + 1} — costs {cost} XP.";
+        <BaronyTooltip Title="Spend XP" Text="@tip" Placement="Placement.Top">
+            <button type="button"
+                    class="unit-xp-plus"
+                    @onclick="RaiseDisciplineAsync">+</button>
+        </BaronyTooltip>
     };
 
     private RenderFragment EditableCell(int value, string title, bool canClick, Func<Task> onClick) => __builder =>
     {
         if (canClick)
         {
-            <button type="button"
-                    class="unit-draft-skill-tile__col unit-draft-skill-tile__col--btn"
-                    title="@title"
-                    @onclick="onClick">@value</button>
+            <BaronyTooltip Title="@title" Text="@title" Placement="Placement.Top">
+                <button type="button"
+                        class="unit-draft-skill-tile__col unit-draft-skill-tile__col--btn"
+                        @onclick="onClick">@value</button>
+            </BaronyTooltip>
         }
         else
         {
-            <span class="unit-draft-skill-tile__col" title="@title">@value</span>
+            <BaronyTooltip Title="@title" Text="@title" Placement="Placement.Top">
+                <span class="unit-draft-skill-tile__col">@value</span>
+            </BaronyTooltip>
         }
     };
+
+    private RenderFragment OtherCell(UnitSkillDef def, int value) => __builder =>
+    {
+        var tip = OtherTip(def.Key);
+        <BaronyTooltip Title="Other" Text="@tip" Placement="Placement.Top">
+            @if (CanManageAsMg)
+            {
+                <button type="button"
+                        class="unit-draft-skill-tile__col unit-draft-skill-tile__col--btn"
+                        @onclick="@(() => EditOtherAsync(def))">@value</button>
+            }
+            else
+            {
+                <span class="unit-draft-skill-tile__col">@value</span>
+            }
+        </BaronyTooltip>
+    };
+
+    private string OtherTip(string skillKey)
+    {
+        var lines = UnitCombatOtherFormulas.TooltipLines(
+            UnitCombatOtherFormulas.Get(Unit.SkillOtherSources, skillKey));
+        return CanManageAsMg
+            ? $"{lines}\n\nClick to edit named sources."
+            : lines;
+    }
 
     private async Task OnBaseClickAsync(UnitSkillDef def)
     {
         if (CanManageAsMg)
-        {
-            BeginEdit(def, baseField: true);
-            return;
-        }
-        if (CanSpendPd)
-            await RaiseBaseAsync(def);
+            BeginEditBase(def);
+        await Task.CompletedTask;
     }
 
-    private Task OnOtherClickAsync(UnitSkillDef def)
+    private async Task EditOtherAsync(UnitSkillDef def)
     {
-        if (CanManageAsMg)
-            BeginEdit(def, baseField: false);
-        return Task.CompletedTask;
+        if (!CanManageAsMg) return;
+
+        Unit.SkillOtherSources ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+        Unit.SkillOther ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        var existing = UnitCombatOtherFormulas.Get(Unit.SkillOtherSources, def.Key)
+            .Select(m => new UnitCombatModifierEntry { Label = m.Label, Value = m.Value })
+            .ToList();
+
+        // Legacy: Other was a bare number before named sources existed.
+        if (existing.Count == 0 && Unit.SkillOther.TryGetValue(def.Key, out var legacy) && legacy != 0)
+            existing.Add(new UnitCombatModifierEntry { Label = "Other", Value = legacy });
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitNamedModifiersDialog.Title)] = $"{def.Name} — other",
+            [nameof(UnitNamedModifiersDialog.Hint)] =
+                "Each row is a named source (e.g. blessing, magic, training). The sum fills the Other column and appears in the tooltip.",
+            [nameof(UnitNamedModifiersDialog.Modifiers)] = existing,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitNamedModifiersDialog>(
+            $"{def.Name} — other",
+            parameters,
+            options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not List<UnitCombatModifierEntry> saved)
+            return;
+
+        if (saved.Count == 0)
+        {
+            Unit.SkillOtherSources.Remove(def.Key);
+            Unit.SkillOther.Remove(def.Key);
+        }
+        else
+        {
+            Unit.SkillOtherSources[def.Key] = saved;
+            Unit.SkillOther[def.Key] = UnitCombatOtherFormulas.Sum(saved);
+        }
+
+        _skillTotals = UnitStatHelper.BuildSkillTotals(Unit);
+        await OnChanged.InvokeAsync();
     }
 
     private async Task OnDisciplineClickAsync()
     {
-        if (CanManageAsMg)
-        {
-            _editKey = "__discipline__";
-            _editName = "Discipline";
-            _editField = "Base";
-            _editValue = Unit.Discipline;
-            return;
-        }
-        if (CanSpendPd)
-            await RaiseDisciplineAsync();
+        if (!CanManageAsMg) return;
+        _editKey = "__discipline__";
+        _editName = "Discipline";
+        _editField = "Base";
+        _editValue = Unit.Discipline;
+        await Task.CompletedTask;
     }
 
-    private void BeginEdit(UnitSkillDef def, bool baseField)
+    private void BeginEditBase(UnitSkillDef def)
     {
         _editKey = def.Key;
         _editName = def.Name;
-        _editField = baseField ? "Base" : "Other";
-        if (baseField)
-            Unit.SkillBase.TryGetValue(def.Key, out _editValue);
-        else
-            Unit.SkillOther.TryGetValue(def.Key, out _editValue);
+        _editField = "Base";
+        Unit.SkillBase.TryGetValue(def.Key, out _editValue);
     }
 
     private void CancelEdit() => _editKey = null;
@@ -249,10 +413,16 @@
         {
             Unit.Discipline = Math.Clamp(v, UnitRules.DisciplineMin, UnitRules.DisciplineMax);
         }
-        else if (_editField == "Base")
-            Unit.SkillBase[_editKey] = v;
         else
-            Unit.SkillOther[_editKey] = v;
+        {
+            var def = UnitSkillTree.Find(_editKey);
+            if (def is not null && def.IsBase && def.Key != UnitSkillKey.Riding
+                && BaseSkillRaiseCap < int.MaxValue)
+            {
+                v = Math.Min(v, BaseSkillRaiseCap);
+            }
+            Unit.SkillBase[_editKey] = v;
+        }
         _editKey = null;
         _skillTotals = UnitStatHelper.BuildSkillTotals(Unit);
         await OnChanged.InvokeAsync();
@@ -265,9 +435,13 @@
         int cost;
         if (def.IsBase && def.Key != UnitSkillKey.Riding)
         {
-            if (!UnitPdFormulas.CanRaiseBaseSkill(current, int.MaxValue, Unit.RemainingPd, out cost))
+            if (!UnitPdFormulas.CanRaiseBaseSkill(current, BaseSkillRaiseCap, Unit.RemainingPd, out cost))
             {
-                _snackBar.Add($"Need {cost} PD.", Severity.Warning);
+                _snackBar.Add(
+                    BaseSkillRaiseCap < int.MaxValue && current + 1 > BaseSkillRaiseCap
+                        ? $"Max base skill is {BaseSkillRaiseCap} until graduation."
+                        : $"Need {cost} XP.",
+                    Severity.Warning);
                 return;
             }
         }
@@ -279,7 +453,7 @@
             {
                 _snackBar.Add(current + 1 > parentBase
                     ? "Special cannot exceed parent base skill."
-                    : $"Need {cost} PD.", Severity.Warning);
+                    : $"Need {cost} XP.", Severity.Warning);
                 return;
             }
         }
@@ -287,7 +461,7 @@
         Unit.SkillBase[def.Key] = current + 1;
         Unit.RemainingPd -= cost;
         _skillTotals = UnitStatHelper.BuildSkillTotals(Unit);
-        await OnChanged.InvokeAsync();
+        await OnXpDraftChanged.InvokeAsync();
     }
 
     private async Task RaiseDisciplineAsync()
@@ -295,11 +469,11 @@
         if (!CanSpendPd) return;
         if (!UnitPdFormulas.CanRaiseDiscipline(Unit.Discipline, Unit.RemainingPd, out var cost))
         {
-            _snackBar.Add(Unit.Discipline >= UnitRules.DisciplineMax ? "Discipline maxed." : $"Need {cost} PD.", Severity.Warning);
+            _snackBar.Add(Unit.Discipline >= UnitRules.DisciplineMax ? "Discipline maxed." : $"Need {cost} XP.", Severity.Warning);
             return;
         }
         Unit.RemainingPd -= cost;
         Unit.Discipline++;
-        await OnChanged.InvokeAsync();
+        await OnXpDraftChanged.InvokeAsync();
     }
 }

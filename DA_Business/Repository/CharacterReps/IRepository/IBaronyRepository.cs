@@ -155,6 +155,8 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyUnitDTO> SaveUnit(BaronyUnitDTO dto);
         Task<int> DeleteUnit(int id);
         Task<StartUnitTrainingResult> StartUnitTraining(StartUnitTrainingRequest request);
+        /// <summary>MG: force a training unit to Active and complete its training project.</summary>
+        Task<BaronyUnitDTO> ActivateUnit(int unitId);
 
         // --- Resources balance custom sources ---
         Task<List<BaronyResourceSourceDTO>> GetResourceSources(int baronyId);

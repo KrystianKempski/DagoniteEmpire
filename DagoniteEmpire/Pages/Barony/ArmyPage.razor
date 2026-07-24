@@ -31,25 +31,34 @@ else if (Barony is not null)
                           CanManageAsMg="@CanManageAsMg"
                           OnStarted="OnTrainingStarted" />
 
-    <UnitsListSection Units="@_units"
-                      SelectedId="@_selectedId"
-                      OnSelect="SelectUnit"
-                      OnChanged="ReloadAsync" />
-
-    @if (_selected is not null)
-    {
-        <UnitCardSection Unit="@_selected"
-                         CanEdit="@CanEdit"
-                         CanManageAsMg="@CanManageAsMg"
-                         OnChanged="ReloadAsync" />
-    }
+    <BaronySection Title="Units">
+        <Summary>
+            <span class="projects-summary__item">Two cards per row · same layout as the generator preview</span>
+        </Summary>
+        <ChildContent>
+            @if (_units.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No units yet. Use the generator above.</MudText>
+            }
+            else
+            {
+                <div class="unit-roster">
+                    @foreach (var unit in _units)
+                    {
+                        <UnitCardSection @key="unit.Id"
+                                         Unit="@unit"
+                                         CanEdit="@CanEdit"
+                                         CanManageAsMg="@CanManageAsMg"
+                                         OnChanged="ReloadAsync" />
+                    }
+                </div>
+            }
+        </ChildContent>
+    </BaronySection>
 }
 
 @code {
     private List<BaronyUnitDTO> _units = new();
-    private int? _selectedId;
-    private BaronyUnitDTO? _selected =>
-        _selectedId is int id ? _units.FirstOrDefault(u => u.Id == id) : null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,21 +73,18 @@ else if (Barony is not null)
         if (Barony is null)
             return;
         _units = await _baronyRepo.GetUnits(Barony.Id);
-        if (_selectedId is int id && _units.All(u => u.Id != id))
-            _selectedId = null;
         await InvokeAsync(StateHasChanged);
     }
-
-    private void SelectUnit(int id) => _selectedId = id;
 
     private async Task OnTrainingStarted(StartUnitTrainingResult result)
     {
         await ReloadAsync();
-        _selectedId = result.Unit.Id;
-        _snackBar.Add(
-            result.Unit.IsActive
-                ? $"Unit “{result.Unit.Name}” ready."
-                : $"Training project “{result.Project.Name}” created — fund it on Projects.",
-            Severity.Success);
+        var recruit = UnitRecruitSelectionCatalog.Find(result.Unit.RecruitSelectionKey);
+        var msg = result.Unit.IsActive
+            ? $"Unit “{result.Unit.Name}” ready."
+            : $"Training project “{result.Project.Name}” created — fund it on Projects.";
+        if (recruit?.EventEffect is not null)
+            msg += $" Event “{recruit.EventEffect.Name}” started.";
+        _snackBar.Add(msg, Severity.Success);
     }
 }

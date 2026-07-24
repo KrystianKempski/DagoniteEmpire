@@ -17,6 +17,9 @@ namespace DA_Models.BaronyModels
         public string RecruitSelectionKey { get; set; } = string.Empty;
         public string TrainingTypeKey { get; set; } = string.Empty;
 
+        /// <summary>Unit race (<see cref="DA_Common.Barony.UnitRaceKey"/>). Only Human for now.</summary>
+        public string RaceKey { get; set; } = DA_Common.Barony.UnitRaceKey.Human;
+
         public int Wage { get; set; }
         public decimal UpkeepFood { get; set; } = DA_Common.Barony.UnitRules.DefaultUpkeepFood;
         public int UpkeepDefense { get; set; } = DA_Common.Barony.UnitRules.DefaultUpkeepDefense;
@@ -32,8 +35,20 @@ namespace DA_Models.BaronyModels
         public int AttrOtherWill { get; set; }
         public int AttrOtherPerception { get; set; }
 
+        /// <summary>Named Other sources per attribute key (<see cref="DA_Common.Barony.UnitAttr"/>); sum synced into AttrOther*.</summary>
+        public Dictionary<string, List<DA_Common.Barony.UnitCombatModifierEntry>> AttrOtherSources { get; set; } =
+            new(StringComparer.OrdinalIgnoreCase);
+
         public Dictionary<string, int> SkillBase { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, int> SkillOther { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Named Other sources per combat stat key (<see cref="DA_Common.Barony.UnitCombatStatKey"/>).</summary>
+        public Dictionary<string, List<DA_Common.Barony.UnitCombatModifierEntry>> CombatOther { get; set; } =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Named Other sources per skill key (sum synced into <see cref="SkillOther"/>).</summary>
+        public Dictionary<string, List<DA_Common.Barony.UnitCombatModifierEntry>> SkillOtherSources { get; set; } =
+            new(StringComparer.OrdinalIgnoreCase);
 
         public string? Weapon1Key { get; set; }
         public string? Weapon2Key { get; set; }
@@ -42,7 +57,7 @@ namespace DA_Models.BaronyModels
         public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
         public string Weapon2Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
 
-        public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Shields;
+        public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Dodges;
 
         public int CommanderAttack { get; set; }
         public int CommanderDefense { get; set; }
@@ -80,16 +95,35 @@ namespace DA_Models.BaronyModels
         public string Name { get; set; } = string.Empty;
         public string RecruitSelectionKey { get; set; } = string.Empty;
         public string TrainingTypeKey { get; set; } = string.Empty;
+        public string RaceKey { get; set; } = DA_Common.Barony.UnitRaceKey.Human;
         public string? Weapon1Key { get; set; }
         public string? Weapon2Key { get; set; }
         public string? ArmorKey { get; set; }
         public string? ShieldKey { get; set; }
         public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
-        public bool PayEquipmentAsDefense { get; set; }
+        public string Weapon1AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string Weapon2AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string ArmorAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string ShieldAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public int AccelerateTurns { get; set; }
-        public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Shields;
+        public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Dodges;
         public Dictionary<string, int> SkillBase { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, int> SkillOther { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, List<DA_Common.Barony.UnitCombatModifierEntry>> CombatOther { get; set; } =
+            new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, List<DA_Common.Barony.UnitCombatModifierEntry>> SkillOtherSources { get; set; } =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Optional pre-spend from the generator card (attrs / discipline / XP).</summary>
+        public int? Build { get; set; }
+        public int? Agility { get; set; }
+        public int? Will { get; set; }
+        public int? Perception { get; set; }
+        public int? Discipline { get; set; }
+        public int? RemainingPd { get; set; }
+        public int? FreeAttributePoints { get; set; }
+        public Dictionary<string, List<DA_Common.Barony.UnitCombatModifierEntry>> AttrOtherSources { get; set; } =
+            new(StringComparer.OrdinalIgnoreCase);
     }
 
     public class StartUnitTrainingResult

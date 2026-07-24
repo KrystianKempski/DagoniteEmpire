@@ -16,6 +16,9 @@ namespace DA_DataAccess.BaronyData
         public string RecruitSelectionKey { get; set; } = string.Empty;
         public string TrainingTypeKey { get; set; } = string.Empty;
 
+        /// <summary>Unit race key (<see cref="DA_Common.Barony.UnitRaceKey"/>). Default Human.</summary>
+        public string RaceKey { get; set; } = DA_Common.Barony.UnitRaceKey.Human;
+
         public int Wage { get; set; }
         public decimal UpkeepFood { get; set; } = DA_Common.Barony.UnitRules.DefaultUpkeepFood;
         public int UpkeepDefense { get; set; } = DA_Common.Barony.UnitRules.DefaultUpkeepDefense;
@@ -37,6 +40,15 @@ namespace DA_DataAccess.BaronyData
         /// <summary>JSON map skillKey → other bonus (int).</summary>
         public string SkillOtherJson { get; set; } = "{}";
 
+        /// <summary>JSON map combatStatKey → list of {label,value} Other sources.</summary>
+        public string CombatOtherJson { get; set; } = "{}";
+
+        /// <summary>JSON map skillKey → list of {label,value} Other sources.</summary>
+        public string SkillOtherSourcesJson { get; set; } = "{}";
+
+        /// <summary>JSON map attrKey → list of {label,value} Other sources.</summary>
+        public string AttrOtherSourcesJson { get; set; } = "{}";
+
         public string? Weapon1Key { get; set; }
         public string? Weapon2Key { get; set; }
         public string? ArmorKey { get; set; }
@@ -44,7 +56,7 @@ namespace DA_DataAccess.BaronyData
         public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
         public string Weapon2Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
 
-        public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Shields;
+        public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Dodges;
 
         public int CommanderAttack { get; set; }
         public int CommanderDefense { get; set; }
