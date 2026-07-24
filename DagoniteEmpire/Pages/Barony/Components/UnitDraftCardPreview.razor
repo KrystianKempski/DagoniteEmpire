@@ -204,7 +204,14 @@
             </MudText>
         </BaronyTooltip>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-            Max skill <b>@Unit.MaxBaseSkillAtGraduation</b>
+            @if (Unit.IsTraining && Unit.MaxBaseSkillAtGraduation > 0)
+            {
+                <text>Max skill <b>@Unit.MaxBaseSkillAtGraduation</b> (until graduation)</text>
+            }
+            else if (Unit.IsActive)
+            {
+                <text>Base skill cap lifted</text>
+            }
             @if (Unit.FreeAttributePoints > 0)
             {
                 <text> · Free attrs <b>@Unit.FreeAttributePoints</b></text>

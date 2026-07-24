@@ -9,6 +9,10 @@
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);" Class="mb-3">
                 Transfer resources from your barony stocks into <strong>@Project.Name</strong>.
                 Payment method: <strong>@CostModeLabel(Project.EffectiveCostMode)</strong>.
+                @if (Project.IsCombinedCost)
+                {
+                    <text> Gold, Production and Materials (e.g. Defense) are all required — fund every row.</text>
+                }
                 Allocated resources leave your current stocks immediately.
             </MudText>
 
@@ -132,6 +136,7 @@
     {
         ProjectCostMode.GoldProduction => "Gold & Production",
         ProjectCostMode.Materials => "Materials",
+        ProjectCostMode.Combined => "Combined (Gold, Production & Materials)",
         _ => mode,
     };
 

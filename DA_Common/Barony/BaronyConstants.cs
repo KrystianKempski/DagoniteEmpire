@@ -452,13 +452,15 @@ namespace DA_Common.Barony
         public static readonly string[] All = { Draft, InProgress, Completed, Cancelled };
     }
 
-    /// <summary>How a project cost is paid (one active track at a time).</summary>
+    /// <summary>How a project cost is paid.</summary>
     public readonly struct ProjectCostMode
     {
         public const string GoldProduction = "Gold & Production";
         public const string Materials = "Materials";
+        /// <summary>Both tracks required together (unit training exception).</summary>
+        public const string Combined = "Combined";
 
-        public static readonly string[] All = { GoldProduction, Materials };
+        public static readonly string[] All = { GoldProduction, Materials, Combined };
     }
 
     /// <summary>Which cost payment tracks the GM allows for a project.</summary>
@@ -467,8 +469,16 @@ namespace DA_Common.Barony
         public const string GoldProductionOnly = "Gold & Production only";
         public const string MaterialsOnly = "Materials only";
         public const string PlayerChoice = "Player choice";
+        /// <summary>
+        /// Exception: Gold+Production and Materials (e.g. Defense) are all required —
+        /// not an either/or choice. Used by Unit Training.
+        /// </summary>
+        public const string Combined = "Combined";
 
-        public static readonly string[] All = { GoldProductionOnly, MaterialsOnly, PlayerChoice };
+        public static readonly string[] All =
+        {
+            GoldProductionOnly, MaterialsOnly, PlayerChoice, Combined,
+        };
     }
 
     /// <summary>What a completed project becomes.</summary>

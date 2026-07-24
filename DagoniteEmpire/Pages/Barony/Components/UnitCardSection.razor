@@ -144,6 +144,7 @@
 
             var updated = await _baronyRepo.ActivateUnit(Unit.Id);
             Unit.Status = updated.Status;
+            Unit.MaxBaseSkillAtGraduation = updated.MaxBaseSkillAtGraduation;
             Unit.CurrentHp = updated.CurrentHp;
             Unit.TrainingTurnsRemaining = updated.TrainingTurnsRemaining;
             Unit.TrainingProjectId = updated.TrainingProjectId;

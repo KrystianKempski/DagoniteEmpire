@@ -300,18 +300,29 @@ namespace DA_Models.BaronyModels
             TileId is > 0
             && Status is not (DA_Common.Barony.ProjectStatus.Completed or DA_Common.Barony.ProjectStatus.Cancelled);
 
+        /// <summary>True when both Gold+Production and Materials must be paid together.</summary>
+        public bool IsCombinedCost =>
+            string.Equals(
+                AllowedCostModes,
+                DA_Common.Barony.ProjectAllowedCostModes.Combined,
+                StringComparison.OrdinalIgnoreCase);
+
         /// <summary>Active payment track after GM rules and player selection.</summary>
         public string EffectiveCostMode => ResolveEffectiveCostMode();
 
         public IReadOnlyList<PpbInfo> ActiveCostColumns =>
-            EffectiveCostMode == DA_Common.Barony.ProjectCostMode.GoldProduction
-                ? ProjectCostCatalog.GoldProduction
-                : ProjectCostCatalog.Materials;
+            IsCombinedCost || EffectiveCostMode == DA_Common.Barony.ProjectCostMode.Combined
+                ? ProjectCostCatalog.CombinedActiveColumns(CostGoldProduction, CostMaterials)
+                : EffectiveCostMode == DA_Common.Barony.ProjectCostMode.GoldProduction
+                    ? ProjectCostCatalog.GoldProduction
+                    : ProjectCostCatalog.Materials;
 
         public PpbVector GetActiveCost() =>
-            EffectiveCostMode == DA_Common.Barony.ProjectCostMode.GoldProduction
-                ? ProjectCostCatalog.SliceGoldProduction(CostGoldProduction)
-                : ProjectCostCatalog.SliceMaterials(CostMaterials);
+            IsCombinedCost || EffectiveCostMode == DA_Common.Barony.ProjectCostMode.Combined
+                ? ProjectCostCatalog.MergeTracks(CostGoldProduction, CostMaterials)
+                : EffectiveCostMode == DA_Common.Barony.ProjectCostMode.GoldProduction
+                    ? ProjectCostCatalog.SliceGoldProduction(CostGoldProduction)
+                    : ProjectCostCatalog.SliceMaterials(CostMaterials);
 
         public List<string> GetSelectableCostModes()
         {
@@ -320,6 +331,10 @@ namespace DA_Models.BaronyModels
 
             return AllowedCostModes switch
             {
+                DA_Common.Barony.ProjectAllowedCostModes.Combined =>
+                    hasGoldProduction || hasMaterials
+                        ? new List<string> { DA_Common.Barony.ProjectCostMode.Combined }
+                        : new List<string>(),
                 DA_Common.Barony.ProjectAllowedCostModes.GoldProductionOnly when hasGoldProduction =>
                     new List<string> { DA_Common.Barony.ProjectCostMode.GoldProduction },
                 DA_Common.Barony.ProjectAllowedCostModes.MaterialsOnly when hasMaterials =>
@@ -332,7 +347,8 @@ namespace DA_Models.BaronyModels
             ActiveCostColumns.Any(info => Allocated[info.Key] > 0m);
 
         public bool CanSwitchCostMode =>
-            Status is not (ProjectStatus.Completed or ProjectStatus.Cancelled)
+            !IsCombinedCost
+            && Status is not (ProjectStatus.Completed or ProjectStatus.Cancelled)
             && GetSelectableCostModes().Count > 1
             && !HasAllocationOnActiveTrack();
 
@@ -352,12 +368,12 @@ namespace DA_Models.BaronyModels
                 }
 
                 if (ratios.Count == 0)
-                    return ProjectCostCatalog.HasRequirement(cost) ? 0 : 100;
+                    return ProjectCostCatalog.HasRequirement(cost) || ActiveCostColumns.Count > 0 ? 0 : 100;
                 return (int)Math.Round(ratios.Average() * 100m);
             }
         }
 
-        /// <summary>Remaining cost on the active payment track only.</summary>
+        /// <summary>Remaining cost on the active payment track(s).</summary>
         public PpbVector RemainingCost()
         {
             var cost = GetActiveCost();
@@ -399,6 +415,9 @@ namespace DA_Models.BaronyModels
 
         private string ResolveEffectiveCostMode()
         {
+            if (IsCombinedCost)
+                return DA_Common.Barony.ProjectCostMode.Combined;
+
             var selectable = GetSelectableCostModes();
             if (selectable.Count == 0)
                 return DA_Common.Barony.ProjectCostMode.GoldProduction;

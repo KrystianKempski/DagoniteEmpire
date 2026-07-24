@@ -153,7 +153,8 @@ namespace DA_Common.Barony
     }
 
     /// <summary>
-    /// Project cost tracks: pay with Gold + Production, or with other cumulative resources.
+    /// Project cost tracks: pay with Gold + Production, or with other cumulative resources,
+    /// or <see cref="ProjectCostMode.Combined"/> when both tracks are required together.
     /// </summary>
     public static class ProjectCostCatalog
     {
@@ -191,6 +192,36 @@ namespace DA_Common.Barony
             foreach (var info in Materials)
                 result[info.Key] = source[info.Key];
             return result;
+        }
+
+        /// <summary>Merge both payment tracks into one requirement vector.</summary>
+        public static PpbVector MergeTracks(PpbVector? goldProduction, PpbVector? materials)
+        {
+            var result = new PpbVector();
+            foreach (var info in GoldProduction)
+                result[info.Key] = goldProduction is null ? 0m : goldProduction[info.Key];
+            foreach (var info in Materials)
+                result[info.Key] = materials is null ? 0m : materials[info.Key];
+            return result;
+        }
+
+        /// <summary>Columns that have a positive requirement across both tracks.</summary>
+        public static IReadOnlyList<PpbInfo> CombinedActiveColumns(
+            PpbVector? goldProduction,
+            PpbVector? materials)
+        {
+            var cols = new List<PpbInfo>();
+            foreach (var info in GoldProduction)
+            {
+                if (goldProduction is not null && goldProduction[info.Key] > 0m)
+                    cols.Add(info);
+            }
+            foreach (var info in Materials)
+            {
+                if (materials is not null && materials[info.Key] > 0m)
+                    cols.Add(info);
+            }
+            return cols;
         }
 
         public static bool HasRequirement(PpbVector? source) =>

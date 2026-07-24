@@ -248,9 +248,10 @@ One unit = **50** troops (default). Training is a project (`ProjectOutputKind.Un
 - Recruit Defense cost from selection catalog
 - Accelerate: −1 turn / **50** Defense (max = training turns)
 - Training gold = one-time fee by type: Express **10**, Accelerated **20**, Standard **40**, Elite **75** (not per turn)
-- Project gold track = gear gold + training gold; Defense track = recruit + gear-as-defense + accelerate
+- Project gold track = gear gold + training gold + recruit gold; Defense track = recruit Defense + gear-as-defense + accelerate
+- **Unit Training cost mode** = `Combined` when both gold/production and Defense are needed: both tracks must be funded together (exception to the usual Gold&Prod vs Materials either/or rule)
 - Gear can be paid entirely as Defense; training gold remains a gold fee unless covered separately
-- XP / starting Discipline / max base skill from training ∩ recruit — **max base skill** = `min(recruit.Skl, training.Skl)` (lower wins). Cap blocks raising **Base** above that while Training / in the generator; lifted after Active graduation.
+- XP / starting Discipline / max base skill from training ∩ recruit — **max base skill** = `min(recruit.Skl, training.Skl)` (lower wins). Cap blocks raising **Base** above that while Training / in the generator; **lifted when the unit becomes Active** (`MaxBaseSkillAtGraduation` cleared).
 - Wage (stored, Budget later) = recruit wage + training wage
 - **Human race**: Move +3; player picks **two** base skills for **+1 Other** each (`SkillOtherSources` label `Race`)
 

@@ -284,8 +284,8 @@ namespace DA_Common.Barony
         public static bool CanRaiseBaseSkill(int current, int maxAtGraduation, int remainingPd, out int cost)
         {
             cost = UnitRules.BaseSkillRaiseCost(current + 1);
-            // Cap applies until graduation (Training / draft). Pass int.MaxValue after Active.
-            if (maxAtGraduation > 0 && current + 1 > maxAtGraduation)
+            // Cap only while Training (pass int.MaxValue or 0 after Active graduation).
+            if (maxAtGraduation > 0 && maxAtGraduation < int.MaxValue && current + 1 > maxAtGraduation)
                 return false;
             return remainingPd >= cost;
         }

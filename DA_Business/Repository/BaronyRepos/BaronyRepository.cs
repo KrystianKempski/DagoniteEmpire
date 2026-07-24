@@ -382,6 +382,7 @@ namespace DA_Business.Repository.BaronyRepos
                     if (unit is not null)
                     {
                         unit.Status = UnitStatus.Active;
+                        unit.MaxBaseSkillAtGraduation = 0;
                         unit.UpdatedAtUtc = DateTime.UtcNow;
                         if (unit.CurrentHp <= 0)
                         {
@@ -1941,6 +1942,8 @@ namespace DA_Business.Repository.BaronyRepos
                     throw new InvalidOperationException("Disbanded units cannot be activated.");
 
                 unit.Status = UnitStatus.Active;
+                // Graduation cap no longer applies — clear so UI/saves don't re-enforce it.
+                unit.MaxBaseSkillAtGraduation = 0;
                 unit.UpdatedAtUtc = DateTime.UtcNow;
                 if (unit.CurrentHp <= 0)
                 {
@@ -2083,11 +2086,18 @@ namespace DA_Business.Repository.BaronyRepos
 
                 var hasGoldTrack = costs.GoldTotal > 0 || costs.Production > 0;
                 var hasDefTrack = costs.DefenseTotal > 0;
+                // Unit training is the Combined exception: gold+production and Defense can be required together.
                 var allowed = (hasGoldTrack, hasDefTrack) switch
                 {
-                    (true, true) => ProjectAllowedCostModes.PlayerChoice,
+                    (true, true) => ProjectAllowedCostModes.Combined,
                     (false, true) => ProjectAllowedCostModes.MaterialsOnly,
                     _ => ProjectAllowedCostModes.GoldProductionOnly,
+                };
+                var selectedMode = (hasGoldTrack, hasDefTrack) switch
+                {
+                    (true, true) => ProjectCostMode.Combined,
+                    (false, true) => ProjectCostMode.Materials,
+                    _ => ProjectCostMode.GoldProduction,
                 };
 
                 var recruitNote = recruit.EventEffect is not null
@@ -2104,9 +2114,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Status = ProjectStatus.Draft,
                     TurnsRemaining = costs.Turns,
                     AllowedCostModes = allowed,
-                    SelectedCostMode = hasGoldTrack
-                        ? ProjectCostMode.GoldProduction
-                        : ProjectCostMode.Materials,
+                    SelectedCostMode = selectedMode,
                     CostGoldProductionJson = Ser(ProjectCostCatalog.SliceGoldProduction(goldCost)),
                     CostMaterialsJson = Ser(ProjectCostCatalog.SliceMaterials(defenseCost)),
                     CostJson = Ser(MergeLegacyCost(goldCost, defenseCost)),
@@ -2121,6 +2129,7 @@ namespace DA_Business.Repository.BaronyRepos
                 if (!hasGoldTrack && !hasDefTrack && costs.Turns <= 0)
                 {
                     unit.Status = UnitStatus.Active;
+                    unit.MaxBaseSkillAtGraduation = 0;
                     unit.UpdatedAtUtc = DateTime.UtcNow;
                     project.Status = ProjectStatus.Completed;
                     project.TurnsRemaining = 0;

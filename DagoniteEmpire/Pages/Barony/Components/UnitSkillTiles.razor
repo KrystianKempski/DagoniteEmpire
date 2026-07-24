@@ -93,11 +93,14 @@
     private string _editField = "Base";
     private int _editValue;
 
-    /// <summary>Max base skill while Training/draft; lifted after Active graduation.</summary>
+    /// <summary>
+    /// Cap applies only while the unit is still Training / forming.
+    /// After Active graduation there is no max on raising base skills with XP.
+    /// </summary>
     private int BaseSkillRaiseCap =>
-        Unit.IsActive || Unit.MaxBaseSkillAtGraduation <= 0
-            ? int.MaxValue
-            : Unit.MaxBaseSkillAtGraduation;
+        Unit.IsTraining && Unit.MaxBaseSkillAtGraduation > 0
+            ? Unit.MaxBaseSkillAtGraduation
+            : int.MaxValue;
 
     protected override void OnParametersSet()
     {
