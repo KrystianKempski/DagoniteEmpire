@@ -22,6 +22,7 @@ namespace DA_Models.BaronyModels
         public List<SeatPurposeTemplateDTO> SeatPurposeTemplates { get; set; } = new();
         public List<BaronyResourceSourceDTO> ResourceSources { get; set; } = new();
         public List<BaronPurseSourceDTO> PurseSources { get; set; } = new();
+        public List<BaronyUnitDTO> Units { get; set; } = new();
 
         /// <summary>Suma wpływów addytywnych z dostarczonych modyfikatorów.</summary>
         public static PpbVector SumAdditive(IEnumerable<(PpbVector Additive, PpbVector Percent)> rows)

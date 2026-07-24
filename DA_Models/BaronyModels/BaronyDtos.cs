@@ -601,6 +601,7 @@ namespace DA_Models.BaronyModels
         public int UnrestDelta { get; set; }
         public int NewConjunctureDice { get; set; }
         public int ConjunctureModifier { get; set; }
+        public List<string> UnitTroopRegenerations { get; set; } = new();
         public string SummaryText { get; set; } = string.Empty;
     }
 }

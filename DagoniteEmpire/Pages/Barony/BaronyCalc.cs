@@ -599,6 +599,30 @@ namespace DagoniteEmpire.Pages.Barony
                 .Select(e => Row(e.Name, e.Additive, e.Percent, null, e.Description))
                 .ToList();
 
+        /// <summary>
+        /// Active units only: wage (Gold), food upkeep, defense upkeep as negative Additive.
+        /// Training units do not count until graduation.
+        /// </summary>
+        public static List<PpbModifierRow> ArmyRows(IEnumerable<BaronyUnitDTO>? units)
+            => (units ?? Enumerable.Empty<BaronyUnitDTO>())
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(u => u.Id)
+                .Select(u =>
+                {
+                    var additive = new PpbVector();
+                    additive[Ppb.Treasury] = -u.Wage;
+                    additive[Ppb.Food] = -u.UpkeepFood;
+                    additive[Ppb.Defense] = -u.UpkeepDefense;
+                    return Row(
+                        u.Name,
+                        additive,
+                        new PpbVector(),
+                        formula: $"Wage {u.Wage} · Food {PpbFormat.Additive(u.UpkeepFood)} · Defense {u.UpkeepDefense} per turn (Active only).",
+                        note: $"{u.TroopCount} troops");
+                })
+                .ToList();
+
         public static List<PpbModifierRow> CommunityRows(IEnumerable<CommunityModifierDTO> mods)
             => mods.Select(m => Row(m.Source, m.Additive, m.Percent, m.FormulaText)).ToList();
 
@@ -609,6 +633,7 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<PpbModifierRow> improvementRows,
             IEnumerable<PpbModifierRow> decreeRows,
             IEnumerable<PpbModifierRow> eventRows,
+            IEnumerable<PpbModifierRow> armyRows,
             int unrest,
             int settlementPopulation,
             int conjunctureDice,
@@ -621,6 +646,7 @@ namespace DagoniteEmpire.Pages.Barony
             preCommunity.AddRange(improvementRows);
             preCommunity.AddRange(decreeRows);
             preCommunity.AddRange(eventRows);
+            preCommunity.AddRange(armyRows);
 
             var preAdd = SumAdditive(preCommunity);
             var hunger = HungerPpbFormulas.FromFoodBalance(preAdd[Ppb.Food]);
@@ -746,9 +772,10 @@ namespace DagoniteEmpire.Pages.Barony
                 ov.Improvements, ov.Tiles, ov.Fiefs, ov.Barony.VassalTributePercent);
             var decreeRows = DecreeRows(ov.Decrees);
             var eventRows = EventRows(ov.Events, ov.Barony.TurnNumber);
+            var armyRows = ArmyRows(ov.Units);
             var settlementPop = SumSettlementPopulation(ov.Barony.Id, ov.Buildings, ov.Improvements);
             var communityRows = CommunityRows(
-                advisorRows, buildingRows, socialRows, improvementRows, decreeRows, eventRows,
+                advisorRows, buildingRows, socialRows, improvementRows, decreeRows, eventRows, armyRows,
                 ov.Barony.Unrest,
                 settlementPop,
                 ov.Barony.ConjunctureDice,
@@ -761,6 +788,7 @@ namespace DagoniteEmpire.Pages.Barony
             allRows.AddRange(improvementRows);
             allRows.AddRange(decreeRows);
             allRows.AddRange(eventRows);
+            allRows.AddRange(armyRows);
             allRows.AddRange(communityRows);
 
             return new DomainPanelRowSet
@@ -772,6 +800,7 @@ namespace DagoniteEmpire.Pages.Barony
                 ImprovementRows = improvementRows,
                 DecreeRows = decreeRows,
                 EventRows = eventRows,
+                ArmyRows = armyRows,
                 CommunityRows = communityRows,
                 AllRows = allRows,
                 GrandTotal = SummarizeSections(allRows),
@@ -843,6 +872,7 @@ namespace DagoniteEmpire.Pages.Barony
             public List<PpbModifierRow> ImprovementRows { get; init; } = new();
             public List<PpbModifierRow> DecreeRows { get; init; } = new();
             public List<PpbModifierRow> EventRows { get; init; } = new();
+            public List<PpbModifierRow> ArmyRows { get; init; } = new();
             public List<PpbModifierRow> CommunityRows { get; init; } = new();
             public List<PpbModifierRow> AllRows { get; init; } = new();
             public PpbVector GrandTotal { get; init; } = new();

@@ -125,7 +125,7 @@ namespace DA_Common.Barony
             BonusBaseSkillPicks = 2,
             BonusBaseSkillAmount = 1,
             Description =
-                "Move +3. Base skills: Melee 3, Ranged 3, Athletics 2, Agility 2, Urban 1, Scout 2. "
+                "Move +3. Base skills start at 0. "
                 + "+1 Other to two base skills (player picks).",
         };
 
@@ -154,6 +154,17 @@ namespace DA_Common.Barony
         public const int DisciplineMax = 18;
         public const int AccelerateDefensePerTurn = 50;
 
+        /// <summary>Per full 10% of nominal strength lost: −1 Attack, −1 Defense, −4 Max HP.</summary>
+        public const int CasualtyAttackPerStep = 1;
+        public const int CasualtyDefensePerStep = 1;
+        public const int CasualtyHpPerStep = 4;
+        /// <summary>Troops restored per turn while below full strength.</summary>
+        public const int TroopRegenPerTurn = 10;
+        /// <summary>Floors applied when the unit has casualty steps (loss &gt; 0).</summary>
+        public const int CasualtyMinAttack = 1;
+        public const int CasualtyMinDefense = 1;
+        public const int CasualtyMinMaxHp = 10;
+
         public static int AttributeRaiseCost(int targetLevel) => Math.Max(1, targetLevel) * 10;
         public static int BaseSkillRaiseCost(int targetLevel) => Math.Max(1, targetLevel) * 3;
         public static int SpecialSkillRaiseCost(int targetLevel) => Math.Max(1, targetLevel);
@@ -161,20 +172,20 @@ namespace DA_Common.Barony
     }
 
     /// <summary>
-    /// Excel starting <c>Bazowo</c> for base skills — same for every unit until XP / MG changes them.
-    /// Melee/Ranged 3, Athletics/Agility 2, Urban 1, Scout 2 (Generator / Oddziały sheets).
+    /// Starting <c>Bazowo</c> for base skills (Humans: all at 0) until XP / MG changes them.
+    /// Racial bonus is only via <see cref="UnitRaceSkillBonus"/> (+1 Other × picks).
     /// </summary>
     public static class UnitSkillDefaults
     {
         public static readonly IReadOnlyDictionary<string, int> BaseSkillLevels =
             new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
             {
-                [UnitSkillKey.Melee] = 3,
-                [UnitSkillKey.Ranged] = 3,
-                [UnitSkillKey.Athletics] = 2,
-                [UnitSkillKey.AgilitySkill] = 2,
-                [UnitSkillKey.Urban] = 1,
-                [UnitSkillKey.Scout] = 2,
+                [UnitSkillKey.Melee] = 0,
+                [UnitSkillKey.Ranged] = 0,
+                [UnitSkillKey.Athletics] = 0,
+                [UnitSkillKey.AgilitySkill] = 0,
+                [UnitSkillKey.Urban] = 0,
+                [UnitSkillKey.Scout] = 0,
             };
 
         public static Dictionary<string, int> CreateSkillBase(

@@ -44,8 +44,24 @@
                        Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item"><em>XP</em> <b>@Unit.RemainingPd</b></span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Troops" Text="One unit represents 50 troops." Placement="Placement.Bottom">
-            <span class="unit-draft-card__meta-item"><em>Troops</em> <b>@Unit.TroopCount</b></span>
+        <BaronyTooltip Title="Troops" Text="@TroopTip" Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item">
+                <em>Troops</em>
+                @if (CanManageAsMg)
+                {
+                    <button type="button"
+                            class="unit-draft-card__meta-btn @(Unit.TroopCount < UnitRules.DefaultTroopCount ? "unit-draft-card__meta-btn--loss" : null)"
+                            @onclick="EditTroopCountAsync">
+                        @Unit.TroopCount/@UnitRules.DefaultTroopCount
+                    </button>
+                }
+                else
+                {
+                    <b class="@(Unit.TroopCount < UnitRules.DefaultTroopCount ? "unit-draft-card__meta-val--loss" : null)">
+                        @Unit.TroopCount/@UnitRules.DefaultTroopCount
+                    </b>
+                }
+            </span>
         </BaronyTooltip>
         <BaronyTooltip Title="Race" Text="@_race.Description" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item"><em>Race</em> <b>@_race.Name</b></span>
@@ -495,7 +511,41 @@
         }
     }
 
+    private string TroopTip
+    {
+        get
+        {
+            var explain = UnitCasualtyFormulas.Explain(Unit.TroopCount);
+            return CanManageAsMg
+                ? $"{explain}\n\nClick to set troop count (MG)."
+                : explain;
+        }
+    }
+
     private void RefreshCombat() => _combat = UnitStatHelper.Compute(Unit);
+
+    private async Task EditTroopCountAsync()
+    {
+        if (!CanManageAsMg) return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitTroopCountEditDialog.UnitName)] = Unit.Name,
+            [nameof(UnitTroopCountEditDialog.Value)] = Unit.TroopCount,
+            [nameof(UnitTroopCountEditDialog.FullStrength)] = UnitRules.DefaultTroopCount,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitTroopCountEditDialog>("Troop count", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int troops)
+            return;
+
+        Unit.TroopCount = troops;
+        RefreshCombat();
+        if (Unit.CurrentHp > _combat.MaxHp)
+            Unit.CurrentHp = _combat.MaxHp;
+        await SkillsChanged.InvokeAsync();
+    }
 
     private async Task HandleSkillsChanged()
     {

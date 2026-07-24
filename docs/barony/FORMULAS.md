@@ -17,7 +17,7 @@ Conventions:
 
 Logic: `BaronyCalc.SummarizeSections` / `PpbMath.Summarize`.  
 Sources: all Domain Panel sections (Baron and Advisors, City and Buildings, Social Groups,
-Terrain Improvements, Decrees, Events, Community) — both **+** and **%** columns.
+Terrain Improvements, Decrees, Events, Army, Community) — both **+** and **%** columns.
 
 ```
 scalable_additive = Σ positive Additive per row  (Corruption: Σ negative)
@@ -239,6 +239,11 @@ Cell tooltips: `ExplainOfficeAdvisorAdditive` / `ExplainOfficeAdvisorPercent` (f
 
 One unit = **50** troops (default). Training is a project (`ProjectOutputKind.UnitTraining`).
 
+### Starter units (new barony only)
+Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
+- **City Watch** — Active, 50 troops, wage/food/defense upkeep **0**. Short spears, light leather, wooden medium shield. Attrs 4/3/3/3, Discipline 10.
+- **Baron's Guard** — Active, **10**/50 troops (casualty Loss), wage/food/defense upkeep **0**. Longswords + simple bows, mail and gambeson, studded medium shield. Attrs 4/4/4/4, Discipline 10.
+
 ### Creation costs
 - Recruit cost from selection catalog: usually Defense; **Mercenaries** = **80** gold (0 Defense); **Forced hire** = 0/0 and creates event **Forced hire** (Loyalty −7, Stability −7 for 3 turns) when training starts
 - Per-item acquire mode:
@@ -252,22 +257,26 @@ One unit = **50** troops (default). Training is a project (`ProjectOutputKind.Un
 - **Unit Training cost mode** = `Combined` when both gold/production and Defense are needed: both tracks must be funded together (exception to the usual Gold&Prod vs Materials either/or rule)
 - Gear can be paid entirely as Defense; training gold remains a gold fee unless covered separately
 - XP / starting Discipline / max base skill from training ∩ recruit — **max base skill** = `min(recruit.Skl, training.Skl)` (lower wins). Cap blocks raising **Base** above that while Training / in the generator; **lifted when the unit becomes Active** (`MaxBaseSkillAtGraduation` cleared).
-- Wage (stored, Budget later) = recruit wage + training wage
-- **Human race**: Move +3; player picks **two** base skills for **+1 Other** each (`SkillOtherSources` label `Race`)
+- Wage (stored) = recruit wage + training wage
+- **Per-turn upkeep (Active only)** — Domain Panel → **Army** (`BaronyCalc.ArmyRows`): Gold `−Wage`, Food `−UpkeepFood` (default **0.5**), Defense `−UpkeepDefense` (default **5**). Included in Expected Income / Budget / Resolve Turn. Food upkeep feeds Community Hunger (pre-community sum). Training units do not count until graduation.
+- **Human race**: Move +3; base skills start at **0**; player picks **two** base skills for **+1 Other** each (`SkillOtherSources` label `Race`) — that is the only racial skill bonus.
 
 ### Combat totals
-- **Attack** = Skl (weapon-type skill) + Gear (weapon Atk ± quality) + Cmd + Oth  
+- **Attack** = Skl (weapon-type skill) + Gear (weapon Atk ± quality) + Cmd + Oth + **Loss**  
   Quality: Good +1 / Poor −1 to Atk and Dmg
-- **Defense** = Skl (highest eligible among Dodges always; Shields if shield equipped; Armor if armor equipped) + Gear (weapon/armor/shield Def) + Cmd + Oth
+- **Defense** = Skl (highest eligible among Dodges always; Shields if shield equipped; Armor if armor equipped) + Gear (weapon/armor/shield Def) + Cmd + Oth + **Loss**
 - **Damage** = Gear (weapon Dmg ± quality) + Oth
 - **Move** = Race (`UnitRaceCatalog`, Humans **+3**) + `floor((Agility + Run)/2)` + Gear (Mov penalties) + Oth
   Only Human race is playable for now; `RaceKey` on the unit defaults to `human`.
 - **Armor** = Gear (armor/shield Arm) + Oth
+- **Max HP** = Build×2 + Will×2 + Endurance + Discipline×3 + Oth + **Loss**
 - Combat **Oth** / skill **Other** = sum of named sources (MG dialog). Persist in `CombatOtherJson` / `SkillOtherSourcesJson`; totals synced to `OtherAttack`… / `SkillOther`.
+- **Casualty Loss** (`UnitCasualtyFormulas`): nominal full strength = **50**. For each full **10%** of strength missing: **−1** Attack, **−1** Defense, **−4** Max HP. Example: 10/50 → 8 steps → −8 Atk/Def, −32 HP. While depleted (steps > 0): floors Atk/Def ≥ **1**, Max HP ≥ **10**. MG edits troop count by clicking Troops on the unit card.
+- **Troop recovery**: understrength units (not Disbanded) regain **+10** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.
 
 ### Skill totals (Excel Generator / Oddziały)
 - **Base skills** (Melee, Ranged, Athletics, Agility, Urban, Scout): `Razem = Bazowo + Inne` — **no** attribute.
-- **Starting Bazowo** (same for every unit, Excel Generator/Oddziały): Melee 3, Ranged 3, Athletics 2, Agility 2, Urban 1, Scout 2. Riding starts at 0. Raised later with XP / MG edit.
+- **Starting Bazowo** (Humans): all base skills at **0**. Racial skill bonus = only the two **+1 Other** picks. Riding starts at 0. Raised later with XP / MG edit.
 - **Specializations**: `Razem = parent Razem + linked attr + Bazowo + Inne` (specialization Bazowo starts at 0).
 - **Riding**: treated as a Melee specialization (`parent = Melee Razem + Agility + base + other`), shown on its own row.
 - Attr letters: B Build / A Agility / W Will / P Perception (Excel S = Sprawność).

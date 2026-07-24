@@ -4,16 +4,18 @@
 @* Excel-style combat breakdown: full block titles, short column labels. *@
 <div class="unit-combat-break">
     @Block("Attack",
-        $"Skill ({AttackSkillName}) + weapon attack (± quality) + commander + other.",
+        $"Skill ({AttackSkillName}) + weapon attack (± quality) + commander + other + casualty loss.",
         UnitCombatStatKey.Attack,
+        Combat.LossAttack,
         ("Skl", "Skill", Combat.AttackSkill, "Weapon-type skill total"),
         ("Gear", "Gear", Combat.WeaponAttackBonus, "Weapon attack including quality"),
         ("Cmd", "Commander", Combat.CommanderAttack, "Commander bonus"),
         Combat.Attack)
 
     @Block("Defense",
-        $"Highest eligible defense skill ({DefenseSkillName}): Dodges always; Shields only with a shield; Armor only with armor. Plus gear defense + commander + other.",
+        $"Highest eligible defense skill ({DefenseSkillName}): Dodges always; Shields only with a shield; Armor only with armor. Plus gear defense + commander + other + casualty loss.",
         UnitCombatStatKey.Defense,
+        Combat.LossDefense,
         ("Skl", "Skill", Combat.DefenseSkill, $"Highest eligible defense skill ({DefenseSkillName})"),
         ("Gear", "Gear", Combat.WeaponDefenseBonus, "Weapon + armor + shield defense"),
         ("Cmd", "Commander", Combat.CommanderDefense, "Commander bonus"),
@@ -22,12 +24,14 @@
     @Block("Damage",
         "Weapon damage (± quality) + other.",
         UnitCombatStatKey.Damage,
+        lossValue: null,
         ("Gear", "Gear", Combat.WeaponDamageBonus, "Weapon damage including quality"),
         Combat.Damage)
 
     @Block("Move",
         "Race move + floor((Agility + Run)/2) + gear move penalties + other.",
         UnitCombatStatKey.Move,
+        lossValue: null,
         ("Race", "Race", Combat.RaceMove, RaceMoveTip),
         ("Agi", "Agility + Run", Combat.AgilityRunMove, "floor((Agility + Run) / 2)"),
         ("Gear", "Gear", Combat.EquipmentMovePenalty, "Weapon/armor/shield move penalties"),
@@ -36,6 +40,7 @@
     @Block("Armor",
         "Armor value from armor and shield. Reduces incoming damage.",
         UnitCombatStatKey.Armor,
+        lossValue: null,
         ("Gear", "Gear", Combat.ArmorFromGear, "Armor + shield armor value"),
         Combat.Armor)
 
@@ -64,6 +69,8 @@
         }
     }
 
+    private string LossTip => UnitCasualtyFormulas.Explain(Combat.TroopCount, Combat.FullTroopCount);
+
     private int OtherValue(string statKey) => UnitCombatOtherFormulas.Sum(
         UnitCombatOtherFormulas.Get(Unit?.CombatOther, statKey));
 
@@ -79,6 +86,7 @@
         string title,
         string tipText,
         string otherStatKey,
+        int? lossValue,
         (string Label, string TipTitle, int Value, string ColTip) a,
         int total) => __builder =>
     {
@@ -89,6 +97,10 @@
             <div class="unit-combat-break__cols">
                 @Col(a.Label, a.TipTitle, a.Value, a.ColTip)
                 @OtherCol(otherStatKey)
+                @if (lossValue.HasValue)
+                {
+                    @LossCol(lossValue.Value)
+                }
                 @Tot(total)
             </div>
         </div>
@@ -98,6 +110,7 @@
         string title,
         string tipText,
         string otherStatKey,
+        int? lossValue,
         (string Label, string TipTitle, int Value, string ColTip) a,
         (string Label, string TipTitle, int Value, string ColTip) b,
         int total) => __builder =>
@@ -110,6 +123,10 @@
                 @Col(a.Label, a.TipTitle, a.Value, a.ColTip)
                 @Col(b.Label, b.TipTitle, b.Value, b.ColTip)
                 @OtherCol(otherStatKey)
+                @if (lossValue.HasValue)
+                {
+                    @LossCol(lossValue.Value)
+                }
                 @Tot(total)
             </div>
         </div>
@@ -119,6 +136,7 @@
         string title,
         string tipText,
         string otherStatKey,
+        int? lossValue,
         (string Label, string TipTitle, int Value, string ColTip) a,
         (string Label, string TipTitle, int Value, string ColTip) b,
         (string Label, string TipTitle, int Value, string ColTip) c,
@@ -133,6 +151,10 @@
                 @Col(b.Label, b.TipTitle, b.Value, b.ColTip)
                 @Col(c.Label, c.TipTitle, c.Value, c.ColTip)
                 @OtherCol(otherStatKey)
+                @if (lossValue.HasValue)
+                {
+                    @LossCol(lossValue.Value)
+                }
                 @Tot(total)
             </div>
         </div>
@@ -140,17 +162,18 @@
 
     private RenderFragment HpBlock() => __builder =>
     {
-        var baseHp = Combat.MaxHp - Combat.OtherHp;
+        var baseHp = Combat.MaxHp - Combat.OtherHp - Combat.LossHp;
         var cur = CurrentHp ?? Combat.MaxHp;
         <div class="unit-combat-break__block">
             <BaronyTooltip Title="Hit points"
-                           Text="Maximum = Build×2 + Will×2 + Endurance + Discipline×3 + other. Current tracks wounds in play."
+                           Text="Maximum = Build×2 + Will×2 + Endurance + Discipline×3 + other + casualty loss. Current tracks wounds in play."
                            Placement="Placement.Bottom">
                 <div class="unit-combat-break__title">Hit points</div>
             </BaronyTooltip>
             <div class="unit-combat-break__cols">
-                @Col("Max", "Maximum", baseHp, "Formula maximum before other modifiers")
+                @Col("Max", "Maximum", baseHp, "Formula maximum before other and casualty modifiers")
                 @OtherCol(UnitCombatStatKey.Hp)
+                @LossCol(Combat.LossHp)
                 @Tot(Combat.MaxHp)
                 @if (CurrentHp.HasValue)
                 {
@@ -165,6 +188,16 @@
         <BaronyTooltip Title="@tipTitle" Text="@tip" Placement="Placement.Top">
             <div class="unit-combat-break__col @(value != 0 ? null : "unit-combat-break__col--zero")">
                 <span class="unit-combat-break__lab">@label</span>
+                <b class="unit-combat-break__val">@value</b>
+            </div>
+        </BaronyTooltip>
+    };
+
+    private RenderFragment LossCol(int value) => __builder =>
+    {
+        <BaronyTooltip Title="Casualty loss" Text="@LossTip" Placement="Placement.Top">
+            <div class="unit-combat-break__col @(value != 0 ? "unit-combat-break__col--loss" : "unit-combat-break__col--zero")">
+                <span class="unit-combat-break__lab">Loss</span>
                 <b class="unit-combat-break__val">@value</b>
             </div>
         </BaronyTooltip>
@@ -196,7 +229,7 @@
 
     private RenderFragment Tot(int value) => __builder =>
     {
-        <BaronyTooltip Title="Total" Text="Sum of the columns to the left." Placement="Placement.Top">
+        <BaronyTooltip Title="Total" Text="Sum of the columns to the left (with casualty floors when depleted)." Placement="Placement.Top">
             <div class="unit-combat-break__col unit-combat-break__col--tot">
                 <span class="unit-combat-break__lab">Tot</span>
                 <b class="unit-combat-break__val">@value</b>

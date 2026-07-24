@@ -185,6 +185,7 @@ else if (_overview is not null)
                    Events="@_overview.Events"
                    CanManage="@CanManageAsMg"
                    OnChanged="ReloadOverviewAsync" />
+    <ArmySection Rows="@_armyRows" />
     <CommunityPenaltiesSection Rows="@_communityRows" />
 
     <BaronySection Title="Barony Summary">
@@ -254,6 +255,7 @@ else if (_overview is not null)
     private List<PpbModifierRow> _improvementRows = new();
     private List<PpbModifierRow> _decreeRows = new();
     private List<PpbModifierRow> _eventRows = new();
+    private List<PpbModifierRow> _armyRows = new();
     private List<PpbModifierRow> _communityRows = new();
 
     private List<PpbModifierRow> _totalBreakdown = new();
@@ -290,6 +292,7 @@ else if (_overview is not null)
         _improvementRows = panel.ImprovementRows;
         _decreeRows = panel.DecreeRows;
         _eventRows = panel.EventRows;
+        _armyRows = panel.ArmyRows;
         _communityRows = panel.CommunityRows;
         ApplyPanelTotals(panel);
         NotifyResourceHud();
@@ -320,6 +323,7 @@ else if (_overview is not null)
         _improvementRows = panel.ImprovementRows;
         _decreeRows = panel.DecreeRows;
         _eventRows = panel.EventRows;
+        _armyRows = panel.ArmyRows;
         _communityRows = panel.CommunityRows;
         ApplyPanelTotals(panel);
         NotifyResourceHud();

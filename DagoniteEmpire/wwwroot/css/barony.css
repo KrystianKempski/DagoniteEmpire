@@ -737,6 +737,77 @@
     align-items: stretch;
 }
 
+.army-roster-summary {
+    margin: 0 0 12px;
+    padding: 8px 10px 10px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--barony-accent) 8%, var(--barony-surface-2)), var(--barony-surface-2));
+    border: 1px solid var(--barony-border);
+    border-radius: 4px;
+}
+
+.army-roster-summary__title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--barony-muted);
+    margin-bottom: 6px;
+}
+
+.army-roster-summary__grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px 8px;
+}
+
+@media (max-width: 900px) {
+    .army-roster-summary__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.army-roster-summary__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.army-roster-summary__label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--barony-muted);
+}
+
+.army-roster-summary__value {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--barony-ink);
+}
+
+.army-roster-summary__value--gold {
+    color: #b8922e;
+}
+
+.army-roster-summary__value--food {
+    color: #3d7a45;
+}
+
+.army-roster-summary__value--defense {
+    color: #7a818c;
+}
+
+.army-roster-summary__note {
+    margin-top: 6px !important;
+    color: var(--barony-muted) !important;
+}
+
 @media (max-width: 1100px) {
     .unit-roster {
         grid-template-columns: 1fr;
@@ -840,6 +911,29 @@
 .unit-draft-card__meta-val--gold { color: #c9a83a; }
 .unit-draft-card__meta-val--food { color: #6bcf75; }
 .unit-draft-card__meta-val--defense { color: #7a818c; }
+.unit-draft-card__meta-val--loss { color: #b54a3c; }
+
+.unit-draft-card__meta-btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0 2px;
+    margin: 0;
+    font: inherit;
+    font-weight: 700;
+    color: inherit;
+    cursor: pointer;
+    border-radius: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.unit-draft-card__meta-btn:hover {
+    background: color-mix(in srgb, var(--barony-accent) 14%, transparent);
+}
+
+.unit-draft-card__meta-btn--loss {
+    color: #b54a3c;
+}
 
 .unit-draft-card__meta-val .barony-res-icon {
     opacity: 0.95;
@@ -925,6 +1019,10 @@
 
 .unit-combat-break__col--zero .unit-combat-break__val {
     color: color-mix(in srgb, var(--barony-muted) 70%, transparent);
+}
+
+.unit-combat-break__col--loss .unit-combat-break__val {
+    color: #b54a3c;
 }
 
 .unit-combat-break__col--tot {

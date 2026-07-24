@@ -552,18 +552,19 @@ namespace DA_Common.Barony
         public const string Improvements = "Terrain Improvements";
         public const string Decrees = "Decrees and Technologies";
         public const string Events = "Events";
+        public const string Army = "Army";
         public const string Community = "Community";
         public const string PercentModifiers = "% modifiers";
         public const string Other = "Other";
 
         public static readonly string[] Income =
         {
-            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Community, PercentModifiers, Other,
+            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Army, Community, PercentModifiers, Other,
         };
 
         public static readonly string[] Expense =
         {
-            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Community, PercentModifiers, Other,
+            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Army, Community, PercentModifiers, Other,
         };
     }
 

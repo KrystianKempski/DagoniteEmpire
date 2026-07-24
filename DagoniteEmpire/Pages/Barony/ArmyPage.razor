@@ -26,19 +26,71 @@ else if (Barony is not null)
         </Summary>
     </BaronyPageHeader>
 
-    <UnitGeneratorSection BaronyId="@Barony.Id"
-                          CanEdit="@CanEdit"
-                          CanManageAsMg="@CanManageAsMg"
-                          OnStarted="OnTrainingStarted" />
-
     <BaronySection Title="Units">
         <Summary>
             <span class="projects-summary__item">Two cards per row · same layout as the generator preview</span>
         </Summary>
         <ChildContent>
+            <div class="army-roster-summary">
+                <div class="army-roster-summary__title">Army totals</div>
+                <div class="army-roster-summary__grid">
+                    <BaronyTooltip Title="Units"
+                                   Text="Number of units in the roster (training + active).">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Units</span>
+                            <span class="army-roster-summary__value">@_rosterUnits</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Troops"
+                                   Text="Sum of troop counts across all units (one unit is usually 50).">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Troops</span>
+                            <span class="army-roster-summary__value">@_rosterTroops</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Wage / turn"
+                                   Text="Sum of wages for Active units (paid each turn once graduated). Training units are excluded until Active.">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Gold / turn</span>
+                            <span class="army-roster-summary__value army-roster-summary__value--gold">
+                                @_rosterWage
+                                <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                            </span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Food upkeep / turn"
+                                   Text="Sum of food upkeep for Active units each turn.">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Food / turn</span>
+                            <span class="army-roster-summary__value army-roster-summary__value--food">
+                                @_rosterFood.ToString("0.#")
+                                <BaronyResourceIcon Resource="Ppb.Food" Size="xs" />
+                            </span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Defense upkeep / turn"
+                                   Text="Sum of Defense upkeep for Active units each turn.">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Defense / turn</span>
+                            <span class="army-roster-summary__value army-roster-summary__value--defense">
+                                @_rosterDefense
+                                <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
+                            </span>
+                        </div>
+                    </BaronyTooltip>
+                </div>
+                @if (_units.Any(u => u.IsTraining))
+                {
+                    <MudText Typo="Typo.caption" Class="army-roster-summary__note">
+                        Upkeep totals count Active units only
+                        (@_units.Count(u => u.IsActive) active · @_units.Count(u => u.IsTraining) still training).
+                    </MudText>
+                }
+            </div>
+
             @if (_units.Count == 0)
             {
-                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No units yet. Use the generator above.</MudText>
+                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No units yet. Use the generator below.</MudText>
             }
             else
             {
@@ -55,10 +107,21 @@ else if (Barony is not null)
             }
         </ChildContent>
     </BaronySection>
+
+    <UnitGeneratorSection BaronyId="@Barony.Id"
+                          CanEdit="@CanEdit"
+                          CanManageAsMg="@CanManageAsMg"
+                          OnStarted="OnTrainingStarted" />
 }
 
 @code {
     private List<BaronyUnitDTO> _units = new();
+
+    private int _rosterUnits => _units.Count;
+    private int _rosterTroops => _units.Sum(u => u.TroopCount);
+    private int _rosterWage => _units.Where(u => u.IsActive).Sum(u => u.Wage);
+    private decimal _rosterFood => _units.Where(u => u.IsActive).Sum(u => u.UpkeepFood);
+    private int _rosterDefense => _units.Where(u => u.IsActive).Sum(u => u.UpkeepDefense);
 
     protected override async Task OnInitializedAsync()
     {

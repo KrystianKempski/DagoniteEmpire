@@ -140,12 +140,79 @@ namespace DA_Common.Barony
         int OtherMove = 0,
         int OtherArmor = 0,
         int OtherHp = 0,
+        int LossAttack = 0,
+        int LossDefense = 0,
+        int LossHp = 0,
+        int CasualtySteps = 0,
+        int TroopCount = UnitRules.DefaultTroopCount,
+        int FullTroopCount = UnitRules.DefaultTroopCount,
         int BaseMove = 0,
         int RaceMove = 0,
         int AgilityRunMove = 0,
         int ArmorFromGear = 0,
         string? AttackSkillKey = null,
         string? DefenseSkillKeyUsed = null);
+
+    /// <summary>
+    /// Combat penalties from missing troops vs nominal full strength (default 50).
+    /// −1 Attack, −1 Defense, −4 Max HP per each full 10% of strength lost.
+    /// Example: 10/50 → 80% lost → 8 steps → −8 Atk/Def, −32 HP.
+    /// </summary>
+    public static class UnitCasualtyFormulas
+    {
+        public sealed record Penalties(int Steps, int Attack, int Defense, int Hp);
+
+        public static int Steps(int troopCount, int fullStrength = UnitRules.DefaultTroopCount)
+        {
+            var full = Math.Max(1, fullStrength);
+            var current = Math.Max(0, troopCount);
+            if (current >= full)
+                return 0;
+            var lost = full - current;
+            // Each 10% of full strength = one step (50 → step size 5).
+            return lost * 10 / full;
+        }
+
+        public static Penalties Compute(int troopCount, int fullStrength = UnitRules.DefaultTroopCount)
+        {
+            var steps = Steps(troopCount, fullStrength);
+            return new Penalties(
+                Steps: steps,
+                Attack: -steps * UnitRules.CasualtyAttackPerStep,
+                Defense: -steps * UnitRules.CasualtyDefensePerStep,
+                Hp: -steps * UnitRules.CasualtyHpPerStep);
+        }
+
+        /// <summary>
+        /// Restores up to <see cref="UnitRules.TroopRegenPerTurn"/> troops toward full strength.
+        /// Returns the new troop count (unchanged when already full).
+        /// </summary>
+        public static int Regenerate(
+            int troopCount,
+            int fullStrength = UnitRules.DefaultTroopCount,
+            int perTurn = UnitRules.TroopRegenPerTurn)
+        {
+            var full = Math.Max(1, fullStrength);
+            var current = Math.Max(0, troopCount);
+            if (current >= full)
+                return full;
+            return Math.Min(full, current + Math.Max(0, perTurn));
+        }
+
+        public static string Explain(int troopCount, int fullStrength = UnitRules.DefaultTroopCount)
+        {
+            var p = Compute(troopCount, fullStrength);
+            var lostPct = Math.Max(0, fullStrength - Math.Max(0, troopCount)) * 100 / Math.Max(1, fullStrength);
+            var regenNote = Math.Max(0, troopCount) < fullStrength
+                ? $" Regenerates +{UnitRules.TroopRegenPerTurn} troops per turn until full."
+                : string.Empty;
+            return $"Troops {Math.Max(0, troopCount)}/{fullStrength} ({lostPct}% lost). "
+                + $"Each 10% lost → −{UnitRules.CasualtyAttackPerStep} Atk/Def, −{UnitRules.CasualtyHpPerStep} HP. "
+                + $"Steps {p.Steps}: Atk {p.Attack}, Def {p.Defense}, HP {p.Hp}. "
+                + $"Floors while depleted: Atk/Def ≥ {UnitRules.CasualtyMinAttack}, Max HP ≥ {UnitRules.CasualtyMinMaxHp}."
+                + regenNote;
+        }
+    }
 
     public static class UnitCombatFormulas
     {
@@ -212,18 +279,18 @@ namespace DA_Common.Barony
             int otherMove = 0,
             int otherArmor = 0,
             int otherHp = 0,
-            int raceMoveBonus = UnitRules.RaceMoveBonus)
+            int raceMoveBonus = UnitRules.RaceMoveBonus,
+            int troopCount = UnitRules.DefaultTroopCount,
+            int fullTroopCount = UnitRules.DefaultTroopCount)
         {
             var quality = UnitWeaponQuality.AttackDamageBonus(weaponQuality);
             var skillKey = UnitSkillTree.SkillKeyForWeaponType(primaryWeapon?.WeaponType);
             var attackSkill = skillKey is not null && skillTotals.TryGetValue(skillKey, out var asv) ? asv : 0;
             var weaponAt = (primaryWeapon?.Attack ?? 0) + quality;
-            var attack = attackSkill + weaponAt + commanderAttack + otherAttack;
 
             var defKey = ResolveDefenseSkillKey(skillTotals, hasShield: shield is not null, hasArmor: armor is not null);
             var defenseSkill = skillTotals.TryGetValue(defKey, out var dsv) ? dsv : 0;
             var gearDef = (primaryWeapon?.Defense ?? 0) + (armor?.Defense ?? 0) + (shield?.Defense ?? 0);
-            var defense = defenseSkill + gearDef + commanderDefense + otherDefense;
 
             var weaponDmg = (primaryWeapon?.Damage ?? 0) + quality;
             var damage = weaponDmg + otherDamage;
@@ -241,7 +308,18 @@ namespace DA_Common.Barony
             var armorRating = armorFromGear + otherArmor;
 
             var endurance = skillTotals.TryGetValue(UnitSkillKey.Endurance, out var endVal) ? endVal : 0;
-            var maxHp = build * 2 + will * 2 + endurance + discipline * 3 + otherHp;
+            var loss = UnitCasualtyFormulas.Compute(troopCount, fullTroopCount);
+
+            var attack = attackSkill + weaponAt + commanderAttack + otherAttack + loss.Attack;
+            var defense = defenseSkill + gearDef + commanderDefense + otherDefense + loss.Defense;
+            var maxHp = build * 2 + will * 2 + endurance + discipline * 3 + otherHp + loss.Hp;
+
+            if (loss.Steps > 0)
+            {
+                attack = Math.Max(UnitRules.CasualtyMinAttack, attack);
+                defense = Math.Max(UnitRules.CasualtyMinDefense, defense);
+                maxHp = Math.Max(UnitRules.CasualtyMinMaxHp, maxHp);
+            }
 
             return new UnitCombatTotals(
                 Attack: attack,
@@ -264,6 +342,12 @@ namespace DA_Common.Barony
                 OtherMove: otherMove,
                 OtherArmor: otherArmor,
                 OtherHp: otherHp,
+                LossAttack: loss.Attack,
+                LossDefense: loss.Defense,
+                LossHp: loss.Hp,
+                CasualtySteps: loss.Steps,
+                TroopCount: Math.Max(0, troopCount),
+                FullTroopCount: Math.Max(1, fullTroopCount),
                 BaseMove: baseMove,
                 RaceMove: raceMove,
                 AgilityRunMove: agilityRunMove,

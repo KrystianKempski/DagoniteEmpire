@@ -141,6 +141,7 @@ namespace DA_Business.Repository.BaronyRepos
                 OrganizationsSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 VassalsFromFiefsSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 await EnsureStarterCityBuildingsAsync(ctx, added.Entity.Id);
+                SeedStarterUnits(ctx, added.Entity.Id);
                 await ctx.SaveChangesAsync();
 
                 return ToDTO(added.Entity);
@@ -313,7 +314,10 @@ namespace DA_Business.Repository.BaronyRepos
                 // 8) Letter inbound quotas / awaiting-reply unlock via advanced TurnNumber
                 //    (see BaronLetterRules.CountsAsReceivedThisTurn / BaronAwaitingReplyThisTurn).
 
-                // 9) Clear ready flag
+                // 9) Depleted units regenerate troops toward full strength
+                report.UnitTroopRegenerations = await RegenerateDepletedUnitsAsync(ctx, baronyId);
+
+                // 10) Clear ready flag
                 barony.PlayerTurnReady = false;
 
                 await ctx.SaveChangesAsync();
@@ -364,6 +368,43 @@ namespace DA_Business.Repository.BaronyRepos
                 management.Name = BaronTimeRules.ManagementActionName;
                 management.Kind = BaronTimeActionKind.Management;
             }
+        }
+
+        /// <summary>
+        /// Understrength units regain <see cref="UnitRules.TroopRegenPerTurn"/> troops per Resolve Turn
+        /// (capped at full strength). Updates CurrentHp when the unit was at its previous Max HP.
+        /// </summary>
+        private static async Task<List<string>> RegenerateDepletedUnitsAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var notes = new List<string>();
+            var units = await ctx.BaronyUnits
+                .Where(u => u.BaronyId == baronyId
+                    && u.TroopCount < UnitRules.DefaultTroopCount
+                    && u.Status != UnitStatus.Disbanded)
+                .ToListAsync();
+
+            foreach (var unit in units)
+            {
+                var before = unit.TroopCount;
+                var after = UnitCasualtyFormulas.Regenerate(before);
+                if (after <= before)
+                    continue;
+
+                var dto = ToUnitDTO(unit);
+                var oldMax = UnitStatHelper.Compute(dto).MaxHp;
+                var wasAtMax = unit.CurrentHp >= oldMax;
+
+                unit.TroopCount = after;
+                unit.UpdatedAtUtc = DateTime.UtcNow;
+                dto.TroopCount = after;
+                var newMax = UnitStatHelper.Compute(dto).MaxHp;
+                unit.CurrentHp = wasAtMax ? newMax : Math.Min(unit.CurrentHp, newMax);
+                unit.DefenseSkillKey = dto.DefenseSkillKey;
+
+                notes.Add($"{unit.Name}: {before} → {after}/{UnitRules.DefaultTroopCount}");
+            }
+
+            return notes;
         }
 
         private static async Task ApplyCompletedProjectResultsAsync(
@@ -515,6 +556,10 @@ namespace DA_Business.Repository.BaronyRepos
             else
                 lines.Add("No projects completed.");
 
+            if (r.UnitTroopRegenerations.Count > 0)
+                lines.Add("Troop recovery (+" + UnitRules.TroopRegenPerTurn + "/turn): "
+                    + string.Join("; ", r.UnitTroopRegenerations) + ".");
+
             if (r.LoyaltyTestRan)
             {
                 lines.Add(
@@ -612,6 +657,13 @@ namespace DA_Business.Repository.BaronyRepos
                     Projects = (await ctx.BaronyProjects.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     ResourceSources = (await ctx.BaronyResourceSources.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     PurseSources = (await ctx.BaronPurseSources.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    Units = (await ctx.BaronyUnits.AsNoTracking()
+                            .Where(x => x.BaronyId == baronyId)
+                            .OrderBy(x => x.Name)
+                            .ThenBy(x => x.Id)
+                            .ToListAsync())
+                        .Select(ToUnitDTO)
+                        .ToList(),
                 };
             }
             catch (System.Exception ex) { throw Err(ex, nameof(GetOverview)); }
@@ -701,6 +753,21 @@ namespace DA_Business.Repository.BaronyRepos
                         ? "{}"
                         : template.EffectPercentJson,
                 });
+            }
+        }
+
+        /// <summary>
+        /// Seeds City Watch + Baron's Guard once on barony create (not Ensure / GetOverview).
+        /// </summary>
+        private static void SeedStarterUnits(ApplicationDbContext ctx, int baronyId)
+        {
+            var now = DateTime.UtcNow;
+            foreach (var dto in StarterUnitsSeeder.CreateDefaults(baronyId))
+            {
+                var entity = ToUnitEntity(dto);
+                entity.CreatedAtUtc = now;
+                entity.UpdatedAtUtc = now;
+                ctx.BaronyUnits.Add(entity);
             }
         }
 
@@ -3373,7 +3440,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.BaronyId = d.BaronyId;
             e.Name = d.Name?.Trim() ?? string.Empty;
             e.Status = string.IsNullOrWhiteSpace(d.Status) ? UnitStatus.Training : d.Status.Trim();
-            e.TroopCount = d.TroopCount > 0 ? d.TroopCount : UnitRules.DefaultTroopCount;
+            e.TroopCount = Math.Clamp(d.TroopCount, 0, UnitRules.DefaultTroopCount);
             e.RecruitSelectionKey = d.RecruitSelectionKey ?? string.Empty;
             e.TrainingTypeKey = d.TrainingTypeKey ?? string.Empty;
             e.RaceKey = string.IsNullOrWhiteSpace(d.RaceKey) ? UnitRaceKey.Human : d.RaceKey.Trim();

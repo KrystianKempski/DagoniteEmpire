@@ -303,6 +303,7 @@ else if (_overview is not null)
         var (impInAll, impEx) = Split(panel.ImprovementRows);
         var (decIn, decEx) = Split(panel.DecreeRows);
         var (evtIn, evtEx) = Split(panel.EventRows);
+        var (armyIn, armyEx) = Split(panel.ArmyRows);
         var (comIn, comEx) = Split(panel.CommunityRows);
 
         _liegeTributePercent = FiefTributeFormulas.ClampPercent(_overview!.Barony.LiegeTributePercent);
@@ -316,8 +317,8 @@ else if (_overview is not null)
         var impIn = PpbFormat.Round(impInAll - fiefIn);
 
         // Exact remainder so Σ income − Σ expenses (before Fief tribute) == Domain Panel Final Gold.
-        var additiveIncome = advIn + fiefIn + bldIn + socIn + impIn + decIn + evtIn + comIn;
-        var additiveExpense = advEx + bldEx + socEx + impEx + decEx + evtEx + comEx;
+        var additiveIncome = advIn + fiefIn + bldIn + socIn + impIn + decIn + evtIn + armyIn + comIn;
+        var additiveExpense = advEx + bldEx + socEx + impEx + decEx + evtEx + armyEx + comEx;
         var goldScaling = goldFinal - (additiveIncome - additiveExpense);
         var scalingIncome = Math.Max(0m, goldScaling);
         var scalingExpense = Math.Max(0m, -goldScaling);
@@ -345,6 +346,8 @@ else if (_overview is not null)
                 "Sum of positive Gold (+) from Domain Panel → Decrees and Technologies."),
             Line(BudgetSource.Events, evtIn,
                 "Sum of positive Gold (+) from Domain Panel → Events active this turn."),
+            Line(BudgetSource.Army, armyIn,
+                "Sum of positive Gold (+) from Domain Panel → Army (normally none; wages are expenses)."),
             Line(BudgetSource.Community, comIn,
                 "Sum of positive Gold (+) from Domain Panel → Community (includes net Economy profit)."),
             Line(BudgetSource.PercentModifiers, scalingIncome,
@@ -370,6 +373,8 @@ else if (_overview is not null)
                 "Sum of negative Gold (−) from Domain Panel → Decrees and Technologies."),
             Line(BudgetSource.Events, evtEx,
                 "Sum of negative Gold (−) from Domain Panel → Events active this turn."),
+            Line(BudgetSource.Army, armyEx,
+                "Wages of Active units from Domain Panel → Army (Training units excluded)."),
             Line(BudgetSource.Community, comEx,
                 "Sum of negative Gold (−) from Domain Panel → Community."),
             Line(BudgetSource.PercentModifiers, scalingExpense,
