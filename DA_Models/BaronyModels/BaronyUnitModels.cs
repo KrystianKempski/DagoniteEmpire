@@ -131,4 +131,23 @@ namespace DA_Models.BaronyModels
         public BaronyUnitDTO Unit { get; set; } = new();
         public BaronyProjectDTO Project { get; set; } = new();
     }
+
+    /// <summary>Payload to create a Unit Reinforce project for an understrength Active unit.</summary>
+    public class StartUnitReinforceRequest
+    {
+        public int BaronyId { get; set; }
+        public int UnitId { get; set; }
+        /// <summary>Troops to add (1 … missing). Defaults to all missing when ≤ 0.</summary>
+        public int TroopCount { get; set; }
+        public string Weapon1AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string Weapon2AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string ArmorAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string ShieldAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+    }
+
+    public class StartUnitReinforceResult
+    {
+        public BaronyUnitDTO Unit { get; set; } = new();
+        public BaronyProjectDTO Project { get; set; } = new();
+    }
 }

@@ -51,6 +51,45 @@ namespace DA_Common.Barony
 
     public static class UnitTrainingCostFormulas
     {
+        public static (int Prod, int Gold, int Def) SliceWeapon(UnitWeaponDef? w, string mode)
+        {
+            if (w is null) return (0, 0, 0);
+            return UnitEquipmentAcquireMode.Normalize(mode) switch
+            {
+                UnitEquipmentAcquireMode.Buy => (0, w.MarketGold, 0),
+                UnitEquipmentAcquireMode.Defense => (0, 0, w.MarketGold * 2),
+                _ => (w.ProductionCost, w.GoldCost, 0),
+            };
+        }
+
+        public static (int Prod, int Gold, int Def) SliceArmor(UnitArmorDef? a, string mode)
+        {
+            if (a is null) return (0, 0, 0);
+            return UnitEquipmentAcquireMode.Normalize(mode) switch
+            {
+                UnitEquipmentAcquireMode.Buy => (0, a.MarketGold, 0),
+                UnitEquipmentAcquireMode.Defense => (0, 0, a.MarketGold * 2),
+                _ => (a.ProductionCost, a.GoldCost, 0),
+            };
+        }
+
+        public static (int Prod, int Gold, int Def) SumGear(
+            UnitWeaponDef? weapon1,
+            UnitWeaponDef? weapon2,
+            UnitArmorDef? armor,
+            UnitArmorDef? shield,
+            UnitEquipmentPayModes payModes)
+        {
+            var w1 = SliceWeapon(weapon1, payModes.Weapon1);
+            var w2 = SliceWeapon(weapon2, payModes.Weapon2);
+            var ar = SliceArmor(armor, payModes.Armor);
+            var sh = SliceArmor(shield, payModes.Shield);
+            return (
+                w1.Prod + w2.Prod + ar.Prod + sh.Prod,
+                w1.Gold + w2.Gold + ar.Gold + sh.Gold,
+                w1.Def + w2.Def + ar.Def + sh.Def);
+        }
+
         public static UnitTrainingCostSummary Compute(
             UnitRecruitSelection recruit,
             UnitTrainingType training,
@@ -61,36 +100,7 @@ namespace DA_Common.Barony
             UnitEquipmentPayModes payModes,
             int accelerateTurns)
         {
-            static (int Prod, int Gold, int Def) SliceWeapon(UnitWeaponDef? w, string mode)
-            {
-                if (w is null) return (0, 0, 0);
-                return UnitEquipmentAcquireMode.Normalize(mode) switch
-                {
-                    UnitEquipmentAcquireMode.Buy => (0, w.MarketGold, 0),
-                    UnitEquipmentAcquireMode.Defense => (0, 0, w.MarketGold * 2),
-                    _ => (w.ProductionCost, w.GoldCost, 0),
-                };
-            }
-
-            static (int Prod, int Gold, int Def) SliceArmor(UnitArmorDef? a, string mode)
-            {
-                if (a is null) return (0, 0, 0);
-                return UnitEquipmentAcquireMode.Normalize(mode) switch
-                {
-                    UnitEquipmentAcquireMode.Buy => (0, a.MarketGold, 0),
-                    UnitEquipmentAcquireMode.Defense => (0, 0, a.MarketGold * 2),
-                    _ => (a.ProductionCost, a.GoldCost, 0),
-                };
-            }
-
-            var w1 = SliceWeapon(weapon1, payModes.Weapon1);
-            var w2 = SliceWeapon(weapon2, payModes.Weapon2);
-            var ar = SliceArmor(armor, payModes.Armor);
-            var sh = SliceArmor(shield, payModes.Shield);
-
-            var prod = w1.Prod + w2.Prod + ar.Prod + sh.Prod;
-            var goldEq = w1.Gold + w2.Gold + ar.Gold + sh.Gold;
-            var defEq = w1.Def + w2.Def + ar.Def + sh.Def;
+            var (prod, goldEq, defEq) = SumGear(weapon1, weapon2, armor, shield, payModes);
 
             var accel = Math.Clamp(accelerateTurns, 0, training.Turns);
             var turns = Math.Max(0, training.Turns - accel);
@@ -116,6 +126,167 @@ namespace DA_Common.Barony
                 MaxBaseSkill: Math.Min(recruit.MaxBaseSkill, training.MaxBaseSkill),
                 AttributeScore: recruit.AttributeScore,
                 FreeAttributePoints: training.FreeAttributePoints);
+        }
+    }
+
+    public sealed record UnitReinforceCostSummary(
+        int TroopCount,
+        int MissingTroops,
+        int Production,
+        int GoldPeople,
+        int GoldGear,
+        int GoldTotal,
+        int DefensePeople,
+        int DefenseGear,
+        int DefenseTotal,
+        int Turns,
+        int FullGearProduction,
+        int FullGearGold,
+        int FullGearDefense);
+
+    /// <summary>
+    /// Reinforce understrength units: Selected volunteers + Standard people cost scaled by N/50,
+    /// plus current gear at 50% salvage then × N/50 (i.e. full gear × N/100). Floor rounding.
+    /// </summary>
+    public static class UnitReinforceCostFormulas
+    {
+        public static UnitReinforceCostSummary Compute(
+            int currentTroops,
+            UnitWeaponDef? weapon1,
+            UnitWeaponDef? weapon2,
+            UnitArmorDef? armor,
+            UnitArmorDef? shield,
+            UnitEquipmentPayModes payModes,
+            int? reinforceTroops = null)
+        {
+            var full = UnitRules.DefaultTroopCount;
+            var current = Math.Clamp(currentTroops, 0, full);
+            var missing = full - current;
+            var n = reinforceTroops is int asked
+                ? Math.Clamp(asked, 1, Math.Max(1, missing))
+                : Math.Max(1, missing);
+            if (missing <= 0)
+                n = 0;
+
+            var recruit = UnitRecruitSelectionCatalog.SelectedVolunteers;
+            var training = UnitTrainingTypeCatalog.Standard;
+            var (fullProd, fullGold, fullDef) = UnitTrainingCostFormulas.SumGear(
+                weapon1, weapon2, armor, shield, payModes);
+
+            // People: Selected volunteers Defense + Standard gold, × N/50 (floor).
+            var goldPeople = n <= 0 ? 0 : training.GoldCost * n / full;
+            var defPeople = n <= 0 ? 0 : recruit.DefenseCost * n / full;
+
+            // Gear: salvage% of full gear, then × N/50 → full × N × salvage / (full×100) (floor).
+            var prod = n <= 0 ? 0 : fullProd * n * UnitRules.ReinforceGearSalvagePercent / (full * 100);
+            var goldGear = n <= 0 ? 0 : fullGold * n * UnitRules.ReinforceGearSalvagePercent / (full * 100);
+            var defGear = n <= 0 ? 0 : fullDef * n * UnitRules.ReinforceGearSalvagePercent / (full * 100);
+
+            var turns = n <= 0 ? 0 : Math.Max(1, training.Turns * n / full);
+
+            return new UnitReinforceCostSummary(
+                TroopCount: n,
+                MissingTroops: missing,
+                Production: prod,
+                GoldPeople: goldPeople,
+                GoldGear: goldGear,
+                GoldTotal: goldPeople + goldGear,
+                DefensePeople: defPeople,
+                DefenseGear: defGear,
+                DefenseTotal: defPeople + defGear,
+                Turns: turns,
+                FullGearProduction: fullProd,
+                FullGearGold: fullGold,
+                FullGearDefense: fullDef);
+        }
+    }
+
+    /// <summary>
+    /// Per-turn unit maintenance (Active units / Domain Panel Army).
+    /// Gold = base wage + floor(Σ equipment Mkt / 100) × 2.
+    /// Defense = floor(Σ equipment Mkt / 100) × 5 (replaces the old flat 5).
+    /// Food = stored UpkeepFood. Starter units with wage/food/defense all 0 are exempt.
+    /// </summary>
+    public sealed record UnitUpkeepTotals(
+        int GearMarketGold,
+        int GearBlocks,
+        int BaseWage,
+        int GearGold,
+        int Gold,
+        decimal Food,
+        int Defense,
+        bool MaintenanceExempt);
+
+    public static class UnitUpkeepFormulas
+    {
+        public static int EquipmentMarketGold(
+            string? weapon1Key,
+            string? weapon2Key,
+            string? armorKey,
+            string? shieldKey)
+        {
+            var sum = 0;
+            if (UnitWeaponCatalog.Find(weapon1Key) is { } w1) sum += w1.MarketGold;
+            if (UnitWeaponCatalog.Find(weapon2Key) is { } w2) sum += w2.MarketGold;
+            if (UnitArmorCatalog.Find(armorKey) is { } ar) sum += ar.MarketGold;
+            if (UnitArmorCatalog.Find(shieldKey) is { } sh) sum += sh.MarketGold;
+            return Math.Max(0, sum);
+        }
+
+        /// <summary>
+        /// Seeded free companies (City Watch / Baron's Guard): wage, food, and stored defense all 0.
+        /// </summary>
+        public static bool IsMaintenanceExempt(int wage, decimal upkeepFood, int upkeepDefense) =>
+            wage == 0 && upkeepFood == 0m && upkeepDefense == 0;
+
+        public static UnitUpkeepTotals Compute(
+            int baseWage,
+            decimal upkeepFood,
+            int storedUpkeepDefense,
+            string? weapon1Key,
+            string? weapon2Key,
+            string? armorKey,
+            string? shieldKey)
+        {
+            var mkt = EquipmentMarketGold(weapon1Key, weapon2Key, armorKey, shieldKey);
+            var blocks = mkt / UnitRules.GearUpkeepMarketGoldPerBlock; // floor for non-negative
+            var gearGold = blocks * UnitRules.GearUpkeepGoldPerBlock;
+            var gearDef = blocks * UnitRules.GearUpkeepDefensePerBlock;
+
+            if (IsMaintenanceExempt(baseWage, upkeepFood, storedUpkeepDefense))
+            {
+                return new UnitUpkeepTotals(
+                    GearMarketGold: mkt,
+                    GearBlocks: blocks,
+                    BaseWage: 0,
+                    GearGold: 0,
+                    Gold: 0,
+                    Food: 0m,
+                    Defense: 0,
+                    MaintenanceExempt: true);
+            }
+
+            return new UnitUpkeepTotals(
+                GearMarketGold: mkt,
+                GearBlocks: blocks,
+                BaseWage: Math.Max(0, baseWage),
+                GearGold: gearGold,
+                Gold: Math.Max(0, baseWage) + gearGold,
+                Food: upkeepFood,
+                Defense: gearDef,
+                MaintenanceExempt: false);
+        }
+
+        public static string Explain(UnitUpkeepTotals u)
+        {
+            if (u.MaintenanceExempt)
+                return "Maintenance paid elsewhere (no gold, food, or Defense upkeep).";
+
+            return $"Gold / turn = base wage {u.BaseWage} + gear ({u.GearBlocks} × {UnitRules.GearUpkeepGoldPerBlock} "
+                + $"from {u.GearMarketGold} Mkt) = {u.Gold}. "
+                + $"Defense / turn = {u.GearBlocks} × {UnitRules.GearUpkeepDefensePerBlock} = {u.Defense} "
+                + $"(floor of equipment market gold / {UnitRules.GearUpkeepMarketGoldPerBlock}). "
+                + $"Food / turn = {u.Food.ToString("0.#")}.";
         }
     }
 

@@ -490,10 +490,11 @@ namespace DA_Common.Barony
         public const string Building = "Building";
         public const string Improvement = "Improvement";
         public const string UnitTraining = "Unit Training";
+        public const string UnitReinforce = "Unit Reinforce";
 
         public static readonly string[] All =
         {
-            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement, UnitTraining,
+            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement, UnitTraining, UnitReinforce,
         };
     }
 

@@ -75,5 +75,10 @@ namespace DA_Business.Repository.BaronyRepos
                 dto.DefenseSkillKey = combat.DefenseSkillKeyUsed;
             return combat;
         }
+
+        public static UnitUpkeepTotals ComputeUpkeep(BaronyUnitDTO dto) =>
+            UnitUpkeepFormulas.Compute(
+                dto.Wage, dto.UpkeepFood, dto.UpkeepDefense,
+                dto.Weapon1Key, dto.Weapon2Key, dto.ArmorKey, dto.ShieldKey);
     }
 }

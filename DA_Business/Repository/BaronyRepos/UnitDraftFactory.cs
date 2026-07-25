@@ -32,7 +32,7 @@ namespace DA_Business.Repository.BaronyRepos
                 RaceKey = UnitRaceKey.Human,
                 Wage = costs.Wage,
                 UpkeepFood = UnitRules.DefaultUpkeepFood,
-                UpkeepDefense = UnitRules.DefaultUpkeepDefense,
+                UpkeepDefense = 0, // Defense upkeep is derived from gear Mkt (UnitUpkeepFormulas).
                 Build = attr,
                 Agility = attr,
                 Will = attr,

@@ -258,7 +258,13 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 - Gear can be paid entirely as Defense; training gold remains a gold fee unless covered separately
 - XP / starting Discipline / max base skill from training ∩ recruit — **max base skill** = `min(recruit.Skl, training.Skl)` (lower wins). Cap blocks raising **Base** above that while Training / in the generator; **lifted when the unit becomes Active** (`MaxBaseSkillAtGraduation` cleared).
 - Wage (stored) = recruit wage + training wage
-- **Per-turn upkeep (Active only)** — Domain Panel → **Army** (`BaronyCalc.ArmyRows`): Gold `−Wage`, Food `−UpkeepFood` (default **0.5**), Defense `−UpkeepDefense` (default **5**). Included in Expected Income / Budget / Resolve Turn. Food upkeep feeds Community Hunger (pre-community sum). Training units do not count until graduation.
+- **Per-turn upkeep (Active only)** — Domain Panel → **Army** (`UnitUpkeepFormulas` / `BaronyCalc.ArmyRows`):
+  - **Gold** = base `Wage` (recruit + training) + `floor(Σ equipment Mkt / 100) × 2`
+  - **Defense** = `floor(Σ equipment Mkt / 100) × 5` (replaces the old flat 5)
+  - **Food** = `UpkeepFood` (default **0.5**)
+  - Equipment Mkt = weapon1 + weapon2 + armor + shield catalog market gold; round blocks **down**.
+  - Seeded free companies (wage/food/stored defense all **0**, e.g. City Watch / Baron's Guard) pay **nothing**.
+  - Included in Expected Income / Budget / Resolve Turn. Food feeds Community Hunger. Training units do not count until graduation.
 - **Human race**: Move +3; base skills start at **0**; player picks **two** base skills for **+1 Other** each (`SkillOtherSources` label `Race`) — that is the only racial skill bonus.
 
 ### Combat totals
@@ -272,7 +278,8 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 - **Max HP** = Build×2 + Will×2 + Endurance + Discipline×3 + Oth + **Loss**
 - Combat **Oth** / skill **Other** = sum of named sources (MG dialog). Persist in `CombatOtherJson` / `SkillOtherSourcesJson`; totals synced to `OtherAttack`… / `SkillOther`.
 - **Casualty Loss** (`UnitCasualtyFormulas`): nominal full strength = **50**. For each full **10%** of strength missing: **−1** Attack, **−1** Defense, **−4** Max HP. Example: 10/50 → 8 steps → −8 Atk/Def, −32 HP. While depleted (steps > 0): floors Atk/Def ≥ **1**, Max HP ≥ **10**. MG edits troop count by clicking Troops on the unit card.
-- **Troop recovery**: understrength units (not Disbanded) regain **+10** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.
+- **Troop recovery**: understrength units (not Disbanded) regain **+5** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.
+- **Reinforce project** (`ProjectOutputKind.UnitReinforce`): button on understrength Active units with no open project. People cost = Selected volunteers + Standard, scaled `× N/50` (floor). Gear = current loadout at **50%** salvage × same scale (`× N/100` of full gear). Acquire modes Craft/Buy/Defense like the generator. On complete: add N troops (cap 50) and sync Max HP.
 
 ### Skill totals (Excel Generator / Oddziały)
 - **Base skills** (Melee, Ranged, Athletics, Agility, Urban, Scout): `Razem = Bazowo + Inne` — **no** attribute.

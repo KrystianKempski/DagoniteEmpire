@@ -63,13 +63,17 @@
                                     </span>
                                 </div>
                             </BaronyTooltip>
-                            <BaronyTooltip Title="Wage"
-                                           Text="Wage the unit receives after training = recruit wage + training wage, paid each turn. Ongoing upkeep also includes 0.5 Food and 5 Defense per turn (Domain Panel → Army).">
+                            <BaronyTooltip Title="Wage / turn"
+                                           Text="@WageTurnTip">
                                 <div class="unit-workshop__cost">
                                     <span class="unit-workshop__cost-label">Wage / turn</span>
                                     <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
-                                        @_costs.Wage
+                                        @_previewUpkeep.Gold
                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                                    </span>
+                                    <span class="unit-workshop__cost-sub">
+                                        Base @_previewUpkeep.BaseWage · Gear @_previewUpkeep.GearGold
+                                        · Def/t @_previewUpkeep.Defense
                                     </span>
                                 </div>
                             </BaronyTooltip>
@@ -482,12 +486,16 @@
     private string? _raceBonus2;
 
     private UnitTrainingCostSummary _costs = default!;
+    private UnitUpkeepTotals _previewUpkeep;
     private BaronyUnitDTO _draft = new();
     private UnitWeaponDef? _w1;
     private UnitArmorDef? _armorDef;
     private UnitArmorDef? _shieldDef;
     private UnitRaceDef _race => UnitRaceCatalog.Find(_draft.RaceKey);
     private bool _sanitizingGear;
+
+    private string WageTurnTip => UnitUpkeepFormulas.Explain(_previewUpkeep)
+        + " Food defaults to 0.5/turn once Active (Domain Panel → Army).";
 
     private string _xpRecruitKey = string.Empty;
     private string _xpTrainingKey = string.Empty;
@@ -761,6 +769,8 @@
             try { Recalc(); }
             finally { _sanitizingGear = false; }
         }
+
+        _previewUpkeep = UnitStatHelper.ComputeUpkeep(_draft);
     }
 
     /// <summary>

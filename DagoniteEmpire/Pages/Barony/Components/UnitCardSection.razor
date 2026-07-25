@@ -1,7 +1,9 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @using DA_Business.Repository.BaronyRepos
+@using DA_Common.Barony
 @inject IBaronyRepository _baronyRepo
 @inject ISnackbar _snackBar
+@inject IDialogService _dialogService
 
 <div class="unit-roster-card @(_xpDirty ? "unit-roster-card--dirty" : null)">
     @if (Unit.IsTraining)
@@ -24,6 +26,31 @@
                     Make active (MG)
                 </MudButton>
             }
+        </div>
+    }
+    else if (Unit.IsActive && Unit.TrainingProjectId is int reinforcePid)
+    {
+        <div class="unit-roster-card__banner">
+            <span>
+                Reinforcing (@(Unit.TrainingTurnsRemaining?.ToString() ?? "?") turns left).
+                <a href="/barony/projects">Project #@reinforcePid</a>.
+            </span>
+        </div>
+    }
+    else if (CanReinforce)
+    {
+        <div class="unit-roster-card__banner">
+            <span>
+                Understrength (@Unit.TroopCount/@UnitRules.DefaultTroopCount).
+                Create a reinforce project to replenish troops.
+            </span>
+            <MudButton Size="Size.Small"
+                       Variant="Variant.Filled"
+                       Class="barony-turn-btn barony-turn-btn--solid"
+                       Disabled="@_busy"
+                       OnClick="OpenReinforceAsync">
+                Reinforce
+            </MudButton>
         </div>
     }
 
@@ -72,6 +99,11 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private bool CanSpendPd => CanEdit && Unit.IsActive;
+    private bool CanReinforce =>
+        CanEdit
+        && Unit.IsActive
+        && Unit.TroopCount < UnitRules.DefaultTroopCount
+        && Unit.TrainingProjectId is null;
 
     private bool _xpDirty;
     private bool _busy;
@@ -131,6 +163,39 @@
         _baseline = null;
         _xpDirty = false;
         _snackBar.Add("XP spend undone.", Severity.Info);
+    }
+
+    private async Task OpenReinforceAsync()
+    {
+        if (!CanReinforce || _busy) return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitReinforceDialog.Unit)] = Unit,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitReinforceDialog>("Reinforce", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not StartUnitReinforceRequest request)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _baronyRepo.StartUnitReinforce(request);
+            Unit.TrainingProjectId = created.Project.Id;
+            Unit.TrainingTurnsRemaining = created.Project.TurnsRemaining;
+            _snackBar.Add($"Reinforce project “{created.Project.Name}” created — fund it on Projects.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private async Task ActivateUnitAsync()

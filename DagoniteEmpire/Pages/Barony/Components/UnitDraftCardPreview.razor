@@ -12,29 +12,29 @@
     </div>
 
     <div class="unit-draft-card__meta">
-        <BaronyTooltip Title="Wage" Text="Wage after graduation = recruit wage + training wage." Placement="Placement.Bottom">
+        <BaronyTooltip Title="Wage / turn" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
                 <em>Wage</em>
                 <b class="unit-draft-card__meta-val unit-draft-card__meta-val--gold">
-                    @Unit.Wage
+                    @_upkeep.Gold
                     <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                 </b>
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Food upkeep" Text="Ongoing food upkeep per turn once the unit is active (default 0.5)." Placement="Placement.Bottom">
+        <BaronyTooltip Title="Food upkeep" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
                 <em>Food</em>
                 <b class="unit-draft-card__meta-val unit-draft-card__meta-val--food">
-                    @Unit.UpkeepFood.ToString("0.#")
+                    @_upkeep.Food.ToString("0.#")
                     <BaronyResourceIcon Resource="Ppb.Food" Size="xs" />
                 </b>
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Defense upkeep" Text="Ongoing Defense upkeep per turn once the unit is active (default 5)." Placement="Placement.Bottom">
+        <BaronyTooltip Title="Defense upkeep" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
                 <em>Def/t</em>
                 <b class="unit-draft-card__meta-val unit-draft-card__meta-val--defense">
-                    @Unit.UpkeepDefense
+                    @_upkeep.Defense
                     <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
                 </b>
             </span>
@@ -246,6 +246,8 @@
     [Parameter] public EventCallback OnXpDraftChanged { get; set; }
 
     private UnitCombatTotals _combat;
+    private UnitUpkeepTotals _upkeep;
+    private string _upkeepExplain = string.Empty;
     private UnitWeaponDef? _w1;
     private UnitWeaponDef? _w2;
     private UnitArmorDef? _armor;
@@ -262,6 +264,8 @@
     protected override void OnParametersSet()
     {
         _combat = UnitStatHelper.Compute(Unit);
+        _upkeep = UnitStatHelper.ComputeUpkeep(Unit);
+        _upkeepExplain = UnitUpkeepFormulas.Explain(_upkeep);
         _w1 = UnitWeaponCatalog.Find(Unit.Weapon1Key);
         _w2 = UnitWeaponCatalog.Find(Unit.Weapon2Key);
         _armor = UnitArmorCatalog.Find(Unit.ArmorKey);
@@ -522,7 +526,12 @@
         }
     }
 
-    private void RefreshCombat() => _combat = UnitStatHelper.Compute(Unit);
+    private void RefreshCombat()
+    {
+        _combat = UnitStatHelper.Compute(Unit);
+        _upkeep = UnitStatHelper.ComputeUpkeep(Unit);
+        _upkeepExplain = UnitUpkeepFormulas.Explain(_upkeep);
+    }
 
     private async Task EditTroopCountAsync()
     {

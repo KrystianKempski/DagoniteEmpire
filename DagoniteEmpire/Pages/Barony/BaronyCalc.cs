@@ -610,15 +610,18 @@ namespace DagoniteEmpire.Pages.Barony
                 .ThenBy(u => u.Id)
                 .Select(u =>
                 {
+                    var upkeep = UnitUpkeepFormulas.Compute(
+                        u.Wage, u.UpkeepFood, u.UpkeepDefense,
+                        u.Weapon1Key, u.Weapon2Key, u.ArmorKey, u.ShieldKey);
                     var additive = new PpbVector();
-                    additive[Ppb.Treasury] = -u.Wage;
-                    additive[Ppb.Food] = -u.UpkeepFood;
-                    additive[Ppb.Defense] = -u.UpkeepDefense;
+                    additive[Ppb.Treasury] = -upkeep.Gold;
+                    additive[Ppb.Food] = -upkeep.Food;
+                    additive[Ppb.Defense] = -upkeep.Defense;
                     return Row(
                         u.Name,
                         additive,
                         new PpbVector(),
-                        formula: $"Wage {u.Wage} · Food {PpbFormat.Additive(u.UpkeepFood)} · Defense {u.UpkeepDefense} per turn (Active only).",
+                        formula: UnitUpkeepFormulas.Explain(upkeep),
                         note: $"{u.TroopCount} troops");
                 })
                 .ToList();

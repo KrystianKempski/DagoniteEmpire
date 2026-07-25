@@ -147,7 +147,20 @@ namespace DA_Common.Barony
     {
         public const int DefaultTroopCount = 50;
         public const decimal DefaultUpkeepFood = 0.5m;
+        /// <summary>Legacy flat Defense upkeep — replaced by gear Mkt blocks (<see cref="UnitUpkeepFormulas"/>).</summary>
         public const int DefaultUpkeepDefense = 5;
+        /// <summary>Each full 100 market-gold of equipped gear is one upkeep block.</summary>
+        public const int GearUpkeepMarketGoldPerBlock = 100;
+        /// <summary>Gold added to wage per gear Mkt block (floor).</summary>
+        public const int GearUpkeepGoldPerBlock = 2;
+        /// <summary>Defense upkeep per gear Mkt block (floor) — replaces flat DefaultUpkeepDefense.</summary>
+        public const int GearUpkeepDefensePerBlock = 5;
+
+        /// <summary>
+        /// Reinforce people cost uses Selected volunteers + Standard training, scaled by troops/50.
+        /// Gear costs use half catalog price (salvage) then the same troop scale → effective × troops/100.
+        /// </summary>
+        public const int ReinforceGearSalvagePercent = 50;
         /// <summary>Legacy alias — prefer <see cref="UnitRaceCatalog.Human"/>.MoveBonus.</summary>
         public const int RaceMoveBonus = 3; // Humans
         public const int DisciplineMin = 1;
@@ -159,7 +172,7 @@ namespace DA_Common.Barony
         public const int CasualtyDefensePerStep = 1;
         public const int CasualtyHpPerStep = 4;
         /// <summary>Troops restored per turn while below full strength.</summary>
-        public const int TroopRegenPerTurn = 10;
+        public const int TroopRegenPerTurn = 5;
         /// <summary>Floors applied when the unit has casualty steps (loss &gt; 0).</summary>
         public const int CasualtyMinAttack = 1;
         public const int CasualtyMinDefense = 1;

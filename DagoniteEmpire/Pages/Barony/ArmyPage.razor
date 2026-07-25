@@ -119,9 +119,9 @@ else if (Barony is not null)
 
     private int _rosterUnits => _units.Count;
     private int _rosterTroops => _units.Sum(u => u.TroopCount);
-    private int _rosterWage => _units.Where(u => u.IsActive).Sum(u => u.Wage);
-    private decimal _rosterFood => _units.Where(u => u.IsActive).Sum(u => u.UpkeepFood);
-    private int _rosterDefense => _units.Where(u => u.IsActive).Sum(u => u.UpkeepDefense);
+    private int _rosterWage => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u).Gold);
+    private decimal _rosterFood => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u).Food);
+    private int _rosterDefense => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u).Defense);
 
     protected override async Task OnInitializedAsync()
     {

@@ -31,6 +31,7 @@
                         {
                             var combat = UnitStatHelper.Compute(u);
                             var selected = SelectedId == u.Id;
+                            var upkeep = UnitStatHelper.ComputeUpkeep(u);
                             <tr class="@(selected ? "source-row--system" : null)"
                                 style="cursor:pointer;"
                                 @onclick="() => OnSelect.InvokeAsync(u.Id)">
@@ -42,7 +43,7 @@
                                 <td>@combat.Defense</td>
                                 <td>@u.CurrentHp/@combat.MaxHp</td>
                                 <td>@combat.Move</td>
-                                <td>@u.Wage</td>
+                                <td>@upkeep.Gold</td>
                                 <td>
                                     @if (u.IsTraining)
                                     {

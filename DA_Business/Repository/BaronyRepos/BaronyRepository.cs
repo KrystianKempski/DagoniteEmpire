@@ -435,6 +435,34 @@ namespace DA_Business.Repository.BaronyRepos
                 return;
             }
 
+            if (string.Equals(kind, ProjectOutputKind.UnitReinforce, StringComparison.OrdinalIgnoreCase))
+            {
+                if (project.UnitId is int unitId && unitId > 0)
+                {
+                    var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u => u.Id == unitId && u.BaronyId == barony.Id);
+                    if (unit is not null)
+                    {
+                        var add = ReadReinforceTroops(project.Notes);
+                        if (add > 0)
+                        {
+                            var dto = ToUnitDTO(unit);
+                            var oldMax = UnitStatHelper.Compute(dto).MaxHp;
+                            var wasAtMax = unit.CurrentHp >= oldMax;
+                            unit.TroopCount = Math.Clamp(
+                                unit.TroopCount + add,
+                                0,
+                                UnitRules.DefaultTroopCount);
+                            unit.UpdatedAtUtc = DateTime.UtcNow;
+                            dto.TroopCount = unit.TroopCount;
+                            var newMax = UnitStatHelper.Compute(dto).MaxHp;
+                            unit.CurrentHp = wasAtMax ? newMax : Math.Min(unit.CurrentHp, newMax);
+                            unit.DefenseSkillKey = dto.DefenseSkillKey;
+                        }
+                    }
+                }
+                return;
+            }
+
             if (string.Equals(kind, ProjectOutputKind.OneTimeResources, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(kind, "One-time resources", StringComparison.OrdinalIgnoreCase))
             {
@@ -2099,7 +2127,7 @@ namespace DA_Business.Repository.BaronyRepos
                         : request.RaceKey.Trim(),
                     Wage = costs.Wage,
                     UpkeepFood = UnitRules.DefaultUpkeepFood,
-                    UpkeepDefense = UnitRules.DefaultUpkeepDefense,
+                    UpkeepDefense = 0, // Derived from gear market gold each turn.
                     Build = Math.Max(attr, request.Build ?? attr),
                     Agility = Math.Max(attr, request.Agility ?? attr),
                     Will = Math.Max(attr, request.Will ?? attr),
@@ -2233,6 +2261,123 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) when (ex is not InvalidOperationException)
             {
                 throw Err(ex, nameof(StartUnitTraining));
+            }
+        }
+
+        public async Task<StartUnitReinforceResult> StartUnitReinforce(StartUnitReinforceRequest request)
+        {
+            try
+            {
+                if (request.BaronyId <= 0)
+                    throw new InvalidOperationException("Barony is required.");
+                if (request.UnitId <= 0)
+                    throw new InvalidOperationException("Unit is required.");
+
+                using var ctx = await _db.CreateDbContextAsync();
+                _ = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == request.BaronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u =>
+                        u.Id == request.UnitId && u.BaronyId == request.BaronyId)
+                    ?? throw new InvalidOperationException("Unit not found.");
+
+                if (!string.Equals(unit.Status, UnitStatus.Active, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Only Active units can be reinforced.");
+
+                var missing = UnitRules.DefaultTroopCount - unit.TroopCount;
+                if (missing <= 0)
+                    throw new InvalidOperationException("Unit is already at full strength.");
+
+                var openProject = await ctx.BaronyProjects.AsNoTracking()
+                    .AnyAsync(p => p.BaronyId == request.BaronyId
+                        && p.UnitId == unit.Id
+                        && p.Status != ProjectStatus.Completed
+                        && p.Status != ProjectStatus.Cancelled);
+                if (openProject)
+                    throw new InvalidOperationException("This unit already has an open project.");
+
+                var n = request.TroopCount > 0
+                    ? Math.Clamp(request.TroopCount, 1, missing)
+                    : missing;
+
+                var payModes = new UnitEquipmentPayModes(
+                    UnitEquipmentAcquireMode.Normalize(request.Weapon1AcquireMode),
+                    UnitEquipmentAcquireMode.Normalize(request.Weapon2AcquireMode),
+                    UnitEquipmentAcquireMode.Normalize(request.ArmorAcquireMode),
+                    UnitEquipmentAcquireMode.Normalize(request.ShieldAcquireMode));
+
+                var costs = UnitReinforceCostFormulas.Compute(
+                    unit.TroopCount,
+                    UnitWeaponCatalog.Find(unit.Weapon1Key),
+                    UnitWeaponCatalog.Find(unit.Weapon2Key),
+                    UnitArmorCatalog.Find(unit.ArmorKey),
+                    UnitArmorCatalog.Find(unit.ShieldKey),
+                    payModes,
+                    n);
+
+                if (costs.TroopCount <= 0)
+                    throw new InvalidOperationException("Nothing to reinforce.");
+
+                var goldCost = new PpbVector();
+                goldCost[Ppb.Treasury] = costs.GoldTotal;
+                goldCost[Ppb.Production] = costs.Production;
+
+                var defenseCost = new PpbVector();
+                defenseCost[Ppb.Defense] = costs.DefenseTotal;
+
+                var hasGoldTrack = costs.GoldTotal > 0 || costs.Production > 0;
+                var hasDefTrack = costs.DefenseTotal > 0;
+                var allowed = (hasGoldTrack, hasDefTrack) switch
+                {
+                    (true, true) => ProjectAllowedCostModes.Combined,
+                    (false, true) => ProjectAllowedCostModes.MaterialsOnly,
+                    _ => ProjectAllowedCostModes.GoldProductionOnly,
+                };
+                var selectedMode = (hasGoldTrack, hasDefTrack) switch
+                {
+                    (true, true) => ProjectCostMode.Combined,
+                    (false, true) => ProjectCostMode.Materials,
+                    _ => ProjectCostMode.GoldProduction,
+                };
+
+                var recruit = UnitRecruitSelectionCatalog.SelectedVolunteers;
+                var training = UnitTrainingTypeCatalog.Standard;
+
+                var project = new BaronyProject
+                {
+                    BaronyId = request.BaronyId,
+                    Name = $"Reinforce: {unit.Name}",
+                    Description =
+                        $"Replenish {costs.TroopCount} troops for {unit.Name} "
+                        + $"({recruit.Name} + {training.Name}; gear at {UnitRules.ReinforceGearSalvagePercent}% salvage, scaled).",
+                    OutputKind = ProjectOutputKind.UnitReinforce,
+                    UnitId = unit.Id,
+                    Status = ProjectStatus.Draft,
+                    TurnsRemaining = costs.Turns,
+                    AllowedCostModes = allowed,
+                    SelectedCostMode = selectedMode,
+                    CostGoldProductionJson = Ser(ProjectCostCatalog.SliceGoldProduction(goldCost)),
+                    CostMaterialsJson = Ser(ProjectCostCatalog.SliceMaterials(defenseCost)),
+                    CostJson = Ser(MergeLegacyCost(goldCost, defenseCost)),
+                    ResultJson = "{}",
+                    ResultPercentJson = "{}",
+                    AllocatedJson = "{}",
+                    ResultDescription = $"Adds {costs.TroopCount} troops to unit #{unit.Id} ({unit.Name}).",
+                    Notes = BuildReinforceNote(costs.TroopCount, payModes),
+                };
+
+                ctx.BaronyProjects.Add(project);
+                await ctx.SaveChangesAsync();
+
+                return new StartUnitReinforceResult
+                {
+                    Unit = ToUnitDTO(unit),
+                    Project = ToDTO(project),
+                };
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(StartUnitReinforce));
             }
         }
 
@@ -3511,6 +3656,40 @@ namespace DA_Business.Repository.BaronyRepos
             return parts.Count == 0
                 ? null
                 : $"Gear acquire: {string.Join(", ", parts)} (Buy = Mkt gold; Defense = 2×Mkt).";
+        }
+
+        private static string BuildReinforceNote(int troopCount, UnitEquipmentPayModes pay)
+        {
+            var parts = new List<string>
+            {
+                $"ReinforceTroops={troopCount}",
+                $"W1={UnitEquipmentAcquireMode.Label(pay.Weapon1)}",
+                $"W2={UnitEquipmentAcquireMode.Label(pay.Weapon2)}",
+                $"armor={UnitEquipmentAcquireMode.Label(pay.Armor)}",
+                $"shield={UnitEquipmentAcquireMode.Label(pay.Shield)}",
+            };
+            return string.Join("; ", parts)
+                + $". People = Selected volunteers + Standard × N/{UnitRules.DefaultTroopCount}; "
+                + $"gear = {UnitRules.ReinforceGearSalvagePercent}% salvage × same scale.";
+        }
+
+        private static int ReadReinforceTroops(string? notes)
+        {
+            if (string.IsNullOrWhiteSpace(notes))
+                return 0;
+
+            const string prefix = "ReinforceTroops=";
+            var idx = notes.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0)
+                return 0;
+
+            var start = idx + prefix.Length;
+            var end = start;
+            while (end < notes.Length && char.IsDigit(notes[end]))
+                end++;
+            if (end > start && int.TryParse(notes[start..end], out var fromNotes) && fromNotes > 0)
+                return fromNotes;
+            return 0;
         }
 
         private static string SerIntDict(Dictionary<string, int>? map)
