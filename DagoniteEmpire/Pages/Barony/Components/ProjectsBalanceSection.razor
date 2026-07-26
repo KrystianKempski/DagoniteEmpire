@@ -83,8 +83,9 @@
                                 }
                                 @foreach (var info in PpbCatalog.All)
                                 {
-                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, row.Project.ResultAdditive[info.Key]) @(outputCellIndex == 0 ? "projects-balance-split-start" : null)">@FmtAdd(row.Project.ResultAdditive[info.Key])</td>
-                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, row.Project.ResultPercent[info.Key])">@FmtPct(row.Project.ResultPercent[info.Key])</td>
+                                    var hideOutput = row.Project.IsResultHiddenFromViewer(CanManage);
+                                    <td class="projects-balance-output-cell @(hideOutput ? null : PpbCellClass(info.Key, row.Project.ResultAdditive[info.Key])) @(outputCellIndex == 0 ? "projects-balance-split-start" : null)">@(hideOutput ? "?" : FmtAdd(row.Project.ResultAdditive[info.Key]))</td>
+                                    <td class="projects-balance-output-cell @(hideOutput ? null : PpbCellClass(info.Key, row.Project.ResultPercent[info.Key]))">@(hideOutput ? "?" : FmtPct(row.Project.ResultPercent[info.Key]))</td>
                                     outputCellIndex++;
                                 }
                             </tr>
@@ -98,6 +99,7 @@
 
 @code {
     [Parameter] public List<BaronyProjectDTO> Projects { get; set; } = new();
+    [Parameter] public bool CanManage { get; set; }
 
     /// <summary>Food … Defense (7 cumulative resources, required cost).</summary>
     private static readonly IReadOnlyList<PpbInfo> _costColumns = ResourceCatalog.All.Take(7).ToList();

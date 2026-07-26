@@ -2892,6 +2892,8 @@ namespace DagoniteEmpire.Service
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Clay pit")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Salt")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Sawmill - Elven alder")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Sawmill - Shipbuilding wood")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Sulfur")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Quarry - Tarnit")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Dagoferryt")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - poor fertility")

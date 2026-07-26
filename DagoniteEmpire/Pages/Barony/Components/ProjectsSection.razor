@@ -65,7 +65,7 @@
     </ChildContent>
 </BaronySection>
 
-<BaronySection Title="Passed Projects" DefaultOpen="false">
+<BaronySection Title="Completed Projects" DefaultOpen="false">
     <Summary>
         <span class="projects-summary">
             <span class="projects-summary__item">@CompletedProjects.Count completed</span>
@@ -257,6 +257,7 @@
             saved.Status = ProjectStatus.Draft;
             saved.TurnsRemaining = 0;
             saved.Notes = null;
+            saved.HideResultFromBaron = false;
             saved.AllowedCostModes = ProjectAllowedCostModes.PlayerChoice;
             saved.CostGoldProduction = new();
             saved.CostMaterials = new();
@@ -319,10 +320,12 @@
         ResultPercent = p.ResultPercent.Clone(),
         Allocated = p.Allocated.Clone(),
         ResultDescription = p.ResultDescription,
+        HideResultFromBaron = p.HideResultFromBaron,
         Status = p.Status,
         TurnsRemaining = p.TurnsRemaining,
         Notes = p.Notes,
         TileId = p.TileId,
         BuildingTemplateId = p.BuildingTemplateId,
+        UnitId = p.UnitId,
     };
 }

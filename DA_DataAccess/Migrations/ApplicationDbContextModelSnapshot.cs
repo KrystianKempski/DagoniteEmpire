@@ -750,6 +750,10 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("ConjunctureModifier")
                         .HasColumnType("integer");
 
+                    b.Property<string>("DefaultUnitWeaponQuality")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<decimal>("LiegeTributePercent")
                         .HasColumnType("numeric");
 
@@ -882,6 +886,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("HideResultFromBaron")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()

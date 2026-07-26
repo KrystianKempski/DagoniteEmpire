@@ -154,4 +154,26 @@ namespace DA_Models.BaronyModels
         public BaronyUnitDTO Unit { get; set; } = new();
         public BaronyProjectDTO Project { get; set; } = new();
     }
+
+    /// <summary>Payload to create a Unit Change Equipment project (Resource allocation, reinforce-style costs).</summary>
+    public class StartUnitChangeEquipmentRequest
+    {
+        public int BaronyId { get; set; }
+        public int UnitId { get; set; }
+        public string Weapon1Key { get; set; } = string.Empty;
+        public string? Weapon2Key { get; set; }
+        public string? ArmorKey { get; set; }
+        public string? ShieldKey { get; set; }
+        public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
+        public string Weapon1AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string Weapon2AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string ArmorAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string ShieldAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+    }
+
+    public class StartUnitChangeEquipmentResult
+    {
+        public BaronyUnitDTO Unit { get; set; } = new();
+        public BaronyProjectDTO Project { get; set; } = new();
+    }
 }

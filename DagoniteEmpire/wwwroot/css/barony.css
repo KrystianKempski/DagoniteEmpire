@@ -730,6 +730,26 @@
     box-sizing: border-box;
 }
 
+.unit-draft-card--collapsed {
+    height: auto;
+    padding-bottom: 10px;
+}
+
+.unit-draft-card--collapsed .unit-draft-card__title {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.unit-draft-card__title--toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.unit-draft-card__title--toggle:hover {
+    color: var(--barony-ink);
+}
+
 .unit-roster {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -859,7 +879,8 @@
 .unit-draft-card__title {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px 12px;
     margin-bottom: 8px;
     padding-bottom: 8px;
@@ -869,6 +890,68 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--barony-muted);
+}
+
+.unit-draft-card__title-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 12px;
+    min-width: 0;
+}
+
+.unit-draft-card__title-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.unit-draft-card__title-status {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--barony-muted);
+    white-space: nowrap;
+}
+
+.unit-draft-card__title-status a {
+    color: var(--barony-ink);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.unit-draft-card__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--barony-border);
+    border-radius: 4px;
+    background: var(--barony-surface);
+    cursor: pointer;
+    color: var(--barony-ink);
+}
+
+.unit-draft-card__icon-btn:hover:not(:disabled) {
+    background: var(--barony-accent-soft);
+    border-color: var(--barony-border-strong);
+}
+
+.unit-draft-card__icon-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.unit-draft-card__icon-btn-img {
+    display: block;
+    width: 1.15rem;
+    height: 1.15rem;
+    object-fit: contain;
 }
 
 .unit-draft-card__title b {
@@ -6696,4 +6779,74 @@ a.city-building-name-text--link:hover {
 
 .lords-seat-templates-wrap {
     overflow-x: auto;
+}
+
+/* ---- Known lords tab ---- */
+.known-lords-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 10px;
+}
+
+.known-lords-filters__search {
+    flex: 1 1 260px;
+    max-width: 420px;
+}
+
+.known-lords-table {
+    min-width: 980px;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.known-lords-table th,
+.known-lords-table td {
+    vertical-align: middle;
+}
+
+.known-lords-table col.known-lords-col-name { width: 120px; }
+.known-lords-table col.known-lords-col-house { width: 120px; }
+.known-lords-table col.known-lords-col-title { width: 140px; }
+.known-lords-table col.known-lords-col-holdings { width: 150px; }
+.known-lords-table col.known-lords-col-desc { width: 220px; }
+.known-lords-table col.known-lords-col-goods { width: 160px; }
+
+.known-lords-table th.known-lords-col-name,
+.known-lords-table td.known-lords-col-name,
+.known-lords-table th.known-lords-col-house,
+.known-lords-table td.known-lords-col-house,
+.known-lords-table th.known-lords-col-title,
+.known-lords-table td.known-lords-col-title,
+.known-lords-table th.known-lords-col-holdings,
+.known-lords-table td.known-lords-col-holdings,
+.known-lords-table th.known-lords-col-desc,
+.known-lords-table td.known-lords-col-desc,
+.known-lords-table th.known-lords-col-goods,
+.known-lords-table td.known-lords-col-goods {
+    text-align: left;
+    white-space: normal;
+    overflow: hidden;
+    max-width: 0;
+}
+
+.known-lords-table td.known-lords-col-name {
+    font-weight: 600;
+    color: var(--barony-ink);
+}
+
+.known-lords-col-desc .barony-tip-anchor,
+.known-lords-col-goods .barony-tip-anchor {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.known-lords-col-desc > .mud-tooltip-root,
+.known-lords-col-goods > .mud-tooltip-root {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
 }

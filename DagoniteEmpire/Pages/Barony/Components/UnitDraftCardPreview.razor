@@ -5,12 +5,26 @@
 @inject IDialogService _dialogService
 
 @* Shared unit card layout (Excel right-hand card) — used by generator preview and roster. *@
-<div class="unit-draft-card">
-    <div class="unit-draft-card__title">
-        <span>@ResolvedTitleEyebrow</span>
-        <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
+<div class="unit-draft-card @(Collapsible ? (_isOpen ? "unit-draft-card--open" : "unit-draft-card--collapsed") : null)">
+    <div class="unit-draft-card__title @(Collapsible ? "unit-draft-card__title--toggle" : null)"
+         @onclick="Toggle"
+         role="@(Collapsible ? "button" : null)"
+         aria-expanded="@(Collapsible ? _isOpen : null)">
+        <div class="unit-draft-card__title-main">
+            <span>@ResolvedTitleEyebrow</span>
+            <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
+        </div>
+        @if (TitleActions is not null)
+        {
+            <div class="unit-draft-card__title-actions" @onclick:stopPropagation="true">
+                @TitleActions
+            </div>
+        }
     </div>
 
+    @if (_isOpen)
+    {
+    <div class="unit-draft-card__body">
     <div class="unit-draft-card__meta">
         <BaronyTooltip Title="Wage / turn" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
@@ -234,6 +248,8 @@
             }
         </MudText>
     </div>
+    </div>
+    }
 </div>
 
 @code {
@@ -242,8 +258,17 @@
     [Parameter] public bool CanSpendPd { get; set; }
     [Parameter] public bool ShowCurrentHp { get; set; }
     [Parameter] public string? TitleEyebrow { get; set; }
+    /// <summary>Optional controls aligned with the unit name (e.g. Reinforce / re-equip).</summary>
+    [Parameter] public RenderFragment? TitleActions { get; set; }
+    /// <summary>When true, the card can collapse to the title row (roster). Generator leaves this false.</summary>
+    [Parameter] public bool Collapsible { get; set; }
+    /// <summary>Initial open state when <see cref="Collapsible"/> (default collapsed, like projects).</summary>
+    [Parameter] public bool DefaultOpen { get; set; }
     [Parameter] public EventCallback SkillsChanged { get; set; }
     [Parameter] public EventCallback OnXpDraftChanged { get; set; }
+
+    private bool _isOpen = true;
+    private bool _collapseInitialized;
 
     private UnitCombatTotals _combat;
     private UnitUpkeepTotals _upkeep;
@@ -261,8 +286,24 @@
             : Unit.IsTraining ? "In training"
             : Unit.Status;
 
+    private void Toggle()
+    {
+        if (!Collapsible) return;
+        _isOpen = !_isOpen;
+    }
+
     protected override void OnParametersSet()
     {
+        if (Collapsible && !_collapseInitialized)
+        {
+            _isOpen = DefaultOpen;
+            _collapseInitialized = true;
+        }
+        else if (!Collapsible)
+        {
+            _isOpen = true;
+        }
+
         _combat = UnitStatHelper.Compute(Unit);
         _upkeep = UnitStatHelper.ComputeUpkeep(Unit);
         _upkeepExplain = UnitUpkeepFormulas.Explain(_upkeep);

@@ -573,6 +573,37 @@ namespace DA_Business.Repository.BaronyRepos
                 return new ProjectApplyResult(notes, Applied: false);
             }
 
+            if (IsUnitChangeEquipmentKind(kind))
+            {
+                if (ResolveProjectUnitId(project) is int equipUnitId)
+                {
+                    var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u =>
+                        u.Id == equipUnitId && u.BaronyId == barony.Id);
+                    if (unit is not null)
+                    {
+                        if (!TryApplyChangeEquipmentFromNotes(project, unit, out var loadoutNote))
+                        {
+                            notes.Add($"{project.Name}: change-equipment notes incomplete — loadout not updated.");
+                            return new ProjectApplyResult(notes, Applied: false);
+                        }
+
+                        if (project.UnitId is null or <= 0)
+                            project.UnitId = unit.Id;
+
+                        notes.Add($"Change equipment complete: {unit.Name} — {loadoutNote}.");
+                        return new ProjectApplyResult(notes, Applied: true);
+                    }
+
+                    notes.Add($"{project.Name}: change-equipment project has no matching unit #{equipUnitId}.");
+                }
+                else
+                {
+                    notes.Add($"{project.Name}: Unit Change Equipment finished but UnitId is missing.");
+                }
+
+                return new ProjectApplyResult(notes, Applied: false);
+            }
+
             if (IsOneTimeResourcesKind(kind))
             {
                 var grant = ResourceCatalog.Slice(project.ResultAdditive);
@@ -747,7 +778,15 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static bool IsUnitReinforceKind(string kind) =>
             string.Equals(kind, ProjectOutputKind.UnitReinforce, StringComparison.OrdinalIgnoreCase)
-            || kind.Contains("Reinforce", StringComparison.OrdinalIgnoreCase);
+            || (kind.Contains("Reinforce", StringComparison.OrdinalIgnoreCase)
+                && !kind.Contains("Equipment", StringComparison.OrdinalIgnoreCase)
+                && !kind.Contains("Change", StringComparison.OrdinalIgnoreCase));
+
+        private static bool IsUnitChangeEquipmentKind(string kind) =>
+            string.Equals(kind, ProjectOutputKind.UnitChangeEquipment, StringComparison.OrdinalIgnoreCase)
+            || (kind.Contains("Change Equipment", StringComparison.OrdinalIgnoreCase)
+                || kind.Contains("Re-equip", StringComparison.OrdinalIgnoreCase)
+                || kind.Contains("ChangeEquipment", StringComparison.OrdinalIgnoreCase));
 
         /// <summary>
         /// Completed projects of these kinds can have results re-applied once if a prior resolve
@@ -758,7 +797,7 @@ namespace DA_Business.Repository.BaronyRepos
         private static bool IsRepairableCompletedKind(string? kind)
         {
             var k = kind?.Trim() ?? "";
-            return IsUnitTrainingKind(k) || IsUnitReinforceKind(k);
+            return IsUnitTrainingKind(k) || IsUnitReinforceKind(k) || IsUnitChangeEquipmentKind(k);
         }
 
         private static int? ResolveProjectUnitId(BaronyProjectDTO project)
@@ -2374,6 +2413,7 @@ namespace DA_Business.Repository.BaronyRepos
                 using var ctx = await _db.CreateDbContextAsync();
                 var barony = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == request.BaronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
+                var gearQuality = UnitWeaponQuality.Normalize(barony.DefaultUnitWeaponQuality);
 
                 var now = DateTime.UtcNow;
                 var attr = recruit.AttributeScore;
@@ -2403,9 +2443,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Weapon2Key = weapon2?.Key,
                     ArmorKey = armor?.Key,
                     ShieldKey = shield?.Key,
-                    Weapon1Quality = string.IsNullOrWhiteSpace(request.Weapon1Quality)
-                        ? UnitWeaponQuality.Normal
-                        : request.Weapon1Quality.Trim(),
+                    Weapon1Quality = gearQuality,
                     Weapon2Quality = UnitWeaponQuality.Normal,
                     DefenseSkillKey = UnitSkillKey.Dodges,
                     RemainingPd = Math.Clamp(request.RemainingPd ?? costs.Pd, 0, costs.Pd),
@@ -2641,6 +2679,154 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) when (ex is not InvalidOperationException)
             {
                 throw Err(ex, nameof(StartUnitReinforce));
+            }
+        }
+
+        public async Task<StartUnitChangeEquipmentResult> StartUnitChangeEquipment(StartUnitChangeEquipmentRequest request)
+        {
+            try
+            {
+                if (request.BaronyId <= 0)
+                    throw new InvalidOperationException("Barony is required.");
+                if (request.UnitId <= 0)
+                    throw new InvalidOperationException("Unit is required.");
+
+                using var ctx = await _db.CreateDbContextAsync();
+                _ = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == request.BaronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u =>
+                        u.Id == request.UnitId && u.BaronyId == request.BaronyId)
+                    ?? throw new InvalidOperationException("Unit not found.");
+
+                if (!string.Equals(unit.Status, UnitStatus.Active, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Only Active units can change equipment.");
+
+                var openProject = await ctx.BaronyProjects.AsNoTracking()
+                    .AnyAsync(p => p.BaronyId == request.BaronyId
+                        && p.UnitId == unit.Id
+                        && p.Status != ProjectStatus.Completed
+                        && p.Status != ProjectStatus.Cancelled);
+                if (openProject)
+                    throw new InvalidOperationException("This unit already has an open project.");
+
+                var weapon1 = UnitWeaponCatalog.Find(request.Weapon1Key)
+                    ?? throw new InvalidOperationException("Primary weapon is required.");
+                var weapon2 = UnitWeaponCatalog.Find(request.Weapon2Key);
+                var armor = UnitArmorCatalog.Find(request.ArmorKey);
+                var shield = UnitArmorCatalog.Find(request.ShieldKey);
+
+                var unitDto = ToUnitDTO(unit);
+                var build = unitDto.EffectiveBuild;
+                var agility = unitDto.EffectiveAgility;
+                var armorSkill = UnitStatHelper.BuildSkillTotals(unitDto)
+                    .GetValueOrDefault(UnitSkillKey.ArmorSkill);
+
+                if (!UnitEquipmentRequirements.MeetsWeapon(weapon1, build, agility, out var w1Why))
+                    throw new InvalidOperationException(w1Why);
+                if (weapon2 is not null
+                    && !UnitEquipmentRequirements.MeetsWeapon(weapon2, build, agility, out var w2Why))
+                    throw new InvalidOperationException(w2Why);
+                if (armor is not null
+                    && !UnitEquipmentRequirements.MeetsArmor(armor, build, armorSkill, out var arWhy))
+                    throw new InvalidOperationException(arWhy);
+                if (shield is not null
+                    && !UnitEquipmentRequirements.MeetsArmor(shield, build, armorSkill, out var shWhy))
+                    throw new InvalidOperationException(shWhy);
+
+                var sameLoadout =
+                    string.Equals(unit.Weapon1Key, weapon1.Key, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(unit.Weapon2Key ?? "", weapon2?.Key ?? "", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(unit.ArmorKey ?? "", armor?.Key ?? "", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(unit.ShieldKey ?? "", shield?.Key ?? "", StringComparison.OrdinalIgnoreCase);
+                if (sameLoadout)
+                    throw new InvalidOperationException("Choose a different loadout than the unit already has.");
+
+                var payModes = new UnitEquipmentPayModes(
+                    UnitEquipmentAcquireMode.Normalize(request.Weapon1AcquireMode),
+                    weapon2 is null
+                        ? UnitEquipmentAcquireMode.Craft
+                        : UnitEquipmentAcquireMode.Normalize(request.Weapon2AcquireMode),
+                    armor is null
+                        ? UnitEquipmentAcquireMode.Craft
+                        : UnitEquipmentAcquireMode.Normalize(request.ArmorAcquireMode),
+                    shield is null
+                        ? UnitEquipmentAcquireMode.Craft
+                        : UnitEquipmentAcquireMode.Normalize(request.ShieldAcquireMode));
+
+                var costs = UnitChangeEquipmentCostFormulas.Compute(
+                    weapon1, weapon2, armor, shield, payModes, unit.TroopCount);
+
+                var goldCost = new PpbVector();
+                goldCost[Ppb.Treasury] = costs.Gold;
+                goldCost[Ppb.Production] = costs.Production;
+
+                var defenseCost = new PpbVector();
+                defenseCost[Ppb.Defense] = costs.Defense;
+
+                var hasGoldTrack = costs.Gold > 0 || costs.Production > 0;
+                var hasDefTrack = costs.Defense > 0;
+                var allowed = (hasGoldTrack, hasDefTrack) switch
+                {
+                    (true, true) => ProjectAllowedCostModes.Combined,
+                    (false, true) => ProjectAllowedCostModes.MaterialsOnly,
+                    _ => ProjectAllowedCostModes.GoldProductionOnly,
+                };
+                var selectedMode = (hasGoldTrack, hasDefTrack) switch
+                {
+                    (true, true) => ProjectCostMode.Combined,
+                    (false, true) => ProjectCostMode.Materials,
+                    _ => ProjectCostMode.GoldProduction,
+                };
+
+                // Quality is MG barony policy / existing unit value — not chosen on re-equip.
+                var quality = UnitWeaponQuality.Normalize(unit.Weapon1Quality);
+
+                var gearSummary = string.Join(", ", new[]
+                {
+                    weapon1.Name,
+                    weapon2?.Name,
+                    armor?.Name,
+                    shield?.Name,
+                }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+                var project = new BaronyProject
+                {
+                    BaronyId = request.BaronyId,
+                    Name = $"Change equipment: {unit.Name}",
+                    Description =
+                        $"Re-equip {unit.Name} ({unit.TroopCount}/{UnitRules.DefaultTroopCount} troops): {gearSummary}. "
+                        + "Gear paid Craft / Buy / Defense like the unit generator; cost scaled by troop count.",
+                    // Same funding flow as Unit Reinforce (Resource allocation + Combined tracks).
+                    OutputKind = ProjectOutputKind.UnitChangeEquipment,
+                    UnitId = unit.Id,
+                    Status = ProjectStatus.ResourceAllocation,
+                    TurnsRemaining = costs.Turns,
+                    AllowedCostModes = allowed,
+                    SelectedCostMode = selectedMode,
+                    CostGoldProductionJson = Ser(ProjectCostCatalog.SliceGoldProduction(goldCost)),
+                    CostMaterialsJson = Ser(ProjectCostCatalog.SliceMaterials(defenseCost)),
+                    CostJson = Ser(MergeLegacyCost(goldCost, defenseCost)),
+                    ResultJson = "{}",
+                    ResultPercentJson = "{}",
+                    AllocatedJson = "{}",
+                    ResultDescription = $"Changes equipment on unit #{unit.Id} ({unit.Name}).",
+                    Notes = BuildChangeEquipmentNote(
+                        weapon1.Key, weapon2?.Key, armor?.Key, shield?.Key, quality, payModes),
+                };
+
+                ctx.BaronyProjects.Add(project);
+                await ctx.SaveChangesAsync();
+
+                return new StartUnitChangeEquipmentResult
+                {
+                    Unit = ToUnitDTO(unit),
+                    Project = ToDTO(project),
+                };
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(StartUnitChangeEquipment));
             }
         }
 
@@ -3053,6 +3239,7 @@ namespace DA_Business.Repository.BaronyRepos
                 Unrest = e.Unrest,
                 ConjunctureDice = e.ConjunctureDice,
                 ConjunctureModifier = e.ConjunctureModifier,
+                DefaultUnitWeaponQuality = UnitWeaponQuality.Normalize(e.DefaultUnitWeaponQuality),
                 LiegeTributePercent = e.LiegeTributePercent,
                 VassalTributePercent = e.VassalTributePercent,
                 Prestige = e.Prestige,
@@ -3085,6 +3272,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.Unrest = d.Unrest;
             e.ConjunctureDice = d.ConjunctureDice;
             e.ConjunctureModifier = d.ConjunctureModifier;
+            e.DefaultUnitWeaponQuality = UnitWeaponQuality.Normalize(d.DefaultUnitWeaponQuality);
             e.LiegeTributePercent = FiefTributeFormulas.ClampPercent(d.LiegeTributePercent);
             e.VassalTributePercent = FiefTributeFormulas.ClampPercent(d.VassalTributePercent);
             e.Prestige = d.Prestige;
@@ -3747,6 +3935,7 @@ namespace DA_Business.Repository.BaronyRepos
                 ResultPercent = De(e.ResultPercentJson),
                 Allocated = De(e.AllocatedJson),
                 ResultDescription = e.ResultDescription,
+                HideResultFromBaron = e.HideResultFromBaron,
                 Status = e.Status,
                 TurnsRemaining = e.TurnsRemaining,
                 Notes = e.Notes,
@@ -3777,6 +3966,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.ResultPercentJson = Ser(d.ResultPercent);
             e.AllocatedJson = Ser(ResourceCatalog.Slice(d.Allocated));
             e.ResultDescription = d.ResultDescription;
+            e.HideResultFromBaron = d.HideResultFromBaron;
             e.Status = d.Status;
             e.TurnsRemaining = d.TurnsRemaining;
             e.Notes = d.Notes;
@@ -3946,6 +4136,103 @@ namespace DA_Business.Repository.BaronyRepos
             return string.Join("; ", parts)
                 + $". People = Selected volunteers + Standard × N/{UnitRules.DefaultTroopCount}; "
                 + $"gear = {UnitRules.ReinforceGearSalvagePercent}% salvage × same scale.";
+        }
+
+        private static string BuildChangeEquipmentNote(
+            string weapon1Key,
+            string? weapon2Key,
+            string? armorKey,
+            string? shieldKey,
+            string weapon1Quality,
+            UnitEquipmentPayModes pay)
+        {
+            var parts = new List<string>
+            {
+                "ChangeEquipment=1",
+                $"W1Key={weapon1Key}",
+                $"W2Key={weapon2Key ?? ""}",
+                $"ArmorKey={armorKey ?? ""}",
+                $"ShieldKey={shieldKey ?? ""}",
+                $"Qual={weapon1Quality}",
+                $"W1={UnitEquipmentAcquireMode.Label(pay.Weapon1)}",
+                $"W2={UnitEquipmentAcquireMode.Label(pay.Weapon2)}",
+                $"armor={UnitEquipmentAcquireMode.Label(pay.Armor)}",
+                $"shield={UnitEquipmentAcquireMode.Label(pay.Shield)}",
+            };
+            return string.Join("; ", parts);
+        }
+
+        private static bool TryApplyChangeEquipmentFromNotes(
+            BaronyProjectDTO project,
+            BaronyUnit unit,
+            out string loadoutNote)
+        {
+            loadoutNote = string.Empty;
+            var w1Key = ReadNoteValue(project.Notes, "W1Key=");
+            if (string.IsNullOrWhiteSpace(w1Key) || UnitWeaponCatalog.Find(w1Key) is null)
+                return false;
+
+            var w2Key = NullIfEmpty(ReadNoteValue(project.Notes, "W2Key="));
+            var armorKey = NullIfEmpty(ReadNoteValue(project.Notes, "ArmorKey="));
+            var shieldKey = NullIfEmpty(ReadNoteValue(project.Notes, "ShieldKey="));
+            var quality = ReadNoteValue(project.Notes, "Qual=");
+            if (string.IsNullOrWhiteSpace(quality)
+                || !UnitWeaponQuality.All.Contains(quality, StringComparer.OrdinalIgnoreCase))
+                quality = UnitWeaponQuality.Normal;
+
+            if (w2Key is not null && UnitWeaponCatalog.Find(w2Key) is null)
+                w2Key = null;
+            if (armorKey is not null && UnitArmorCatalog.Find(armorKey) is null)
+                armorKey = null;
+            if (shieldKey is not null && UnitArmorCatalog.Find(shieldKey) is null)
+                shieldKey = null;
+
+            var armor = UnitArmorCatalog.Find(armorKey);
+            var shield = UnitArmorCatalog.Find(shieldKey);
+
+            var dto = ToUnitDTO(unit);
+            var oldMax = UnitStatHelper.Compute(dto).MaxHp;
+            var wasAtMax = unit.CurrentHp >= oldMax;
+
+            unit.Weapon1Key = w1Key.Trim();
+            unit.Weapon2Key = w2Key;
+            unit.ArmorKey = armorKey;
+            unit.ShieldKey = shieldKey;
+            unit.Weapon1Quality = quality;
+            unit.Weapon2Quality = UnitWeaponQuality.Normal;
+            unit.AttrPenaltyAgility = (armor?.AgilityPenalty ?? 0) + (shield?.AgilityPenalty ?? 0);
+            unit.UpdatedAtUtc = DateTime.UtcNow;
+
+            dto = ToUnitDTO(unit);
+            dto.AttrPenaltyAgility = unit.AttrPenaltyAgility;
+            var newMax = UnitStatHelper.Compute(dto).MaxHp;
+            unit.CurrentHp = wasAtMax ? newMax : Math.Min(unit.CurrentHp, newMax);
+            unit.DefenseSkillKey = dto.DefenseSkillKey;
+
+            loadoutNote = string.Join(", ", new[]
+            {
+                UnitWeaponCatalog.Find(unit.Weapon1Key)?.Name ?? unit.Weapon1Key,
+                unit.Weapon2Key is null ? null : UnitWeaponCatalog.Find(unit.Weapon2Key)?.Name ?? unit.Weapon2Key,
+                unit.ArmorKey is null ? null : UnitArmorCatalog.Find(unit.ArmorKey)?.Name ?? unit.ArmorKey,
+                unit.ShieldKey is null ? null : UnitArmorCatalog.Find(unit.ShieldKey)?.Name ?? unit.ShieldKey,
+            }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            return true;
+        }
+
+        private static string? NullIfEmpty(string? value) =>
+            string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+        private static string? ReadNoteValue(string? notes, string prefix)
+        {
+            if (string.IsNullOrWhiteSpace(notes) || string.IsNullOrEmpty(prefix))
+                return null;
+            var idx = notes.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0)
+                return null;
+            var start = idx + prefix.Length;
+            var end = notes.IndexOf(';', start);
+            var raw = end < 0 ? notes[start..] : notes[start..end];
+            return raw.Trim().TrimEnd('.');
         }
 
         /// <summary>

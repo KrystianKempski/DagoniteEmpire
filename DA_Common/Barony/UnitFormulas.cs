@@ -201,6 +201,47 @@ namespace DA_Common.Barony
         }
     }
 
+    public sealed record UnitChangeEquipmentCostSummary(
+        int Production,
+        int Gold,
+        int Defense,
+        int Turns,
+        int TroopScale);
+
+    /// <summary>
+    /// Re-equip an Active unit: full catalog gear cost (Craft/Buy/Defense), scaled by current troops / 50.
+    /// No people cost. Turns = max(1, Standard.Turns × N/50).
+    /// </summary>
+    public static class UnitChangeEquipmentCostFormulas
+    {
+        public static UnitChangeEquipmentCostSummary Compute(
+            UnitWeaponDef? weapon1,
+            UnitWeaponDef? weapon2,
+            UnitArmorDef? armor,
+            UnitArmorDef? shield,
+            UnitEquipmentPayModes payModes,
+            int troopCount)
+        {
+            var full = UnitRules.DefaultTroopCount;
+            var n = Math.Clamp(troopCount, 1, full);
+            var (fullProd, fullGold, fullDef) = UnitTrainingCostFormulas.SumGear(
+                weapon1, weapon2, armor, shield, payModes);
+
+            var prod = fullProd * n / full;
+            var gold = fullGold * n / full;
+            var def = fullDef * n / full;
+            var training = UnitTrainingTypeCatalog.Standard;
+            var turns = Math.Max(1, training.Turns * n / full);
+
+            return new UnitChangeEquipmentCostSummary(
+                Production: prod,
+                Gold: gold,
+                Defense: def,
+                Turns: turns,
+                TroopScale: n);
+        }
+    }
+
     /// <summary>
     /// Per-turn unit maintenance (Active units / Domain Panel Army).
     /// Gold = base wage + floor(Σ equipment Mkt / 100) × 2.
@@ -277,8 +318,10 @@ namespace DA_Common.Barony
                 MaintenanceExempt: false);
         }
 
-        public static string Explain(UnitUpkeepTotals u)
+        public static string Explain(UnitUpkeepTotals? u)
         {
+            if (u is null)
+                return string.Empty;
             if (u.MaintenanceExempt)
                 return "Maintenance paid elsewhere (no gold, food, or Defense upkeep).";
 

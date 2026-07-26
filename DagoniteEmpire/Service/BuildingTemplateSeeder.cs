@@ -150,6 +150,10 @@ namespace DagoniteEmpire.Service
                 "A salt mine.",
                 Fx(food: 1, economy: 5, production: 1, stability: -3, law: -2, corruption: -1, science: 1, defense: 2, treasury: 100),
                 terrainRequirement: "Salt");
+            Add("Mine - Sulfur", 1, I, 80, 60,
+                "A sulfur mine. Foul air and brittle ground — useful for alchemy, powder, and foul weapons.",
+                Fx(economy: 3, loyalty: -1, stability: -3, defense: 3, treasury: 40),
+                terrainRequirement: "Sulfur");
             Add("Mine - Gold", 3, I, 120, 100,
                 "A gold mine. Excellent income, but greed and legal trouble follow.",
                 Fx(food: -0.3m, economy: 6, production: 3, stability: -3, law: -6, corruption: -3, science: 3, culture: 2, treasury: 200),
@@ -228,6 +232,10 @@ namespace DagoniteEmpire.Service
             Add("Sawmill - Elven alder", 1, I, 60, 40,
                 "Elven alder is an extremely rare timber—superb for bows and highly prized decorative wood.",
                 Fx(economy: 6, production: 4, stability: -2, law: -4, culture: 2, intelligence: 4, defense: 3, treasury: 150),
+                terrainRequirement: "Forest");
+            Add("Sawmill - Shipbuilding wood", 1, I, 60, 40,
+                "Dark ship timber for hulls and masts—dense planks suited to coastal yards and river docks.",
+                Fx(economy: 3, production: 4, defense: 2, treasury: 20),
                 terrainRequirement: "Forest");
             Add("Blacksmith Workshop", 1, B, 60, 100,
                 "A small smithy—a master and apprentices at one forge. Enough for a baron to equip light infantry.",

@@ -360,23 +360,32 @@
                     <section class="unit-workshop__block unit-workshop__block--compact">
                         <div class="unit-workshop__gear-head">
                             <BaronyTooltip Title="Gear"
-                                           Text="How each item is acquired: Craft = Production + catalog gold; Buy = market gold (Mkt) only, no Production; Defense = 2× Mkt as Defense. Weapon 1 quality adjusts Atk/Dmg (Good +1 / Poor −1).">
+                                           Text="How each item is acquired: Craft = Production + catalog gold; Buy = market gold (Mkt) only, no Production; Defense = 2× Mkt as Defense. Weapon 1 quality (Good +1 / Poor −1 Atk &amp; Dmg) is set by the GM for the whole barony.">
                                 <h3 class="unit-workshop__heading">Gear</h3>
                             </BaronyTooltip>
-                            <MudSelect T="string"
-                                       Label="W1 quality"
-                                       Value="_quality"
-                                       ValueChanged="OnQualityChanged"
-                                       Variant="Variant.Outlined"
-                                       Margin="Margin.Dense"
-                                       Dense="true"
-                                       Disabled="@(!CanEdit)"
-                                       Class="baron-influence-field unit-workshop__quality">
-                                @foreach (var q in UnitWeaponQuality.All)
-                                {
-                                    <MudSelectItem Value="@q">@q</MudSelectItem>
-                                }
-                            </MudSelect>
+                            @if (CanManageAsMg)
+                            {
+                                <MudSelect T="string"
+                                           Label="Gear quality (MG)"
+                                           Value="_quality"
+                                           ValueChanged="OnQualityChanged"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           Dense="true"
+                                           Class="baron-influence-field unit-workshop__quality">
+                                    @foreach (var q in UnitWeaponQuality.All)
+                                    {
+                                        <MudSelectItem Value="@q">@q</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Class="unit-workshop__quality-ro">
+                                    Quality: <b>@_quality</b>
+                                    <span style="color:var(--barony-muted);"> (GM)</span>
+                                </MudText>
+                            }
                         </div>
                         <MudText Typo="Typo.caption" Class="unit-workshop__note unit-workshop__note--tight">
                             Acquire:
@@ -510,7 +519,47 @@
 
     private int _maxAccel => UnitTrainingTypeCatalog.Find(_trainingKey)?.Turns ?? 0;
 
-    protected override void OnInitialized() => Recalc();
+    protected override async Task OnInitializedAsync()
+    {
+        // Recalc before any await so the first render never sees a null upkeep preview.
+        Recalc();
+        await LoadBaronyQualityAsync();
+        Recalc();
+    }
+
+    private async Task LoadBaronyQualityAsync()
+    {
+        if (BaronyId <= 0) return;
+        try
+        {
+            var barony = await _baronyRepo.GetById(BaronyId);
+            if (barony is not null)
+                _quality = UnitWeaponQuality.Normalize(barony.DefaultUnitWeaponQuality);
+        }
+        catch
+        {
+            _quality = UnitWeaponQuality.Normal;
+        }
+    }
+
+    private async Task OnQualityChanged(string v)
+    {
+        if (!CanManageAsMg) return;
+        _quality = UnitWeaponQuality.Normalize(v);
+        Recalc();
+        try
+        {
+            var barony = await _baronyRepo.GetById(BaronyId);
+            if (barony is null) return;
+            barony.DefaultUnitWeaponQuality = _quality;
+            await _baronyRepo.UpdateBarony(barony);
+            _snackBar.Add($"Default gear quality set to {_quality}.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save gear quality: " + ex.Message, Severity.Error);
+        }
+    }
 
     private void SelectRecruit(string key)
     {
@@ -591,7 +640,6 @@
         Recalc();
         return Task.CompletedTask;
     }
-    private Task OnQualityChanged(string v) { _quality = v; Recalc(); return Task.CompletedTask; }
     private Task OnPayW1Changed(string v) { _payW1 = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
     private Task OnPayW2Changed(string v) { _payW2 = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
     private Task OnPayArmorChanged(string v) { _payArmor = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }

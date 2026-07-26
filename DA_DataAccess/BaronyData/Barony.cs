@@ -57,6 +57,11 @@ namespace DA_DataAccess.BaronyData
         public int ConjunctureModifier { get; set; }
 
         /// <summary>
+        /// Default Weapon 1 quality for newly trained units (Normal / Good / Poor). MG-only.
+        /// </summary>
+        public string DefaultUnitWeaponQuality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
+
+        /// <summary>
         /// Share of gross gold income paid to the senior (Budget Fief expense). Default 15.
         /// </summary>
         public decimal LiegeTributePercent { get; set; } = 15m;

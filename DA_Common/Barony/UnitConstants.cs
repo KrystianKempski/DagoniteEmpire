@@ -42,6 +42,15 @@ namespace DA_Common.Barony
             Poor => -1,
             _ => 0,
         };
+
+        public static string Normalize(string? quality)
+        {
+            if (string.Equals(quality, Good, StringComparison.OrdinalIgnoreCase))
+                return Good;
+            if (string.Equals(quality, Poor, StringComparison.OrdinalIgnoreCase))
+                return Poor;
+            return Normal;
+        }
     }
 
     /// <summary>Skill keys used on unit cards (English keys, Excel trees).</summary>

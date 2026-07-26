@@ -40,6 +40,14 @@
 
             @if (CanManage)
             {
+                <MudCheckBox @bind-Value="_hideResultFromBaron"
+                             Label="Hide result for baron"
+                             Color="Color.Primary"
+                             Dense="true"
+                             Class="baron-influence-field" />
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted); margin-top:-0.5rem; margin-bottom:0.75rem;">
+                    Baron still sees the project description, but result resources and output summary stay hidden until the project is completed.
+                </MudText>
                 <MudSelect @bind-Value="_status"
                            Label="Status"
                            Variant="Variant.Outlined"
@@ -126,6 +134,7 @@
     private string _status = ProjectStatus.Draft;
     private int _turnsRemaining;
     private string? _resultDescription;
+    private bool _hideResultFromBaron;
     private string? _notes;
     private string _allowedCostModes = ProjectAllowedCostModes.PlayerChoice;
     private PpbVector _costGoldProduction = new();
@@ -143,6 +152,7 @@
         _status = Project.Status;
         _turnsRemaining = Project.TurnsRemaining;
         _resultDescription = Project.ResultDescription;
+        _hideResultFromBaron = Project.HideResultFromBaron;
         _notes = Project.Notes;
         _allowedCostModes = string.IsNullOrWhiteSpace(Project.AllowedCostModes)
             ? ProjectAllowedCostModes.PlayerChoice
@@ -170,6 +180,7 @@
 
         if (CanManage)
         {
+            Project.HideResultFromBaron = _hideResultFromBaron;
             Project.Status = _status;
             Project.TurnsRemaining = Math.Max(0, _turnsRemaining);
             Project.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
@@ -200,6 +211,7 @@
             Project.Status = ProjectStatus.Draft;
             Project.TurnsRemaining = 0;
             Project.Notes = null;
+            Project.HideResultFromBaron = false;
             Project.AllowedCostModes = ProjectAllowedCostModes.PlayerChoice;
             Project.CostGoldProduction = new();
             Project.CostMaterials = new();

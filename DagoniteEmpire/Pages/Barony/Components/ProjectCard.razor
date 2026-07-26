@@ -167,7 +167,13 @@
 
         <section class="project-card__panel project-card__panel--output">
             <h4 class="project-card__panel-title">Expected Output</h4>
-            @if (!HasOutput)
+            @if (HideResult)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                    Result hidden until the project is completed.
+                </MudText>
+            }
+            else if (!HasOutput)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No PPB output defined.</MudText>
             }
@@ -213,7 +219,7 @@
                     </table>
                 </div>
             }
-            @if (!string.IsNullOrWhiteSpace(Project.ResultDescription))
+            @if (!HideResult && !string.IsNullOrWhiteSpace(Project.ResultDescription))
             {
                 <p class="project-card__output-summary">@Project.ResultDescription</p>
             }
@@ -237,6 +243,8 @@
     private List<string> _selectableModes = new();
 
     private string ProjectAnchorId => $"project-{Project.Id}";
+
+    private bool HideResult => Project.IsResultHiddenFromViewer(CanManage);
 
     private bool HasOutput =>
         PpbCatalog.All.Any(info =>

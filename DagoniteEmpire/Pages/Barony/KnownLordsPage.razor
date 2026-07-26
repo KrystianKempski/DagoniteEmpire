@@ -1,0 +1,45 @@
+@page "/barony/known-lords"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+
+<PageTitle>Dagonite Empire | Znani lordowie</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading known lords...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else
+{
+    <BaronyPageHeader Title="Znani lordowie">
+        <Summary>
+            <span class="projects-summary">
+                <span class="projects-summary__item">@_lords.Count lord@(_lords.Count == 1 ? "" : "s")</span>
+            </span>
+        </Summary>
+    </BaronyPageHeader>
+
+    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+        Shared roster for every barony — lords of the Eastern March, their holdings, and trade goods.
+    </MudText>
+
+    <KnownLordsSection Region="@KnownLordsCatalog.RegionEasternMarch"
+                       Lords="@_lords" />
+}
+
+@code {
+    private IReadOnlyList<KnownLordEntry> _lords = Array.Empty<KnownLordEntry>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        _lords = KnownLordsCatalog.EasternMarch;
+    }
+}

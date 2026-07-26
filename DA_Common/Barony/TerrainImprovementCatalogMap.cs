@@ -65,7 +65,7 @@ namespace DA_Common.Barony
             TerrainFeature.Has(featuresMask, TerrainFeature.Coast)
             || TerrainFeature.Has(featuresMask, TerrainFeature.River);
 
-        /// <summary>Sawmill needs forest / dense forest, or an Ironwood / Elven alder deposit.</summary>
+        /// <summary>Sawmill needs forest / dense forest, or a timber deposit (Ironwood / Elven alder / Shipbuilding wood).</summary>
         public static bool CanPlaceSawmill(int featuresMask, string? resource) =>
             IsWoodResource(resource)
             || TerrainFeature.Has(featuresMask, TerrainFeature.Forest)
@@ -175,23 +175,24 @@ namespace DA_Common.Barony
                 return "Cannot place a mine on timber. Use a sawmill instead.";
 
             if (mapKind == MapImprovement.Mine && string.IsNullOrWhiteSpace(resource))
-                return "Mines require a resource deposit on the tile (metal, stone, clay, salt, gems…).";
+                return "Mines require a resource deposit on the tile (metal, stone, clay, salt, sulfur, gems…).";
 
             if (mapKind == MapImprovement.Mine && ResolveExtractive(resource) is null)
-                return $"Cannot place a mine on “{TerrainResource.DisplayName(resource)}”. Needs metal, stone, clay, salt, or gems.";
+                return $"Cannot place a mine on “{TerrainResource.DisplayName(resource)}”. Needs metal, stone, clay, salt, sulfur, or gems.";
 
             if (mapKind == MapImprovement.FishingHarbor && !CanPlaceFishingHarbor(featuresMask))
                 return "Fishing harbor requires coast or river on the tile.";
 
             if (mapKind == MapImprovement.Sawmill && !CanPlaceSawmill(featuresMask, resource))
-                return "Sawmills require forest, dense forest, or an Ironwood / Elven alder deposit.";
+                return "Sawmills require forest, dense forest, or a timber deposit (Ironwood / Elven alder / Shipbuilding wood).";
 
             return null;
         }
 
         private static bool IsWoodResource(string? resource) =>
             string.Equals(resource, TerrainResource.Ironwood, StringComparison.Ordinal)
-            || string.Equals(resource, TerrainResource.ElvenAlder, StringComparison.Ordinal);
+            || string.Equals(resource, TerrainResource.ElvenAlder, StringComparison.Ordinal)
+            || string.Equals(resource, TerrainResource.ShipbuildingWood, StringComparison.Ordinal);
 
         private static string? ResolveExtractive(string? resource) => resource switch
         {
@@ -201,6 +202,7 @@ namespace DA_Common.Barony
             TerrainResource.Gold => "Mine - Gold",
             TerrainResource.Dagoferryt => "Mine - Dagoferryt",
             TerrainResource.Salt => "Mine - Salt",
+            TerrainResource.Sulfur => "Mine - Sulfur",
             TerrainResource.Gemstones => "Mine - precious gems (luxury)",
             TerrainResource.Stone => "Quarry - common stone",
             TerrainResource.Granite => "Quarry - Granite",
@@ -215,6 +217,7 @@ namespace DA_Common.Barony
         {
             TerrainResource.Ironwood => "Sawmill - Ironwood",
             TerrainResource.ElvenAlder => "Sawmill - Elven alder",
+            TerrainResource.ShipbuildingWood => "Sawmill - Shipbuilding wood",
             _ => SawmillCommon,
         };
     }

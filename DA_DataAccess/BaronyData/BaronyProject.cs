@@ -42,6 +42,12 @@ namespace DA_DataAccess.BaronyData
 
         public string ResultDescription { get; set; } = string.Empty;
 
+        /// <summary>
+        /// When true, non-MG viewers do not see result resources / output description
+        /// until the project is completed.
+        /// </summary>
+        public bool HideResultFromBaron { get; set; }
+
         /// <summary>Status (ProjectStatus).</summary>
         public string Status { get; set; } = DA_Common.Barony.ProjectStatus.Draft;
 

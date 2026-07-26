@@ -270,7 +270,9 @@ namespace DA_Common.Barony
         public const string Clay = "Clay";
         public const string Ironwood = "Ironwood";
         public const string ElvenAlder = "Elven alder";
+        public const string ShipbuildingWood = "Shipbuilding wood";
         public const string Salt = "Salt";
+        public const string Sulfur = "Sulfur";
         public const string Gemstones = "Gemstones";
 
         public static readonly string[] All =
@@ -278,7 +280,7 @@ namespace DA_Common.Barony
             SoftMetals, Iron, Silver, Gold, Dagoferryt,
             Fishery,
             Stone, Granite, Tarnit, Obsidian,
-            Clay, Ironwood, ElvenAlder, Salt, Gemstones,
+            Clay, Ironwood, ElvenAlder, ShipbuildingWood, Salt, Sulfur, Gemstones,
         };
 
         public static bool IsKnown(string? key) =>
@@ -299,7 +301,9 @@ namespace DA_Common.Barony
             Clay => "Clay",
             Ironwood => "Ironwood",
             ElvenAlder => "Elven alder",
+            ShipbuildingWood => "Shipbuilding wood",
             Salt => "Salt",
+            Sulfur => "Sulfur",
             Gemstones => "Gemstones",
             _ => key ?? "None",
         };
@@ -309,9 +313,9 @@ namespace DA_Common.Barony
             SoftMetals or Iron or Silver or Gold or Dagoferryt => "/icons/metal-bar.svg",
             Fishery => "/icons/fishing.svg",
             Stone or Granite or Tarnit => "/icons/stone-block.svg",
-            Obsidian => "/icons/silex.svg",
+            Obsidian or Sulfur => "/icons/silex.svg",
             Clay or Salt => "/icons/coal-pile.svg",
-            Ironwood or ElvenAlder => "/icons/wood-pile.svg",
+            Ironwood or ElvenAlder or ShipbuildingWood => "/icons/wood-pile.svg",
             Gemstones => "/icons/crystal-growth.svg",
             _ => "/icons/metal-bar.svg",
         };
@@ -331,7 +335,11 @@ namespace DA_Common.Barony
             Clay => "#c4783a",
             Ironwood => "#2471a3",
             ElvenAlder => "#d4af37",
+            // Dark hull timber — distinct from Clay orange and Elven alder gold.
+            ShipbuildingWood => "#5c3317",
             Salt => "#f8f8ff",
+            // Yellow obsidian-shaped deposit.
+            Sulfur => "#e6c200",
             Gemstones => "#9b59b6",
             _ => "#888888",
         };
@@ -513,10 +521,12 @@ namespace DA_Common.Barony
         public const string Improvement = "Improvement";
         public const string UnitTraining = "Unit Training";
         public const string UnitReinforce = "Unit Reinforce";
+        public const string UnitChangeEquipment = "Unit Change Equipment";
 
         public static readonly string[] All =
         {
-            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement, UnitTraining, UnitReinforce,
+            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement,
+            UnitTraining, UnitReinforce, UnitChangeEquipment,
         };
     }
 

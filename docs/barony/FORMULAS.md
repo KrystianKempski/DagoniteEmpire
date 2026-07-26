@@ -136,6 +136,7 @@ Pipeline (player End Turn flag → MG Resolve Turn):
 2. Funded projects (`HasRemainingCost` false): `TurnsRemaining = max(0, TurnsRemaining − 1)`; if `TurnsRemaining == 0` → Complete and apply `OutputKind` results into the turn log:
    - **Unit Training** → linked unit `Training` → `Active`
    - **Unit Reinforce** → add `ReinforceTroops` (from Notes / description; else fill toward 50)
+   - **Unit Change Equipment** → apply new loadout from Notes (`W1Key` / `W2Key` / `ArmorKey` / `ShieldKey` / `Qual`)
    - **One-time resources** → add `ResultAdditive` to stocks **and** a new Resource Balance source row for the new turn (wiped into opening stock on the next Resolve)
    - **Decree / Technology** → new active row in Domain Panel → Decrees and Technologies (`ResultAdditive` / `ResultPercent`)
    - **Event** → Domain Panel event from `ResultAdditive`/`ResultPercent`, active from the **new** turn (ongoing until MG sets an end)
@@ -291,6 +292,7 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 - **Casualty Loss** (`UnitCasualtyFormulas`): nominal full strength = **50**. For each full **10%** of strength missing: **−1** Attack, **−1** Defense, **−4** Max HP. Example: 10/50 → 8 steps → −8 Atk/Def, −32 HP. While depleted (steps > 0): floors Atk/Def ≥ **1**, Max HP ≥ **10**. MG edits troop count by clicking Troops on the unit card.
 - **Troop recovery**: understrength units (not Disbanded) regain **+5** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.
 - **Reinforce project** (`ProjectOutputKind.UnitReinforce`): button on understrength Active units with no open project. People cost = Selected volunteers + Standard, scaled `× N/50` (floor). Gear = current loadout at **50%** salvage × same scale (`× N/100` of full gear). Acquire modes Craft/Buy/Defense like the generator. On complete: add N troops (cap 50) and sync Max HP.
+- **Change equipment project** (`ProjectOutputKind.UnitChangeEquipment`): button on Active units with no open project. Dialog picks new loadout + Craft/Buy/Defense pay modes (unit generator Gear UX). Cost = full gear `SumGear` scaled `× troopCount/50`; turns = max(1, Standard×N/50). Starts in Resource allocation. On complete: write keys/quality, refresh agility penalty / Defense skill / Max HP.
 
 ### Skill totals (Excel Generator / Oddziały)
 - **Base skills** (Melee, Ranged, Athletics, Agility, Urban, Scout): `Razem = Bazowo + Inne` — **no** attribute.

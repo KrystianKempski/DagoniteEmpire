@@ -6,58 +6,6 @@
 @inject IDialogService _dialogService
 
 <div class="unit-roster-card @(_xpDirty ? "unit-roster-card--dirty" : null)">
-    @if (Unit.IsTraining)
-    {
-        <div class="unit-roster-card__banner">
-            <span>
-                @(ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus)
-                    ? "In training — awaiting resources."
-                    : $"In training ({Unit.TrainingTurnsRemaining?.ToString() ?? "?"} turns left).")
-                @if (Unit.TrainingProjectId is int pid)
-                {
-                    <text> <a href="/barony/projects">Project #@pid</a>.</text>
-                }
-            </span>
-            @if (CanManageAsMg)
-            {
-                <MudButton Size="Size.Small"
-                           Variant="Variant.Filled"
-                           Class="barony-turn-btn barony-turn-btn--solid"
-                           Disabled="@_busy"
-                           OnClick="ActivateUnitAsync">
-                    Make active (MG)
-                </MudButton>
-            }
-        </div>
-    }
-    else if (Unit.IsActive && HasOpenReinforceProject)
-    {
-        <div class="unit-roster-card__banner">
-            <span>
-                @(IsReinforceAwaitingResources
-                    ? "Reinforcing — awaiting resources."
-                    : $"Reinforcing ({Unit.TrainingTurnsRemaining?.ToString() ?? "?"} turn{(Unit.TrainingTurnsRemaining == 1 ? "" : "s")} left).")
-                <a href="/barony/projects">Project #@Unit.TrainingProjectId</a>.
-            </span>
-        </div>
-    }
-    else if (CanReinforce)
-    {
-        <div class="unit-roster-card__banner">
-            <span>
-                Understrength (@Unit.TroopCount/@UnitRules.DefaultTroopCount).
-                Create a reinforce project to replenish troops.
-            </span>
-            <MudButton Size="Size.Small"
-                       Variant="Variant.Filled"
-                       Class="barony-turn-btn barony-turn-btn--solid"
-                       Disabled="@_busy"
-                       OnClick="OpenReinforceAsync">
-                Reinforce
-            </MudButton>
-        </div>
-    }
-
     @if (_xpDirty)
     {
         <div class="unit-xp-bar">
@@ -92,8 +40,83 @@
                           CanManageAsMg="@CanManageAsMg"
                           CanSpendPd="@CanSpendPd"
                           ShowCurrentHp="true"
+                          Collapsible="true"
                           SkillsChanged="PersistFromCardAsync"
-                          OnXpDraftChanged="OnXpDraftFromCardAsync" />
+                          OnXpDraftChanged="OnXpDraftFromCardAsync">
+        <TitleActions>
+            @if (Unit.IsTraining)
+            {
+                <span class="unit-draft-card__title-status">
+                    @if (ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus))
+                    {
+                        <text>awaiting resources</text>
+                    }
+                    else
+                    {
+                        <text>@TurnsLeftLabel left</text>
+                    }
+                    @if (Unit.TrainingProjectId is int trainPid)
+                    {
+                        <text> · <a href="/barony/projects">#@trainPid</a></text>
+                    }
+                </span>
+                @if (CanManageAsMg)
+                {
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Filled"
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               Disabled="@_busy"
+                               OnClick="ActivateUnitAsync">
+                        Make active
+                    </MudButton>
+                }
+            }
+            else if (HasOpenChangeEquipmentProject)
+            {
+                <span class="unit-draft-card__title-status">
+                    @(IsChangeEquipmentAwaitingResources ? "re-equip · awaiting resources" : $"re-equip · {TurnsLeftLabel} left")
+                    · <a href="/barony/projects">#@Unit.TrainingProjectId</a>
+                </span>
+            }
+            else if (HasOpenReinforceProject)
+            {
+                <span class="unit-draft-card__title-status">
+                    @(IsReinforceAwaitingResources ? "reinforce · awaiting resources" : $"reinforce · {TurnsLeftLabel} left")
+                    · <a href="/barony/projects">#@Unit.TrainingProjectId</a>
+                </span>
+            }
+            else
+            {
+                @if (CanReinforce)
+                {
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Filled"
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               Disabled="@_busy"
+                               OnClick="OpenReinforceAsync">
+                        Reinforce
+                    </MudButton>
+                }
+                @if (CanChangeEquipment)
+                {
+                    <BaronyTooltip Title="Change unit equipment"
+                                   Text="Start a Resource allocation project to re-equip this unit (Craft / Buy / Defense), same as the unit generator Gear row.">
+                        <button type="button"
+                                class="unit-draft-card__icon-btn"
+                                disabled="@_busy"
+                                aria-label="Change unit equipment"
+                                @onclick="OpenChangeEquipmentAsync">
+                            <img src="/icons/armor-vest.svg"
+                                 alt=""
+                                 width="20"
+                                 height="20"
+                                 class="unit-draft-card__icon-btn-img" />
+                        </button>
+                    </BaronyTooltip>
+                }
+            }
+        </TitleActions>
+    </UnitDraftCardPreview>
 </div>
 
 @code {
@@ -106,14 +129,40 @@
     private bool HasOpenReinforceProject =>
         Unit.TrainingProjectId is > 0
         && !string.IsNullOrWhiteSpace(Unit.OpenProjectOutputKind)
-        && Unit.OpenProjectOutputKind.Contains("Reinforce", StringComparison.OrdinalIgnoreCase);
+        && Unit.OpenProjectOutputKind.Contains("Reinforce", StringComparison.OrdinalIgnoreCase)
+        && !IsChangeEquipmentKind(Unit.OpenProjectOutputKind);
+    private bool HasOpenChangeEquipmentProject =>
+        Unit.TrainingProjectId is > 0
+        && IsChangeEquipmentKind(Unit.OpenProjectOutputKind);
     private bool IsReinforceAwaitingResources =>
         HasOpenReinforceProject && ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus);
+    private bool IsChangeEquipmentAwaitingResources =>
+        HasOpenChangeEquipmentProject && ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus);
     private bool CanReinforce =>
         CanEdit
         && Unit.IsActive
         && Unit.TroopCount < UnitRules.DefaultTroopCount
         && Unit.TrainingProjectId is null;
+    private bool CanChangeEquipment =>
+        CanEdit
+        && Unit.IsActive
+        && Unit.TrainingProjectId is null;
+
+    private string TurnsLeftLabel
+    {
+        get
+        {
+            var n = Unit.TrainingTurnsRemaining;
+            if (n is null) return "? turns";
+            return n == 1 ? "1 turn" : $"{n} turns";
+        }
+    }
+
+    private static bool IsChangeEquipmentKind(string? kind) =>
+        !string.IsNullOrWhiteSpace(kind)
+        && (kind.Contains("Change Equipment", StringComparison.OrdinalIgnoreCase)
+            || kind.Contains("ChangeEquipment", StringComparison.OrdinalIgnoreCase)
+            || kind.Contains("Re-equip", StringComparison.OrdinalIgnoreCase));
 
     private bool _xpDirty;
     private bool _busy;
@@ -198,6 +247,49 @@
             Unit.OpenProjectOutputKind = created.Project.OutputKind;
             Unit.OpenProjectStatus = created.Project.Status;
             _snackBar.Add($"Reinforce project “{created.Project.Name}” created — fund it on Projects.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OpenChangeEquipmentAsync()
+    {
+        if (!CanChangeEquipment || _busy) return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitChangeEquipmentDialog.Unit)] = Unit,
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.ExtraLarge,
+            FullWidth = true,
+        };
+        var dialog = await _dialogService.ShowAsync<UnitChangeEquipmentDialog>(
+            "Change unit equipment", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not StartUnitChangeEquipmentRequest request)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _baronyRepo.StartUnitChangeEquipment(request);
+            Unit.TrainingProjectId = created.Project.Id;
+            Unit.TrainingTurnsRemaining = created.Project.TurnsRemaining;
+            Unit.OpenProjectOutputKind = created.Project.OutputKind;
+            Unit.OpenProjectStatus = created.Project.Status;
+            _snackBar.Add(
+                $"Change equipment project “{created.Project.Name}” created — fund it on Projects.",
+                Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)

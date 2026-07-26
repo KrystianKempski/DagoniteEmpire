@@ -38,6 +38,11 @@ namespace DA_Models.BaronyModels
         /// <summary>MG fortune modifier added to the dice (war −3, good harvest +2, …).</summary>
         public int ConjunctureModifier { get; set; }
 
+        /// <summary>
+        /// Default Weapon 1 quality for newly trained units (Normal / Good / Poor). MG sets this for the barony.
+        /// </summary>
+        public string DefaultUnitWeaponQuality { get; set; } = UnitWeaponQuality.Normal;
+
         /// <summary>Effective conjuncture this turn: Dice + Modifier.</summary>
         public int Conjuncture => ConjunctureDice + ConjunctureModifier;
 
@@ -294,6 +299,13 @@ namespace DA_Models.BaronyModels
         public PpbVector ResultPercent { get; set; } = new();
         public PpbVector Allocated { get; set; } = new();
         public string ResultDescription { get; set; } = string.Empty;
+
+        /// <summary>
+        /// When true, non-MG viewers do not see result resources / output description
+        /// until the project is completed.
+        /// </summary>
+        public bool HideResultFromBaron { get; set; }
+
         public string Status { get; set; } = DA_Common.Barony.ProjectStatus.Draft;
         public int TurnsRemaining { get; set; }
         public string? Notes { get; set; }
@@ -311,6 +323,14 @@ namespace DA_Models.BaronyModels
         public bool IsActiveMapConstruction =>
             TileId is > 0
             && Status is not (DA_Common.Barony.ProjectStatus.Completed or DA_Common.Barony.ProjectStatus.Cancelled);
+
+        /// <summary>
+        /// Whether result resources / output description should be concealed from the current viewer.
+        /// </summary>
+        public bool IsResultHiddenFromViewer(bool canManageAsMg) =>
+            HideResultFromBaron
+            && !canManageAsMg
+            && !DA_Common.Barony.ProjectStatus.IsCompleted(Status);
 
         /// <summary>True when both Gold+Production and Materials must be paid together.</summary>
         public bool IsCombinedCost =>

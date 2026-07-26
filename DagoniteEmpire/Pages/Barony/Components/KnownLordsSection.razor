@@ -1,0 +1,135 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="@Region">
+    <Summary>
+        <span class="projects-summary__item">@Filtered.Count lord@(Filtered.Count == 1 ? "" : "s")</span>
+    </Summary>
+    <ChildContent>
+        <div class="known-lords-filters">
+            <MudTextField @bind-Value="_filter"
+                          Placeholder="Filter by name, house, title, holdings…"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Immediate="true"
+                          Clearable="true"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Class="known-lords-filters__search" />
+        </div>
+
+        @if (Filtered.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No lords match the current filter.
+            </MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--lined known-lords-table">
+                    <colgroup>
+                        <col class="known-lords-col-name" />
+                        <col class="known-lords-col-house" />
+                        <col class="known-lords-col-title" />
+                        <col class="known-lords-col-holdings" />
+                        <col class="known-lords-col-desc" />
+                        <col class="known-lords-col-goods" />
+                        <col class="known-lords-col-goods" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="known-lords-col-name">Imię</th>
+                            <th class="known-lords-col-house">Ród</th>
+                            <th class="known-lords-col-title">Tytuł</th>
+                            <th class="known-lords-col-holdings">Włości</th>
+                            <th class="known-lords-col-desc">Opis</th>
+                            <th class="known-lords-col-goods">Dostępne towary</th>
+                            <th class="known-lords-col-goods">Poszukiwane towary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var lord in Filtered)
+                        {
+                            <tr>
+                                <td class="known-lords-col-name">@lord.Name</td>
+                                <td class="known-lords-col-house">@(DashIfEmpty(lord.House))</td>
+                                <td class="known-lords-col-title">@(DashIfEmpty(lord.Title))</td>
+                                <td class="known-lords-col-holdings">@(DashIfEmpty(lord.Holdings))</td>
+                                <td class="known-lords-col-desc">
+                                    @if (!string.IsNullOrWhiteSpace(lord.Description))
+                                    {
+                                        <BaronyTooltip Title="Opis" Text="@lord.Description">
+                                            <span class="relations-ellipsis">@lord.Description</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
+                                    }
+                                </td>
+                                <td class="known-lords-col-goods">
+                                    @if (!string.IsNullOrWhiteSpace(lord.ProducedGoods))
+                                    {
+                                        <BaronyTooltip Title="Dostępne towary" Text="@lord.ProducedGoods">
+                                            <span class="relations-ellipsis">@lord.ProducedGoods</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
+                                    }
+                                </td>
+                                <td class="known-lords-col-goods">
+                                    @if (!string.IsNullOrWhiteSpace(lord.DemandedGoods))
+                                    {
+                                        <BaronyTooltip Title="Poszukiwane towary" Text="@lord.DemandedGoods">
+                                            <span class="relations-ellipsis">@lord.DemandedGoods</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public string Region { get; set; } = KnownLordsCatalog.RegionEasternMarch;
+    [Parameter] public IReadOnlyList<KnownLordEntry> Lords { get; set; } = Array.Empty<KnownLordEntry>();
+
+    private string _filter = "";
+
+    private List<KnownLordEntry> Filtered =>
+        Lords
+            .Where(MatchesFilter)
+            .OrderBy(l => l.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private bool MatchesFilter(KnownLordEntry lord)
+    {
+        if (string.IsNullOrWhiteSpace(_filter))
+            return true;
+
+        return Contains(lord.Name)
+               || Contains(lord.House)
+               || Contains(lord.Title)
+               || Contains(lord.Holdings)
+               || Contains(lord.Description)
+               || Contains(lord.ProducedGoods)
+               || Contains(lord.DemandedGoods);
+
+        bool Contains(string? value) =>
+            !string.IsNullOrEmpty(value)
+            && value.Contains(_filter, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string DashIfEmpty(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "—" : value;
+}
