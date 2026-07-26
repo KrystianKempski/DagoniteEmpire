@@ -9,7 +9,7 @@
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-            Overview of all available projects. Click a project name to jump to its card below.
+            Overview of open projects. Click a project name to jump to its card below.
         </MudText>
 
         @if (_rows.Count == 0)
@@ -109,8 +109,11 @@
     private void RebuildRows()
     {
         _rows = Projects
-            .Where(p => p.Status != ProjectStatus.Cancelled)
-            .OrderBy(p => p.Status == ProjectStatus.InProgress ? 0 : p.Status == ProjectStatus.Draft ? 1 : 2)
+            .Where(p => !ProjectStatus.IsCompleted(p.Status) && !ProjectStatus.IsCancelled(p.Status))
+            .OrderBy(p => p.Status == ProjectStatus.InProgress ? 0
+                : ProjectStatus.IsResourceAllocation(p.Status) ? 1
+                : p.Status == ProjectStatus.Draft ? 2
+                : 3)
             .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
             .Select(p => new BalanceRow { Project = p })
             .ToList();
@@ -131,10 +134,10 @@
     }
 
     private static string RowClass(BaronyProjectDTO project) =>
-        project.Status is ProjectStatus.Completed
-            ? "projects-balance-tr--inactive"
-            : project.Status == ProjectStatus.InProgress
-                ? "projects-balance-tr--active"
+        project.Status == ProjectStatus.InProgress
+            ? "projects-balance-tr--active"
+            : ProjectStatus.IsResourceAllocation(project.Status)
+                ? "projects-balance-tr--allocating"
                 : string.Empty;
 
     private static string Fmt(decimal v) => v == 0m ? "·" : PpbFormat.Number(v);

@@ -444,12 +444,34 @@ namespace DA_Common.Barony
     /// <summary>Status projektu.</summary>
     public readonly struct ProjectStatus
     {
+        /// <summary>Player proposal / unfinished setup — not accepted by MG yet.</summary>
         public const string Draft = "Szkic";
+        /// <summary>Accepted by MG (or auto-created); waiting for resource allocation. Turns do not tick.</summary>
+        public const string ResourceAllocation = "Alokacja zasobów";
+        /// <summary>Fully funded (or past allocation); turns tick on Resolve when still funded.</summary>
         public const string InProgress = "W trakcie";
         public const string Completed = "Zakończony";
         public const string Cancelled = "Anulowany";
 
-        public static readonly string[] All = { Draft, InProgress, Completed, Cancelled };
+        public static readonly string[] All =
+        {
+            Draft, ResourceAllocation, InProgress, Completed, Cancelled,
+        };
+
+        public static bool IsTerminal(string? status) =>
+            IsCompleted(status) || IsCancelled(status);
+
+        public static bool IsCompleted(string? status) =>
+            string.Equals(status, Completed, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "Completed", StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsCancelled(string? status) =>
+            string.Equals(status, Cancelled, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsResourceAllocation(string? status) =>
+            string.Equals(status, ResourceAllocation, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "Resource allocation", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>How a project cost is paid.</summary>

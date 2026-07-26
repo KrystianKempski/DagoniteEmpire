@@ -129,6 +129,7 @@ namespace DA_Business.Repository.BaronyRepos
                     BaseParametersJson = Ser(new PpbVector()),
                     ResourceStocksJson = Ser(new PpbVector()),
                     PreviousTurnIncomeJson = Ser(new PpbVector()),
+                    PreviousTurnStockJson = Ser(new PpbVector()),
                 };
                 var added = await ctx.Baronies.AddAsync(entity);
                 await ctx.SaveChangesAsync();
@@ -210,40 +211,101 @@ namespace DA_Business.Repository.BaronyRepos
                     UnrestBefore = barony.Unrest,
                 };
 
-                // 1) Apply expected resource income
+                // 1) Rebuild Resource Balance for the new turn:
+                //    snapshot opening stock → wipe all ledger sources → apply income → (projects add grants).
                 var income = ResourceCatalog.Slice(expectedIncome);
                 var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
                 stocks[Ppb.Food] = barony.FoodInGranaries;
                 stocks[Ppb.Treasury] = barony.TreasuryGold;
+                var openingStock = ResourceCatalog.Slice(stocks);
+
+                var oldSources = await ctx.BaronyResourceSources
+                    .Where(s => s.BaronyId == baronyId)
+                    .ToListAsync();
+                if (oldSources.Count > 0)
+                    ctx.BaronyResourceSources.RemoveRange(oldSources);
+
                 foreach (var info in ResourceCatalog.All)
                     stocks[info.Key] += income[info.Key];
                 stocks = ResourceCatalog.Slice(stocks);
+                barony.PreviousTurnStockJson = Ser(openingStock);
+                barony.PreviousTurnIncomeJson = Ser(income);
                 barony.ResourceStocksJson = Ser(stocks);
                 barony.FoodInGranaries = stocks[Ppb.Food];
                 barony.TreasuryGold = stocks[Ppb.Treasury];
-                barony.PreviousTurnIncomeJson = Ser(income);
                 report.AppliedIncome = income.Clone();
 
-                // 2) Tick / complete funded projects
+                // 2) Tick / complete funded projects and apply their results
                 var projects = await ctx.BaronyProjects
                     .Where(p => p.BaronyId == baronyId)
                     .ToListAsync();
                 var templates = await ctx.BuildingTemplates.AsNoTracking().ToListAsync();
                 var templateById = templates.ToDictionary(t => t.Id);
 
+                var nextCal = BaronyCalendarFormulas.AdvanceOneTurn(
+                    barony.Year, barony.Month, barony.TurnNumber, barony.Season);
+                var effectStartTurn = nextCal.TurnNumber;
+
                 foreach (var project in projects)
                 {
                     var dto = ToDTO(project);
-                    if (dto.Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                    if (ProjectStatus.IsTerminal(dto.Status))
+                    {
+                        if (!ProjectStatus.IsCompleted(dto.Status))
+                            continue;
+
+                        // Already granted — never re-apply on later Resolves.
+                        if (HasProjectResultsApplied(dto.Notes))
+                            continue;
+
+                        // One-time: grant only when the project completes (non-terminal path below).
+                        // Never repair-stack stocks on later turns; just stamp the marker if missing.
+                        if (IsOneTimeResourcesKind(dto.OutputKind ?? ""))
+                        {
+                            dto.Notes = MarkProjectResultsApplied(dto.Notes);
+                            ApplyProject(project, dto);
+                            continue;
+                        }
+
+                        if (!IsRepairableCompletedKind(dto.OutputKind))
+                            continue;
+
+                        ApplyProject(project, dto);
+                        report.CompletedProjects.Add(dto.Name + " (results applied)");
+                        var repair = await ApplyCompletedProjectResultsAsync(
+                            ctx, barony, dto, templateById, stocks, effectStartTurn);
+                        if (repair.Applied)
+                        {
+                            dto.Notes = MarkProjectResultsApplied(dto.Notes);
+                            ApplyProject(project, dto);
+                        }
+
+                        if (repair.Notes.Count > 0)
+                            report.ProjectResults.AddRange(repair.Notes);
+                        else
+                            report.ProjectResults.Add($"{dto.Name}: completed (no further effect).");
                         continue;
-                    if (dto.HasRemainingCost)
+                    }
+
+                    // Draft: not accepted yet — never tick turns.
+                    if (dto.Status == ProjectStatus.Draft)
                         continue;
+
+                    // Resource allocation: wait until fully funded; then start (In progress) and tick.
+                    if (ProjectStatus.IsResourceAllocation(dto.Status))
+                    {
+                        if (dto.HasRemainingCost)
+                            continue;
+                        dto.Status = ProjectStatus.InProgress;
+                    }
+                    else if (dto.HasRemainingCost)
+                    {
+                        continue;
+                    }
 
                     dto.TurnsRemaining = Math.Max(0, dto.TurnsRemaining - 1);
                     if (dto.TurnsRemaining > 0)
                     {
-                        if (dto.Status == ProjectStatus.Draft)
-                            dto.Status = ProjectStatus.InProgress;
                         ApplyProject(project, dto);
                         continue;
                     }
@@ -253,7 +315,18 @@ namespace DA_Business.Repository.BaronyRepos
                     ApplyProject(project, dto);
                     report.CompletedProjects.Add(dto.Name);
 
-                    await ApplyCompletedProjectResultsAsync(ctx, barony, dto, templateById, stocks);
+                    var finish = await ApplyCompletedProjectResultsAsync(
+                        ctx, barony, dto, templateById, stocks, effectStartTurn);
+                    if (finish.Applied)
+                    {
+                        dto.Notes = MarkProjectResultsApplied(dto.Notes);
+                        ApplyProject(project, dto);
+                    }
+
+                    if (finish.Notes.Count > 0)
+                        report.ProjectResults.AddRange(finish.Notes);
+                    else
+                        report.ProjectResults.Add($"{dto.Name}: completed (no further effect).");
                 }
 
                 // Re-sync stocks after one-time resource grants from projects
@@ -290,17 +363,15 @@ namespace DA_Business.Repository.BaronyRepos
 
                 report.UnrestAfter = barony.Unrest;
 
-                // 5) Advance calendar
-                var cal = BaronyCalendarFormulas.AdvanceOneTurn(
-                    barony.Year, barony.Month, barony.TurnNumber, barony.Season);
-                barony.Year = cal.Year;
-                barony.Month = cal.Month;
-                barony.TurnNumber = cal.TurnNumber;
-                barony.Season = cal.Season;
-                report.NewTurnNumber = cal.TurnNumber;
-                report.NewSeason = cal.Season;
-                report.NewYear = cal.Year;
-                report.NewMonth = cal.Month;
+                // 5) Advance calendar (same step precomputed for project event dating)
+                barony.Year = nextCal.Year;
+                barony.Month = nextCal.Month;
+                barony.TurnNumber = nextCal.TurnNumber;
+                barony.Season = nextCal.Season;
+                report.NewTurnNumber = nextCal.TurnNumber;
+                report.NewSeason = nextCal.Season;
+                report.NewYear = nextCal.Year;
+                report.NewMonth = nextCal.Month;
 
                 // 6) New conjuncture
                 var conj = RollService.Roll2d6();
@@ -407,21 +478,30 @@ namespace DA_Business.Repository.BaronyRepos
             return notes;
         }
 
-        private static async Task ApplyCompletedProjectResultsAsync(
+        private sealed record ProjectApplyResult(List<string> Notes, bool Applied);
+
+        /// <summary>
+        /// Applies the finished project's OutputKind effect (unit training/reinforce, event, decree, building, resources).
+        /// </summary>
+        private static async Task<ProjectApplyResult> ApplyCompletedProjectResultsAsync(
             ApplicationDbContext ctx,
             Barony barony,
             BaronyProjectDTO project,
             IReadOnlyDictionary<int, BuildingTemplate> templateById,
-            PpbVector stocks)
+            PpbVector stocks,
+            int effectStartTurn)
         {
+            var notes = new List<string>();
             var kind = project.OutputKind?.Trim() ?? "";
-            if (string.Equals(kind, ProjectOutputKind.UnitTraining, StringComparison.OrdinalIgnoreCase))
+
+            if (IsUnitTrainingKind(kind))
             {
-                if (project.UnitId is int unitId && unitId > 0)
+                if (ResolveProjectUnitId(project) is int unitId)
                 {
                     var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u => u.Id == unitId && u.BaronyId == barony.Id);
                     if (unit is not null)
                     {
+                        var was = unit.Status;
                         unit.Status = UnitStatus.Active;
                         unit.MaxBaseSkillAtGraduation = 0;
                         unit.UpdatedAtUtc = DateTime.UtcNow;
@@ -430,19 +510,34 @@ namespace DA_Business.Repository.BaronyRepos
                             var dto = ToUnitDTO(unit);
                             unit.CurrentHp = ComputeUnitCombat(dto).MaxHp;
                         }
+
+                        if (project.UnitId is null or <= 0)
+                            project.UnitId = unit.Id;
+
+                        notes.Add(
+                            $"Training complete: {unit.Name} ({was} → {UnitStatus.Active}).");
+                        return new ProjectApplyResult(notes, Applied: true);
                     }
+
+                    notes.Add($"{project.Name}: training project has no matching unit #{unitId}.");
                 }
-                return;
+                else
+                {
+                    notes.Add($"{project.Name}: Unit Training finished but UnitId is missing.");
+                }
+
+                return new ProjectApplyResult(notes, Applied: false);
             }
 
-            if (string.Equals(kind, ProjectOutputKind.UnitReinforce, StringComparison.OrdinalIgnoreCase))
+            if (IsUnitReinforceKind(kind))
             {
-                if (project.UnitId is int unitId && unitId > 0)
+                if (ResolveProjectUnitId(project) is int unitId)
                 {
                     var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u => u.Id == unitId && u.BaronyId == barony.Id);
                     if (unit is not null)
                     {
-                        var add = ReadReinforceTroops(project.Notes);
+                        var add = ResolveReinforceTroopAdd(project, unit);
+                        var before = unit.TroopCount;
                         if (add > 0)
                         {
                             var dto = ToUnitDTO(unit);
@@ -458,55 +553,116 @@ namespace DA_Business.Repository.BaronyRepos
                             unit.CurrentHp = wasAtMax ? newMax : Math.Min(unit.CurrentHp, newMax);
                             unit.DefenseSkillKey = dto.DefenseSkillKey;
                         }
+
+                        if (project.UnitId is null or <= 0)
+                            project.UnitId = unit.Id;
+
+                        notes.Add(
+                            $"Reinforce complete: {unit.Name} troops {before} → {unit.TroopCount}/{UnitRules.DefaultTroopCount}"
+                            + (add > 0 ? $" (+{add})." : " (no troops added — check project notes)."));
+                        return new ProjectApplyResult(notes, Applied: add > 0);
                     }
+
+                    notes.Add($"{project.Name}: reinforce project has no matching unit #{unitId}.");
                 }
-                return;
+                else
+                {
+                    notes.Add($"{project.Name}: Unit Reinforce finished but UnitId is missing.");
+                }
+
+                return new ProjectApplyResult(notes, Applied: false);
             }
 
-            if (string.Equals(kind, ProjectOutputKind.OneTimeResources, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(kind, "One-time resources", StringComparison.OrdinalIgnoreCase))
+            if (IsOneTimeResourcesKind(kind))
             {
+                var grant = ResourceCatalog.Slice(project.ResultAdditive);
+                if (grant.IsEmpty)
+                {
+                    var hadNonResource = PpbCatalog.All.Any(info =>
+                        !ResourceCatalog.Contains(info.Key) && project.ResultAdditive[info.Key] != 0m);
+                    notes.Add(hadNonResource
+                        ? $"{project.Name}: one-time resources need values in cumulative resources (Food, Gold, Production, …). Loyalty/Stability/etc. are ignored for stock grants."
+                        : $"{project.Name}: one-time resources finished but Expected output (+) has no cumulative resources.");
+                    return new ProjectApplyResult(notes, Applied: false);
+                }
+
                 foreach (var info in ResourceCatalog.All)
-                    stocks[info.Key] += project.ResultAdditive[info.Key];
-                return;
+                    stocks[info.Key] += grant[info.Key];
+
+                var name = string.IsNullOrWhiteSpace(project.Name) ? "Project grant" : project.Name.Trim();
+                ctx.BaronyResourceSources.Add(new BaronyResourceSource
+                {
+                    BaronyId = barony.Id,
+                    Name = name,
+                    Description = string.IsNullOrWhiteSpace(project.ResultDescription)
+                        ? $"One-time resources from project completed at Resolve Turn {effectStartTurn}."
+                        : project.ResultDescription.Trim(),
+                    AdditiveJson = Ser(grant),
+                    IsTurnEphemeral = false,
+                    VisibleOnTurn = null,
+                });
+
+                var parts = ResourceCatalog.All
+                    .Where(info => grant[info.Key] != 0m)
+                    .Select(info => $"{info.ShortEn} {PpbFormat.Additive(grant[info.Key])}");
+                notes.Add(
+                    $"One-time resources → stocks & Resource Balance “{name}”: "
+                    + string.Join(", ", parts) + ".");
+                return new ProjectApplyResult(notes, Applied: true);
             }
 
             if (string.Equals(kind, ProjectOutputKind.DecreeOrTechnology, StringComparison.OrdinalIgnoreCase)
-                || kind.Contains("Decree", StringComparison.OrdinalIgnoreCase))
+                || kind.Contains("Decree", StringComparison.OrdinalIgnoreCase)
+                || kind.Contains("Technology", StringComparison.OrdinalIgnoreCase))
             {
+                var name = string.IsNullOrWhiteSpace(project.Name) ? "Completed project" : project.Name.Trim();
+                var additive = project.ResultAdditive.Clone();
+                var percent = project.ResultPercent.Clone();
                 ctx.Decrees.Add(new Decree
                 {
                     BaronyId = barony.Id,
-                    Name = string.IsNullOrWhiteSpace(project.Name) ? "Completed project" : project.Name.Trim(),
-                    Description = project.ResultDescription,
+                    Name = name,
+                    Description = string.IsNullOrWhiteSpace(project.ResultDescription)
+                        ? $"From completed project “{name}”."
+                        : project.ResultDescription.Trim(),
                     FormulaText = null,
-                    AdditiveJson = Ser(project.ResultAdditive),
-                    PercentJson = Ser(project.ResultPercent),
+                    AdditiveJson = Ser(additive),
+                    PercentJson = Ser(percent),
                     IsActive = true,
                 });
-                return;
+
+                var hasPpb = PpbCatalog.All.Any(info =>
+                    additive[info.Key] != 0m || percent[info.Key] != 0m);
+                notes.Add(
+                    hasPpb
+                        ? $"Decree / technology added to Domain Panel: {name}."
+                        : $"Decree / technology added to Domain Panel: {name} (no PPB modifiers set on the project).");
+                return new ProjectApplyResult(notes, Applied: true);
             }
 
             if (string.Equals(kind, ProjectOutputKind.Event, StringComparison.OrdinalIgnoreCase))
             {
+                var name = string.IsNullOrWhiteSpace(project.Name) ? "Completed project" : project.Name.Trim();
                 ctx.BaronyEvents.Add(new BaronyEvent
                 {
                     BaronyId = barony.Id,
-                    Name = string.IsNullOrWhiteSpace(project.Name) ? "Completed project" : project.Name.Trim(),
-                    Description = project.ResultDescription,
-                    StartTurn = barony.TurnNumber,
-                    EndTurn = barony.TurnNumber,
+                    Name = name,
+                    Description = string.IsNullOrWhiteSpace(project.ResultDescription)
+                        ? $"From completed project “{name}”."
+                        : project.ResultDescription,
+                    StartTurn = Math.Max(1, effectStartTurn),
+                    EndTurn = null,
                     AdditiveJson = Ser(project.ResultAdditive),
                     PercentJson = Ser(project.ResultPercent),
                 });
-                return;
+                notes.Add($"Event added to Domain Panel: {name} (from turn {effectStartTurn}, ongoing).");
+                return new ProjectApplyResult(notes, Applied: true);
             }
 
             BuildingTemplate? template = null;
             if (project.BuildingTemplateId is int tid && templateById.TryGetValue(tid, out var t))
                 template = t;
 
-            // Map construction (crane projects): always land on the tile.
             if (project.TileId is int tileId && tileId > 0)
             {
                 var existing = await ctx.TerrainImprovements
@@ -545,7 +701,9 @@ namespace DA_Business.Repository.BaronyRepos
                     existing.IsActive = true;
                     existing.InactiveReason = null;
                 }
-                return;
+
+                notes.Add($"Map improvement placed: {name} (tile #{tileId}).");
+                return new ProjectApplyResult(notes, Applied: true);
             }
 
             if (string.Equals(kind, ProjectOutputKind.Building, StringComparison.OrdinalIgnoreCase)
@@ -569,7 +727,74 @@ namespace DA_Business.Repository.BaronyRepos
                     AdditiveJson = Ser(additive),
                     PercentJson = Ser(percent),
                 });
+                notes.Add($"{kind} added: {name}.");
+                return new ProjectApplyResult(notes, Applied: true);
             }
+
+            notes.Add($"{project.Name}: completed with unhandled output type “{kind}”.");
+            return new ProjectApplyResult(notes, Applied: false);
+        }
+
+        private static bool IsOneTimeResourcesKind(string kind) =>
+            string.Equals(kind, ProjectOutputKind.OneTimeResources, StringComparison.OrdinalIgnoreCase)
+            || kind.Contains("One-time", StringComparison.OrdinalIgnoreCase)
+            || kind.Contains("One time", StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsUnitTrainingKind(string kind) =>
+            string.Equals(kind, ProjectOutputKind.UnitTraining, StringComparison.OrdinalIgnoreCase)
+            || (kind.Contains("Training", StringComparison.OrdinalIgnoreCase)
+                && !kind.Contains("Reinforce", StringComparison.OrdinalIgnoreCase));
+
+        private static bool IsUnitReinforceKind(string kind) =>
+            string.Equals(kind, ProjectOutputKind.UnitReinforce, StringComparison.OrdinalIgnoreCase)
+            || kind.Contains("Reinforce", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Completed projects of these kinds can have results re-applied once if a prior resolve
+        /// marked them done without granting the effect.
+        /// One-time resources are excluded: they must grant only on the Resolve that completes them
+        /// (re-running them would stack stocks every turn).
+        /// </summary>
+        private static bool IsRepairableCompletedKind(string? kind)
+        {
+            var k = kind?.Trim() ?? "";
+            return IsUnitTrainingKind(k) || IsUnitReinforceKind(k);
+        }
+
+        private static int? ResolveProjectUnitId(BaronyProjectDTO project)
+        {
+            if (project.UnitId is int id && id > 0)
+                return id;
+
+            // "Adds N troops to unit #ID (...)." / "Activates unit #ID (...)."
+            foreach (var text in new[] { project.ResultDescription, project.Description })
+            {
+                if (string.IsNullOrWhiteSpace(text))
+                    continue;
+                var idx = text.IndexOf("unit #", StringComparison.OrdinalIgnoreCase);
+                if (idx < 0)
+                    continue;
+                var parsed = ReadIntAt(text, idx + "unit #".Length);
+                if (parsed > 0)
+                    return parsed;
+            }
+
+            return null;
+        }
+
+        private const string ProjectResultsAppliedMarker = "ResultsApplied=1";
+
+        private static bool HasProjectResultsApplied(string? notes) =>
+            !string.IsNullOrEmpty(notes)
+            && notes.Contains(ProjectResultsAppliedMarker, StringComparison.OrdinalIgnoreCase);
+
+        private static string MarkProjectResultsApplied(string? notes)
+        {
+            if (HasProjectResultsApplied(notes))
+                return notes!;
+            return string.IsNullOrWhiteSpace(notes)
+                ? ProjectResultsAppliedMarker
+                : notes.TrimEnd() + "; " + ProjectResultsAppliedMarker;
         }
 
         private static string BuildTurnSummary(TurnResolveReportDTO r)
@@ -580,9 +805,15 @@ namespace DA_Business.Repository.BaronyRepos
                 $"Resource income applied. Size {r.Size}. Control DC {r.ControlDc} (population {r.SettlementPopulation}).",
             };
             if (r.CompletedProjects.Count > 0)
-                lines.Add("Completed: " + string.Join(", ", r.CompletedProjects) + ".");
+            {
+                lines.Add("Completed projects: " + string.Join(", ", r.CompletedProjects) + ".");
+                foreach (var detail in r.ProjectResults)
+                    lines.Add("  • " + detail);
+            }
             else
+            {
                 lines.Add("No projects completed.");
+            }
 
             if (r.UnitTroopRegenerations.Count > 0)
                 lines.Add("Troop recovery (+" + UnitRules.TroopRegenPerTurn + "/turn): "
@@ -1946,8 +2177,36 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.BaronyProjects.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var previousStatus = e?.Status;
                 if (e is null) { e = ToEntity(dto); ctx.BaronyProjects.Add(e); }
                 else { ApplyProject(e, dto); }
+
+                // MG manually marking a project Completed should still grant its OutputKind result.
+                var becameCompleted =
+                    string.Equals(dto.Status, ProjectStatus.Completed, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(previousStatus, ProjectStatus.Completed, StringComparison.OrdinalIgnoreCase);
+                if (becameCompleted)
+                {
+                    var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == e.BaronyId)
+                        ?? throw new InvalidOperationException("Barony not found.");
+                    var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
+                    stocks[Ppb.Food] = barony.FoodInGranaries;
+                    stocks[Ppb.Treasury] = barony.TreasuryGold;
+                    var templates = await ctx.BuildingTemplates.AsNoTracking().ToListAsync();
+                    var appliedDto = ToDTO(e);
+                    var finish = await ApplyCompletedProjectResultsAsync(
+                        ctx, barony, appliedDto, templates.ToDictionary(t => t.Id), stocks, barony.TurnNumber);
+                    if (finish.Applied)
+                        appliedDto.Notes = MarkProjectResultsApplied(appliedDto.Notes);
+                    if (appliedDto.UnitId is int restoredUnitId && restoredUnitId > 0)
+                        e.UnitId = restoredUnitId;
+                    e.Notes = appliedDto.Notes;
+                    stocks = ResourceCatalog.Slice(stocks);
+                    barony.ResourceStocksJson = Ser(stocks);
+                    barony.FoodInGranaries = stocks[Ppb.Food];
+                    barony.TreasuryGold = stocks[Ppb.Treasury];
+                }
+
                 await ctx.SaveChangesAsync();
                 return ToDTO(e);
             }
@@ -1970,7 +2229,9 @@ namespace DA_Business.Repository.BaronyRepos
                 var projects = await ctx.BaronyProjects.AsNoTracking()
                     .Where(p => p.BaronyId == baronyId && p.UnitId != null
                         && p.Status != ProjectStatus.Completed
-                        && p.Status != ProjectStatus.Cancelled)
+                        && p.Status != ProjectStatus.Cancelled
+                        && p.Status != "Completed"
+                        && p.Status != "Cancelled")
                     .ToListAsync();
                 var byUnit = projects
                     .Where(p => p.UnitId is int)
@@ -1984,6 +2245,8 @@ namespace DA_Business.Repository.BaronyRepos
                     {
                         dto.TrainingProjectId = proj.Id;
                         dto.TrainingTurnsRemaining = proj.TurnsRemaining;
+                        dto.OpenProjectOutputKind = proj.OutputKind;
+                        dto.OpenProjectStatus = proj.Status;
                     }
                     return dto;
                 }).ToList();
@@ -2206,7 +2469,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Description = $"Unit training — {recruit.Name}, {training.Name}.{recruitNote}",
                     OutputKind = ProjectOutputKind.UnitTraining,
                     UnitId = unit.Id,
-                    Status = ProjectStatus.Draft,
+                    Status = ProjectStatus.ResourceAllocation,
                     TurnsRemaining = costs.Turns,
                     AllowedCostModes = allowed,
                     SelectedCostMode = selectedMode,
@@ -2352,7 +2615,7 @@ namespace DA_Business.Repository.BaronyRepos
                         + $"({recruit.Name} + {training.Name}; gear at {UnitRules.ReinforceGearSalvagePercent}% salvage, scaled).",
                     OutputKind = ProjectOutputKind.UnitReinforce,
                     UnitId = unit.Id,
-                    Status = ProjectStatus.Draft,
+                    Status = ProjectStatus.ResourceAllocation,
                     TurnsRemaining = costs.Turns,
                     AllowedCostModes = allowed,
                     SelectedCostMode = selectedMode,
@@ -2412,7 +2675,9 @@ namespace DA_Business.Repository.BaronyRepos
                 using var ctx = await _db.CreateDbContextAsync();
                 var project = await ctx.BaronyProjects.FirstOrDefaultAsync(x => x.Id == projectId)
                     ?? throw new InvalidOperationException("Project not found.");
-                if (project.Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                if (project.Status is ProjectStatus.Completed or ProjectStatus.Cancelled
+                    || string.Equals(project.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(project.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This project cannot accept resources.");
 
                 var barony = await ctx.Baronies.FirstOrDefaultAsync(x => x.Id == project.BaronyId)
@@ -2420,6 +2685,8 @@ namespace DA_Business.Repository.BaronyRepos
 
                 var dto = ToDTO(project);
                 var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
+                stocks[Ppb.Food] = barony.FoodInGranaries;
+                stocks[Ppb.Treasury] = barony.TreasuryGold;
                 var toAdd = ResourceCatalog.Slice(amounts);
                 var activeCost = dto.GetActiveCost();
                 var activeKeys = dto.ActiveCostColumns.Select(x => x.Key).ToHashSet();
@@ -2454,6 +2721,10 @@ namespace DA_Business.Repository.BaronyRepos
                 if (string.IsNullOrWhiteSpace(dto.SelectedCostMode))
                     dto.SelectedCostMode = dto.EffectiveCostMode;
 
+                // Fully funded allocation phase → work may begin (turns tick from next Resolve).
+                if (ProjectStatus.IsResourceAllocation(dto.Status) && !dto.HasRemainingCost)
+                    dto.Status = ProjectStatus.InProgress;
+
                 ApplyProject(project, dto);
                 stocks = ResourceCatalog.Slice(stocks);
                 barony.ResourceStocksJson = Ser(stocks);
@@ -2481,8 +2752,10 @@ namespace DA_Business.Repository.BaronyRepos
                     ?? throw new InvalidOperationException("Barony not found.");
 
                 var dto = ToDTO(project);
-                if (dto.Status != ProjectStatus.Draft)
-                    throw new InvalidOperationException("Only draft projects can have allocations cleared.");
+                if (dto.Status != ProjectStatus.Draft
+                    && !ProjectStatus.IsResourceAllocation(dto.Status))
+                    throw new InvalidOperationException(
+                        "Only draft or resource-allocation projects can have allocations cleared.");
                 if (!dto.HasAnyAllocation)
                     throw new InvalidOperationException("This project has no allocated resources.");
 
@@ -2775,7 +3048,8 @@ namespace DA_Business.Repository.BaronyRepos
                 BaronPurseGold = e.BaronPurseGold,
                 FoodInGranaries = e.FoodInGranaries,
                 ResourceStocks = stocks,
-                PreviousTurnIncome = De(e.PreviousTurnIncomeJson),
+                PreviousTurnStock = ResourceCatalog.Slice(De(e.PreviousTurnStockJson)),
+                PreviousTurnIncome = ResourceCatalog.Slice(De(e.PreviousTurnIncomeJson)),
                 Unrest = e.Unrest,
                 ConjunctureDice = e.ConjunctureDice,
                 ConjunctureModifier = e.ConjunctureModifier,
@@ -2828,6 +3102,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.TreasuryGold = stocks[Ppb.Treasury];
             e.ResourceStocksJson = Ser(stocks);
             e.PreviousTurnIncomeJson = Ser(ResourceCatalog.Slice(d.PreviousTurnIncome));
+            e.PreviousTurnStockJson = Ser(ResourceCatalog.Slice(d.PreviousTurnStock));
         }
 
         // ---------------- Mapping: Advisor ----------------
@@ -3673,6 +3948,31 @@ namespace DA_Business.Repository.BaronyRepos
                 + $"gear = {UnitRules.ReinforceGearSalvagePercent}% salvage × same scale.";
         }
 
+        /// <summary>
+        /// Troops to add when a reinforce project completes.
+        /// Prefers Notes (<c>ReinforceTroops=N</c>), then ResultDescription / Description, then fill-to-full.
+        /// </summary>
+        private static int ResolveReinforceTroopAdd(BaronyProjectDTO project, BaronyUnit unit)
+        {
+            var fromNotes = ReadReinforceTroops(project.Notes);
+            if (fromNotes > 0)
+                return ClampReinforceAdd(fromNotes, unit.TroopCount);
+
+            var fromResult = ReadLeadingIntAfter(project.ResultDescription, "Adds ");
+            if (fromResult > 0)
+                return ClampReinforceAdd(fromResult, unit.TroopCount);
+
+            var fromDesc = ReadLeadingIntAfter(project.Description, "Replenish ");
+            if (fromDesc > 0)
+                return ClampReinforceAdd(fromDesc, unit.TroopCount);
+
+            var missing = UnitRules.DefaultTroopCount - unit.TroopCount;
+            return Math.Max(0, missing);
+        }
+
+        private static int ClampReinforceAdd(int add, int currentTroops) =>
+            Math.Clamp(add, 0, Math.Max(0, UnitRules.DefaultTroopCount - currentTroops));
+
         private static int ReadReinforceTroops(string? notes)
         {
             if (string.IsNullOrWhiteSpace(notes))
@@ -3683,12 +3983,28 @@ namespace DA_Business.Repository.BaronyRepos
             if (idx < 0)
                 return 0;
 
-            var start = idx + prefix.Length;
+            return ReadIntAt(notes, idx + prefix.Length);
+        }
+
+        private static int ReadLeadingIntAfter(string? text, string marker)
+        {
+            if (string.IsNullOrWhiteSpace(text) || string.IsNullOrEmpty(marker))
+                return 0;
+            var idx = text.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0)
+                return 0;
+            return ReadIntAt(text, idx + marker.Length);
+        }
+
+        private static int ReadIntAt(string text, int start)
+        {
+            while (start < text.Length && char.IsWhiteSpace(text[start]))
+                start++;
             var end = start;
-            while (end < notes.Length && char.IsDigit(notes[end]))
+            while (end < text.Length && char.IsDigit(text[end]))
                 end++;
-            if (end > start && int.TryParse(notes[start..end], out var fromNotes) && fromNotes > 0)
-                return fromNotes;
+            if (end > start && int.TryParse(text.AsSpan(start, end - start), out var n) && n > 0)
+                return n;
             return 0;
         }
 
@@ -3846,6 +4162,8 @@ namespace DA_Business.Repository.BaronyRepos
             Name = e.Name,
             Description = e.Description,
             Additive = De(e.AdditiveJson),
+            IsTurnEphemeral = e.IsTurnEphemeral,
+            VisibleOnTurn = e.VisibleOnTurn,
         };
 
         private static BaronyResourceSource ToEntity(BaronyResourceSourceDTO d)
@@ -3862,6 +4180,8 @@ namespace DA_Business.Repository.BaronyRepos
             e.Name = d.Name;
             e.Description = d.Description;
             e.AdditiveJson = Ser(ResourceCatalog.Slice(d.Additive));
+            e.IsTurnEphemeral = d.IsTurnEphemeral;
+            e.VisibleOnTurn = d.IsTurnEphemeral ? d.VisibleOnTurn : null;
         }
 
         // ---------------- Mapping: Baron purse source ----------------

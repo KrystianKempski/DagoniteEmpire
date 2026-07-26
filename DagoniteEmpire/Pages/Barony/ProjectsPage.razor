@@ -18,11 +18,15 @@ else if (_overview is not null)
     <BaronyPageHeader Title="Projects">
         <Summary>
             <span class="projects-summary">
+                @if (_allocatingCount > 0)
+                {
+                    <span class="projects-summary__item">@_allocatingCount awaiting resources</span>
+                }
                 @if (_inProgressCount > 0)
                 {
                     <span class="projects-summary__item projects-summary__item--active">@_inProgressCount in progress</span>
                 }
-                else
+                @if (_allocatingCount == 0 && _inProgressCount == 0)
                 {
                     <span class="projects-summary__item">@_projects.Count project@(_projects.Count == 1 ? "" : "s")</span>
                 }
@@ -44,6 +48,7 @@ else if (_overview is not null)
     private BaronyOverviewDTO? _overview;
     private List<BaronyProjectDTO> _projects = new();
     private int _inProgressCount => _projects.Count(p => p.Status == ProjectStatus.InProgress);
+    private int _allocatingCount => _projects.Count(p => ProjectStatus.IsResourceAllocation(p.Status));
 
     protected override async Task OnInitializedAsync()
     {

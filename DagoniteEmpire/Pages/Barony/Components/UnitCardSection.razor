@@ -10,7 +10,9 @@
     {
         <div class="unit-roster-card__banner">
             <span>
-                In training (@(Unit.TrainingTurnsRemaining?.ToString() ?? "?") turns left).
+                @(ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus)
+                    ? "In training — awaiting resources."
+                    : $"In training ({Unit.TrainingTurnsRemaining?.ToString() ?? "?"} turns left).")
                 @if (Unit.TrainingProjectId is int pid)
                 {
                     <text> <a href="/barony/projects">Project #@pid</a>.</text>
@@ -28,12 +30,14 @@
             }
         </div>
     }
-    else if (Unit.IsActive && Unit.TrainingProjectId is int reinforcePid)
+    else if (Unit.IsActive && HasOpenReinforceProject)
     {
         <div class="unit-roster-card__banner">
             <span>
-                Reinforcing (@(Unit.TrainingTurnsRemaining?.ToString() ?? "?") turns left).
-                <a href="/barony/projects">Project #@reinforcePid</a>.
+                @(IsReinforceAwaitingResources
+                    ? "Reinforcing — awaiting resources."
+                    : $"Reinforcing ({Unit.TrainingTurnsRemaining?.ToString() ?? "?"} turn{(Unit.TrainingTurnsRemaining == 1 ? "" : "s")} left).")
+                <a href="/barony/projects">Project #@Unit.TrainingProjectId</a>.
             </span>
         </div>
     }
@@ -99,6 +103,12 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private bool CanSpendPd => CanEdit && Unit.IsActive;
+    private bool HasOpenReinforceProject =>
+        Unit.TrainingProjectId is > 0
+        && !string.IsNullOrWhiteSpace(Unit.OpenProjectOutputKind)
+        && Unit.OpenProjectOutputKind.Contains("Reinforce", StringComparison.OrdinalIgnoreCase);
+    private bool IsReinforceAwaitingResources =>
+        HasOpenReinforceProject && ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus);
     private bool CanReinforce =>
         CanEdit
         && Unit.IsActive
@@ -185,6 +195,8 @@
             var created = await _baronyRepo.StartUnitReinforce(request);
             Unit.TrainingProjectId = created.Project.Id;
             Unit.TrainingTurnsRemaining = created.Project.TurnsRemaining;
+            Unit.OpenProjectOutputKind = created.Project.OutputKind;
+            Unit.OpenProjectStatus = created.Project.Status;
             _snackBar.Add($"Reinforce project “{created.Project.Name}” created — fund it on Projects.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
@@ -213,6 +225,8 @@
             Unit.CurrentHp = updated.CurrentHp;
             Unit.TrainingTurnsRemaining = updated.TrainingTurnsRemaining;
             Unit.TrainingProjectId = updated.TrainingProjectId;
+            Unit.OpenProjectOutputKind = null;
+            Unit.OpenProjectStatus = null;
             _baseline = null;
             _xpDirty = false;
             _snackBar.Add($"Unit “{Unit.Name}” is now Active.", Severity.Success);

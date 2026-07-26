@@ -56,15 +56,27 @@
         try
         {
             var userInfo = await _userService.GetUserInfo();
+            var isAdminOrMg = userInfo?.IsAdminOrMG == true;
             var characterId = userInfo?.SelectedCharacter?.Id ?? 0;
-            if (characterId <= 0)
+
+            BaronyDTO? barony = characterId > 0
+                ? await _baronyRepo.GetByCharacterId(characterId)
+                : null;
+
+            // Same first-paint fallback as BaronyPageBase for MG/Admin.
+            if (barony is null && isAdminOrMg)
             {
-                _ready = false;
-                await InvokeAsync(StateHasChanged);
-                return;
+                var summaries = await _baronyRepo.GetAllSummaries();
+                if (summaries.Count > 0)
+                {
+                    var pick = summaries.FirstOrDefault(b => b.CharacterId == characterId)
+                               ?? summaries[0];
+                    if (pick.CharacterId != characterId)
+                        await _userService.SetSelectedCharId(pick.CharacterId);
+                    barony = await _baronyRepo.GetByCharacterId(pick.CharacterId);
+                }
             }
 
-            var barony = await _baronyRepo.GetByCharacterId(characterId);
             if (barony is null)
             {
                 _ready = false;

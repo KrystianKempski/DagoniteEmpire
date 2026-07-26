@@ -202,6 +202,15 @@ namespace DA_DataAccess.BaronyData
 
         /// <summary>Resource deltas (JSON PpbVector). Positive = income, negative = expense.</summary>
         public string AdditiveJson { get; set; } = "{}";
+
+        /// <summary>
+        /// Legacy flag (unused by Resolve Turn). Ledger is wiped wholesale on Resolve;
+        /// mid-turn rows fold into <c>PreviousTurnStock</c> on the next resolve.
+        /// </summary>
+        public bool IsTurnEphemeral { get; set; }
+
+        /// <summary>Legacy: turn visibility for ephemeral sources (unused).</summary>
+        public int? VisibleOnTurn { get; set; }
     }
 
     /// <summary>Custom gold income/expense line for the baron’s personal purse.</summary>

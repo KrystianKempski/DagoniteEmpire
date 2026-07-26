@@ -76,6 +76,10 @@ namespace DA_Models.BaronyModels
 
         public int? TrainingProjectId { get; set; }
         public int? TrainingTurnsRemaining { get; set; }
+        /// <summary>OutputKind of the open unit-linked project (training / reinforce), if any.</summary>
+        public string? OpenProjectOutputKind { get; set; }
+        /// <summary>Status of the open unit-linked project, if any.</summary>
+        public string? OpenProjectStatus { get; set; }
 
         public int EffectiveBuild => Build + AttrPenaltyBuild + AttrOtherBuild;
         public int EffectiveAgility => Agility + AttrPenaltyAgility + AttrOtherAgility;

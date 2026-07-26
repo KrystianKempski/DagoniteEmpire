@@ -1,8 +1,8 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<article id="@ProjectAnchorId" class="project-card @CardClass">
+<article id="@ProjectAnchorId" class="project-card @CardClass @(_isOpen ? "project-card--open" : "project-card--collapsed")">
     <header class="project-card__header">
-        <div class="project-card__title-row">
+        <div class="project-card__title-row" @onclick="Toggle" role="button" aria-expanded="@_isOpen">
             @if (HasNotes)
             {
                 <BaronyTooltip Title="Notes" Text="@NotesTooltip">
@@ -16,71 +16,77 @@
             <div class="project-card__badges">
                 <span class="project-output-badge">@OutputLabel(Project.OutputKind)</span>
                 <span class="project-card__status project-card__status--@StatusClass">@StatusLabel(Project.Status)</span>
-                @if (Project.TurnsRemaining > 0)
-                {
-                    <span class="project-card__turns">@TurnsLabel</span>
-                }
             </div>
         </div>
 
-        @if (!string.IsNullOrWhiteSpace(Project.Description))
+        @if (_isOpen)
         {
-            @if (HasNotes)
+            @if (Project.TurnsRemaining > 0)
             {
-                <BaronyTooltip Title="Notes" Text="@NotesTooltip">
+                <span class="project-card__turns">@TurnsLabel</span>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Project.Description))
+            {
+                @if (HasNotes)
+                {
+                    <BaronyTooltip Title="Notes" Text="@NotesTooltip">
+                        <p class="project-card__description">@Project.Description</p>
+                    </BaronyTooltip>
+                }
+                else
+                {
                     <p class="project-card__description">@Project.Description</p>
-                </BaronyTooltip>
+                }
             }
-            else
-            {
-                <p class="project-card__description">@Project.Description</p>
-            }
+
+            <div class="project-card__progress">
+                <div class="project-card__progress-bar" style="width:@($"{Project.AllocationPercent}%")"></div>
+                <span class="project-card__progress-label">
+                    @Project.AllocationPercent% funded · @CostModeShort(Project.EffectiveCostMode)
+                </span>
+            </div>
+
+            <div class="project-card__actions" @onclick:stopPropagation="true">
+                @if (CanEdit && Project.CanAcceptAllocation)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Size="Size.Small"
+                               Class="baron-influence-save-btn"
+                               StartIcon="@Icons.Material.Filled.Savings"
+                               OnClick="OnAllocate">
+                        Allocate resources
+                    </MudButton>
+                }
+                @if (CanEdit && Project.CanClearAllocation)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Undo"
+                               OnClick="OnClearAllocation">
+                        Clear allocation
+                    </MudButton>
+                }
+                @if (CanManage)
+                {
+                    <BaronyTooltip Text="Edit project">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Size="Size.Small"
+                                       OnClick="OnEdit" />
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="Remove project">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="OnDelete" />
+                    </BaronyTooltip>
+                }
+            </div>
         }
-
-        <div class="project-card__progress">
-            <div class="project-card__progress-bar" style="width:@($"{Project.AllocationPercent}%")"></div>
-            <span class="project-card__progress-label">
-                @Project.AllocationPercent% funded · @CostModeShort(Project.EffectiveCostMode)
-            </span>
-        </div>
-
-        <div class="project-card__actions">
-            @if (CanEdit && Project.CanAcceptAllocation)
-            {
-                <MudButton Variant="Variant.Filled"
-                           Size="Size.Small"
-                           Class="baron-influence-save-btn"
-                           StartIcon="@Icons.Material.Filled.Savings"
-                           OnClick="OnAllocate">
-                    Allocate resources
-                </MudButton>
-            }
-            @if (CanEdit && Project.CanClearAllocation)
-            {
-                <MudButton Variant="Variant.Outlined"
-                           Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.Undo"
-                           OnClick="OnClearAllocation">
-                    Clear allocation
-                </MudButton>
-            }
-            @if (CanManage)
-            {
-                <BaronyTooltip Text="Edit project">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                   Size="Size.Small"
-                                   OnClick="OnEdit" />
-                </BaronyTooltip>
-                <BaronyTooltip Text="Remove project">
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                   Size="Size.Small"
-                                   Color="Color.Error"
-                                   OnClick="OnDelete" />
-                </BaronyTooltip>
-            }
-        </div>
     </header>
 
+    @if (_isOpen)
+    {
     <div class="project-card__panels">
         <section class="project-card__panel project-card__panel--cost">
             <div class="project-card__panel-head">
@@ -213,6 +219,7 @@
             }
         </section>
     </div>
+    }
 </article>
 
 @code {
@@ -225,6 +232,7 @@
     [Parameter] public EventCallback OnEdit { get; set; }
     [Parameter] public EventCallback OnDelete { get; set; }
 
+    private bool _isOpen;
     private List<CostRow> _costRows = new();
     private List<string> _selectableModes = new();
 
@@ -235,6 +243,8 @@
             Project.ResultAdditive[info.Key] != 0m || Project.ResultPercent[info.Key] != 0m);
 
     protected override void OnParametersSet() => RebuildRows();
+
+    private void Toggle() => _isOpen = !_isOpen;
 
     private void RebuildRows()
     {
@@ -274,11 +284,14 @@
             ? "project-card--inactive"
             : Project.Status == ProjectStatus.InProgress
                 ? "project-card--active"
-                : string.Empty;
+                : ProjectStatus.IsResourceAllocation(Project.Status)
+                    ? "project-card--allocating"
+                    : string.Empty;
 
     private string StatusClass => Project.Status switch
     {
         ProjectStatus.InProgress => "progress",
+        ProjectStatus.ResourceAllocation => "allocate",
         ProjectStatus.Completed => "done",
         ProjectStatus.Cancelled => "cancelled",
         _ => "draft",
@@ -288,7 +301,8 @@
     private string? NotesTooltip => Project.Notes?.Trim();
 
     private string TurnsLabel => Project.Status == ProjectStatus.Draft
-        ? $"{Project.TurnsRemaining} turn{(Project.TurnsRemaining == 1 ? "" : "s")} to complete"
+        || ProjectStatus.IsResourceAllocation(Project.Status)
+        ? $"{Project.TurnsRemaining} turn{(Project.TurnsRemaining == 1 ? "" : "s")} to complete (clock starts after full funding)"
         : $"{Project.TurnsRemaining} turn{(Project.TurnsRemaining == 1 ? "" : "s")} left";
 
     private static string OutputLabel(string kind) =>
@@ -297,6 +311,7 @@
     private static string StatusLabel(string status) => status switch
     {
         ProjectStatus.Draft => "Draft",
+        ProjectStatus.ResourceAllocation => "Resource allocation",
         ProjectStatus.InProgress => "In progress",
         ProjectStatus.Completed => "Completed",
         ProjectStatus.Cancelled => "Cancelled",

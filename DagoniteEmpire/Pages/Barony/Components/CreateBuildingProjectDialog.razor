@@ -100,7 +100,7 @@
     private void ApplyTemplate(BuildingTemplateDTO template)
     {
         _templateId = template.Id;
-        _name = $"Build {template.Name}";
+        _name = $"Build {template.Name} at [{Tile.X},{Tile.Y}]";
         _description = template.Description;
         _goldCost = template.GoldCost;
         _productionCost = template.ProductionCost;
@@ -134,10 +134,16 @@
         cost[Ppb.Treasury] = Math.Max(0m, _goldCost);
         cost[Ppb.Production] = Math.Max(0m, _productionCost);
 
+        var displayName = _name.Trim();
+        var template = Templates.FirstOrDefault(t => t.Id == _templateId);
+        var templateName = template?.Name?.Trim();
+        if (string.IsNullOrWhiteSpace(templateName))
+            templateName = displayName;
+
         var project = new BaronyProjectDTO
         {
             BaronyId = BaronyId,
-            Name = _name.Trim(),
+            Name = displayName,
             Description = string.IsNullOrWhiteSpace(_description) ? string.Empty : _description.Trim(),
             OutputKind = ProjectOutputKind.Building,
             AllowedCostModes = ProjectAllowedCostModes.GoldProductionOnly,
@@ -146,8 +152,8 @@
             CostMaterials = new(),
             ResultAdditive = _resultAdditive.Clone(),
             ResultPercent = _resultPercent.Clone(),
-            ResultDescription = $"Construct {_name.Trim()} at ({Tile.X}, {Tile.Y}).",
-            Status = ProjectStatus.Draft,
+            ResultDescription = $"Construct {templateName} at [{Tile.X},{Tile.Y}].",
+            Status = ProjectStatus.ResourceAllocation,
             TileId = Tile.Id,
             BuildingTemplateId = _templateId,
         };

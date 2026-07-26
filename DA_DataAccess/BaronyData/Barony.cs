@@ -39,8 +39,14 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Cumulative resource stocks (JSON PpbVector; Food/Gold mirrored with scalar fields).</summary>
         public string ResourceStocksJson { get; set; } = "{}";
 
-        /// <summary>Income applied at end of the previous turn (JSON PpbVector). Editable on turn 1 for MG start.</summary>
+        /// <summary>Income applied at end of the previous turn (JSON PpbVector).</summary>
         public string PreviousTurnIncomeJson { get; set; } = "{}";
+
+        /// <summary>
+        /// Stocks snapshot at Resolve Turn, before income and project grants (JSON PpbVector).
+        /// Resource Balance “Stock from previous turn”.
+        /// </summary>
+        public string PreviousTurnStockJson { get; set; } = "{}";
 
         public int Unrest { get; set; }
 

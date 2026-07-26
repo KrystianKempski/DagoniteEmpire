@@ -49,6 +49,11 @@ else if (_overview is not null)
             <PpbSummaryChips Vector="@_balanceSum" Columns="@ResourceCatalog.All" />
         </Summary>
         <ChildContent>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Σ is the sum of every row below and must match Current Resource Stocks / HUD.
+                On Resolve Turn the ledger is cleared: opening stock + Domain Panel income + grants from projects
+                completed that resolve; mid-turn allocations and Add Source rows live only until the next Resolve.
+            </MudText>
             <div style="overflow-x:auto;">
                 <ResourceVectorTable Rows="@_balanceRows"
                                     Summary="@_balanceSum"
@@ -118,8 +123,18 @@ else if (_overview is not null)
 
         var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
         var prevIncome = ResourceCatalog.Slice(_overview.Barony.PreviousTurnIncome);
-        var prevStock = ResourceCatalog.Subtract(stocks, prevIncome);
         var projectCosts = ProjectCosts();
+        var sourcesSum = ResourceCatalog.Slice(
+            PpbVector.Sum(_overview.ResourceSources.Select(s => ResourceCatalog.Slice(s.Additive))));
+
+        var prevStock = ResourceCatalog.Slice(_overview.Barony.PreviousTurnStock);
+        // First load / pre-migration: derive opening stock so Σ still matches HUD.
+        if (prevStock.IsEmpty && (!stocks.IsEmpty || !prevIncome.IsEmpty || !sourcesSum.IsEmpty))
+        {
+            prevStock = ResourceCatalog.Subtract(stocks, prevIncome);
+            prevStock = ResourceCatalog.Subtract(prevStock, sourcesSum);
+            prevStock = ResourceCatalog.Subtract(prevStock, projectCosts);
+        }
 
         _stocksGlance = stocks;
         _expectedGlance = _expectedIncome;
@@ -135,15 +150,15 @@ else if (_overview is not null)
             },
         };
 
-        var canEditStartStock = CanManageAsMg && _overview.Barony.TurnNumber <= 1;
+        var canEditStartStock = CanManageAsMg;
         _balanceRows = new List<ResourceTableRow>
         {
             new()
             {
                 Label = "Stock from previous turn",
                 Description = canEditStartStock
-                    ? "Editable on turn 1 so the GM can set starting stock."
-                    : "Current stocks minus income from the previous turn.",
+                    ? "Snapshot at last Resolve Turn (before income and project grants). Editable by GM."
+                    : "Stocks carried in at the start of this turn (before income).",
                 Values = prevStock,
                 IsSystem = true,
                 CanEdit = canEditStartStock,
@@ -151,15 +166,8 @@ else if (_overview is not null)
             new()
             {
                 Label = "Income from previous turn",
-                Description = "Filled when a turn is ended (locked after turn 1).",
+                Description = "Domain Panel / Budget expected income applied at last Resolve Turn.",
                 Values = prevIncome,
-                IsSystem = true,
-            },
-            new()
-            {
-                Label = "Project costs",
-                Description = "Committed project spending: allocated resources plus remaining cost on the active payment track. Applies only after the first allocation.",
-                Values = projectCosts,
                 IsSystem = true,
             },
         };
@@ -177,8 +185,19 @@ else if (_overview is not null)
             });
         }
 
-        _balanceSum = PpbVector.Sum(_balanceRows.Select(r => r.Values));
-        _balanceSum = ResourceCatalog.Slice(_balanceSum);
+        if (!projectCosts.IsEmpty)
+        {
+            _balanceRows.Add(new ResourceTableRow
+            {
+                Label = "Project costs",
+                Description = "Resources already allocated to open projects this turn (left your stocks).",
+                Values = projectCosts,
+                IsSystem = true,
+            });
+        }
+
+        // Σ = every balance row → must equal current stocks (HUD).
+        _balanceSum = ResourceCatalog.Slice(prevStock + prevIncome + sourcesSum + projectCosts);
     }
 
     private PpbVector ProjectCosts()
@@ -214,21 +233,29 @@ else if (_overview is not null)
 
     private async Task EditPreviousTurnStockAsync()
     {
-        if (_overview is null || !CanManageAsMg || _overview.Barony.TurnNumber > 1)
+        if (_overview is null || !CanManageAsMg)
             return;
 
         var prevIncome = ResourceCatalog.Slice(_overview.Barony.PreviousTurnIncome);
-        var prevStock = ResourceCatalog.Subtract(
-            ResourceCatalog.Slice(_overview.Barony.ResourceStocks),
-            prevIncome);
+        var oldOpening = ResourceCatalog.Slice(_overview.Barony.PreviousTurnStock);
+        if (oldOpening.IsEmpty)
+        {
+            var stocksNow = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+            var sourcesSum = ResourceCatalog.Slice(
+                PpbVector.Sum(_overview.ResourceSources.Select(s => ResourceCatalog.Slice(s.Additive))));
+            var projectCosts = ProjectCosts();
+            oldOpening = ResourceCatalog.Subtract(stocksNow, prevIncome);
+            oldOpening = ResourceCatalog.Subtract(oldOpening, sourcesSum);
+            oldOpening = ResourceCatalog.Subtract(oldOpening, projectCosts);
+        }
 
         var parameters = new DialogParameters<PreviousTurnIncomeEditDialog>
         {
-            { x => x.Values, prevStock },
+            { x => x.Values, oldOpening },
         };
 
         var dialog = await _dialogService.ShowAsync<PreviousTurnIncomeEditDialog>(
-            "Edit starting stock",
+            "Edit stock from previous turn",
             parameters,
             new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
 
@@ -238,15 +265,17 @@ else if (_overview is not null)
 
         try
         {
-            // Current stocks = stock from previous turn + income from previous turn.
-            var stocks = ResourceCatalog.Slice(saved);
-            stocks.AddInPlace(prevIncome);
+            var newOpening = ResourceCatalog.Slice(saved);
+            var delta = ResourceCatalog.Subtract(newOpening, oldOpening);
+            var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+            stocks.AddInPlace(delta);
 
+            _overview.Barony.PreviousTurnStock = newOpening;
             _overview.Barony.ResourceStocks = stocks;
             _overview.Barony.FoodInGranaries = stocks[Ppb.Food];
             _overview.Barony.TreasuryGold = stocks[Ppb.Treasury];
             await _baronyRepo.UpdateBarony(_overview.Barony);
-            _snackBar.Add("Starting stock saved.", Severity.Success);
+            _snackBar.Add("Stock saved.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
@@ -265,6 +294,7 @@ else if (_overview is not null)
 
     private async Task OpenSourceDialogAsync(BaronyResourceSourceDTO draft, bool isNew)
     {
+        var previous = isNew ? new PpbVector() : ResourceCatalog.Slice(draft.Additive);
         var parameters = new DialogParameters<ResourceSourceEditDialog>
         {
             { x => x.Source, draft },
@@ -282,7 +312,9 @@ else if (_overview is not null)
         try
         {
             await _baronyRepo.SaveResourceSource(saved);
-            _snackBar.Add(isNew ? "Source added." : "Source updated.", Severity.Success);
+            // Mirror Budget transfers: ledger row + actual stock change.
+            await ApplyStockDeltaAsync(ResourceCatalog.Subtract(ResourceCatalog.Slice(saved.Additive), previous));
+            _snackBar.Add(isNew ? "Source added and stocks updated." : "Source updated and stocks adjusted.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
@@ -298,7 +330,7 @@ else if (_overview is not null)
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
             "Remove source",
-            $"Remove “{row.Label}”?",
+            $"Remove ledger line “{row.Label}”? Current stocks are not changed — edit the source to zero first if you want to reverse a grant.",
             yesText: "Remove",
             cancelText: "Cancel");
         if (confirm != true)
@@ -316,6 +348,24 @@ else if (_overview is not null)
         }
     }
 
+    /// <summary>Applies a PPB delta to barony stocks (Food/Treasury scalars stay in sync).</summary>
+    private async Task ApplyStockDeltaAsync(PpbVector delta)
+    {
+        if (_overview is null)
+            return;
+
+        var sliced = ResourceCatalog.Slice(delta);
+        if (sliced.IsEmpty)
+            return;
+
+        var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+        stocks.AddInPlace(sliced);
+        _overview.Barony.ResourceStocks = stocks;
+        _overview.Barony.FoodInGranaries = stocks[Ppb.Food];
+        _overview.Barony.TreasuryGold = stocks[Ppb.Treasury];
+        await _baronyRepo.UpdateBarony(_overview.Barony);
+    }
+
     private static BaronyResourceSourceDTO CloneSource(BaronyResourceSourceDTO s) => new()
     {
         Id = s.Id,
@@ -323,5 +373,7 @@ else if (_overview is not null)
         Name = s.Name,
         Description = s.Description,
         Additive = ResourceCatalog.Slice(s.Additive),
+        IsTurnEphemeral = s.IsTurnEphemeral,
+        VisibleOnTurn = s.VisibleOnTurn,
     };
 }

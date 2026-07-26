@@ -81,13 +81,23 @@
                                  Title="Cost — Materials"
                                  Compact="true"
                                  Columns="@ProjectCostCatalog.Materials" />
-                <PpbVectorEditor @bind-Value="_resultAdditive"
-                                 Title="Expected output — additive (+)"
-                                 Compact="true" />
-                <PpbVectorEditor @bind-Value="_resultPercent"
-                                 Title="Expected output — percent (%)"
-                                 Compact="true"
-                                 Percent="true" />
+                @if (_outputKind == ProjectOutputKind.OneTimeResources)
+                {
+                    <PpbVectorEditor @bind-Value="_resultAdditive"
+                                     Title="Resources granted on completion (added to stocks)"
+                                     Compact="true"
+                                     Columns="@ResourceCatalog.All" />
+                }
+                else
+                {
+                    <PpbVectorEditor @bind-Value="_resultAdditive"
+                                     Title="Expected output — additive (+)"
+                                     Compact="true" />
+                    <PpbVectorEditor @bind-Value="_resultPercent"
+                                     Title="Expected output — percent (%)"
+                                     Compact="true"
+                                     Percent="true" />
+                }
             }
             else
             {
@@ -166,8 +176,23 @@
             Project.AllowedCostModes = _allowedCostModes;
             Project.CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(_costGoldProduction).Clone();
             Project.CostMaterials = ProjectCostCatalog.SliceMaterials(_costMaterials).Clone();
-            Project.ResultAdditive = _resultAdditive.Clone();
-            Project.ResultPercent = _resultPercent.Clone();
+            if (_outputKind == ProjectOutputKind.OneTimeResources)
+            {
+                Project.ResultAdditive = ResourceCatalog.Slice(_resultAdditive);
+                Project.ResultPercent = new();
+                if (Project.ResultAdditive.IsEmpty)
+                {
+                    _snackBar.Add(
+                        "One-time resources need at least one cumulative resource (Food, Gold, Production, …).",
+                        Severity.Warning);
+                    return;
+                }
+            }
+            else
+            {
+                Project.ResultAdditive = _resultAdditive.Clone();
+                Project.ResultPercent = _resultPercent.Clone();
+            }
         }
         else
         {
@@ -199,6 +224,7 @@
     private static string StatusLabel(string status) => status switch
     {
         ProjectStatus.Draft => "Draft",
+        ProjectStatus.ResourceAllocation => "Resource allocation",
         ProjectStatus.InProgress => "In progress",
         ProjectStatus.Completed => "Completed",
         ProjectStatus.Cancelled => "Cancelled",

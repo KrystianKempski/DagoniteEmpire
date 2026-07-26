@@ -132,14 +132,25 @@ PPB balances **before** Community rows (Hunger / Crime / Corruption / Unrest / E
 
 ### End of turn — `BaronyRepository.ResolveTurn`
 Pipeline (player End Turn flag → MG Resolve Turn):
-1. Apply `ExpectedResourceIncome` to stocks; store as `PreviousTurnIncome`
-2. Funded projects: `TurnsRemaining = max(0, TurnsRemaining − 1)`; if `TurnsRemaining == 0` → Complete + apply `OutputKind` results (Building / Improvement / Decree / Event / resources / **Unit Training** → set linked unit Active)
+1. Snapshot stocks as `PreviousTurnStock` (opening stock before income/grants). Delete **all** `BaronyResourceSources` (no multi-turn ledger history). Apply `ExpectedResourceIncome` to stocks; store as `PreviousTurnIncome`.
+2. Funded projects (`HasRemainingCost` false): `TurnsRemaining = max(0, TurnsRemaining − 1)`; if `TurnsRemaining == 0` → Complete and apply `OutputKind` results into the turn log:
+   - **Unit Training** → linked unit `Training` → `Active`
+   - **Unit Reinforce** → add `ReinforceTroops` (from Notes / description; else fill toward 50)
+   - **One-time resources** → add `ResultAdditive` to stocks **and** a new Resource Balance source row for the new turn (wiped into opening stock on the next Resolve)
+   - **Decree / Technology** → new active row in Domain Panel → Decrees and Technologies (`ResultAdditive` / `ResultPercent`)
+   - **Event** → Domain Panel event from `ResultAdditive`/`ResultPercent`, active from the **new** turn (ongoing until MG sets an end)
+   - **Building / Improvement** (incl. map tile) as before
+   - Auto-generated unit/map projects start as **Resource allocation** (turns do not tick until fully funded); then → **In progress**
 3. Sync `Size` = primary-domain tile count
 4. If Final Stability ≤ 0 → loyalty test (below)
 5. Advance calendar one season (`BaronyCalendarFormulas`); re-roll Conjuncture 2d6
 6. Reset Baron's Time: remove non-system actions; restore management to `RequiredManagementJc` (100 BT). Percent time modifiers are kept.
 7. Letter communication quotas refresh with the new turn number (inbound caps per correspondent/region; awaiting-reply lock is only for the current turn).
-8. Clear `PlayerTurnReady`
+8. Depleted units regenerate troops (`UnitRules.TroopRegenPerTurn`)
+9. Clear `PlayerTurnReady`
+
+Resources tab → Resource Balance: **Σ of all rows = current stocks = HUD**.
+Rows = Stock from previous turn (`PreviousTurnStock`) + Income from previous turn (`PreviousTurnIncome`) + current ledger sources (project grants, Budget transfers, MG Add Source) + Project costs (if any). Everything except Domain Panel income from the prior turn is folded into the next opening stock on Resolve.
 
 ### Letters — inbound caps / turn — `BaronLetterRules`
 - Eastern March: max **3** inbound letters from the same correspondent per turn

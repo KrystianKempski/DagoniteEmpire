@@ -6,7 +6,11 @@
 <BaronySection Title="Projects">
     <Summary>
         <span class="projects-summary">
-            <span class="projects-summary__item">@Projects.Count project@(Projects.Count == 1 ? "" : "s")</span>
+            <span class="projects-summary__item">@ActiveProjects.Count project@(ActiveProjects.Count == 1 ? "" : "s")</span>
+            @if (_allocatingCount > 0)
+            {
+                <span class="projects-summary__item">@_allocatingCount awaiting resources</span>
+            }
             @if (_inProgressCount > 0)
             {
                 <span class="projects-summary__item projects-summary__item--active">@_inProgressCount in progress</span>
@@ -16,23 +20,36 @@
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
             Fund projects by allocating Gold, Production, and other cumulative stocks from your barony.
-            Remaining unallocated costs appear on the Resources balance as future commitments.
+            Auto-created projects start in <strong>Resource allocation</strong> — turns do not tick until they are fully funded.
+            Spent allocations appear on the Resources balance.
+            Click a project title row to expand or collapse details.
         </MudText>
 
-        @if (Projects.Count == 0)
+        @if (CanEdit)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddAsync">
+                    Add Project
+                </MudButton>
+            </div>
+        }
+
+        @if (ActiveProjects.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No projects yet.
+                No open projects.
                 @if (CanEdit)
                 {
-                    <text> Add one below.</text>
+                    <text> Add one above.</text>
                 }
             </MudText>
         }
         else
         {
             <div class="project-card-grid">
-                @foreach (var item in OrderedProjects)
+                @foreach (var item in OrderedActiveProjects)
                 {
                     <ProjectCard Project="@item"
                                  CanEdit="@CanEdit"
@@ -45,15 +62,36 @@
                 }
             </div>
         }
+    </ChildContent>
+</BaronySection>
 
-        @if (CanEdit)
+<BaronySection Title="Passed Projects" DefaultOpen="false">
+    <Summary>
+        <span class="projects-summary">
+            <span class="projects-summary__item">@CompletedProjects.Count completed</span>
+        </span>
+    </Summary>
+    <ChildContent>
+        @if (CompletedProjects.Count == 0)
         {
-            <div class="d-flex flex-wrap gap-2 mt-3">
-                <MudButton Variant="Variant.Outlined"
-                           StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="AddAsync">
-                    Add Project
-                </MudButton>
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No completed projects yet.
+            </MudText>
+        }
+        else
+        {
+            <div class="project-card-grid">
+                @foreach (var item in OrderedCompletedProjects)
+                {
+                    <ProjectCard Project="@item"
+                                 CanEdit="@CanEdit"
+                                 CanManage="@CanManage"
+                                 OnAllocate="@(() => AllocateAsync(item))"
+                                 OnClearAllocation="@(() => ClearAllocationAsync(item))"
+                                 OnCostModeChanged="@(mode => SwitchCostModeAsync(item, mode))"
+                                 OnEdit="@(() => EditAsync(item))"
+                                 OnDelete="@(() => DeleteAsync(item))" />
+                }
             </div>
         }
     </ChildContent>
@@ -67,11 +105,24 @@
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private int _inProgressCount => Projects.Count(p => p.Status == ProjectStatus.InProgress);
+    private List<BaronyProjectDTO> ActiveProjects =>
+        Projects.Where(p => !ProjectStatus.IsCompleted(p.Status)).ToList();
 
-    private IEnumerable<BaronyProjectDTO> OrderedProjects =>
-        Projects.OrderBy(p => p.Status == ProjectStatus.InProgress ? 0 : p.Status == ProjectStatus.Draft ? 1 : 2)
+    private List<BaronyProjectDTO> CompletedProjects =>
+        Projects.Where(p => ProjectStatus.IsCompleted(p.Status)).ToList();
+
+    private int _inProgressCount => ActiveProjects.Count(p => p.Status == ProjectStatus.InProgress);
+    private int _allocatingCount => ActiveProjects.Count(p => ProjectStatus.IsResourceAllocation(p.Status));
+
+    private IEnumerable<BaronyProjectDTO> OrderedActiveProjects =>
+        ActiveProjects.OrderBy(p => p.Status == ProjectStatus.InProgress ? 0
+                : ProjectStatus.IsResourceAllocation(p.Status) ? 1
+                : p.Status == ProjectStatus.Draft ? 2
+                : 3)
             .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+    private IEnumerable<BaronyProjectDTO> OrderedCompletedProjects =>
+        CompletedProjects.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase);
 
     private async Task AllocateAsync(BaronyProjectDTO item)
     {

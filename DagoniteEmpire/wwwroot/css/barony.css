@@ -2399,6 +2399,10 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     box-shadow: 0 1px 4px rgba(47, 42, 36, 0.1);
 }
 
+.project-card--allocating {
+    border-color: #c4a35a;
+}
+
 .project-card--inactive {
     opacity: 0.72;
 }
@@ -2409,12 +2413,19 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     background: linear-gradient(180deg, var(--barony-surface) 0%, var(--barony-surface-2, #f5f0e4) 100%);
 }
 
+.project-card--collapsed .project-card__header {
+    border-bottom: none;
+    padding-bottom: 0.85rem;
+}
+
 .project-card__title-row {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
     justify-content: space-between;
     gap: 0.5rem 0.75rem;
+    cursor: pointer;
+    user-select: none;
 }
 
 .project-card__title {
@@ -2456,6 +2467,11 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     color: #7a6020;
 }
 
+.project-card__status--allocate {
+    background: rgba(196, 163, 90, 0.2);
+    color: #6e5520;
+}
+
 .project-card__status--done {
     background: rgba(61, 122, 69, 0.12);
     color: #3d7a45;
@@ -2467,6 +2483,8 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 }
 
 .project-card__turns {
+    display: block;
+    margin-top: 0.4rem;
     font-size: 0.72rem;
     color: var(--barony-muted);
 }

@@ -51,20 +51,44 @@ namespace DagoniteEmpire.Pages.Barony
                 }
 
                 var characterId = UserInfo?.SelectedCharacter?.Id ?? 0;
-                if (characterId <= 0 || characterId == -1)
+                if (characterId > 0 && characterId != -1)
+                    Barony = await _baronyRepo.GetByCharacterId(characterId);
+                else
+                    Barony = null;
+
+                // MG/Admin: BaronySwitcher may still be establishing selection on first paint.
+                // If the current character has no barony (or none selected), pick the first available.
+                if (Barony is null && isAdminOrMg)
                 {
-                    LoadError = isAdminOrMg
-                        ? "Select a barony from the selector above, or create one in Panel MG."
-                        : "Select your baron character first (character menu in the top-right corner).";
-                    return;
+                    var summaries = await _baronyRepo.GetAllSummaries();
+                    if (summaries.Count > 0)
+                    {
+                        var pick = summaries.FirstOrDefault(b => b.CharacterId == characterId)
+                                   ?? summaries[0];
+                        if (pick.CharacterId != characterId)
+                        {
+                            await _userService.SetSelectedCharId(pick.CharacterId);
+                            UserInfo = await _userService.GetUserInfo();
+                        }
+
+                        Barony = await _baronyRepo.GetByCharacterId(pick.CharacterId);
+                    }
                 }
 
-                Barony = await _baronyRepo.GetByCharacterId(characterId);
                 if (Barony is null)
                 {
-                    LoadError = isAdminOrMg
-                        ? "This character does not have a barony yet. Create one in Panel MG."
-                        : "Your barony has not been set up yet. Ask the Game Master.";
+                    if (characterId <= 0 || characterId == -1)
+                    {
+                        LoadError = isAdminOrMg
+                            ? "Select a barony from the selector above, or create one in Panel MG."
+                            : "Select your baron character first (character menu in the top-right corner).";
+                    }
+                    else
+                    {
+                        LoadError = isAdminOrMg
+                            ? "This character does not have a barony yet. Create one in Panel MG."
+                            : "Your barony has not been set up yet. Ask the Game Master.";
+                    }
                     return;
                 }
 

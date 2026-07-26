@@ -720,6 +720,10 @@ namespace DA_DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PreviousTurnStockJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("ResourceStocksJson")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1028,9 +1032,15 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsTurnEphemeral")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("VisibleOnTurn")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

@@ -30,11 +30,17 @@
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    // null = no manual override (follows global default state).
+    /// <summary>
+    /// When set, overrides the global expand/collapse default for this section
+    /// (e.g. archive sections that should start collapsed).
+    /// </summary>
+    [Parameter] public bool? DefaultOpen { get; set; }
+
+    // null = no manual override (follows DefaultOpen / global default).
     private bool? _userOverride;
     private int _seenVersion = -1;
 
-    private bool IsOpen => _userOverride ?? (ViewOptions?.DefaultExpanded ?? true);
+    private bool IsOpen => _userOverride ?? DefaultOpen ?? (ViewOptions?.DefaultExpanded ?? true);
 
     protected override void OnInitialized()
     {

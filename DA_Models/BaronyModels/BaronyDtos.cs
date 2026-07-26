@@ -21,7 +21,13 @@ namespace DA_Models.BaronyModels
         /// <summary>Cumulative stocks for Food, Gold, Production, Science, Magic, Culture, Intelligence, Defense.</summary>
         public PpbVector ResourceStocks { get; set; } = new();
 
-        /// <summary>Income from the previous turn (editable on turn 1 for MG starting grants).</summary>
+        /// <summary>
+        /// Stocks at last Resolve Turn before income/grants.
+        /// Resource Balance row “Stock from previous turn”.
+        /// </summary>
+        public PpbVector PreviousTurnStock { get; set; } = new();
+
+        /// <summary>Income applied at last Resolve Turn (Domain Panel / Budget expected income).</summary>
         public PpbVector PreviousTurnIncome { get; set; } = new();
 
         public int Unrest { get; set; }
@@ -183,6 +189,12 @@ namespace DA_Models.BaronyModels
 
         /// <summary>Resource deltas. Positive = income, negative = expense.</summary>
         public PpbVector Additive { get; set; } = new();
+
+        /// <summary>One-time project grant: visible for a single turn, then cleared on Resolve.</summary>
+        public bool IsTurnEphemeral { get; set; }
+
+        /// <summary>Turn on which an ephemeral source appears.</summary>
+        public int? VisibleOnTurn { get; set; }
     }
 
     public class BaronPurseSourceDTO
@@ -393,11 +405,12 @@ namespace DA_Models.BaronyModels
             ResourceCatalog.All.Any(info => Allocated[info.Key] > 0m);
 
         public bool CanClearAllocation =>
-            Status == ProjectStatus.Draft && HasAnyAllocation;
+            (Status == ProjectStatus.Draft || ProjectStatus.IsResourceAllocation(Status))
+            && HasAnyAllocation;
 
         /// <summary>
-        /// Negative Resources balance row: allocated + remaining on active track.
-        /// Only when at least one resource was allocated; otherwise no stock impact.
+        /// Negative Resources balance row: resources already allocated this turn (left stocks).
+        /// Remaining unfunded cost is not shown. Completed / cancelled projects are excluded.
         /// </summary>
         public PpbVector ResourcesBalanceImpact()
         {
@@ -407,9 +420,8 @@ namespace DA_Models.BaronyModels
             if (Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
                 return v;
 
-            var remaining = RemainingCost();
             foreach (var info in ResourceCatalog.All)
-                v[info.Key] -= Allocated[info.Key] + remaining[info.Key];
+                v[info.Key] -= Allocated[info.Key];
             return v;
         }
 
@@ -588,6 +600,8 @@ namespace DA_Models.BaronyModels
         public int NewMonth { get; set; }
         public PpbVector AppliedIncome { get; set; } = new();
         public List<string> CompletedProjects { get; set; } = new();
+        /// <summary>Detailed outcomes applied when projects finished this resolve (training, reinforce, events, etc.).</summary>
+        public List<string> ProjectResults { get; set; } = new();
         public int Size { get; set; }
         public int ControlDc { get; set; }
         public int SettlementPopulation { get; set; }
