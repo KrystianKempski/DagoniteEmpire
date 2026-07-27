@@ -51,7 +51,19 @@
                     }
                     else
                     {
-                        <span title="@item.Description">@item.Description</span>
+                        <div class="catalog-desc" title="@item.Description">
+                            @foreach (var line in DescriptionLines(item.Description))
+                            {
+                                if (line.StartsWith("Produces ", StringComparison.Ordinal))
+                                {
+                                    <div class="catalog-desc__produces"><strong>@line</strong></div>
+                                }
+                                else
+                                {
+                                    <div class="catalog-desc__body">@line</div>
+                                }
+                            }
+                        </div>
                     }
                 </td>
                 @foreach (var info in PpbCatalog.All)
@@ -138,6 +150,16 @@
         return desc
             ? items.OrderByDescending(Add).ThenByDescending(Pct).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
             : items.OrderBy(Add).ThenBy(Pct).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static IEnumerable<string> DescriptionLines(string description)
+    {
+        foreach (var line in description.Replace("\r\n", "\n").Split('\n'))
+        {
+            var t = line.Trim();
+            if (t.Length > 0)
+                yield return t;
+        }
     }
 
     private static string TypeLabel(string? kind)

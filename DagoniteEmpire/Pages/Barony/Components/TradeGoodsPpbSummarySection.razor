@@ -1,0 +1,73 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="Trade good bonus summary" DefaultOpen="true">
+    <Summary>
+        <span class="projects-summary__item">@SelectedCount good@(SelectedCount == 1 ? "" : "s")</span>
+        <span class="projects-summary__item">@LuxuryTier.NameEn</span>
+    </Summary>
+    <ChildContent>
+        @if (SelectedCount == 0 && !HasLuxuryBonus)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                Mark goods available in this barony (and set luxury access) to see the combined PPB bonus.
+            </MudText>
+        }
+        else
+        {
+            <div class="trade-goods-ppb-summary">
+                <table class="ppb-table ppb-table--lined trade-goods-ppb-table">
+                    <thead>
+                        <tr>
+                            <th>PPB</th>
+                            <th>Additive</th>
+                            <th>Percent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Rows)
+                        {
+                            <tr>
+                                <td>@row.Label</td>
+                                <td class="trade-goods-ppb-num">@row.Additive</td>
+                                <td class="trade-goods-ppb-num">@row.Percent</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public IReadOnlyList<TradeGoodEntry> Selected { get; set; } = Array.Empty<TradeGoodEntry>();
+    [Parameter] public string LuxuryAccessKey { get; set; } = LuxuryGoodsAccessCatalog.DefaultKey;
+
+    private int SelectedCount => Selected.Count;
+    private LuxuryGoodsAccessTier LuxuryTier => LuxuryGoodsAccessCatalog.Find(LuxuryAccessKey);
+
+    private bool HasLuxuryBonus =>
+        PpbCatalog.All.Any(info => LuxuryTier.BonusAdditive[info.Key] != 0m);
+
+    private IEnumerable<PpbRow> Rows
+    {
+        get
+        {
+            TradeGoodsBonusAggregator.Sum(Selected, out var add, out var pct);
+            add.AddInPlace(LuxuryTier.BonusAdditive);
+            foreach (var info in PpbCatalog.All)
+            {
+                var a = add[info.Key];
+                var p = pct[info.Key];
+                if (a == 0m && p == 0m)
+                    continue;
+                yield return new PpbRow(
+                    info.NameEn,
+                    a == 0m ? "—" : PpbFormat.Additive(a),
+                    p == 0m ? "—" : PpbFormat.Percent(p));
+            }
+        }
+    }
+
+    private sealed record PpbRow(string Label, string Additive, string Percent);
+}

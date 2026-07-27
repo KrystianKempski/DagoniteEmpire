@@ -754,6 +754,14 @@ namespace DA_DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("AvailableTradeGoodsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LuxuryGoodsAccessKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<decimal>("LiegeTributePercent")
                         .HasColumnType("numeric");
 

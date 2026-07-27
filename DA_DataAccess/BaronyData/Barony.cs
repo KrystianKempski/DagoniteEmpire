@@ -80,6 +80,12 @@ namespace DA_DataAccess.BaronyData
 
         public string? Notes { get; set; }
 
+        /// <summary>JSON array of <see cref="DA_Common.Barony.TradeGoodsCatalog"/> keys available in this barony.</summary>
+        public string AvailableTradeGoodsJson { get; set; } = "[]";
+
+        /// <summary>Key from <see cref="DA_Common.Barony.LuxuryGoodsAccessCatalog"/> — luxury market reach for this barony.</summary>
+        public string LuxuryGoodsAccessKey { get; set; } = "basic";
+
         /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
         public bool PlayerTurnReady { get; set; }
     }

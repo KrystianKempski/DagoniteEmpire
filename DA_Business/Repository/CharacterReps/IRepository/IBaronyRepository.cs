@@ -170,6 +170,12 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronPurseSourceDTO> SavePurseSource(BaronPurseSourceDTO dto);
         Task<int> DeletePurseSource(int id);
 
+        // --- Towary strategiczne (dostępność w baronii) ---
+        Task<HashSet<string>> GetAvailableTradeGoodKeys(int baronyId);
+        Task SetAvailableTradeGoodKeys(int baronyId, IReadOnlyCollection<string> keys);
+        Task<string> GetLuxuryGoodsAccessKey(int baronyId);
+        Task SetLuxuryGoodsAccessKey(int baronyId, string key);
+
         // --- Katalog budynków/ulepszeń (globalny) ---
         Task<List<BuildingTemplateDTO>> GetBuildingTemplates();
         Task<BuildingTemplateDTO> SaveBuildingTemplate(BuildingTemplateDTO dto);

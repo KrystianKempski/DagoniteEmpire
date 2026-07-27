@@ -1,0 +1,118 @@
+@page "/barony/trade-goods"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+
+<PageTitle>Dagonite Empire | Trade goods</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading trade goods...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else
+{
+    <BaronyPageHeader Title="Trade goods">
+        <Summary>
+            <span class="projects-summary">
+                <span class="projects-summary__item">@_available.Count / @TradeGoodsCatalog.All.Count available</span>
+            </span>
+        </Summary>
+    </BaronyPageHeader>
+
+    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+        Mark which strategic goods this barony can produce, stock, or import reliably. PPB totals apply only to checked goods.
+    </MudText>
+
+    <TradeGoodsPpbSummarySection Selected="@SelectedGoods" LuxuryAccessKey="@_luxuryKey" />
+
+    <LuxuryGoodsAccessSection SelectedKey="@_luxuryKey"
+                              CanEdit="@CanManageAsMg"
+                              SelectedKeyChanged="OnLuxuryKeyChangedAsync" />
+
+    @foreach (var tradeSection in TradeGoodSection.All)
+    {
+        var items = TradeGoodsCatalog.BySection(tradeSection.Key).ToList();
+        if (items.Count == 0)
+            continue;
+
+        <TradeGoodsSection SectionKey="@tradeSection.Key"
+                           SectionLabel="@tradeSection.LabelEn"
+                           Items="@items"
+                           AvailableKeys="@_available"
+                           CanEdit="@CanEdit"
+                           OnToggle="OnToggleAsync" />
+    }
+}
+
+@code {
+    private HashSet<string> _available = new(StringComparer.OrdinalIgnoreCase);
+    private string _luxuryKey = LuxuryGoodsAccessCatalog.DefaultKey;
+    private bool _saving;
+
+    private IReadOnlyList<TradeGoodEntry> SelectedGoods =>
+        TradeGoodsCatalog.All.Where(g => _available.Contains(g.Key)).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        _available = await _baronyRepo.GetAvailableTradeGoodKeys(Barony.Id);
+        _luxuryKey = await _baronyRepo.GetLuxuryGoodsAccessKey(Barony.Id);
+    }
+
+    private async Task OnLuxuryKeyChangedAsync(string key)
+    {
+        if (!CanManageAsMg || Barony is null || _saving)
+            return;
+
+        _luxuryKey = LuxuryGoodsAccessCatalog.Find(key).Key;
+        _saving = true;
+        try
+        {
+            await _baronyRepo.SetLuxuryGoodsAccessKey(Barony.Id, _luxuryKey);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save luxury goods access: " + ex.Message, Severity.Error);
+            _luxuryKey = await _baronyRepo.GetLuxuryGoodsAccessKey(Barony.Id);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task OnToggleAsync((string Key, bool Available) args)
+    {
+        if (!CanEdit || Barony is null || _saving)
+            return;
+
+        if (args.Available)
+            _available.Add(args.Key);
+        else
+            _available.Remove(args.Key);
+
+        _saving = true;
+        try
+        {
+            await _baronyRepo.SetAvailableTradeGoodKeys(Barony.Id, _available);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save trade goods: " + ex.Message, Severity.Error);
+            _available = await _baronyRepo.GetAvailableTradeGoodKeys(Barony.Id);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

@@ -28,7 +28,7 @@ namespace DA_Business.Repository.BaronyRepos
                 SortOrder: 0),
             new(
                 GroupName: "House Canterill",
-                Name: "Argeweld Canterill",
+                Name: "Argewald Canterill",
                 Title: "Marquis of Totham",
                 Age: 53,
                 Description:

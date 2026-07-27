@@ -2843,6 +2843,7 @@ namespace DagoniteEmpire.Service
 
                 await SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex);
                 await OrganizationsSeeder.EnsureForAllBaroniesAsync(contex);
+                await NeighborsSeeder.EnsureForAllBaroniesAsync(contex);
                 await VassalsFromFiefsSeeder.EnsureForAllBaroniesAsync(contex);
                 await SeatPurposeTemplatesSeeder.EnsureDefaultsAsync(contex);
             }
@@ -2905,6 +2906,16 @@ namespace DagoniteEmpire.Service
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Steward's Building")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Marketplace")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Inn")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Brewery")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Candlemaker")
+                // Trade-building lore: Pastures / Vineyard cost explanations + Produces lines.
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Pastures (cattle)"
+                    && (t.Description == null || !t.Description.Contains("herd itself must be bought")))
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Apiary"
+                    && (t.Description == null || !t.Description.Contains("Produces Honey & Wax")))
+                || await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Small Brewery")
                 || await ctx.BuildingTemplates.AnyAsync(t =>
                     t.Name == "Fishing Pier"
                     && (t.EffectAdditiveJson == null || !t.EffectAdditiveJson.Contains("-0.5,10")))

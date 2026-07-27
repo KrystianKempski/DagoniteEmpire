@@ -32,19 +32,21 @@
                         <col class="known-lords-col-house" />
                         <col class="known-lords-col-title" />
                         <col class="known-lords-col-holdings" />
+                        <col class="known-lords-col-wealth" />
                         <col class="known-lords-col-desc" />
                         <col class="known-lords-col-goods" />
                         <col class="known-lords-col-goods" />
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="known-lords-col-name">Imię</th>
-                            <th class="known-lords-col-house">Ród</th>
-                            <th class="known-lords-col-title">Tytuł</th>
-                            <th class="known-lords-col-holdings">Włości</th>
-                            <th class="known-lords-col-desc">Opis</th>
-                            <th class="known-lords-col-goods">Dostępne towary</th>
-                            <th class="known-lords-col-goods">Poszukiwane towary</th>
+                            <th class="known-lords-col-name">Name</th>
+                            <th class="known-lords-col-house">House</th>
+                            <th class="known-lords-col-title">Title</th>
+                            <th class="known-lords-col-holdings">Holdings</th>
+                            <th class="known-lords-col-wealth">Wealth</th>
+                            <th class="known-lords-col-desc">Description</th>
+                            <th class="known-lords-col-goods">Available goods</th>
+                            <th class="known-lords-col-goods">Sought goods</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -55,10 +57,11 @@
                                 <td class="known-lords-col-house">@(DashIfEmpty(lord.House))</td>
                                 <td class="known-lords-col-title">@(DashIfEmpty(lord.Title))</td>
                                 <td class="known-lords-col-holdings">@(DashIfEmpty(lord.Holdings))</td>
+                                <td class="known-lords-col-wealth">@lord.Wealth</td>
                                 <td class="known-lords-col-desc">
                                     @if (!string.IsNullOrWhiteSpace(lord.Description))
                                     {
-                                        <BaronyTooltip Title="Opis" Text="@lord.Description">
+                                        <BaronyTooltip Title="Description" Text="@lord.Description">
                                             <span class="relations-ellipsis">@lord.Description</span>
                                         </BaronyTooltip>
                                     }
@@ -70,7 +73,7 @@
                                 <td class="known-lords-col-goods">
                                     @if (!string.IsNullOrWhiteSpace(lord.ProducedGoods))
                                     {
-                                        <BaronyTooltip Title="Dostępne towary" Text="@lord.ProducedGoods">
+                                        <BaronyTooltip Title="Available goods" Text="@lord.ProducedGoods">
                                             <span class="relations-ellipsis">@lord.ProducedGoods</span>
                                         </BaronyTooltip>
                                     }
@@ -82,7 +85,7 @@
                                 <td class="known-lords-col-goods">
                                     @if (!string.IsNullOrWhiteSpace(lord.DemandedGoods))
                                     {
-                                        <BaronyTooltip Title="Poszukiwane towary" Text="@lord.DemandedGoods">
+                                        <BaronyTooltip Title="Sought goods" Text="@lord.DemandedGoods">
                                             <span class="relations-ellipsis">@lord.DemandedGoods</span>
                                         </BaronyTooltip>
                                     }

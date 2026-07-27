@@ -140,6 +140,7 @@ namespace DA_Business.Repository.BaronyRepos
                 SeedPrimaryFief(ctx, added.Entity.Id, character.NPCName ?? "Baron");
                 SeniorHousesSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 OrganizationsSeeder.EnsureForBarony(ctx, added.Entity.Id);
+                NeighborsSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 VassalsFromFiefsSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 await EnsureStarterCityBuildingsAsync(ctx, added.Entity.Id);
                 SeedStarterUnits(ctx, added.Entity.Id);
@@ -185,6 +186,95 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) when (ex is not InvalidOperationException)
             {
                 throw Err(ex, nameof(SetPlayerTurnReady));
+            }
+        }
+
+        public async Task<HashSet<string>> GetAvailableTradeGoodKeys(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var json = await ctx.Baronies.AsNoTracking()
+                    .Where(b => b.Id == baronyId)
+                    .Select(b => b.AvailableTradeGoodsJson)
+                    .FirstOrDefaultAsync();
+                return ParseTradeGoodKeys(json);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetAvailableTradeGoodKeys)); }
+        }
+
+        public async Task SetAvailableTradeGoodKeys(int baronyId, IReadOnlyCollection<string> keys)
+        {
+            try
+            {
+                var known = new HashSet<string>(
+                    TradeGoodsCatalog.All.Select(g => g.Key),
+                    StringComparer.OrdinalIgnoreCase);
+                var normalized = keys
+                    .Where(k => !string.IsNullOrWhiteSpace(k))
+                    .Select(k => k.Trim())
+                    .Where(known.Contains)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+                e.AvailableTradeGoodsJson = JsonSerializer.Serialize(normalized, JsonOptions);
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SetAvailableTradeGoodKeys));
+            }
+        }
+
+        public async Task<string> GetLuxuryGoodsAccessKey(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var key = await ctx.Baronies.AsNoTracking()
+                    .Where(b => b.Id == baronyId)
+                    .Select(b => b.LuxuryGoodsAccessKey)
+                    .FirstOrDefaultAsync();
+                return LuxuryGoodsAccessCatalog.Find(key).Key;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetLuxuryGoodsAccessKey)); }
+        }
+
+        public async Task SetLuxuryGoodsAccessKey(int baronyId, string key)
+        {
+            try
+            {
+                var tier = LuxuryGoodsAccessCatalog.Find(key);
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+                e.LuxuryGoodsAccessKey = tier.Key;
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SetLuxuryGoodsAccessKey));
+            }
+        }
+
+        private static HashSet<string> ParseTradeGoodKeys(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                var list = JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>();
+                return new HashSet<string>(
+                    list.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()),
+                    StringComparer.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             }
         }
 
@@ -919,6 +1009,7 @@ namespace DA_Business.Repository.BaronyRepos
 
                 VassalsFromFiefsSeeder.EnsureForBarony(ctx, baronyId);
                 SeniorHousesSeeder.EnsureForBarony(ctx, baronyId);
+                NeighborsSeeder.EnsureForBarony(ctx, baronyId);
                 await EnsureCoreOfficeDescriptionsAsync(ctx, baronyId);
                 await EnsureStarterCityBuildingsAsync(ctx, baronyId);
                 await ctx.SaveChangesAsync();
@@ -1204,6 +1295,8 @@ namespace DA_Business.Repository.BaronyRepos
                 using var ctx = await _db.CreateDbContextAsync();
                 VassalsFromFiefsSeeder.EnsureForBarony(ctx, baronyId);
                 SeniorHousesSeeder.EnsureForBarony(ctx, baronyId);
+                OrganizationsSeeder.EnsureForBarony(ctx, baronyId);
+                NeighborsSeeder.EnsureForBarony(ctx, baronyId);
                 await ctx.SaveChangesAsync();
 
                 var list = await ctx.BaronyRelations.AsNoTracking()

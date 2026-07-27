@@ -1,0 +1,93 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="@SectionLabel">
+    <Summary>
+        <span class="projects-summary__item">@AvailableCount / @Items.Count available</span>
+    </Summary>
+    <ChildContent>
+        <div style="overflow-x:auto;">
+            <table class="ppb-table ppb-table--lined trade-goods-table">
+                <colgroup>
+                    <col class="trade-goods-col-check" />
+                    <col class="trade-goods-col-name" />
+                    <col class="trade-goods-col-desc" />
+                    <col class="trade-goods-col-bonus" />
+                    <col class="trade-goods-col-unlock" />
+                    <col class="trade-goods-col-building" />
+                    <col class="trade-goods-col-req" />
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="trade-goods-col-check">Available</th>
+                        <th class="trade-goods-col-name">Good</th>
+                        <th class="trade-goods-col-desc">Description</th>
+                        <th class="trade-goods-col-bonus">PPB bonus</th>
+                        <th class="trade-goods-col-unlock">Unlocks</th>
+                        <th class="trade-goods-col-building">Production building</th>
+                        <th class="trade-goods-col-req">Requires</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Items)
+                    {
+                        var available = AvailableKeys.Contains(item.Key);
+                        <tr class="@(available ? "trade-goods-row--available" : "")">
+                            <td class="trade-goods-col-check">
+                                <MudCheckBox T="bool"
+                                             Value="available"
+                                             ValueChanged="@(v => OnToggleAsync(item.Key, v))"
+                                             Disabled="@(!CanEdit)"
+                                             Dense="true" />
+                            </td>
+                            <td class="trade-goods-col-name">@item.Name</td>
+                            <td class="trade-goods-col-desc">
+                                <BaronyTooltip Title="@item.Name" Text="@item.Description">
+                                    <span class="relations-ellipsis">@item.Description</span>
+                                </BaronyTooltip>
+                            </td>
+                            <td class="trade-goods-col-bonus">@item.BonusDisplay</td>
+                            <td class="trade-goods-col-unlock">
+                                @if (!string.IsNullOrWhiteSpace(item.Unlocks))
+                                {
+                                    <BaronyTooltip Title="Unlocks" Text="@item.Unlocks">
+                                        <span class="relations-ellipsis">@item.Unlocks</span>
+                                    </BaronyTooltip>
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </td>
+                            <td class="trade-goods-col-building">@(string.IsNullOrWhiteSpace(item.ProductionBuilding) ? "—" : item.ProductionBuilding)</td>
+                            <td class="trade-goods-col-req">
+                                @if (!string.IsNullOrWhiteSpace(item.Requirements))
+                                {
+                                    <BaronyTooltip Title="Requires" Text="@item.Requirements">
+                                        <span class="relations-ellipsis">@item.Requirements</span>
+                                    </BaronyTooltip>
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public string SectionKey { get; set; } = "";
+    [Parameter] public string SectionLabel { get; set; } = "";
+    [Parameter] public IReadOnlyList<TradeGoodEntry> Items { get; set; } = Array.Empty<TradeGoodEntry>();
+    [Parameter] public HashSet<string> AvailableKeys { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback<(string Key, bool Available)> OnToggle { get; set; }
+
+    private int AvailableCount => Items.Count(i => AvailableKeys.Contains(i.Key));
+
+    private Task OnToggleAsync(string key, bool available) => OnToggle.InvokeAsync((key, available));
+}

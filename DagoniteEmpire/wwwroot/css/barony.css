@@ -5917,6 +5917,17 @@ a.city-building-name-text--link:hover {
     vertical-align: top;
 }
 
+.ppb-table--catalog .catalog-desc__body {
+    margin-bottom: 0.35em;
+    line-height: 1.35;
+}
+
+.ppb-table--catalog .catalog-desc__produces {
+    margin-top: 0.15em;
+    line-height: 1.3;
+    color: var(--barony-ink, #2f2a24);
+}
+
 .ppb-table--catalog thead th.catalog-col-name {
     position: sticky;
     left: 0;
@@ -6810,6 +6821,7 @@ a.city-building-name-text--link:hover {
 .known-lords-table col.known-lords-col-house { width: 120px; }
 .known-lords-table col.known-lords-col-title { width: 140px; }
 .known-lords-table col.known-lords-col-holdings { width: 150px; }
+.known-lords-table col.known-lords-col-wealth { width: 64px; }
 .known-lords-table col.known-lords-col-desc { width: 220px; }
 .known-lords-table col.known-lords-col-goods { width: 160px; }
 
@@ -6821,6 +6833,8 @@ a.city-building-name-text--link:hover {
 .known-lords-table td.known-lords-col-title,
 .known-lords-table th.known-lords-col-holdings,
 .known-lords-table td.known-lords-col-holdings,
+.known-lords-table th.known-lords-col-wealth,
+.known-lords-table td.known-lords-col-wealth,
 .known-lords-table th.known-lords-col-desc,
 .known-lords-table td.known-lords-col-desc,
 .known-lords-table th.known-lords-col-goods,
@@ -6836,6 +6850,13 @@ a.city-building-name-text--link:hover {
     color: var(--barony-ink);
 }
 
+.known-lords-table th.known-lords-col-wealth,
+.known-lords-table td.known-lords-col-wealth {
+    text-align: center;
+    max-width: none;
+    font-variant-numeric: tabular-nums;
+}
+
 .known-lords-col-desc .barony-tip-anchor,
 .known-lords-col-goods .barony-tip-anchor {
     display: block;
@@ -6849,4 +6870,143 @@ a.city-building-name-text--link:hover {
     display: block;
     max-width: 100%;
     overflow: hidden;
+}
+
+/* ---- Trade goods tab ---- */
+.trade-goods-table {
+    min-width: 1100px;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.trade-goods-table col.trade-goods-col-check { width: 72px; }
+.trade-goods-table col.trade-goods-col-name { width: 150px; }
+.trade-goods-table col.trade-goods-col-desc { width: 200px; }
+.trade-goods-table col.trade-goods-col-bonus { width: 130px; }
+.trade-goods-table col.trade-goods-col-unlock { width: 150px; }
+.trade-goods-table col.trade-goods-col-building { width: 150px; }
+.trade-goods-table col.trade-goods-col-req { width: 140px; }
+
+.trade-goods-table th,
+.trade-goods-table td {
+    vertical-align: middle;
+}
+
+.trade-goods-col-check {
+    text-align: center;
+}
+
+.trade-goods-table th.trade-goods-col-name,
+.trade-goods-table td.trade-goods-col-name,
+.trade-goods-table th.trade-goods-col-desc,
+.trade-goods-table td.trade-goods-col-desc {
+    text-align: left;
+}
+
+.trade-goods-table th.trade-goods-col-desc,
+.trade-goods-table td.trade-goods-col-desc,
+.trade-goods-table th.trade-goods-col-unlock,
+.trade-goods-table td.trade-goods-col-unlock,
+.trade-goods-table th.trade-goods-col-req,
+.trade-goods-table td.trade-goods-col-req {
+    white-space: normal;
+    overflow: hidden;
+    max-width: 0;
+}
+
+.trade-goods-col-name {
+    font-weight: 600;
+    color: var(--barony-ink);
+}
+
+.trade-goods-row--available td.trade-goods-col-name {
+    color: var(--barony-accent, #6b4423);
+}
+
+/* ---- Luxury goods access ---- */
+.luxury-goods-access-table {
+    min-width: 720px;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.luxury-goods-access-table col.luxury-goods-col-radio { width: 64px; }
+.luxury-goods-access-table col.luxury-goods-col-name { width: 180px; }
+.luxury-goods-access-table col.luxury-goods-col-bonus { width: 220px; }
+.luxury-goods-access-table col.luxury-goods-col-desc { width: auto; }
+
+.luxury-goods-access-table th.luxury-goods-col-radio,
+.luxury-goods-access-table td.luxury-goods-col-radio {
+    text-align: center;
+}
+
+.luxury-goods-access-table th.luxury-goods-col-name,
+.luxury-goods-access-table td.luxury-goods-col-name,
+.luxury-goods-access-table th.luxury-goods-col-bonus,
+.luxury-goods-access-table td.luxury-goods-col-bonus,
+.luxury-goods-access-table th.luxury-goods-col-desc,
+.luxury-goods-access-table td.luxury-goods-col-desc {
+    text-align: left;
+    white-space: normal;
+}
+
+.luxury-goods-col-name {
+    font-weight: 600;
+    color: var(--barony-ink);
+}
+
+.luxury-goods-row--active td.luxury-goods-col-name {
+    color: var(--barony-accent, #6b4423);
+}
+
+/* Trade goods / luxury: barony-accent radios & checkboxes (not MudBlazor blue). */
+.trade-goods-table .mud-checkbox,
+.trade-goods-table .mud-radio,
+.luxury-goods-access .mud-checkbox,
+.luxury-goods-access .mud-radio {
+    color: var(--barony-ink);
+}
+
+.trade-goods-table .mud-checkbox .mud-icon-root,
+.trade-goods-table .mud-radio .mud-icon-root,
+.luxury-goods-access .mud-checkbox .mud-icon-root,
+.luxury-goods-access .mud-radio .mud-icon-root {
+    color: inherit;
+}
+
+.trade-goods-table .mud-checked .mud-icon-root,
+.trade-goods-table .mud-checkbox-true,
+.luxury-goods-access .mud-checked .mud-icon-root,
+.luxury-goods-access .mud-checkbox-true {
+    color: var(--barony-accent, #9c7a33) !important;
+}
+
+.trade-goods-table .mud-primary-text,
+.luxury-goods-access .mud-primary-text {
+    color: var(--barony-accent, #9c7a33) !important;
+}
+
+.trade-goods-table .mud-radio,
+.luxury-goods-access .mud-radio {
+    margin: 0 !important;
+}
+
+.trade-goods-table .mud-button-root,
+.luxury-goods-access .mud-button-root {
+    padding: 0 !important;
+}
+
+.trade-goods-ppb-summary {
+    overflow-x: auto;
+    margin-bottom: 8px;
+}
+
+.trade-goods-ppb-table {
+    min-width: 360px;
+    max-width: 520px;
+}
+
+.trade-goods-ppb-num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
