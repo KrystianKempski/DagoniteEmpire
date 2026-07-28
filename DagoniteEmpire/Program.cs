@@ -19,6 +19,7 @@ using DA_Models.ChatModels;
 using MudBlazor;
 using DA_Business.Repository.ChatRepos;
 using DA_Business.Repository.BaronyRepos;
+using DA_Business.Repository.MarchMapRepos;
 using DA_Business.Services.Interfaces;
 using DA_Business.Services;
 using Cropper.Blazor.Extensions;
@@ -152,6 +153,7 @@ public class Program
         builder.Services.AddScoped<IBattleMapRepository, BattleMapRepository>();
         builder.Services.AddScoped<IBattleEventRepository, BattleEventRepository>();
         builder.Services.AddScoped<IBaronyRepository, BaronyRepository>();
+        builder.Services.AddScoped<IMarchMapRepository, MarchMapRepository>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<ICampaignSummaryService, CampaignSummaryService>();
         builder.Services.AddScoped<CallbackService>();

@@ -24,10 +24,20 @@ else
     </BaronyPageHeader>
 
     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-        Mark which strategic goods this barony can produce, stock, or import reliably. PPB totals apply only to checked goods.
+        Mark which strategic goods this barony can produce, stock, or import reliably. PPB totals include checked goods, luxury access, and goods received from trade treaties.
     </MudText>
 
-    <TradeGoodsPpbSummarySection Selected="@SelectedGoods" LuxuryAccessKey="@_luxuryKey" />
+    <TradeGoodsPpbSummarySection Selected="@SelectedGoods"
+                                 TreatyGoods="@_treatyGoods"
+                                 TreatyRouteEconomyBonus="@_treatyRouteEconomy"
+                                 LuxuryAccessKey="@_luxuryKey" />
+
+    <TradeTreatiesSection BaronyId="@BaronyId"
+                          Treaties="@_treaties"
+                          BaronyAvailableGoodKeys="@_available"
+                          BorderLordKeys="@_borderLordKeys"
+                          CanEdit="@CanEdit"
+                          TreatiesChanged="OnTreatiesChangedAsync" />
 
     <LuxuryGoodsAccessSection SelectedKey="@_luxuryKey"
                               CanEdit="@CanManageAsMg"
@@ -51,10 +61,17 @@ else
 @code {
     private HashSet<string> _available = new(StringComparer.OrdinalIgnoreCase);
     private string _luxuryKey = LuxuryGoodsAccessCatalog.DefaultKey;
+    private List<BaronyTradeTreaty> _treaties = new();
+    private HashSet<string> _borderLordKeys = new(StringComparer.OrdinalIgnoreCase);
     private bool _saving;
 
     private IReadOnlyList<TradeGoodEntry> SelectedGoods =>
         TradeGoodsCatalog.All.Where(g => _available.Contains(g.Key)).ToList();
+
+    private IReadOnlyList<TradeGoodEntry> _treatyGoods =>
+        TradeTreatyCalculator.BaronyReceivedGoods(_treaties);
+
+    private decimal _treatyRouteEconomy => TradeTreatyCalculator.TotalRouteEconomyBonus(_treaties);
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,6 +81,45 @@ else
 
         _available = await _baronyRepo.GetAvailableTradeGoodKeys(Barony.Id);
         _luxuryKey = await _baronyRepo.GetLuxuryGoodsAccessKey(Barony.Id);
+        _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
+        _borderLordKeys = await LoadBorderLordKeysAsync(Barony.Id);
+    }
+
+    private async Task<HashSet<string>> LoadBorderLordKeysAsync(int baronyId)
+    {
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var relations = await _baronyRepo.GetRelations(baronyId);
+        foreach (var rel in relations.Where(r => string.Equals(r.Category, RelationCategory.Neighbors, StringComparison.OrdinalIgnoreCase)))
+        {
+            var key = KnownLordsCatalog.MatchLordKeyFromRelationName(rel.Name);
+            if (key is not null)
+                keys.Add(key);
+        }
+
+        return keys;
+    }
+
+    private async Task OnTreatiesChangedAsync(IReadOnlyList<BaronyTradeTreaty> treaties)
+    {
+        if (!CanEdit || Barony is null || _saving)
+            return;
+
+        _saving = true;
+        try
+        {
+            await _baronyRepo.SaveTradeTreaties(Barony.Id, treaties);
+            _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save trade treaties: " + ex.Message, Severity.Error);
+            _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private async Task OnLuxuryKeyChangedAsync(string key)

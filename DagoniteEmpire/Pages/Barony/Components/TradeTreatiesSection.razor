@@ -1,0 +1,159 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+@inject NavigationManager _nav
+
+<BaronySection Title="Trade treaties" DefaultOpen="true">
+    <Summary>
+        <span class="projects-summary">
+            <span class="projects-summary__item">@Treaties.Count treaty@(Treaties.Count == 1 ? "" : "ies")</span>
+            @if (_customsPerTurn > 0m)
+            {
+                <span class="projects-summary__item">@_customsPerTurn.ToString("0.##") gold / turn customs</span>
+            }
+            @if (_sweetenerPerTurn != 0m)
+            {
+                <span class="projects-summary__item">
+                    @if (_sweetenerPerTurn > 0m)
+                    {
+                        <text>@_sweetenerPerTurn.ToString("0.##") gold / turn sweeteners paid</text>
+                    }
+                    else
+                    {
+                        <text>@((-_sweetenerPerTurn).ToString("0.##")) gold / turn from sweeteners</text>
+                    }
+                </span>
+            }
+            @if (_routeEconomy > 0m)
+            {
+                <span class="projects-summary__item">+@_routeEconomy.ToString("0.##") Economy (routes)</span>
+            }
+        </span>
+    </Summary>
+    <ChildContent>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+            Design routes on the March map, then choose goods for each seat on the path.
+            One paragraph = one lord (transit toll or destination). Each produced good can be shared with at most one lord.
+            Transit customs come from the map (MG default; not editable on the treaty). Optional gold sweetener balances uneven goods swaps.
+        </MudText>
+
+        @if (CanEdit)
+        {
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Class="mb-3"
+                       OnClick="CreateAsync">
+                New trade treaty
+            </MudButton>
+        }
+
+        @if (Treaties.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No trade treaties yet.
+                @if (CanEdit)
+                {
+                    <text> Design a route on the March map to open shared goods and route bonuses.</text>
+                }
+            </MudText>
+        }
+        else
+        {
+            <div class="trade-treaties-list">
+                @foreach (var treaty in Treaties)
+                {
+                    var lord = KnownLordsCatalog.FindByKey(treaty.CounterpartyLordKey);
+                    var title = !string.IsNullOrWhiteSpace(treaty.Title)
+                        ? treaty.Title
+                        : lord is not null
+                            ? $"Treaty with {lord.Name} {lord.House}"
+                            : treaty.CounterpartyLordKey;
+                    var received = TradeTreatyCalculator.BaronyReceivedGoods(new[] { treaty });
+                    <div class="trade-treaty-card barony-panel mb-3">
+                        <div class="d-flex flex-wrap justify-space-between align-center gap-2 mb-2">
+                            <MudText Typo="Typo.subtitle1">@title</MudText>
+                            @if (CanEdit)
+                            {
+                                <div class="d-flex gap-2">
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => EditAsync(treaty)">Edit route</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteAsync(treaty)">Delete</MudButton>
+                                </div>
+                            }
+                        </div>
+                        @if (lord is not null)
+                        {
+                            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                                @lord.Title · @lord.Holdings · Wealth @lord.Wealth
+                            </MudText>
+                        }
+                        <MudText Typo="Typo.body2" Class="mt-2">
+                            <strong>Route economy:</strong> +@TradeTreatyCalculator.RouteEconomyBonus(treaty).ToString("0.##")
+                            (toll + destination: max(1, Wealth − 2))
+                        </MudText>
+                        @if (received.Count > 0)
+                        {
+                            <MudText Typo="Typo.body2" Class="mt-1">
+                                <strong>Goods received:</strong>
+                                @string.Join(", ", received.Select(g => g.Name))
+                            </MudText>
+                        }
+                        @foreach (var (paragraph, idx) in treaty.Paragraphs.Select((p, i) => (p, i)))
+                        {
+                            var addressee = KnownLordsCatalog.FindByKey(paragraph.LordKey);
+                            <div class="trade-treaty-paragraph mt-2">
+                                <MudText Typo="Typo.caption">
+                                    <strong>@(idx + 1). @TradeTreatyParagraphLabels.AddresseeHeading(paragraph)</strong>
+                                </MudText>
+                                @if (!paragraph.IsDestination)
+                                {
+                                    <MudText Typo="Typo.body2">Customs: @paragraph.CustomsGoldPerTurn.ToString("0.##") gold/turn</MudText>
+                                }
+                                @if (TradeTreatyParagraphLabels.SweetenerLabel(paragraph) is { } sweetener)
+                                {
+                                    <MudText Typo="Typo.body2">@sweetener</MudText>
+                                }
+                                @if (paragraph.BaronyGrantsGoodKeys.Count > 0)
+                                {
+                                    <MudText Typo="Typo.body2">Barony grants to @(addressee?.Name ?? "lord"): @FormatGoods(paragraph.BaronyGrantsGoodKeys)</MudText>
+                                }
+                                @if (paragraph.CounterpartyGrantsGoodKeys.Count > 0)
+                                {
+                                    <MudText Typo="Typo.body2">@(addressee?.Name ?? "Lord") grants: @FormatGoods(paragraph.CounterpartyGrantsGoodKeys)</MudText>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <TradeTreatyBonusSummary Treaties="@Treaties" />
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public IReadOnlyList<BaronyTradeTreaty> Treaties { get; set; } = Array.Empty<BaronyTradeTreaty>();
+    [Parameter] public IReadOnlyCollection<string> BaronyAvailableGoodKeys { get; set; } = Array.Empty<string>();
+    [Parameter] public IReadOnlyCollection<string> BorderLordKeys { get; set; } = Array.Empty<string>();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<BaronyTradeTreaty>> TreatiesChanged { get; set; }
+
+    private decimal _customsPerTurn => TradeTreatyCalculator.TotalCustomsGoldPerTurn(Treaties);
+    private decimal _sweetenerPerTurn => TradeTreatyCalculator.TotalSweetenerGoldPerTurn(Treaties);
+    private decimal _routeEconomy => TradeTreatyCalculator.TotalRouteEconomyBonus(Treaties);
+
+    private static string FormatGoods(IEnumerable<string> keys) =>
+        string.Join(", ", keys.Select(k => TradeGoodsCatalog.Find(k)?.Name ?? k));
+
+    private void CreateAsync() => _nav.NavigateTo("/barony/march-map?design=1");
+
+    private void EditAsync(BaronyTradeTreaty treaty) =>
+        _nav.NavigateTo($"/barony/march-map?treaty={Uri.EscapeDataString(treaty.Id)}");
+
+    private async Task DeleteAsync(BaronyTradeTreaty treaty)
+    {
+        var list = Treaties.Where(t => !string.Equals(t.Id, treaty.Id, StringComparison.OrdinalIgnoreCase)).ToList();
+        await TreatiesChanged.InvokeAsync(list);
+        _snackBar.Add("Trade treaty removed.", Severity.Info);
+    }
+}

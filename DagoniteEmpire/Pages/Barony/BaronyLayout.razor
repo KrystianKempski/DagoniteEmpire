@@ -3,7 +3,7 @@
 @layout DagoniteEmpire.Shared.MainLayout
 @inject NavigationManager NavigationManager
 
-<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "")">
+<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "")">
     <AuthorizeView Roles="@BaronRoles">
         <Authorized Context="baronyAuth">
             @if (baronyAuth.User.IsInRole(SD.Role_Admin) || baronyAuth.User.IsInRole(SD.Role_GameMaster))
@@ -34,14 +34,20 @@
     private const string BaronRoles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer;
 
     private readonly BaronyViewOptions _viewOptions = new();
-    private bool IsDomainPanel => "/" + NavigationManager.ToBaseRelativePath(NavigationManager.Uri).TrimEnd('/') == "/barony";
 
-    private bool IsBuildingsCatalog
+    private string CurrentPath
     {
         get
         {
-            var path = "/" + NavigationManager.ToBaseRelativePath(NavigationManager.Uri).TrimEnd('/');
-            return path == "/barony/buildings";
+            var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+            var pathOnly = relative.Split('?', '#')[0].TrimEnd('/');
+            return pathOnly.Length == 0 ? "/" : "/" + pathOnly;
         }
     }
+
+    private bool IsDomainPanel => CurrentPath == "/barony";
+
+    private bool IsBuildingsCatalog => CurrentPath == "/barony/buildings";
+
+    private bool IsMarchMap => CurrentPath == "/barony/march-map";
 }

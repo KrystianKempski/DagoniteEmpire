@@ -6,7 +6,7 @@
         <span class="projects-summary__item">@LuxuryTier.NameEn</span>
     </Summary>
     <ChildContent>
-        @if (SelectedCount == 0 && !HasLuxuryBonus)
+        @if (SelectedCount == 0 && !HasLuxuryBonus && TreatyRouteEconomyBonus == 0m)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
                 Mark goods available in this barony (and set luxury access) to see the combined PPB bonus.
@@ -41,9 +41,15 @@
 
 @code {
     [Parameter] public IReadOnlyList<TradeGoodEntry> Selected { get; set; } = Array.Empty<TradeGoodEntry>();
+    [Parameter] public IReadOnlyList<TradeGoodEntry> TreatyGoods { get; set; } = Array.Empty<TradeGoodEntry>();
+    [Parameter] public decimal TreatyRouteEconomyBonus { get; set; }
     [Parameter] public string LuxuryAccessKey { get; set; } = LuxuryGoodsAccessCatalog.DefaultKey;
 
-    private int SelectedCount => Selected.Count;
+    private int SelectedCount =>
+        Selected.Concat(TreatyGoods)
+            .Select(g => g.Key)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
     private LuxuryGoodsAccessTier LuxuryTier => LuxuryGoodsAccessCatalog.Find(LuxuryAccessKey);
 
     private bool HasLuxuryBonus =>
@@ -53,8 +59,14 @@
     {
         get
         {
-            TradeGoodsBonusAggregator.Sum(Selected, out var add, out var pct);
+            var merged = Selected.Concat(TreatyGoods)
+                .GroupBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First())
+                .ToList();
+            TradeGoodsBonusAggregator.Sum(merged, out var add, out var pct);
             add.AddInPlace(LuxuryTier.BonusAdditive);
+            if (TreatyRouteEconomyBonus != 0m)
+                add[Ppb.Economy] += TreatyRouteEconomyBonus;
             foreach (var info in PpbCatalog.All)
             {
                 var a = add[info.Key];

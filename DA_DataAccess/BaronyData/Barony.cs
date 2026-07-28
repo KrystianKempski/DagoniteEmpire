@@ -86,6 +86,15 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Key from <see cref="DA_Common.Barony.LuxuryGoodsAccessCatalog"/> — luxury market reach for this barony.</summary>
         public string LuxuryGoodsAccessKey { get; set; } = "basic";
 
+        /// <summary>JSON array of <see cref="DA_Common.Barony.BaronyTradeTreaty"/>.</summary>
+        public string TradeTreatiesJson { get; set; } = "[]";
+
+        /// <summary>
+        /// JSON array of Known Lords keys blocked from trading with this barony
+        /// (cannot be path destination or transit).
+        /// </summary>
+        public string BlockedTradeLordKeysJson { get; set; } = "[]";
+
         /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
         public bool PlayerTurnReady { get; set; }
     }

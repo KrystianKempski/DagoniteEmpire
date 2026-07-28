@@ -89,6 +89,7 @@ namespace DA_DataAccess.Data
         public DbSet<BaronLetterThread> BaronLetterThreads { get; set; }
         public DbSet<BaronLetterMessage> BaronLetterMessages { get; set; }
         public DbSet<BaronyUnit> BaronyUnits { get; set; }
+        public DbSet<MarchMapState> MarchMapStates { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

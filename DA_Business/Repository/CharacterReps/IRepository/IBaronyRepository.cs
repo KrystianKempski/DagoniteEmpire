@@ -176,6 +176,11 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<string> GetLuxuryGoodsAccessKey(int baronyId);
         Task SetLuxuryGoodsAccessKey(int baronyId, string key);
 
+        Task<List<BaronyTradeTreaty>> GetTradeTreaties(int baronyId);
+        Task SaveTradeTreaties(int baronyId, IReadOnlyList<BaronyTradeTreaty> treaties);
+        Task<HashSet<string>> GetBlockedTradeLordKeys(int baronyId);
+        Task SetBlockedTradeLordKeys(int baronyId, IReadOnlyCollection<string> lordKeys);
+
         // --- Katalog budynków/ulepszeń (globalny) ---
         Task<List<BuildingTemplateDTO>> GetBuildingTemplates();
         Task<BuildingTemplateDTO> SaveBuildingTemplate(BuildingTemplateDTO dto);

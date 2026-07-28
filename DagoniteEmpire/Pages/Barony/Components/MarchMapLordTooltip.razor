@@ -1,0 +1,105 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IJSRuntime Js
+@implements IDisposable
+
+<MudTooltip Placement="@_placement"
+            Arrow="false"
+            Color="Color.Transparent"
+            TooltipClass="barony-tip-popover"
+            ShowOnHover="false"
+            ShowOnFocus="false"
+            @bind-Visible="_visible">
+    <ChildContent>
+        <span @ref="_anchor"
+              class="march-map-lord-tip-anchor @Class"
+              style="@Style"
+              @onpointerenter="ShowAsync"
+              @onpointerleave="Hide"
+              @onpointercancel="Hide">
+            @ChildContent
+        </span>
+    </ChildContent>
+    <TooltipContent>
+        <MarchMapLordTipBody Lord="@Lord" PlaceLabel="@PlaceLabel" />
+    </TooltipContent>
+</MudTooltip>
+
+@code {
+    [Parameter] public KnownLordEntry? Lord { get; set; }
+    [Parameter] public string PlaceLabel { get; set; } = "";
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public Placement Placement { get; set; } = Placement.Top;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private ElementReference _anchor;
+    private Placement _placement = Placement.Top;
+    private bool _visible;
+    private int _hoverToken;
+    private readonly Guid _instanceId = Guid.NewGuid();
+    private DotNetObjectReference<MarchMapLordTooltip>? _dotNetRef;
+
+    protected override void OnInitialized() => _dotNetRef = DotNetObjectReference.Create(this);
+
+    protected override void OnParametersSet()
+    {
+        if (!_visible)
+            _placement = Placement;
+    }
+
+    private async Task ShowAsync()
+    {
+        var token = ++_hoverToken;
+        try
+        {
+            var name = await Js.InvokeAsync<string>("baronyPickTooltipPlacement", _anchor, Placement.ToString());
+            if (token != _hoverToken)
+                return;
+            _placement = name switch
+            {
+                "Left" => Placement.Left,
+                "Right" => Placement.Right,
+                "Bottom" => Placement.Bottom,
+                _ => Placement.Top,
+            };
+        }
+        catch
+        {
+            if (token != _hoverToken)
+                return;
+            _placement = Placement;
+        }
+
+        if (token != _hoverToken)
+            return;
+        _visible = true;
+        try { await Js.InvokeVoidAsync("baronyTipWatchScroll", _instanceId.ToString(), _dotNetRef); }
+        catch { /* ignore */ }
+    }
+
+    private void Hide()
+    {
+        _hoverToken++;
+        _visible = false;
+        _ = TryUnwatchScrollAsync();
+    }
+
+    [JSInvokable]
+    public Task OnScrollHide()
+    {
+        Hide();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task TryUnwatchScrollAsync()
+    {
+        try { await Js.InvokeVoidAsync("baronyTipUnwatchScroll", _instanceId.ToString()); }
+        catch { /* ignore */ }
+    }
+
+    public void Dispose()
+    {
+        _ = TryUnwatchScrollAsync();
+        _dotNetRef?.Dispose();
+    }
+}

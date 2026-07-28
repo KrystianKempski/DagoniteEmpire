@@ -261,6 +261,223 @@ namespace DA_Business.Repository.BaronyRepos
             }
         }
 
+        public async Task<List<BaronyTradeTreaty>> GetTradeTreaties(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var json = await ctx.Baronies.AsNoTracking()
+                    .Where(b => b.Id == baronyId)
+                    .Select(b => b.TradeTreatiesJson)
+                    .FirstOrDefaultAsync();
+                return ParseTradeTreaties(json);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetTradeTreaties)); }
+        }
+
+        public async Task SaveTradeTreaties(int baronyId, IReadOnlyList<BaronyTradeTreaty> treaties)
+        {
+            try
+            {
+                var normalized = NormalizeTradeTreaties(treaties);
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+                e.TradeTreatiesJson = JsonSerializer.Serialize(normalized, JsonOptions);
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveTradeTreaties));
+            }
+        }
+
+        public async Task<HashSet<string>> GetBlockedTradeLordKeys(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var json = await ctx.Baronies.AsNoTracking()
+                    .Where(b => b.Id == baronyId)
+                    .Select(b => b.BlockedTradeLordKeysJson)
+                    .FirstOrDefaultAsync();
+                return ParseLordKeySet(json);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetBlockedTradeLordKeys)); }
+        }
+
+        public async Task SetBlockedTradeLordKeys(int baronyId, IReadOnlyCollection<string> lordKeys)
+        {
+            try
+            {
+                var normalized = (lordKeys ?? Array.Empty<string>())
+                    .Where(k => !string.IsNullOrWhiteSpace(k))
+                    .Select(k => k.Trim())
+                    .Where(k => KnownLordsCatalog.FindByKey(k) is not null)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+                e.BlockedTradeLordKeysJson = JsonSerializer.Serialize(normalized, JsonOptions);
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SetBlockedTradeLordKeys));
+            }
+        }
+
+        private static HashSet<string> ParseLordKeySet(string? json)
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(json))
+                return set;
+            try
+            {
+                var list = JsonSerializer.Deserialize<List<string>>(json, JsonOptions);
+                if (list is null)
+                    return set;
+                foreach (var key in list)
+                {
+                    if (!string.IsNullOrWhiteSpace(key) && KnownLordsCatalog.FindByKey(key) is not null)
+                        set.Add(key.Trim());
+                }
+            }
+            catch
+            {
+                /* ignore corrupt json */
+            }
+
+            return set;
+        }
+
+        private static List<BaronyTradeTreaty> ParseTradeTreaties(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new List<BaronyTradeTreaty>();
+            try
+            {
+                return JsonSerializer.Deserialize<List<BaronyTradeTreaty>>(json, JsonOptions) ?? new List<BaronyTradeTreaty>();
+            }
+            catch
+            {
+                return new List<BaronyTradeTreaty>();
+            }
+        }
+
+        private static List<BaronyTradeTreaty> NormalizeTradeTreaties(IReadOnlyList<BaronyTradeTreaty> treaties)
+        {
+            var knownGoods = new HashSet<string>(
+                TradeGoodsCatalog.All.Select(g => g.Key),
+                StringComparer.OrdinalIgnoreCase);
+
+            var result = new List<BaronyTradeTreaty>();
+            foreach (var treaty in treaties)
+            {
+                if (string.IsNullOrWhiteSpace(treaty.CounterpartyLordKey))
+                    continue;
+
+                if (KnownLordsCatalog.FindByKey(treaty.CounterpartyLordKey) is null)
+                    continue;
+
+                var copy = new BaronyTradeTreaty
+                {
+                    Id = string.IsNullOrWhiteSpace(treaty.Id) ? Guid.NewGuid().ToString("N") : treaty.Id.Trim(),
+                    CounterpartyLordKey = treaty.CounterpartyLordKey.Trim(),
+                    Title = string.IsNullOrWhiteSpace(treaty.Title) ? null : treaty.Title.Trim(),
+                    Paragraphs = MigrateParagraphsToPerSeat(treaty, knownGoods),
+                };
+
+                copy.Paragraphs = copy.Paragraphs
+                    .Where(p => KnownLordsCatalog.FindByKey(p.LordKey) is not null)
+                    .ToList();
+
+                if (copy.Paragraphs.Count == 0)
+                    continue;
+
+                if (!copy.Paragraphs.Any(p => p.IsDestination))
+                {
+                    var dest = copy.Paragraphs[^1];
+                    dest.IsDestination = true;
+                    dest.CustomsGoldPerTurn = 0m;
+                    dest.LordKey = copy.CounterpartyLordKey;
+                }
+
+                copy.CounterpartyLordKey = copy.Paragraphs.First(p => p.IsDestination).LordKey;
+                result.Add(copy);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// New model: one paragraph per seat. Legacy: goods on one paragraph + TransitLegs list → expand.
+        /// </summary>
+        private static List<TradeTreatyParagraph> MigrateParagraphsToPerSeat(
+            BaronyTradeTreaty treaty,
+            HashSet<string> knownGoods)
+        {
+            static List<string> CleanGoods(IEnumerable<string> keys, HashSet<string> known) =>
+                keys.Where(known.Contains)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+            if (treaty.Paragraphs.Any(p => !string.IsNullOrWhiteSpace(p.LordKey)) &&
+                treaty.Paragraphs.All(p => p.TransitLegs.Count == 0))
+            {
+                return treaty.Paragraphs.Select(p => new TradeTreatyParagraph
+                {
+                    LordKey = p.LordKey.Trim(),
+                    IsDestination = p.IsDestination ||
+                                    string.Equals(p.LordKey, treaty.CounterpartyLordKey, StringComparison.OrdinalIgnoreCase),
+                    CustomsGoldPerTurn = p.IsDestination ||
+                                         string.Equals(p.LordKey, treaty.CounterpartyLordKey, StringComparison.OrdinalIgnoreCase)
+                        ? 0m
+                        : (p.CustomsGoldPerTurn < 0m ? 0m : p.CustomsGoldPerTurn),
+                    SweetenerGoldPerTurn = p.SweetenerGoldPerTurn,
+                    BaronyGrantsGoodKeys = CleanGoods(p.BaronyGrantsGoodKeys, knownGoods),
+                    CounterpartyGrantsGoodKeys = CleanGoods(p.CounterpartyGrantsGoodKeys, knownGoods),
+                }).ToList();
+            }
+
+            var legacyLegs = treaty.Paragraphs.SelectMany(p => p.TransitLegs).ToList();
+            var goodsSource = treaty.Paragraphs.FirstOrDefault(p =>
+                p.BaronyGrantsGoodKeys.Count > 0 || p.CounterpartyGrantsGoodKeys.Count > 0)
+                ?? treaty.Paragraphs.FirstOrDefault();
+
+            var result = new List<TradeTreatyParagraph>();
+            foreach (var leg in legacyLegs)
+            {
+                if (KnownLordsCatalog.FindByKey(leg.LordKey) is null)
+                    continue;
+                result.Add(new TradeTreatyParagraph
+                {
+                    LordKey = leg.LordKey.Trim(),
+                    IsDestination = false,
+                    CustomsGoldPerTurn = leg.CustomsGoldPerTurn < 0m ? 0m : leg.CustomsGoldPerTurn,
+                    SweetenerGoldPerTurn = 0m,
+                    BaronyGrantsGoodKeys = new List<string>(),
+                    CounterpartyGrantsGoodKeys = new List<string>(),
+                });
+            }
+
+            result.Add(new TradeTreatyParagraph
+            {
+                LordKey = treaty.CounterpartyLordKey.Trim(),
+                IsDestination = true,
+                CustomsGoldPerTurn = 0m,
+                SweetenerGoldPerTurn = goodsSource?.SweetenerGoldPerTurn ?? 0m,
+                BaronyGrantsGoodKeys = CleanGoods(goodsSource?.BaronyGrantsGoodKeys ?? Enumerable.Empty<string>(), knownGoods),
+                CounterpartyGrantsGoodKeys = CleanGoods(goodsSource?.CounterpartyGrantsGoodKeys ?? Enumerable.Empty<string>(), knownGoods),
+            });
+
+            return result;
+        }
+
         private static HashSet<string> ParseTradeGoodKeys(string? json)
         {
             if (string.IsNullOrWhiteSpace(json))

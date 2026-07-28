@@ -15,6 +15,7 @@ using Microsoft.JSInterop;
 using DagoniteEmpire.Helper;
 using DA_DataAccess.BaronyData;
 using DA_Business.Repository.BaronyRepos;
+using DA_Business.Repository.MarchMapRepos;
 
 namespace DagoniteEmpire.Service
 {
@@ -2844,6 +2845,7 @@ namespace DagoniteEmpire.Service
                 await SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex);
                 await OrganizationsSeeder.EnsureForAllBaroniesAsync(contex);
                 await NeighborsSeeder.EnsureForAllBaroniesAsync(contex);
+                await MarchMapSeeder.EnsureInitializedAsync(contex);
                 await VassalsFromFiefsSeeder.EnsureForAllBaroniesAsync(contex);
                 await SeatPurposeTemplatesSeeder.EnsureDefaultsAsync(contex);
             }

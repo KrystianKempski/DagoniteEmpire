@@ -762,6 +762,14 @@ namespace DA_DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("BlockedTradeLordKeysJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TradeTreatiesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<decimal>("LiegeTributePercent")
                         .HasColumnType("numeric");
 
@@ -1134,6 +1142,20 @@ namespace DA_DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("BuildingTemplates");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.MarchMapState", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MarchMapStates");
                 });
 
             modelBuilder.Entity("DA_DataAccess.BaronyData.CommunityModifier", b =>

@@ -4384,7 +4384,7 @@ a.city-building-name-text--link:hover {
     font-weight: 400;
     line-height: 1.45;
     color: #2f2a24;
-    white-space: pre-wrap;
+    white-space: pre-line;
     overflow-wrap: anywhere;
     word-break: break-word;
 }
@@ -7009,4 +7009,455 @@ a.city-building-name-text--link:hover {
 .trade-goods-ppb-num {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+.trade-treaty-card {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--barony-border, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+}
+
+.trade-treaty-paragraph {
+    padding-left: 0.5rem;
+    border-left: 3px solid var(--barony-accent, #c9a227);
+}
+
+.trade-treaty-edit-paragraph {
+    padding: 0.75rem;
+}
+
+/* ---- Eastern March map (full viewport) ---- */
+.mud-main-content:has(.barony-scope--march-map) {
+    overflow: hidden;
+    height: 100dvh;
+    max-height: 100dvh;
+    box-sizing: border-box;
+}
+
+.barony-scope--march-map {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    height: calc(100dvh - 64px);
+    max-height: calc(100dvh - 64px);
+    min-height: 0;
+    overflow: hidden;
+    padding: 4px 8px 44px 8px;
+}
+
+.barony-scope--march-map .barony-resource-hud {
+    display: none;
+}
+
+.march-map-page {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.march-map-toolbar {
+    flex-shrink: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+}
+
+.march-map-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.march-map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: var(--barony-muted);
+}
+
+.march-map-legend-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.march-map-legend--routes {
+    padding-top: 2px;
+    border-top: 1px solid color-mix(in srgb, var(--barony-border, rgba(255,255,255,0.12)) 80%, transparent);
+}
+
+.march-map-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.march-map-legend__swatch {
+    display: inline-block;
+    width: 22px;
+    height: 0;
+    border-top: 3px solid #c4a574;
+}
+
+.march-map-legend__swatch--river {
+    border-top-style: dashed;
+    border-top-color: #4a90c2;
+}
+
+.march-map-legend__dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid #1a1510;
+    flex-shrink: 0;
+}
+
+.march-map-legend__dot--capital {
+    width: 12px;
+    height: 12px;
+    background: #e8c547;
+}
+
+.march-map-legend__dot--large-city {
+    width: 11px;
+    height: 11px;
+    background: #c49a3a;
+}
+
+.march-map-legend__dot--city {
+    background: #9c7a33;
+}
+
+.march-map-legend__dot--village {
+    width: 8px;
+    height: 8px;
+    background: #6d8f6a;
+}
+
+.march-map-legend__dot--player-seat {
+    width: 12px;
+    height: 12px;
+    background: #5a9fd4;
+}
+
+.march-map-legend__dot--blocked {
+    width: 10px;
+    height: 10px;
+    background: #6a6060;
+    opacity: 0.85;
+}
+
+.march-map-canvas {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+}
+
+.march-map-viewport {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
+    display: block;
+    cursor: grab;
+    background: color-mix(in srgb, var(--barony-surface-2) 85%, #0e0c0a);
+    border: 1px solid var(--barony-border, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+}
+
+.march-map-viewport.march-map-viewport--grabbing {
+    cursor: grabbing;
+}
+
+.march-map-viewport .march-map-marker {
+    cursor: pointer;
+}
+
+.march-map-scrollpad {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 100%;
+    min-height: 100%;
+}
+
+.march-map-stage {
+    position: relative;
+    flex: none;
+    box-sizing: border-box;
+}
+
+.march-map-media {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.march-map-route-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 24;
+    pointer-events: stroke;
+    cursor: pointer;
+}
+
+.march-map-hover-tip {
+    position: fixed;
+    z-index: 2000;
+    pointer-events: none;
+    max-width: min(380px, 92vw);
+}
+
+.march-map-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+}
+
+.march-map-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.march-map-route {
+    fill: none;
+    stroke-width: 4;
+    pointer-events: none;
+}
+
+.march-map-route--road {
+    stroke: #c4a574;
+}
+
+.march-map-route--river {
+    stroke: #4a90c2;
+    stroke-dasharray: 10 8;
+}
+
+.march-map-route--active {
+    stroke-width: 6;
+    filter: drop-shadow(0 0 4px rgba(255, 220, 140, 0.8));
+}
+
+.march-map-route--design {
+    stroke: #8a8680 !important;
+    stroke-width: 6;
+    filter: drop-shadow(0 0 3px rgba(40, 38, 34, 0.55));
+}
+
+.march-map-trade-overlay {
+    fill: none;
+    stroke-width: 5;
+    stroke-linecap: round;
+    opacity: 0.92;
+}
+
+.march-map-design-banner {
+    margin: 0 0 8px;
+    padding: 8px 12px;
+}
+
+.march-map-design-banner__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.march-map-marker--blocked .march-map-marker__dot {
+    fill: #6a6060;
+    stroke: #2a2222;
+    opacity: 0.75;
+}
+
+.march-map-marker--design .march-map-marker__dot {
+    stroke: #8a8680;
+    stroke-width: 1.5;
+}
+
+.march-map-marker {
+    cursor: pointer;
+    pointer-events: all;
+}
+
+.march-map-marker__hit {
+    fill: transparent;
+    stroke: none;
+}
+
+.march-map-marker__dot {
+    fill: var(--barony-accent, #9c7a33);
+    stroke: #1a1510;
+    stroke-width: 1;
+}
+
+.march-map-marker--capital .march-map-marker__dot {
+    fill: #e8c547;
+    stroke: #4a3818;
+}
+
+.march-map-marker--large-city .march-map-marker__dot {
+    fill: #c49a3a;
+    stroke: #3d2e14;
+}
+
+.march-map-marker--city .march-map-marker__dot {
+    fill: #9c7a33;
+    stroke: #1a1510;
+}
+
+.march-map-marker--village .march-map-marker__dot {
+    fill: #6d8f6a;
+    stroke: #1a2820;
+}
+
+.march-map-marker--selected .march-map-marker__dot {
+    fill: #fff3c4;
+    stroke: var(--barony-accent, #9c7a33);
+    stroke-width: 1.5;
+}
+
+.march-map-marker--selected.march-map-marker--capital .march-map-marker__dot {
+    fill: #fff8dc;
+    stroke: #e8c547;
+}
+
+.march-map-marker--selected.march-map-marker--large-city .march-map-marker__dot {
+    fill: #fff0d0;
+    stroke: #c49a3a;
+}
+
+.march-map-marker--selected.march-map-marker--village .march-map-marker__dot {
+    fill: #e8f4e6;
+    stroke: #6d8f6a;
+}
+
+.march-map-marker--connect .march-map-marker__dot {
+    fill: #8fd4ff;
+}
+
+.march-map-marker--player-seat .march-map-marker__dot {
+    fill: #5a9fd4;
+    stroke: #1a2838;
+}
+
+.march-map-marker--selected.march-map-marker--player-seat .march-map-marker__dot {
+    fill: #c8e4f8;
+    stroke: #5a9fd4;
+}
+
+.march-map-marker__label {
+    fill: #f5ecd8;
+    font-size: 8px;
+    font-weight: 500;
+    font-family: var(--barony-font, inherit);
+    paint-order: stroke;
+    stroke: #1a1510;
+    stroke-width: 1px;
+    pointer-events: none;
+}
+
+/* Toolbar — barony accent (no default Mud blue) */
+.march-map-toolbar--barony .march-map-toolbar__btn.mud-button-outlined {
+    border-color: color-mix(in srgb, var(--barony-accent) 45%, var(--barony-border)) !important;
+    color: var(--barony-ink) !important;
+}
+
+.march-map-toolbar--barony .march-map-tool-toggle .mud-button-root.mud-button-filled {
+    background: color-mix(in srgb, var(--barony-accent) 22%, var(--barony-surface)) !important;
+    color: var(--barony-ink) !important;
+    border-color: var(--barony-accent) !important;
+}
+
+.march-map-toolbar--barony .march-map-tool-toggle .mud-button-root.mud-button-outlined {
+    border-color: var(--barony-border) !important;
+    color: var(--barony-ink) !important;
+}
+
+.march-map-toolbar--barony .march-map-link-kind-group .mud-button-root {
+    border-color: color-mix(in srgb, var(--barony-accent) 35%, var(--barony-border)) !important;
+    color: var(--barony-ink) !important;
+}
+
+.march-map-route-type-buttons__active,
+.march-map-route-type-buttons__active.mud-button-root {
+    background: color-mix(in srgb, var(--barony-accent) 22%, var(--barony-surface)) !important;
+    border-color: var(--barony-accent) !important;
+    color: var(--barony-ink) !important;
+}
+
+.march-map-lord-tip {
+    max-width: min(360px, 88vw);
+}
+
+.march-map-lord-tip__meta {
+    font-size: 0.8rem;
+    color: var(--barony-muted);
+    margin-bottom: 8px;
+}
+
+.march-map-lord-tip__you {
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #6ec8ff;
+    margin-left: 4px;
+}
+
+.march-map-lord-tip__section + .march-map-lord-tip__section {
+    margin-top: 8px;
+}
+
+.march-map-lord-tip__label {
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+}
+
+.march-map-lord-tip-anchor {
+    display: inline-flex;
+}
+
+.march-map-toolbar__link-kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.march-map-inspector {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: min(320px, 92vw);
+    padding: 10px 12px;
+    z-index: 2;
+    max-height: calc(100% - 16px);
+    overflow-y: auto;
+}
+
+.march-map-missing-image {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    z-index: 2;
+    max-width: min(480px, 90vw);
 }
