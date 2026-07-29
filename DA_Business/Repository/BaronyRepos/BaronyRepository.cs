@@ -665,7 +665,7 @@ namespace DA_Business.Repository.BaronyRepos
                     report.LoyaltyD20 = d20;
                     report.LoyaltyTestResult = test;
                     report.UnrestDelta = delta;
-                    barony.Unrest = Math.Max(0, barony.Unrest + delta);
+                    barony.Unrest = UnrestPpbFormulas.Clamp(barony.Unrest + delta);
                 }
 
                 report.UnrestAfter = barony.Unrest;
@@ -2578,6 +2578,9 @@ namespace DA_Business.Repository.BaronyRepos
                     OutcomeNotes = "",
                     AdditiveJson = old.AdditiveJson,
                     PercentJson = old.PercentJson,
+                    Prestige = old.Prestige,
+                    Honor = old.Honor,
+                    Fear = old.Fear,
                     CreatedAtUtc = now,
                     UpdatedAtUtc = now,
                 };
@@ -3895,7 +3898,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.TurnNumber = d.TurnNumber;
             e.Season = d.Season;
             e.BaronPurseGold = d.BaronPurseGold;
-            e.Unrest = d.Unrest;
+            e.Unrest = UnrestPpbFormulas.Clamp(d.Unrest);
             e.ConjunctureDice = d.ConjunctureDice;
             e.ConjunctureModifier = d.ConjunctureModifier;
             e.DefaultUnitWeaponQuality = UnitWeaponQuality.Normalize(d.DefaultUnitWeaponQuality);
@@ -4370,6 +4373,9 @@ namespace DA_Business.Repository.BaronyRepos
             OutcomeNotes = e.OutcomeNotes ?? "",
             Additive = De(e.AdditiveJson),
             Percent = De(e.PercentJson),
+            Prestige = e.Prestige,
+            Honor = e.Honor,
+            Fear = e.Fear,
             CreatedAtUtc = e.CreatedAtUtc,
             UpdatedAtUtc = e.UpdatedAtUtc,
             ClosedAtUtc = e.ClosedAtUtc,
@@ -4384,6 +4390,9 @@ namespace DA_Business.Repository.BaronyRepos
             SpeakerName = e.SpeakerName,
             IsResourceChange = e.IsResourceChange,
             Additive = De(e.AdditiveJson),
+            Prestige = e.Prestige,
+            Honor = e.Honor,
+            Fear = e.Fear,
             TurnNumber = e.TurnNumber,
             SortOrder = e.SortOrder,
             CreatedAtUtc = e.CreatedAtUtc,
@@ -4417,6 +4426,9 @@ namespace DA_Business.Repository.BaronyRepos
             e.OutcomeNotes = d.OutcomeNotes ?? "";
             e.AdditiveJson = Ser(d.Additive);
             e.PercentJson = Ser(d.Percent);
+            e.Prestige = d.Prestige;
+            e.Honor = d.Honor;
+            e.Fear = d.Fear;
             e.ClosedAtUtc = d.ClosedAtUtc;
         }
 
@@ -4428,6 +4440,9 @@ namespace DA_Business.Repository.BaronyRepos
             e.SpeakerName = string.IsNullOrWhiteSpace(d.SpeakerName) ? null : d.SpeakerName.Trim();
             e.IsResourceChange = d.IsResourceChange;
             e.AdditiveJson = Ser(d.Additive);
+            e.Prestige = d.Prestige;
+            e.Honor = d.Honor;
+            e.Fear = d.Fear;
             e.TurnNumber = d.TurnNumber;
             e.SortOrder = d.SortOrder;
         }

@@ -19,6 +19,10 @@ namespace DA_Models.BaronyModels
         public DA_Common.Barony.PpbVector Additive { get; set; } = new();
         public DA_Common.Barony.PpbVector Percent { get; set; } = new();
 
+        public int Prestige { get; set; }
+        public int Honor { get; set; }
+        public int Fear { get; set; }
+
         public DateTime CreatedAtUtc { get; set; }
         public DateTime UpdatedAtUtc { get; set; }
         public DateTime? ClosedAtUtc { get; set; }
@@ -41,6 +45,8 @@ namespace DA_Models.BaronyModels
             DA_Common.Barony.BaronAudiencePpb.ContributesToTurn(TurnNumber, Status, currentTurn);
 
         public bool HasPpb => !Additive.IsEmpty || !Percent.IsEmpty;
+        public bool HasPhp => Prestige != 0 || Honor != 0 || Fear != 0;
+        public bool HasGrants => HasPpb || HasPhp;
     }
 
     public class BaronAudienceExchangeDTO
@@ -64,8 +70,14 @@ namespace DA_Models.BaronyModels
         /// <summary>PPB delta granted by this resource-change line.</summary>
         public DA_Common.Barony.PpbVector Additive { get; set; } = new();
 
+        public int Prestige { get; set; }
+        public int Honor { get; set; }
+        public int Fear { get; set; }
+
         public int TurnNumber { get; set; }
         public int SortOrder { get; set; }
         public DateTime CreatedAtUtc { get; set; }
+
+        public bool HasPhp => Prestige != 0 || Honor != 0 || Fear != 0;
     }
 }

@@ -75,6 +75,7 @@
     [Parameter] public List<SeatPurposeTemplateDTO> PurposeTemplates { get; set; } = new();
     [Parameter] public List<BaronPhpSourceDTO> CustomSources { get; set; } = new();
     [Parameter] public List<BaronArtifactDTO> Artifacts { get; set; } = new();
+    [Parameter] public List<BaronAudienceDTO> Audiences { get; set; } = new();
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
@@ -90,7 +91,8 @@
     {
         var seat = BaronyCalc.SeatPhpContribution(Seat, PurposeTemplates);
         var items = BaronyCalc.ArtifactsPhpContribution(Artifacts, Seat);
-        _rows = BaronyCalc.BuildPhpRows(seat, items, CustomSources);
+        var adventures = BaronyCalc.AudiencePhpContribution(Audiences);
+        _rows = BaronyCalc.BuildPhpRows(seat, items, CustomSources, adventures);
         _total = BaronyCalc.SumPhpRows(_rows);
     }
 

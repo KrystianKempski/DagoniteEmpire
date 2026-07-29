@@ -29,11 +29,30 @@ else if (Barony is not null)
     <div class="baron-audience">
         <BaronySection Title="Audience summary">
             <Summary>
-                <PpbSummaryChips Vector="@SummaryAdditive" />
+                <div class="baron-audience__summary-chips">
+                    <PpbSummaryChips Vector="@SummaryAdditive" />
+                    @if (SummaryPhp.Prestige != 0 || SummaryPhp.Honor != 0 || SummaryPhp.Fear != 0)
+                    {
+                        <div class="baron-php-summary">
+                            @if (SummaryPhp.Prestige != 0)
+                            {
+                                <PhpMetricChip Metric="PhpMetric.Prestige" Value="@SummaryPhp.Prestige" />
+                            }
+                            @if (SummaryPhp.Honor != 0)
+                            {
+                                <PhpMetricChip Metric="PhpMetric.Honor" Value="@SummaryPhp.Honor" />
+                            }
+                            @if (SummaryPhp.Fear != 0)
+                            {
+                                <PhpMetricChip Metric="PhpMetric.Fear" Value="@SummaryPhp.Fear" />
+                            }
+                        </div>
+                    }
+                </div>
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    Non-cumulative PPB → Domain Panel Events · Cumulative → Project Summary.
+                    Additive PPB → Domain Panel Events / Resources Expected Income · PHP → Baron Card (From Adventures).
                 </MudText>
                 @if (SummaryRows.Count == 0)
                 {
@@ -42,29 +61,33 @@ else if (Barony is not null)
                 else
                 {
                     <div style="overflow-x:auto;">
-                        <table class="ppb-table ppb-table--advisors ppb-table--events ppb-table--lined">
+                        <table class="ppb-table ppb-table--advisors ppb-table--events ppb-table--lined baron-audience-summary-table">
                             <colgroup>
                                 <col class="city-building-col-name" />
                                 @foreach (var _ in PpbCatalog.All)
                                 {
                                     <col class="ppb-pair-col" />
-                                    <col class="ppb-pair-col" />
                                 }
+                                <col class="php-col" />
+                                <col class="php-col" />
+                                <col class="php-col" />
                             </colgroup>
                             <thead>
                                 <tr>
-                                    <th rowspan="2" class="ppb-row-label city-building-col-name">Audience</th>
+                                    <th class="ppb-row-label city-building-col-name">Audience</th>
                                     @foreach (var info in PpbCatalog.All)
                                     {
-                                        <th colspan="2" title="@info.NameEn">@PpbShort(info.Key)</th>
+                                        <th title="@info.NameEn">@PpbShort(info.Key)</th>
                                     }
-                                </tr>
-                                <tr>
-                                    @foreach (var _ in PpbCatalog.All)
-                                    {
-                                        <th class="ppb-subcol ppb-subcol--add">+</th>
-                                        <th class="ppb-subcol ppb-subcol--pct">%</th>
-                                    }
+                                    <th class="php-col php-col--prestige" title="@BaronPhpVisuals.Name(PhpMetric.Prestige)">
+                                        <PhpMetricIcon Metric="PhpMetric.Prestige" />
+                                    </th>
+                                    <th class="php-col php-col--honor" title="@BaronPhpVisuals.Name(PhpMetric.Honor)">
+                                        <PhpMetricIcon Metric="PhpMetric.Honor" />
+                                    </th>
+                                    <th class="php-col php-col--fear" title="@BaronPhpVisuals.Name(PhpMetric.Fear)">
+                                        <PhpMetricIcon Metric="PhpMetric.Fear" />
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -78,8 +101,10 @@ else if (Barony is not null)
                                         @foreach (var info in PpbCatalog.All)
                                         {
                                             <td class="@PpbCellStyle.ValueClass(info.Key, a.Additive[info.Key])">@FmtAdd(a.Additive[info.Key])</td>
-                                            <td class="@PpbCellStyle.ValueClass(info.Key, a.Percent[info.Key])">@FmtPct(a.Percent[info.Key])</td>
                                         }
+                                        <td class="@PhpScoreClass(PhpMetric.Prestige, a.Prestige)">@FmtPhp(a.Prestige)</td>
+                                        <td class="@PhpScoreClass(PhpMetric.Honor, a.Honor)">@FmtPhp(a.Honor)</td>
+                                        <td class="@PhpScoreClass(PhpMetric.Fear, a.Fear)">@FmtPhp(a.Fear)</td>
                                     </tr>
                                 }
                                 <tr class="ppb-summary-row">
@@ -87,8 +112,10 @@ else if (Barony is not null)
                                     @foreach (var info in PpbCatalog.All)
                                     {
                                         <td class="@PpbCellStyle.ValueClass(info.Key, SummaryAdditive[info.Key])"><b>@FmtAdd(SummaryAdditive[info.Key])</b></td>
-                                        <td class="@PpbCellStyle.ValueClass(info.Key, SummaryPercent[info.Key])"><b>@FmtPct(SummaryPercent[info.Key])</b></td>
                                     }
+                                    <td class="@PhpScoreClass(PhpMetric.Prestige, SummaryPhp.Prestige)"><b>@FmtPhp(SummaryPhp.Prestige)</b></td>
+                                    <td class="@PhpScoreClass(PhpMetric.Honor, SummaryPhp.Honor)"><b>@FmtPhp(SummaryPhp.Honor)</b></td>
+                                    <td class="@PhpScoreClass(PhpMetric.Fear, SummaryPhp.Fear)"><b>@FmtPhp(SummaryPhp.Fear)</b></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -226,15 +253,18 @@ else if (Barony is not null)
 
     private IReadOnlyList<BaronAudienceDTO> SummaryRows =>
         _audiences
-            .Where(a => a.ContributesToTurn(Barony?.TurnNumber ?? 0) && a.HasPpb)
+            .Where(a => a.ContributesToTurn(Barony?.TurnNumber ?? 0) && a.HasGrants)
             .OrderBy(a => a.Id)
             .ToList();
 
     private PpbVector SummaryAdditive =>
         PpbVector.Sum(SummaryRows.Select(a => a.Additive));
 
-    private PpbVector SummaryPercent =>
-        PpbVector.Sum(SummaryRows.Select(a => a.Percent));
+    private PhpTotals SummaryPhp =>
+        new(
+            SummaryRows.Sum(a => a.Prestige),
+            SummaryRows.Sum(a => a.Honor),
+            SummaryRows.Sum(a => a.Fear));
 
     private IReadOnlyList<BaronAudienceDTO> CurrentTurnActive =>
         _audiences
@@ -344,6 +374,9 @@ else if (Barony is not null)
             var additive = a.Additive?.Clone() ?? new PpbVector();
             additive.AddInPlace(data.Delta);
             a.Additive = additive;
+            a.Prestige += data.Prestige;
+            a.Honor += data.Honor;
+            a.Fear += data.Fear;
             await _baronyRepo.SaveAudience(a);
 
             await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
@@ -353,6 +386,9 @@ else if (Barony is not null)
                 IsFromPetitioner = false,
                 IsResourceChange = true,
                 Additive = data.Delta.Clone(),
+                Prestige = data.Prestige,
+                Honor = data.Honor,
+                Fear = data.Fear,
                 TurnNumber = Barony!.TurnNumber,
             });
 
@@ -476,7 +512,12 @@ else if (Barony is not null)
     }
 
     private static string FmtAdd(decimal v) => v == 0m ? "·" : PpbFormat.Additive(v);
-    private static string FmtPct(decimal v) => v == 0m ? "·" : PpbFormat.Percent(v);
+
+    private static string FmtPhp(int v) => v == 0 ? "·" : (v > 0 ? $"+{v}" : v.ToString());
+
+    private static string PhpScoreClass(PhpMetric metric, int value) =>
+        $"php-cell {BaronPhpVisuals.CssClass(metric)}"
+        + (value > 0 ? " php-cell--pos" : value < 0 ? " php-cell--neg" : "");
 
     private static string PpbShort(Ppb p) => p switch
     {

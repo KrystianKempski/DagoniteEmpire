@@ -80,10 +80,22 @@ else if (_overview is not null)
                 </span>
             </BaronyHudTip>
             <BaronyHudTip Title="Unrest" Text="@BaronyUiTooltips.MetaUnrest">
-                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
-                    <span class="barony-meta-bar__label">Unrest</span>
-                    <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
-                </span>
+                @if (CanManageAsMg)
+                {
+                    <button type="button"
+                            class="barony-meta-bar__stat barony-meta-bar__stat--centered barony-meta-bar__stat--clickable"
+                            @onclick="EditUnrestAsync">
+                        <span class="barony-meta-bar__label">Unrest</span>
+                        <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
+                    </button>
+                }
+                else
+                {
+                    <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                        <span class="barony-meta-bar__label">Unrest</span>
+                        <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
+                    </span>
+                }
             </BaronyHudTip>
             <BaronyHudTip Title="Conjuncture" Text="@BaronyUiTooltips.MetaConjuncture(_overview.Barony.ConjunctureDice, _overview.Barony.ConjunctureModifier)">
                 @if (CanManageAsMg)
@@ -356,6 +368,45 @@ else if (_overview is not null)
         => conj > EconomyConjunctureFormulas.ConjunctureNeutral ? "barony-meta-bar__value--pos"
             : conj < EconomyConjunctureFormulas.ConjunctureNeutral ? "barony-meta-bar__value--neg"
             : "";
+
+    private async Task EditUnrestAsync()
+    {
+        if (!CanManageAsMg || _overview is null)
+            return;
+
+        var parameters = new DialogParameters<UnrestEditDialog>
+        {
+            { x => x.Unrest, _overview.Barony.Unrest },
+        };
+
+        var dialog = await _dialogService.ShowAsync<UnrestEditDialog>(
+            "Unrest",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int unrest)
+            return;
+
+        try
+        {
+            _overview.Barony.Unrest = UnrestPpbFormulas.Clamp(unrest);
+            await _baronyRepo.UpdateBarony(_overview.Barony);
+            if (Barony is not null)
+                Barony.Unrest = _overview.Barony.Unrest;
+            _snackBar.Add("Unrest updated.", Severity.Success);
+            await ReloadOverviewAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save unrest: " + ex.Message, Severity.Error);
+        }
+    }
 
     private async Task EditConjunctureAsync()
     {

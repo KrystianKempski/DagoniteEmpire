@@ -14,6 +14,33 @@
             </div>
         </div>
 
+        @if (Audience.HasPpb || Audience.HasPhp)
+        {
+            <div class="baron-audience__ppb-glance" @onclick:stopPropagation="true">
+                @if (Audience.HasPpb)
+                {
+                    <PpbSummaryChips Vector="@AudienceGlance" />
+                }
+                @if (Audience.HasPhp)
+                {
+                    <div class="baron-php-summary">
+                        @if (Audience.Prestige != 0)
+                        {
+                            <PhpMetricChip Metric="PhpMetric.Prestige" Value="@Audience.Prestige" />
+                        }
+                        @if (Audience.Honor != 0)
+                        {
+                            <PhpMetricChip Metric="PhpMetric.Honor" Value="@Audience.Honor" />
+                        }
+                        @if (Audience.Fear != 0)
+                        {
+                            <PhpMetricChip Metric="PhpMetric.Fear" Value="@Audience.Fear" />
+                        }
+                    </div>
+                }
+            </div>
+        }
+
         @if (_isOpen)
         {
             <span class="project-card__turns">
@@ -35,16 +62,38 @@
                             <span>· T@(x.TurnNumber)</span>
                         </div>
                         <div class="baron-audience__exchange-body">@x.Body</div>
-                        @if (x.IsResourceChange && x.Additive is not null && !x.Additive.IsEmpty)
+                        @if (x.IsResourceChange
+                            && ((x.Additive is not null && !x.Additive.IsEmpty) || x.HasPhp))
                         {
                             <div class="baron-audience__ppb-delta">
-                                @foreach (var info in PpbCatalog.All)
+                                @if (x.Additive is not null && !x.Additive.IsEmpty)
                                 {
-                                    var v = x.Additive[info.Key];
-                                    if (v == 0m)
-                                        continue;
-                                    <span class="baron-audience__ppb-delta-item @PpbCellStyle.ValueClass(info.Key, v)">
-                                        @PpbFormat.Additive(v) @info.ShortEn
+                                    @foreach (var info in PpbCatalog.All)
+                                    {
+                                        var v = x.Additive[info.Key];
+                                        if (v == 0m)
+                                            continue;
+                                        <span class="baron-audience__ppb-delta-item @PpbCellStyle.ValueClass(info.Key, v)">
+                                            @PpbFormat.Additive(v) @info.ShortEn
+                                        </span>
+                                    }
+                                }
+                                @if (x.Prestige != 0)
+                                {
+                                    <span class="baron-audience__ppb-delta-item php-metric--prestige" title="Prestige">
+                                        @FmtPhp(x.Prestige) Prestige
+                                    </span>
+                                }
+                                @if (x.Honor != 0)
+                                {
+                                    <span class="baron-audience__ppb-delta-item php-metric--honor" title="Honor">
+                                        @FmtPhp(x.Honor) Honor
+                                    </span>
+                                }
+                                @if (x.Fear != 0)
+                                {
+                                    <span class="baron-audience__ppb-delta-item php-metric--fear" title="Fear">
+                                        @FmtPhp(x.Fear) Fear
                                     </span>
                                 }
                             </div>
@@ -52,13 +101,6 @@
                     </div>
                 }
             </div>
-
-            @if (Audience.HasPpb)
-            {
-                <div class="baron-audience__ppb-glance">
-                    <PpbSummaryChips Vector="@AudienceGlance" />
-                </div>
-            }
 
             @if (ShowSummary && (!string.IsNullOrWhiteSpace(Audience.GmSummary) || !string.IsNullOrWhiteSpace(Audience.OutcomeNotes)))
             {
@@ -247,4 +289,6 @@
         await OnSpeak.InvokeAsync(new SpeakRequest(text, isGm, speaker));
         _draft = "";
     }
+
+    private static string FmtPhp(int v) => v == 0 ? "·" : (v > 0 ? $"+{v}" : v.ToString());
 }

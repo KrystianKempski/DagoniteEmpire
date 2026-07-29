@@ -36,6 +36,15 @@ namespace DA_DataAccess.BaronyData
         /// <summary>PPB percent granted through this audience.</summary>
         public string PercentJson { get; set; } = "[]";
 
+        /// <summary>Prestige granted through this audience (Baron Card PHP).</summary>
+        public int Prestige { get; set; }
+
+        /// <summary>Honor granted through this audience (Baron Card PHP).</summary>
+        public int Honor { get; set; }
+
+        /// <summary>Fear granted through this audience (Baron Card PHP).</summary>
+        public int Fear { get; set; }
+
         public DateTime CreatedAtUtc { get; set; }
         public DateTime UpdatedAtUtc { get; set; }
         public DateTime? ClosedAtUtc { get; set; }
@@ -67,6 +76,10 @@ namespace DA_DataAccess.BaronyData
 
         /// <summary>PPB delta for resource-change lines (JSON <see cref="DA_Common.Barony.PpbVector"/>).</summary>
         public string AdditiveJson { get; set; } = "[]";
+
+        public int Prestige { get; set; }
+        public int Honor { get; set; }
+        public int Fear { get; set; }
 
         public int TurnNumber { get; set; }
         public int SortOrder { get; set; }

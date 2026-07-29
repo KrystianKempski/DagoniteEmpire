@@ -94,7 +94,10 @@
                                     <span class="city-building-name-text">@BaronAudiencePpb.SummaryRowName</span>
                                 </td>
                                 <td class="event-col-turns">
-                                    <span title="This turn">T@CurrentTurn</span>
+                                    <BaronyTooltip Title="Turn range"
+                                                   Text="@($"Turns {CurrentTurn}–{CurrentTurn}. Audience grants apply only on the turn they were granted.")">
+                                        <span>@(CurrentTurn)–@(CurrentTurn)</span>
+                                    </BaronyTooltip>
                                 </td>
                                 @foreach (var info in PpbCatalog.All)
                                 {

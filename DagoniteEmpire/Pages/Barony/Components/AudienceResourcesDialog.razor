@@ -7,17 +7,39 @@
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.body2" Class="mb-2">@_subtitle</MudText>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Adds PPB to this audience and posts a “Resource change” note in the dialogue.
-                Non-cumulative → Events · Cumulative → Project Summary.
+                Adds PPB and Prestige / Honor / Fear to this audience and posts a “Resource change” note.
+                Non-cumulative PPB → Events · Cumulative PPB → Resources (Expected Income) · PHP → Baron Card (From Adventures).
             </MudText>
             <MudTextField @bind-Value="_note"
                           Label="Description of changes"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="4"
+                          Immediate="true"
                           HelperText="Shown under the Resource change entry"
                           Class="baron-influence-field mb-2" />
             <PpbVectorEditor @bind-Value="_delta" Title="PPB change (+)" Compact="true" />
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Prestige / Honor / Fear</MudText>
+            <div class="baron-php-edit-fields">
+                <MudNumericField @bind-Value="_prestige"
+                                 Label="Prestige"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Immediate="true"
+                                 Class="baron-influence-field php-field php-field--prestige" />
+                <MudNumericField @bind-Value="_honor"
+                                 Label="Honor"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Immediate="true"
+                                 Class="baron-influence-field php-field php-field--honor" />
+                <MudNumericField @bind-Value="_fear"
+                                 Label="Fear"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Immediate="true"
+                                 Class="baron-influence-field php-field php-field--fear" />
+            </div>
         </div>
     </DialogContent>
     <DialogActions>
@@ -35,9 +57,14 @@
     private string _subtitle = "";
     private string _note = "";
     private PpbVector _delta = new();
+    private int _prestige;
+    private int _honor;
+    private int _fear;
+
+    private bool HasPhp => _prestige != 0 || _honor != 0 || _fear != 0;
 
     private bool CanSave =>
-        !string.IsNullOrWhiteSpace(_note) && !_delta.IsEmpty;
+        !string.IsNullOrWhiteSpace(_note) && (!_delta.IsEmpty || HasPhp);
 
     protected override void OnInitialized()
     {
@@ -51,8 +78,18 @@
     {
         if (!CanSave)
             return;
-        MudDialog.Close(DialogResult.Ok(new AudienceResourcesResult(_delta.Clone(), _note.Trim())));
+        MudDialog.Close(DialogResult.Ok(new AudienceResourcesResult(
+            _delta.Clone(),
+            _note.Trim(),
+            _prestige,
+            _honor,
+            _fear)));
     }
 
-    public sealed record AudienceResourcesResult(PpbVector Delta, string Note);
+    public sealed record AudienceResourcesResult(
+        PpbVector Delta,
+        string Note,
+        int Prestige,
+        int Honor,
+        int Fear);
 }

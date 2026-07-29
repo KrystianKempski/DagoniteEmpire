@@ -59,6 +59,14 @@ namespace DA_Common.Barony
             return !string.Equals(status, BaronAudienceStatus.Dismissed, StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Lifetime PHP on Baron Card: active + resolved grants.
+        /// Deferred (superseded) and dismissed audiences are excluded so defer chains do not double-count.
+        /// </summary>
+        public static bool ContributesToPhp(string? status) =>
+            !string.Equals(status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(status, BaronAudienceStatus.Dismissed, StringComparison.OrdinalIgnoreCase);
+
         public static PpbVector SliceNonCumulative(PpbVector? source)
         {
             var result = new PpbVector();

@@ -35,8 +35,9 @@ else if (_overview is not null)
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Domain Panel grand total for cumulative resources. Gold already subtracts liege tribute
-                (Budget Fief expense: gross income × tribute %). Matches Budget turn balance.
+                Domain Panel grand total for cumulative resources, plus Audiences grants this turn.
+                Gold already subtracts liege tribute (Budget Fief expense: gross income × tribute %).
+                Applied to stocks on Resolve Turn.
             </MudText>
             <div style="overflow-x:auto;">
                 <ResourceVectorTable Rows="@_expectedRows" NameHeader="Source" />
@@ -139,16 +140,32 @@ else if (_overview is not null)
         _stocksGlance = stocks;
         _expectedGlance = _expectedIncome;
 
+        BaronyCalc.AudienceCumulativeTotals(
+            _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
+        var audienceIncome = ResourceCatalog.Slice(audienceAdd);
+        var domainOnly = ResourceCatalog.Subtract(_expectedIncome, audienceIncome);
+
         _expectedRows = new List<ResourceTableRow>
         {
             new()
             {
                 Label = "Domain Panel grand total",
                 Description = "Expected cumulative PPB when the turn ends. Gold already subtracts liege tribute (Budget Fief).",
-                Values = _expectedIncome,
+                Values = domainOnly,
                 IsSystem = true,
             },
         };
+        if (!audienceIncome.IsEmpty)
+        {
+            _expectedRows.Add(new ResourceTableRow
+            {
+                Label = BaronAudiencePpb.SummaryRowName,
+                Description = "Cumulative PPB granted through audiences this turn (Food, Production, …). Applied on Resolve Turn.",
+                Values = audienceIncome,
+                IsSystem = true,
+            });
+        }
+
 
         var canEditStartStock = CanManageAsMg;
         _balanceRows = new List<ResourceTableRow>

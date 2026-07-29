@@ -103,11 +103,14 @@ namespace DagoniteEmpire.Pages.Barony
         {
             var sources = await baronyRepo.GetBaronPhpSources(barony.Id);
             var artifacts = await baronyRepo.GetBaronArtifacts(barony.Id);
+            var audiences = await baronyRepo.GetAudiences(barony.Id);
             var seat = await baronyRepo.EnsureSeat(barony.Id);
             var purposes = await baronyRepo.GetSeatPurposeTemplates(barony.Id);
             var seatContribution = BaronyCalc.SeatPhpContribution(seat, purposes);
             var itemsContribution = BaronyCalc.ArtifactsPhpContribution(artifacts, seat);
-            var totals = BaronyCalc.SumPhpRows(BaronyCalc.BuildPhpRows(seatContribution, itemsContribution, sources));
+            var adventuresContribution = BaronyCalc.AudiencePhpContribution(audiences);
+            var totals = BaronyCalc.SumPhpRows(BaronyCalc.BuildPhpRows(
+                seatContribution, itemsContribution, sources, adventuresContribution));
 
             if (barony.Prestige == totals.Prestige
                 && barony.Honor == totals.Honor

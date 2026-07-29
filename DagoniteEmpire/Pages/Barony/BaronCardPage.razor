@@ -30,6 +30,7 @@ else if (Barony is not null)
                      PurposeTemplates="@_purposeTemplates"
                      CustomSources="@_phpSources"
                      Artifacts="@_artifacts"
+                     Audiences="@_audiences"
                      CanEdit="@CanEdit"
                      OnChanged="ReloadAsync" />
 
@@ -56,6 +57,7 @@ else if (Barony is not null)
     private List<BaronInfluenceModifierDTO> _customModifiers = new();
     private List<BaronPhpSourceDTO> _phpSources = new();
     private List<BaronArtifactDTO> _artifacts = new();
+    private List<BaronAudienceDTO> _audiences = new();
     private List<BaronTimeActionDTO> _timeActions = new();
     private List<BaronTimeModifierDTO> _timeModifiers = new();
     private BaronySeatDTO? _seat;
@@ -80,6 +82,7 @@ else if (Barony is not null)
         _customModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
         _phpSources = await _baronyRepo.GetBaronPhpSources(Barony.Id);
         _artifacts = await _baronyRepo.GetBaronArtifacts(Barony.Id);
+        _audiences = await _baronyRepo.GetAudiences(Barony.Id);
         await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
         _timeActions = await _baronyRepo.GetBaronTimeActions(Barony.Id);
         _timeModifiers = await _baronyRepo.GetBaronTimeModifiers(Barony.Id);
@@ -98,7 +101,8 @@ else if (Barony is not null)
 
         var seat = BaronyCalc.SeatPhpContribution(_seat, _purposeTemplates);
         var items = BaronyCalc.ArtifactsPhpContribution(_artifacts, _seat);
-        var total = BaronyCalc.SumPhpRows(BaronyCalc.BuildPhpRows(seat, items, _phpSources));
+        var adventures = BaronyCalc.AudiencePhpContribution(_audiences);
+        var total = BaronyCalc.SumPhpRows(BaronyCalc.BuildPhpRows(seat, items, _phpSources, adventures));
 
         if (Barony.Prestige == total.Prestige
             && Barony.Honor == total.Honor

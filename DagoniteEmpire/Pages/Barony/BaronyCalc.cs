@@ -904,7 +904,10 @@ namespace DagoniteEmpire.Pages.Barony
             return PpbFormat.Round(pos + Math.Max(0m, scaling));
         }
 
-        /// <summary>Expected resource delta for HUD / Resources: Domain Panel Final minus liege tribute on Gold.</summary>
+        /// <summary>
+        /// Expected resource delta for HUD / Resources: Domain Panel Final minus liege tribute on Gold,
+        /// plus this turn's cumulative audience grants (Food, Production, …).
+        /// </summary>
         public static PpbVector ExpectedResourceIncome(
             BaronyOverviewDTO ov,
             CharacterDTO? character = null,
@@ -917,7 +920,10 @@ namespace DagoniteEmpire.Pages.Barony
             var gross = GrossGoldIncome(panel);
             var tribute = FiefTributeFormulas.ComputeTribute(gross, ov.Barony.LiegeTributePercent);
             expected[Ppb.Treasury] = PpbFormat.Round(expected[Ppb.Treasury] - tribute);
-            return expected;
+
+            AudienceCumulativeTotals(ov.Audiences, ov.Barony.TurnNumber, out var audienceAdd, out _);
+            expected.AddInPlace(ResourceCatalog.Slice(audienceAdd));
+            return ResourceCatalog.Slice(expected);
         }
 
         public sealed class DomainPanelRowSet
@@ -1136,7 +1142,8 @@ namespace DagoniteEmpire.Pages.Barony
         public static List<BaronPhpRow> BuildPhpRows(
             PhpTotals seatContribution,
             PhpTotals itemsContribution,
-            IEnumerable<BaronPhpSourceDTO>? customSources)
+            IEnumerable<BaronPhpSourceDTO>? customSources,
+            PhpTotals adventuresContribution = default)
         {
             var rows = new List<BaronPhpRow>
             {
@@ -1163,6 +1170,17 @@ namespace DagoniteEmpire.Pages.Barony
                         + "× the chamber prestige multiplier of the room where it is displayed "
                         + "(×1 if not placed).",
                 },
+                new()
+                {
+                    Source = BaronPhpSourceLabel.FromAdventures,
+                    Prestige = adventuresContribution.Prestige,
+                    Honor = adventuresContribution.Honor,
+                    Fear = adventuresContribution.Fear,
+                    IsSystem = true,
+                    Description =
+                        "Prestige, Honor and Fear granted through baronial audiences "
+                        + "(petitioner adventures). Deferred and dismissed audiences are excluded.",
+                },
             };
 
             foreach (var source in customSources ?? Enumerable.Empty<BaronPhpSourceDTO>())
@@ -1180,6 +1198,22 @@ namespace DagoniteEmpire.Pages.Barony
             }
 
             return rows;
+        }
+
+        /// <summary>Lifetime PHP for Baron Card (active + resolved; not deferred/dismissed).</summary>
+        public static PhpTotals AudiencePhpContribution(IEnumerable<BaronAudienceDTO>? audiences)
+        {
+            int prestige = 0, honor = 0, fear = 0;
+            foreach (var a in audiences ?? Enumerable.Empty<BaronAudienceDTO>())
+            {
+                if (!BaronAudiencePpb.ContributesToPhp(a.Status))
+                    continue;
+                prestige += a.Prestige;
+                honor += a.Honor;
+                fear += a.Fear;
+            }
+
+            return new PhpTotals(prestige, honor, fear);
         }
 
         /// <summary>

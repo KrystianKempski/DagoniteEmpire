@@ -5,5 +5,6 @@ namespace DA_Common.Barony
     {
         public const string FromSeat = "From seat";
         public const string FromItems = "From items";
+        public const string FromAdventures = "From Adventures";
     }
 }

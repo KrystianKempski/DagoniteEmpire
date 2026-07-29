@@ -3,12 +3,15 @@ namespace DA_Common.Barony
     public static class UnrestPpbFormulas
     {
         public const string InputLabel = "Unrest";
+        public const int Max = 5;
         public const decimal EconomyProductionPercentPerUnrest = 15m;
         public const decimal LoyaltyStabilityLawPerUnrest = 3m;
 
+        public static int Clamp(int unrest) => Math.Clamp(unrest, 0, Max);
+
         public static PpbVector ComputeAdditive(decimal unrest)
         {
-            var u = Math.Max(0m, unrest);
+            var u = Math.Max(0m, Math.Min(Max, unrest));
             var v = new PpbVector();
             v.EnsureSize();
             if (u == 0m) return v;
@@ -20,7 +23,7 @@ namespace DA_Common.Barony
 
         public static PpbVector ComputePercent(decimal unrest)
         {
-            var u = Math.Max(0m, unrest);
+            var u = Math.Max(0m, Math.Min(Max, unrest));
             var v = new PpbVector();
             v.EnsureSize();
             if (u == 0m) return v;

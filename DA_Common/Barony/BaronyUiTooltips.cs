@@ -25,7 +25,7 @@ namespace DA_Common.Barony
             "Terrain tiles assigned to this barony on the map.";
 
         public const string MetaUnrest =
-            "Community unrest level. Feeds the Community section and penalizes Loyalty, Stability, Law, Economy, and Production.";
+            "Community unrest level (0–5). Feeds the Community section and penalizes Loyalty, Stability, Law, Economy, and Production. MG can click to edit.";
 
         public static string MetaConjuncture(int dice, int modifier)
         {

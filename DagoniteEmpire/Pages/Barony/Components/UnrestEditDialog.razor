@@ -1,0 +1,45 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudText Typo="Typo.body2" Class="mb-2" Style="color:var(--barony-muted);">
+                Community unrest (0–@UnrestPpbFormulas.Max). Feeds Community penalties on Loyalty,
+                Stability, Law, Economy, and Production. Raised by failed loyalty tests when Stability ≤ 0.
+            </MudText>
+            <MudNumericField @bind-Value="_unrest"
+                             Label="Unrest"
+                             HelperText="@($"0 to {UnrestPpbFormulas.Max}")"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Max="@UnrestPpbFormulas.Max"
+                             Immediate="true"
+                             Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int Unrest { get; set; }
+
+    private int _unrest;
+
+    protected override void OnInitialized()
+    {
+        _unrest = UnrestPpbFormulas.Clamp(Unrest);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save() =>
+        MudDialog.Close(DialogResult.Ok(UnrestPpbFormulas.Clamp(_unrest)));
+}
