@@ -1,0 +1,64 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="barony-dialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">New audience</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_petitionerName"
+                      Label="Petitioner"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      HelperText="Name of the person seeking audience"
+                      Class="mb-2" />
+        <MudTextField @bind-Value="_title"
+                      Label="Audience title"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      HelperText="e.g. Plea for harvest help"
+                      Class="mb-2" />
+        <MudTextField @bind-Value="_opening"
+                      Label="Opening words"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="5"
+                      Immediate="true"
+                      HelperText="What the petitioner says first" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Submit" Disabled="_busy || !CanSubmit">
+            Grant audience
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private string _petitionerName = "";
+    private string _title = "";
+    private string _opening = "";
+    private bool _busy;
+
+    private bool CanSubmit =>
+        !string.IsNullOrWhiteSpace(_petitionerName)
+        && !string.IsNullOrWhiteSpace(_title)
+        && !string.IsNullOrWhiteSpace(_opening);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (!CanSubmit) return;
+        _busy = true;
+        MudDialog.Close(DialogResult.Ok(new NewAudienceResult(
+            _petitionerName.Trim(),
+            _title.Trim(),
+            _opening.Trim())));
+    }
+
+    public sealed record NewAudienceResult(string PetitionerName, string Title, string OpeningBody);
+}

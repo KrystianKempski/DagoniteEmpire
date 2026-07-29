@@ -1,35 +1,18 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IBaronyRepository _baronyRepo
 @inject IUserService _userService
+@inject IDialogService _dialogService
 @inject NavigationManager _navigationManager
 @inject ISnackbar _snackBar
 
 @if (_visible)
 {
-    <div class="barony-switcher">
-        <MudIcon Icon="@Icons.Material.Filled.Castle" Size="Size.Small" Class="barony-switcher__icon" />
-        <MudSelect T="BaronyListItemDTO?"
-                   Label="Barony"
-                   Value="@_selected"
-                   ValueChanged="OnBaronyChangedAsync"
-                   Variant="Variant.Outlined"
-                   Margin="Margin.Dense"
-                   Dense="true"
-                   Class="barony-switcher__select"
-                   Disabled="@(_baronies.Count == 0)">
-            @if (_baronies.Count == 0)
-            {
-                <MudSelectItem Value="@((BaronyListItemDTO?)null)">No baronies — create in Panel MG</MudSelectItem>
-            }
-            else
-            {
-                @foreach (var barony in _baronies)
-                {
-                    <MudSelectItem Value="@barony">@($"{barony.Name} — {barony.BaronName}")</MudSelectItem>
-                }
-            }
-        </MudSelect>
-    </div>
+    <button type="button"
+            class="barony-meta-bar__name barony-meta-bar__name--switch"
+            title="Switch barony"
+            @onclick="OpenSwitchDialogAsync">
+        @(_selected?.Name ?? "Select barony")
+    </button>
 }
 
 @code {
@@ -73,9 +56,34 @@
         }
     }
 
-    private async Task OnBaronyChangedAsync(BaronyListItemDTO? barony)
+    private async Task OpenSwitchDialogAsync()
     {
-        if (barony is null)
+        var parameters = new DialogParameters<BaronySwitchDialog>
+        {
+            { x => x.Baronies, _baronies },
+            { x => x.CurrentCharacterId, _selected?.CharacterId ?? 0 },
+        };
+
+        var dialog = await _dialogService.ShowAsync<BaronySwitchDialog>(
+            "Switch barony",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyListItemDTO picked)
+            return;
+
+        await OnBaronyChangedAsync(picked);
+    }
+
+    private async Task OnBaronyChangedAsync(BaronyListItemDTO barony)
+    {
+        if (_selected is not null && barony.CharacterId == _selected.CharacterId)
             return;
 
         _selected = barony;

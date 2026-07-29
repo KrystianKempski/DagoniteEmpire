@@ -8,8 +8,7 @@ namespace DA_Common.Barony
         string Holdings,
         string Description,
         string ProducedGoods,
-        string DemandedGoods,
-        int Wealth); // 1=destitute … 4=average barony … 6=Totham … 7=Warrington … 10=Imperial capital
+        int Wealth); // 1=destitute … 4=average barony … 6=Totham … 7=Warrington … 10=Imperial capital; count of available goods
 
     /// <summary>
     /// Global catalog of known lords of the Eastern March.
@@ -27,8 +26,7 @@ namespace DA_Common.Barony
                 Title: "Baronet",
                 Holdings: "Riolle (village)",
                 Description: "A handsome, short, slender blond. Known as the husband of the Margrave's daughter; he received a village near Warrington as her dowry.",
-                ProducedGoods: "Wine, Cloth, Cheese",
-                DemandedGoods: "Silk, Spices, Gold",
+                ProducedGoods: "Wine, Cloth",
                 Wealth: 2),
             new(
                 Name: "Ammett",
@@ -36,8 +34,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Westhills",
                 Description: "A quiet hill-country baron who keeps Westhills orderly and unremarkable. Prefers local justice and steady harvests over court intrigue in Warrington.",
-                ProducedGoods: "Wool, Cheese, Building stone, Honey & wax",
-                DemandedGoods: "Iron, Salt, Cloth, Soft metals",
+                ProducedGoods: "Building stone, Wool, Cheese",
                 Wealth: 3),
             new(
                 Name: "Aren",
@@ -45,8 +42,7 @@ namespace DA_Common.Barony
                 Title: "Count",
                 Holdings: "King's Peace",
                 Description: "From an old Kildrad house—the only one to open trade with the elves of Lorathrien. The Empire let him keep his lands after he swore fealty. Dignified and slim, known for loving Lorathrien jewelry and dress.",
-                ProducedGoods: "Elven forest crafts, Elven alder, Herbs & roots, Honey & wax, Dyes, Glass",
-                DemandedGoods: "Iron, Soft metals, Salt, Wine, Paper, Bricks",
+                ProducedGoods: "Elven forest crafts, Elven alder, Herbs & roots, Honey & wax, Dyes",
                 Wealth: 5),
             new(
                 Name: "Argewald",
@@ -54,8 +50,7 @@ namespace DA_Common.Barony
                 Title: "Marquis",
                 Holdings: "Totham",
                 Description: "A clever, restless, gold-loving marquis and member of the triumvirate that rules the Eastern March. A devotee of Tarat.",
-                ProducedGoods: "Wool, Cloth, Leather, Cheese, Flax & hemp, Horses, Bricks",
-                DemandedGoods: "Military weapons, Silk, Paper, Spices, Gold, Glass, War horses",
+                ProducedGoods: "Wool, Cloth, Leather, Cheese, Flax & hemp, Horses",
                 Wealth: 6),
             new(
                 Name: "Arienna",
@@ -63,8 +58,7 @@ namespace DA_Common.Barony
                 Title: "Baroness",
                 Holdings: "Thyruswill",
                 Description: "A sharp, adroit politician of weak blood who makes up for it with charm and natural magnetism. Despite a quarrel with her liege she kept and grew her barony by winning Margrave Hardwin's favour. A perpetual widow of Lord Luden Canterill.",
-                ProducedGoods: "Salted fish & meat, Cloth, Dyes, Glass, Wine",
-                DemandedGoods: "Gold, Spices, Iron, Soft metals, Silk",
+                ProducedGoods: "Salted fish & meat, Cloth, Dyes, Glass",
                 Wealth: 4),
             new(
                 Name: "Balon",
@@ -72,8 +66,7 @@ namespace DA_Common.Barony
                 Title: "Viscount",
                 Holdings: "Easthills",
                 Description: "Proud cousin of Margrave Greyward. Known as a stern, strong lord whose judgments are fair and whose lands stay safe.",
-                ProducedGoods: "Iron, Soft metals, Silver, Building stone, Granite, Gold",
-                DemandedGoods: "Salted fish & meat, Salt, Cloth, Wine, Paper, Military weapons",
+                ProducedGoods: "Ironwood, Soft metals, Building stone, Honey & wax, Leather",
                 Wealth: 5),
             new(
                 Name: "Bedjer",
@@ -81,8 +74,7 @@ namespace DA_Common.Barony
                 Title: "Archbishop of the Church of Thyrus",
                 Holdings: "Lands in and around Warrington",
                 Description: "Among the elite he is famed for a merchant's instinct and a love of gold.",
-                ProducedGoods: "Paper, Glass, Gold, Wine, Cloth, Ceramics",
-                DemandedGoods: "Silk, Spices, Ivory & walrus bone, Soft metals, Horses, Gemstones",
+                ProducedGoods: "Paper, Glass, Gold, Wine, Cloth",
                 Wealth: 5),
             new(
                 Name: "Benam",
@@ -90,8 +82,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Boldbeak",
                 Description: "Very old, yielding, and peaceable. Has two sons: Bennet and Benwin.",
-                ProducedGoods: "Wool, Cheese, Honey & wax, Flax & hemp",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Honey & wax, Wool, Cheese",
                 Wealth: 3),
             new(
                 Name: "Borwin",
@@ -99,8 +90,7 @@ namespace DA_Common.Barony
                 Title: "Baronet",
                 Holdings: "Whiteoak (village)",
                 Description: "A huge baronet from King's Peace who can drink vast amounts of alcohol and finish a small boar in a single feast.",
-                ProducedGoods: "Honey & wax, Salted fish & meat, Cheese",
-                DemandedGoods: "Wine, Spices, Cloth",
+                ProducedGoods: "Honey & wax, Salted fish & meat",
                 Wealth: 2),
             new(
                 Name: "Braddock",
@@ -108,8 +98,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Direward",
                 Description: "A stooped, balding man with thick spectacles, around fifty. Known for loyalty to his wife and a modest, unimposing stature.",
-                ProducedGoods: "Cloth, Paper, Ceramics, Dyes",
-                DemandedGoods: "Iron, Soft metals, Salt, Leather",
+                ProducedGoods: "Cloth, Paper, Honey & wax",
                 Wealth: 3),
             new(
                 Name: "Brant",
@@ -117,8 +106,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Oakencoast",
                 Description: "A coastal baron who watches the oak-lined shore and river mouths. Practical, weather-worn, and more interested in tolls and timber than in Warrington's pageantry.",
-                ProducedGoods: "Shipbuilding timber, Flax & hemp, Salted fish & meat, Clay",
-                DemandedGoods: "Iron, Salt, Soft metals, Cloth",
+                ProducedGoods: "Shipbuilding timber, Flax & hemp, Salted fish & meat",
                 Wealth: 3),
             new(
                 Name: "Clarrik",
@@ -126,8 +114,7 @@ namespace DA_Common.Barony
                 Title: "Count",
                 Holdings: "Hawk Greeting",
                 Description: "A sturdy man with a hard gaze and a proud step. Keeps a rich stud and wields real political weight—his cousin is Archbishop Bedjer Dyernedi, highest priest of Thyrus in the March.",
-                ProducedGoods: "Horses, War horses, Noble horses, Leather, Wool, Cheese",
-                DemandedGoods: "Iron, Silk, Soft metals, Salt, Spices, Military weapons",
+                ProducedGoods: "Horses, War horses, Noble horses, Leather, Wool",
                 Wealth: 5),
             new(
                 Name: "Colren",
@@ -135,8 +122,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Ilow",
                 Description: "A mid-rank Warrin baron of Ilow, careful with words and careful with borders. Rarely seen at great feasts, but his messengers are often in Warrington.",
-                ProducedGoods: "Wool, Flax & hemp, Cheese, Clay",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Wool, Flax & hemp, Cheese",
                 Wealth: 3),
             new(
                 Name: "Corlin",
@@ -144,8 +130,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Klin",
                 Description: "The obese baron of Klin. For years he fought Viscount Olgred of Brie, hiring sellswords of doubtful morals who nonetheless helped hold his domain.",
-                ProducedGoods: "Leather, Military weapons, Beer, Salted fish & meat",
-                DemandedGoods: "Iron, Horses, Salt, Cloth",
+                ProducedGoods: "Leather, Military weapons, Beer",
                 Wealth: 3),
             new(
                 Name: "Dalran",
@@ -153,8 +138,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Irtow",
                 Description: "Lord of Irtow, a lean holding watched from a tall spyre of stone. Reserved, exacting, and said to know every rumour that crosses his roads.",
-                ProducedGoods: "Paper, Soft metals, Glass, Ceramics",
-                DemandedGoods: "Spices, Silk, Iron, Cloth",
+                ProducedGoods: "Paper, Glass, Ceramics",
                 Wealth: 3),
             new(
                 Name: "Darrin",
@@ -162,8 +146,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Keatlow",
                 Description: "Very ambitious and warlike. His elder brothers died in strange circumstances; after taking power he seized neighbouring lands.",
-                ProducedGoods: "Iron, Military weapons, Horses, Leather",
-                DemandedGoods: "Salt, Cloth, Soft metals, Wine",
+                ProducedGoods: "Military weapons, Horses, Leather",
                 Wealth: 3),
             new(
                 Name: "Dramon",
@@ -171,8 +154,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Forestedge",
                 Description: "Younger son of Count Keven Hastwyck of Dawntree. Forestedge was carved from Dawntree and granted to him only recently. With a loan from his father and other funds he raised a sizable seat, then—backed by Dawntree's administration—grew the barony quickly and eyed further lands. He sought Hurtbow, but Margrave Hardwin gave it elsewhere. Ambitious and able; rumour says he will not leave his brother's inheritance alone and means to contest Dawntree itself against their father's will.",
-                ProducedGoods: "Ironwood, Leather, Honey & wax, Herbs & roots, Building stone",
-                DemandedGoods: "Iron, Soft metals, Cloth, Military weapons, Gold",
+                ProducedGoods: "Herbs & roots, Leather, Honey & wax",
                 Wealth: 3),
             new(
                 Name: "Dunna",
@@ -180,8 +162,7 @@ namespace DA_Common.Barony
                 Title: "Baronet",
                 Holdings: "Holdywag (village)",
                 Description: "One of the Koltbergs—a house known for poverty and wildness from the Koltberg hollow. They are little respected and often ignored in Eastern March politics.",
-                ProducedGoods: "Building stone, Honey & wax",
-                DemandedGoods: "Iron, Cloth",
+                ProducedGoods: "Wool",
                 Wealth: 1),
             new(
                 Name: "Durisug",
@@ -189,8 +170,7 @@ namespace DA_Common.Barony
                 Title: "Marquis (Mountain Prince)",
                 Holdings: "Groundfall",
                 Description: "A hard, unyielding, proud dwarven ruler of a mountain hold. Direct vassal of the Margrave. He has no official say over the March, but his word is respected.",
-                ProducedGoods: "Iron, Granite, Soft metals, Dagoferryt, Building stone, Military weapons",
-                DemandedGoods: "Wine, Cloth, Salt, Paper, Herbs & roots, Honey & wax",
+                ProducedGoods: "Iron, Silver, Heavy armor, Tarnit, Herbs & roots",
                 Wealth: 5),
             new(
                 Name: "Dyron",
@@ -198,8 +178,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Hurtbow",
                 Description: "Tall, thin, and little given to ambition. Known for intelligence and love of learning, logic, and games. Appointed by the Margrave to rule Hurtbow—a troubled barony on the edge of Irredale Forest.",
-                ProducedGoods: "Herbs & roots, Honey & wax, Leather, Ironwood",
-                DemandedGoods: "Iron, Salt, Military weapons, Soft metals",
+                ProducedGoods: "Herbs & roots, Honey & wax, Leather",
                 Wealth: 3),
             new(
                 Name: "Eldren",
@@ -207,8 +186,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Moratz",
                 Description: "Baron of Moratz and head of a house that keeps old local rites alongside Imperial law. Soft-spoken in council, stubborn on his own soil.",
-                ProducedGoods: "Herbs & roots, Clay, Ceramics, Honey & wax",
-                DemandedGoods: "Salt, Cloth, Iron, Paper",
+                ProducedGoods: "Herbs & roots, Clay, Ceramics",
                 Wealth: 3),
             new(
                 Name: "Erac",
@@ -216,17 +194,15 @@ namespace DA_Common.Barony
                 Title: "Count",
                 Holdings: "Willow Hill",
                 Description: "Loyal vassal of the Margrave. Master of the hunt and protector of the deep woods. Past fifty, still in good fighting shape.",
-                ProducedGoods: "Leather, Herbs & roots, Honey & wax, Ironwood, Salted fish & meat",
-                DemandedGoods: "Iron, Salt, Wine, Military weapons, Cloth",
-                Wealth: 4),
+                ProducedGoods: "Ironwood, Leather, Herbs & roots, Honey & wax, Furs",
+                Wealth: 5),
             new(
                 Name: "Erwald",
                 House: "Clifford",
                 Title: "Baron",
                 Holdings: "Earthcliff",
                 Description: "Twin brother of Parweld, who rules Newcliff. The brothers have been at feud for several years.",
-                ProducedGoods: "Wool, Cheese, Flax & hemp, Salted fish & meat",
-                DemandedGoods: "Iron, Salt, Military weapons, Cloth",
+                ProducedGoods: "Wool, Cheese, Flax & hemp",
                 Wealth: 3),
             new(
                 Name: "Garrel",
@@ -234,8 +210,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Waterhall",
                 Description: "Lord of Waterhall on the river flats. Mild manners hide a keen eye for flood-works, mills, and river tolls.",
-                ProducedGoods: "Salted fish & meat, Flax & hemp, Clay, Shipbuilding timber",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Shipbuilding timber, Flax & hemp, Salted fish & meat",
                 Wealth: 3),
             new(
                 Name: "Goller",
@@ -243,8 +218,7 @@ namespace DA_Common.Barony
                 Title: "Count",
                 Holdings: "Properties in Warrington",
                 Description: "A count in title only. Wealthy, a member of Warrington's council, he keeps a small merchant fleet sailing from the Empire as far as Solime, plus lesser ventures.",
-                ProducedGoods: "Wine, Cloth, Paper, Amber, Glass, Ceramics",
-                DemandedGoods: "Shipbuilding timber, Soft metals, Iron, Spices, Silk, Sugar",
+                ProducedGoods: "Wine, Cloth, Paper, Amber, Glass",
                 Wealth: 5),
             new(
                 Name: "Graige",
@@ -252,17 +226,15 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Darklyn",
                 Description: "A grain-and-oats baron of Darklyn, blunt and thrifty. His house thrives on harvest ledgers more than on knightly fame.",
-                ProducedGoods: "Wool, Cheese, Flax & hemp, Honey & wax",
-                DemandedGoods: "Iron, Salt, Cloth, Soft metals",
-                Wealth: 3),
+                ProducedGoods: "Honey & wax, Wool, Flax & hemp, Furs",
+                Wealth: 4),
             new(
                 Name: "Gron",
                 House: "Duevaft",
                 Title: "Baron",
                 Holdings: "Lonehill",
                 Description: "Rules the lonely rise of Lonehill with a small garrison and fewer friends. Suspicious of strangers, loyal to those who keep his roads clear.",
-                ProducedGoods: "Honey & wax, Building stone, Herbs & roots, Leather",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Honey & wax, Herbs & roots, Leather",
                 Wealth: 3),
             new(
                 Name: "Hardwin",
@@ -270,8 +242,7 @@ namespace DA_Common.Barony
                 Title: "Margrave",
                 Holdings: "Warrington",
                 Description: "A sturdy, proud, commanding man of about fifty, full of splendour. Overseer of the triumvirate and unofficial ruler of the Eastern March. A devotee of Thyrus.",
-                ProducedGoods: "Wine, Gold, Paper, Glass, Cloth, Horses, Soft metals, Military weapons",
-                DemandedGoods: "Spices, War horses, Gemstones, Ivory & walrus bone, Dagoferryt, Olive oil, Sugar, Amber",
+                ProducedGoods: "Wine, Gold, Paper, Glass, Cloth, Horses, Salted fish & meat",
                 Wealth: 7),
             new(
                 Name: "Herrath",
@@ -279,8 +250,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Summerhall",
                 Description: "A great man of gentle temper and a love of exotic dishes.",
-                ProducedGoods: "Wine, Cheese, Dyes, Salted fish & meat, Cloth",
-                DemandedGoods: "Silk, Ivory & walrus bone, Iron, Soft metals, Spices",
+                ProducedGoods: "Wine, Cheese, Dyes, Salted fish & meat",
                 Wealth: 4),
             new(
                 Name: "Huel",
@@ -288,8 +258,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Gillamoor",
                 Description: "Knighted at fourteen after the Battle of the Pass. Through a warlike temper, endurance, and few scruples he won one of the larger domains and armies in the Eastern March.",
-                ProducedGoods: "Military weapons, Medium armor, Horses, Iron, Leather",
-                DemandedGoods: "Salt, Cloth, Soft metals, Wine, Salted fish & meat",
+                ProducedGoods: "Military weapons, Medium armor, Horses, Leather",
                 Wealth: 4),
             new(
                 Name: "Igwar",
@@ -297,8 +266,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Olm",
                 Description: "A young, plain-looking youth—little known and of little interest at court.",
-                ProducedGoods: "Wool, Clay, Ceramics, Bricks",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Honey & wax, Clay, Ceramics",
                 Wealth: 3),
             new(
                 Name: "Jardan",
@@ -306,8 +274,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Ogrville",
                 Description: "Baron of Ogrville on rough border ground. Hard bargainer, harder drinker after victories, and forever short of good iron for his spears.",
-                ProducedGoods: "Leather, Military weapons, Honey & wax, Building stone",
-                DemandedGoods: "Iron, Salt, Cloth, Soft metals",
+                ProducedGoods: "Leather, Military weapons, Honey & wax",
                 Wealth: 3),
             new(
                 Name: "Jerald",
@@ -315,8 +282,7 @@ namespace DA_Common.Barony
                 Title: "Viscount",
                 Holdings: "Brodlow",
                 Description: "Has fought goblin hordes on his lands for over twenty years and lost two sons to them. Said to hate goblins so fiercely that once, disarmed and surrounded, he tore them apart and gouged out their eyes with his fingers.",
-                ProducedGoods: "Horses, Ironwood, Leather, Honey & wax, Military weapons",
-                DemandedGoods: "Iron, Salt, Cloth, Soft metals, Medium armor",
+                ProducedGoods: "Horses, Leather, Honey & wax, Military weapons",
                 Wealth: 4),
             new(
                 Name: "Jorah",
@@ -324,8 +290,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Last Inn",
                 Description: "A sturdy man in middle years—broad shoulders, thick side-whiskers, and a stern look over a wide, badly set nose. Proud, with an unblemished name. His son and heir Ivern has paralysed legs and cannot walk.",
-                ProducedGoods: "Leather, Cheese, Wool, Salted fish & meat",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Leather, Cheese, Wool",
                 Wealth: 3),
             new(
                 Name: "Keven",
@@ -333,8 +298,7 @@ namespace DA_Common.Barony
                 Title: "Count",
                 Holdings: "Dawntree",
                 Description: "Count of Dawntree and head of House Hastwyck. He recently carved Forestedge from his own lands and granted it to his younger son Dramon, keeping the elder line's claim on Dawntree. A careful patron: he backed Dramon's new seat with a loan and administrative help, yet remains wary of his son's appetite for further conquest.",
-                ProducedGoods: "Ironwood, Honey & wax, Leather, Herbs & roots, Wine, Cloth",
-                DemandedGoods: "Iron, Soft metals, Salt, Military weapons, Paper",
+                ProducedGoods: "Ironwood, Honey & wax, Leather, Herbs & roots",
                 Wealth: 4),
             new(
                 Name: "Kyllan",
@@ -342,8 +306,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Cywell",
                 Description: "A sharp-tongued baron of Cywell who collects debts as carefully as he collects insults. Small domain, long memory.",
-                ProducedGoods: "Cloth, Soft metals, Dyes, Ceramics",
-                DemandedGoods: "Iron, Salt, Silk, Paper",
+                ProducedGoods: "Cloth, Dyes, Ceramics",
                 Wealth: 3),
             new(
                 Name: "Lancion",
@@ -351,8 +314,7 @@ namespace DA_Common.Barony
                 Title: "Count",
                 Holdings: "Gray Obelisk",
                 Description: "Count of a major trade hub on Warrington's main river. Haughty and corpulent, with a large appetite and a love of gambling.",
-                ProducedGoods: "Salt, Ceramics, Cheese, Wool, Flax & hemp, Shipbuilding timber",
-                DemandedGoods: "Cloth, Iron, Soft metals, Silk, Spices, Wine",
+                ProducedGoods: "Salt, Ceramics, Cheese, Wool, Flax & hemp",
                 Wealth: 5),
             new(
                 Name: "Liram",
@@ -360,8 +322,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Lorenmill",
                 Description: "Keeps the mill-town of Lorenmill running on flour, tolls, and blacksmith smoke. Unflashy, but the bakers and millers of three baronies know his name.",
-                ProducedGoods: "Flax & hemp, Cheese, Clay, Bricks",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Building stone, Flax & hemp, Cheese",
                 Wealth: 3),
             new(
                 Name: "Lother",
@@ -369,8 +330,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Pitchfork",
                 Description: "An old, seasoned hand of March politics. Close friend of Marquis Argewald Canterill. Content with life, a loyal vassal, and a lover of every kind of feast.",
-                ProducedGoods: "Wine, Cheese, Honey & wax, Salted fish & meat",
-                DemandedGoods: "Spices, Silk, Iron, Soft metals",
+                ProducedGoods: "Wine, Cheese, Honey & wax",
                 Wealth: 3),
             new(
                 Name: "Melevan",
@@ -378,8 +338,7 @@ namespace DA_Common.Barony
                 Title: "Viscount",
                 Holdings: "Dreton",
                 Description: "Viscount of Dreton, where forges and mirror-bright plate make his house's name. Cool in council; hotter when contracts for metal are on the table.",
-                ProducedGoods: "Iron, Soft metals, Military weapons, Glass, Medium armor",
-                DemandedGoods: "Leather, Cloth, Salt, Wine, Bricks",
+                ProducedGoods: "Military weapons, Glass, Medium armor, Wool",
                 Wealth: 4),
             new(
                 Name: "Mevir",
@@ -387,8 +346,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Bonefyre",
                 Description: "A former Inquisition captain raised to a barony for service and ability.",
-                ProducedGoods: "Ironwood, Leather, Herbs & roots, Military weapons",
-                DemandedGoods: "Iron, Salt, Cloth, Soft metals",
+                ProducedGoods: "Leather, Herbs & roots, Honey & wax",
                 Wealth: 3),
             new(
                 Name: "Myrton",
@@ -396,8 +354,7 @@ namespace DA_Common.Barony
                 Title: "Marquis",
                 Holdings: "Betforge",
                 Description: "Honourable, loyal, and just—a veteran of the Kildrad war. Marquis of the triumvirate. A devotee of Ur.",
-                ProducedGoods: "Iron, Soft metals, Military weapons, Bricks, Building stone, Granite",
-                DemandedGoods: "Cloth, Wine, Salt, Paper, Leather, Horses",
+                ProducedGoods: "Iron, Soft metals, Building stone, Granite, Furs",
                 Wealth: 5),
             new(
                 Name: "Nathar",
@@ -405,8 +362,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Warning Arrow",
                 Description: "Handsome and well-groomed, in faultless dress with many touches of wood-elf fashion. Sparing with emotion, but polite.",
-                ProducedGoods: "Elven alder, Dyes, Cloth, Herbs & roots, Glass",
-                DemandedGoods: "Iron, Soft metals, Salt, Silk, Spices",
+                ProducedGoods: "Dyes, Cloth, Herbs & roots, Glass",
                 Wealth: 4),
             new(
                 Name: "Nowald",
@@ -414,8 +370,7 @@ namespace DA_Common.Barony
                 Title: "Baronet",
                 Holdings: "Nerton (village by Warrington)",
                 Description: "Son of a cousin of Margrave Hardwin Greatwing. A sturdy, tall dark-haired man around thirty. Influential and ambitious.",
-                ProducedGoods: "Wine, Cloth, Horses",
-                DemandedGoods: "Gold, Spices, Silk",
+                ProducedGoods: "Wine, Cloth",
                 Wealth: 2),
             new(
                 Name: "Olgred",
@@ -423,8 +378,7 @@ namespace DA_Common.Barony
                 Title: "Viscount",
                 Holdings: "Brie",
                 Description: "Of Kildrad blood. After his father's death he turned the barony into a military zone and entered a war with Lord Werdhog of Klin that he could not win.",
-                ProducedGoods: "Military weapons, Horses, Iron, Leather, Medium armor",
-                DemandedGoods: "Salt, Cloth, Soft metals, Wine, Paper",
+                ProducedGoods: "Military weapons, Horses, Leather, Medium armor",
                 Wealth: 4),
             new(
                 Name: "Orswal",
@@ -432,8 +386,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Bearbury",
                 Description: "Baron of Bearbury, famed for open hospitality and for hunting bears in the nearby woods. Generous to guests, slow to forgive a slight at his table.",
-                ProducedGoods: "Honey & wax, Leather, Salted fish & meat, Ironwood",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Honey & wax, Leather, Salted fish & meat",
                 Wealth: 3),
             new(
                 Name: "Parweld",
@@ -441,8 +394,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Newcliff",
                 Description: "Twin brother of Erwald, who rules Earthcliff. The brothers have been at feud for several years.",
-                ProducedGoods: "Wool, Cheese, Flax & hemp, Salted fish & meat",
-                DemandedGoods: "Iron, Salt, Military weapons, Cloth",
+                ProducedGoods: "Wool, Cheese, Flax & hemp",
                 Wealth: 3),
             new(
                 Name: "Payton",
@@ -450,8 +402,7 @@ namespace DA_Common.Barony
                 Title: "Viscount",
                 Holdings: "Northlap",
                 Description: "Lord of a foothill settlement ringed by wild western forests. Watches the western border and the Edge Mountains. Rumours tie his house to witches.",
-                ProducedGoods: "Herbs & roots, Honey & wax, Ironwood, Leather, Building stone",
-                DemandedGoods: "Iron, Salt, Cloth, Soft metals, Wine",
+                ProducedGoods: "Iron, Building stone, Soft metals, Granite",
                 Wealth: 4),
             new(
                 Name: "Piff",
@@ -459,8 +410,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Hogbridge",
                 Description: "Fourth son of Lord Ogwal (the three before him died in strange circumstances). Massive, fat, strong, and foul-smelling. Looks duller than he is.",
-                ProducedGoods: "Leather, Salted fish & meat, Wool, Clay",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Leather, Salted fish & meat, Wool",
                 Wealth: 3),
             new(
                 Name: "Pranar",
@@ -468,8 +418,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Lafast",
                 Description: "An elderly baron of a noble house. True to his word, honourable, and proud. Known for sense, caution, and choosing good people.",
-                ProducedGoods: "Cheese, Cloth, Horses, Wine",
-                DemandedGoods: "Iron, Soft metals, Salt, Military weapons",
+                ProducedGoods: "Cheese, Cloth, Horses",
                 Wealth: 3),
             new(
                 Name: "Ruger",
@@ -477,8 +426,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Fillbury",
                 Description: "A practical Fillbury baron who minds orchards, bridges, and market days. Avoids open feuds; settles most quarrels with coin or a quiet favour.",
-                ProducedGoods: "Honey & wax, Cheese, Flax & hemp, Dyes",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Honey & wax, Cheese, Flax & hemp",
                 Wealth: 3),
             new(
                 Name: "Ryher",
@@ -486,8 +434,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Bredow",
                 Description: "Started a conflict with the Vorgowelds that turned a prosperous trading domain into a war-torn, militarised ruin.",
-                ProducedGoods: "Military weapons, Iron, Leather, Cloth",
-                DemandedGoods: "Salt, Soft metals, Wine, Spices",
+                ProducedGoods: "Military weapons, Leather, Cloth",
                 Wealth: 3),
             new(
                 Name: "Sulvan",
@@ -495,8 +442,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Timberhill",
                 Description: "A huge man of great strength and fighting skill. Oddly known for a gentle nature and a love of animals.",
-                ProducedGoods: "Ironwood, Honey & wax, Leather, Herbs & roots",
-                DemandedGoods: "Iron, Cloth, Salt, Soft metals",
+                ProducedGoods: "Honey & wax, Leather, Herbs & roots",
                 Wealth: 3),
             new(
                 Name: "Thaddeus",
@@ -504,8 +450,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Darkhold",
                 Description: "A decorated general and veteran of the war against the lizardfolk, come from deep in the Empire. Of a significant, wealthy, honourable family.",
-                ProducedGoods: "Military weapons, Medium armor, Horses, Iron, Leather",
-                DemandedGoods: "Wine, Cloth, Salt, Soft metals, Paper",
+                ProducedGoods: "Military weapons, Medium armor, Horses, Leather",
                 Wealth: 4),
             new(
                 Name: "Tirus",
@@ -513,8 +458,7 @@ namespace DA_Common.Barony
                 Title: "Viscount",
                 Holdings: "Madtree",
                 Description: "Viscount of Madtree, where twisted old oaks and odd local rites keep travellers wary. Dry humour, sharp ledgers, and little patience for superstition—unless it pays.",
-                ProducedGoods: "Herbs & roots, Honey & wax, Paper, Ironwood, Dyes",
-                DemandedGoods: "Iron, Salt, Cloth, Soft metals, Wine",
+                ProducedGoods: "Ironwood, Herbs & roots, Honey & wax, Paper",
                 Wealth: 4),
             new(
                 Name: "Turen",
@@ -522,8 +466,7 @@ namespace DA_Common.Barony
                 Title: "Baronet",
                 Holdings: "Um (village)",
                 Description: "One of the Koltbergs—a house known for poverty and wildness from the Koltberg hollow. They are little respected and often ignored in Eastern March politics.",
-                ProducedGoods: "Building stone, Honey & wax",
-                DemandedGoods: "Iron, Cloth",
+                ProducedGoods: "Sulfur",
                 Wealth: 1),
             new(
                 Name: "Urven",
@@ -531,8 +474,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Orlyn",
                 Description: "A legitimised bastard of a Greyward cadet line, distant kin to Myrton. An adroit, merciful ruler who minds his subjects' welfare. Organiser of the \"Royal Hunts\", very popular among the elite.",
-                ProducedGoods: "Ironwood, Herbs & roots, Honey & wax, Leather, Dyes",
-                DemandedGoods: "Iron, Salt, Cloth, Soft metals, Wine",
+                ProducedGoods: "Ironwood, Soft metals, Building stone, Leather",
                 Wealth: 4),
             new(
                 Name: "Virrol",
@@ -540,8 +482,7 @@ namespace DA_Common.Barony
                 Title: "Viscount",
                 Holdings: "Zinth",
                 Description: "Warm, kind, and intelligent, though of frail build and rather timid. Even so, a good steward of quite prosperous Zinth.",
-                ProducedGoods: "Glass, Cloth, Cheese, Paper, Ceramics",
-                DemandedGoods: "Iron, Soft metals, Salt, Silk, Spices",
+                ProducedGoods: "Glass, Cloth, Cheese, Paper",
                 Wealth: 4),
             new(
                 Name: "Volenbert",
@@ -549,8 +490,7 @@ namespace DA_Common.Barony
                 Title: "Baronet",
                 Holdings: "Lands by Warrington",
                 Description: "An older man who recently lost his daughter Vivienne.",
-                ProducedGoods: "Cloth, Cheese, Wine",
-                DemandedGoods: "Spices, Silk, Gold",
+                ProducedGoods: "Cloth, Cheese",
                 Wealth: 2),
             new(
                 Name: "Vortigern",
@@ -558,8 +498,7 @@ namespace DA_Common.Barony
                 Title: "Baron",
                 Holdings: "Blackhammer",
                 Description: "Newly raised lord of Blackhammer Valley. A former mercenary with a murky past and a reputation as a capable, resourceful fighter.",
-                ProducedGoods: "Building stone, Iron, Soft metals, Granite",
-                DemandedGoods: "Leather, Cloth, Salt, Military weapons",
+                ProducedGoods: "Wool, Cheese, Leather",
                 Wealth: 3),
             new(
                 Name: "Welron",
@@ -567,8 +506,7 @@ namespace DA_Common.Barony
                 Title: "Enforest",
                 Holdings: "Redpine",
                 Description: "Holder of the Enforest title over Redpine woods—ranger-lord more than courtier. Knows every game trail and every outlaw camp under the red pines.",
-                ProducedGoods: "Ironwood, Herbs & roots, Honey & wax, Leather",
-                DemandedGoods: "Iron, Salt, Cloth, Soft metals",
+                ProducedGoods: "Ironwood, Herbs & roots, Honey & wax",
                 Wealth: 3),
             new(
                 Name: "Will the Stammerer",
@@ -576,8 +514,7 @@ namespace DA_Common.Barony
                 Title: "Baronet",
                 Holdings: "Arg (village)",
                 Description: "One of the Koltbergs—a house known for poverty and wildness from the Koltberg hollow. They are little respected and often ignored in Eastern March politics.",
-                ProducedGoods: "Building stone, Honey & wax",
-                DemandedGoods: "Iron, Cloth",
+                ProducedGoods: "Herbs & roots",
                 Wealth: 1),
             new(
                 Name: "Yagga",
@@ -585,8 +522,7 @@ namespace DA_Common.Barony
                 Title: "Baroness",
                 Holdings: "Borolin",
                 Description: "An old house from Kilgrad days. At its head stands young, beautiful, warlike Yagga, whose looks are matched only by the force of her temper.",
-                ProducedGoods: "Horses, Military weapons, Leather, Ironwood",
-                DemandedGoods: "Iron, Wine, Salt, Cloth",
+                ProducedGoods: "Horses, Leather, Wool",
                 Wealth: 3),
         };
     }

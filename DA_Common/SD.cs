@@ -670,6 +670,8 @@ namespace DA_Common
         public const string JewelCrownWhite = "icons/jewel-crown_white.svg";
         public const string JewelCrown = "icons/jewel-crown.svg";
         public const string Compass = "icons/compass.svg";
+        public const string Windmill = "icons/windmill.svg";
+        public const string WindmillBlack = "icons/windmill-black.svg";
         public const string TwoCoins = "icons/two-coins.svg";
         public const string Trade = "icons/trade.svg";
         public const string WoodenCrate = "icons/wooden-crate.svg";

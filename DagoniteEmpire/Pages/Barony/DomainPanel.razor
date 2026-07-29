@@ -18,9 +18,18 @@ else if (LoadError is not null)
 else if (_overview is not null)
 {
     <div class="barony-meta-bar" aria-label="Barony status">
-        <BaronyHudTip Title="Barony" Text="@BaronyUiTooltips.MetaBaronyName">
-            <div class="barony-meta-bar__name">@_overview.Barony.Name</div>
-        </BaronyHudTip>
+        @if (CanManageAsMg)
+        {
+            <BaronyHudTip Title="Barony" Text="@BaronyUiTooltips.MetaBaronyNameMg">
+                <BaronySwitcher />
+            </BaronyHudTip>
+        }
+        else
+        {
+            <BaronyHudTip Title="Barony" Text="@BaronyUiTooltips.MetaBaronyName">
+                <div class="barony-meta-bar__name">@_overview.Barony.Name</div>
+            </BaronyHudTip>
+        }
         <div class="barony-meta-bar__stats">
             <BaronyHudTip Title="Year" Text="@BaronyUiTooltips.MetaYear">
                 <span class="barony-meta-bar__stat">
@@ -183,6 +192,7 @@ else if (_overview is not null)
     <EventsSection BaronyId="@BaronyId"
                    CurrentTurn="@_overview.Barony.TurnNumber"
                    Events="@_overview.Events"
+                   Audiences="@_overview.Audiences"
                    CanManage="@CanManageAsMg"
                    OnChanged="ReloadOverviewAsync" />
     <ArmySection Rows="@_armyRows" />

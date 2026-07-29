@@ -84,6 +84,121 @@ namespace DA_Common.Barony
             return new MarchMapTradePath(chain);
         }
 
+        public static bool AreAdjacent(MarchMapDocument document, string nodeIdA, string nodeIdB)
+        {
+            if (string.IsNullOrWhiteSpace(nodeIdA) || string.IsNullOrWhiteSpace(nodeIdB))
+                return false;
+            var adj = BuildAdjacency(document);
+            return adj.TryGetValue(nodeIdA, out var neighbors) &&
+                   neighbors.Contains(nodeIdB, StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Whether a walk from the seat exists that visits paragraph lords in order (any path, not necessarily shortest).</summary>
+        public static bool RouteLordSequenceExists(
+            MarchMapDocument document,
+            string startNodeId,
+            IReadOnlyList<string> lordKeysInOrder,
+            IReadOnlyCollection<string> blockedLordKeys)
+        {
+            if (string.IsNullOrWhiteSpace(startNodeId) || lordKeysInOrder.Count == 0)
+                return false;
+
+            var nodes = (document.Nodes ?? new List<MarchMapNode>())
+                .ToDictionary(n => n.Id, StringComparer.OrdinalIgnoreCase);
+            if (!nodes.ContainsKey(startNodeId))
+                return false;
+
+            var blocked = new HashSet<string>(blockedLordKeys ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+            var adj = BuildAdjacency(document);
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { startNodeId };
+
+            return VisitNext(0, startNodeId);
+
+            bool VisitNext(int lordIndex, string currentId)
+            {
+                if (!adj.TryGetValue(currentId, out var neighbors))
+                    return false;
+
+                var expectedLord = lordKeysInOrder[lordIndex];
+                foreach (var nextId in neighbors)
+                {
+                    if (visited.Contains(nextId))
+                        continue;
+                    if (!nodes.TryGetValue(nextId, out var next))
+                        continue;
+                    if (string.IsNullOrWhiteSpace(next.LordKey))
+                        continue;
+                    if (!string.Equals(next.LordKey, expectedLord, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var isDest = lordIndex == lordKeysInOrder.Count - 1;
+                    if (blocked.Contains(next.LordKey!))
+                        continue;
+
+                    visited.Add(nextId);
+                    if (isDest)
+                        return true;
+                    if (VisitNext(lordIndex + 1, nextId))
+                        return true;
+                    visited.Remove(nextId);
+                }
+
+                return false;
+            }
+        }
+
+        public static MarchMapTradePath? PathFromNodeIds(MarchMapDocument document, IReadOnlyList<string> nodeIds)
+        {
+            if (nodeIds.Count < 2)
+                return null;
+
+            var chain = new List<MarchMapNode>();
+            foreach (var id in nodeIds)
+            {
+                var node = document.Nodes?.FirstOrDefault(n =>
+                    string.Equals(n.Id, id, StringComparison.OrdinalIgnoreCase));
+                if (node is null)
+                    return null;
+                chain.Add(node);
+            }
+
+            return new MarchMapTradePath(chain);
+        }
+
+        public static IReadOnlyList<string> ReachableNeighborIds(
+            MarchMapDocument document,
+            string fromNodeId,
+            IReadOnlyCollection<string> blockedLordKeys,
+            string? playerSeatNodeId,
+            IReadOnlyCollection<string> alreadyOnPathNodeIds)
+        {
+            var adj = BuildAdjacency(document);
+            if (!adj.TryGetValue(fromNodeId, out var neighbors))
+                return Array.Empty<string>();
+
+            var onPath = new HashSet<string>(alreadyOnPathNodeIds ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+            var blocked = new HashSet<string>(blockedLordKeys ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+            var result = new List<string>();
+
+            foreach (var nextId in neighbors)
+            {
+                if (onPath.Contains(nextId))
+                    continue;
+                var node = document.Nodes?.FirstOrDefault(n =>
+                    string.Equals(n.Id, nextId, StringComparison.OrdinalIgnoreCase));
+                if (node is null || string.IsNullOrWhiteSpace(node.LordKey))
+                    continue;
+                if (!string.IsNullOrWhiteSpace(playerSeatNodeId) &&
+                    string.Equals(node.Id, playerSeatNodeId, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (blocked.Contains(node.LordKey!))
+                    continue;
+                result.Add(nextId);
+            }
+
+            return result;
+        }
+
         public static Dictionary<string, List<string>> BuildAdjacency(MarchMapDocument document)
         {
             var adj = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);

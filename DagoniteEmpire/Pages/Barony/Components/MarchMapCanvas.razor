@@ -97,7 +97,9 @@
                         var isPlayerSeat = PlayerBaronyMarchSeats.IsPlayerSeat(node, PlayerSeatNodeId);
                         var isBlocked = IsBlocked(node);
                         var onDesign = DesignPathNodeIds.Any(id => string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase));
-                        <g class="march-map-marker @visual.MarkerClass @(isPlayerSeat ? "march-map-marker--player-seat" : "") @(isBlocked ? "march-map-marker--blocked" : "") @(onDesign ? "march-map-marker--design" : "") @(selected ? "march-map-marker--selected" : "") @(connectHint ? "march-map-marker--connect" : "")"
+                        var routeReachable = ActiveTool == MarchMapTool.DesignRoute && DesignRouteManualMode &&
+                                             DesignRouteReachableNodeIds.Any(id => string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase));
+                        <g class="march-map-marker @visual.MarkerClass @(isPlayerSeat ? "march-map-marker--player-seat" : "") @(isBlocked ? "march-map-marker--blocked" : "") @(onDesign ? "march-map-marker--design" : "") @(selected ? "march-map-marker--selected" : "") @(connectHint || routeReachable ? "march-map-marker--connect" : "")"
                            transform="translate(@Fmt(node.X), @Fmt(node.Y))"
                            @onclick:stopPropagation="true"
                            @onclick="() => OnNodeClick(node)"
@@ -262,10 +264,12 @@
     [Parameter] public MarchMapPlayerBaronyContext? PlayerBarony { get; set; }
     [Parameter] public IReadOnlyCollection<string> BlockedLordKeys { get; set; } = Array.Empty<string>();
     [Parameter] public IReadOnlyList<string> DesignPathNodeIds { get; set; } = Array.Empty<string>();
+    [Parameter] public bool DesignRouteManualMode { get; set; }
+    [Parameter] public IReadOnlyList<string> DesignRouteReachableNodeIds { get; set; } = Array.Empty<string>();
     [Parameter] public IReadOnlyList<MarchMapTradeRouteOverlay> TradeRouteOverlays { get; set; } = Array.Empty<MarchMapTradeRouteOverlay>();
     [Parameter] public EventCallback<MarchMapDocument> DocumentChanged { get; set; }
     [Parameter] public EventCallback<MarchMapNode> NodeClicked { get; set; }
-    [Parameter] public EventCallback<IReadOnlyCollection<string>> BlockedLordsChanged { get; set; }
+    [Parameter] public EventCallback<BlockTradeToggleRequest> BlockTradeToggleRequested { get; set; }
 
     private ElementReference _viewportRef;
     private ElementReference _mediaRef;
@@ -297,8 +301,24 @@
         if (!firstRender)
             return;
 
-        _wheelModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/march-map.js");
-        await _wheelModule.InvokeVoidAsync("attachWheelZoom", _viewportRef, _mediaRef);
+        try
+        {
+            _wheelModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/march-map.js?v=focus-zoom");
+
+            var seat = string.IsNullOrWhiteSpace(PlayerSeatNodeId)
+                ? null
+                : Document.Nodes.FirstOrDefault(n =>
+                    string.Equals(n.Id, PlayerSeatNodeId, StringComparison.OrdinalIgnoreCase));
+
+            if (seat is not null)
+                await _wheelModule.InvokeVoidAsync("attachWheelZoom", _viewportRef, _mediaRef, seat.X, seat.Y, 3.0);
+            else
+                await _wheelModule.InvokeVoidAsync("attachWheelZoom", _viewportRef, _mediaRef);
+        }
+        catch (JSException)
+        {
+            /* map pan/zoom optional — do not break the Blazor circuit */
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -581,13 +601,11 @@
         if (_selectedNode?.LordKey is null)
             return;
 
-        var set = BlockedLordKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (blocked)
-            set.Add(_selectedNode.LordKey);
-        else
-            set.Remove(_selectedNode.LordKey);
-
-        await BlockedLordsChanged.InvokeAsync(set);
+        await BlockTradeToggleRequested.InvokeAsync(new BlockTradeToggleRequest
+        {
+            LordKey = _selectedNode.LordKey,
+            Block = blocked,
+        });
     }
 
     private Task NotifyChangedAsync() => DocumentChanged.InvokeAsync(Document);

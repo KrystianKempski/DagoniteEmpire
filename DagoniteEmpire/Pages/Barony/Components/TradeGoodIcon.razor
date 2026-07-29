@@ -1,0 +1,30 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<span class="trade-good-icon @(NeedsOutline ? "resource-icon--dark-outline" : null) @Class"
+      style="@IconStyle"
+      title="@(string.IsNullOrWhiteSpace(Title) ? null : Title)"
+      aria-hidden="@(string.IsNullOrWhiteSpace(Title) ? "true" : null)"
+      aria-label="@Title"></span>
+
+@code {
+    [Parameter] public string? GoodKey { get; set; }
+    [Parameter] public TradeGoodEntry? Good { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private TradeGoodEntry? Resolved => Good ?? TradeGoodsCatalog.Find(GoodKey);
+
+    private bool NeedsOutline => TradeGoodsCatalog.NeedsDarkOutline(Resolved?.Key ?? GoodKey);
+
+    private string IconStyle
+    {
+        get
+        {
+            var icon = Resolved?.IconUrl ?? TradeGoodsCatalog.IconUrl(GoodKey);
+            var color = Resolved?.ColorHex ?? TradeGoodsCatalog.ColorHex(GoodKey);
+            return $"--resource-color:{color};" +
+                   $"-webkit-mask-image:url('{icon}');" +
+                   $"mask-image:url('{icon}');";
+        }
+    }
+}

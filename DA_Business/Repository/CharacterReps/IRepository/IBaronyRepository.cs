@@ -116,6 +116,17 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         /// <summary>Unread outbound (baron→) letters across all baronies — for MG/Admin FAB.</summary>
         Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForGm();
 
+        // --- Baron audiences (petitioner dialogues) ---
+        Task<List<BaronAudienceDTO>> GetAudiences(int baronyId);
+        Task<BaronAudienceDTO> SaveAudience(BaronAudienceDTO dto);
+        Task<int> DeleteAudience(int id);
+        Task<BaronAudienceExchangeDTO> SaveAudienceExchange(BaronAudienceExchangeDTO dto);
+        Task<int> DeleteAudienceExchange(int id);
+        /// <summary>MG: mark deferred. Spawns a continuation on next Resolve Turn.</summary>
+        Task<BaronAudienceDTO> DeferAudience(int audienceId);
+        Task<BaronAudienceDTO> ResolveAudience(int audienceId, string? gmSummary, string? outcomeNotes);
+        Task<BaronAudienceDTO> DismissAudience(int audienceId, string? gmSummary = null);
+
         // --- Offices influence ---
         Task<List<AdvisorInfluenceModifierDTO>> GetAdvisorInfluenceModifiers(int baronyId);
         Task<AdvisorInfluenceModifierDTO> SaveAdvisorInfluenceModifier(AdvisorInfluenceModifierDTO dto);

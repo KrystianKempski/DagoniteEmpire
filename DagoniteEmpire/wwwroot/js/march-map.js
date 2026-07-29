@@ -7,7 +7,12 @@ const DEFAULT_MAP_HEIGHT = 6690;
  * Scale 1 = largest contain-fit of the map in the viewport (correct aspect, no stretch).
  * Cannot zoom out below 1.
  */
-export function attachWheelZoom(viewport, media) {
+/**
+ * @param {number|null|undefined} focusNx - SVG viewBox X (0..1000) to center on load
+ * @param {number|null|undefined} focusNy - SVG viewBox Y (0..1000) to center on load
+ * @param {number|null|undefined} focusScale - initial zoom (e.g. 4); min 1, max 8
+ */
+export function attachWheelZoom(viewport, media, focusNx, focusNy, focusScale) {
     if (!viewport || !media)
         return;
 
@@ -18,7 +23,13 @@ export function attachWheelZoom(viewport, media) {
 
     const img = media.querySelector('img');
 
-    let scale = 1;
+    const initialFocus =
+        typeof focusScale === 'number' && focusScale > 1 &&
+        typeof focusNx === 'number' && typeof focusNy === 'number'
+            ? { nx: focusNx, ny: focusNy, scale: focusScale }
+            : null;
+
+    let scale = initialFocus ? Math.min(8, Math.max(1, initialFocus.scale)) : 1;
     const min = 1;
     const max = 8;
     const step = 0.12;
@@ -63,6 +74,31 @@ export function attachWheelZoom(viewport, media) {
         viewport.scrollTop = Math.max(0, (padH - vh) / 2);
     };
 
+    const scrollToViewBoxPoint = (nx, ny) => {
+        const fit = fitAtScale1();
+        const stageW = fit.w * scale;
+        const stageH = fit.h * scale;
+        const padW = Math.max(viewport.clientWidth, stageW);
+        const padH = Math.max(viewport.clientHeight, stageH);
+        const pointX = (nx / 1000) * stageW;
+        const pointY = (ny / 1000) * stageH;
+        const vw = viewport.clientWidth;
+        const vh = viewport.clientHeight;
+        viewport.scrollLeft = Math.min(Math.max(0, pointX - vw / 2), Math.max(0, padW - vw));
+        viewport.scrollTop = Math.min(Math.max(0, pointY - vh / 2), Math.max(0, padH - vh));
+    };
+
+    const applyInitialView = () => {
+        if (initialFocus) {
+            scale = Math.min(max, Math.max(min, initialFocus.scale));
+            applyLayout();
+            scrollToViewBoxPoint(initialFocus.nx, initialFocus.ny);
+        } else {
+            applyLayout();
+            centerScrollIfNeeded();
+        }
+    };
+
     const clampScroll = () => {
         const maxScrollLeft = Math.max(0, scrollpad.offsetWidth - viewport.clientWidth);
         const maxScrollTop = Math.max(0, scrollpad.offsetHeight - viewport.clientHeight);
@@ -103,8 +139,7 @@ export function attachWheelZoom(viewport, media) {
     };
 
     const onImageReady = () => {
-        applyLayout();
-        centerScrollIfNeeded();
+        applyInitialView();
     };
 
     viewport.addEventListener('wheel', onWheel, { passive: false });
@@ -120,8 +155,7 @@ export function attachWheelZoom(viewport, media) {
         : null;
     ro?.observe(viewport);
 
-    applyLayout();
-    centerScrollIfNeeded();
+    applyInitialView();
 
     // --- drag to pan ---
     const panThreshold = 4;

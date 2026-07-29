@@ -30,20 +30,19 @@
         </span>
     </Summary>
     <ChildContent>
-        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-            Design routes on the March map, then choose goods for each seat on the path.
-            One paragraph = one lord (transit toll or destination). Each produced good can be shared with at most one lord.
-            Transit customs come from the map (MG default; not editable on the treaty). Optional gold sweetener balances uneven goods swaps.
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3 d-block">
+            Treaties are designed on the March map.
         </MudText>
 
         @if (CanEdit)
         {
-            <MudButton Variant="Variant.Outlined"
-                       StartIcon="@Icons.Material.Filled.Add"
-                       Class="mb-3"
-                       OnClick="CreateAsync">
-                New trade treaty
-            </MudButton>
+            <div class="mb-3">
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="CreateAsync">
+                    New trade treaty
+                </MudButton>
+            </div>
         }
 
         @if (Treaties.Count == 0)

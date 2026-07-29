@@ -12,7 +12,7 @@
             Overview of open projects. Click a project name to jump to its card below.
         </MudText>
 
-        @if (_rows.Count == 0)
+        @if (_rows.Count == 0 && !HasAudienceRow)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No projects to show.</MudText>
         }
@@ -90,6 +90,26 @@
                                 }
                             </tr>
                         }
+
+                        @if (HasAudienceRow)
+                        {
+                            var audienceOutputIndex = 0;
+                            <tr class="projects-balance-tr--audience">
+                                <td class="ppb-row-label projects-balance-col-name">
+                                    <span>@BaronAudiencePpb.SummaryRowName</span>
+                                </td>
+                                @foreach (var info in _costColumns)
+                                {
+                                    <td class="projects-balance-zone--cost">·</td>
+                                }
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _audienceAdd[info.Key]) @(audienceOutputIndex == 0 ? "projects-balance-split-start" : null)">@FmtAdd(_audienceAdd[info.Key])</td>
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _audiencePct[info.Key])">@FmtPct(_audiencePct[info.Key])</td>
+                                    audienceOutputIndex++;
+                                }
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -99,12 +119,17 @@
 
 @code {
     [Parameter] public List<BaronyProjectDTO> Projects { get; set; } = new();
+    [Parameter] public List<BaronAudienceDTO> Audiences { get; set; } = new();
+    [Parameter] public int CurrentTurn { get; set; } = 1;
     [Parameter] public bool CanManage { get; set; }
 
     /// <summary>Food … Defense (7 cumulative resources, required cost).</summary>
     private static readonly IReadOnlyList<PpbInfo> _costColumns = ResourceCatalog.All.Take(7).ToList();
 
     private List<BalanceRow> _rows = new();
+    private PpbVector _audienceAdd = new();
+    private PpbVector _audiencePct = new();
+    private bool HasAudienceRow => !_audienceAdd.IsEmpty || !_audiencePct.IsEmpty;
 
     protected override void OnParametersSet() => RebuildRows();
 
@@ -119,6 +144,8 @@
             .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
             .Select(p => new BalanceRow { Project = p })
             .ToList();
+
+        BaronyCalc.AudienceCumulativeTotals(Audiences, CurrentTurn, out _audienceAdd, out _audiencePct);
     }
 
     private static string ProjectAnchorId(int projectId) => $"project-{projectId}";

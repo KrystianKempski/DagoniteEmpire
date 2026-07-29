@@ -36,4 +36,10 @@ namespace DA_Common.Barony
         public List<MarchMapNode> Nodes { get; set; } = new();
         public List<MarchMapRoute> Routes { get; set; } = new();
     }
+
+    public sealed class BlockTradeToggleRequest
+    {
+        public string LordKey { get; set; } = string.Empty;
+        public bool Block { get; set; }
+    }
 }

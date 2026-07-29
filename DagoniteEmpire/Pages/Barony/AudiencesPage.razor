@@ -1,0 +1,498 @@
+@page "/barony/audiences"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject IDialogService _dialogService
+
+<PageTitle>Dagonite Empire | Audiences</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading audiences...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (Barony is not null)
+{
+    <BaronyPageHeader Title="Audiences">
+        <Summary>
+            <span class="projects-summary">
+                <span class="projects-summary__item">@CurrentTurnActive.Count this turn</span>
+                <span class="projects-summary__item">@DeferredWaiting.Count deferred</span>
+                <span class="projects-summary__item">Archive: @_audiences.Count(IsArchiveEntry)</span>
+            </span>
+        </Summary>
+    </BaronyPageHeader>
+
+    <div class="baron-audience">
+        <BaronySection Title="Audience summary">
+            <Summary>
+                <PpbSummaryChips Vector="@SummaryAdditive" />
+            </Summary>
+            <ChildContent>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                    Non-cumulative PPB → Domain Panel Events · Cumulative → Project Summary.
+                </MudText>
+                @if (SummaryRows.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No audience grants this turn yet.</MudText>
+                }
+                else
+                {
+                    <div style="overflow-x:auto;">
+                        <table class="ppb-table ppb-table--advisors ppb-table--events ppb-table--lined">
+                            <colgroup>
+                                <col class="city-building-col-name" />
+                                @foreach (var _ in PpbCatalog.All)
+                                {
+                                    <col class="ppb-pair-col" />
+                                    <col class="ppb-pair-col" />
+                                }
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="ppb-row-label city-building-col-name">Audience</th>
+                                    @foreach (var info in PpbCatalog.All)
+                                    {
+                                        <th colspan="2" title="@info.NameEn">@PpbShort(info.Key)</th>
+                                    }
+                                </tr>
+                                <tr>
+                                    @foreach (var _ in PpbCatalog.All)
+                                    {
+                                        <th class="ppb-subcol ppb-subcol--add">+</th>
+                                        <th class="ppb-subcol ppb-subcol--pct">%</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in SummaryRows)
+                                {
+                                    <tr>
+                                        <td class="ppb-row-label city-building-col-name">
+                                            <strong>@a.Title</strong>
+                                            <span class="baron-audience__petitioner"> · @a.PetitionerName</span>
+                                        </td>
+                                        @foreach (var info in PpbCatalog.All)
+                                        {
+                                            <td class="@PpbCellStyle.ValueClass(info.Key, a.Additive[info.Key])">@FmtAdd(a.Additive[info.Key])</td>
+                                            <td class="@PpbCellStyle.ValueClass(info.Key, a.Percent[info.Key])">@FmtPct(a.Percent[info.Key])</td>
+                                        }
+                                    </tr>
+                                }
+                                <tr class="ppb-summary-row">
+                                    <td class="ppb-row-label city-building-col-name">Σ audiences</td>
+                                    @foreach (var info in PpbCatalog.All)
+                                    {
+                                        <td class="@PpbCellStyle.ValueClass(info.Key, SummaryAdditive[info.Key])"><b>@FmtAdd(SummaryAdditive[info.Key])</b></td>
+                                        <td class="@PpbCellStyle.ValueClass(info.Key, SummaryPercent[info.Key])"><b>@FmtPct(SummaryPercent[info.Key])</b></td>
+                                    }
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </ChildContent>
+        </BaronySection>
+
+        <BaronySection Title="Audiences">
+            <Summary>
+                <span class="projects-summary">
+                    <span class="projects-summary__item">@CurrentTurnActive.Count open</span>
+                    @if (DeferredWaiting.Count > 0)
+                    {
+                        <span class="projects-summary__item">@DeferredWaiting.Count deferred</span>
+                    }
+                    <span class="projects-summary__item">T@(Barony.TurnNumber)</span>
+                </span>
+            </Summary>
+            <ChildContent>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
+                    Click an audience title row to expand or collapse the dialogue.
+                </MudText>
+
+                @if (CanWriteAsGm)
+                {
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <MudButton Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="CreateAudienceAsync"
+                                   Disabled="_busy">
+                            New audience
+                        </MudButton>
+                    </div>
+                }
+
+                @if (CurrentTurnActive.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                        No open audiences this turn.
+                        @if (CanWriteAsGm)
+                        {
+                            <text> Add one above.</text>
+                        }
+                    </MudText>
+                }
+                else
+                {
+                    <div class="project-card-grid">
+                        @foreach (var a in CurrentTurnActive)
+                        {
+                            <AudiencePanel Audience="a"
+                                           CanWriteAsGm="CanWriteAsGm"
+                                           CanWriteAsBaron="CanWriteAsBaron"
+                                           Busy="_busy"
+                                           OnSpeak="req => SendReplyAsync(a, req)"
+                                           OnAddResources="() => AddResourcesAsync(a)"
+                                           OnResolve="() => ResolveAsync(a)"
+                                           OnDefer="() => DeferAsync(a)"
+                                           OnDismiss="() => DismissAsync(a)" />
+                        }
+                    </div>
+                }
+
+                @if (DeferredWaiting.Count > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Deferred — continue next turn</MudText>
+                    <div class="project-card-grid">
+                        @foreach (var a in DeferredWaiting)
+                        {
+                            <AudiencePanel Audience="a"
+                                           ReadOnly="true"
+                                           CanWriteAsGm="CanWriteAsGm"
+                                           CanWriteAsBaron="CanWriteAsBaron"
+                                           Busy="_busy" />
+                        }
+                    </div>
+                }
+            </ChildContent>
+        </BaronySection>
+
+        <BaronySection Title="Archive" DefaultOpen="false">
+            <Summary>
+                <span class="projects-summary">
+                    <span class="projects-summary__item">@_audiences.Count(IsArchiveEntry) archived</span>
+                </span>
+            </Summary>
+            <ChildContent>
+                @if (ArchiveFolders.Count == 0)
+                {
+                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No archived audiences yet.</MudText>
+                }
+                else
+                {
+                    @foreach (var folder in ArchiveFolders)
+                    {
+                        var open = _expandedArchiveTurns.Contains(folder.Turn);
+                        <div class="baron-audience__folder @(open ? "baron-audience__folder--open" : "")">
+                            <button type="button"
+                                    class="baron-audience__folder-summary"
+                                    @onclick="@(() => ToggleArchiveFolder(folder.Turn))">
+                                <span>@(open ? "▾" : "▸")</span>
+                                <span>Turn @folder.Turn</span>
+                                <span class="baron-audience__folder-count">@folder.Items.Count</span>
+                            </button>
+                            @if (open)
+                            {
+                                <div class="project-card-grid">
+                                    @foreach (var a in folder.Items)
+                                    {
+                                        <AudiencePanel Audience="a"
+                                                       ReadOnly="true"
+                                                       ShowSummary="true"
+                                                       CanWriteAsGm="CanWriteAsGm"
+                                                       CanWriteAsBaron="CanWriteAsBaron"
+                                                       Busy="_busy" />
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </ChildContent>
+        </BaronySection>
+    </div>
+}
+
+@code {
+    private List<BaronAudienceDTO> _audiences = new();
+    private readonly HashSet<int> _expandedArchiveTurns = new();
+    private bool _busy;
+
+    private bool CanWriteAsGm => CanManageAsMg;
+    private bool CanWriteAsBaron => CanEdit && !CanManageAsMg;
+
+    private IReadOnlyList<BaronAudienceDTO> SummaryRows =>
+        _audiences
+            .Where(a => a.ContributesToTurn(Barony?.TurnNumber ?? 0) && a.HasPpb)
+            .OrderBy(a => a.Id)
+            .ToList();
+
+    private PpbVector SummaryAdditive =>
+        PpbVector.Sum(SummaryRows.Select(a => a.Additive));
+
+    private PpbVector SummaryPercent =>
+        PpbVector.Sum(SummaryRows.Select(a => a.Percent));
+
+    private IReadOnlyList<BaronAudienceDTO> CurrentTurnActive =>
+        _audiences
+            .Where(a => a.TurnNumber == (Barony?.TurnNumber ?? 0)
+                        && (string.Equals(a.Status, BaronAudienceStatus.Scheduled, StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(a.Status, BaronAudienceStatus.InProgress, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(a => a.Id)
+            .ToList();
+
+    private IReadOnlyList<BaronAudienceDTO> DeferredWaiting =>
+        _audiences
+            .Where(a => string.Equals(a.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
+                        && !_audiences.Any(c => c.ContinuedFromAudienceId == a.Id))
+            .OrderBy(a => a.Id)
+            .ToList();
+
+    private IReadOnlyList<(int Turn, List<BaronAudienceDTO> Items)> ArchiveFolders =>
+        _audiences
+            .Where(IsArchiveEntry)
+            .GroupBy(a => a.TurnNumber)
+            .OrderByDescending(g => g.Key)
+            .Select(g => (g.Key, g.OrderByDescending(a => a.UpdatedAtUtc).ToList()))
+            .ToList();
+
+    private bool IsArchiveEntry(BaronAudienceDTO a)
+    {
+        if (BaronAudienceStatus.IsClosed(a.Status))
+            return true;
+        if (!string.Equals(a.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase))
+            return false;
+        return _audiences.Any(c => c.ContinuedFromAudienceId == a.Id);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is not null)
+            await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _audiences = await _baronyRepo.GetAudiences(BaronyId);
+        StateHasChanged();
+    }
+
+    private void ToggleArchiveFolder(int turn)
+    {
+        if (!_expandedArchiveTurns.Add(turn))
+            _expandedArchiveTurns.Remove(turn);
+    }
+
+    private async Task CreateAudienceAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<NewAudienceDialog>("New audience",
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not NewAudienceDialog.NewAudienceResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _baronyRepo.SaveAudience(new BaronAudienceDTO
+            {
+                BaronyId = BaronyId,
+                PetitionerName = data.PetitionerName,
+                Title = data.Title,
+                Status = BaronAudienceStatus.Scheduled,
+                TurnNumber = Barony!.TurnNumber,
+            });
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = created.Id,
+                Body = data.OpeningBody,
+                IsFromPetitioner = true,
+                TurnNumber = Barony.TurnNumber,
+            });
+            await ReloadAsync();
+            _snackBar.Add("Audience granted.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task AddResourcesAsync(BaronAudienceDTO a)
+    {
+        var parameters = new DialogParameters<AudienceResourcesDialog>
+        {
+            { x => x.Audience, a },
+        };
+        var dialog = await _dialogService.ShowAsync<AudienceResourcesDialog>("Add resources", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not AudienceResourcesDialog.AudienceResourcesResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            var additive = a.Additive?.Clone() ?? new PpbVector();
+            additive.AddInPlace(data.Delta);
+            a.Additive = additive;
+            await _baronyRepo.SaveAudience(a);
+
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = a.Id,
+                Body = data.Note,
+                IsFromPetitioner = false,
+                IsResourceChange = true,
+                Additive = data.Delta.Clone(),
+                TurnNumber = Barony!.TurnNumber,
+            });
+
+            await ReloadAsync();
+            _snackBar.Add("Resources added.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task SendReplyAsync(BaronAudienceDTO a, AudiencePanel.SpeakRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.Body)) return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = a.Id,
+                Body = req.Body.Trim(),
+                IsFromPetitioner = req.IsGmSide,
+                SpeakerName = req.SpeakerName,
+                TurnNumber = Barony!.TurnNumber,
+            });
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ResolveAsync(BaronAudienceDTO a)
+    {
+        var parameters = new DialogParameters<ResolveAudienceDialog>
+        {
+            { x => x.Subtitle, $"{a.Title} — {a.PetitionerName}" },
+        };
+        var dialog = await _dialogService.ShowAsync<ResolveAudienceDialog>("Resolve audience", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not ResolveAudienceDialog.ResolveAudienceResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.ResolveAudience(a.Id, data.GmSummary, data.OutcomeNotes);
+            await ReloadAsync();
+            _snackBar.Add("Audience resolved.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeferAsync(BaronAudienceDTO a)
+    {
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            "Defer audience",
+            $"Defer \"{a.Title}\" to next turn? It will reopen with the last exchange.",
+            yesText: "Defer", cancelText: "Cancel");
+        if (ok != true) return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.DeferAudience(a.Id);
+            await ReloadAsync();
+            _snackBar.Add("Audience deferred.", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DismissAsync(BaronAudienceDTO a)
+    {
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            "Dismiss audience",
+            $"Dismiss \"{a.Title}\"? The petitioner will leave without a resolution.",
+            yesText: "Dismiss", cancelText: "Cancel");
+        if (ok != true) return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.DismissAudience(a.Id);
+            await ReloadAsync();
+            _snackBar.Add("Audience dismissed.", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static string FmtAdd(decimal v) => v == 0m ? "·" : PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => v == 0m ? "·" : PpbFormat.Percent(v);
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+}

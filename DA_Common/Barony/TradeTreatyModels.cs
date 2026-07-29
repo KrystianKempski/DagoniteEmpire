@@ -53,7 +53,7 @@ namespace DA_Common.Barony
   public static class TradeTreatyParagraphLabels
   {
     public static string RoleLabel(TradeTreatyParagraph paragraph) =>
-      paragraph.IsDestination ? "Destination" : "Transit";
+      paragraph.IsDestination ? "Partner" : "Transit";
 
     public static string AddresseeHeading(TradeTreatyParagraph paragraph)
     {
@@ -61,7 +61,7 @@ namespace DA_Common.Barony
       if (lord is null)
         return $"{RoleLabel(paragraph)} · unknown lord";
 
-      return $"{RoleLabel(paragraph)} · {lord.Title} {lord.Name} {lord.House} · {lord.Holdings}";
+      return $"{RoleLabel(paragraph)} · {lord.Name} {lord.House} ({lord.Holdings})";
     }
 
     public static string AddresseeShort(TradeTreatyParagraph paragraph)

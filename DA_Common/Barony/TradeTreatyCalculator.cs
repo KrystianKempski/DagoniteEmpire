@@ -4,6 +4,20 @@ namespace DA_Common.Barony
   {
     public const int MaxGranteesPerProducedGood = 1;
 
+    public static IReadOnlyList<BaronyTradeTreaty> TreatiesUsingLord(
+      IEnumerable<BaronyTradeTreaty> treaties,
+      string lordKey)
+    {
+      if (string.IsNullOrWhiteSpace(lordKey))
+        return Array.Empty<BaronyTradeTreaty>();
+
+      return treaties
+        .Where(t =>
+          string.Equals(t.CounterpartyLordKey, lordKey, StringComparison.OrdinalIgnoreCase) ||
+          t.Paragraphs.Any(p => string.Equals(p.LordKey, lordKey, StringComparison.OrdinalIgnoreCase)))
+        .ToList();
+    }
+
     public static IReadOnlyList<TradeGoodEntry> BaronyReceivedGoods(IEnumerable<BaronyTradeTreaty> treaties)
     {
       var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -173,21 +187,10 @@ namespace DA_Common.Barony
 
       if (map is not null && !string.IsNullOrWhiteSpace(playerSeatNodeId) && endNode is not null)
       {
-        var path = MarchMapTradePathfinder.FindShortestPath(
-          map, playerSeatNodeId, endNode.Id, blocked);
-        if (path is null)
+        var actualLords = RouteLordKeys(treaty);
+        if (!MarchMapTradePathfinder.RouteLordSequenceExists(map, playerSeatNodeId, actualLords, blocked))
         {
-          errors.Add("No trade route on the march map (blocked seats or incomplete roads).");
-        }
-        else
-        {
-          var expected = path.Nodes.Skip(1).Select(n => n.LordKey!).ToList();
-          var actual = RouteLordKeys(treaty);
-          if (expected.Count != actual.Count ||
-              expected.Where((k, i) => !string.Equals(k, actual[i], StringComparison.OrdinalIgnoreCase)).Any())
-          {
-            errors.Add("Route paragraphs do not match the shortest map path. Redesign the route on the March map.");
-          }
+          errors.Add("Route paragraphs do not match a valid path on the march map. Redesign the route on the March map.");
         }
       }
       else

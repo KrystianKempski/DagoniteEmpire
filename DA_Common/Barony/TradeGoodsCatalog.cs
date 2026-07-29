@@ -32,6 +32,8 @@ namespace DA_Common.Barony
         public required string Unlocks { get; init; }
         public required string ProductionBuilding { get; init; }
         public string? Requirements { get; init; }
+        public string IconUrl { get; set; } = "/icons/wooden-crate.svg";
+        public string ColorHex { get; set; } = "#888888";
         public PpbVector BonusAdditive { get; init; } = new();
         public PpbVector BonusPercent { get; init; } = new();
     }
@@ -297,7 +299,100 @@ namespace DA_Common.Barony
             g.BonusAdditive[Ppb.Magic] = 1.0m;
             }
 
+            ApplyVisuals();
         }
+
+        private static void ApplyVisuals()
+        {
+            void Set(string key, string icon, string color)
+            {
+                var g = Find(key);
+                if (g is null)
+                    return;
+                g.IconUrl = icon.StartsWith('/') ? icon : "/icons/" + icon;
+                g.ColorHex = color;
+            }
+
+            // Mines / stone — align with TerrainResource where possible
+            Set("soft-metals", "copper.svg", "#e67e22");
+            Set("iron", "metal-bar.svg", "#2e86c1");
+            Set("silver", "metal-bar.svg", "#c0c7ce");
+            Set("gold", "metal-bar.svg", "#d4af37");
+            Set("dagoferryt", "metal-bar.svg", "#8e44ad");
+            Set("building-stone", "stone-block.svg", "#f4f1ea");
+            Set("granite", "stone-block.svg", "#7f8c8d");
+            Set("tarnit", "stone-block.svg", "#9b59b6");
+            Set("obsidian", "silex.svg", "#1c1c1c");
+            Set("sulfur", "silex.svg", "#e6c200");
+            Set("clay", "coal-pile.svg", "#c4783a");
+            Set("salt", "coal-pile.svg", "#f8f8ff");
+            Set("gemstones", "emerald.svg", "#9b59b6");
+
+            // Wood
+            Set("shipbuilding-wood", "wood-pile.svg", "#5c3317");
+            Set("ironwood", "wood-pile.svg", "#2471a3");
+            Set("elven-alder", "oak.svg", "#d4af37");
+            Set("herbs-roots", "apothecary.svg", "#3d8b57");
+            Set("honey-wax", "honeycomb.svg", "#d4a017");
+
+            // Food
+            Set("fish-meat-salted", "fishing.svg", "#1a9bb5");
+            Set("cattle", "cow.svg", "#8b6914");
+            Set("cheese", "cheese-wedge.svg", "#e8c547");
+            Set("wine", "grapes.svg", "#722f37");
+            Set("beer", "beer-stein.svg", "#c9a227");
+            Set("olive-oil", "porcelain-vase.svg", "#9caf00");
+
+            // Fibers
+            Set("wool", "wool.svg", "#e8e0d0");
+            Set("flax-hemp", "flax.svg", "#6d8f6a");
+            Set("cloth", "rolled-cloth.svg", "#5b7c99");
+            Set("cotton", "cotton-flower.svg", "#f5f0e6");
+            Set("leather", "rolled-cloth.svg", "#8b4513");
+            Set("furs", "animal-hide.svg", "#5c4033");
+            Set("silk", "sparkles.svg", "#c9a0dc");
+
+            // Crafts
+            Set("dyes", "powder-bag.svg", "#9b2d5a");
+            Set("bricks", "brick-pile.svg", "#b55239");
+            Set("ceramics", "porcelain-vase.svg", "#a0522d");
+            Set("paper", "papers.svg", "#d9cfb8");
+            Set("glass", "wine-glass.svg", "#7ec8e3");
+            Set("amber", "emerald.svg", "#ffbf00");
+            Set("saltpeter", "powder-bag.svg", "#e8e8e0");
+
+            // Exotic
+            Set("spices", "powder-bag.svg", "#c45c26");
+            Set("sugar", "sugar-cane.svg", "#f2e6c8");
+            Set("ivory", "ivory-tusks.svg", "#f5f0e1");
+            Set("elf-forest-goods", "elf-helmet.svg", "#2e8b57");
+
+            // Arms & horses
+            Set("horses", "horse-head.svg", "#8b6914");
+            Set("war-horses", "horse-head.svg", "#4a3728");
+            Set("noble-horses", "horse-head.svg", "#d4af37");
+            Set("access-arms-military", "axe-sword.svg", "#5a6a7a");
+            Set("access-arms-firearms", "musket.svg", "#3d3d3d");
+            Set("access-armor-light", "leather-armor.svg", "#a67c52");
+            Set("access-armor-medium", "armor-vest.svg", "#6e7f8d");
+            Set("access-armor-heavy", "breastplate.svg", "#4a5560");
+        }
+
+        public static string IconUrl(string? key) => Find(key)?.IconUrl ?? "/icons/wooden-crate.svg";
+
+        public static string ColorHex(string? key) => Find(key)?.ColorHex ?? "#888888";
+
+        /// <summary>Near-white fills need a black outline on pale UI backgrounds.</summary>
+        public static bool NeedsDarkOutline(string? key) =>
+            string.Equals(key, "building-stone", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "salt", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "silver", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "wool", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "cotton", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "paper", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "sugar", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "ivory", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "saltpeter", StringComparison.OrdinalIgnoreCase);
 
         public static TradeGoodEntry? Find(string? key) =>
             string.IsNullOrWhiteSpace(key) ? null : _all.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));

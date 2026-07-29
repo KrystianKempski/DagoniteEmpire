@@ -107,7 +107,7 @@
                             @if (ShowLayer(TerrainMapLayer.Resources) && !string.IsNullOrWhiteSpace(tile?.Resource))
                             {
                                 <span class="barony-terrain-cell__layer barony-terrain-cell__resource">
-                                    <span class="barony-terrain-cell__resource-icon"
+                                    <span class="barony-terrain-cell__resource-icon @(TerrainResource.NeedsDarkOutline(tile!.Resource) ? "resource-icon--dark-outline" : null)"
                                           style="@ResourceIconStyle(tile!.Resource)"
                                           aria-hidden="true"></span>
                                 </span>

@@ -35,7 +35,6 @@
                         <col class="known-lords-col-wealth" />
                         <col class="known-lords-col-desc" />
                         <col class="known-lords-col-goods" />
-                        <col class="known-lords-col-goods" />
                     </colgroup>
                     <thead>
                         <tr>
@@ -46,7 +45,6 @@
                             <th class="known-lords-col-wealth">Wealth</th>
                             <th class="known-lords-col-desc">Description</th>
                             <th class="known-lords-col-goods">Available goods</th>
-                            <th class="known-lords-col-goods">Sought goods</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -73,21 +71,20 @@
                                 <td class="known-lords-col-goods">
                                     @if (!string.IsNullOrWhiteSpace(lord.ProducedGoods))
                                     {
-                                        <BaronyTooltip Title="Available goods" Text="@lord.ProducedGoods">
-                                            <span class="relations-ellipsis">@lord.ProducedGoods</span>
-                                        </BaronyTooltip>
-                                    }
-                                    else
-                                    {
-                                        <span>—</span>
-                                    }
-                                </td>
-                                <td class="known-lords-col-goods">
-                                    @if (!string.IsNullOrWhiteSpace(lord.DemandedGoods))
-                                    {
-                                        <BaronyTooltip Title="Sought goods" Text="@lord.DemandedGoods">
-                                            <span class="relations-ellipsis">@lord.DemandedGoods</span>
-                                        </BaronyTooltip>
+                                        <div class="trade-good-chip-row">
+                                            @foreach (var key in TradeGoodLordNames.ParseLordGoodsList(lord.ProducedGoods))
+                                            {
+                                                var good = TradeGoodsCatalog.Find(key);
+                                                if (good is null)
+                                                    continue;
+                                                <BaronyTooltip Title="@good.Name" Text="@good.Description">
+                                                    <span class="trade-good-chip">
+                                                        <TradeGoodIcon Good="@good" />
+                                                        <span>@good.Name</span>
+                                                    </span>
+                                                </BaronyTooltip>
+                                            }
+                                        </div>
                                     }
                                     else
                                     {
@@ -125,8 +122,7 @@
                || Contains(lord.Title)
                || Contains(lord.Holdings)
                || Contains(lord.Description)
-               || Contains(lord.ProducedGoods)
-               || Contains(lord.DemandedGoods);
+               || Contains(lord.ProducedGoods);
 
         bool Contains(string? value) =>
             !string.IsNullOrEmpty(value)

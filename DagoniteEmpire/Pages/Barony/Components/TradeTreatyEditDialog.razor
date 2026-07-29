@@ -1,58 +1,75 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject ISnackbar _snackBar
 
-<MudDialog Class="baron-influence-dialog"
+<MudDialog Class="baron-influence-dialog trade-treaty-dialog"
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog trade-treaty-edit-dialog">
             <MudTextField @bind-Value="_title"
-                          Label="Treaty title (optional)"
+                          Label="Title (optional)"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
-                          Class="baron-influence-field" />
+                          Class="baron-influence-field mb-2"
+                          HelperText="Shown on the Trade Goods list. Leave blank for an auto name." />
 
-            <MudText Typo="Typo.body2" Class="mb-2" Style="color:var(--barony-muted);">
-                Destination:
-                <strong>@(Counterparty is null ? "—" : $"{Counterparty.Title} {Counterparty.Name} {Counterparty.House} · {Counterparty.Holdings}")</strong>
+            <MudText Typo="Typo.subtitle2" Class="mb-1">Trade partner</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3" Style="color:var(--barony-muted);">
+                @(Counterparty is null
+                    ? "—"
+                    : $"{Counterparty.Title} {Counterparty.Name} {Counterparty.House} · {Counterparty.Holdings}")
             </MudText>
 
             @if (LockRoute)
             {
-                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
-                    Each paragraph is one seat on the map route (transit toll or destination). Redesign the path on the March map to change who appears here.
-                </MudAlert>
+                <MudText Typo="Typo.subtitle2" Class="mb-1">Route</MudText>
+                <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color:var(--barony-muted);">
+                    Seats below follow the path from the March map. To change who is on the route, redesign it there.
+                </MudText>
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           Class="mb-3"
+                           OnClick="RequestManualRouteDesign">
+                    Redesign route manually
+                </MudButton>
             }
 
-            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-2">Route paragraphs</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1">Seats on the route</MudText>
+            <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color:var(--barony-muted);">
+                For each seat you may swap goods and add a gold sweetener. Destination needs at least one exchanged good.
+            </MudText>
+
             @for (var i = 0; i < _paragraphs.Count; i++)
             {
                 var index = i;
                 var paragraph = _paragraphs[index];
                 var addressee = KnownLordsCatalog.FindByKey(paragraph.LordKey);
+                var lordName = addressee?.Name ?? "this lord";
                 var lordGoods = addressee is null
                     ? (IReadOnlyList<string>)Array.Empty<string>()
                     : KnownLordsCatalog.ProducedGoodKeys(addressee)
                         .OrderBy(k => TradeGoodsCatalog.Find(k)?.Name ?? k, StringComparer.OrdinalIgnoreCase)
                         .ToList();
                 <div class="trade-treaty-edit-paragraph barony-panel mb-3 pa-3">
-                    <MudText Typo="Typo.subtitle2" Class="mb-1">@TradeTreatyParagraphLabels.AddresseeHeading(paragraph)</MudText>
-                    <MudText Typo="Typo.caption" Class="mb-3" Style="color:var(--barony-muted);">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">
+                        @(index + 1). @TradeTreatyParagraphLabels.AddresseeHeading(paragraph)
+                    </MudText>
+                    <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
                         @if (paragraph.IsDestination)
                         {
-                            <text>Final counterparty of this treaty — exchange goods and optionally sweeten with gold.</text>
+                            <text>End of the route — your main trade partner.</text>
                         }
                         else
                         {
-                            <text>Transit seat on the road — map customs apply to pass; you may also trade goods and add a gold sweetener.</text>
+                            <text>Passage seat — toll applies; optional side deal with this lord.</text>
                         }
                     </MudText>
 
                     @if (!paragraph.IsDestination)
                     {
-                        <MudText Typo="Typo.body2" Class="mb-2" Style="color:var(--barony-muted);">
-                            Customs (map toll): @paragraph.CustomsGoldPerTurn.ToString("0.##") gold/turn
-                            — set by MG on the March map node, not editable here.
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            Toll: <strong>@paragraph.CustomsGoldPerTurn.ToString("0.##")</strong> gold/turn
+                            <span style="color:var(--barony-muted);"> (set on the map)</span>
                         </MudText>
                     }
 
@@ -64,10 +81,10 @@
                                      Margin="Margin.Dense"
                                      Class="mb-2"
                                      Style="max-width:14rem;"
-                                     HelperText="Positive = you pay this lord; negative = you receive gold (e.g. top-up when goods feel uneven)." />
+                                     HelperText="+ you pay · − you receive" />
 
                     <MudSelect T="string"
-                               Label="@($"Goods your barony grants to {addressee?.Name ?? "this lord"}")"
+                               Label="@($"You give {lordName}")"
                                MultiSelection="true"
                                SelectedValues="_paragraphBaronyGrants[index]"
                                SelectedValuesChanged="v => OnBaronyGrantsChanged(index, v)"
@@ -82,7 +99,7 @@
                     </MudSelect>
 
                     <MudSelect T="string"
-                               Label="@($"Goods {addressee?.Name ?? "this lord"} grants to you")"
+                               Label="@($"{lordName} gives you")"
                                MultiSelection="true"
                                SelectedValues="_paragraphLordGrants[index]"
                                SelectedValuesChanged="v => OnLordGrantsChanged(index, v)"
@@ -100,49 +117,49 @@
             }
 
             <MudDivider Class="my-3" />
-            <MudText Typo="Typo.subtitle2" Class="mb-2">Summary</MudText>
-            @if (_validationErrors.Count > 0)
-            {
-                <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">
-                    <ul class="ma-0 pa-0" style="list-style:inside;">
-                        @foreach (var err in _validationErrors)
-                        {
-                            <li>@err</li>
-                        }
-                    </ul>
-                </MudAlert>
-            }
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Totals</MudText>
+            <div class="trade-treaty-validation-slot mb-2" aria-live="polite">
+                @if (_validationErrors.Count > 0)
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" Class="ma-0">
+                        <ul class="ma-0 pa-0" style="list-style:inside;">
+                            @foreach (var err in _validationErrors)
+                            {
+                                <li>@err</li>
+                            }
+                        </ul>
+                    </MudAlert>
+                }
+            </div>
             <MudText Typo="Typo.body2">
-                <strong>Barony receives:</strong>
+                Goods received:
                 @( _previewReceived.Count == 0 ? "—" : string.Join(", ", _previewReceived.Select(g => g.Name)) )
             </MudText>
             <MudText Typo="Typo.body2" Class="mt-1">
-                <strong>Route economy bonus:</strong> +@_previewRouteEconomy.ToString("0.##")
-                (each route seat: max(1, Wealth − 2))
+                Economy from route: +@_previewRouteEconomy.ToString("0.##")
             </MudText>
             <MudText Typo="Typo.body2" Class="mt-1">
-                <strong>Customs per turn:</strong> @_previewCustoms.ToString("0.##") gold
-                (from map tolls)
+                Tolls: @_previewCustoms.ToString("0.##") gold/turn
             </MudText>
             <MudText Typo="Typo.body2" Class="mt-1">
-                <strong>Sweetener net:</strong>
+                Sweeteners:
                 @if (_previewSweetener == 0m)
                 {
                     <text>—</text>
                 }
                 else if (_previewSweetener > 0m)
                 {
-                    <text>barony pays @_previewSweetener.ToString("0.##") gold/turn</text>
+                    <text>you pay @_previewSweetener.ToString("0.##") gold/turn</text>
                 }
                 else
                 {
-                    <text>barony receives @((-_previewSweetener).ToString("0.##")) gold/turn</text>
+                    <text>you receive @((-_previewSweetener).ToString("0.##")) gold/turn</text>
                 }
             </MudText>
             @if (_previewReceived.Count > 0)
             {
                 <div class="trade-goods-ppb-summary mt-2">
-                    <MudText Typo="Typo.caption" Class="mb-1">PPB from received goods (+ route economy)</MudText>
+                    <MudText Typo="Typo.caption" Class="mb-1">PPB bonuses (goods + route economy)</MudText>
                     <table class="ppb-table ppb-table--lined trade-goods-ppb-table">
                         <thead>
                             <tr>
@@ -171,6 +188,8 @@
 </MudDialog>
 
 @code {
+    public const string ManualRouteDesignRequest = "manual-design";
+
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public IReadOnlyCollection<string> BaronyAvailableGoodKeys { get; set; } = Array.Empty<string>();
@@ -292,12 +311,15 @@
 
     private void Cancel() => MudDialog.Cancel();
 
+    private void RequestManualRouteDesign() =>
+        MudDialog.Close(DialogResult.Ok(TradeTreatyEditDialog.ManualRouteDesignRequest));
+
     private void Save()
     {
         var errors = _validationErrors;
         if (errors.Count > 0)
         {
-            _snackBar.Add("Fix treaty errors before saving.", Severity.Error);
+            _snackBar.Add("Fix the errors below before saving.", Severity.Error);
             return;
         }
 

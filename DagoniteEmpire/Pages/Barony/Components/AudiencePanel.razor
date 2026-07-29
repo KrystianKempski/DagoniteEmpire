@@ -1,0 +1,250 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<article class="project-card @CardClass @(_isOpen ? "project-card--open" : "project-card--collapsed")">
+    <header class="project-card__header">
+        <div class="project-card__title-row" @onclick="Toggle" role="button" aria-expanded="@_isOpen">
+            <h3 class="project-card__title">@Audience.Title</h3>
+            <div class="project-card__badges">
+                <span class="project-output-badge">@Audience.PetitionerName</span>
+                <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
+                @if (Audience.ContinuedFromAudienceId is not null)
+                {
+                    <span class="baron-audience__continued" title="Continued from a deferred audience">continued</span>
+                }
+            </div>
+        </div>
+
+        @if (_isOpen)
+        {
+            <span class="project-card__turns">
+                @Audience.ExchangeCount exchange@(Audience.ExchangeCount == 1 ? "" : "s")
+                · T@(Audience.TurnNumber)
+            </span>
+        }
+    </header>
+
+    @if (_isOpen)
+    {
+        <div class="baron-audience__body">
+            <div class="baron-audience__exchanges">
+                @foreach (var x in Audience.Exchanges.OrderBy(e => e.SortOrder).ThenBy(e => e.Id))
+                {
+                    <div class="baron-audience__exchange @ExchangeThemeClass(x)">
+                        <div class="baron-audience__exchange-head">
+                            @SpeakerLabel(x)
+                            <span>· T@(x.TurnNumber)</span>
+                        </div>
+                        <div class="baron-audience__exchange-body">@x.Body</div>
+                        @if (x.IsResourceChange && x.Additive is not null && !x.Additive.IsEmpty)
+                        {
+                            <div class="baron-audience__ppb-delta">
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    var v = x.Additive[info.Key];
+                                    if (v == 0m)
+                                        continue;
+                                    <span class="baron-audience__ppb-delta-item @PpbCellStyle.ValueClass(info.Key, v)">
+                                        @PpbFormat.Additive(v) @info.ShortEn
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (Audience.HasPpb)
+            {
+                <div class="baron-audience__ppb-glance">
+                    <PpbSummaryChips Vector="@AudienceGlance" />
+                </div>
+            }
+
+            @if (ShowSummary && (!string.IsNullOrWhiteSpace(Audience.GmSummary) || !string.IsNullOrWhiteSpace(Audience.OutcomeNotes)))
+            {
+                <div class="baron-audience__summary">
+                    @if (!string.IsNullOrWhiteSpace(Audience.GmSummary))
+                    {
+                        <div><span class="baron-audience__summary-label">Summary</span> @Audience.GmSummary</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Audience.OutcomeNotes))
+                    {
+                        <div><span class="baron-audience__summary-label">Outcomes</span> @Audience.OutcomeNotes</div>
+                    }
+                </div>
+            }
+
+            @if (CanReply)
+            {
+                <div class="baron-audience__composer @(CanWriteAsGm ? "baron-audience__composer--gm" : "baron-audience__composer--baron")">
+                    @if (CanWriteAsGm)
+                    {
+                        <div class="baron-audience__speaker-row">
+                            <MudSelect T="string"
+                                       @bind-Value="_speakerMode"
+                                       Label="Speak as"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       Disabled="Busy">
+                                <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petitioner)</MudSelectItem>
+                                <MudSelectItem Value="@SpeakerModeOther">Other character</MudSelectItem>
+                            </MudSelect>
+                            @if (_speakerMode == SpeakerModeOther)
+                            {
+                                <MudTextField @bind-Value="_otherSpeaker"
+                                              Label="Character name"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Immediate="true"
+                                              Disabled="Busy" />
+                            }
+                        </div>
+                    }
+                    <MudTextField @bind-Value="_draft"
+                                  Label="@(ComposerLabel)"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Lines="3"
+                                  Immediate="true"
+                                  Disabled="Busy" />
+                    <div class="baron-audience__composer-actions">
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Filled"
+                                   Class="barony-turn-btn barony-turn-btn--solid"
+                                   Disabled="@(Busy || !CanSpeak)"
+                                   OnClick="SpeakAsync">
+                            Speak
+                        </MudButton>
+                        @if (CanWriteAsGm)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnAddResources.InvokeAsync()">
+                                Add resources
+                            </MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnResolve.InvokeAsync()">Resolve</MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnDefer.InvokeAsync()">Defer to next turn</MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnDismiss.InvokeAsync()">Dismiss</MudButton>
+                        }
+                        else if (CanWriteAsBaron)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnDismiss.InvokeAsync()">Dismiss</MudButton>
+                        }
+                    </div>
+                </div>
+            }
+            else if (CanWriteAsGm
+                     && string.Equals(Audience.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
+                     && !ShowSummary)
+            {
+                <MudText Typo="Typo.caption">Deferred — will open again next turn with the last exchange.</MudText>
+            }
+        </div>
+    }
+</article>
+
+@code {
+    public const string SpeakerModePetitioner = "petitioner";
+    public const string SpeakerModeOther = "other";
+
+    public sealed record SpeakRequest(string Body, bool IsGmSide, string? SpeakerName);
+
+    [Parameter, EditorRequired] public BaronAudienceDTO Audience { get; set; } = default!;
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public bool ShowSummary { get; set; }
+    [Parameter] public bool CanWriteAsGm { get; set; }
+    [Parameter] public bool CanWriteAsBaron { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<SpeakRequest> OnSpeak { get; set; }
+    [Parameter] public EventCallback OnAddResources { get; set; }
+    [Parameter] public EventCallback OnResolve { get; set; }
+    [Parameter] public EventCallback OnDefer { get; set; }
+    [Parameter] public EventCallback OnDismiss { get; set; }
+
+    private bool _isOpen;
+    private string _draft = "";
+    private string _speakerMode = SpeakerModePetitioner;
+    private string _otherSpeaker = "";
+
+    private string StatusCss => (Audience.Status ?? "scheduled").ToLowerInvariant();
+
+    private string CardClass =>
+        Audience.IsClosed
+            ? "project-card--inactive"
+            : string.Equals(Audience.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
+                ? "project-card--allocating"
+                : string.Equals(Audience.Status, BaronAudienceStatus.InProgress, StringComparison.OrdinalIgnoreCase)
+                    ? "project-card--active"
+                    : string.Empty;
+
+    private PpbVector AudienceGlance => Audience.Additive?.Clone() ?? new PpbVector();
+
+    private bool CanReply =>
+        !ReadOnly
+        && !Audience.IsClosed
+        && !string.Equals(Audience.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
+        && (CanWriteAsGm || CanWriteAsBaron);
+
+    private bool CanSpeak =>
+        !string.IsNullOrWhiteSpace(_draft)
+        && (!CanWriteAsGm
+            || _speakerMode != SpeakerModeOther
+            || !string.IsNullOrWhiteSpace(_otherSpeaker));
+
+    private string ComposerLabel =>
+        CanWriteAsGm
+            ? (_speakerMode == SpeakerModeOther ? "Other character speaks…" : "Petitioner speaks…")
+            : "Your reply…";
+
+    private void Toggle() => _isOpen = !_isOpen;
+
+    private string ExchangeThemeClass(BaronAudienceExchangeDTO x) =>
+        x.IsResourceChange
+            ? "baron-audience__exchange--resource"
+            : x.IsFromPetitioner
+                ? "baron-audience__exchange--gm"
+                : "baron-audience__exchange--baron";
+
+    private string SpeakerLabel(BaronAudienceExchangeDTO x)
+    {
+        if (x.IsResourceChange)
+            return "Resource change";
+        if (!string.IsNullOrWhiteSpace(x.SpeakerName))
+            return x.SpeakerName.Trim();
+        return x.IsFromPetitioner ? Audience.PetitionerName : "Lord";
+    }
+
+    private async Task SpeakAsync()
+    {
+        var text = _draft.Trim();
+        if (string.IsNullOrEmpty(text) || !CanSpeak)
+            return;
+
+        string? speaker = null;
+        var isGm = CanWriteAsGm;
+        if (isGm && _speakerMode == SpeakerModeOther)
+            speaker = _otherSpeaker.Trim();
+
+        await OnSpeak.InvokeAsync(new SpeakRequest(text, isGm, speaker));
+        _draft = "";
+    }
+}

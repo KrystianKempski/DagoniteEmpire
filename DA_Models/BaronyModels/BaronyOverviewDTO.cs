@@ -13,6 +13,7 @@ namespace DA_Models.BaronyModels
         public List<TerrainImprovementDTO> Improvements { get; set; } = new();
         public List<DecreeDTO> Decrees { get; set; } = new();
         public List<BaronyEventDTO> Events { get; set; } = new();
+        public List<BaronAudienceDTO> Audiences { get; set; } = new();
         public List<CommunityModifierDTO> CommunityModifiers { get; set; } = new();
         public List<FiefDTO> Fiefs { get; set; } = new();
         public List<TerrainTileDTO> Tiles { get; set; } = new();

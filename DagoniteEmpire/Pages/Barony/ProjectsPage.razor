@@ -34,7 +34,10 @@ else if (_overview is not null)
         </Summary>
     </BaronyPageHeader>
 
-    <ProjectsBalanceSection Projects="@_projects" CanManage="@CanManageAsMg" />
+    <ProjectsBalanceSection Projects="@_projects"
+                            Audiences="@(_overview.Audiences)"
+                            CurrentTurn="@_overview.Barony.TurnNumber"
+                            CanManage="@CanManageAsMg" />
 
     <ProjectsSection BaronyId="@BaronyId"
                      Projects="@_projects"

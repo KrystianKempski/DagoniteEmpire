@@ -1639,6 +1639,36 @@
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
+button.barony-meta-bar__name--switch {
+    display: block;
+    margin: 0;
+    border: none;
+    border-right: 1px solid rgba(212, 180, 100, 0.28);
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-family: 'Eagle Lake', serif;
+    font-size: 1rem;
+    font-weight: 400;
+    color: #f7f1e4;
+    padding: 0.2rem 0.5rem 0.2rem 0.3rem;
+    margin-right: 0.05rem;
+    white-space: nowrap;
+    line-height: 1.15;
+    align-self: center;
+    text-align: left;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+button.barony-meta-bar__name--switch:hover {
+    color: #fff8ea;
+}
+
+button.barony-meta-bar__name--switch:focus-visible {
+    outline: 2px solid rgba(212, 180, 100, 0.65);
+    outline-offset: 2px;
+}
+
 .barony-meta-bar__stats {
     display: flex;
     flex-wrap: wrap;
@@ -1839,6 +1869,11 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     box-shadow:
         0 2px 10px rgba(0, 0, 0, 0.45),
         inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.barony-page-header__sections-switch {
+    flex: 0 1 auto;
+    max-width: min(16rem, 100%);
 }
 
 .barony-resource-hud__item {
@@ -4932,28 +4967,6 @@ a.city-building-name-text--link:hover {
 }
 
 /* ---- Bottom "Barony Tabs" bar (Excel-like tabs) ---- */
-.barony-switcher {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: 420px;
-    margin: 0 0 12px 0;
-    padding: 8px 12px;
-    background: var(--barony-surface);
-    border: 1px solid var(--barony-border);
-    border-radius: 8px;
-}
-
-.barony-switcher__icon {
-    color: var(--barony-accent);
-    flex-shrink: 0;
-}
-
-.barony-switcher__select {
-    flex: 1;
-    min-width: 0;
-}
-
 .barony-tabbar {
     position: fixed;
     left: 0;
@@ -5793,11 +5806,6 @@ a.city-building-name-text--link:hover {
     min-height: 0;
     overflow: hidden;
     padding: 8px 12px 48px 12px;
-}
-
-.barony-scope--buildings-catalog .barony-switcher {
-    flex-shrink: 0;
-    margin-bottom: 8px;
 }
 
 .buildings-page {
@@ -6919,6 +6927,54 @@ a.city-building-name-text--link:hover {
     color: var(--barony-ink);
 }
 
+.trade-good-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.trade-good-icon {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 1.15rem;
+    height: 1.15rem;
+    background-color: var(--resource-color, #888);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.45));
+}
+
+/* Near-white mask fills (building stone, salt, …) on pale backgrounds */
+.resource-icon--dark-outline {
+    filter: drop-shadow(0 0 0.45px #000)
+            drop-shadow(0 0 0.9px #000)
+            drop-shadow(0 0 1.35px rgba(0, 0, 0, 0.85));
+}
+
+.trade-good-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.45rem;
+    align-items: center;
+}
+
+.trade-good-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    font-size: 0.78rem;
+    line-height: 1.2;
+    color: var(--barony-ink);
+}
+
+.trade-good-chip-row--tip .trade-good-chip {
+    color: inherit;
+}
+
 .trade-goods-row--available td.trade-goods-col-name {
     color: var(--barony-accent, #6b4423);
 }
@@ -7026,6 +7082,25 @@ a.city-building-name-text--link:hover {
     padding: 0.75rem;
 }
 
+.mud-dialog-container .mud-dialog.baron-influence-dialog.trade-treaty-dialog:not(.mud-dialog-fullscreen):has(.baron-influence-dialog-content) {
+    max-width: min(96vw, 56rem) !important;
+    min-width: min(96vw, 38rem) !important;
+}
+
+.trade-treaty-edit-dialog {
+    min-width: min(96vw, 36rem);
+}
+
+.trade-treaty-validation-slot {
+    min-height: 4.75rem;
+    box-sizing: border-box;
+}
+
+.trade-treaty-validation-slot .mud-alert {
+    max-height: 8.5rem;
+    overflow-y: auto;
+}
+
 /* ---- Eastern March map (full viewport) ---- */
 .mud-main-content:has(.barony-scope--march-map) {
     overflow: hidden;
@@ -7042,7 +7117,7 @@ a.city-building-name-text--link:hover {
     max-height: calc(100dvh - 64px);
     min-height: 0;
     overflow: hidden;
-    padding: 4px 8px 44px 8px;
+    padding: 0 0 44px 0;
 }
 
 .barony-scope--march-map .barony-resource-hud {
@@ -7055,6 +7130,103 @@ a.city-building-name-text--link:hover {
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
+}
+
+.march-map-frame {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.march-map-frame > .march-map-canvas {
+    position: absolute;
+    inset: 0;
+}
+
+/* Floating overlays on the map — frosted parchment */
+.march-map-legend-panel,
+.march-map-edit-panel,
+.march-map-inspector {
+    background: color-mix(in srgb, var(--barony-surface) 90%, rgba(47, 42, 36, 0.06));
+    backdrop-filter: blur(12px) saturate(1.1);
+    -webkit-backdrop-filter: blur(12px) saturate(1.1);
+    border: 1px solid color-mix(in srgb, var(--barony-border-strong) 70%, transparent);
+    border-radius: 10px;
+    box-shadow:
+        0 4px 20px rgba(47, 42, 36, 0.14),
+        0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+    color: var(--barony-ink);
+}
+
+.march-map-legend-panel .march-map-legend,
+.march-map-edit-panel,
+.march-map-inspector {
+    color: var(--barony-ink);
+}
+
+.march-map-legend-panel {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    padding: 8px 10px;
+    max-width: min(280px, 42vw);
+    max-height: calc(100% - 16px);
+    overflow-y: auto;
+    pointer-events: auto;
+}
+
+.march-map-edit-panel {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: 6px 8px;
+    width: fit-content;
+    max-width: min(320px, 42vw);
+    max-height: calc(100% - 16px);
+    overflow-y: auto;
+    pointer-events: auto;
+    box-sizing: border-box;
+}
+
+.march-map-edit-panel--expanded {
+    width: min(320px, 42vw);
+    align-items: stretch;
+}
+
+.march-map-edit-panel__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.march-map-edit-panel__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid color-mix(in srgb, var(--barony-border-strong) 55%, transparent);
+    box-sizing: border-box;
+}
+
+.march-map-edit-panel:not(.march-map-edit-panel--expanded) .march-map-edit-panel__body {
+    display: none;
+}
+
+.march-map-edit-panel__tools {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .march-map-toolbar {
@@ -7080,7 +7252,7 @@ a.city-building-name-text--link:hover {
     flex-wrap: wrap;
     gap: 12px;
     font-size: 0.8rem;
-    color: var(--barony-muted);
+    color: var(--barony-ink);
 }
 
 .march-map-legend-stack {
@@ -7099,6 +7271,7 @@ a.city-building-name-text--link:hover {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    text-shadow: 0 0 8px color-mix(in srgb, var(--barony-surface) 80%, transparent);
 }
 
 .march-map-legend__swatch {
@@ -7446,12 +7619,18 @@ a.city-building-name-text--link:hover {
 .march-map-inspector {
     position: absolute;
     top: 8px;
-    right: 8px;
-    width: min(320px, 92vw);
+    left: 8px;
+    width: min(320px, 42vw);
     padding: 10px 12px;
-    z-index: 2;
+    z-index: 4;
     max-height: calc(100% - 16px);
     overflow-y: auto;
+}
+
+.march-map-frame:has(.march-map-edit-panel) .march-map-inspector {
+    top: auto;
+    bottom: 12px;
+    max-height: min(50%, 440px);
 }
 
 .march-map-missing-image {
@@ -7460,4 +7639,243 @@ a.city-building-name-text--link:hover {
     bottom: 12px;
     z-index: 2;
     max-width: min(480px, 90vw);
+}
+
+/* ---- Audiences ---- */
+.baron-audience {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.baron-audience__toolbar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.baron-audience__section-title {
+    margin: 0 0 0.55rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--barony-ink);
+}
+
+.baron-audience__empty {
+    color: var(--barony-muted);
+}
+
+.baron-audience__panels {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.baron-audience__body {
+    padding: 0.75rem 1rem 0.95rem;
+}
+
+.baron-audience__panel-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.65rem;
+    width: 100%;
+    padding-right: 0.5rem;
+}
+
+.baron-audience__petitioner {
+    color: var(--barony-muted);
+    font-size: 0.9em;
+}
+
+.baron-audience__meta {
+    margin-left: auto;
+    font-size: 0.78rem;
+    color: var(--barony-muted);
+}
+
+.baron-audience__continued {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7f9a;
+    border: 1px solid rgba(107, 127, 154, 0.45);
+    border-radius: 3px;
+    padding: 0 0.35rem;
+}
+
+.baron-audience__status {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-radius: 3px;
+    padding: 0.1rem 0.4rem;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--barony-muted);
+}
+
+.baron-audience__status--scheduled { background: rgba(90, 130, 180, 0.15); color: #3a5a7a; }
+.baron-audience__status--inprogress { background: rgba(180, 130, 50, 0.18); color: #7a5520; }
+.baron-audience__status--deferred { background: rgba(120, 100, 160, 0.15); color: #5a4a7a; }
+.baron-audience__status--resolved { background: rgba(70, 130, 80, 0.16); color: #2f5a38; }
+.baron-audience__status--dismissed { background: rgba(140, 70, 70, 0.14); color: #6a3030; }
+
+.baron-audience__exchanges {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-bottom: 0.75rem;
+}
+
+.baron-audience__exchange {
+    border-left: 3px solid transparent;
+    padding: 0.45rem 0.65rem;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 0 4px 4px 0;
+}
+
+.baron-audience__exchange--gm {
+    border-left-color: #8b4518;
+    background: rgba(139, 69, 24, 0.09);
+}
+
+.baron-audience__exchange--baron {
+    border-left-color: #2f5d8a;
+    background: rgba(47, 93, 138, 0.10);
+}
+
+.baron-audience__exchange--resource {
+    border-left-color: #9c7a33;
+    background: rgba(156, 122, 51, 0.08);
+}
+
+.baron-audience__composer--gm {
+    border-left: 3px solid #8b4518;
+    padding-left: 0.55rem;
+}
+
+.baron-audience__composer--baron {
+    border-left: 3px solid #2f5d8a;
+    padding-left: 0.55rem;
+}
+
+.baron-audience__speaker-row {
+    display: grid;
+    grid-template-columns: minmax(10rem, 1fr) minmax(10rem, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0;
+}
+
+.baron-audience__speaker-row .mud-input-control {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+    .baron-audience__speaker-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.baron-audience__ppb-delta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.55rem;
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.baron-audience__ppb-delta-item {
+    white-space: nowrap;
+}
+
+.baron-audience__exchange-head {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--barony-muted);
+    margin-bottom: 0.2rem;
+}
+
+.baron-audience__exchange-body {
+    white-space: pre-wrap;
+    line-height: 1.45;
+    font-size: 0.92rem;
+}
+
+.baron-audience__summary {
+    margin: 0.5rem 0 0.75rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    font-size: 0.88rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.baron-audience__summary-label {
+    font-weight: 700;
+    margin-right: 0.35rem;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--barony-muted);
+}
+
+.baron-audience__composer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.baron-audience__composer > .mud-input-control {
+    margin-top: 0;
+    margin-bottom: 0.15rem;
+}
+
+.baron-audience__ppb-glance {
+    margin: 0.35rem 0 0.65rem;
+}
+
+.baron-audience__composer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.baron-audience__composer-actions .barony-turn-btn {
+    text-transform: none;
+}
+
+.baron-audience__folder {
+    margin-bottom: 0.45rem;
+}
+
+.baron-audience__folder .project-card-grid {
+    margin-top: 0.35rem;
+}
+
+.baron-audience__folder-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0.35rem 0.15rem;
+    color: var(--barony-ink);
+    font: inherit;
+    font-weight: 600;
+}
+
+.baron-audience__folder-count {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--barony-muted);
 }

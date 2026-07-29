@@ -23,7 +23,7 @@
                         title="@TerrainResource.DisplayName(r)"
                         aria-label="@TerrainResource.DisplayName(r)"
                         @onclick="() => SelectAsync(r)">
-                    <span class="terrain-resource-option__icon"
+                    <span class="terrain-resource-option__icon @(TerrainResource.NeedsDarkOutline(r) ? "resource-icon--dark-outline" : null)"
                           style="@IconStyle(r)"
                           aria-hidden="true"></span>
                     <span>@TerrainResource.DisplayName(r)</span>

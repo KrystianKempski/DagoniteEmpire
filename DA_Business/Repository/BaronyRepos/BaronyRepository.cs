@@ -692,6 +692,9 @@ namespace DA_Business.Repository.BaronyRepos
                 // 8) Letter inbound quotas / awaiting-reply unlock via advanced TurnNumber
                 //    (see BaronLetterRules.CountsAsReceivedThisTurn / BaronAwaitingReplyThisTurn).
 
+                // 8b) Deferred audiences → new turn copies (last exchange carried forward)
+                await AdvanceDeferredAudiencesAsync(ctx, baronyId, nextCal.TurnNumber);
+
                 // 9) Depleted units regenerate troops toward full strength
                 report.UnitTroopRegenerations = await RegenerateDepletedUnitsAsync(ctx, baronyId);
 
@@ -1254,6 +1257,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Improvements = improvementDtos,
                     Decrees = (await ctx.Decrees.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Events = (await ctx.BaronyEvents.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    Audiences = await LoadAudienceDtosAsync(ctx, baronyId),
                     Relations = (await ctx.BaronyRelations.AsNoTracking().Include(x => x.Modifiers).Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Seat = await EnsureSeatDtoAsync(ctx, baronyId),
                     SeatPurposeTemplates = await LoadPurposeTemplatesAsync(ctx, baronyId),
@@ -2284,6 +2288,318 @@ namespace DA_Business.Repository.BaronyRepos
                 };
             }
             catch (System.Exception ex) { throw Err(ex, nameof(GetLetterInboxBadgeForGm)); }
+        }
+
+        // ---------------- Baron audiences ----------------
+        public async Task<List<BaronAudienceDTO>> GetAudiences(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                return await LoadAudienceDtosAsync(ctx, baronyId);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetAudiences)); }
+        }
+
+        public async Task<BaronAudienceDTO> SaveAudience(BaronAudienceDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var now = DateTime.UtcNow;
+                BaronAudience e;
+                if (dto.Id > 0)
+                {
+                    e = await ctx.BaronAudiences.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                        ?? throw new InvalidOperationException("Audience not found.");
+                    ApplyAudience(e, dto);
+                    e.UpdatedAtUtc = now;
+                }
+                else
+                {
+                    e = ToEntity(dto);
+                    e.CreatedAtUtc = now;
+                    e.UpdatedAtUtc = now;
+                    if (e.TurnNumber <= 0)
+                    {
+                        var barony = await ctx.Baronies.AsNoTracking()
+                            .FirstOrDefaultAsync(b => b.Id == dto.BaronyId);
+                        e.TurnNumber = barony?.TurnNumber ?? 1;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(e.Status))
+                        e.Status = BaronAudienceStatus.Scheduled;
+
+                    ctx.BaronAudiences.Add(e);
+                }
+
+                await ctx.SaveChangesAsync();
+                var result = ToDTO(e);
+                result.Exchanges = dto.Exchanges ?? new List<BaronAudienceExchangeDTO>();
+                return result;
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveAudience));
+            }
+        }
+
+        public async Task<int> DeleteAudience(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronAudiences.FirstOrDefaultAsync(x => x.Id == id);
+                if (e is null) return 0;
+                ctx.BaronAudiences.Remove(e);
+                await ctx.SaveChangesAsync();
+                return 1;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteAudience)); }
+        }
+
+        public async Task<BaronAudienceExchangeDTO> SaveAudienceExchange(BaronAudienceExchangeDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var audience = await ctx.BaronAudiences.FirstOrDefaultAsync(a => a.Id == dto.AudienceId)
+                    ?? throw new InvalidOperationException("Audience not found.");
+
+                if (BaronAudienceStatus.IsClosed(audience.Status)
+                    || string.Equals(audience.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("This audience is closed or deferred.");
+
+                var now = DateTime.UtcNow;
+                BaronAudienceExchange e;
+                if (dto.Id > 0)
+                {
+                    e = await ctx.BaronAudienceExchanges.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                        ?? throw new InvalidOperationException("Exchange not found.");
+                    ApplyAudienceExchange(e, dto);
+                }
+                else
+                {
+                    e = ToEntity(dto);
+                    e.CreatedAtUtc = now;
+                    if (e.SortOrder <= 0)
+                    {
+                        var max = await ctx.BaronAudienceExchanges
+                            .Where(x => x.AudienceId == dto.AudienceId)
+                            .Select(x => (int?)x.SortOrder)
+                            .MaxAsync() ?? 0;
+                        e.SortOrder = max + 1;
+                    }
+
+                    if (e.TurnNumber <= 0)
+                    {
+                        var barony = await ctx.Baronies.AsNoTracking()
+                            .FirstOrDefaultAsync(b => b.Id == audience.BaronyId);
+                        e.TurnNumber = barony?.TurnNumber ?? audience.TurnNumber;
+                    }
+
+                    ctx.BaronAudienceExchanges.Add(e);
+                }
+
+                if (string.Equals(audience.Status, BaronAudienceStatus.Scheduled, StringComparison.OrdinalIgnoreCase))
+                    audience.Status = BaronAudienceStatus.InProgress;
+                audience.UpdatedAtUtc = now;
+
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveAudienceExchange));
+            }
+        }
+
+        public Task<int> DeleteAudienceExchange(int id) =>
+            Delete(ctx => ctx.BaronAudienceExchanges, id, nameof(DeleteAudienceExchange));
+
+        public async Task<BaronAudienceDTO> DeferAudience(int audienceId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronAudiences.FirstOrDefaultAsync(a => a.Id == audienceId)
+                    ?? throw new InvalidOperationException("Audience not found.");
+                if (BaronAudienceStatus.IsClosed(e.Status))
+                    throw new InvalidOperationException("Closed audiences cannot be deferred.");
+
+                e.Status = BaronAudienceStatus.Deferred;
+                e.UpdatedAtUtc = DateTime.UtcNow;
+                await ctx.SaveChangesAsync();
+                return await LoadAudienceDtoAsync(ctx, e.Id);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(DeferAudience));
+            }
+        }
+
+        public async Task<BaronAudienceDTO> ResolveAudience(int audienceId, string? gmSummary, string? outcomeNotes)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronAudiences.FirstOrDefaultAsync(a => a.Id == audienceId)
+                    ?? throw new InvalidOperationException("Audience not found.");
+
+                e.Status = BaronAudienceStatus.Resolved;
+                e.GmSummary = (gmSummary ?? "").Trim();
+                e.OutcomeNotes = (outcomeNotes ?? "").Trim();
+                e.ClosedAtUtc = DateTime.UtcNow;
+                e.UpdatedAtUtc = e.ClosedAtUtc.Value;
+                await ctx.SaveChangesAsync();
+                return await LoadAudienceDtoAsync(ctx, e.Id);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(ResolveAudience));
+            }
+        }
+
+        public async Task<BaronAudienceDTO> DismissAudience(int audienceId, string? gmSummary = null)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronAudiences.FirstOrDefaultAsync(a => a.Id == audienceId)
+                    ?? throw new InvalidOperationException("Audience not found.");
+
+                e.Status = BaronAudienceStatus.Dismissed;
+                if (!string.IsNullOrWhiteSpace(gmSummary))
+                    e.GmSummary = gmSummary.Trim();
+                e.ClosedAtUtc = DateTime.UtcNow;
+                e.UpdatedAtUtc = e.ClosedAtUtc.Value;
+                await ctx.SaveChangesAsync();
+                return await LoadAudienceDtoAsync(ctx, e.Id);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(DismissAudience));
+            }
+        }
+
+        private static async Task<BaronAudienceDTO> LoadAudienceDtoAsync(ApplicationDbContext ctx, int id)
+        {
+            var e = await ctx.BaronAudiences.AsNoTracking().FirstAsync(a => a.Id == id);
+            var dto = ToDTO(e);
+            dto.Exchanges = await ctx.BaronAudienceExchanges.AsNoTracking()
+                .Where(x => x.AudienceId == id)
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.Id)
+                .Select(x => ToDTO(x))
+                .ToListAsync();
+            return dto;
+        }
+
+        private static async Task<List<BaronAudienceDTO>> LoadAudienceDtosAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var audiences = await ctx.BaronAudiences.AsNoTracking()
+                .Where(a => a.BaronyId == baronyId)
+                .OrderByDescending(a => a.TurnNumber)
+                .ThenByDescending(a => a.UpdatedAtUtc)
+                .ThenByDescending(a => a.Id)
+                .ToListAsync();
+            if (audiences.Count == 0)
+                return new List<BaronAudienceDTO>();
+
+            var ids = audiences.Select(a => a.Id).ToList();
+            var exchanges = await ctx.BaronAudienceExchanges.AsNoTracking()
+                .Where(x => ids.Contains(x.AudienceId))
+                .OrderBy(x => x.SortOrder)
+                .ThenBy(x => x.Id)
+                .ToListAsync();
+            var byAudience = exchanges
+                .GroupBy(x => x.AudienceId)
+                .ToDictionary(g => g.Key, g => g.Select(ToDTO).ToList());
+
+            return audiences.Select(a =>
+            {
+                var dto = ToDTO(a);
+                dto.Exchanges = byAudience.TryGetValue(a.Id, out var list)
+                    ? list
+                    : new List<BaronAudienceExchangeDTO>();
+                return dto;
+            }).ToList();
+        }
+
+        /// <summary>
+        /// Deferred audiences become archived continuity sources; a new audience is opened
+        /// on the new turn with the last exchange copied as the opening line.
+        /// </summary>
+        private static async Task AdvanceDeferredAudiencesAsync(
+            ApplicationDbContext ctx,
+            int baronyId,
+            int newTurnNumber)
+        {
+            var deferred = await ctx.BaronAudiences
+                .Where(a => a.BaronyId == baronyId
+                    && a.Status == BaronAudienceStatus.Deferred)
+                .ToListAsync();
+            if (deferred.Count == 0)
+                return;
+
+            var continuedIds = await ctx.BaronAudiences
+                .Where(a => a.BaronyId == baronyId && a.ContinuedFromAudienceId != null)
+                .Select(a => a.ContinuedFromAudienceId!.Value)
+                .Distinct()
+                .ToListAsync();
+            var continuedSet = continuedIds.ToHashSet();
+
+            deferred = deferred.Where(a => !continuedSet.Contains(a.Id)).ToList();
+            if (deferred.Count == 0)
+                return;
+
+            var ids = deferred.Select(a => a.Id).ToList();
+            var exchanges = await ctx.BaronAudienceExchanges
+                .Where(x => ids.Contains(x.AudienceId))
+                .ToListAsync();
+            var lastMap = exchanges
+                .GroupBy(x => x.AudienceId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(x => x.SortOrder).ThenByDescending(x => x.Id).First());
+
+            var now = DateTime.UtcNow;
+            foreach (var old in deferred)
+            {
+                var neu = new BaronAudience
+                {
+                    BaronyId = baronyId,
+                    Title = old.Title,
+                    PetitionerName = old.PetitionerName,
+                    Status = BaronAudienceStatus.Scheduled,
+                    TurnNumber = newTurnNumber,
+                    ContinuedFromAudienceId = old.Id,
+                    GmSummary = "",
+                    OutcomeNotes = "",
+                    AdditiveJson = old.AdditiveJson,
+                    PercentJson = old.PercentJson,
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now,
+                };
+                ctx.BaronAudiences.Add(neu);
+                await ctx.SaveChangesAsync();
+
+                if (lastMap.TryGetValue(old.Id, out var last) && !string.IsNullOrWhiteSpace(last.Body))
+                {
+                    ctx.BaronAudienceExchanges.Add(new BaronAudienceExchange
+                    {
+                        AudienceId = neu.Id,
+                        Body = last.Body,
+                        IsFromPetitioner = last.IsFromPetitioner,
+                        TurnNumber = newTurnNumber,
+                        SortOrder = 1,
+                        CreatedAtUtc = now,
+                    });
+                    neu.Status = BaronAudienceStatus.InProgress;
+                    neu.UpdatedAtUtc = now;
+                    await ctx.SaveChangesAsync();
+                }
+            }
         }
 
         // ---------------- Offices influence ----------------
@@ -4038,6 +4354,82 @@ namespace DA_Business.Repository.BaronyRepos
             e.SentAtUtc = d.SentAtUtc;
             if (d.CreatedAtUtc != default)
                 e.CreatedAtUtc = d.CreatedAtUtc;
+        }
+
+        // ---------------- Mapping: Baron audiences ----------------
+        private static BaronAudienceDTO ToDTO(BaronAudience e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Title = e.Title ?? "",
+            PetitionerName = e.PetitionerName ?? "",
+            Status = e.Status ?? BaronAudienceStatus.Scheduled,
+            TurnNumber = e.TurnNumber,
+            ContinuedFromAudienceId = e.ContinuedFromAudienceId,
+            GmSummary = e.GmSummary ?? "",
+            OutcomeNotes = e.OutcomeNotes ?? "",
+            Additive = De(e.AdditiveJson),
+            Percent = De(e.PercentJson),
+            CreatedAtUtc = e.CreatedAtUtc,
+            UpdatedAtUtc = e.UpdatedAtUtc,
+            ClosedAtUtc = e.ClosedAtUtc,
+        };
+
+        private static BaronAudienceExchangeDTO ToDTO(BaronAudienceExchange e) => new()
+        {
+            Id = e.Id,
+            AudienceId = e.AudienceId,
+            Body = e.Body ?? "",
+            IsFromPetitioner = e.IsFromPetitioner,
+            SpeakerName = e.SpeakerName,
+            IsResourceChange = e.IsResourceChange,
+            Additive = De(e.AdditiveJson),
+            TurnNumber = e.TurnNumber,
+            SortOrder = e.SortOrder,
+            CreatedAtUtc = e.CreatedAtUtc,
+        };
+
+        private static BaronAudience ToEntity(BaronAudienceDTO d)
+        {
+            var e = new BaronAudience();
+            ApplyAudience(e, d);
+            return e;
+        }
+
+        private static BaronAudienceExchange ToEntity(BaronAudienceExchangeDTO d)
+        {
+            var e = new BaronAudienceExchange();
+            ApplyAudienceExchange(e, d);
+            return e;
+        }
+
+        private static void ApplyAudience(BaronAudience e, BaronAudienceDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Title = (d.Title ?? "").Trim();
+            e.PetitionerName = (d.PetitionerName ?? "").Trim();
+            e.Status = string.IsNullOrWhiteSpace(d.Status)
+                ? BaronAudienceStatus.Scheduled
+                : d.Status.Trim();
+            e.TurnNumber = d.TurnNumber;
+            e.ContinuedFromAudienceId = d.ContinuedFromAudienceId;
+            e.GmSummary = d.GmSummary ?? "";
+            e.OutcomeNotes = d.OutcomeNotes ?? "";
+            e.AdditiveJson = Ser(d.Additive);
+            e.PercentJson = Ser(d.Percent);
+            e.ClosedAtUtc = d.ClosedAtUtc;
+        }
+
+        private static void ApplyAudienceExchange(BaronAudienceExchange e, BaronAudienceExchangeDTO d)
+        {
+            e.AudienceId = d.AudienceId;
+            e.Body = d.Body ?? "";
+            e.IsFromPetitioner = d.IsFromPetitioner;
+            e.SpeakerName = string.IsNullOrWhiteSpace(d.SpeakerName) ? null : d.SpeakerName.Trim();
+            e.IsResourceChange = d.IsResourceChange;
+            e.AdditiveJson = Ser(d.Additive);
+            e.TurnNumber = d.TurnNumber;
+            e.SortOrder = d.SortOrder;
         }
 
         // ---------------- Mapping: Advisor influence ----------------

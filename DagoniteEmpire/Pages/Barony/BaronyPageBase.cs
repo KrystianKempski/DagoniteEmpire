@@ -56,8 +56,7 @@ namespace DagoniteEmpire.Pages.Barony
                 else
                     Barony = null;
 
-                // MG/Admin: BaronySwitcher may still be establishing selection on first paint.
-                // If the current character has no barony (or none selected), pick the first available.
+                // MG/Admin: if no barony is selected yet, pick the first available.
                 if (Barony is null && isAdminOrMg)
                 {
                     var summaries = await _baronyRepo.GetAllSummaries();
@@ -80,7 +79,7 @@ namespace DagoniteEmpire.Pages.Barony
                     if (characterId <= 0 || characterId == -1)
                     {
                         LoadError = isAdminOrMg
-                            ? "Select a barony from the selector above, or create one in Panel MG."
+                            ? "Select a barony on the Domain Panel (click the barony name), or create one in Panel MG."
                             : "Select your baron character first (character menu in the top-right corner).";
                     }
                     else

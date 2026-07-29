@@ -39,7 +39,12 @@
                                              Disabled="@(!CanEdit)"
                                              Dense="true" />
                             </td>
-                            <td class="trade-goods-col-name">@item.Name</td>
+                            <td class="trade-goods-col-name">
+                                <span class="trade-good-name">
+                                    <TradeGoodIcon Good="@item" Title="@item.Name" />
+                                    <span>@item.Name</span>
+                                </span>
+                            </td>
                             <td class="trade-goods-col-desc">
                                 <BaronyTooltip Title="@item.Name" Text="@item.Description">
                                     <span class="relations-ellipsis">@item.Description</span>

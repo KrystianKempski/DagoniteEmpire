@@ -21,9 +21,8 @@ else if (LoadError is not null)
 else
 {
     <div class="march-map-page">
-        <div class="march-map-toolbar barony-panel march-map-toolbar--barony">
-            <MudText Typo="Typo.subtitle1">Eastern March</MudText>
-            <div class="march-map-toolbar__actions">
+        <div class="march-map-frame">
+            <aside class="march-map-legend-panel barony-panel">
                 <div class="march-map-legend-stack">
                     <span class="march-map-legend">
                         <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--road"></i> Road</span>
@@ -51,114 +50,142 @@ else
                         </span>
                     }
                 </div>
+            </aside>
 
-                @if (CanEdit && _playerSeatNodeId is not null)
-                {
-                    <MudButton Variant="@(_tool == MarchMapCanvas.MarchMapTool.DesignRoute ? Variant.Filled : Variant.Outlined)"
-                               Size="Size.Small"
-                               Class="@(_tool == MarchMapCanvas.MarchMapTool.DesignRoute ? "baron-influence-save-btn" : "march-map-toolbar__btn")"
-                               OnClick="ToggleDesignRoute">
-                        Design route
-                    </MudButton>
-                }
-
-                @if (CanManageAsMg)
-                {
-                    <MudButton Variant="@(_editMode ? Variant.Filled : Variant.Outlined)"
-                               Size="Size.Small"
-                               Class="@(_editMode ? "baron-influence-save-btn" : "march-map-toolbar__btn")"
-                               OnClick="ToggleEditMode">
-                        @(_editMode ? "Editing" : "Edit map")
-                    </MudButton>
-                    @if (_editMode)
-                    {
-                        <MudToggleGroup T="MarchMapCanvas.MarchMapTool" Value="_tool" ValueChanged="OnToolChanged" Size="Size.Small" Class="march-map-tool-toggle" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
-                            <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Move">Move</MudToggleItem>
-                            <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Connect">Connect</MudToggleItem>
-                            <MudToggleItem Value="MarchMapCanvas.MarchMapTool.EditLinks">Edit links</MudToggleItem>
-                            <MudToggleItem Value="MarchMapCanvas.MarchMapTool.AddPlace">Add place</MudToggleItem>
-                        </MudToggleGroup>
-                        <span class="march-map-toolbar__link-kind">
-                            <MudText Typo="Typo.caption">New link:</MudText>
-                            <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" Class="march-map-link-kind-group">
-                                <MudButton Class="@LinkKindClass(MarchRouteKind.Road)" OnClick="() => SetLinkKind(MarchRouteKind.Road)">Road</MudButton>
-                                <MudButton Class="@LinkKindClass(MarchRouteKind.River)" OnClick="() => SetLinkKind(MarchRouteKind.River)">River</MudButton>
-                            </MudButtonGroup>
-                        </span>
-                        @if (_tool == MarchMapCanvas.MarchMapTool.AddPlace)
+            @if (ShowMapActionChip)
+            {
+                <aside class="march-map-edit-panel march-map-toolbar--barony @(IsLeftPanelExpanded ? "march-map-edit-panel--expanded" : "")">
+                    <div class="march-map-edit-panel__actions">
+                        @if (CanEdit && _playerSeatNodeId is not null)
                         {
-                            <MudSelect T="string"
-                                       Label="New place type"
-                                       @bind-Value="_newPlaceKind"
-                                       Variant="Variant.Outlined"
-                                       Margin="Margin.Dense"
-                                       Style="max-width:11rem;">
-                                @foreach (var placeKind in MarchMapNodeKind.PlaceKinds)
-                                {
-                                    <MudSelectItem Value="@placeKind">@MarchMapNodeKind.Label(placeKind)</MudSelectItem>
-                                }
-                            </MudSelect>
+                            <MudButton Variant="@(_tool == MarchMapCanvas.MarchMapTool.DesignRoute ? Variant.Filled : Variant.Outlined)"
+                                       Size="Size.Small"
+                                       Class="@(_tool == MarchMapCanvas.MarchMapTool.DesignRoute ? "baron-influence-save-btn" : "march-map-toolbar__btn")"
+                                       OnClick="ToggleDesignRoute">
+                                Design route
+                            </MudButton>
                         }
-                        <MudTextField @bind-Value="_document.ImageUrl"
-                                      Label="Image URL"
-                                      Variant="Variant.Outlined"
-                                      Margin="Margin.Dense"
-                                      Style="max-width:16rem;"
-                                      @bind-Value:after="SaveMapAsync" />
-                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ResetSeedAsync">Reset layout</MudButton>
-                    }
-                }
-            </div>
-        </div>
 
-        @if (_tool == MarchMapCanvas.MarchMapTool.DesignRoute)
-        {
-            <div class="march-map-design-banner barony-panel">
-                @if (_playerSeatNodeId is null)
-                {
-                    <MudText Typo="Typo.body2">Your barony seat is not on the map — trade routes cannot be designed.</MudText>
-                }
-                else if (_designPath is null)
-                {
-                    <MudText Typo="Typo.body2">Click a city to design the shortest trade route from your seat.</MudText>
-                }
-                else
-                {
-                    <div class="march-map-design-banner__row">
-                        <MudText Typo="Typo.body2">
-                            <strong>@_designPath.Start.Label</strong>
-                            → @string.Join(" → ", _designPath.TransitNodes.Select(n => n.Label))
-                            @( _designPath.TransitNodes.Any() ? " → " : "")
-                            <strong>@_designPath.End.Label</strong>
-                            · toll @_designCustoms.ToString("0.##") gold/turn
-                            · Economy +@_designEconomy.ToString("0.##")
-                        </MudText>
-                        <MudButton Variant="Variant.Filled"
-                                   Size="Size.Small"
-                                   Class="baron-influence-save-btn"
-                                   OnClick="ConfirmDesignRouteAsync">
-                            Set trade route
-                        </MudButton>
-                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ClearDesignPath">Clear</MudButton>
+                        @if (CanManageAsMg)
+                        {
+                            <MudButton Variant="@(_editMode ? Variant.Filled : Variant.Outlined)"
+                                       Size="Size.Small"
+                                       Class="@(_editMode ? "baron-influence-save-btn" : "march-map-toolbar__btn")"
+                                       OnClick="ToggleEditMode">
+                                @(_editMode ? "Editing" : "Edit map")
+                            </MudButton>
+                        }
                     </div>
-                }
-            </div>
-        }
 
-        <MarchMapCanvas Document="@_document"
-                        CanEdit="@(CanManageAsMg && _editMode && _tool != MarchMapCanvas.MarchMapTool.DesignRoute)"
-                        CanManageTrade="@CanManageAsMg"
-                        ActiveTool="@_tool"
-                        ConnectRouteKind="@_connectRouteKind"
-                        NewPlaceKind="@_newPlaceKind"
-                        PlayerSeatNodeId="@_playerSeatNodeId"
-                        PlayerBarony="@_playerBarony"
-                        BlockedLordKeys="@_blockedLordKeys"
+                    @if (_tool == MarchMapCanvas.MarchMapTool.DesignRoute)
+                    {
+                        <div class="march-map-edit-panel__body">
+                            @if (_playerSeatNodeId is null)
+                            {
+                                <MudText Typo="Typo.body2">Your barony seat is not on the map — trade routes cannot be designed.</MudText>
+                            }
+                            else if (_designPath is null)
+                            {
+                                @if (_routeDesignManual)
+                                {
+                                    <MudText Typo="Typo.body2" Class="mb-2">
+                                        Build the path from <strong>@(_document.Nodes.FirstOrDefault(n => string.Equals(n.Id, _playerSeatNodeId, StringComparison.OrdinalIgnoreCase))?.Label ?? "your seat")</strong>:
+                                        click a highlighted neighbor, then the next, until you reach the partner.
+                                    </MudText>
+                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="UndoManualRouteStep" Disabled="@(_manualPathNodeIds.Count <= 1)">Undo</MudButton>
+                                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="CancelManualRouteDesign">Cancel</MudButton>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Class="mb-2">
+                                        Click a city for the shortest route, or design the path seat by seat.
+                                    </MudText>
+                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="mb-2" OnClick="StartManualRouteDesign">Manual design</MudButton>
+                                }
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" Class="mb-2">
+                                    <strong>@_designPath.Start.Label</strong>
+                                    → @string.Join(" → ", _designPath.TransitNodes.Select(n => n.Label))
+                                    @( _designPath.TransitNodes.Any() ? " → " : "")
+                                    <strong>@_designPath.End.Label</strong>
+                                    · toll @_designCustoms.ToString("0.##") gold/turn
+                                    · Economy +@_designEconomy.ToString("0.##")
+                                </MudText>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <MudButton Variant="Variant.Filled"
+                                               Size="Size.Small"
+                                               Class="baron-influence-save-btn"
+                                               OnClick="ConfirmDesignRouteAsync">
+                                        Continue to treaty
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ClearDesignPath">Clear</MudButton>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (CanManageAsMg && _editMode)
+                    {
+                        <div class="march-map-edit-panel__body march-map-edit-panel__tools">
+                            <MudToggleGroup T="MarchMapCanvas.MarchMapTool" Value="_tool" ValueChanged="OnToolChanged" Size="Size.Small" Class="march-map-tool-toggle" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Move">Move</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Connect">Connect</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.EditLinks">Edit links</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.AddPlace">Add place</MudToggleItem>
+                            </MudToggleGroup>
+                            <span class="march-map-toolbar__link-kind">
+                                <MudText Typo="Typo.caption">New link:</MudText>
+                                <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" Class="march-map-link-kind-group">
+                                    <MudButton Class="@LinkKindClass(MarchRouteKind.Road)" OnClick="() => SetLinkKind(MarchRouteKind.Road)">Road</MudButton>
+                                    <MudButton Class="@LinkKindClass(MarchRouteKind.River)" OnClick="() => SetLinkKind(MarchRouteKind.River)">River</MudButton>
+                                </MudButtonGroup>
+                            </span>
+                            @if (_tool == MarchMapCanvas.MarchMapTool.AddPlace)
+                            {
+                                <MudSelect T="string"
+                                           Label="New place type"
+                                           @bind-Value="_newPlaceKind"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           FullWidth="true">
+                                    @foreach (var placeKind in MarchMapNodeKind.PlaceKinds)
+                                    {
+                                        <MudSelectItem Value="@placeKind">@MarchMapNodeKind.Label(placeKind)</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+                            <MudTextField @bind-Value="_document.ImageUrl"
+                                          Label="Image URL"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          FullWidth="true"
+                                          @bind-Value:after="SaveMapAsync" />
+                            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ResetSeedAsync">Reset layout</MudButton>
+                        </div>
+                    }
+                </aside>
+            }
+
+            <MarchMapCanvas Document="@_document"
+                            CanEdit="@(CanManageAsMg && _editMode && _tool != MarchMapCanvas.MarchMapTool.DesignRoute)"
+                            CanManageTrade="@CanManageAsMg"
+                            ActiveTool="@_tool"
+                            ConnectRouteKind="@_connectRouteKind"
+                            NewPlaceKind="@_newPlaceKind"
+                            PlayerSeatNodeId="@_playerSeatNodeId"
+                            PlayerBarony="@_playerBarony"
+                            BlockedLordKeys="@_blockedLordKeys"
                         DesignPathNodeIds="@_designPathNodeIds"
+                        DesignRouteManualMode="@_routeDesignManual"
+                        DesignRouteReachableNodeIds="@_manualReachableNodeIds"
                         TradeRouteOverlays="@_tradeRouteOverlays"
-                        DocumentChanged="OnDocumentChangedAsync"
-                        NodeClicked="OnCanvasNodeClickedAsync"
-                        BlockedLordsChanged="OnBlockedLordsChangedAsync" />
+                            DocumentChanged="OnDocumentChangedAsync"
+                            NodeClicked="OnCanvasNodeClickedAsync"
+                            BlockTradeToggleRequested="OnBlockTradeToggleRequestedAsync" />
+        </div>
     </div>
 }
 
@@ -182,6 +209,24 @@ else
     private decimal _designCustoms;
     private decimal _designEconomy;
     private string? _baronNameFromList;
+    private bool _routeDesignManual;
+    private List<string> _manualPathNodeIds = new();
+
+    private bool ShowMapActionChip =>
+        (CanEdit && _playerSeatNodeId is not null) || CanManageAsMg;
+
+    private bool IsLeftPanelExpanded =>
+        _tool == MarchMapCanvas.MarchMapTool.DesignRoute || (CanManageAsMg && _editMode);
+
+    private IReadOnlyList<string> _manualReachableNodeIds =>
+        !_routeDesignManual || _manualPathNodeIds.Count == 0 || _playerSeatNodeId is null
+            ? Array.Empty<string>()
+            : MarchMapTradePathfinder.ReachableNeighborIds(
+                _document,
+                _manualPathNodeIds[^1],
+                _blockedLordKeys,
+                _playerSeatNodeId,
+                _manualPathNodeIds);
 
     protected override async Task OnInitializedAsync()
     {
@@ -241,14 +286,18 @@ else
     {
         var uri = _nav.ToAbsoluteUri(_nav.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
+        var manual = query.ContainsKey("manual");
+
         if (query.TryGetValue("treaty", out var treatyId) && !string.IsNullOrWhiteSpace(treatyId))
         {
             _editingTreaty = _treaties.FirstOrDefault(t =>
                 string.Equals(t.Id, treatyId.ToString(), StringComparison.OrdinalIgnoreCase));
             _tool = MarchMapCanvas.MarchMapTool.DesignRoute;
             _editMode = false;
-            if (_editingTreaty is not null)
+            if (_editingTreaty is not null && !manual)
                 TryRestorePathForTreaty(_editingTreaty);
+            if (manual)
+                StartManualRouteDesign();
             return;
         }
 
@@ -257,6 +306,8 @@ else
             _tool = MarchMapCanvas.MarchMapTool.DesignRoute;
             _editMode = false;
             _editingTreaty = null;
+            if (manual)
+                StartManualRouteDesign();
         }
     }
 
@@ -379,6 +430,12 @@ else
             return;
         }
 
+        if (_routeDesignManual)
+        {
+            await OnManualRouteNodeClickedAsync(node);
+            return;
+        }
+
         if (string.Equals(node.Id, _playerSeatNodeId, StringComparison.OrdinalIgnoreCase))
         {
             _snackBar.Add("Select a different city as the trade partner.", Severity.Info);
@@ -404,6 +461,70 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
+    private async Task OnManualRouteNodeClickedAsync(MarchMapNode node)
+    {
+        if (!_manualReachableNodeIds.Any(id => string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase)))
+        {
+            _snackBar.Add("Pick a neighboring city directly linked to the previous step (not blocked).", Severity.Info);
+            return;
+        }
+
+        _manualPathNodeIds.Add(node.Id);
+        UpdateDesignPathFromManual();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void StartManualRouteDesign()
+    {
+        if (_playerSeatNodeId is null)
+        {
+            _snackBar.Add("Your barony seat is not on the map.", Severity.Warning);
+            return;
+        }
+
+        _routeDesignManual = true;
+        _manualPathNodeIds = new List<string> { _playerSeatNodeId };
+        UpdateDesignPathFromManual();
+    }
+
+    private void CancelManualRouteDesign()
+    {
+        _routeDesignManual = false;
+        _manualPathNodeIds.Clear();
+        SetDesignPath(null);
+    }
+
+    private void UndoManualRouteStep()
+    {
+        if (!_routeDesignManual || _manualPathNodeIds.Count <= 1)
+            return;
+
+        _manualPathNodeIds.RemoveAt(_manualPathNodeIds.Count - 1);
+        UpdateDesignPathFromManual();
+    }
+
+    private void UpdateDesignPathFromManual()
+    {
+        if (_manualPathNodeIds.Count >= 2)
+        {
+            var path = MarchMapTradePathfinder.PathFromNodeIds(_document, _manualPathNodeIds);
+            if (path is null)
+            {
+                _snackBar.Add("Invalid manual route — clear and try again.", Severity.Error);
+                CancelManualRouteDesign();
+                return;
+            }
+
+            SetDesignPath(path);
+            return;
+        }
+
+        _designPath = null;
+        _designCustoms = 0m;
+        _designEconomy = 0m;
+        _designPathNodeIds = _manualPathNodeIds.ToList();
+    }
+
     private void SetDesignPath(MarchMapTradePath? path)
     {
         _designPath = path;
@@ -412,7 +533,12 @@ else
         _designEconomy = path is null ? 0m : MarchMapTradePathfinder.EstimateRouteEconomy(path);
     }
 
-    private void ClearDesignPath() => SetDesignPath(null);
+    private void ClearDesignPath()
+    {
+        _routeDesignManual = false;
+        _manualPathNodeIds.Clear();
+        SetDesignPath(null);
+    }
 
     private async Task ConfirmDesignRouteAsync()
     {
@@ -432,13 +558,24 @@ else
             { x => x.BlockedLordKeys, _blockedLordKeys },
         };
 
-        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
         var dialog = await _dialogService.ShowAsync<TradeTreatyEditDialog>(
             _editingTreaty is null ? "New trade treaty" : "Edit trade treaty",
             parameters,
             options);
         var result = await dialog.Result;
-        if (result is null || result.Canceled || result.Data is not BaronyTradeTreaty saved)
+        if (result is null || result.Canceled)
+            return;
+
+        if (result.Data is string request &&
+            string.Equals(request, TradeTreatyEditDialog.ManualRouteDesignRequest, StringComparison.Ordinal))
+        {
+            _editingTreaty = draft;
+            StartManualRouteDesign();
+            return;
+        }
+
+        if (result.Data is not BaronyTradeTreaty saved)
             return;
 
         var list = _treaties.ToList();
@@ -474,9 +611,84 @@ else
         };
     }
 
-    private async Task OnBlockedLordsChangedAsync(IReadOnlyCollection<string> keys)
+    private async Task OnBlockTradeToggleRequestedAsync(BlockTradeToggleRequest request)
     {
-        _blockedLordKeys = keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(request.LordKey))
+            return;
+
+        var set = _blockedLordKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (!request.Block)
+        {
+            set.Remove(request.LordKey);
+            await ApplyBlockedLordKeysAsync(set);
+            return;
+        }
+
+        if (set.Contains(request.LordKey))
+            return;
+
+        var affected = TradeTreatyCalculator.TreatiesUsingLord(_treaties, request.LordKey);
+        if (affected.Count > 0)
+        {
+            var lord = KnownLordsCatalog.FindByKey(request.LordKey);
+            var lordLabel = lord is not null
+                ? $"{lord.Name} {lord.House} ({lord.Holdings})"
+                : request.LordKey;
+            var treatyList = string.Join(
+                "\n",
+                affected.Select(FormatTreatyTitleForBlockDialog));
+
+            var confirm = await _dialogService.ShowMessageBoxAsync(
+                "Block trade?",
+                $"Blocking {lordLabel} will remove {affected.Count} trade " +
+                $"treat{(affected.Count == 1 ? "y" : "ies")} that pass through or end at this seat:\n\n" +
+                $"{treatyList}\n\nContinue?",
+                yesText: "Block and remove treaties",
+                cancelText: "Cancel");
+
+            if (confirm != true)
+            {
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var removeIds = affected.Select(t => t.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var remaining = _treaties.Where(t => !removeIds.Contains(t.Id)).ToList();
+            await _baronyRepo.SaveTradeTreaties(BaronyId, remaining);
+            _treaties = remaining;
+            RefreshTradeRouteOverlays();
+
+            if (_editingTreaty is not null && removeIds.Contains(_editingTreaty.Id))
+            {
+                _editingTreaty = null;
+                ClearDesignPath();
+            }
+
+            _snackBar.Add(
+                $"Removed {affected.Count} trade treat{(affected.Count == 1 ? "y" : "ies")} blocked by this seat.",
+                Severity.Info);
+            NotifyResourceHud();
+        }
+
+        set.Add(request.LordKey);
+        await ApplyBlockedLordKeysAsync(set);
+    }
+
+    private static string FormatTreatyTitleForBlockDialog(BaronyTradeTreaty treaty)
+    {
+        if (!string.IsNullOrWhiteSpace(treaty.Title))
+            return $"• {treaty.Title}";
+
+        var lord = KnownLordsCatalog.FindByKey(treaty.CounterpartyLordKey);
+        return lord is not null
+            ? $"• Treaty with {lord.Name} {lord.House}"
+            : $"• Treaty ({treaty.CounterpartyLordKey})";
+    }
+
+    private async Task ApplyBlockedLordKeysAsync(HashSet<string> keys)
+    {
+        _blockedLordKeys = keys;
         await _baronyRepo.SetBlockedTradeLordKeys(BaronyId, _blockedLordKeys);
         if (_designPath is not null)
         {
@@ -486,6 +698,8 @@ else
             if (_designPath is null)
                 _snackBar.Add("Current design route is no longer reachable.", Severity.Warning);
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task OnDocumentChangedAsync(MarchMapDocument doc)

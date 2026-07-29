@@ -6,6 +6,9 @@ namespace DA_Common.Barony
         public const string MetaBaronyName =
             "Formal name of your barony.";
 
+        public const string MetaBaronyNameMg =
+            "Click to switch which barony you are managing.";
+
         public const string MetaYear =
             "Campaign calendar year.";
 

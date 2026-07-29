@@ -88,6 +88,8 @@ namespace DA_DataAccess.Data
         public DbSet<BaronTimeAction> BaronTimeActions { get; set; }
         public DbSet<BaronLetterThread> BaronLetterThreads { get; set; }
         public DbSet<BaronLetterMessage> BaronLetterMessages { get; set; }
+        public DbSet<BaronAudience> BaronAudiences { get; set; }
+        public DbSet<BaronAudienceExchange> BaronAudienceExchanges { get; set; }
         public DbSet<BaronyUnit> BaronyUnits { get; set; }
         public DbSet<MarchMapState> MarchMapStates { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
@@ -151,6 +153,22 @@ namespace DA_DataAccess.Data
             modelBuilder.Entity<BaronLetterMessage>(entity =>
             {
                 entity.HasIndex(e => e.ThreadId);
+            });
+
+            modelBuilder.Entity<BaronAudience>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => new { e.BaronyId, e.TurnNumber });
+                entity.HasIndex(e => e.ContinuedFromAudienceId);
+                entity.HasMany(e => e.Exchanges)
+                    .WithOne(e => e.Audience!)
+                    .HasForeignKey(e => e.AudienceId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<BaronAudienceExchange>(entity =>
+            {
+                entity.HasIndex(e => e.AudienceId);
             });
 
             modelBuilder.Entity<BaronyUnit>(entity =>

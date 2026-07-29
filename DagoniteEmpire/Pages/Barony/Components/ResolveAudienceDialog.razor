@@ -1,0 +1,45 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="barony-dialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Resolve audience</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-2">@_subtitle</MudText>
+        <MudTextField @bind-Value="_summary"
+                      Label="GM summary"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="4"
+                      HelperText="Archive summary of how this audience ended"
+                      Class="mb-2" />
+        <MudTextField @bind-Value="_outcome"
+                      Label="Outcomes"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="3"
+                      HelperText="PPB, resources, projects, events — free text for now" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Submit">Resolve</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string? Subtitle { get; set; }
+
+    private string _subtitle = "";
+    private string _summary = "";
+    private string _outcome = "";
+
+    protected override void OnParametersSet() => _subtitle = Subtitle ?? "";
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() =>
+        MudDialog.Close(DialogResult.Ok(new ResolveAudienceResult(_summary.Trim(), _outcome.Trim())));
+
+    public sealed record ResolveAudienceResult(string GmSummary, string OutcomeNotes);
+}

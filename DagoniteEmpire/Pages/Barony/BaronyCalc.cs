@@ -600,6 +600,59 @@ namespace DagoniteEmpire.Pages.Barony
                 .ToList();
 
         /// <summary>
+        /// Non-cumulative PPB from this turn's audiences (Economy, Loyalty, Stability, Law, Corruption).
+        /// Shown as a synthetic Events row named <see cref="BaronAudiencePpb.SummaryRowName"/>.
+        /// </summary>
+        public static List<PpbModifierRow> AudienceEventRows(IEnumerable<BaronAudienceDTO>? audiences, int currentTurn)
+        {
+            var add = new PpbVector();
+            var pct = new PpbVector();
+            foreach (var a in audiences ?? Enumerable.Empty<BaronAudienceDTO>())
+            {
+                if (!BaronAudiencePpb.ContributesToTurn(a.TurnNumber, a.Status, currentTurn))
+                    continue;
+                add.AddInPlace(a.Additive);
+                pct.AddInPlace(a.Percent);
+            }
+
+            add = BaronAudiencePpb.SliceNonCumulative(add);
+            pct = BaronAudiencePpb.SliceNonCumulative(pct);
+            if (add.IsEmpty && pct.IsEmpty)
+                return new List<PpbModifierRow>();
+
+            return new List<PpbModifierRow>
+            {
+                Row(
+                    BaronAudiencePpb.SummaryRowName,
+                    add,
+                    pct,
+                    formula: "Sum of audience grants (non-cumulative PPB)",
+                    note: "From Audiences this turn"),
+            };
+        }
+
+        /// <summary>Cumulative PPB slice from this turn's audiences (for Project Summary).</summary>
+        public static void AudienceCumulativeTotals(
+            IEnumerable<BaronAudienceDTO>? audiences,
+            int currentTurn,
+            out PpbVector additive,
+            out PpbVector percent)
+        {
+            additive = new PpbVector();
+            percent = new PpbVector();
+            foreach (var a in audiences ?? Enumerable.Empty<BaronAudienceDTO>())
+            {
+                if (!BaronAudiencePpb.ContributesToTurn(a.TurnNumber, a.Status, currentTurn))
+                    continue;
+                additive.AddInPlace(a.Additive);
+                percent.AddInPlace(a.Percent);
+            }
+
+            additive = BaronAudiencePpb.SliceCumulative(additive);
+            percent = BaronAudiencePpb.SliceCumulative(percent);
+        }
+
+        /// <summary>
         /// Active units only: wage (Gold), food upkeep, defense upkeep as negative Additive.
         /// Training units do not count until graduation.
         /// </summary>
@@ -775,6 +828,7 @@ namespace DagoniteEmpire.Pages.Barony
                 ov.Improvements, ov.Tiles, ov.Fiefs, ov.Barony.VassalTributePercent);
             var decreeRows = DecreeRows(ov.Decrees);
             var eventRows = EventRows(ov.Events, ov.Barony.TurnNumber);
+            eventRows.AddRange(AudienceEventRows(ov.Audiences, ov.Barony.TurnNumber));
             var armyRows = ArmyRows(ov.Units);
             var settlementPop = SumSettlementPopulation(ov.Barony.Id, ov.Buildings, ov.Improvements);
             var communityRows = CommunityRows(

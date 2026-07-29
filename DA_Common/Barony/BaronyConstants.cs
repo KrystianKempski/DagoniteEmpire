@@ -310,7 +310,8 @@ namespace DA_Common.Barony
 
         public static string IconUrl(string? key) => key switch
         {
-            SoftMetals or Iron or Silver or Gold or Dagoferryt => "/icons/metal-bar.svg",
+            SoftMetals => "/icons/copper.svg",
+            Iron or Silver or Gold or Dagoferryt => "/icons/metal-bar.svg",
             Fishery => "/icons/fishing.svg",
             Stone or Granite or Tarnit => "/icons/stone-block.svg",
             Obsidian or Sulfur => "/icons/silex.svg",
@@ -343,6 +344,12 @@ namespace DA_Common.Barony
             Gemstones => "#9b59b6",
             _ => "#888888",
         };
+
+        /// <summary>Near-white fills (e.g. building stone) need a black outline on pale UI backgrounds.</summary>
+        public static bool NeedsDarkOutline(string? key) =>
+            string.Equals(key, Stone, StringComparison.Ordinal)
+            || string.Equals(key, Salt, StringComparison.Ordinal)
+            || string.Equals(key, Silver, StringComparison.Ordinal);
     }
 
     /// <summary>Map-placed terrain improvements (stored as TerrainImprovement.Name).</summary>

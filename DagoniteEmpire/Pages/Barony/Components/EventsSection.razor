@@ -8,7 +8,7 @@
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
     <ChildContent>
-        @if (Events.Count == 0)
+        @if (Events.Count == 0 && !HasAudienceRow)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
                 No events yet.
@@ -87,6 +87,23 @@
                             </tr>
                         }
 
+                        @if (HasAudienceRow)
+                        {
+                            <tr class="event-row--audience">
+                                <td class="city-building-col-name">
+                                    <span class="city-building-name-text">@BaronAudiencePpb.SummaryRowName</span>
+                                </td>
+                                <td class="event-col-turns">
+                                    <span title="This turn">T@CurrentTurn</span>
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, AudienceAdditive[info.Key])">@FmtAdd(AudienceAdditive[info.Key])</td>
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, AudiencePercent[info.Key])">@FmtPct(AudiencePercent[info.Key])</td>
+                                }
+                            </tr>
+                        }
+
                         <tr class="ppb-summary-row">
                             <td class="ppb-row-label city-building-col-name">Σ section</td>
                             <td class="event-col-turns"></td>
@@ -118,6 +135,7 @@
     [Parameter] public int BaronyId { get; set; }
     [Parameter] public int CurrentTurn { get; set; } = 1;
     [Parameter] public List<BaronyEventDTO> Events { get; set; } = new();
+    [Parameter] public List<BaronAudienceDTO> Audiences { get; set; } = new();
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
@@ -130,9 +148,35 @@
     private IEnumerable<BaronyEventDTO> ActiveEvents =>
         Events.Where(e => e.IsActiveOnTurn(CurrentTurn));
 
-    private PpbVector AdditiveSum => PpbVector.Sum(ActiveEvents.Select(e => e.Additive));
-    private PpbVector PercentSum => PpbVector.Sum(ActiveEvents.Select(e => e.Percent));
-    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.EventRows(Events, CurrentTurn));
+    private PpbVector AudienceAdditive { get; set; } = new();
+    private PpbVector AudiencePercent { get; set; } = new();
+    private bool HasAudienceRow => !AudienceAdditive.IsEmpty || !AudiencePercent.IsEmpty;
+
+    private PpbVector AdditiveSum =>
+        PpbVector.Sum(ActiveEvents.Select(e => e.Additive).Append(AudienceAdditive));
+
+    private PpbVector PercentSum =>
+        PpbVector.Sum(ActiveEvents.Select(e => e.Percent).Append(AudiencePercent));
+
+    private PpbVector Glance =>
+        BaronyCalc.SectionGlance(
+            BaronyCalc.EventRows(Events, CurrentTurn)
+                .Concat(BaronyCalc.AudienceEventRows(Audiences, CurrentTurn)));
+
+    protected override void OnParametersSet()
+    {
+        var rows = BaronyCalc.AudienceEventRows(Audiences, CurrentTurn);
+        if (rows.Count == 0)
+        {
+            AudienceAdditive = new PpbVector();
+            AudiencePercent = new PpbVector();
+        }
+        else
+        {
+            AudienceAdditive = rows[0].Additive.Clone();
+            AudiencePercent = rows[0].Percent.Clone();
+        }
+    }
 
     private static string? NameTooltip(BaronyEventDTO item) =>
         string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim();

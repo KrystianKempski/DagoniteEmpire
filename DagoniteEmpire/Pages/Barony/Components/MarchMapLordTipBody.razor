@@ -24,14 +24,18 @@
         {
             <div class="march-map-lord-tip__section">
                 <div class="march-map-lord-tip__label">Available goods</div>
-                <div class="barony-tip__body">@Lord.ProducedGoods</div>
-            </div>
-        }
-        @if (!string.IsNullOrWhiteSpace(Lord.DemandedGoods))
-        {
-            <div class="march-map-lord-tip__section">
-                <div class="march-map-lord-tip__label">Sought goods</div>
-                <div class="barony-tip__body">@Lord.DemandedGoods</div>
+                <div class="trade-good-chip-row trade-good-chip-row--tip">
+                    @foreach (var key in TradeGoodLordNames.ParseLordGoodsList(Lord.ProducedGoods))
+                    {
+                        var good = TradeGoodsCatalog.Find(key);
+                        if (good is null)
+                            continue;
+                        <span class="trade-good-chip" title="@good.Name">
+                            <TradeGoodIcon Good="@good" />
+                            <span>@good.Name</span>
+                        </span>
+                    }
+                </div>
             </div>
         }
         @if (!string.IsNullOrWhiteSpace(Lord.Description))
