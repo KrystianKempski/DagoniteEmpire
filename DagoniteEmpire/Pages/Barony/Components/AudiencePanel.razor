@@ -4,6 +4,32 @@
     <header class="project-card__header">
         <div class="project-card__title-row" @onclick="Toggle" role="button" aria-expanded="@_isOpen">
             <h3 class="project-card__title">@Audience.Title</h3>
+            @if (Audience.HasPpb || Audience.HasPhp)
+            {
+                <div class="baron-audience__ppb-glance" @onclick:stopPropagation="true">
+                    @if (Audience.HasPpb)
+                    {
+                        <PpbSummaryChips Vector="@AudienceGlance" />
+                    }
+                    @if (Audience.HasPhp)
+                    {
+                        <div class="baron-php-summary">
+                            @if (Audience.Prestige != 0)
+                            {
+                                <PhpMetricChip Metric="PhpMetric.Prestige" Value="@Audience.Prestige" ShowLabel="false" />
+                            }
+                            @if (Audience.Honor != 0)
+                            {
+                                <PhpMetricChip Metric="PhpMetric.Honor" Value="@Audience.Honor" ShowLabel="false" />
+                            }
+                            @if (Audience.Fear != 0)
+                            {
+                                <PhpMetricChip Metric="PhpMetric.Fear" Value="@Audience.Fear" ShowLabel="false" />
+                            }
+                        </div>
+                    }
+                </div>
+            }
             <div class="project-card__badges">
                 <span class="project-output-badge">@Audience.PetitionerName</span>
                 <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
@@ -13,33 +39,6 @@
                 }
             </div>
         </div>
-
-        @if (Audience.HasPpb || Audience.HasPhp)
-        {
-            <div class="baron-audience__ppb-glance" @onclick:stopPropagation="true">
-                @if (Audience.HasPpb)
-                {
-                    <PpbSummaryChips Vector="@AudienceGlance" />
-                }
-                @if (Audience.HasPhp)
-                {
-                    <div class="baron-php-summary">
-                        @if (Audience.Prestige != 0)
-                        {
-                            <PhpMetricChip Metric="PhpMetric.Prestige" Value="@Audience.Prestige" />
-                        }
-                        @if (Audience.Honor != 0)
-                        {
-                            <PhpMetricChip Metric="PhpMetric.Honor" Value="@Audience.Honor" />
-                        }
-                        @if (Audience.Fear != 0)
-                        {
-                            <PhpMetricChip Metric="PhpMetric.Fear" Value="@Audience.Fear" />
-                        }
-                    </div>
-                }
-            </div>
-        }
 
         @if (_isOpen)
         {
