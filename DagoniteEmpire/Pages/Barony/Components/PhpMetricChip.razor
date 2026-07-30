@@ -1,13 +1,15 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<span class="baron-php-chip @BaronPhpVisuals.CssClass(Metric)" title="@TitleOrDefault">
-    <PhpMetricIcon Metric="Metric" Title="@TitleOrDefault" />
-    @if (ShowLabel)
-    {
-        <span class="baron-php-chip__label">@BaronPhpVisuals.Name(Metric)</span>
-    }
-    <span class="baron-php-chip__value">@FormatScore(Value)</span>
-</span>
+<BaronyTooltip Text="@TitleOrDefault">
+    <span class="baron-php-chip @BaronPhpVisuals.CssClass(Metric)">
+        <PhpMetricIcon Metric="Metric" Title="" />
+        @if (ShowLabel)
+        {
+            <span class="baron-php-chip__label">@BaronPhpVisuals.Name(Metric)</span>
+        }
+        <span class="baron-php-chip__value">@FormatScore(Value)</span>
+    </span>
+</BaronyTooltip>
 
 @code {
     [Parameter] public PhpMetric Metric { get; set; }

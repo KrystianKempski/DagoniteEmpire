@@ -2,14 +2,18 @@
 
 <span class="php-metric-icon @BaronPhpVisuals.CssClass(Metric)"
       style="@MaskStyle"
-      title="@TitleOrDefault"
+      title="@NativeTitle"
       aria-hidden="true"></span>
 
 @code {
     [Parameter] public PhpMetric Metric { get; set; }
+    /// <summary>Native browser tooltip. Pass empty string to suppress (e.g. when wrapped in BaronyTooltip).</summary>
     [Parameter] public string? Title { get; set; }
 
-    private string TitleOrDefault => Title ?? BaronPhpVisuals.Name(Metric);
+    private string? NativeTitle =>
+        Title is null ? BaronPhpVisuals.Name(Metric)
+        : string.IsNullOrWhiteSpace(Title) ? null
+        : Title;
 
     private string MaskStyle =>
         $"--php-icon-url: url('{BaronPhpVisuals.IconUrl(Metric)}');";

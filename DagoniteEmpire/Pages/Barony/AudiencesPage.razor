@@ -77,16 +77,26 @@ else if (Barony is not null)
                                     <th class="ppb-row-label city-building-col-name">Audience</th>
                                     @foreach (var info in PpbCatalog.All)
                                     {
-                                        <th title="@info.NameEn">@PpbShort(info.Key)</th>
+                                        <th>
+                                            <BaronyTooltip Text="@info.NameEn">
+                                                <span>@PpbShort(info.Key)</span>
+                                            </BaronyTooltip>
+                                        </th>
                                     }
-                                    <th class="php-col php-col--prestige" title="@BaronPhpVisuals.Name(PhpMetric.Prestige)">
-                                        <PhpMetricIcon Metric="PhpMetric.Prestige" />
+                                    <th class="php-col php-col--prestige">
+                                        <BaronyTooltip Text="@BaronPhpVisuals.Name(PhpMetric.Prestige)">
+                                            <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
+                                        </BaronyTooltip>
                                     </th>
-                                    <th class="php-col php-col--honor" title="@BaronPhpVisuals.Name(PhpMetric.Honor)">
-                                        <PhpMetricIcon Metric="PhpMetric.Honor" />
+                                    <th class="php-col php-col--honor">
+                                        <BaronyTooltip Text="@BaronPhpVisuals.Name(PhpMetric.Honor)">
+                                            <PhpMetricIcon Metric="PhpMetric.Honor" Title="" />
+                                        </BaronyTooltip>
                                     </th>
-                                    <th class="php-col php-col--fear" title="@BaronPhpVisuals.Name(PhpMetric.Fear)">
-                                        <PhpMetricIcon Metric="PhpMetric.Fear" />
+                                    <th class="php-col php-col--fear">
+                                        <BaronyTooltip Text="@BaronPhpVisuals.Name(PhpMetric.Fear)">
+                                            <PhpMetricIcon Metric="PhpMetric.Fear" Title="" />
+                                        </BaronyTooltip>
                                     </th>
                                 </tr>
                             </thead>
@@ -173,6 +183,7 @@ else if (Barony is not null)
                                            Busy="_busy"
                                            OnSpeak="req => SendReplyAsync(a, req)"
                                            OnAddResources="() => AddResourcesAsync(a)"
+                                           OnCreateProject="() => CreateProjectAsync(a)"
                                            OnResolve="() => ResolveAsync(a)"
                                            OnDefer="() => DeferAsync(a)"
                                            OnDismiss="() => DismissAsync(a)" />
@@ -394,6 +405,79 @@ else if (Barony is not null)
 
             await ReloadAsync();
             _snackBar.Add("Resources added.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CreateProjectAsync(BaronAudienceDTO a)
+    {
+        var draft = new BaronyProjectDTO
+        {
+            BaronyId = BaronyId,
+            Status = ProjectStatus.Draft,
+            OutputKind = ProjectOutputKind.DecreeOrTechnology,
+        };
+        var parameters = new DialogParameters<ProjectEditDialog>
+        {
+            { x => x.Project, draft },
+            { x => x.CanManage, CanWriteAsGm },
+        };
+        var dialog = await _dialogService.ShowAsync<ProjectEditDialog>(
+            "Add Project",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = CanWriteAsGm ? MaxWidth.Large : MaxWidth.Small,
+                FullWidth = true,
+            });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyProjectDTO saved)
+            return;
+
+        if (!CanWriteAsGm)
+        {
+            saved.Status = ProjectStatus.Draft;
+            saved.TurnsRemaining = 0;
+            saved.Notes = null;
+            saved.HideResultFromBaron = false;
+            saved.AllowedCostModes = ProjectAllowedCostModes.PlayerChoice;
+            saved.CostGoldProduction = new();
+            saved.CostMaterials = new();
+            saved.ResultAdditive = new();
+            saved.ResultPercent = new();
+            saved.Allocated = new();
+            saved.SelectedCostMode = null;
+        }
+
+        _busy = true;
+        try
+        {
+            saved.BaronyId = BaronyId;
+            var created = await _baronyRepo.SaveProject(saved);
+
+            var body = $"Created project \"{created.Name}\".";
+            if (!string.IsNullOrWhiteSpace(created.Description))
+                body += $" {created.Description.Trim()}";
+
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = a.Id,
+                Body = body,
+                IsFromPetitioner = false,
+                SpeakerName = AudiencePanel.ProjectSpeaker,
+                TurnNumber = Barony!.TurnNumber,
+            });
+
+            await ReloadAsync();
+            _snackBar.Add("Project added.", Severity.Success);
         }
         catch (Exception ex)
         {

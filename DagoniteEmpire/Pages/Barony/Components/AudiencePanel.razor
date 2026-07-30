@@ -35,7 +35,9 @@
                 <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
                 @if (Audience.ContinuedFromAudienceId is not null)
                 {
-                    <span class="baron-audience__continued" title="Continued from a deferred audience">continued</span>
+                    <BaronyTooltip Text="Continued from a deferred audience">
+                        <span class="baron-audience__continued">continued</span>
+                    </BaronyTooltip>
                 }
             </div>
         </div>
@@ -79,19 +81,19 @@
                                 }
                                 @if (x.Prestige != 0)
                                 {
-                                    <span class="baron-audience__ppb-delta-item php-metric--prestige" title="Prestige">
+                                    <span class="baron-audience__ppb-delta-item php-metric--prestige">
                                         @FmtPhp(x.Prestige) Prestige
                                     </span>
                                 }
                                 @if (x.Honor != 0)
                                 {
-                                    <span class="baron-audience__ppb-delta-item php-metric--honor" title="Honor">
+                                    <span class="baron-audience__ppb-delta-item php-metric--honor">
                                         @FmtPhp(x.Honor) Honor
                                     </span>
                                 }
                                 @if (x.Fear != 0)
                                 {
-                                    <span class="baron-audience__ppb-delta-item php-metric--fear" title="Fear">
+                                    <span class="baron-audience__ppb-delta-item php-metric--fear">
                                         @FmtPhp(x.Fear) Fear
                                     </span>
                                 }
@@ -170,6 +172,13 @@
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
+                                       OnClick="() => OnCreateProject.InvokeAsync()">
+                                Add project
+                            </MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
                                        OnClick="() => OnResolve.InvokeAsync()">Resolve</MudButton>
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
@@ -206,6 +215,7 @@
 @code {
     public const string SpeakerModePetitioner = "petitioner";
     public const string SpeakerModeOther = "other";
+    public const string ProjectSpeaker = "Project";
 
     public sealed record SpeakRequest(string Body, bool IsGmSide, string? SpeakerName);
 
@@ -217,6 +227,7 @@
     [Parameter] public bool Busy { get; set; }
     [Parameter] public EventCallback<SpeakRequest> OnSpeak { get; set; }
     [Parameter] public EventCallback OnAddResources { get; set; }
+    [Parameter] public EventCallback OnCreateProject { get; set; }
     [Parameter] public EventCallback OnResolve { get; set; }
     [Parameter] public EventCallback OnDefer { get; set; }
     [Parameter] public EventCallback OnDismiss { get; set; }
@@ -259,7 +270,7 @@
     private void Toggle() => _isOpen = !_isOpen;
 
     private string ExchangeThemeClass(BaronAudienceExchangeDTO x) =>
-        x.IsResourceChange
+        x.IsResourceChange || IsProjectNote(x)
             ? "baron-audience__exchange--resource"
             : x.IsFromPetitioner
                 ? "baron-audience__exchange--gm"
@@ -273,6 +284,9 @@
             return x.SpeakerName.Trim();
         return x.IsFromPetitioner ? Audience.PetitionerName : "Lord";
     }
+
+    private static bool IsProjectNote(BaronAudienceExchangeDTO x) =>
+        string.Equals(x.SpeakerName, ProjectSpeaker, StringComparison.OrdinalIgnoreCase);
 
     private async Task SpeakAsync()
     {
