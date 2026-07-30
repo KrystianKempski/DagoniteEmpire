@@ -704,19 +704,61 @@ namespace DagoniteEmpire.Pages.Barony
             preCommunity.AddRange(eventRows);
             preCommunity.AddRange(armyRows);
 
-            var preAdd = SumAdditive(preCommunity);
-            var hunger = HungerPpbFormulas.FromFoodBalance(preAdd[Ppb.Food]);
-            var crime = CrimePpbFormulas.FromLawBalance(preAdd[Ppb.Law]);
-            var corruption = CorruptionPpbFormulas.FromCorruptionBalance(preAdd[Ppb.Corruption]);
+            var preFinal = SummarizeSections(preCommunity);
+            var foodFinal = preFinal[Ppb.Food];
+            var hunger = HungerPpbFormulas.FromFoodBalance(foodFinal);
+            var corruptionFinal = preFinal[Ppb.Corruption];
+            var corruption = CorruptionPpbFormulas.FromCorruptionBalance(corruptionFinal);
             var unrestValue = Math.Max(0m, unrest);
-            var economyE = preAdd[Ppb.Economy];
+
+            var hungerRow = Row(
+                CommunitySource.Hunger,
+                HungerPpbFormulas.ComputeAdditive(hunger),
+                HungerPpbFormulas.ComputePercent(hunger),
+                HungerPpbFormulas.FormulaSummary(foodFinal, hunger),
+                HungerPpbFormulas.CatalogDescription);
+            var unrestRow = Row(
+                CommunitySource.Unrest,
+                UnrestPpbFormulas.ComputeAdditive(unrestValue),
+                UnrestPpbFormulas.ComputePercent(unrestValue),
+                UnrestPpbFormulas.FormulaSummary(unrestValue),
+                UnrestPpbFormulas.CatalogDescription);
+            var corruptionRow = Row(
+                CommunitySource.Corruption,
+                CorruptionPpbFormulas.ComputeAdditive(corruption),
+                CorruptionPpbFormulas.ComputePercent(corruption),
+                CorruptionPpbFormulas.FormulaSummary(corruptionFinal, corruption),
+                CorruptionPpbFormulas.CatalogDescription);
+
+            // Crime = max(0, −Final Law). Crime does not modify Law, so Final Law =
+            // Law after Hunger + Unrest (and other non-Crime rows that touch Law).
+            var beforeCrime = new List<PpbModifierRow>(preCommunity) { hungerRow, unrestRow };
+            var lawFinal = SummarizeSections(beforeCrime)[Ppb.Law];
+            var crime = CrimePpbFormulas.FromLawBalance(lawFinal);
+            var crimeRow = Row(
+                CommunitySource.Crime,
+                CrimePpbFormulas.ComputeAdditive(crime),
+                CrimePpbFormulas.ComputePercent(crime),
+                CrimePpbFormulas.FormulaSummary(lawFinal, crime),
+                CrimePpbFormulas.CatalogDescription);
+
+            // Economy conjuncture uses Domain Final Economy after other Community rows
+            // (Hunger/Crime/Corruption/Unrest). That row does not modify Economy, so no loop.
+            var beforeEconomy = new List<PpbModifierRow>(preCommunity)
+            {
+                hungerRow,
+                crimeRow,
+                corruptionRow,
+                unrestRow,
+            };
+            var economyE = SummarizeSections(beforeEconomy)[Ppb.Economy];
 
             return new List<PpbModifierRow>
             {
-                Row(CommunitySource.Hunger, HungerPpbFormulas.ComputeAdditive(hunger), HungerPpbFormulas.ComputePercent(hunger)),
-                Row(CommunitySource.Crime, CrimePpbFormulas.ComputeAdditive(crime), CrimePpbFormulas.ComputePercent(crime)),
-                Row(CommunitySource.Corruption, CorruptionPpbFormulas.ComputeAdditive(corruption), CorruptionPpbFormulas.ComputePercent(corruption)),
-                Row(CommunitySource.Unrest, UnrestPpbFormulas.ComputeAdditive(unrestValue), UnrestPpbFormulas.ComputePercent(unrestValue)),
+                hungerRow,
+                crimeRow,
+                corruptionRow,
+                unrestRow,
                 Row(
                     CommunitySource.Economy,
                     EconomyConjunctureFormulas.ComputeAdditive(
@@ -738,7 +780,7 @@ namespace DagoniteEmpire.Pages.Barony
             => PpbVector.Sum(rows.Select(r => r.Percent));
 
         /// <summary>
-        /// Additive values that percent modifiers scale: positive per row (negative for Corruption).
+        /// Additive values that percent modifiers scale: positive per row only.
         /// </summary>
         public static PpbVector SumScalableAdditive(IEnumerable<PpbModifierRow> rows)
         {
@@ -749,17 +791,9 @@ namespace DagoniteEmpire.Pages.Barony
                     continue;
                 foreach (var info in PpbCatalog.All)
                 {
-                    var key = info.Key;
-                    var v = row.Additive[key];
-                    if (key == Ppb.Corruption)
-                    {
-                        if (v < 0m)
-                            sum[key] += v;
-                    }
-                    else if (v > 0m)
-                    {
-                        sum[key] += v;
-                    }
+                    var v = row.Additive[info.Key];
+                    if (v > 0m)
+                        sum[info.Key] += v;
                 }
             }
             return sum;
@@ -905,8 +939,8 @@ namespace DagoniteEmpire.Pages.Barony
         }
 
         /// <summary>
-        /// Expected resource delta for HUD / Resources: Domain Panel Final minus liege tribute on Gold,
-        /// plus this turn's cumulative audience grants (Food, Production, …).
+        /// Expected resource delta for HUD / Resources: Domain Panel Final minus liege tribute on Gold.
+        /// Audience cumulative grants are applied to stocks immediately (Resource Balance), not here.
         /// </summary>
         public static PpbVector ExpectedResourceIncome(
             BaronyOverviewDTO ov,
@@ -920,9 +954,6 @@ namespace DagoniteEmpire.Pages.Barony
             var gross = GrossGoldIncome(panel);
             var tribute = FiefTributeFormulas.ComputeTribute(gross, ov.Barony.LiegeTributePercent);
             expected[Ppb.Treasury] = PpbFormat.Round(expected[Ppb.Treasury] - tribute);
-
-            AudienceCumulativeTotals(ov.Audiences, ov.Barony.TurnNumber, out var audienceAdd, out _);
-            expected.AddInPlace(ResourceCatalog.Slice(audienceAdd));
             return ResourceCatalog.Slice(expected);
         }
 

@@ -4,7 +4,7 @@ namespace DA_Common.Barony
     {
         public const string InputLabel = "Unrest";
         public const int Max = 5;
-        public const decimal EconomyProductionPercentPerUnrest = 15m;
+        public const decimal EconomyProductionPercentPerUnrest = 10m;
         public const decimal LoyaltyStabilityLawPerUnrest = 3m;
 
         public static int Clamp(int unrest) => Math.Clamp(unrest, 0, Max);
@@ -32,6 +32,9 @@ namespace DA_Common.Barony
             return v;
         }
 
+        public static string FormulaSummary(decimal unrest) =>
+            $"This turn: Unrest {PpbFormat.Number(unrest)} (barony level, 0–{Max}).";
+
         public static string? ExplainAdditive(Ppb key) => key switch
         {
             Ppb.Loyalty or Ppb.Stability or Ppb.Law
@@ -45,5 +48,9 @@ namespace DA_Common.Barony
                 => $"= −{InputLabel} × {EconomyProductionPercentPerUnrest:0}",
             _ => null,
         };
+
+        public static string CatalogDescription =>
+            "Community penalty from barony Unrest (0–5). "
+            + "Also reduces Law, which can raise Crime (= max(0, −Final Law)).";
     }
 }

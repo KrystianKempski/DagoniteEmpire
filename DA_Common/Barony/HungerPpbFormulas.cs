@@ -3,7 +3,7 @@ namespace DA_Common.Barony
     public static class HungerPpbFormulas
     {
         public const string InputLabel = "Hunger";
-        public const decimal EconomyProductionPercentPerHunger = 10m;
+        public const decimal EconomyProductionPercentPerHunger = 5m;
         public const decimal EconomyProductionPercentFloor = -50m;
         public const decimal LoyaltyStabilityPerHunger = 3m;
         public const decimal LawPerHunger = 2m;
@@ -36,6 +36,10 @@ namespace DA_Common.Barony
             return v;
         }
 
+        public static string FormulaSummary(decimal foodFinal, decimal hunger) =>
+            $"This turn: Final Food {PpbFormat.Number(foodFinal)}, "
+            + $"Hunger {PpbFormat.Number(hunger)} (= max(0, −Food)).";
+
         public static string? ExplainAdditive(Ppb key) => key switch
         {
             Ppb.Loyalty => $"= −{InputLabel} × {LoyaltyStabilityPerHunger:0}",
@@ -54,6 +58,6 @@ namespace DA_Common.Barony
 
         public static string CatalogDescription =>
             "Community penalty when Food balance is below zero. "
-            + $"{InputLabel} = max(0, −Food balance).";
+            + $"{InputLabel} = max(0, −Final Food before Community).";
     }
 }

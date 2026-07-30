@@ -5,6 +5,7 @@ namespace DA_Common.Barony
     /// Gold (net profit) = (Economy + Conjuncture) × 2.
     /// % = 50·(Economy/(2×Population)−1) + (Conjuncture − 7), soft-capped for extremes,
     /// applied to Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.
+    /// Economy = Domain Final Economy after other Community rows (Hunger/Crime/Corruption/Unrest).
     /// Conjuncture = 2d6 (turn roll) + MG modifier.
     /// </summary>
     public static class EconomyConjunctureFormulas
@@ -94,7 +95,7 @@ namespace DA_Common.Barony
             var conj = EffectiveConjuncture(conjunctureDice, conjunctureModifier);
             var modSign = conjunctureModifier >= 0 ? "+" : "";
             return
-                $"This turn: Economy {PpbFormat.Number(economyAdditive)}, "
+                $"This turn: Final Economy {PpbFormat.Number(economyAdditive)}, "
                 + $"Population {population}, "
                 + $"Conjuncture {conj} (2d6 {conjunctureDice}{modSign}{conjunctureModifier}).";
         }
@@ -107,7 +108,8 @@ namespace DA_Common.Barony
             return
                 $"= {RatioScale:0} × (Economy / ({EconomyPerPopulation:0} × Population) − 1) "
                 + $"+ (Conjuncture − {ConjunctureNeutral})\n"
-                + "Economy = additive before this row; Population = settlement population; "
+                + "Economy = Domain Final Economy after Hunger/Crime/Corruption/Unrest; "
+                + "Population = settlement population; "
                 + "Conjuncture = 2d6 turn roll + MG modifier.\n"
                 + "Same % applies to Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.";
         }
@@ -119,7 +121,8 @@ namespace DA_Common.Barony
 
             return
                 $"= (Economy + Conjuncture) × {NetProfitGoldFactor:0}\n"
-                + "Economy = additive before this row; Conjuncture = 2d6 turn roll + MG modifier.\n"
+                + "Economy = Domain Final Economy after Hunger/Crime/Corruption/Unrest; "
+                + "Conjuncture = 2d6 turn roll + MG modifier.\n"
                 + "Net gold profit from the economy.";
         }
 

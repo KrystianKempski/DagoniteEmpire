@@ -50,7 +50,7 @@ namespace DA_Common.Barony
             if (key == Ppb.Economy)
             {
                 return baseTip + "\n"
-                    + $"Community net Gold uses pre-Community Economy additive: "
+                    + $"Community net Gold uses Final Economy (after other Community rows): "
                     + $"(Economy + Conjuncture) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}.";
             }
 

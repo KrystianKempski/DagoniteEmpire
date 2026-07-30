@@ -20,7 +20,7 @@ Sources: all Domain Panel sections (Baron and Advisors, City and Buildings, Soci
 Terrain Improvements, Decrees, Events, Army, Community) — both **+** and **%** columns.
 
 ```
-scalable_additive = Σ positive Additive per row  (Corruption: Σ negative)
+scalable_additive = Σ positive Additive per row
 percent_effect    = scalable_additive × (Σ Percent / 100)
 final             = Σ Additive + percent_effect
 ```
@@ -93,30 +93,31 @@ Class: `TownPpbFormulas`. Row “Population of \<city\>” under City and Buildi
 
 ## Community Penalties
 
-PPB balances **before** Community rows (Hunger / Crime / Corruption / Unrest / Economy).
+PPB balances **before** Community rows use Domain **Final** Food / Law / Corruption from sections above Community (Hunger / Crime / Corruption inputs). Economy conjuncture uses Final Economy after Hunger/Crime/Corruption/Unrest.
 
 ### Hunger — `HungerPpbFormulas`
-- `Hunger = max(0, −FoodBalance)`
-- `% Economy/Production = max(−Hunger×10, −50)`
+- `Hunger = max(0, −FoodBalance)` — `FoodBalance` = Final Food before Community
+- `% Economy/Production = max(−Hunger×5, −50)`
 - `+ Loyalty/Stability = −Hunger×3`, `Law = −Hunger×2`, `Corruption = Hunger`
 
 ### Crime — `CrimePpbFormulas`
-- `Crime = max(0, −LawBalance)`
-- `% Economy/Production = max(−Crime×5, −50)`
+- `Crime = max(0, −Final Law)` — only when Law is negative; then Crime = |Law|
+- Final Law includes Hunger and Unrest Law penalties (Crime itself does not change Law)
+- `% Economy/Production = max(−Crime×3, −50)`
 - `+ Loyalty = −Crime`, `Stability = −Crime×2`, `Corruption = Crime/2`
 
 ### Corruption — `CorruptionPpbFormulas`
-- `Corruption = max(0, CorruptionBalance)`
-- `% Economy/Production = max(−Corruption×5, −50)`
+- `Corruption = max(0, CorruptionBalance)` — `CorruptionBalance` = Final Corruption before Community
+- `% Economy/Production = max(−Corruption×3, −50)`
 - `+ Loyalty = −Corruption×2`, `Stability = −Corruption`
 
 ### Unrest — `UnrestPpbFormulas`
 - `Unrest = Barony.Unrest`
-- `% Economy/Production = −Unrest×15`
+- `% Economy/Production = −Unrest×10`
 - `+ Loyalty/Stability/Law = −Unrest×3`
 
 ### Economy (conjuncture) — `EconomyConjunctureFormulas`
-- Inputs: `Economy` = Economy additive sum **before** Community rows; `Population` = settlement population; `Conjuncture` = 2d6 + MG modifier
+- Inputs: `Economy` = Domain **Final Economy** after Hunger/Crime/Corruption/Unrest (this row does not modify Economy, so no loop); `Population` = settlement population; `Conjuncture` = 2d6 + MG modifier
 - **Net Gold profit** = `(Economy + Conjuncture) × 2`
 - `% Gold/Production/Loyalty/Stability/Magic/Culture/Science/Defense` = `clamp(50 × (Economy / (2 × Population) − 1) + (Conjuncture − 7), −40, +40)`
 
@@ -151,7 +152,7 @@ Pipeline (player End Turn flag → MG Resolve Turn):
 9. Clear `PlayerTurnReady`
 
 Resources tab → Resource Balance: **Σ of all rows = current stocks = HUD**.
-Rows = Stock from previous turn (`PreviousTurnStock`) + Income from previous turn (`PreviousTurnIncome`) + current ledger sources (project grants, Budget transfers, MG Add Source) + Project costs (if any). Everything except Domain Panel income from the prior turn is folded into the next opening stock on Resolve.
+Rows = Stock from previous turn (`PreviousTurnStock`) + Income from previous turn (`PreviousTurnIncome`) + current ledger sources (project grants, Budget transfers, MG Add Source) + **Audiences** (cumulative grants this turn, already in stocks) + Project costs (if any). Everything except Domain Panel income from the prior turn is folded into the next opening stock on Resolve.
 
 ### Letters — inbound caps / turn — `BaronLetterRules`
 - Eastern March: max **3** inbound letters from the same correspondent per turn

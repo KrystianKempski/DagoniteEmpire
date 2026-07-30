@@ -3,7 +3,7 @@ namespace DA_Common.Barony
     public static class CorruptionPpbFormulas
     {
         public const string InputLabel = "Corruption";
-        public const decimal EconomyProductionPercentPerCorruption = 5m;
+        public const decimal EconomyProductionPercentPerCorruption = 3m;
         public const decimal EconomyProductionPercentFloor = -50m;
         public const decimal LoyaltyPerCorruption = 2m;
         public const decimal StabilityPerCorruption = 1m;
@@ -33,6 +33,10 @@ namespace DA_Common.Barony
             return v;
         }
 
+        public static string FormulaSummary(decimal corruptionFinal, decimal corruption) =>
+            $"This turn: Final Corruption {PpbFormat.Number(corruptionFinal)}, "
+            + $"input {PpbFormat.Number(corruption)} (= max(0, Corruption)).";
+
         public static string? ExplainAdditive(Ppb key) => key switch
         {
             Ppb.Loyalty => $"= −{InputLabel} × {LoyaltyPerCorruption:0}",
@@ -46,5 +50,9 @@ namespace DA_Common.Barony
                 $"= max(−{InputLabel} × {EconomyProductionPercentPerCorruption:0}, {EconomyProductionPercentFloor:0})",
             _ => null,
         };
+
+        public static string CatalogDescription =>
+            "Community penalty from Corruption. "
+            + $"Input = max(0, Final Corruption before Community).";
     }
 }

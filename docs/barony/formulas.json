@@ -6,7 +6,7 @@
       "title": "Barony Summary (Domain Panel grand total)",
       "category": "domain-panel",
       "implementation": "BaronyCalc.SummarizeSections / PpbMath.Summarize",
-      "notes": "All Domain Panel sections contribute Additive and Percent. final = Σ Additive + SumScalableAdditive × (Σ Percent / 100). Scalable = positive Additive per row (negative for Corruption). No separate base row.",
+      "notes": "All Domain Panel sections contribute Additive and Percent. final = Σ Additive + SumScalableAdditive × (Σ Percent / 100). Scalable = positive Additive per row only. No separate base row.",
       "formula": "final = Σadd + scalable_add × (Σpct / 100)"
     },
     {
@@ -73,7 +73,7 @@
       "title": "Hunger",
       "category": "community-penalty",
       "implementation": "DA_Common/Barony/HungerPpbFormulas.cs",
-      "input": "Hunger = max(0, -FoodBalance)",
+      "input": "Hunger = max(0, -FinalFood before Community)",
       "additive": {
         "Loyalty": "-Hunger * 3",
         "Stability": "-Hunger * 3",
@@ -81,8 +81,8 @@
         "Corruption": "Hunger * 1"
       },
       "percent": {
-        "Economy": "max(-Hunger * 10, -50)",
-        "Production": "max(-Hunger * 10, -50)"
+        "Economy": "max(-Hunger * 5, -50)",
+        "Production": "max(-Hunger * 5, -50)"
       }
     },
     {
@@ -90,15 +90,15 @@
       "title": "Crime",
       "category": "community-penalty",
       "implementation": "DA_Common/Barony/CrimePpbFormulas.cs",
-      "input": "Crime = max(0, -LawBalance)",
+      "input": "Crime = max(0, -FinalLaw); FinalLaw includes Hunger+Unrest Law penalties",
       "additive": {
         "Loyalty": "-Crime * 1",
         "Stability": "-Crime * 2",
         "Corruption": "Crime / 2"
       },
       "percent": {
-        "Economy": "max(-Crime * 5, -50)",
-        "Production": "max(-Crime * 5, -50)"
+        "Economy": "max(-Crime * 3, -50)",
+        "Production": "max(-Crime * 3, -50)"
       }
     },
     {
@@ -106,14 +106,14 @@
       "title": "Corruption",
       "category": "community-penalty",
       "implementation": "DA_Common/Barony/CorruptionPpbFormulas.cs",
-      "input": "Corruption = max(0, CorruptionBalance)",
+      "input": "Corruption = max(0, FinalCorruption before Community)",
       "additive": {
         "Loyalty": "-Corruption * 2",
         "Stability": "-Corruption * 1"
       },
       "percent": {
-        "Economy": "max(-Corruption * 5, -50)",
-        "Production": "max(-Corruption * 5, -50)"
+        "Economy": "max(-Corruption * 3, -50)",
+        "Production": "max(-Corruption * 3, -50)"
       }
     },
     {
@@ -128,8 +128,8 @@
         "Law": "-Unrest * 3"
       },
       "percent": {
-        "Economy": "-Unrest * 15",
-        "Production": "-Unrest * 15"
+        "Economy": "-Unrest * 10",
+        "Production": "-Unrest * 10"
       }
     },
     {
@@ -137,12 +137,12 @@
       "title": "Economy (conjuncture)",
       "category": "community-penalty",
       "implementation": "DA_Common/Barony/EconomyConjunctureFormulas.cs",
-      "notes": "Economy = Economy additive before Community rows. Population = settlement population (towns + city buildings + villages). Conjuncture = 2d6 turn roll + MG modifier. Net Gold profit is additive; % applies to Gold, Production, Loyalty, Stability, Magic, Culture, Science, Defense.",
+      "notes": "Economy = Domain Final Economy after Hunger/Crime/Corruption/Unrest (this row does not modify Economy). Population = settlement population (towns + city buildings + villages). Conjuncture = 2d6 turn roll + MG modifier. Net Gold profit is additive; % applies to Gold, Production, Loyalty, Stability, Magic, Culture, Science, Defense.",
       "inputs": [
         {
           "name": "Economy",
           "type": "decimal",
-          "description": "Sum of Economy additive from sections before Community"
+          "description": "Domain Final Economy after other Community rows"
         },
         {
           "name": "Population",

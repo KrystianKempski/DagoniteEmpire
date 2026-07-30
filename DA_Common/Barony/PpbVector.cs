@@ -121,8 +121,7 @@ namespace DA_Common.Barony
     {
         /// <summary>
         /// final = Σ additive + scalable_additive × (Σ percent / 100).
-        /// <paramref name="scalableAdditive"/> — suma dodatnich wartości addytywnych per wiersz
-        /// (dla Korupcji: suma ujemnych).
+        /// <paramref name="scalableAdditive"/> — suma dodatnich wartości addytywnych per wiersz.
         /// </summary>
         public static PpbVector Summarize(PpbVector? additive, PpbVector? scalableAdditive, PpbVector? percent)
         {

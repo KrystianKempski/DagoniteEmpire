@@ -26,8 +26,7 @@ else if (Barony is not null)
         </Summary>
     </BaronyPageHeader>
 
-    <div class="baron-audience">
-        <BaronySection Title="Audience summary">
+    <BaronySection Title="Audience summary">
             <Summary>
                 <div class="baron-audience__summary-chips">
                     <PpbSummaryChips Vector="@SummaryAdditive" />
@@ -52,7 +51,7 @@ else if (Barony is not null)
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    Additive PPB → Domain Panel Events / Resources Expected Income · PHP → Baron Card (From Adventures).
+                    Additive PPB → Domain Panel Events · cumulative resources → Resource Balance (stocks immediately) · PHP → Baron Card (From Adventures).
                 </MudText>
                 @if (SummaryRows.Count == 0)
                 {
@@ -250,8 +249,7 @@ else if (Barony is not null)
                     }
                 }
             </ChildContent>
-        </BaronySection>
-    </div>
+    </BaronySection>
 }
 
 @code {
@@ -390,6 +388,17 @@ else if (Barony is not null)
             a.Fear += data.Fear;
             await _baronyRepo.SaveAudience(a);
 
+            var stockDelta = ResourceCatalog.Slice(data.Delta);
+            if (!stockDelta.IsEmpty && Barony is not null)
+            {
+                var stocks = ResourceCatalog.Slice(Barony.ResourceStocks);
+                stocks.AddInPlace(stockDelta);
+                Barony.ResourceStocks = stocks;
+                Barony.FoodInGranaries = stocks[Ppb.Food];
+                Barony.TreasuryGold = stocks[Ppb.Treasury];
+                await _baronyRepo.UpdateBarony(Barony);
+            }
+
             await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
             {
                 AudienceId = a.Id,
@@ -404,6 +413,7 @@ else if (Barony is not null)
             });
 
             await ReloadAsync();
+            NotifyResourceHud();
             _snackBar.Add("Resources added.", Severity.Success);
         }
         catch (Exception ex)

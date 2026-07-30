@@ -35,9 +35,9 @@ else if (_overview is not null)
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Domain Panel grand total for cumulative resources, plus Audiences grants this turn.
+                Domain Panel grand total for cumulative resources.
                 Gold already subtracts liege tribute (Budget Fief expense: gross income × tribute %).
-                Applied to stocks on Resolve Turn.
+                Applied to stocks on Resolve Turn. Audience grants land immediately under Resource Balance.
             </MudText>
             <div style="overflow-x:auto;">
                 <ResourceVectorTable Rows="@_expectedRows" NameHeader="Source" />
@@ -52,6 +52,7 @@ else if (_overview is not null)
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
                 Σ is the sum of every row below and must match Current Resource Stocks / HUD.
+                Audience grants are added to stocks as soon as they are awarded.
                 On Resolve Turn the ledger is cleared: opening stock + Domain Panel income + grants from projects
                 completed that resolve; mid-turn allocations and Add Source rows live only until the next Resolve.
             </MudText>
@@ -112,9 +113,55 @@ else if (_overview is not null)
         _expectedIncome = BaronyCalc.ExpectedResourceIncome(
             _overview, character, baronModifiers, advisorModifiers, managementJc);
 
+        await EnsureAudienceGrantsInStocksAsync();
         BuildTables();
         NotifyResourceHud();
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Older audience grants lived only in Expected Income. Credit them into stocks once
+    /// so Resource Balance Σ matches HUD after moving Audiences into the balance ledger.
+    /// </summary>
+    private async Task EnsureAudienceGrantsInStocksAsync()
+    {
+        if (_overview is null)
+            return;
+
+        var prevStock = ResourceCatalog.Slice(_overview.Barony.PreviousTurnStock);
+        // Need a known opening stock; otherwise we cannot tell if grants are already in stocks.
+        if (prevStock.IsEmpty)
+            return;
+
+        BaronyCalc.AudienceCumulativeTotals(
+            _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
+        var audienceGrants = ResourceCatalog.Slice(audienceAdd);
+        if (audienceGrants.IsEmpty)
+            return;
+
+        var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+        var prevIncome = ResourceCatalog.Slice(_overview.Barony.PreviousTurnIncome);
+        var projectCosts = ProjectCosts();
+        var sourcesSum = ResourceCatalog.Slice(
+            PpbVector.Sum(_overview.ResourceSources.Select(s => ResourceCatalog.Slice(s.Additive))));
+
+        var withoutAudience = ResourceCatalog.Slice(prevStock + prevIncome + sourcesSum + projectCosts);
+        var withAudience = ResourceCatalog.Slice(withoutAudience + audienceGrants);
+
+        if (ResourceVectorsEqual(stocks, withAudience) || !ResourceVectorsEqual(stocks, withoutAudience))
+            return;
+
+        await ApplyStockDeltaAsync(audienceGrants);
+    }
+
+    private static bool ResourceVectorsEqual(PpbVector a, PpbVector b)
+    {
+        foreach (var info in ResourceCatalog.All)
+        {
+            if (PpbFormat.Round(a[info.Key]) != PpbFormat.Round(b[info.Key]))
+                return false;
+        }
+        return true;
     }
 
     private void BuildTables()
@@ -129,21 +176,21 @@ else if (_overview is not null)
             PpbVector.Sum(_overview.ResourceSources.Select(s => ResourceCatalog.Slice(s.Additive))));
 
         var prevStock = ResourceCatalog.Slice(_overview.Barony.PreviousTurnStock);
+        BaronyCalc.AudienceCumulativeTotals(
+            _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
+        var audienceGrants = ResourceCatalog.Slice(audienceAdd);
+
         // First load / pre-migration: derive opening stock so Σ still matches HUD.
-        if (prevStock.IsEmpty && (!stocks.IsEmpty || !prevIncome.IsEmpty || !sourcesSum.IsEmpty))
+        if (prevStock.IsEmpty && (!stocks.IsEmpty || !prevIncome.IsEmpty || !sourcesSum.IsEmpty || !audienceGrants.IsEmpty))
         {
             prevStock = ResourceCatalog.Subtract(stocks, prevIncome);
             prevStock = ResourceCatalog.Subtract(prevStock, sourcesSum);
             prevStock = ResourceCatalog.Subtract(prevStock, projectCosts);
+            prevStock = ResourceCatalog.Subtract(prevStock, audienceGrants);
         }
 
         _stocksGlance = stocks;
         _expectedGlance = _expectedIncome;
-
-        BaronyCalc.AudienceCumulativeTotals(
-            _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
-        var audienceIncome = ResourceCatalog.Slice(audienceAdd);
-        var domainOnly = ResourceCatalog.Subtract(_expectedIncome, audienceIncome);
 
         _expectedRows = new List<ResourceTableRow>
         {
@@ -151,21 +198,10 @@ else if (_overview is not null)
             {
                 Label = "Domain Panel grand total",
                 Description = "Expected cumulative PPB when the turn ends. Gold already subtracts liege tribute (Budget Fief).",
-                Values = domainOnly,
+                Values = _expectedIncome,
                 IsSystem = true,
             },
         };
-        if (!audienceIncome.IsEmpty)
-        {
-            _expectedRows.Add(new ResourceTableRow
-            {
-                Label = BaronAudiencePpb.SummaryRowName,
-                Description = "Cumulative PPB granted through audiences this turn (Food, Production, …). Applied on Resolve Turn.",
-                Values = audienceIncome,
-                IsSystem = true,
-            });
-        }
-
 
         var canEditStartStock = CanManageAsMg;
         _balanceRows = new List<ResourceTableRow>
@@ -202,6 +238,17 @@ else if (_overview is not null)
             });
         }
 
+        if (!audienceGrants.IsEmpty)
+        {
+            _balanceRows.Add(new ResourceTableRow
+            {
+                Label = BaronAudiencePpb.SummaryRowName,
+                Description = "Cumulative resources granted through audiences this turn — already in Current Resource Stocks.",
+                Values = audienceGrants,
+                IsSystem = true,
+            });
+        }
+
         if (!projectCosts.IsEmpty)
         {
             _balanceRows.Add(new ResourceTableRow
@@ -214,7 +261,7 @@ else if (_overview is not null)
         }
 
         // Σ = every balance row → must equal current stocks (HUD).
-        _balanceSum = ResourceCatalog.Slice(prevStock + prevIncome + sourcesSum + projectCosts);
+        _balanceSum = ResourceCatalog.Slice(prevStock + prevIncome + sourcesSum + audienceGrants + projectCosts);
     }
 
     private PpbVector ProjectCosts()
@@ -261,9 +308,13 @@ else if (_overview is not null)
             var sourcesSum = ResourceCatalog.Slice(
                 PpbVector.Sum(_overview.ResourceSources.Select(s => ResourceCatalog.Slice(s.Additive))));
             var projectCosts = ProjectCosts();
+            BaronyCalc.AudienceCumulativeTotals(
+                _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
+            var audienceGrants = ResourceCatalog.Slice(audienceAdd);
             oldOpening = ResourceCatalog.Subtract(stocksNow, prevIncome);
             oldOpening = ResourceCatalog.Subtract(oldOpening, sourcesSum);
             oldOpening = ResourceCatalog.Subtract(oldOpening, projectCosts);
+            oldOpening = ResourceCatalog.Subtract(oldOpening, audienceGrants);
         }
 
         var parameters = new DialogParameters<PreviousTurnIncomeEditDialog>
