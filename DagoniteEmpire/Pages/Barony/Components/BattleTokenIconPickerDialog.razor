@@ -1,0 +1,35 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Choose icon</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="bbm-icon-picker">
+            @foreach (var icon in BattleTokenIconCatalog.All)
+            {
+                <button type="button"
+                        class="bbm-icon-picker__item @(string.Equals(icon.Key, SelectedKey, StringComparison.OrdinalIgnoreCase) ? "selected" : null)"
+                        title="@icon.Label"
+                        @onclick="() => Select(icon.Key)">
+                    <img src="/@icon.Path" alt="@icon.Label" />
+                    <span>@icon.Label</span>
+                </button>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Class="march-map-toolbar__btn">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string? SelectedKey { get; set; }
+
+    private void Select(string key) => MudDialog.Close(DialogResult.Ok(key));
+
+    private void Cancel() => MudDialog.Cancel();
+}

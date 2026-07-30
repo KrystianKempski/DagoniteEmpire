@@ -3,8 +3,23 @@
 @layout DagoniteEmpire.Shared.MainLayout
 @inject NavigationManager NavigationManager
 
-<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "")">
-        <CascadingValue Value="@_viewOptions">
+<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "") @(IsBattleMap ? "barony-scope--battle-map" : "")">
+    <CascadingValue Value="@_viewOptions">
+        @* Fill wrapper only for full-viewport map pages — plain pages stay unwrapped. *@
+        @if (IsMarchMap || IsBattleMap)
+        {
+            <div class="barony-scope-body--fill">
+                <BaronyResourceHud />
+                @Body
+                <AuthorizeView Roles="@(SD.Role_DukePlayer + "," + SD.Role_Admin + "," + SD.Role_GameMaster)">
+                    <Authorized>
+                        <BaronLetterInboxFab />
+                    </Authorized>
+                </AuthorizeView>
+            </div>
+        }
+        else
+        {
             <BaronyResourceHud />
             @Body
             <AuthorizeView Roles="@(SD.Role_DukePlayer + "," + SD.Role_Admin + "," + SD.Role_GameMaster)">
@@ -12,7 +27,8 @@
                     <BaronLetterInboxFab />
                 </Authorized>
             </AuthorizeView>
-        </CascadingValue>
+        }
+    </CascadingValue>
 
     <AuthorizeView Roles="@BaronRoles">
         <Authorized>
@@ -41,4 +57,6 @@
     private bool IsBuildingsCatalog => CurrentPath == "/barony/buildings";
 
     private bool IsMarchMap => CurrentPath == "/barony/march-map";
+
+    private bool IsBattleMap => CurrentPath == "/barony/battle-map";
 }

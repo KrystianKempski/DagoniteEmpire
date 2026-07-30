@@ -91,6 +91,7 @@ namespace DA_DataAccess.Data
         public DbSet<BaronAudience> BaronAudiences { get; set; }
         public DbSet<BaronAudienceExchange> BaronAudienceExchanges { get; set; }
         public DbSet<BaronyUnit> BaronyUnits { get; set; }
+        public DbSet<BaronyBattleMap> BaronyBattleMaps { get; set; }
         public DbSet<MarchMapState> MarchMapStates { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
 

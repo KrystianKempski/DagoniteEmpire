@@ -4664,6 +4664,14 @@ a.city-building-name-text--link:hover {
     align-items: center;
 }
 
+.ppb-chips > .barony-tip-anchor,
+.baron-php-summary > .barony-tip-anchor,
+.baron-audience__ppb-glance .barony-tip-anchor,
+.baron-audience-summary-table th .barony-tip-anchor {
+    display: inline-flex;
+    align-items: center;
+}
+
 .ppb-chip {
     display: inline-flex;
     gap: 4px;
@@ -7910,4 +7918,738 @@ a.city-building-name-text--link:hover {
     margin-left: auto;
     font-size: 0.8rem;
     color: var(--barony-muted);
+}
+
+
+/* ===== Battle Map ===== */
+.mud-main-content:has(.barony-scope--battle-map) {
+    overflow: hidden;
+    height: 100dvh;
+    max-height: 100dvh;
+    box-sizing: border-box;
+}
+
+.barony-scope--battle-map {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    height: calc(100dvh - 64px);
+    max-height: calc(100dvh - 64px);
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 0 44px 0;
+}
+
+.barony-scope--battle-map .barony-resource-hud {
+    display: none;
+}
+
+.barony-scope--march-map .barony-scope-body--fill,
+.barony-scope--battle-map .barony-scope-body--fill {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.barony-scope .bbm-page {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    padding: 0.5rem 0.75rem 0;
+    box-sizing: border-box;
+}
+
+.barony-scope .bbm-page .barony-page-header {
+    flex: 0 0 auto;
+    margin-bottom: 0.5rem;
+}
+
+.barony-scope .bbm-phase-chip,
+.barony-scope .bbm-turn-chip {
+    display: inline-block;
+    margin-right: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--barony-muted);
+}
+
+.barony-scope .bbm-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0.75rem;
+    flex: 1 1 auto;
+    min-height: 420px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.barony-scope .bbm-map-pane {
+    position: relative;
+    min-width: 0;
+    min-height: 420px;
+    height: 100%;
+    overflow: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+}
+
+.barony-scope .bbm-edit-panel {
+    z-index: 6;
+}
+
+.barony-scope .bbm-edit-panel .bbm-toggle-twoline {
+    display: inline-block;
+    line-height: 1.1;
+    text-align: center;
+    font-size: 0.75rem;
+}
+
+.barony-scope .bbm-edit-panel .bbm-tool-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.barony-scope .bbm-edit-panel .mud-button-root {
+    text-transform: none;
+}
+
+.barony-scope .bbm-side-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: auto;
+    padding: 2px;
+}
+
+.barony-scope .bbm-side-pane > .barony-section {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+}
+
+.barony-scope .bbm-side-pane > .barony-section:has(.bbm-log) {
+    flex: 1 1 auto;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-scope .bbm-side-pane > .barony-section:has(.bbm-log) .barony-section__body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.barony-scope .bbm-log {
+    flex: 1 1 auto;
+    min-height: 80px;
+    max-height: none;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.35rem;
+}
+
+.barony-scope .bbm-force-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.barony-scope .bbm-force-card {
+    border: 1px solid var(--barony-border);
+    border-radius: 6px;
+    background: var(--barony-surface);
+    padding: 0.45rem 0.55rem;
+    cursor: default;
+}
+
+.barony-scope .bbm-force-card.picked {
+    border-color: var(--barony-accent);
+    box-shadow: inset 0 0 0 1px var(--barony-accent);
+}
+
+.barony-scope .bbm-force-card.on-map {
+    background: color-mix(in srgb, var(--barony-accent-soft) 55%, var(--barony-surface));
+}
+
+.barony-scope .bbm-force-card.enemy {
+    cursor: pointer;
+}
+
+.barony-scope .bbm-force-card__top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.barony-scope .bbm-force-icon-btn {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    padding: 4px;
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 6px;
+    background: var(--barony-bg);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.barony-scope .bbm-force-icon-btn:hover:not(:disabled) {
+    border-color: var(--barony-accent);
+    background: var(--barony-accent-soft);
+}
+
+.barony-scope .bbm-force-icon-btn:disabled {
+    cursor: default;
+    opacity: 1;
+}
+
+.barony-scope .bbm-force-icon-btn:disabled:hover {
+    border-color: var(--barony-border-strong);
+    background: var(--barony-bg);
+}
+
+.barony-scope .bbm-force-icon-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.barony-scope .bbm-force-card__identity {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+}
+
+.barony-scope .bbm-force-card__name {
+    font-size: 0.9rem;
+    line-height: 1.2;
+    color: var(--barony-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.barony-scope .bbm-force-card__hp {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--barony-accent);
+}
+
+.barony-scope .bbm-force-card__actions {
+    flex: 0 0 auto;
+}
+
+.barony-scope .bbm-force-card__stats {
+    margin-top: 0.3rem;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--barony-muted);
+}
+
+.barony-scope .bbm-force-meta {
+    font-size: 0.72rem;
+    color: var(--barony-muted);
+}
+
+.barony-scope .bbm-empty,
+.barony-scope .bbm-hint {
+    font-size: 0.8rem;
+    color: var(--barony-muted);
+    margin: 0.25rem 0;
+}
+
+.barony-scope .bbm-mini-btn {
+    font-size: 0.72rem !important;
+    padding: 0.15rem 0.45rem !important;
+    min-height: 0 !important;
+}
+
+.barony-scope .bbm-input {
+    font: inherit;
+    font-size: 0.78rem;
+    color: var(--barony-ink);
+    background: var(--barony-bg);
+    border: 1px solid var(--barony-border);
+    padding: 0.2rem 0.35rem;
+    max-width: 100%;
+}
+
+.barony-scope .bbm-enemy-name {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.bbm-icon-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 0.5rem;
+    max-height: min(60vh, 420px);
+    overflow: auto;
+    padding: 0.25rem;
+}
+
+.bbm-icon-picker__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.45rem 0.35rem;
+    border: 1px solid var(--barony-border, #d9cfb8);
+    border-radius: 8px;
+    background: var(--barony-surface, #fbf8f1);
+    cursor: pointer;
+    color: var(--barony-ink, #2f2a24);
+}
+
+.bbm-icon-picker__item:hover,
+.bbm-icon-picker__item.selected {
+    border-color: var(--barony-accent, #9c7a33);
+    background: var(--barony-accent-soft, #ece0c4);
+}
+
+.bbm-icon-picker__item img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.bbm-icon-picker__item span {
+    font-size: 0.68rem;
+    text-align: center;
+    line-height: 1.15;
+}
+
+.barony-scope .bbm-enemy-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px dashed var(--barony-border);
+}
+
+.barony-scope .bbm-enemy-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.25rem;
+    font-size: 0.72rem;
+}
+
+.barony-scope .bbm-enemy-stats label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    color: var(--barony-muted);
+}
+
+.barony-scope .bbm-enemy-stats input {
+    width: 100%;
+    font: inherit;
+    font-size: 0.75rem;
+    border: 1px solid var(--barony-border);
+    background: var(--barony-bg);
+    color: var(--barony-ink);
+    padding: 0.15rem;
+}
+
+.barony-scope .bbm-log-entry {
+    font-size: 0.75rem;
+    line-height: 1.25;
+}
+
+.barony-scope .bbm-log-entry--system .bbm-log-text {
+    color: var(--barony-muted);
+    font-style: italic;
+}
+
+.barony-scope .bbm-log-author {
+    font-weight: 700;
+    margin-right: 0.35rem;
+    color: var(--barony-accent);
+}
+
+.barony-scope .bbm-chat-row {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.barony-scope .bbm-chat-row .bbm-input {
+    flex: 1 1 auto;
+}
+
+.barony-scope .bbm-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.barony-scope .bbm-tool-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+}
+
+.barony-scope .bbm-tool-label {
+    font-size: 0.75rem;
+    color: var(--barony-muted);
+    margin-right: 0.15rem;
+}
+
+.barony-scope .bbm-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.barony-scope .bbm-swatch {
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--barony-border);
+    cursor: pointer;
+    padding: 0;
+}
+
+.barony-scope .bbm-swatch.selected {
+    outline: 2px solid var(--barony-accent);
+    outline-offset: 1px;
+}
+
+.barony-scope .bbm-initiative {
+    margin: 0.5rem 0 0;
+    padding-left: 1.1rem;
+    font-size: 0.78rem;
+}
+
+.barony-scope .bbm-initiative .current {
+    font-weight: 700;
+    color: var(--barony-accent);
+}
+
+/* Grid (kept global so cells keep size even if scoped CSS is stale) */
+.barony-scope .bbm-grid-root {
+    --bbm-cell: 50px;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-scope .bbm-scroll {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 360px;
+    max-height: none;
+    overflow: auto;
+    border: 1px solid var(--barony-border);
+    background: var(--barony-surface);
+}
+
+.barony-scope .bbm-cursor-pos {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    z-index: 5;
+    pointer-events: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    background: rgba(47, 42, 36, 0.75);
+    color: #fbf8f1;
+    font-family: monospace;
+}
+
+.barony-scope .bbm-labeled-grid {
+    display: grid;
+    grid-template-areas:
+        "corner cols"
+        "rows map";
+    /* First column width is also set inline; keep a safe fallback here. */
+    grid-template-columns: 32px max-content;
+    width: fit-content;
+    padding: 4px 4px 4px 0;
+}
+
+.barony-scope .bbm-corner {
+    grid-area: corner;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    box-sizing: border-box;
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 4;
+    background: var(--barony-surface);
+}
+
+.barony-scope .bbm-col-labels {
+    grid-area: cols;
+    display: grid;
+    gap: 1px;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--barony-surface);
+    padding-bottom: 2px;
+}
+
+.barony-scope .bbm-row-labels {
+    grid-area: rows;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    box-sizing: border-box;
+    align-items: stretch;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--barony-surface);
+    overflow: visible;
+}
+
+.barony-scope .bbm-axis-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--barony-muted);
+    user-select: none;
+    box-sizing: border-box;
+    font-variant-numeric: tabular-nums;
+    /* Avoid Bootstrap .row / .col class names — they break axis layout. */
+}
+
+.barony-scope .bbm-axis-label--col {
+    width: var(--bbm-cell);
+    text-align: center;
+}
+
+.barony-scope .bbm-axis-label--row {
+    flex: 0 0 var(--bbm-cell);
+    height: var(--bbm-cell);
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 6px 0 0;
+    text-align: right;
+    line-height: var(--bbm-cell);
+    overflow: hidden;
+}
+
+.barony-scope .bbm-grid {
+    grid-area: map;
+    display: grid;
+    gap: 1px;
+    background: var(--barony-border);
+    box-shadow: inset 0 0 0 1px var(--barony-border);
+    width: max-content;
+}
+
+.barony-scope .bbm-cell {
+    position: relative;
+    width: var(--bbm-cell, 50px);
+    height: var(--bbm-cell, 50px);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3eee2;
+    overflow: hidden;
+    user-select: none;
+}
+
+.barony-scope .bbm-cell.interactive {
+    cursor: pointer;
+}
+
+.barony-scope .bbm-cell.interactive:hover {
+    outline: 2px solid var(--barony-accent);
+    outline-offset: -2px;
+}
+
+.barony-scope .bbm-cell.selected {
+    outline: 2px solid #c45c26;
+    outline-offset: -2px;
+}
+
+.barony-scope .bbm-cell.has-large-token {
+    overflow: visible;
+    z-index: 3;
+}
+
+.barony-scope .bbm-range {
+    position: absolute;
+    inset: 0;
+    background: rgba(156, 122, 51, 0.28);
+    box-shadow: inset 0 0 0 1px rgba(156, 122, 51, 0.55);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.barony-scope .bbm-terrain {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(47, 42, 36, 0.4);
+}
+
+.barony-scope .bbm-terrain--deploy {
+    background: rgba(70, 130, 80, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(70, 130, 80, 0.35);
+}
+
+.barony-scope .bbm-terrain--difficult {
+    background: rgba(139, 110, 60, 0.12);
+}
+
+.barony-scope .bbm-terrain--impassable {
+    background: rgba(60, 50, 40, 0.28);
+}
+
+.barony-scope .bbm-cell-text {
+    position: relative;
+    z-index: 2;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.barony-scope .bbm-token {
+    position: absolute;
+    z-index: 2;
+    inset: 8%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 2px solid var(--barony-accent);
+    background: var(--barony-surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.barony-scope .bbm-token.enemy {
+    border-color: #8b3a3a;
+}
+
+.barony-scope .bbm-token.selected {
+    box-shadow: 0 0 0 2px #c45c26;
+}
+
+.barony-scope .bbm-token.active-turn {
+    box-shadow: 0 0 0 2px #2f6b4f, 0 0 8px rgba(47, 107, 79, 0.45);
+}
+
+.barony-scope .bbm-token.large {
+    top: 0;
+    left: 0;
+    width: var(--bbm-footprint);
+    height: var(--bbm-footprint);
+    inset: auto;
+}
+
+.barony-scope .bbm-token-icon {
+    width: 58%;
+    height: 58%;
+    object-fit: contain;
+}
+
+.barony-scope .bbm-token-fallback {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--barony-ink);
+}
+
+.barony-scope .bbm-token-label {
+    display: block;
+    max-width: 100%;
+    padding: 0 1px;
+    font-size: 0.45rem;
+    line-height: 1.1;
+    font-weight: 700;
+    color: var(--barony-ink);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.barony-scope .bbm-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+    font-size: 0.72rem;
+    color: var(--barony-muted);
+}
+
+.barony-scope .bbm-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.barony-scope .bbm-legend__swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.barony-scope .bbm-legend__swatch--range {
+    background: rgba(156, 122, 51, 0.35);
+    box-shadow: inset 0 0 0 1px rgba(156, 122, 51, 0.55);
+}
+
+.barony-scope .bbm-legend__swatch--deploy {
+    background: rgba(70, 130, 80, 0.35);
+}
+
+.barony-scope .bbm-legend__swatch--difficult {
+    background: rgba(139, 110, 60, 0.35);
+}
+
+.barony-scope .bbm-legend__swatch--impassable {
+    background: rgba(60, 50, 40, 0.4);
+}
+
+@media (max-width: 700px) {
+    .barony-scope .bbm-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(360px, 55vh) auto;
+        overflow: auto;
+    }
 }

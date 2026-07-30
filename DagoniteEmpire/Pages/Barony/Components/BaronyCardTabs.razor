@@ -1,7 +1,11 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @implements IDisposable
+@using DA_Business.Repository.BaronyRepos
+@using DA_Business.Services.Interfaces
 @inject NavigationManager _navigationManager
 @inject IUserService _userService
+@inject IBaronyRepository _baronyRepo
+@inject IBaronyBattleMapRepository _battleMapRepo
 
 <nav class="barony-tabbar"
      aria-label="Barony tabs"
@@ -49,6 +53,7 @@
         new("budget", "Budget", "/barony/budget", SvgIcon: "/" + MyIcon.TwoCoins),
         new("projects", "Projects", "/barony/projects", SvgIcon: "/" + MyIcon.GearHammer),
         new("army", "Army", "/barony/army", Icons.Material.Filled.Shield),
+        new("battle-map", "Battle Map", "/barony/battle-map", Icons.Material.Filled.Map),
         new("buildings", "Buildings", "/barony/buildings", SvgIcon: "/" + MyIcon.WoodCabinBlack),
         new("offices", "Offices", "/barony/offices", Icons.Material.Filled.Groups),
         new("terrain", "Terrain", "/barony/terrain", SvgIcon: "/" + MyIcon.WindmillBlack),
@@ -68,12 +73,50 @@
     private string? _lastHoverKey;
     private bool _orderChanged;
     private bool _suppressNextClick;
+    private bool _showBattleMapTab = true;
 
     protected override async Task OnInitializedAsync()
     {
         _navigationManager.LocationChanged += OnLocationChanged;
+        await LoadBattleMapVisibilityAsync();
         await LoadOrderAsync();
     }
+
+    private async Task LoadBattleMapVisibilityAsync()
+    {
+        try
+        {
+            var user = await _userService.GetUserInfo();
+            if (user?.IsAdminOrMG == true)
+            {
+                _showBattleMapTab = true;
+                return;
+            }
+
+            var characterId = user?.SelectedCharacter?.Id ?? 0;
+            if (characterId <= 0 || characterId == -1)
+            {
+                _showBattleMapTab = false;
+                return;
+            }
+
+            var barony = await _baronyRepo.GetByCharacterId(characterId);
+            if (barony is null)
+            {
+                _showBattleMapTab = false;
+                return;
+            }
+
+            _showBattleMapTab = await _battleMapRepo.IsActive(barony.Id);
+        }
+        catch
+        {
+            _showBattleMapTab = false;
+        }
+    }
+
+    private IEnumerable<TabItem> VisibleDefaultTabs =>
+        DefaultTabs.Where(t => t.Key != "battle-map" || _showBattleMapTab);
 
     private async Task LoadOrderAsync()
     {
@@ -84,13 +127,14 @@
         }
         catch
         {
-            _orderedTabs = DefaultTabs.ToList();
+            _orderedTabs = VisibleDefaultTabs.ToList();
         }
     }
 
-    private static List<TabItem> ApplySavedOrder(string? json)
+    private List<TabItem> ApplySavedOrder(string? json)
     {
-        var byKey = DefaultTabs.ToDictionary(t => t.Key, StringComparer.Ordinal);
+        var visible = VisibleDefaultTabs.ToList();
+        var byKey = visible.ToDictionary(t => t.Key, StringComparer.Ordinal);
         var result = new List<TabItem>();
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -113,13 +157,13 @@
             }
         }
 
-        foreach (var tab in DefaultTabs)
+        foreach (var tab in visible)
         {
             if (byKey.Remove(tab.Key, out var leftover))
                 result.Add(leftover);
         }
 
-        return result.Count > 0 ? result : DefaultTabs.ToList();
+        return result.Count > 0 ? result : visible;
     }
 
     private async Task PersistOrderAsync()
@@ -259,7 +303,20 @@
         return path == href;
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
+        InvokeAsync(async () =>
+        {
+            await LoadBattleMapVisibilityAsync();
+            _orderedTabs = ApplySavedOrder(
+                await SafeGetTabOrderJson());
+            StateHasChanged();
+        });
+
+    private async Task<string?> SafeGetTabOrderJson()
+    {
+        try { return await _userService.GetBaronyTabOrderJson(); }
+        catch { return null; }
+    }
 
     public void Dispose() => _navigationManager.LocationChanged -= OnLocationChanged;
 }

@@ -51,6 +51,14 @@ namespace DA_Models.ChatModels
             await Clients.Others.SendAsync("BattleMapUpdated", chapterId);
         }
 
+        /// <summary>
+        /// Notify all clients that a barony battle map changed
+        /// </summary>
+        public async Task NotifyBaronyBattleMapUpdated(int baronyId)
+        {
+            await Clients.Others.SendAsync("BaronyBattleMapUpdated", baronyId);
+        }
+
         public override Task OnConnectedAsync()
         {
             Console.WriteLine($"{Context.ConnectionId} hub connected");

@@ -153,6 +153,7 @@ public class Program
         builder.Services.AddScoped<IBattleMapRepository, BattleMapRepository>();
         builder.Services.AddScoped<IBattleEventRepository, BattleEventRepository>();
         builder.Services.AddScoped<IBaronyRepository, BaronyRepository>();
+        builder.Services.AddScoped<IBaronyBattleMapRepository, BaronyBattleMapRepository>();
         builder.Services.AddScoped<IMarchMapRepository, MarchMapRepository>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<ICampaignSummaryService, CampaignSummaryService>();
