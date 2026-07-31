@@ -62,6 +62,10 @@ namespace DA_Models.BaronyModels
         public bool Locked { get; set; }
         /// <summary>Move points left after reaching this waypoint.</summary>
         public int RemainingMoveAfter { get; set; }
+        /// <summary><see cref="BaronyBattleFacing"/> at this stop (0–7).</summary>
+        public int Facing { get; set; } = BaronyBattleFacing.North;
+        /// <summary>1 if a facing change already spent a move point at this tip.</summary>
+        public int FacingCostPaid { get; set; }
     }
 
     public class BaronyBattleTokenDTO
@@ -85,6 +89,9 @@ namespace DA_Models.BaronyModels
         public int Armor { get; set; }
         public int Move { get; set; }
         public int RemainingMove { get; set; }
+
+        /// <summary><see cref="BaronyBattleFacing"/> — current front (0 = North).</summary>
+        public int Facing { get; set; } = BaronyBattleFacing.North;
 
         public int InitiativeDie { get; set; }
         public int InitiativeTotal { get; set; }
@@ -111,6 +118,13 @@ namespace DA_Models.BaronyModels
                 return (X, Y);
             var last = Path[^1];
             return (last.X, last.Y);
+        }
+
+        public int PlannedFacing()
+        {
+            if (Path.Count == 0)
+                return BaronyBattleFacing.Clamp(Facing);
+            return BaronyBattleFacing.Clamp(Path[^1].Facing);
         }
     }
 

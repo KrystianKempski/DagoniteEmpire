@@ -39,7 +39,7 @@
                             var isActiveTurn = ActiveTokenId is not null && token?.Id == ActiveTokenId;
                             var large = token is not null && TokenSize(token) > 1;
                             var hideToken = token is not null && IsTokenAnimating(token.Id);
-                            <div class="bbm-cell @(Interactive ? "interactive" : null) @(isSelected ? "selected" : null) @(hasOccupant && large ? "has-large-token" : null) @TerrainClass(cell)"
+                            <div class="bbm-cell @(Interactive ? "interactive" : null) @(isSelected ? "selected" : null) @(isActiveTurn ? "active-order" : null) @(hasOccupant && large ? "has-large-token" : null) @TerrainClass(cell)"
                                  style="background-color:@(cell?.Color ?? "transparent")"
                                  @onclick="@(() => OnCellClick.InvokeAsync((cx, cy)))"
                                  @onmouseenter="@(() => OnCellMouseEnter(cx, cy))">
@@ -65,19 +65,13 @@
                                 }
                                 @if (token is not null && !hideToken)
                                 {
-                                    var iconPath = BattleTokenIconCatalog.PathFor(token.IconKey);
-                                    var footprint = TokenFootprintStyle(token);
-                                    <div class="bbm-token @(token.IsEnemy ? "enemy" : "ally") @(large ? "large" : null) @(isSelected ? "selected" : null) @(isActiveTurn ? "active-turn" : null)"
-                                         style="@footprint"
-                                         title="@token.Label">
-                                        @if (!string.IsNullOrEmpty(iconPath))
-                                        {
-                                            <img class="bbm-token-icon" src="/@iconPath" alt="" />
-                                        }
-                                        else
-                                        {
-                                            <span class="bbm-token-fallback">@(token.Label.Length > 0 ? token.Label[0] : '?')</span>
-                                        }
+                                    var facingDeg = BaronyBattleFacing.ToDegrees(token.Facing);
+                                    <div class="bbm-token-slot @(large ? "large" : null) @(isActiveTurn ? "active-order" : null)" style="@TokenFootprintStyle(token)">
+                                        <div class="bbm-token-rect @(token.IsEnemy ? "enemy" : "ally") @(isSelected ? "selected" : null) @(isActiveTurn ? "active-turn" : null)"
+                                             style="--bbm-facing:@(facingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
+                                             title="@token.Label">
+                                            @TokenIcon(token.IconKey, token.Label)
+                                        </div>
                                         <span class="bbm-token-label">@token.Label</span>
                                         @if (ShowMoveBadge(token))
                                         {
@@ -88,25 +82,31 @@
                                 @if (waypoint is not null)
                                 {
                                     var (owner, wp) = waypoint.Value;
-                                    var ghostIcon = BattleTokenIconCatalog.PathFor(owner.IconKey);
                                     var ghostLarge = TokenSize(owner) > 1;
-                                    var ghostFootprint = TokenFootprintStyle(owner);
-                                    <div class="bbm-token bbm-token--ghost @(owner.IsEnemy ? "enemy" : "ally") @(ghostLarge ? "large" : null) @(wp.Locked ? "bbm-token--locked" : null)"
-                                         style="@ghostFootprint"
-                                         title="@(wp.Locked ? $"{owner.Label} (locked)" : $"{owner.Label} (destination)")">
-                                        @if (!string.IsNullOrEmpty(ghostIcon))
-                                        {
-                                            <img class="bbm-token-icon" src="/@ghostIcon" alt="" />
-                                        }
-                                        else
-                                        {
-                                            <span class="bbm-token-fallback">@(owner.Label.Length > 0 ? owner.Label[0] : '?')</span>
-                                        }
+                                    var tipFacingDeg = FacingDegreesForTip(owner, wp);
+                                    var showFacingBtn = ShowFacingButton(owner, wp);
+                                    <div class="bbm-token-slot bbm-token-slot--ghost @(ghostLarge ? "large" : null) @(wp.Locked ? "locked" : null)"
+                                         style="@TokenFootprintStyle(owner)">
+                                        <div class="bbm-token-rect bbm-token-rect--ghost @(owner.IsEnemy ? "enemy" : "ally") @(wp.Locked ? "locked" : null)"
+                                             style="--bbm-facing:@(tipFacingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
+                                             title="@(wp.Locked ? $"{owner.Label} (locked)" : $"{owner.Label} (destination)")">
+                                            @TokenIcon(owner.IconKey, owner.Label)
+                                        </div>
                                         <span class="bbm-token-label">@owner.Label</span>
                                         <span class="bbm-move-badge" title="Move left">@wp.RemainingMoveAfter</span>
                                         @if (wp.Locked)
                                         {
                                             <span class="bbm-lock-badge" title="Locked" aria-hidden="true"></span>
+                                        }
+                                        @if (showFacingBtn)
+                                        {
+                                            <button type="button"
+                                                    class="bbm-facing-btn"
+                                                    title="Change facing (1 move)"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="@(() => OnFacingButton.InvokeAsync(owner.Id))">
+                                                <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
+                                            </button>
                                         }
                                     </div>
                                 }
@@ -116,7 +116,7 @@
                 </div>
                 @if (!IsAnimating)
                 {
-                    <svg class="bbm-path-overlay" width="@(Width * CellPx)" height="@(Height * CellPx)" viewBox="0 0 @(Width * CellPx) @(Height * CellPx)" aria-hidden="true">
+                    <svg class="bbm-path-overlay" width="@(Width * CellPx)" height="@(Height * CellPx)" viewBox="0 0 @(Width * CellPx) @(Height * CellPx)" style="pointer-events:none" aria-hidden="true">
                         <defs>
                             <marker id="bbm-arrow-ally" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
                                 <path d="M0,0 L6,3 L0,6 Z" fill="rgba(47,107,79,0.55)" />
@@ -148,25 +148,25 @@
                         {
                             var token = Tokens.FirstOrDefault(t => t.Id == frame.TokenId);
                             if (token is null) continue;
-                            var iconPath = BattleTokenIconCatalog.PathFor(token.IconKey);
                             var size = Math.Max(1, frame.Size);
-                            var pad = 4;
-                            var dim = size * CellPx - pad * 2;
-                            <div class="bbm-token bbm-token--anim @(token.IsEnemy ? "enemy" : "ally") @(AnimTransitions ? "bbm-token--anim-run" : null) @(size > 1 ? "large" : null)"
-                                 style="left:@(frame.LeftPx + pad)px; top:@(frame.TopPx + pad)px; width:@(dim)px; height:@(dim)px;"
-                                 title="@token.Label">
-                                @if (!string.IsNullOrEmpty(iconPath))
-                                {
-                                    <img class="bbm-token-icon" src="/@iconPath" alt="" />
-                                }
-                                else
-                                {
-                                    <span class="bbm-token-fallback">@(token.Label.Length > 0 ? token.Label[0] : '?')</span>
-                                }
+                            var facingDeg = frame.FacingDeg;
+                            <div class="bbm-token-slot bbm-token-slot--anim @(AnimTransitions ? "bbm-token-slot--anim-run" : null) @(size > 1 ? "large" : null)"
+                                 style="left:@(frame.LeftPx)px; top:@(frame.TopPx)px; width:@(size * CellPx)px; height:@(size * CellPx)px;">
+                                <div class="bbm-token-rect @(token.IsEnemy ? "enemy" : "ally")"
+                                     style="--bbm-facing:@(facingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
+                                     title="@token.Label">
+                                    @TokenIcon(token.IconKey, token.Label)
+                                </div>
                                 <span class="bbm-token-label">@token.Label</span>
                             </div>
                         }
                     </div>
+                }
+                @if (IsFacingEdit)
+                {
+                    <div class="bbm-facing-overlay"
+                         @onmousemove="OnFacingMouseMove"
+                         @onclick="OnFacingOverlayClick"></div>
                 }
             </div>
         </div>
@@ -195,13 +195,21 @@
     [Parameter] public bool ShowActiveMoveBadge { get; set; }
     [Parameter] public IReadOnlyList<BattleMoveAnimFrame> AnimatingTokens { get; set; } = Array.Empty<BattleMoveAnimFrame>();
     [Parameter] public bool AnimTransitions { get; set; }
+    [Parameter] public string? FacingEditTokenId { get; set; }
+    [Parameter] public double? FacingPreviewDegrees { get; set; }
     [Parameter] public EventCallback<(int X, int Y)> OnCellClick { get; set; }
+    [Parameter] public EventCallback<string> OnFacingButton { get; set; }
+    [Parameter] public EventCallback<double> OnFacingPreview { get; set; }
+    [Parameter] public EventCallback OnFacingConfirm { get; set; }
 
     private (int X, int Y)? _hoverCell;
 
     private string RowLabelWidth => "32px";
 
     private bool IsAnimating => AnimatingTokens.Count > 0;
+    private bool IsFacingEdit =>
+        !string.IsNullOrEmpty(FacingEditTokenId)
+        && Tokens.Any(t => t.Id == FacingEditTokenId);
 
     private bool IsTokenAnimating(string tokenId) =>
         AnimatingTokens.Any(a => a.TokenId == tokenId);
@@ -230,6 +238,44 @@
 
     private bool ShowMoveBadge(BaronyBattleTokenDTO token) =>
         ShowActiveMoveBadge && ActiveTokenId == token.Id;
+
+    private bool ShowFacingButton(BaronyBattleTokenDTO owner, BaronyBattleWaypointDTO wp)
+    {
+        if (IsAnimating || IsFacingEdit)
+            return false;
+        if (ActiveTokenId != owner.Id)
+            return false;
+        if (owner.LastWaypoint != wp)
+            return false;
+        return wp.RemainingMoveAfter >= 1 || wp.FacingCostPaid > 0;
+    }
+
+    private double FacingDegreesForTip(BaronyBattleTokenDTO owner, BaronyBattleWaypointDTO wp)
+    {
+        if (FacingEditTokenId == owner.Id && FacingPreviewDegrees is double preview)
+            return preview;
+        return BaronyBattleFacing.ToDegrees(wp.Facing);
+    }
+
+    private RenderFragment TokenIcon(string? iconKey, string label) => builder =>
+    {
+        var iconPath = BattleTokenIconCatalog.PathFor(iconKey);
+        if (!string.IsNullOrEmpty(iconPath))
+        {
+            builder.OpenElement(0, "img");
+            builder.AddAttribute(1, "class", "bbm-token-icon");
+            builder.AddAttribute(2, "src", "/" + iconPath);
+            builder.AddAttribute(3, "alt", "");
+            builder.CloseElement();
+        }
+        else
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", "bbm-token-fallback");
+            builder.AddContent(2, label.Length > 0 ? label[0] : '?');
+            builder.CloseElement();
+        }
+    };
 
     private static List<(double cx, double cy)> PathPoints(BaronyBattleTokenDTO token)
     {
@@ -270,4 +316,26 @@
 
     private void OnCellMouseEnter(int x, int y) => _hoverCell = (x, y);
     private void OnMapMouseLeave() => _hoverCell = null;
+
+    private async Task OnFacingMouseMove(MouseEventArgs e)
+    {
+        if (FacingEditTokenId is null)
+            return;
+        var token = Tokens.FirstOrDefault(t => t.Id == FacingEditTokenId);
+        var tip = token?.LastWaypoint;
+        if (token is null || tip is null)
+            return;
+
+        var size = TokenSize(token);
+        var (cx, cy) = CellCenter(tip.X, tip.Y, size);
+        var deg = BaronyBattleFacing.DegreesToward(cx, cy, e.OffsetX, e.OffsetY);
+        await OnFacingPreview.InvokeAsync(deg);
+    }
+
+    private async Task OnFacingOverlayClick(MouseEventArgs e)
+    {
+        // Final preview from click position, then confirm snap.
+        await OnFacingMouseMove(e);
+        await OnFacingConfirm.InvokeAsync();
+    }
 }
