@@ -22,70 +22,159 @@
                     <div class="bbm-axis-label bbm-axis-label--row">@(y + 1)</div>
                 }
             </div>
-            <div class="bbm-grid" style="grid-template-columns:repeat(@Width, var(--bbm-cell));">
-                @for (int y = 0; y < Height; y++)
-                {
-                    for (int x = 0; x < Width; x++)
+            <div class="bbm-grid-stack">
+                <div class="bbm-grid" style="grid-template-columns:repeat(@Width, var(--bbm-cell));">
+                    @for (int y = 0; y < Height; y++)
                     {
-                        var cx = x;
-                        var cy = y;
-                        var cell = GetCell(cx, cy);
-                        var token = AnchoredTokenAt(cx, cy);
-                        var hasOccupant = GetTokenAt(cx, cy) is not null;
-                        var isSelected = SelectedTokenId is not null && GetTokenAt(cx, cy)?.Id == SelectedTokenId;
-                        var inRange = RangeCells.Contains((cx, cy));
-                        var isActiveTurn = ActiveTokenId is not null && token?.Id == ActiveTokenId;
-                        var large = token is not null && TokenSize(token) > 1;
-                        <div class="bbm-cell @(Interactive ? "interactive" : null) @(isSelected ? "selected" : null) @(hasOccupant && large ? "has-large-token" : null) @TerrainClass(cell)"
-                             style="background-color:@(cell?.Color ?? "transparent")"
-                             @onclick="@(() => OnCellClick.InvokeAsync((cx, cy)))"
-                             @onmouseenter="@(() => OnCellMouseEnter(cx, cy))">
-                            @if (inRange)
-                            {
-                                <div class="bbm-range"></div>
-                            }
-                            @if (cell?.Terrain == BaronyBattleTerrain.Difficult)
-                            {
-                                <div class="bbm-terrain bbm-terrain--difficult" title="Difficult">∿</div>
-                            }
-                            else if (cell?.Terrain == BaronyBattleTerrain.Impassable)
-                            {
-                                <div class="bbm-terrain bbm-terrain--impassable" title="Impassable">✕</div>
-                            }
-                            else if (cell?.Terrain == BaronyBattleTerrain.Deploy)
-                            {
-                                <div class="bbm-terrain bbm-terrain--deploy" title="Deployment zone"></div>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(cell?.Text))
-                            {
-                                <span class="bbm-cell-text" style="color:@(cell!.TextColor ?? "var(--barony-ink)")">@cell.Text</span>
-                            }
-                            @if (token is not null)
-                            {
-                                var iconPath = BattleTokenIconCatalog.PathFor(token.IconKey);
-                                var footprint = TokenFootprintStyle(token);
-                                <div class="bbm-token @(token.IsEnemy ? "enemy" : "ally") @(large ? "large" : null) @(isSelected ? "selected" : null) @(isActiveTurn ? "active-turn" : null)"
-                                     style="@footprint"
-                                     title="@token.Label">
-                                    @if (!string.IsNullOrEmpty(iconPath))
-                                    {
-                                        <img class="bbm-token-icon" src="/@iconPath" alt="" />
-                                    }
-                                    else
-                                    {
-                                        <span class="bbm-token-fallback">@(token.Label.Length > 0 ? token.Label[0] : '?')</span>
-                                    }
-                                    <span class="bbm-token-label">@token.Label</span>
-                                </div>
-                            }
-                        </div>
+                        for (int x = 0; x < Width; x++)
+                        {
+                            var cx = x;
+                            var cy = y;
+                            var cell = GetCell(cx, cy);
+                            var token = AnchoredTokenAt(cx, cy);
+                            var waypoint = IsAnimating ? null : AnchoredWaypointAt(cx, cy);
+                            var hasOccupant = GetTokenAt(cx, cy) is not null;
+                            var isSelected = SelectedTokenId is not null && GetTokenAt(cx, cy)?.Id == SelectedTokenId;
+                            var inRange = !IsAnimating && RangeCells.Contains((cx, cy));
+                            var isActiveTurn = ActiveTokenId is not null && token?.Id == ActiveTokenId;
+                            var large = token is not null && TokenSize(token) > 1;
+                            var hideToken = token is not null && IsTokenAnimating(token.Id);
+                            <div class="bbm-cell @(Interactive ? "interactive" : null) @(isSelected ? "selected" : null) @(hasOccupant && large ? "has-large-token" : null) @TerrainClass(cell)"
+                                 style="background-color:@(cell?.Color ?? "transparent")"
+                                 @onclick="@(() => OnCellClick.InvokeAsync((cx, cy)))"
+                                 @onmouseenter="@(() => OnCellMouseEnter(cx, cy))">
+                                @if (inRange)
+                                {
+                                    <div class="bbm-range"></div>
+                                }
+                                @if (cell?.Terrain == BaronyBattleTerrain.Difficult)
+                                {
+                                    <div class="bbm-terrain bbm-terrain--difficult" title="Difficult">∿</div>
+                                }
+                                else if (cell?.Terrain == BaronyBattleTerrain.Impassable)
+                                {
+                                    <div class="bbm-terrain bbm-terrain--impassable" title="Impassable">✕</div>
+                                }
+                                else if (cell?.Terrain == BaronyBattleTerrain.Deploy)
+                                {
+                                    <div class="bbm-terrain bbm-terrain--deploy" title="Deployment zone"></div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(cell?.Text))
+                                {
+                                    <span class="bbm-cell-text" style="color:@(cell!.TextColor ?? "var(--barony-ink)")">@cell.Text</span>
+                                }
+                                @if (token is not null && !hideToken)
+                                {
+                                    var iconPath = BattleTokenIconCatalog.PathFor(token.IconKey);
+                                    var footprint = TokenFootprintStyle(token);
+                                    <div class="bbm-token @(token.IsEnemy ? "enemy" : "ally") @(large ? "large" : null) @(isSelected ? "selected" : null) @(isActiveTurn ? "active-turn" : null)"
+                                         style="@footprint"
+                                         title="@token.Label">
+                                        @if (!string.IsNullOrEmpty(iconPath))
+                                        {
+                                            <img class="bbm-token-icon" src="/@iconPath" alt="" />
+                                        }
+                                        else
+                                        {
+                                            <span class="bbm-token-fallback">@(token.Label.Length > 0 ? token.Label[0] : '?')</span>
+                                        }
+                                        <span class="bbm-token-label">@token.Label</span>
+                                        @if (ShowMoveBadge(token))
+                                        {
+                                            <span class="bbm-move-badge" title="Move points">@token.Move</span>
+                                        }
+                                    </div>
+                                }
+                                @if (waypoint is not null)
+                                {
+                                    var (owner, wp) = waypoint.Value;
+                                    var ghostIcon = BattleTokenIconCatalog.PathFor(owner.IconKey);
+                                    var ghostLarge = TokenSize(owner) > 1;
+                                    var ghostFootprint = TokenFootprintStyle(owner);
+                                    <div class="bbm-token bbm-token--ghost @(owner.IsEnemy ? "enemy" : "ally") @(ghostLarge ? "large" : null) @(wp.Locked ? "bbm-token--locked" : null)"
+                                         style="@ghostFootprint"
+                                         title="@(wp.Locked ? $"{owner.Label} (locked)" : $"{owner.Label} (destination)")">
+                                        @if (!string.IsNullOrEmpty(ghostIcon))
+                                        {
+                                            <img class="bbm-token-icon" src="/@ghostIcon" alt="" />
+                                        }
+                                        else
+                                        {
+                                            <span class="bbm-token-fallback">@(owner.Label.Length > 0 ? owner.Label[0] : '?')</span>
+                                        }
+                                        <span class="bbm-token-label">@owner.Label</span>
+                                        <span class="bbm-move-badge" title="Move left">@wp.RemainingMoveAfter</span>
+                                        @if (wp.Locked)
+                                        {
+                                            <span class="bbm-lock-badge" title="Locked" aria-hidden="true"></span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
                     }
+                </div>
+                @if (!IsAnimating)
+                {
+                    <svg class="bbm-path-overlay" width="@(Width * CellPx)" height="@(Height * CellPx)" viewBox="0 0 @(Width * CellPx) @(Height * CellPx)" aria-hidden="true">
+                        <defs>
+                            <marker id="bbm-arrow-ally" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L6,3 L0,6 Z" fill="rgba(47,107,79,0.55)" />
+                            </marker>
+                            <marker id="bbm-arrow-enemy" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                                <path d="M0,0 L6,3 L0,6 Z" fill="rgba(168,52,52,0.55)" />
+                            </marker>
+                        </defs>
+                        @foreach (var token in Tokens.Where(t => t.Path.Count > 0))
+                        {
+                            var points = PathPoints(token);
+                            var arrowClass = token.IsEnemy ? "bbm-path-arrow bbm-path-arrow--enemy" : "bbm-path-arrow bbm-path-arrow--ally";
+                            var markerId = token.IsEnemy ? "bbm-arrow-enemy" : "bbm-arrow-ally";
+                            for (var i = 0; i < points.Count - 1; i++)
+                            {
+                                var a = points[i];
+                                var b = points[i + 1];
+                                <line class="@arrowClass"
+                                      x1="@a.cx" y1="@a.cy" x2="@b.cx" y2="@b.cy"
+                                      marker-end="url(#@markerId)" />
+                            }
+                        }
+                    </svg>
+                }
+                @if (IsAnimating)
+                {
+                    <div class="bbm-anim-layer" aria-hidden="true">
+                        @foreach (var frame in AnimatingTokens)
+                        {
+                            var token = Tokens.FirstOrDefault(t => t.Id == frame.TokenId);
+                            if (token is null) continue;
+                            var iconPath = BattleTokenIconCatalog.PathFor(token.IconKey);
+                            var size = Math.Max(1, frame.Size);
+                            var pad = 4;
+                            var dim = size * CellPx - pad * 2;
+                            <div class="bbm-token bbm-token--anim @(token.IsEnemy ? "enemy" : "ally") @(AnimTransitions ? "bbm-token--anim-run" : null) @(size > 1 ? "large" : null)"
+                                 style="left:@(frame.LeftPx + pad)px; top:@(frame.TopPx + pad)px; width:@(dim)px; height:@(dim)px;"
+                                 title="@token.Label">
+                                @if (!string.IsNullOrEmpty(iconPath))
+                                {
+                                    <img class="bbm-token-icon" src="/@iconPath" alt="" />
+                                }
+                                else
+                                {
+                                    <span class="bbm-token-fallback">@(token.Label.Length > 0 ? token.Label[0] : '?')</span>
+                                }
+                                <span class="bbm-token-label">@token.Label</span>
+                            </div>
+                        }
+                    </div>
                 }
             </div>
         </div>
     </div>
     <div class="bbm-legend">
         <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--range"></i> Movement</span>
+        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--ghost"></i> Destination</span>
+        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--locked"></i> Locked</span>
         <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--deploy"></i> Deploy</span>
         <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--difficult"></i> Difficult ×2</span>
         <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--impassable"></i> Impassable</span>
@@ -93,6 +182,8 @@
 </div>
 
 @code {
+    private const int CellPx = 50;
+
     [Parameter] public int Width { get; set; } = 20;
     [Parameter] public int Height { get; set; } = 16;
     [Parameter] public IReadOnlyList<BaronyBattleCellDTO> Cells { get; set; } = Array.Empty<BaronyBattleCellDTO>();
@@ -101,11 +192,19 @@
     [Parameter] public string? ActiveTokenId { get; set; }
     [Parameter] public HashSet<(int X, int Y)> RangeCells { get; set; } = new();
     [Parameter] public bool Interactive { get; set; } = true;
+    [Parameter] public bool ShowActiveMoveBadge { get; set; }
+    [Parameter] public IReadOnlyList<BattleMoveAnimFrame> AnimatingTokens { get; set; } = Array.Empty<BattleMoveAnimFrame>();
+    [Parameter] public bool AnimTransitions { get; set; }
     [Parameter] public EventCallback<(int X, int Y)> OnCellClick { get; set; }
 
     private (int X, int Y)? _hoverCell;
 
     private string RowLabelWidth => "32px";
+
+    private bool IsAnimating => AnimatingTokens.Count > 0;
+
+    private bool IsTokenAnimating(string tokenId) =>
+        AnimatingTokens.Any(a => a.TokenId == tokenId);
 
     private BaronyBattleCellDTO? GetCell(int x, int y) =>
         Cells.FirstOrDefault(c => c.X == x && c.Y == y);
@@ -117,6 +216,32 @@
 
     private BaronyBattleTokenDTO? AnchoredTokenAt(int x, int y) =>
         Tokens.FirstOrDefault(t => t.X == x && t.Y == y);
+
+    private (BaronyBattleTokenDTO Owner, BaronyBattleWaypointDTO Wp)? AnchoredWaypointAt(int x, int y)
+    {
+        foreach (var t in Tokens)
+        {
+            var wp = t.Path.FirstOrDefault(w => w.X == x && w.Y == y && (w.X != t.X || w.Y != t.Y));
+            if (wp is not null)
+                return (t, wp);
+        }
+        return null;
+    }
+
+    private bool ShowMoveBadge(BaronyBattleTokenDTO token) =>
+        ShowActiveMoveBadge && ActiveTokenId == token.Id;
+
+    private static List<(double cx, double cy)> PathPoints(BaronyBattleTokenDTO token)
+    {
+        var size = TokenSize(token);
+        var list = new List<(double, double)> { CellCenter(token.X, token.Y, size) };
+        foreach (var wp in token.Path)
+            list.Add(CellCenter(wp.X, wp.Y, size));
+        return list;
+    }
+
+    private static (double cx, double cy) CellCenter(int x, int y, int size) =>
+        ((x + size / 2.0) * CellPx, (y + size / 2.0) * CellPx);
 
     private static bool Covers(BaronyBattleTokenDTO token, int x, int y)
     {

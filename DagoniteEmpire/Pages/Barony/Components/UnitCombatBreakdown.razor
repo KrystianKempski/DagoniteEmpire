@@ -29,11 +29,11 @@
         Combat.Damage)
 
     @Block("Move",
-        "Race move + floor((Agility + Run)/2) + gear move penalties + other.",
+        "Race move + floor(Run/3) + gear move penalties + other.",
         UnitCombatStatKey.Move,
         lossValue: null,
         ("Race", "Race", Combat.RaceMove, RaceMoveTip),
-        ("Agi", "Agility + Run", Combat.AgilityRunMove, "floor((Agility + Run) / 2)"),
+        ("Run", "Run", Combat.RunMove, "floor(Run / 3)"),
         ("Gear", "Gear", Combat.EquipmentMovePenalty, "Weapon/armor/shield move penalties"),
         Combat.Move)
 

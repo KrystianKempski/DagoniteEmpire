@@ -38,9 +38,21 @@ else
         <BaronyPageHeader Title="Battle Map" ShowSectionToggle="false">
             <Summary>
                 <span class="bbm-phase-chip">@PhaseLabel</span>
-                @if (IsBattlePhase && ActiveToken is not null)
+                @if (IsMovementPhase && ActiveToken is not null)
                 {
-                    <span class="bbm-turn-chip">Turn: @ActiveToken.Label (@ActiveToken.RemainingMove move left)</span>
+                    <span class="bbm-turn-chip">
+                        Order: @ActiveToken.Label
+                        · @GetPlanBudget(ActiveToken) move left
+                        @if (ActiveToken.HasPath)
+                        {
+                            var end = ActiveToken.PlannedEnd();
+                            <text> → @FormatCell(end.X, end.Y)</text>
+                        }
+                    </span>
+                }
+                else if (IsCombatPhase)
+                {
+                    <span class="bbm-turn-chip">Round @Map.TurnState.Round — combat</span>
                 }
             </Summary>
             <Actions>
@@ -144,7 +156,10 @@ else
                                      SelectedTokenId="_selectedTokenId"
                                      ActiveTokenId="ActiveTokenId"
                                      RangeCells="_rangeCells"
-                                     Interactive="true"
+                                     Interactive="!_isResolvingMovement"
+                                     ShowActiveMoveBadge="IsMovementPhase && !_isResolvingMovement"
+                                     AnimatingTokens="_animFrames"
+                                     AnimTransitions="_animTransitionsOn"
                                      OnCellClick="HandleCellClick" />
             </section>
 
@@ -315,7 +330,18 @@ else
                                 else
                                 {
                                     <button type="button" class="barony-turn-btn--ghost bbm-mini-btn" @onclick="ReturnToSetup">Return to setup</button>
-                                    <button type="button" class="barony-turn-btn--solid bbm-mini-btn" @onclick="AdvanceTurn">Next turn</button>
+                                    @if (IsMovementPhase)
+                                    {
+                                        @if (ActiveToken is not null && CanControlToken(ActiveToken))
+                                        {
+                                            <button type="button" class="barony-turn-btn--solid bbm-mini-btn" @onclick="FinishMove" disabled="@_isResolvingMovement">Finish move</button>
+                                        }
+                                        <button type="button" class="barony-turn-btn--ghost bbm-mini-btn" @onclick="ResolveMovementPhase" disabled="@_isResolvingMovement">Resolve all movement</button>
+                                    }
+                                    else if (IsCombatPhase)
+                                    {
+                                        <button type="button" class="barony-turn-btn--solid bbm-mini-btn" @onclick="EndCombatPhase">End combat / next round</button>
+                                    }
                                 }
                             </div>
                         </div>
@@ -323,28 +349,35 @@ else
                     else
                     {
                         <div class="bbm-actions">
-                            <p class="bbm-hint">
-                                @(IsSetupPhase
-                                    ? "Deploy Active units into the green deployment zone, then wait for the Game Master to begin battle."
-                                    : "On your unit's turn, select it and click a highlighted cell to move.")
-                            </p>
-                            @if (IsBattlePhase && ActiveToken is not null && !ActiveToken.IsEnemy && CanEdit)
+                            <p class="bbm-hint">@BaronHint</p>
+                            @if (IsMovementPhase && ActiveToken is not null && !ActiveToken.IsEnemy && CanEdit)
                             {
-                                <button type="button" class="barony-turn-btn--solid bbm-mini-btn" @onclick="AdvanceTurn">End turn</button>
+                                <button type="button" class="barony-turn-btn--solid bbm-mini-btn" @onclick="FinishMove" disabled="@_isResolvingMovement">Finish move</button>
                             }
                         </div>
                     }
 
                     @if (IsBattlePhase && Map.TurnState.InitiativeOrder.Count > 0)
                     {
+                        <p class="bbm-hint" style="margin-top:0.5rem;">
+                            @(IsMovementPhase
+                                ? "Plan a path: click in range, click the ghost to lock, then continue. Finish move when done."
+                                : "Combat phase (attacks coming later).")
+                        </p>
                         <ol class="bbm-initiative">
                             @for (var i = 0; i < Map.TurnState.InitiativeOrder.Count; i++)
                             {
                                 var id = Map.TurnState.InitiativeOrder[i];
                                 var tok = Map.Tokens.FirstOrDefault(t => t.Id == id);
                                 if (tok is null) continue;
-                                <li class="@(i == Map.TurnState.CurrentIndex ? "current" : null)">
-                                    @tok.Label <span class="bbm-force-meta">(@tok.InitiativeTotal)</span>
+                                <li class="@(IsMovementPhase && i == Map.TurnState.CurrentIndex ? "current" : null)">
+                                    @tok.Label
+                                    <span class="bbm-force-meta">(@tok.InitiativeTotal)</span>
+                                    @if (IsMovementPhase && tok.HasPath)
+                                    {
+                                        var end = tok.PlannedEnd();
+                                        <span class="bbm-force-meta"> → @FormatCell(end.X, end.Y) (@tok.Path.Count step@(tok.Path.Count == 1 ? "" : "s"))</span>
+                                    }
                                 </li>
                             }
                         </ol>
@@ -372,6 +405,12 @@ else
     private string _chatDraft = string.Empty;
     private HashSet<(int X, int Y)> _rangeCells = new();
     private EnemyDraft _enemyDraft = EnemyDraft.Default();
+    private bool _isResolvingMovement;
+    private bool _animTransitionsOn;
+    private List<BattleMoveAnimFrame> _animFrames = new();
+
+    private const int AnimCellPx = 50;
+    private const int AnimHopMs = 380;
 
     private static readonly string[] Swatches =
     {
@@ -386,10 +425,29 @@ else
     private bool IsBattlePhase =>
         string.Equals(Map?.Phase, BaronyBattlePhases.Battle, StringComparison.OrdinalIgnoreCase);
 
-    private string PhaseLabel => IsBattlePhase ? "Battle" : "Setup";
+    private bool IsMovementPhase =>
+        IsBattlePhase
+        && string.Equals(Map?.TurnState.SubPhase, BaronyBattleSubPhases.Movement, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsCombatPhase =>
+        IsBattlePhase
+        && string.Equals(Map?.TurnState.SubPhase, BaronyBattleSubPhases.Combat, StringComparison.OrdinalIgnoreCase);
+
+    private string PhaseLabel =>
+        IsSetupPhase ? "Setup"
+        : IsMovementPhase ? $"Battle — Movement (R{Map!.TurnState.Round})"
+        : IsCombatPhase ? $"Battle — Combat (R{Map!.TurnState.Round})"
+        : "Battle";
+
+    private string BaronHint =>
+        IsSetupPhase
+            ? "Deploy Active units into the green deployment zone, then wait for the Game Master to begin battle."
+            : IsMovementPhase
+                ? "Click a highlighted cell to place a destination ghost, click the ghost again to lock it, then plan further steps. Press Finish move when done."
+                : "Combat phase — wait for the Game Master. Attacks will come in a later update.";
 
     private string? ActiveTokenId =>
-        IsBattlePhase && Map is not null && Map.TurnState.InitiativeOrder.Count > 0
+        IsMovementPhase && Map is not null && Map.TurnState.InitiativeOrder.Count > 0
             ? Map.TurnState.InitiativeOrder[Math.Clamp(Map.TurnState.CurrentIndex, 0, Map.TurnState.InitiativeOrder.Count - 1)]
             : null;
 
@@ -407,6 +465,9 @@ else
         try
         {
             Map = await _battleMapRepo.GetOrCreate(BaronyId);
+            EnsureBattleSubPhase();
+            if (IsMovementPhase)
+                _selectedTokenId = ActiveTokenId;
             var units = await _baronyRepo.GetUnits(BaronyId);
             _activeUnits = units.Where(u => u.IsActive).OrderBy(u => u.Name).ToList();
             foreach (var u in _activeUnits)
@@ -457,7 +518,10 @@ else
             try
             {
                 Map = await _battleMapRepo.GetOrCreate(BaronyId);
-                if (_selectedTokenId is not null && Map.Tokens.All(t => t.Id != _selectedTokenId))
+                EnsureBattleSubPhase();
+                if (IsMovementPhase)
+                    _selectedTokenId = ActiveTokenId;
+                else if (_selectedTokenId is not null && Map.Tokens.All(t => t.Id != _selectedTokenId))
                     _selectedTokenId = null;
                 RefreshRange();
                 StateHasChanged();
@@ -660,7 +724,16 @@ else
 
         if (clicked is not null && CanSelectToken(clicked))
         {
-            _selectedTokenId = clicked.Id == _selectedTokenId ? null : clicked.Id;
+            if (IsMovementPhase)
+            {
+                // Keep focus on the unit whose order it is (range + move badge).
+                if (clicked.Id == ActiveTokenId)
+                    _selectedTokenId = ActiveTokenId;
+            }
+            else
+            {
+                _selectedTokenId = clicked.Id == _selectedTokenId ? null : clicked.Id;
+            }
             RefreshRange();
         }
     }
@@ -857,32 +930,101 @@ else
             return true;
         }
 
-        // Battle phase: only active token, within remaining move
-        if (ActiveTokenId != token.Id)
+        // Movement phase: waypoint path planning (ghost → lock → next segment).
+        if (!IsMovementPhase)
         {
-            _snackBar.Add("Wait for this unit's turn.", Severity.Warning);
+            if (IsCombatPhase)
+                _snackBar.Add("Movement is locked during the combat phase.", Severity.Info);
             return false;
         }
 
-        var reachable = ComputeReachableAnchors(token);
-        if (!reachable.Contains((nx, ny)) && !(nx == token.X && ny == token.Y))
+        if (ActiveTokenId != token.Id)
+        {
+            _snackBar.Add("Wait for this unit's movement order.", Severity.Warning);
+            return false;
+        }
+
+        // Click current cell → clear planned path.
+        if (nx == token.X && ny == token.Y)
+        {
+            token.ClearPath();
+            token.RemainingMove = token.Move;
+            _selectedTokenId = token.Id;
+            await SaveAsync(systemMessage: $"{token.Label} cleared movement path.");
+            RefreshRange();
+            return true;
+        }
+
+        // Click provisional ghost → lock it.
+        var provisional = token.ProvisionalWaypoint;
+        if (provisional is not null && provisional.X == nx && provisional.Y == ny)
+        {
+            provisional.Locked = true;
+            token.RemainingMove = provisional.RemainingMoveAfter;
+            _selectedTokenId = token.Id;
+            await SaveAsync(systemMessage: $"{token.Label} locked waypoint at {FormatCell(nx, ny)} ({provisional.RemainingMoveAfter} move left).");
+            RefreshRange();
+            return true;
+        }
+
+        var (fromX, fromY, budget) = GetPlanOrigin(token);
+
+        // Click plan origin or an already-locked waypoint — no new tip.
+        if ((nx == fromX && ny == fromY)
+            || token.Path.Any(w => w.Locked && w.X == nx && w.Y == ny))
+        {
+            _selectedTokenId = token.Id;
+            RefreshRange();
+            return true;
+        }
+
+        if (budget <= 0)
+        {
+            _snackBar.Add("No movement left — Finish move or clear path.", Severity.Warning);
+            return false;
+        }
+
+        var reachable = ComputeReachableAnchorsFrom(token, fromX, fromY, budget);
+        if (!reachable.Contains((nx, ny)))
         {
             _snackBar.Add("Out of movement range.", Severity.Warning);
             return false;
         }
 
-        var cost = EstimateMoveCost(token, nx, ny);
-        if (cost < 0 || cost > token.RemainingMove)
+        if (!CanPlaceWaypoint(token, nx, ny))
+        {
+            _snackBar.Add("Destination blocked (unit or another order).", Severity.Warning);
+            return false;
+        }
+
+        var cost = EstimateMoveCostFrom(token, fromX, fromY, nx, ny, budget);
+        if (cost < 0 || cost > budget)
         {
             _snackBar.Add("Not enough movement.", Severity.Warning);
             return false;
         }
 
-        token.X = nx;
-        token.Y = ny;
-        token.RemainingMove = Math.Max(0, token.RemainingMove - cost);
+        var remaining = Math.Max(0, budget - cost);
+        if (provisional is not null)
+        {
+            provisional.X = nx;
+            provisional.Y = ny;
+            provisional.RemainingMoveAfter = remaining;
+        }
+        else
+        {
+            token.Path.Add(new BaronyBattleWaypointDTO
+            {
+                X = nx,
+                Y = ny,
+                Locked = false,
+                RemainingMoveAfter = remaining,
+            });
+        }
+
+        token.RemainingMove = remaining;
         _selectedTokenId = token.Id;
-        await SaveAsync(systemMessage: $"{token.Label} moved to {FormatCell(nx, ny)} ({token.RemainingMove} move left).");
+        await SaveAsync(systemMessage: $"{token.Label} destination {FormatCell(nx, ny)} (cost {cost}, {remaining} left).");
         RefreshRange();
         return true;
     }
@@ -892,6 +1034,28 @@ else
         if (CanManageAsMg)
             return true;
         return !token.IsEnemy && CanEdit;
+    }
+
+    /// <summary>Origin and remaining budget for the next path segment.</summary>
+    private static (int X, int Y, int Budget) GetPlanOrigin(BaronyBattleTokenDTO token)
+    {
+        var locked = token.Path.Where(w => w.Locked).ToList();
+        if (locked.Count == 0)
+            return (token.X, token.Y, token.Move);
+        var last = locked[^1];
+        return (last.X, last.Y, last.RemainingMoveAfter);
+    }
+
+    private static int GetPlanBudget(BaronyBattleTokenDTO token) => GetPlanOrigin(token).Budget;
+
+    private void EnsureBattleSubPhase()
+    {
+        if (Map is null || !IsBattlePhase)
+            return;
+        if (string.IsNullOrWhiteSpace(Map.TurnState.SubPhase))
+            Map.TurnState.SubPhase = BaronyBattleSubPhases.Movement;
+        if (Map.TurnState.Round < 1)
+            Map.TurnState.Round = 1;
     }
 
     private async Task BeginBattle()
@@ -910,11 +1074,12 @@ else
             token.InitiativeDie = rng.Next(1, 11);
             token.InitiativeTotal = token.Discipline + token.InitiativeDie;
             token.RemainingMove = token.Move;
+            token.ClearPath();
         }
 
-        // Sort by initiative desc; ties broken randomly
+        // Movement orders: lowest initiative first; ties broken randomly.
         var ordered = Map.Tokens
-            .OrderByDescending(t => t.InitiativeTotal)
+            .OrderBy(t => t.InitiativeTotal)
             .ThenBy(_ => rng.Next())
             .Select(t => t.Id)
             .ToList();
@@ -924,13 +1089,15 @@ else
         {
             InitiativeOrder = ordered,
             CurrentIndex = 0,
+            SubPhase = BaronyBattleSubPhases.Movement,
+            Round = 1,
         };
         _tool = "token";
 
         var lines = Map.Tokens
-            .OrderByDescending(t => t.InitiativeTotal)
+            .OrderBy(t => t.InitiativeTotal)
             .Select(t => $"{t.Label}: {t.Discipline}+{t.InitiativeDie}={t.InitiativeTotal}");
-        await SaveAsync(systemMessage: "Battle begins. Initiative — " + string.Join("; ", lines));
+        await SaveAsync(systemMessage: "Battle begins — movement phase (low → high initiative). " + string.Join("; ", lines));
         _selectedTokenId = ActiveTokenId;
         RefreshRange();
     }
@@ -942,38 +1109,199 @@ else
         Map.Phase = BaronyBattlePhases.Setup;
         Map.TurnState = new();
         foreach (var t in Map.Tokens)
+        {
             t.RemainingMove = t.Move;
+            t.ClearPath();
+        }
         await SaveAsync(systemMessage: "Returned to setup.");
         RefreshRange();
     }
 
-    private async Task AdvanceTurn()
+    private async Task FinishMove()
     {
-        if (Map is null || !IsBattlePhase || Map.TurnState.InitiativeOrder.Count == 0)
+        if (Map is null || !IsMovementPhase || Map.TurnState.InitiativeOrder.Count == 0)
+            return;
+
+        var active = ActiveToken;
+        if (active is null)
             return;
 
         if (!CanManageAsMg)
         {
-            var active = ActiveToken;
-            if (active is null || active.IsEnemy || !CanEdit)
+            if (active.IsEnemy || !CanEdit)
             {
-                _snackBar.Add("Not your turn.", Severity.Warning);
+                _snackBar.Add("Not your order.", Severity.Warning);
                 return;
             }
         }
+        else if (!CanControlToken(active))
+        {
+            _snackBar.Add("Cannot finish this unit's move.", Severity.Warning);
+            return;
+        }
+
+        // Auto-lock provisional tip so Finish move always commits the visible path.
+        var provisional = active.ProvisionalWaypoint;
+        if (provisional is not null)
+            provisional.Locked = true;
+
+        var end = active.PlannedEnd();
+        var msg = active.HasPath
+            ? $"{active.Label} finished move → {FormatCell(end.X, end.Y)}."
+            : $"{active.Label} finished move (staying put).";
 
         var next = Map.TurnState.CurrentIndex + 1;
         if (next >= Map.TurnState.InitiativeOrder.Count)
         {
-            next = 0;
-            foreach (var t in Map.Tokens)
-                t.RemainingMove = t.Move;
-            AppendLocalLog("System", "system", "New round — movement refreshed.");
+            AppendLocalLog("System", "system", msg);
+            await ResolveMovementPhase();
+            return;
         }
 
         Map.TurnState.CurrentIndex = next;
         var nextTok = ActiveToken;
-        await SaveAsync(systemMessage: nextTok is null ? "Turn advanced." : $"{nextTok.Label}'s turn.");
+        await SaveAsync(systemMessage: nextTok is null
+            ? msg
+            : $"{msg} Next: {nextTok.Label}.");
+        _selectedTokenId = ActiveTokenId;
+        RefreshRange();
+    }
+
+    private async Task ResolveMovementPhase()
+    {
+        if (Map is null || !IsMovementPhase || _isResolvingMovement)
+            return;
+        if (!CanManageAsMg)
+        {
+            // Only allowed via FinishMove on the last unit.
+            var last = Map.TurnState.CurrentIndex >= Map.TurnState.InitiativeOrder.Count - 1;
+            if (!last)
+            {
+                _snackBar.Add("Only the Game Master can resolve all movement early.", Severity.Warning);
+                return;
+            }
+        }
+
+        _isResolvingMovement = true;
+        _selectedTokenId = null;
+        _rangeCells = new();
+        _animTransitionsOn = false;
+        _animFrames = new();
+
+        try
+        {
+            var movers = new List<(BaronyBattleTokenDTO Token, List<(int X, int Y)> Route)>();
+            foreach (var token in Map.Tokens)
+            {
+                if (!token.HasPath)
+                {
+                    token.RemainingMove = token.Move;
+                    continue;
+                }
+
+                // Drop unfinished provisional tip if somehow still unlocked when MG force-resolves.
+                while (token.Path.Count > 0 && !token.Path[^1].Locked)
+                    token.Path.RemoveAt(token.Path.Count - 1);
+
+                if (!token.HasPath)
+                {
+                    token.RemainingMove = token.Move;
+                    continue;
+                }
+
+                var end = token.PlannedEnd();
+                if (end.X == token.X && end.Y == token.Y)
+                {
+                    token.ClearPath();
+                    token.RemainingMove = token.Move;
+                    continue;
+                }
+
+                var route = new List<(int X, int Y)> { (token.X, token.Y) };
+                foreach (var wp in token.Path)
+                    route.Add((wp.X, wp.Y));
+                movers.Add((token, route));
+            }
+
+            if (movers.Count > 0)
+            {
+                _animFrames = movers.Select(m => new BattleMoveAnimFrame
+                {
+                    TokenId = m.Token.Id,
+                    LeftPx = m.Route[0].X * AnimCellPx,
+                    TopPx = m.Route[0].Y * AnimCellPx,
+                    Size = TokenSize(m.Token),
+                }).ToList();
+                StateHasChanged();
+                await Task.Delay(40);
+
+                _animTransitionsOn = true;
+                StateHasChanged();
+                await Task.Delay(40);
+
+                var maxHop = movers.Max(m => m.Route.Count - 1);
+                for (var hop = 1; hop <= maxHop; hop++)
+                {
+                    foreach (var frame in _animFrames)
+                    {
+                        var mover = movers.First(m => m.Token.Id == frame.TokenId);
+                        var idx = Math.Min(hop, mover.Route.Count - 1);
+                        frame.LeftPx = mover.Route[idx].X * AnimCellPx;
+                        frame.TopPx = mover.Route[idx].Y * AnimCellPx;
+                    }
+                    StateHasChanged();
+                    await Task.Delay(AnimHopMs);
+                }
+
+                await Task.Delay(80);
+            }
+
+            _animFrames = new();
+            _animTransitionsOn = false;
+
+            var moved = 0;
+            foreach (var (token, _) in movers)
+            {
+                var end = token.PlannedEnd();
+                token.X = end.X;
+                token.Y = end.Y;
+                token.RemainingMove = token.Path[^1].RemainingMoveAfter;
+                token.ClearPath();
+                moved++;
+            }
+
+            Map.TurnState.SubPhase = BaronyBattleSubPhases.Combat;
+            Map.TurnState.CurrentIndex = 0;
+
+            await SaveAsync(systemMessage: moved > 0
+                ? $"Movement resolved — {moved} unit(s) moved. Combat phase."
+                : "Movement resolved — no units moved. Combat phase.");
+            _selectedTokenId = null;
+            RefreshRange();
+        }
+        finally
+        {
+            _animFrames = new();
+            _animTransitionsOn = false;
+            _isResolvingMovement = false;
+        }
+    }
+
+    private async Task EndCombatPhase()
+    {
+        if (Map is null || !IsCombatPhase || !CanManageAsMg)
+            return;
+
+        foreach (var token in Map.Tokens)
+        {
+            token.RemainingMove = token.Move;
+            token.ClearPath();
+        }
+
+        Map.TurnState.SubPhase = BaronyBattleSubPhases.Movement;
+        Map.TurnState.CurrentIndex = 0;
+        Map.TurnState.Round = Math.Max(1, Map.TurnState.Round) + 1;
+        await SaveAsync(systemMessage: $"Round {Map.TurnState.Round} — movement phase (low → high initiative).");
         _selectedTokenId = ActiveTokenId;
         RefreshRange();
     }
@@ -1061,13 +1389,16 @@ else
         if (token is null)
             return;
 
-        if (IsBattlePhase)
+        if (IsMovementPhase)
         {
             if (ActiveTokenId != token.Id)
                 return;
-            _rangeCells = ComputeReachable(token);
+            var (fx, fy, budget) = GetPlanOrigin(token);
+            if (budget <= 0)
+                return;
+            _rangeCells = ComputeReachableFrom(token, fx, fy, budget);
         }
-        else if (!token.IsEnemy)
+        else if (IsSetupPhase && !token.IsEnemy)
         {
             // Setup: show deploy cells as soft hint when selected
             foreach (var c in Map.Cells.Where(c => c.Terrain == BaronyBattleTerrain.Deploy))
@@ -1140,6 +1471,45 @@ else
         return true;
     }
 
+    /// <summary>
+    /// Waypoint may not overlap another unit's current footprint or another unit's planned end.
+    /// </summary>
+    private bool CanPlaceWaypoint(BaronyBattleTokenDTO mover, int x, int y)
+    {
+        if (Map is null)
+            return false;
+        int size = TokenSize(mover);
+        if (x < 0 || y < 0 || x + size > Map.Width || y + size > Map.Height)
+            return false;
+
+        for (int dx = 0; dx < size; dx++)
+            for (int dy = 0; dy < size; dy++)
+                if (GetCell(x + dx, y + dy)?.Terrain == BaronyBattleTerrain.Impassable)
+                    return false;
+
+        foreach (var other in Map.Tokens)
+        {
+            if (other.Id == mover.Id)
+                continue;
+            int os = TokenSize(other);
+            bool overlapsCurrent = x < other.X + os && x + size > other.X
+                                && y < other.Y + os && y + size > other.Y;
+            if (overlapsCurrent)
+                return false;
+
+            if (other.HasPath)
+            {
+                var end = other.PlannedEnd();
+                bool overlapsDest = x < end.X + os && x + size > end.X
+                                 && y < end.Y + os && y + size > end.Y;
+                if (overlapsDest)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
     private bool IsBlockedFor(BaronyBattleTokenDTO mover, int x, int y)
     {
         if (GetCell(x, y)?.Terrain == BaronyBattleTerrain.Impassable)
@@ -1177,17 +1547,14 @@ else
         return false;
     }
 
-    private HashSet<(int X, int Y)> ComputeReachableAnchors(BaronyBattleTokenDTO mover)
+    private HashSet<(int X, int Y)> ComputeReachableAnchorsFrom(
+        BaronyBattleTokenDTO mover, int fromX, int fromY, int range)
     {
         var anchors = new HashSet<(int, int)>();
-        if (Map is null)
+        if (Map is null || range <= 0)
             return anchors;
 
         int size = TokenSize(mover);
-        int range = IsBattlePhase ? mover.RemainingMove : mover.Move;
-        if (range <= 0)
-            return anchors;
-
         int budget = range * 2 + 1;
         int w = Map.Width;
         int h = Map.Height;
@@ -1196,9 +1563,9 @@ else
             for (int j = 0; j < h; j++)
                 dist[i, j] = int.MaxValue;
 
-        dist[mover.X, mover.Y] = 0;
+        dist[fromX, fromY] = 0;
         var queue = new PriorityQueue<(int X, int Y), int>();
-        queue.Enqueue((mover.X, mover.Y), 0);
+        queue.Enqueue((fromX, fromY), 0);
 
         while (queue.Count > 0)
         {
@@ -1233,18 +1600,27 @@ else
             {
                 if (dist[i, j] == int.MaxValue) continue;
                 if (dist[i, j] / 2 > range) continue;
-                if (!CanPlace(i, j, size, mover.Id)) continue;
+                if (IsMovementPhase)
+                {
+                    if (!CanPlaceWaypoint(mover, i, j) && !(i == fromX && j == fromY))
+                        continue;
+                }
+                else if (!CanPlace(i, j, size, mover.Id))
+                {
+                    continue;
+                }
                 anchors.Add((i, j));
             }
         }
         return anchors;
     }
 
-    private HashSet<(int X, int Y)> ComputeReachable(BaronyBattleTokenDTO mover)
+    private HashSet<(int X, int Y)> ComputeReachableFrom(
+        BaronyBattleTokenDTO mover, int fromX, int fromY, int range)
     {
         var result = new HashSet<(int, int)>();
         int size = TokenSize(mover);
-        foreach (var (ax, ay) in ComputeReachableAnchors(mover))
+        foreach (var (ax, ay) in ComputeReachableAnchorsFrom(mover, fromX, fromY, range))
         {
             for (int dx = 0; dx < size; dx++)
                 for (int dy = 0; dy < size; dy++)
@@ -1253,16 +1629,15 @@ else
         return result;
     }
 
-    private int EstimateMoveCost(BaronyBattleTokenDTO mover, int targetX, int targetY)
+    private int EstimateMoveCostFrom(
+        BaronyBattleTokenDTO mover, int fromX, int fromY, int targetX, int targetY, int range)
     {
-        if (mover.X == targetX && mover.Y == targetY)
+        if (fromX == targetX && fromY == targetY)
             return 0;
-        // Recompute distances and read cost at target
-        if (Map is null)
+        if (Map is null || range <= 0)
             return -1;
 
         int size = TokenSize(mover);
-        int range = mover.RemainingMove;
         int budget = range * 2 + 1;
         int w = Map.Width;
         int h = Map.Height;
@@ -1270,9 +1645,9 @@ else
         for (int i = 0; i < w; i++)
             for (int j = 0; j < h; j++)
                 dist[i, j] = int.MaxValue;
-        dist[mover.X, mover.Y] = 0;
+        dist[fromX, fromY] = 0;
         var queue = new PriorityQueue<(int X, int Y), int>();
-        queue.Enqueue((mover.X, mover.Y), 0);
+        queue.Enqueue((fromX, fromY), 0);
         while (queue.Count > 0)
         {
             var (cx, cy) = queue.Dequeue();

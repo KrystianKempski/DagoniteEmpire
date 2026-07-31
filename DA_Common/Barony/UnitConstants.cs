@@ -114,7 +114,7 @@ namespace DA_Common.Barony
     {
         public string Key { get; init; } = string.Empty;
         public string Name { get; init; } = string.Empty;
-        /// <summary>Added into Move base: race + floor((Agility + Run)/2).</summary>
+        /// <summary>Added into Move base: race + floor(Run/3).</summary>
         public int MoveBonus { get; init; }
         /// <summary>How many base skills get a racial Other bonus the player may assign.</summary>
         public int BonusBaseSkillPicks { get; init; }

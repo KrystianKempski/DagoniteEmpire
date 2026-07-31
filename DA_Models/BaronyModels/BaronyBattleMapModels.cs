@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace DA_Models.BaronyModels
 {
@@ -7,6 +9,15 @@ namespace DA_Models.BaronyModels
     {
         public const string Setup = "setup";
         public const string Battle = "battle";
+    }
+
+    /// <summary>Sub-phases while <see cref="BaronyBattlePhases.Battle"/> is active.</summary>
+    public static class BaronyBattleSubPhases
+    {
+        /// <summary>Units place destination markers (initiative low → high).</summary>
+        public const string Movement = "movement";
+        /// <summary>After destinations resolve; combat actions (later).</summary>
+        public const string Combat = "combat";
     }
 
     public static class BaronyBattleTerrain
@@ -42,6 +53,17 @@ namespace DA_Models.BaronyModels
         public string? Terrain { get; set; }
     }
 
+    /// <summary>One step on a planned movement path.</summary>
+    public class BaronyBattleWaypointDTO
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        /// <summary>Locked = confirmed stop on the path; unlocked = provisional tip being edited.</summary>
+        public bool Locked { get; set; }
+        /// <summary>Move points left after reaching this waypoint.</summary>
+        public int RemainingMoveAfter { get; set; }
+    }
+
     public class BaronyBattleTokenDTO
     {
         public string Id { get; set; } = string.Empty;
@@ -66,12 +88,39 @@ namespace DA_Models.BaronyModels
 
         public int InitiativeDie { get; set; }
         public int InitiativeTotal { get; set; }
+
+        /// <summary>Planned movement path (waypoints + locks). Empty = stay.</summary>
+        public List<BaronyBattleWaypointDTO> Path { get; set; } = new();
+
+        [JsonIgnore]
+        public bool HasPath => Path.Count > 0;
+
+        [JsonIgnore]
+        public BaronyBattleWaypointDTO? LastWaypoint => Path.Count > 0 ? Path[^1] : null;
+
+        [JsonIgnore]
+        public BaronyBattleWaypointDTO? ProvisionalWaypoint =>
+            Path.LastOrDefault(w => !w.Locked);
+
+        public void ClearPath() => Path.Clear();
+
+        /// <summary>Final planned cell, or current position if no path.</summary>
+        public (int X, int Y) PlannedEnd()
+        {
+            if (Path.Count == 0)
+                return (X, Y);
+            var last = Path[^1];
+            return (last.X, last.Y);
+        }
     }
 
     public class BaronyBattleTurnStateDTO
     {
         public List<string> InitiativeOrder { get; set; } = new();
         public int CurrentIndex { get; set; }
+        /// <summary><see cref="BaronyBattleSubPhases"/> while battle is running.</summary>
+        public string SubPhase { get; set; } = BaronyBattleSubPhases.Movement;
+        public int Round { get; set; } = 1;
     }
 
     public class BaronyBattleLogEntryDTO

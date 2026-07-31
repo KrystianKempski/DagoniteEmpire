@@ -285,7 +285,7 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
   Quality: Good +1 / Poor −1 to Atk and Dmg
 - **Defense** = Skl (highest eligible among Dodges always; Shields if shield equipped; Armor if armor equipped) + Gear (weapon/armor/shield Def) + Cmd + Oth + **Loss**
 - **Damage** = Gear (weapon Dmg ± quality) + Oth
-- **Move** = Race (`UnitRaceCatalog`, Humans **+3**) + `floor((Agility + Run)/2)` + Gear (Mov penalties) + Oth
+- **Move** = Race (`UnitRaceCatalog`, Humans **+3**) + `floor(Run/3)` + Gear (Mov penalties) + Oth
   Only Human race is playable for now; `RaceKey` on the unit defaults to `human`.
 - **Armor** = Gear (armor/shield Arm) + Oth
 - **Max HP** = Build×2 + Will×2 + Endurance + Discipline×3 + Oth + **Loss**

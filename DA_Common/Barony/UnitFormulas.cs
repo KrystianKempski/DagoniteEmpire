@@ -362,7 +362,7 @@ namespace DA_Common.Barony
         int FullTroopCount = UnitRules.DefaultTroopCount,
         int BaseMove = 0,
         int RaceMove = 0,
-        int AgilityRunMove = 0,
+        int RunMove = 0,
         int ArmorFromGear = 0,
         string? AttackSkillKey = null,
         string? DefenseSkillKeyUsed = null);
@@ -511,8 +511,8 @@ namespace DA_Common.Barony
 
             var run = skillTotals.TryGetValue(UnitSkillKey.Run, out var runVal) ? runVal : 0;
             var raceMove = raceMoveBonus;
-            var agilityRunMove = (int)Math.Floor((agility + run) / 2.0);
-            var baseMove = raceMove + agilityRunMove;
+            var runMove = (int)Math.Floor(run / 3.0);
+            var baseMove = raceMove + runMove;
             var movePenalty = (primaryWeapon?.MovePenalty ?? 0)
                 + (armor?.MovePenalty ?? 0)
                 + (shield?.MovePenalty ?? 0);
@@ -564,7 +564,7 @@ namespace DA_Common.Barony
                 FullTroopCount: Math.Max(1, fullTroopCount),
                 BaseMove: baseMove,
                 RaceMove: raceMove,
-                AgilityRunMove: agilityRunMove,
+                RunMove: runMove,
                 ArmorFromGear: armorFromGear,
                 AttackSkillKey: skillKey,
                 DefenseSkillKeyUsed: defKey);
