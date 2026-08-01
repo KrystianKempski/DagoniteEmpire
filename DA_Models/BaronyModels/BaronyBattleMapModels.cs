@@ -16,7 +16,9 @@ namespace DA_Models.BaronyModels
     {
         /// <summary>Units place destination markers (initiative low → high).</summary>
         public const string Movement = "movement";
-        /// <summary>After destinations resolve; combat actions (later).</summary>
+        /// <summary>Players assign attack targets (any order, reversible).</summary>
+        public const string AttackPlanning = "attack-planning";
+        /// <summary>After attack planning resolves; actual damage resolution.</summary>
         public const string Combat = "combat";
     }
 
@@ -92,6 +94,9 @@ namespace DA_Models.BaronyModels
 
         /// <summary><see cref="BaronyBattleFacing"/> — current front (0 = North).</summary>
         public int Facing { get; set; } = BaronyBattleFacing.North;
+
+        /// <summary>Target token ID assigned during attack-planning phase; null = no attack.</summary>
+        public string? AttackTargetId { get; set; }
 
         public int InitiativeDie { get; set; }
         public int InitiativeTotal { get; set; }

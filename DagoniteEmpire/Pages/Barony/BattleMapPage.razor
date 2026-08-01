@@ -51,6 +51,10 @@ else
                         }
                     </span>
                 }
+                else if (IsAttackPlanningPhase)
+                {
+                    <span class="bbm-turn-chip">Round @Map.TurnState.Round — attack planning</span>
+                }
                 else if (IsCombatPhase)
                 {
                     <span class="bbm-turn-chip">Round @Map.TurnState.Round — combat</span>
@@ -161,6 +165,12 @@ else
                                      ShowActiveMoveBadge="@(IsMovementPhase && !_isResolvingMovement)"
                                      AnimatingTokens="@_animFrames"
                                      AnimTransitions="@_animTransitionsOn"
+                                     PlannedRoutes="@_plannedRoutes"
+                                     EngagedTokenIds="@_engagedTokenIds"
+                                     AttackTargetIds="@_attackTargetIds"
+                                     ShowDeployZone="@IsSetupPhase"
+                                     ShowThreatRadius="@_showThreatRadius"
+                                     ThreatFactor="@TokenThreatFactor"
                                      FacingEditTokenId="@_facingEditTokenId"
                                      FacingPreviewDegrees="@_facingPreviewDeg"
                                      OnCellClick="HandleCellClick"
@@ -168,21 +178,50 @@ else
                                      OnFacingPreview="OnFacingPreview"
                                      OnFacingConfirm="ConfirmFacingEdit" />
 
-                @if (ShowMovementControls)
+                @if (ShowMovementControls || (CanManageAsMg && IsMovementPhase && !_isResolvingMovement) || (CanManageAsMg && IsCombatPhase) || (IsAttackPlanningPhase && (CanEdit || CanManageAsMg)))
                 {
                     <div class="bbm-map-overlay-actions">
-                        <button type="button"
-                                class="bbm-map-btn bbm-map-btn--solid"
-                                @onclick="FinishMove"
-                                disabled="@_isResolvingMovement">
-                            Finish move
-                        </button>
-                        @if (CanUndoMove)
+                        @if (ShowMovementControls)
+                        {
+                            <button type="button"
+                                    class="bbm-map-btn bbm-map-btn--solid"
+                                    @onclick="FinishMove"
+                                    disabled="@_isResolvingMovement">
+                                Finish move
+                            </button>
+                            @if (CanUndoMove)
+                            {
+                                <button type="button"
+                                        class="bbm-map-btn bbm-map-btn--ghost"
+                                        @onclick="UndoMoveStep">
+                                    Undo
+                                </button>
+                            }
+                        }
+                        @if (CanManageAsMg && IsMovementPhase)
                         {
                             <button type="button"
                                     class="bbm-map-btn bbm-map-btn--ghost"
-                                    @onclick="UndoMoveStep">
-                                Undo
+                                    @onclick="ResolveMovementPhase"
+                                    disabled="@_isResolvingMovement">
+                                Resolve all movement
+                            </button>
+                        }
+                        @if (CanManageAsMg && IsCombatPhase)
+                        {
+                            <button type="button"
+                                    class="bbm-map-btn bbm-map-btn--solid"
+                                    @onclick="EndCombatPhase"
+                                    disabled="@_isResolvingMovement">
+                                End combat / next round
+                            </button>
+                        }
+                        @if (IsAttackPlanningPhase && (CanEdit || CanManageAsMg))
+                        {
+                            <button type="button"
+                                    class="bbm-map-btn bbm-map-btn--solid"
+                                    @onclick="AdvanceToCombat">
+                                Begin combat
                             </button>
                         }
                     </div>
@@ -329,7 +368,7 @@ else
                         @if (CanManageAsMg)
                         {
                             <div class="bbm-enemy-form">
-                                <div class="bbm-force-card__top">
+                                <div class="bbm-force-card__top bbm-enemy-form__top">
                                     <button type="button"
                                             class="bbm-force-icon-btn"
                                             title="Choose icon"
@@ -347,20 +386,20 @@ else
                                         }
                                     </button>
                                     <input class="bbm-input bbm-enemy-name" placeholder="Name" @bind="_enemyDraft.Label" />
+                                    <button type="button" class="bbm-map-btn bbm-map-btn--solid bbm-enemy-add-btn" @onclick="AddEnemyToken">
+                                        Add
+                                    </button>
                                 </div>
                                 <div class="bbm-enemy-stats">
-                                    <label>Atk <input type="number" @bind="_enemyDraft.Attack" /></label>
-                                    <label>Def <input type="number" @bind="_enemyDraft.Defense" /></label>
-                                    <label>Dmg <input type="number" @bind="_enemyDraft.Damage" /></label>
+                                    <label>Attack <input type="number" @bind="_enemyDraft.Attack" /></label>
+                                    <label>Defence <input type="number" @bind="_enemyDraft.Defense" /></label>
+                                    <label>Damage <input type="number" @bind="_enemyDraft.Damage" /></label>
                                     <label>HP <input type="number" @bind="_enemyDraft.Hp" /></label>
-                                    <label>Arm <input type="number" @bind="_enemyDraft.Armor" /></label>
-                                    <label>Disc <input type="number" @bind="_enemyDraft.Discipline" /></label>
+                                    <label>Armor <input type="number" @bind="_enemyDraft.Armor" /></label>
+                                    <label>Discipline <input type="number" @bind="_enemyDraft.Discipline" /></label>
                                     <label>Men <input type="number" @bind="_enemyDraft.TroopCount" /></label>
-                                    <label>Mv <input type="number" @bind="_enemyDraft.Move" /></label>
+                                    <label>Move <input type="number" @bind="_enemyDraft.Move" /></label>
                                 </div>
-                                <button type="button" class="barony-turn-btn--solid bbm-mini-btn" @onclick="AddEnemyToken">
-                                    Add enemy (click map to place)
-                                </button>
                             </div>
                         }
                         else if (!Map.Tokens.Any(t => t.IsEnemy))
@@ -377,19 +416,11 @@ else
                             <div class="bbm-tool-row">
                                 @if (IsSetupPhase)
                                 {
-                                    <button type="button" class="barony-turn-btn--solid bbm-mini-btn" @onclick="BeginBattle">Begin battle</button>
+                                    <button type="button" class="bbm-map-btn bbm-map-btn--solid" @onclick="BeginBattle">Begin battle</button>
                                 }
                                 else
                                 {
-                                    <button type="button" class="barony-turn-btn--ghost bbm-mini-btn" @onclick="ReturnToSetup">Return to setup</button>
-                                    @if (IsMovementPhase)
-                                    {
-                                        <button type="button" class="barony-turn-btn--ghost bbm-mini-btn" @onclick="ResolveMovementPhase" disabled="@_isResolvingMovement">Resolve all movement</button>
-                                    }
-                                    else if (IsCombatPhase)
-                                    {
-                                        <button type="button" class="barony-turn-btn--solid bbm-mini-btn" @onclick="EndCombatPhase">End combat / next round</button>
-                                    }
+                                    <button type="button" class="bbm-map-btn bbm-map-btn--ghost" @onclick="ReturnToSetup">Return to setup</button>
                                 }
                             </div>
                         </div>
@@ -406,7 +437,9 @@ else
                         <p class="bbm-hint" style="margin-top:0.5rem;">
                             @(IsMovementPhase
                                 ? "Plan a path: place destination, lock, optional facing turn (1 move). Use the bar below to undo or finish."
-                                : "Combat phase (attacks coming later).")
+                                : IsAttackPlanningPhase
+                                    ? "Wybierz oddział, następnie kliknij podświetlonego sąsiedniego wroga, aby przydzielić cel ataku. Kliknij ponownie, aby cofnąć rozkaz."
+                                    : "Combat phase (attacks coming later).")
                         </p>
                         <ol class="bbm-initiative">
                             @for (var i = 0; i < Map.TurnState.InitiativeOrder.Count; i++)
@@ -453,14 +486,23 @@ else
     private bool _isResolvingMovement;
     private bool _animTransitionsOn;
     private List<BattleMoveAnimFrame> _animFrames = new();
+    /// <summary>Full cell-by-cell routes (per token id) for drawing planned-path arrows.</summary>
+    private Dictionary<string, List<(int X, int Y)>> _plannedRoutes = new();
+    private HashSet<string> _engagedTokenIds = new();
+    private HashSet<string> _attackTargetIds = new();
     private string? _facingEditTokenId;
     private double? _facingPreviewDeg;
     private int _facingEditStartFacing;
     private bool _battleLogCollapsed;
+    private bool _showThreatRadius;
 
-    private const int AnimCellPx = 50;
+    // Cell pitch in px for the animation layer = grid cell (64) + 1px grid gap, so
+    // animated tokens stay aligned with the underlying grid columns/rows.
+    private const int AnimCellPx = 65;
     private const int AnimHopMs = 1000;
     private const int AnimTurnMs = 1000;
+    /// <summary>Threat circle radius = ThreatFactor × size × 0.5 cells (1.0 = exact footprint edge).</summary>
+    private const double TokenThreatFactor = 0.82;
 
     /// <summary>Milliseconds per tile; scales inversely with Move (Move 4 ≈ 700ms).</summary>
     private static int AnimCellMsFor(int move) =>
@@ -483,6 +525,10 @@ else
         IsBattlePhase
         && string.Equals(Map?.TurnState.SubPhase, BaronyBattleSubPhases.Movement, StringComparison.OrdinalIgnoreCase);
 
+    private bool IsAttackPlanningPhase =>
+        IsBattlePhase
+        && string.Equals(Map?.TurnState.SubPhase, BaronyBattleSubPhases.AttackPlanning, StringComparison.OrdinalIgnoreCase);
+
     private bool IsCombatPhase =>
         IsBattlePhase
         && string.Equals(Map?.TurnState.SubPhase, BaronyBattleSubPhases.Combat, StringComparison.OrdinalIgnoreCase);
@@ -490,6 +536,7 @@ else
     private string PhaseLabel =>
         IsSetupPhase ? "Setup"
         : IsMovementPhase ? $"Battle — Movement (R{Map!.TurnState.Round})"
+        : IsAttackPlanningPhase ? $"Battle — Attack Planning (R{Map!.TurnState.Round})"
         : IsCombatPhase ? $"Battle — Combat (R{Map!.TurnState.Round})"
         : "Battle";
 
@@ -498,7 +545,9 @@ else
             ? "Deploy Active units into the green deployment zone, then wait for the Game Master to begin battle."
             : IsMovementPhase
                 ? "Use Undo / Finish move at the bottom of the map. While testing, you may also move enemy units on their order."
-                : "Combat phase — wait for the Game Master. Attacks will come in a later update.";
+                : IsAttackPlanningPhase
+                    ? "Wybierz swój oddział, aby podkreślić sąsiadujących wrogów. Kliknij podkreślonego wroga, aby przydzielić cel ataku. Kliknij ponownie, aby cofnąć. Gdy gotowy, wciśnij Begin Combat."
+                    : "Combat phase — wait for the Game Master. Attacks will come in a later update.";
 
     private string? ActiveTokenId =>
         IsMovementPhase && Map is not null && Map.TurnState.InitiativeOrder.Count > 0
@@ -774,6 +823,50 @@ else
             if (tok is not null)
                 Map.Tokens.Remove(tok);
             await SaveAsync();
+            RefreshRange();
+            return;
+        }
+
+        // Attack planning: select token, then click an adjacent opponent to assign target
+        if (IsAttackPlanningPhase)
+        {
+            var planClicked = GetTokenAt(x, y);
+
+            // If an attacker is already selected and we clicked an opposing token
+            if (_selectedTokenId is not null && planClicked is not null)
+            {
+                var attacker = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
+                if (attacker is not null && attacker.IsEnemy != planClicked.IsEnemy && CanControlToken(attacker))
+                {
+                    if (!AreAdjacent(attacker, planClicked))
+                    {
+                        _snackBar.Add("Oddział nie sąsiaduje z wybranym celem.", Severity.Warning);
+                    }
+                    else
+                    {
+                        // Toggle: click same target again to clear
+                        attacker.AttackTargetId = attacker.AttackTargetId == planClicked.Id ? null : planClicked.Id;
+                        var msg = attacker.AttackTargetId is null
+                            ? $"{attacker.Label} cofnął rozkaz ataku."
+                            : $"{attacker.Label} cel ataku: {planClicked.Label}";
+                        await SaveAsync(systemMessage: msg);
+                    }
+                    RefreshRange();
+                    return;
+                }
+            }
+
+            // Otherwise: select / deselect the clicked token
+            if (planClicked is not null)
+            {
+                bool canSelect = CanManageAsMg || (!planClicked.IsEnemy && CanEdit);
+                if (canSelect)
+                    _selectedTokenId = planClicked.Id == _selectedTokenId ? null : planClicked.Id;
+            }
+            else
+            {
+                _selectedTokenId = null;
+            }
             RefreshRange();
             return;
         }
@@ -1193,6 +1286,15 @@ else
 
     private static int GetPlanBudget(BaronyBattleTokenDTO token) => GetPlanOrigin(token).Budget;
 
+    /// <summary>Two tokens are adjacent (footprints touch, Chebyshev gap = 0).</summary>
+    private static bool AreAdjacent(BaronyBattleTokenDTO a, BaronyBattleTokenDTO b)
+    {
+        int sa = TokenSize(a), sb = TokenSize(b);
+        int gx = Math.Max(0, Math.Max(a.X, b.X) - Math.Min(a.X + sa, b.X + sb));
+        int gy = Math.Max(0, Math.Max(a.Y, b.Y) - Math.Min(a.Y + sa, b.Y + sb));
+        return Math.Max(gx, gy) == 0;
+    }
+
     private void EnsureBattleSubPhase()
     {
         if (Map is null || !IsBattlePhase)
@@ -1419,6 +1521,10 @@ else
 
             if (movers.Count > 0)
             {
+                // Publish the exact (post-collision) tile routes so the arrows keep
+                // pointing along the real path for the full duration of the animation.
+                _plannedRoutes = movers.ToDictionary(m => m.Token.Id, m => m.Route);
+
                 _animFrames = movers.Select(m => new BattleMoveAnimFrame
                 {
                     TokenId = m.Token.Id,
@@ -1426,6 +1532,7 @@ else
                     TopPx = m.Route[0].Y * AnimCellPx,
                     Size = TokenSize(m.Token),
                     FacingDeg = BaronyBattleFacing.ToDegrees(m.Token.Facing),
+                    TransitionMs = 0,
                 }).ToList();
                 StateHasChanged();
                 await Task.Delay(40);
@@ -1434,43 +1541,44 @@ else
                 StateHasChanged();
                 await Task.Delay(40);
 
-                // Phase 1: all units turn to face their first travel direction.
+                // Phase 1: turn each mover to face its first travelled tile step.
                 foreach (var frame in _animFrames)
                 {
                     var mover = movers.First(m => m.Token.Id == frame.TokenId);
-                    if (mover.Route.Count < 2)
-                        continue;
-                    var travel = BaronyBattleFacing.FromGridStep(
-                        mover.Route[0].X, mover.Route[0].Y,
-                        mover.Route[1].X, mover.Route[1].Y);
+                    if (mover.Route.Count < 2) continue;
+                    var travelFacing = BaronyBattleFacing.FromGridStep(
+                        mover.Route[0].X, mover.Route[0].Y, mover.Route[1].X, mover.Route[1].Y);
                     frame.FacingDeg = BaronyBattleFacing.ShortestTurnTarget(
-                        frame.FacingDeg, BaronyBattleFacing.ToDegrees(travel));
+                        frame.FacingDeg, BaronyBattleFacing.ToDegrees(travelFacing));
+                    frame.TransitionMs = 0;
                 }
                 StateHasChanged();
                 await Task.Delay(AnimTurnMs);
 
-                // Phase 2: cell-by-cell march — faster Move ⇒ shorter time per tile.
+                // Phase 2: cell-by-cell ("rynnowy") march. Each hop advances one tile
+                // (orthogonal or diagonal); faster units spend less time per tile.
                 var moveEvents = new List<(int AtMs, string TokenId, int Hop)>();
+                var maxCellMs = 0;
                 foreach (var mover in movers)
                 {
                     var cellMs = AnimCellMsFor(mover.Token.Move);
+                    if (cellMs > maxCellMs) maxCellMs = cellMs;
                     for (var hop = 1; hop < mover.Route.Count; hop++)
                         moveEvents.Add((hop * cellMs, mover.Token.Id, hop));
                 }
-
                 moveEvents.Sort((a, b) =>
                 {
                     var c = a.AtMs.CompareTo(b.AtMs);
                     return c != 0 ? c : string.CompareOrdinal(a.TokenId, b.TokenId);
                 });
 
-                var elapsed = 0;
+                var elapsedMs = 0;
                 foreach (var ev in moveEvents)
                 {
-                    var wait = ev.AtMs - elapsed;
+                    var wait = ev.AtMs - elapsedMs;
                     if (wait > 0)
                         await Task.Delay(wait);
-                    elapsed = ev.AtMs;
+                    elapsedMs = ev.AtMs;
 
                     var frame = _animFrames.FirstOrDefault(f => f.TokenId == ev.TokenId);
                     var mover = movers.First(m => m.Token.Id == ev.TokenId);
@@ -1479,54 +1587,78 @@ else
 
                     var prev = mover.Route[ev.Hop - 1];
                     var next = mover.Route[ev.Hop];
-                    var travel = BaronyBattleFacing.FromGridStep(prev.X, prev.Y, next.X, next.Y);
+                    var travelFacing = BaronyBattleFacing.FromGridStep(prev.X, prev.Y, next.X, next.Y);
                     frame.FacingDeg = BaronyBattleFacing.ShortestTurnTarget(
-                        frame.FacingDeg, BaronyBattleFacing.ToDegrees(travel));
+                        frame.FacingDeg, BaronyBattleFacing.ToDegrees(travelFacing));
+                    frame.TransitionMs = AnimCellMsFor(mover.Token.Move);
                     frame.LeftPx = next.X * AnimCellPx;
                     frame.TopPx = next.Y * AnimCellPx;
                     StateHasChanged();
                 }
+                // Wait for the last CSS transition (slowest unit) to fully complete.
+                await Task.Delay(maxCellMs + 80);
 
-                // Phase 3: settle on planned end facing (manual facing / combat face).
-                var needsFinalTurn = false;
-                foreach (var frame in _animFrames)
+                var skipFinalTurnAfterCollision = _engagedTokenIds.Count > 0;
+                var animatedFacingByToken = _animFrames.ToDictionary(
+                    f => f.TokenId,
+                    f => BaronyBattleFacing.SnapFromDegrees(f.FacingDeg));
+
+                // Phase 3: settle on planned end facing (manual facing / combat face),
+                // unless a collision happened (then no one rotates after impact).
+                if (!skipFinalTurnAfterCollision)
                 {
-                    var mover = movers.First(m => m.Token.Id == frame.TokenId);
-                    var target = BaronyBattleFacing.ToDegrees(mover.FinalFacing);
-                    var nextDeg = BaronyBattleFacing.ShortestTurnTarget(frame.FacingDeg, target);
-                    if (Math.Abs(nextDeg - frame.FacingDeg) > 0.5)
+                    var needsFinalTurn = false;
+                    foreach (var frame in _animFrames)
                     {
-                        frame.FacingDeg = nextDeg;
-                        needsFinalTurn = true;
+                        var mover = movers.First(m => m.Token.Id == frame.TokenId);
+                        var target = BaronyBattleFacing.ToDegrees(mover.FinalFacing);
+                        var nextDeg = BaronyBattleFacing.ShortestTurnTarget(frame.FacingDeg, target);
+                        if (Math.Abs(nextDeg - frame.FacingDeg) > 0.5)
+                        {
+                            frame.FacingDeg = nextDeg;
+                            needsFinalTurn = true;
+                        }
                     }
-                }
-                if (needsFinalTurn)
-                {
-                    StateHasChanged();
-                    await Task.Delay(AnimTurnMs);
+                    if (needsFinalTurn)
+                    {
+                        StateHasChanged();
+                        await Task.Delay(AnimTurnMs);
+                    }
+                    else
+                    {
+                        await Task.Delay(80);
+                    }
                 }
                 else
                 {
                     await Task.Delay(80);
                 }
+
+                foreach (var (token, _, finalFacing) in movers)
+                {
+                    if (skipFinalTurnAfterCollision && animatedFacingByToken.TryGetValue(token.Id, out var facingFromAnim))
+                        token.Facing = facingFromAnim;
+                    else
+                        token.Facing = finalFacing;
+                }
             }
 
             _animFrames = new();
             _animTransitionsOn = false;
+            _plannedRoutes = new();
 
             var moved = 0;
-            foreach (var (token, _, finalFacing) in movers)
+            foreach (var (token, _, _) in movers)
             {
                 var end = token.PlannedEnd();
                 token.X = end.X;
                 token.Y = end.Y;
-                token.Facing = finalFacing;
                 token.RemainingMove = token.Path.Count > 0 ? token.Path[^1].RemainingMoveAfter : 0;
                 token.ClearPath();
                 moved++;
             }
 
-            Map.TurnState.SubPhase = BaronyBattleSubPhases.Combat;
+            Map.TurnState.SubPhase = BaronyBattleSubPhases.AttackPlanning;
             Map.TurnState.CurrentIndex = 0;
 
             var round = Math.Max(1, Map.TurnState.Round);
@@ -1534,13 +1666,13 @@ else
                 AppendLocalLog("System", "collision", note);
 
             AppendLocalLog("System", "phase",
-                $"+=========Koniec Fazy Ruchu nr{round} ===========+");
+                $"+=========Koniec Fazy Ruchu nr{round} ===========");
             AppendLocalLog("System", "phase",
-                $"+=========Początek Fazy Walki nr{round} ===========+");
+                $"+=========Początek Fazy Planowania Ataku nr{round} ===========");
 
             var summary = moved > 0
-                ? $"Movement resolved — {moved} unit(s) moved. Combat phase."
-                : "Movement resolved — no units moved. Combat phase.";
+                ? $"Movement resolved — {moved} unit(s) moved. Attack planning phase."
+                : "Movement resolved — no units moved. Attack planning phase.";
             await SaveAsync(systemMessage: summary);
             _selectedTokenId = null;
             RefreshRange();
@@ -1560,7 +1692,15 @@ else
     {
         var notes = new List<string>();
         if (Map is null)
+        {
+            _engagedTokenIds = new();
             return notes;
+        }
+
+        var engagedTokenIds = new HashSet<string>();
+
+        // Each hostile pair is resolved at most once to prevent re-detection of the rest position.
+        var resolvedPairs = new HashSet<(string, string)>();
 
         for (var guard = 0; guard < 32; guard++)
         {
@@ -1592,6 +1732,64 @@ else
                 t1 = idx + 1 < cellCount ? t0 + cellMs : hold;
             }
 
+            bool SweptThreatOverlap(
+                (int X, int Y) aFrom, (int X, int Y) aTo, int aSize,
+                (int X, int Y) bFrom, (int X, int Y) bTo, int bSize,
+                long aT0, int aCellMs, long bT0, int bCellMs,
+                out int hitMs)
+            {
+                hitMs = 0;
+                var start = Math.Max(aT0, bT0);
+                var end = Math.Min(aT0 + aCellMs, bT0 + bCellMs);
+                if (end <= start)
+                    return false;
+
+                var a0x = aFrom.X + aSize * 0.5;
+                var a0y = aFrom.Y + aSize * 0.5;
+                var a1x = aTo.X + aSize * 0.5;
+                var a1y = aTo.Y + aSize * 0.5;
+
+                var b0x = bFrom.X + bSize * 0.5;
+                var b0y = bFrom.Y + bSize * 0.5;
+                var b1x = bTo.X + bSize * 0.5;
+                var b1y = bTo.Y + bSize * 0.5;
+
+                var avx = (a1x - a0x) / aCellMs;
+                var avy = (a1y - a0y) / aCellMs;
+                var bvx = (b1x - b0x) / bCellMs;
+                var bvy = (b1y - b0y) / bCellMs;
+
+                var dtA = start - aT0;
+                var dtB = start - bT0;
+                var axS = a0x + avx * dtA;
+                var ayS = a0y + avy * dtA;
+                var bxS = b0x + bvx * dtB;
+                var byS = b0y + bvy * dtB;
+
+                var rx = axS - bxS;
+                var ry = ayS - byS;
+                var rvx = avx - bvx;
+                var rvy = avy - bvy;
+
+                var span = (double)(end - start);
+                var rv2 = rvx * rvx + rvy * rvy;
+                var tau = 0.0;
+                if (rv2 > 1e-12)
+                {
+                    tau = -(rx * rvx + ry * rvy) / rv2;
+                    tau = Math.Clamp(tau, 0.0, span);
+                }
+
+                var dx = rx + rvx * tau;
+                var dy = ry + rvy * tau;
+                var combined = TokenThreatFactor * (aSize + bSize) * 0.5;
+                if (dx * dx + dy * dy >= combined * combined)
+                    return false;
+
+                hitMs = (int)Math.Round(start + tau);
+                return true;
+            }
+
             (int HitMs, int IdxA, int IdxB, BaronyBattleTokenDTO A, BaronyBattleTokenDTO B)? hit = null;
 
             for (var i = 0; i < timelines.Count; i++)
@@ -1603,27 +1801,48 @@ else
                     continue;
                 if (!a.Moving && !b.Moving)
                     continue;
+                var pairKey = string.CompareOrdinal(a.Token.Id, b.Token.Id) < 0
+                    ? (a.Token.Id, b.Token.Id) : (b.Token.Id, a.Token.Id);
+                if (resolvedPairs.Contains(pairKey))
+                    continue;
 
+                int aSize = TokenSize(a.Token);
+                int bSize = TokenSize(b.Token);
                 for (var ia = 0; ia < a.Cells.Count; ia++)
                 for (var ib = 0; ib < b.Cells.Count; ib++)
                 {
-                    // Both still on their start tiles — not a chase collision.
-                    if (ia == 0 && ib == 0)
-                        continue;
-
                     var pa = a.Cells[ia];
                     var pb = b.Cells[ib];
-                    if (!FootprintsOverlap(pa.X, pa.Y, TokenSize(a.Token), pb.X, pb.Y, TokenSize(b.Token)))
-                        continue;
 
-                    OccupyWindow(a.Moving, ia, a.Cells.Count, a.CellMs, out var a0, out var a1);
-                    OccupyWindow(b.Moving, ib, b.Cells.Count, b.CellMs, out var b0, out var b1);
-                    if (a0 >= b1 || b0 >= a1)
-                        continue;
+                    // Landing/occupation overlap (skip both-at-start to avoid false positives).
+                    if (!(ia == 0 && ib == 0) && ThreatOverlap(pa.X, pa.Y, aSize, pb.X, pb.Y, bSize))
+                    {
+                        OccupyWindow(a.Moving, ia, a.Cells.Count, a.CellMs, out var a0, out var a1);
+                        OccupyWindow(b.Moving, ib, b.Cells.Count, b.CellMs, out var b0, out var b1);
+                        if (a0 < b1 && b0 < a1)
+                        {
+                            var tHit = (int)Math.Max(a0, b0);
+                            if (hit is null || tHit < hit.Value.HitMs)
+                                hit = (tHit, ia, ib, a.Token, b.Token);
+                        }
+                    }
 
-                    var tHit = (int)Math.Max(a0, b0);
-                    if (hit is null || tHit < hit.Value.HitMs)
-                        hit = (tHit, ia, ib, a.Token, b.Token);
+                    // Crossing / pass-through on the segment itself (includes diagonal cross).
+                    if (ia + 1 < a.Cells.Count && ib + 1 < b.Cells.Count)
+                    {
+                        var aNext = a.Cells[ia + 1];
+                        var bNext = b.Cells[ib + 1];
+                        if (SweptThreatOverlap(
+                            pa, aNext, aSize,
+                            pb, bNext, bSize,
+                            (long)ia * a.CellMs, a.CellMs,
+                            (long)ib * b.CellMs, b.CellMs,
+                            out var tHit))
+                        {
+                            if (hit is null || tHit < hit.Value.HitMs)
+                                hit = (tHit, ia, ib, a.Token, b.Token);
+                        }
+                    }
                 }
             }
 
@@ -1680,22 +1899,30 @@ else
             }
 
             if (entryA.Moving)
-                TruncatePathForCollision(tokA, stopA, stopB);
+                TruncatePathForCollision(tokA, stopA);
             if (entryB.Moving)
-                TruncatePathForCollision(tokB, stopB, stopA);
+                TruncatePathForCollision(tokB, stopB);
 
-            notes.Add($"Collision: {tokA.Label} ↔ {tokB.Label} at {FormatCell(meetA.X, meetA.Y)}.");
+            engagedTokenIds.Add(tokA.Id);
+            engagedTokenIds.Add(tokB.Id);
+
+            var resolvedKey = string.CompareOrdinal(tokA.Id, tokB.Id) < 0
+                ? (tokA.Id, tokB.Id) : (tokB.Id, tokA.Id);
+            resolvedPairs.Add(resolvedKey);
+            var meetDesc = (meetA.X == meetB.X && meetA.Y == meetB.Y)
+                ? FormatCell(meetA.X, meetA.Y)
+                : $"{FormatCell(meetA.X, meetA.Y)}/{FormatCell(meetB.X, meetB.Y)}";
+            notes.Add($"Collision: {tokA.Label} ↔ {tokB.Label} at {meetDesc}.");
         }
 
+        _engagedTokenIds = engagedTokenIds;
         return notes;
     }
 
-    private void TruncatePathForCollision(
-        BaronyBattleTokenDTO token, (int X, int Y) stop, (int X, int Y) foe)
+    private static void TruncatePathForCollision(
+        BaronyBattleTokenDTO token, (int X, int Y) stop)
     {
-        var face = stop.X != foe.X || stop.Y != foe.Y
-            ? BaronyBattleFacing.FromGridStep(stop.X, stop.Y, foe.X, foe.Y)
-            : BaronyBattleFacing.Clamp(token.Facing);
+        var face = BaronyBattleFacing.Clamp(token.Facing);
 
         token.ClearPath();
         token.RemainingMove = 0;
@@ -1748,6 +1975,14 @@ else
     private static bool FootprintsOverlap(int ax, int ay, int aSize, int bx, int by, int bSize) =>
         ax < bx + bSize && ax + aSize > bx && ay < by + bSize && ay + aSize > by;
 
+    private static bool ThreatOverlap(int ax, int ay, int aSize, int bx, int by, int bSize)
+    {
+        var dx = (ax + aSize * 0.5) - (bx + bSize * 0.5);
+        var dy = (ay + aSize * 0.5) - (by + bSize * 0.5);
+        var combined = TokenThreatFactor * (aSize + bSize) * 0.5;
+        return dx * dx + dy * dy < combined * combined;
+    }
+
     /// <summary>
     /// Unpaid waypoints face the next path segment; the tip faces along its incoming segment.
     /// </summary>
@@ -1780,6 +2015,22 @@ else
         }
     }
 
+    private async Task AdvanceToCombat()
+    {
+        if (Map is null || !IsAttackPlanningPhase || (!CanEdit && !CanManageAsMg))
+            return;
+
+        var round = Math.Max(1, Map.TurnState.Round);
+        Map.TurnState.SubPhase = BaronyBattleSubPhases.Combat;
+        AppendLocalLog("System", "phase",
+            $"+=========Koniec Fazy Planowania Ataku nr{round} ===========");
+        AppendLocalLog("System", "phase",
+            $"+=========Początek Fazy Walki nr{round} ===========");
+        await SaveAsync(systemMessage: $"Attack planning done — round {round} combat begins.");
+        _selectedTokenId = null;
+        RefreshRange();
+    }
+
     private async Task EndCombatPhase()
     {
         if (Map is null || !IsCombatPhase || !CanManageAsMg)
@@ -1787,6 +2038,7 @@ else
 
         foreach (var token in Map.Tokens)
         {
+            token.AttackTargetId = null;
             token.RemainingMove = token.Move;
             token.ClearPath();
         }
@@ -1881,6 +2133,7 @@ else
 
     private void RefreshRange()
     {
+        RebuildPlannedRoutes();
         _rangeCells = new();
         if (Map is null || _selectedTokenId is null)
             return;
@@ -1897,12 +2150,47 @@ else
                 return;
             _rangeCells = ComputeReachableFrom(token, fx, fy, budget);
         }
+        else if (IsAttackPlanningPhase)
+        {
+            // Highlight all cells occupied by adjacent opposing tokens
+            var attacker = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
+            if (attacker is null) return;
+            foreach (var opponent in Map.Tokens.Where(t => t.IsEnemy != attacker.IsEnemy))
+            {
+                if (!AreAdjacent(attacker, opponent)) continue;
+                int s = TokenSize(opponent);
+                for (int dx = 0; dx < s; dx++)
+                    for (int dy = 0; dy < s; dy++)
+                        _rangeCells.Add((opponent.X + dx, opponent.Y + dy));
+            }
+        }
         else if (IsSetupPhase && !token.IsEnemy)
         {
             // Setup: show deploy cells as soft hint when selected
             foreach (var c in Map.Cells.Where(c => c.Terrain == BaronyBattleTerrain.Deploy))
                 _rangeCells.Add((c.X, c.Y));
         }
+    }
+
+    /// <summary>Recomputes the exact tile routes for every token that has a planned path.</summary>
+    private void RebuildPlannedRoutes()
+    {
+        _attackTargetIds = Map?.Tokens
+            .Where(t => t.AttackTargetId is not null)
+            .Select(t => t.AttackTargetId!)
+            .ToHashSet() ?? new();
+
+        var routes = new Dictionary<string, List<(int X, int Y)>>();
+        if (Map is not null)
+        {
+            foreach (var t in Map.Tokens.Where(t => t.HasPath))
+            {
+                var route = BuildCellRoute(t, ignoreUnits: true);
+                if (route.Count > 1)
+                    routes[t.Id] = route;
+            }
+        }
+        _plannedRoutes = routes;
     }
 
     // --- Grid helpers (forked pathfinding) ---
@@ -2277,12 +2565,12 @@ else
     {
         public string Label { get; set; } = "Raiders";
         public string IconKey { get; set; } = "skull";
-        public int Attack { get; set; } = 3;
-        public int Defense { get; set; } = 3;
-        public int Damage { get; set; } = 2;
-        public int Hp { get; set; } = 20;
-        public int Armor { get; set; } = 1;
-        public int Discipline { get; set; } = 2;
+        public int Attack { get; set; } = 10;
+        public int Defense { get; set; } = 12;
+        public int Damage { get; set; } = 1;
+        public int Hp { get; set; } = 48;
+        public int Armor { get; set; } = 3;
+        public int Discipline { get; set; } = 9;
         public int TroopCount { get; set; } = 50;
         public int Move { get; set; } = 4;
 

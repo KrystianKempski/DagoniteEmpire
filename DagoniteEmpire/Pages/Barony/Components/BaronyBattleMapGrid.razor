@@ -2,7 +2,7 @@
 @using DA_Common.Barony
 @using DA_Models.BaronyModels
 
-<div class="bbm-grid-root">
+<div class="bbm-grid-root" style="--bbm-cell:@(CellPx)px;">
     <div class="bbm-scroll" @onmouseleave="OnMapMouseLeave">
         @if (_hoverCell is not null)
         {
@@ -55,7 +55,7 @@
                                 {
                                     <div class="bbm-terrain bbm-terrain--impassable" title="Impassable">✕</div>
                                 }
-                                else if (cell?.Terrain == BaronyBattleTerrain.Deploy)
+                                else if (cell?.Terrain == BaronyBattleTerrain.Deploy && ShowDeployZone)
                                 {
                                     <div class="bbm-terrain bbm-terrain--deploy" title="Deployment zone"></div>
                                 }
@@ -78,6 +78,18 @@
                                             <span class="bbm-move-badge" title="Move points">@token.Move</span>
                                         }
                                     </div>
+                                    @if (IsEngagedToken(token.Id))
+                                    {
+                                        <span class="bbm-engage-badge" title="Engaged">
+                                            <img class="bbm-engage-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
+                                        </span>
+                                    }
+                                    @if (IsAttackTarget(token.Id))
+                                    {
+                                        <span class="bbm-attack-target-badge" title="Attack target">
+                                            <img class="bbm-attack-target-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
+                                        </span>
+                                    }
                                 }
                                 @if (waypoint is not null)
                                 {
@@ -114,30 +126,55 @@
                         }
                     }
                 </div>
-                @if (!IsAnimating)
-                {
-                    <svg class="bbm-path-overlay" width="@(Width * CellPx)" height="@(Height * CellPx)" viewBox="0 0 @(Width * CellPx) @(Height * CellPx)" style="pointer-events:none" aria-hidden="true">
-                        <defs>
-                            <marker id="bbm-arrow-ally" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
-                                <path d="M0,0 L6,3 L0,6 Z" fill="rgba(47,107,79,0.55)" />
-                            </marker>
-                            <marker id="bbm-arrow-enemy" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
-                                <path d="M0,0 L6,3 L0,6 Z" fill="rgba(168,52,52,0.55)" />
-                            </marker>
-                        </defs>
-                        @foreach (var token in Tokens.Where(t => t.Path.Count > 0))
+                @{
+                    var arrowGw = Width * (CellPx + GridGap) - GridGap;
+                    var arrowGh = Height * (CellPx + GridGap) - GridGap;
+                }
+                <svg class="bbm-path-overlay" width="@arrowGw" height="@arrowGh" viewBox="0 0 @arrowGw @arrowGh" style="pointer-events:none" aria-hidden="true">
+                    <defs>
+                        <marker id="bbm-arrow-ally" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                            <path d="M0,0 L6,3 L0,6 Z" fill="rgba(47,107,79,0.55)" />
+                        </marker>
+                        <marker id="bbm-arrow-enemy" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                            <path d="M0,0 L6,3 L0,6 Z" fill="rgba(168,52,52,0.55)" />
+                        </marker>
+                    </defs>
+                    @foreach (var token in Tokens)
+                    {
+                        var points = RouteCellsFor(token);
+                        if (points.Count < 2) continue;
+                        var arrowClass = token.IsEnemy ? "bbm-path-arrow bbm-path-arrow--enemy" : "bbm-path-arrow bbm-path-arrow--ally";
+                        var markerId = token.IsEnemy ? "bbm-arrow-enemy" : "bbm-arrow-ally";
+                        for (var i = 0; i < points.Count - 1; i++)
                         {
-                            var points = PathPoints(token);
-                            var arrowClass = token.IsEnemy ? "bbm-path-arrow bbm-path-arrow--enemy" : "bbm-path-arrow bbm-path-arrow--ally";
-                            var markerId = token.IsEnemy ? "bbm-arrow-enemy" : "bbm-arrow-ally";
-                            for (var i = 0; i < points.Count - 1; i++)
-                            {
-                                var a = points[i];
-                                var b = points[i + 1];
-                                <line class="@arrowClass"
-                                      x1="@a.cx" y1="@a.cy" x2="@b.cx" y2="@b.cy"
-                                      marker-end="url(#@markerId)" />
-                            }
+                            var a = points[i];
+                            var b = points[i + 1];
+                            var isLast = i == points.Count - 2;
+                            <line class="@arrowClass"
+                                  x1="@a.cx.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                  y1="@a.cy.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                  x2="@b.cx.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                  y2="@b.cy.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                  marker-end="@(isLast ? $"url(#{markerId})" : null)" />
+                        }
+                    }
+                </svg>
+                @if (ShowThreatRadius)
+                {
+                    var gw = Width * (CellPx + GridGap) - GridGap;
+                    var gh = Height * (CellPx + GridGap) - GridGap;
+                    <svg class="bbm-path-overlay bbm-threat-overlay" width="@gw" height="@gh" viewBox="0 0 @gw @gh" style="pointer-events:none" aria-hidden="true">
+                        @foreach (var token in Tokens.Where(t => !IsTokenAnimating(t.Id)))
+                        {
+                            var ts = TokenSize(token);
+                            var (cx, cy) = CellCenter(token.X, token.Y, ts);
+                            var r  = ThreatFactor * ts * 0.5 * CellPx;
+                            var fill   = token.IsEnemy ? "rgba(210,60,60,0.15)"  : "rgba(60,110,210,0.15)";
+                            var stroke = token.IsEnemy ? "rgba(210,60,60,0.70)"  : "rgba(60,110,210,0.70)";
+                            <circle cx="@cx.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                    cy="@cy.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                    r="@r.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                    fill="@fill" stroke="@stroke" stroke-width="1.5" stroke-dasharray="4 3" />
                         }
                     </svg>
                 }
@@ -151,13 +188,25 @@
                             var size = Math.Max(1, frame.Size);
                             var facingDeg = frame.FacingDeg;
                             <div class="bbm-token-slot bbm-token-slot--anim @(AnimTransitions ? "bbm-token-slot--anim-run" : null) @(size > 1 ? "large" : null)"
-                                 style="left:@(frame.LeftPx)px; top:@(frame.TopPx)px; width:@(size * CellPx)px; height:@(size * CellPx)px;">
+                                 style="left:@(frame.LeftPx)px; top:@(frame.TopPx)px; width:@(size * CellPx)px; height:@(size * CellPx)px; transition:left @(frame.TransitionMs)ms linear,top @(frame.TransitionMs)ms linear;">
+                                @if (ShowThreatRadius)
+                                {
+                                    var ringPx = ThreatFactor * size * CellPx;
+                                    <div class="bbm-threat-ring @(token.IsEnemy ? "enemy" : "ally")"
+                                         style="width:@(ringPx.ToString(System.Globalization.CultureInfo.InvariantCulture))px; height:@(ringPx.ToString(System.Globalization.CultureInfo.InvariantCulture))px;"></div>
+                                }
                                 <div class="bbm-token-rect @(token.IsEnemy ? "enemy" : "ally")"
                                      style="--bbm-facing:@(facingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
                                      title="@token.Label">
                                     @TokenIcon(token.IconKey, token.Label)
                                 </div>
                                 <span class="bbm-token-label">@token.Label</span>
+                                @if (IsEngagedToken(token.Id))
+                                {
+                                    <span class="bbm-engage-badge" title="Engaged">
+                                        <img class="bbm-engage-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
+                                    </span>
+                                }
                             </div>
                         }
                     </div>
@@ -182,7 +231,7 @@
 </div>
 
 @code {
-    private const int CellPx = 50;
+    private const int CellPx = 64;
 
     [Parameter] public int Width { get; set; } = 20;
     [Parameter] public int Height { get; set; } = 16;
@@ -195,6 +244,13 @@
     [Parameter] public bool ShowActiveMoveBadge { get; set; }
     [Parameter] public IReadOnlyList<BattleMoveAnimFrame> AnimatingTokens { get; set; } = Array.Empty<BattleMoveAnimFrame>();
     [Parameter] public bool AnimTransitions { get; set; }
+    [Parameter] public bool ShowDeployZone { get; set; } = true;
+    [Parameter] public bool ShowThreatRadius { get; set; }
+    [Parameter] public double ThreatFactor { get; set; } = 1.3;
+    [Parameter] public IReadOnlyDictionary<string, List<(int X, int Y)>> PlannedRoutes { get; set; }
+        = new Dictionary<string, List<(int X, int Y)>>();
+    [Parameter] public IReadOnlySet<string> EngagedTokenIds { get; set; } = new HashSet<string>();
+    [Parameter] public IReadOnlySet<string> AttackTargetIds { get; set; } = new HashSet<string>();
     [Parameter] public string? FacingEditTokenId { get; set; }
     [Parameter] public double? FacingPreviewDegrees { get; set; }
     [Parameter] public EventCallback<(int X, int Y)> OnCellClick { get; set; }
@@ -213,6 +269,12 @@
 
     private bool IsTokenAnimating(string tokenId) =>
         AnimatingTokens.Any(a => a.TokenId == tokenId);
+
+    private bool IsEngagedToken(string tokenId) =>
+        EngagedTokenIds.Contains(tokenId);
+
+    private bool IsAttackTarget(string tokenId) =>
+        AttackTargetIds.Contains(tokenId);
 
     private BaronyBattleCellDTO? GetCell(int x, int y) =>
         Cells.FirstOrDefault(c => c.X == x && c.Y == y);
@@ -286,8 +348,28 @@
         return list;
     }
 
-    private static (double cx, double cy) CellCenter(int x, int y, int size) =>
-        ((x + size / 2.0) * CellPx, (y + size / 2.0) * CellPx);
+    // Arrow polyline for a token: the exact tile-by-tile route when known (so diagonal
+    // corner steps are drawn accurately), otherwise fall back to the waypoint anchors.
+    private List<(double cx, double cy)> RouteCellsFor(BaronyBattleTokenDTO token)
+    {
+        var size = TokenSize(token);
+        if (PlannedRoutes is not null
+            && PlannedRoutes.TryGetValue(token.Id, out var cells)
+            && cells.Count > 1)
+            return cells.Select(c => CellCenter(c.X, c.Y, size)).ToList();
+        if (token.Path.Count > 0)
+            return PathPoints(token);
+        return new List<(double cx, double cy)>();
+    }
+
+    // Each CSS-grid cell is CellPx wide plus 1px gap, so true DOM offset = x * (CellPx + 1).
+    private const int GridGap = 1;
+    private static (double cx, double cy) CellCenter(int x, int y, int size)
+    {
+        const int step = CellPx + GridGap;
+        return (x * step + size * step * 0.5 - GridGap * 0.5,
+                y * step + size * step * 0.5 - GridGap * 0.5);
+    }
 
     private static bool Covers(BaronyBattleTokenDTO token, int x, int y)
     {

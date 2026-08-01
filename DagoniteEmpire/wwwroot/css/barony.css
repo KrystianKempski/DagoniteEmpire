@@ -7990,7 +7990,7 @@ a.city-building-name-text--link:hover {
 .barony-scope .bbm-map-overlay-actions {
     position: absolute;
     left: 50%;
-    bottom: 30px;
+    bottom: 46px;
     transform: translateX(-50%);
     z-index: 20;
     display: flex;
@@ -8097,6 +8097,9 @@ a.city-building-name-text--link:hover {
 }
 
 .barony-scope .bbm-edit-panel {
+    top: 0;
+    left: 0;
+    border-top-left-radius: 0;
     z-index: 6;
 }
 
@@ -8136,10 +8139,10 @@ a.city-building-name-text--link:hover {
 
 .barony-scope .bbm-map-log {
     position: absolute;
-    right: 10px;
-    bottom: 10px;
+    right: 6px;
+    bottom: 6px;
     z-index: 18;
-    width: min(320px, calc(100% - 20px));
+    width: min(320px, calc(100% - 24px));
     max-height: min(42%, 280px);
     display: flex;
     flex-direction: column;
@@ -8264,8 +8267,8 @@ a.city-building-name-text--link:hover {
 
 .barony-scope .bbm-map-log-toggle {
     position: absolute;
-    right: 10px;
-    bottom: 10px;
+    right: 6px;
+    bottom: 6px;
     z-index: 18;
     display: inline-flex;
     align-items: center;
@@ -8484,6 +8487,18 @@ a.city-building-name-text--link:hover {
     border-top: 1px dashed var(--barony-border);
 }
 
+.barony-scope .bbm-enemy-form__top {
+    align-items: center;
+}
+
+.barony-scope .bbm-enemy-add-btn {
+    flex-shrink: 0;
+    align-self: stretch;
+    min-width: 3.5rem;
+    font-size: 0.75rem !important;
+    padding: 0.2rem 0.6rem !important;
+}
+
 .barony-scope .bbm-enemy-stats {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -8584,7 +8599,7 @@ a.city-building-name-text--link:hover {
 
 /* Grid (kept global so cells keep size even if scoped CSS is stale) */
 .barony-scope .bbm-grid-root {
-    --bbm-cell: 50px;
+    --bbm-cell: 64px;
     width: 100%;
     flex: 1 1 auto;
     min-height: 0;
@@ -8707,8 +8722,8 @@ a.city-building-name-text--link:hover {
 
 .barony-scope .bbm-cell {
     position: relative;
-    width: var(--bbm-cell, 50px);
-    height: var(--bbm-cell, 50px);
+    width: var(--bbm-cell, 64px);
+    height: var(--bbm-cell, 64px);
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -8806,7 +8821,7 @@ a.city-building-name-text--link:hover {
 
 .barony-scope .bbm-token-rect {
     width: 100%;
-    height: 42%;
+    height: 46%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -8894,7 +8909,7 @@ a.city-building-name-text--link:hover {
 }
 
 .barony-scope .bbm-token-slot--anim.bbm-token-slot--anim-run {
-    transition: left 0.55s linear, top 0.55s linear;
+    /* left/top transition is driven per-frame via inline style */
 }
 
 .barony-scope .bbm-token-slot--anim.bbm-token-slot--anim-run .bbm-token-rect {
@@ -8997,6 +9012,54 @@ a.city-building-name-text--link:hover {
     box-sizing: border-box;
 }
 
+.barony-scope .bbm-engage-badge {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    background: rgba(168, 52, 52, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 6;
+    pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(245, 240, 230, 0.6);
+}
+
+.barony-scope .bbm-engage-badge__icon {
+    width: 0.68rem;
+    height: 0.68rem;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) invert(1);
+}
+
+.barony-scope .bbm-attack-target-badge {
+    position: absolute;
+    left: 2px;
+    bottom: 2px;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    background: rgba(200, 130, 30, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 6;
+    pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(245, 240, 230, 0.6);
+}
+
+.barony-scope .bbm-attack-target-badge__icon {
+    width: 0.68rem;
+    height: 0.68rem;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) invert(1);
+}
+
 .barony-scope .bbm-grid-stack {
     position: relative;
     display: inline-block;
@@ -9020,6 +9083,28 @@ a.city-building-name-text--link:hover {
     pointer-events: none;
     z-index: 8;
     overflow: visible;
+}
+
+/* Threat ring that rides along with an animated token (follows via the slot transition). */
+.barony-scope .bbm-threat-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1.5px dashed transparent;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.barony-scope .bbm-threat-ring.ally {
+    border-color: rgba(60, 110, 210, 0.70);
+    background: rgba(60, 110, 210, 0.15);
+}
+
+.barony-scope .bbm-threat-ring.enemy {
+    border-color: rgba(210, 60, 60, 0.70);
+    background: rgba(210, 60, 60, 0.15);
 }
 
 .barony-scope .bbm-path-arrow {
@@ -9056,7 +9141,7 @@ a.city-building-name-text--link:hover {
     display: block;
     max-width: 100%;
     padding: 0 1px;
-    font-size: 0.45rem;
+    font-size: 0.62rem;
     line-height: 1.1;
     font-weight: 700;
     text-align: center;
@@ -9064,7 +9149,7 @@ a.city-building-name-text--link:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--barony-ink);
-    text-shadow: 0 0 2px #f5f0e6, 0 0 2px #f5f0e6;
+    text-shadow: 0 0 3px #f5f0e6, 0 0 3px #f5f0e6, 0 0 3px #f5f0e6;
     pointer-events: none;
     z-index: 4;
 }

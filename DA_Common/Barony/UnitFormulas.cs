@@ -354,6 +354,7 @@ namespace DA_Common.Barony
         int OtherMove = 0,
         int OtherArmor = 0,
         int OtherHp = 0,
+        int BuildDamageBonus = 0,
         int LossAttack = 0,
         int LossDefense = 0,
         int LossHp = 0,
@@ -507,7 +508,8 @@ namespace DA_Common.Barony
             var gearDef = (primaryWeapon?.Defense ?? 0) + (armor?.Defense ?? 0) + (shield?.Defense ?? 0);
 
             var weaponDmg = (primaryWeapon?.Damage ?? 0) + quality;
-            var damage = weaponDmg + otherDamage;
+            var buildDmg = build;
+            var damage = weaponDmg + buildDmg + otherDamage;
 
             var run = skillTotals.TryGetValue(UnitSkillKey.Run, out var runVal) ? runVal : 0;
             var raceMove = raceMoveBonus;
@@ -547,6 +549,7 @@ namespace DA_Common.Barony
                 WeaponAttackBonus: weaponAt,
                 WeaponDefenseBonus: gearDef,
                 WeaponDamageBonus: weaponDmg,
+                BuildDamageBonus: buildDmg,
                 EquipmentMovePenalty: movePenalty,
                 CommanderAttack: commanderAttack,
                 CommanderDefense: commanderDefense,
