@@ -115,6 +115,15 @@
                     </BaronyTooltip>
                 }
             }
+            @if (CanManageAsMg)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small"
+                               Color="Color.Error"
+                               title="Remove unit"
+                               Disabled="@_busy"
+                               OnClick="DeleteUnitAsync" />
+            }
         </TitleActions>
     </UnitDraftCardPreview>
 </div>
@@ -334,6 +343,36 @@
         }
     }
 
+    private async Task DeleteUnitAsync()
+    {
+        if (!CanManageAsMg || _busy || Unit.Id <= 0)
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Delete unit?",
+            $"Permanently delete “{Unit.Name}” from the Army roster? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.DeleteUnit(Unit.Id);
+            _snackBar.Add($"Unit “{Unit.Name}” deleted.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
     private async Task PersistFromCardAsync()
     {
         await PersistAsync();
@@ -349,8 +388,7 @@
         try
         {
             var combat = UnitStatHelper.Compute(Unit);
-            if (Unit.CurrentHp <= 0 || Unit.CurrentHp > combat.MaxHp)
-                Unit.CurrentHp = combat.MaxHp;
+            Unit.CurrentHp = Math.Clamp(Unit.CurrentHp, 0, combat.MaxHp);
             await _baronyRepo.SaveUnit(Unit);
             await OnChanged.InvokeAsync();
         }

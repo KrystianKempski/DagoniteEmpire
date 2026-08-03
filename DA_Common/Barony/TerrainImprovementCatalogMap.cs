@@ -220,5 +220,39 @@ namespace DA_Common.Barony
             TerrainResource.ShipbuildingWood => "Sawmill - Shipbuilding wood",
             _ => SawmillCommon,
         };
+
+        /// <summary>
+        /// Reverse of <see cref="ResolveTemplateName"/>: catalog template name → map pin kind
+        /// (<see cref="MapImprovement"/>). Null when the template is not a map improvement.
+        /// </summary>
+        public static string? MapKindFromCatalogTemplateName(string? catalogTemplateName)
+        {
+            if (string.IsNullOrWhiteSpace(catalogTemplateName))
+                return null;
+
+            var name = catalogTemplateName.Trim();
+
+            if (string.Equals(name, UnfortifiedVillage, StringComparison.OrdinalIgnoreCase))
+                return MapImprovement.Village;
+
+            if (string.Equals(name, HuntersLodge, StringComparison.OrdinalIgnoreCase))
+                return MapImprovement.HuntersLodge;
+
+            if (string.Equals(name, FishingPier, StringComparison.OrdinalIgnoreCase))
+                return MapImprovement.FishingHarbor;
+
+            if (string.Equals(name, ClayPit, StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith("Mine -", StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith("Quarry -", StringComparison.OrdinalIgnoreCase))
+                return MapImprovement.Mine;
+
+            if (name.StartsWith("Sawmill", StringComparison.OrdinalIgnoreCase))
+                return MapImprovement.Sawmill;
+
+            if (name.StartsWith("Farm", StringComparison.OrdinalIgnoreCase))
+                return MapImprovement.Farm;
+
+            return null;
+        }
     }
 }

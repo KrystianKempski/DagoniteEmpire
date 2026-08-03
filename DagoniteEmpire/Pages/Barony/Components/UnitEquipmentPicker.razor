@@ -113,7 +113,7 @@
                             <th class="ppb-row-label">Name</th>
                             <th>Type</th>
                             @ColHeader("Def", "Defense", "Defense bonus from this armor or shield.")
-                            @ColHeader("Arm", "Armor", "Armor value — reduces incoming damage by its value.")
+                            @ColHeader("Arm", "Armor", "Armor value from body armor only — shields do not add Armor. Reduces incoming damage.")
                             @ColHeader("Pen", "Agility penalty", "Penalty applied to the Agility attribute.")
                             @ColHeader("Mov", "Move", "Move penalty.")
                             @ColHeader("Bld", "Build requirement", "Minimum required Build.")
@@ -283,7 +283,7 @@
             <td class="ppb-row-label">@a.Name</td>
             <td>@(a.IsShield ? "Shields" : a.ArmorClass)</td>
             <td>@a.Defense</td>
-            <td>@a.ArmorValue</td>
+            <td>@(a.IsShield ? "—" : a.ArmorValue.ToString())</td>
             <td>@(a.AgilityPenalty == 0 ? "—" : a.AgilityPenalty.ToString())</td>
             <td>@(a.MovePenalty == 0 ? "—" : a.MovePenalty.ToString())</td>
             <td class="@(Build < a.RequiredBuild ? "unit-equip-table__req--fail" : null)">@a.RequiredBuild</td>

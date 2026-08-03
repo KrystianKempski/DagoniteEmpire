@@ -7,7 +7,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Tile (@Tile.X, @Tile.Y) — construction project (Building), paid with Gold &amp; Production only.
+                Tile (@Tile.X, @Tile.Y) — map construction project (Improvement), paid with Gold &amp; Production only.
             </MudText>
 
             @if (Templates.Count == 0)
@@ -51,7 +51,7 @@
                     <span>Production: <b>@Fmt(_productionCost)</b></span>
                 </div>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
-                    Output type: @ProjectOutputKind.Building · Payment: Gold &amp; Production only
+                    Output type: @ProjectOutputKind.Improvement · Payment: Gold &amp; Production only
                 </MudText>
             }
         </div>
@@ -145,7 +145,7 @@
             BaronyId = BaronyId,
             Name = displayName,
             Description = string.IsNullOrWhiteSpace(_description) ? string.Empty : _description.Trim(),
-            OutputKind = ProjectOutputKind.Building,
+            OutputKind = ProjectOutputKind.Improvement,
             AllowedCostModes = ProjectAllowedCostModes.GoldProductionOnly,
             SelectedCostMode = ProjectCostMode.GoldProduction,
             CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(cost),

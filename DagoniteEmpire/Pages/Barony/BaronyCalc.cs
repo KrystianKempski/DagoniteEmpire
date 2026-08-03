@@ -593,6 +593,43 @@ namespace DagoniteEmpire.Pages.Barony
                 .Select(d => Row(d.Name, d.Additive, d.Percent, d.FormulaText, d.Description))
                 .ToList();
 
+        /// <summary>
+        /// Always-active trade / luxury / route bonuses shown under Decrees and Technologies.
+        /// </summary>
+        public static List<PpbModifierRow> TradeGoodDomainRows(
+            IEnumerable<BaronyBuildingDTO>? buildings,
+            IEnumerable<TerrainImprovementDTO>? improvements,
+            IEnumerable<BaronyTradeTreaty>? treaties,
+            IEnumerable<string>? mgOverrideKeys,
+            string? luxuryAccessKey)
+        {
+            var facilityNames = (buildings ?? Enumerable.Empty<BaronyBuildingDTO>())
+                .Select(b => b.Name)
+                .Concat(
+                    (improvements ?? Enumerable.Empty<TerrainImprovementDTO>())
+                        .Where(i => i.IsActive)
+                        .SelectMany(i => TradeGoodAvailability.FacilityNamesFromMapImprovement(i.Name, i.Description)));
+            var treatyList = (treaties ?? Enumerable.Empty<BaronyTradeTreaty>()).ToList();
+            var availability = TradeGoodAvailability.Resolve(facilityNames, treatyList, mgOverrideKeys);
+            return TradeGoodAvailability.DomainPanelBonusParts(availability, treatyList, luxuryAccessKey)
+                .Select(p => Row(p.Label, p.Additive, p.Percent, note: p.Note))
+                .ToList();
+        }
+
+        /// <summary>Decrees (active) plus derived trade-good bonuses for the Decrees section.</summary>
+        public static List<PpbModifierRow> DecreeSectionRows(
+            IEnumerable<DecreeDTO> decrees,
+            IEnumerable<BaronyBuildingDTO>? buildings,
+            IEnumerable<TerrainImprovementDTO>? improvements,
+            IEnumerable<BaronyTradeTreaty>? treaties,
+            IEnumerable<string>? mgOverrideKeys,
+            string? luxuryAccessKey)
+        {
+            var rows = DecreeRows(decrees);
+            rows.AddRange(TradeGoodDomainRows(buildings, improvements, treaties, mgOverrideKeys, luxuryAccessKey));
+            return rows;
+        }
+
         public static List<PpbModifierRow> EventRows(IEnumerable<BaronyEventDTO> events, int currentTurn)
             => events
                 .Where(e => e.IsActiveOnTurn(currentTurn))
@@ -860,7 +897,19 @@ namespace DagoniteEmpire.Pages.Barony
             var socialRows = SocialRows(ov.Barony.Id, ov.SocialRelations);
             var improvementRows = ImprovementRows(
                 ov.Improvements, ov.Tiles, ov.Fiefs, ov.Barony.VassalTributePercent);
-            var decreeRows = DecreeRows(ov.Decrees);
+            var decreeRows = DecreeSectionRows(
+                ov.Decrees,
+                ov.Buildings,
+                ov.Improvements,
+                ov.Barony.TradeTreaties,
+                ov.Barony.TradeGoodMgOverrideKeys,
+                ov.Barony.LuxuryGoodsAccessKey);
+            var tradeGoodRows = TradeGoodDomainRows(
+                ov.Buildings,
+                ov.Improvements,
+                ov.Barony.TradeTreaties,
+                ov.Barony.TradeGoodMgOverrideKeys,
+                ov.Barony.LuxuryGoodsAccessKey);
             var eventRows = EventRows(ov.Events, ov.Barony.TurnNumber);
             eventRows.AddRange(AudienceEventRows(ov.Audiences, ov.Barony.TurnNumber));
             var armyRows = ArmyRows(ov.Units);
@@ -890,6 +939,7 @@ namespace DagoniteEmpire.Pages.Barony
                 SocialRows = socialRows,
                 ImprovementRows = improvementRows,
                 DecreeRows = decreeRows,
+                TradeGoodRows = tradeGoodRows,
                 EventRows = eventRows,
                 ArmyRows = armyRows,
                 CommunityRows = communityRows,
@@ -965,6 +1015,7 @@ namespace DagoniteEmpire.Pages.Barony
             public List<PpbModifierRow> SocialRows { get; init; } = new();
             public List<PpbModifierRow> ImprovementRows { get; init; } = new();
             public List<PpbModifierRow> DecreeRows { get; init; } = new();
+            public List<PpbModifierRow> TradeGoodRows { get; init; } = new();
             public List<PpbModifierRow> EventRows { get; init; } = new();
             public List<PpbModifierRow> ArmyRows { get; init; } = new();
             public List<PpbModifierRow> CommunityRows { get; init; } = new();

@@ -239,7 +239,8 @@ else
         ResolvePlayerSeat();
         _blockedLordKeys = await _baronyRepo.GetBlockedTradeLordKeys(BaronyId);
         _treaties = await _baronyRepo.GetTradeTreaties(BaronyId);
-        _availableGoods = await _baronyRepo.GetAvailableTradeGoodKeys(BaronyId);
+        var availability = await _baronyRepo.GetTradeGoodAvailability(BaronyId);
+        _availableGoods = new HashSet<string>(availability.GrantableKeys, StringComparer.OrdinalIgnoreCase);
         _borderLordKeys = await LoadBorderLordKeysAsync(BaronyId);
         RefreshTradeRouteOverlays();
 

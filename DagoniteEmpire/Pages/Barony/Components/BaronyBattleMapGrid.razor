@@ -65,17 +65,27 @@
                                 }
                                 @if (token is not null && !hideToken)
                                 {
-                                    var facingDeg = BaronyBattleFacing.ToDegrees(token.Facing);
                                     <div class="bbm-token-slot @(large ? "large" : null) @(isActiveTurn ? "active-order" : null)" style="@TokenFootprintStyle(token)">
+                                        @HpBar(token)
                                         <div class="bbm-token-rect @(token.IsEnemy ? "enemy" : "ally") @(isSelected ? "selected" : null) @(isActiveTurn ? "active-turn" : null)"
-                                             style="--bbm-facing:@(facingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
-                                             title="@token.Label">
+                                             style="--bbm-facing:@(FacingDegreesForToken(token).ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
+                                             title="@($"{token.Label} · HP {token.Hp}/{Math.Max(1, token.MaxHp)}")">
                                             @TokenIcon(token.IconKey, token.Label)
                                         </div>
-                                        <div class="bbm-token-label">@token.Label</div>
+                                        <div class="bbm-token-label @(token.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@token.Label</div>
                                         @if (ShowMoveBadge(token))
                                         {
-                                            <span class="bbm-move-badge" title="Move points">@token.Move</span>
+                                            <span class="bbm-move-badge" title="Move points">@(OriginMoveBadge(token))</span>
+                                        }
+                                        @if (ShowOriginFacingButton(token))
+                                        {
+                                            <button type="button"
+                                                    class="bbm-facing-btn"
+                                                    title="@(AllowSetupFacing ? "Change facing" : "Change facing (1 move)")"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="@(() => OnFacingButton.InvokeAsync(token.Id))">
+                                                <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
+                                            </button>
                                         }
                                     </div>
                                     @if (IsEngagedToken(token.Id))
@@ -86,7 +96,7 @@
                                     }
                                     @if (HasAttackEngagement(token.Id))
                                     {
-                                        <span class="bbm-attack-target-badge" title="Nawiązanie walki">
+                                        <span class="bbm-attack-target-badge" title="Engaged in combat">
                                             <img class="bbm-attack-target-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
                                         </span>
                                     }
@@ -104,7 +114,7 @@
                                              title="@(wp.Locked ? $"{owner.Label} (locked)" : $"{owner.Label} (destination)")">
                                             @TokenIcon(owner.IconKey, owner.Label)
                                         </div>
-                                        <div class="bbm-token-label">@owner.Label</div>
+                                        <div class="bbm-token-label @(owner.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@owner.Label</div>
                                         <span class="bbm-move-badge" title="Move left">@wp.RemainingMoveAfter</span>
                                         @if (wp.Locked)
                                         {
@@ -170,7 +180,7 @@
                     </defs>
                     @foreach (var attacker in Tokens)
                     {
-                        if (string.IsNullOrWhiteSpace(attacker.AttackTargetId)) continue;
+                        if (!ShouldDrawAttackArrow(attacker)) continue;
                         var target = Tokens.FirstOrDefault(t => t.Id == attacker.AttackTargetId);
                         if (target is null) continue;
 
@@ -183,7 +193,9 @@
                         var to = baseTo;
 
                         // If both units target each other, draw two parallel arrows on opposite sides.
-                        if (!string.IsNullOrWhiteSpace(target.AttackTargetId)
+                        // During combat focus anim, always draw a single centered shaft.
+                        if (!CombatAnimActive
+                            && !string.IsNullOrWhiteSpace(target.AttackTargetId)
                             && string.Equals(target.AttackTargetId, attacker.Id, StringComparison.Ordinal)
                             && len > 0.001)
                         {
@@ -221,7 +233,7 @@
                             : "bbm-attack-plan-arrow bbm-attack-plan-arrow--ally";
                         var markerId = attacker.IsEnemy ? "bbm-attack-arrow-enemy" : "bbm-attack-arrow-ally";
 
-                        <line class="@arrowClass"
+                        <line class="@arrowClass @(CombatAnimActive ? "bbm-attack-plan-arrow--focus" : null)"
                               x1="@from.cx.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                               y1="@from.cy.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                             x2="@shaftToX.ToString(System.Globalization.CultureInfo.InvariantCulture)"
@@ -229,6 +241,38 @@
                               marker-end="url(#@markerId)" />
                     }
                 </svg>
+                @if (CombatFx is not null)
+                {
+                    var atk = Tokens.FirstOrDefault(t => t.Id == CombatFx.AttackerId);
+                    var def = Tokens.FirstOrDefault(t => t.Id == CombatFx.DefenderId);
+                    if (atk is not null && def is not null)
+                    {
+                        var atkCenter = CellCenter(atk.X, atk.Y, TokenSize(atk));
+                        var defCenter = CellCenter(def.X, def.Y, TokenSize(def));
+                        var midX = (atkCenter.cx + defCenter.cx) / 2.0;
+                        var midY = (atkCenter.cy + defCenter.cy) / 2.0;
+                        <div class="bbm-combat-fx-layer" aria-hidden="true">
+                            @if (CombatFx.ShowClash)
+                            {
+                                <div class="bbm-combat-clash"
+                                     style="left:@(midX.ToString(System.Globalization.CultureInfo.InvariantCulture))px; top:@(midY.ToString(System.Globalization.CultureInfo.InvariantCulture))px;">
+                                    <img src="/icons/crossed-swords.svg" alt="" />
+                                </div>
+                            }
+                            @if (CombatFx.ShowDamage)
+                            {
+                                <div class="bbm-combat-float bbm-combat-float--hit"
+                                     style="left:@(defCenter.cx.ToString(System.Globalization.CultureInfo.InvariantCulture))px; top:@(defCenter.cy.ToString(System.Globalization.CultureInfo.InvariantCulture))px;">
+                                    -@CombatFx.DealtToDefender
+                                </div>
+                                <div class="bbm-combat-float bbm-combat-float--riposte"
+                                     style="left:@(atkCenter.cx.ToString(System.Globalization.CultureInfo.InvariantCulture))px; top:@(atkCenter.cy.ToString(System.Globalization.CultureInfo.InvariantCulture))px;">
+                                    -@CombatFx.DealtToAttacker
+                                </div>
+                            }
+                        </div>
+                    }
+                }
                 @if (ShowThreatRadius)
                 {
                     var gw = Width * (CellPx + GridGap) - GridGap;
@@ -265,12 +309,13 @@
                                     <div class="bbm-threat-ring @(token.IsEnemy ? "enemy" : "ally")"
                                          style="width:@(ringPx.ToString(System.Globalization.CultureInfo.InvariantCulture))px; height:@(ringPx.ToString(System.Globalization.CultureInfo.InvariantCulture))px;"></div>
                                 }
+                                @HpBar(token)
                                 <div class="bbm-token-rect @(token.IsEnemy ? "enemy" : "ally")"
                                      style="--bbm-facing:@(facingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
-                                     title="@token.Label">
+                                     title="@($"{token.Label} · HP {token.Hp}/{Math.Max(1, token.MaxHp)}")">
                                     @TokenIcon(token.IconKey, token.Label)
                                 </div>
-                                <div class="bbm-token-label">@token.Label</div>
+                                <div class="bbm-token-label @(token.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@token.Label</div>
                                 @if (IsEngagedToken(token.Id))
                                 {
                                     <span class="bbm-engage-badge" title="Engaged">
@@ -315,12 +360,17 @@
     [Parameter] public IReadOnlyList<BattleMoveAnimFrame> AnimatingTokens { get; set; } = Array.Empty<BattleMoveAnimFrame>();
     [Parameter] public bool AnimTransitions { get; set; }
     [Parameter] public bool ShowDeployZone { get; set; } = true;
+    [Parameter] public bool AllowSetupFacing { get; set; }
     [Parameter] public bool ShowThreatRadius { get; set; }
     [Parameter] public double ThreatFactor { get; set; } = 1.3;
     [Parameter] public IReadOnlyDictionary<string, List<(int X, int Y)>> PlannedRoutes { get; set; }
         = new Dictionary<string, List<(int X, int Y)>>();
     [Parameter] public IReadOnlySet<string> EngagedTokenIds { get; set; } = new HashSet<string>();
     [Parameter] public IReadOnlySet<string> AttackTargetIds { get; set; } = new HashSet<string>();
+    /// <summary>When true, only the focused attacker's arrow is drawn (or none if focus is null).</summary>
+    [Parameter] public bool CombatAnimActive { get; set; }
+    [Parameter] public string? CombatFocusAttackerId { get; set; }
+    [Parameter] public BattleCombatFx? CombatFx { get; set; }
     [Parameter] public string? FacingEditTokenId { get; set; }
     [Parameter] public double? FacingPreviewDegrees { get; set; }
     [Parameter] public EventCallback<(int X, int Y)> OnCellClick { get; set; }
@@ -349,8 +399,28 @@
     private bool IsAttackingToken(string tokenId) =>
         Tokens.Any(t => t.Id == tokenId && !string.IsNullOrWhiteSpace(t.AttackTargetId));
 
-    private bool HasAttackEngagement(string tokenId) =>
-        IsAttackTarget(tokenId) || IsAttackingToken(tokenId);
+    private bool HasAttackEngagement(string tokenId)
+    {
+        if (CombatAnimActive)
+        {
+            if (string.IsNullOrWhiteSpace(CombatFocusAttackerId) || CombatFx is null)
+                return false;
+            return string.Equals(tokenId, CombatFx.AttackerId, StringComparison.Ordinal)
+                || string.Equals(tokenId, CombatFx.DefenderId, StringComparison.Ordinal);
+        }
+
+        return IsAttackTarget(tokenId) || IsAttackingToken(tokenId);
+    }
+
+    private bool ShouldDrawAttackArrow(BaronyBattleTokenDTO attacker)
+    {
+        if (string.IsNullOrWhiteSpace(attacker.AttackTargetId))
+            return false;
+        if (!CombatAnimActive)
+            return true;
+        return !string.IsNullOrWhiteSpace(CombatFocusAttackerId)
+            && string.Equals(attacker.Id, CombatFocusAttackerId, StringComparison.Ordinal);
+    }
 
     private BaronyBattleCellDTO? GetCell(int x, int y) =>
         Cells.FirstOrDefault(c => c.X == x && c.Y == y);
@@ -377,6 +447,37 @@
     private bool ShowMoveBadge(BaronyBattleTokenDTO token) =>
         ShowActiveMoveBadge && ActiveTokenId == token.Id;
 
+    private bool IsInPlaceTip(BaronyBattleTokenDTO token, BaronyBattleWaypointDTO wp) =>
+        wp.X == token.X && wp.Y == token.Y;
+
+    private bool ShowOriginFacingButton(BaronyBattleTokenDTO token)
+    {
+        if (IsAnimating || IsFacingEdit || !Interactive)
+            return false;
+
+        // Setup / deploy: rotate any selected token for free.
+        if (AllowSetupFacing && SelectedTokenId == token.Id)
+            return true;
+
+        if (ActiveTokenId != token.Id)
+            return false;
+        var tip = token.LastWaypoint;
+        // Destination tip elsewhere already has its own facing button.
+        if (tip is not null && !IsInPlaceTip(token, tip))
+            return false;
+        var moveLeft = tip?.RemainingMoveAfter ?? token.RemainingMove;
+        var paid = tip?.FacingCostPaid ?? 0;
+        return moveLeft >= 1 || paid > 0;
+    }
+
+    private int OriginMoveBadge(BaronyBattleTokenDTO token)
+    {
+        var tip = token.LastWaypoint;
+        if (tip is not null && IsInPlaceTip(token, tip))
+            return tip.RemainingMoveAfter;
+        return token.RemainingMove > 0 ? token.RemainingMove : token.Move;
+    }
+
     private bool ShowFacingButton(BaronyBattleTokenDTO owner, BaronyBattleWaypointDTO wp)
     {
         if (IsAnimating || IsFacingEdit)
@@ -388,12 +489,38 @@
         return wp.RemainingMoveAfter >= 1 || wp.FacingCostPaid > 0;
     }
 
+    private double FacingDegreesForToken(BaronyBattleTokenDTO token)
+    {
+        if (FacingEditTokenId == token.Id && FacingPreviewDegrees is double preview)
+            return preview;
+        var tip = token.LastWaypoint;
+        if (tip is not null && IsInPlaceTip(token, tip))
+            return BaronyBattleFacing.ToDegrees(tip.Facing);
+        return BaronyBattleFacing.ToDegrees(token.Facing);
+    }
+
     private double FacingDegreesForTip(BaronyBattleTokenDTO owner, BaronyBattleWaypointDTO wp)
     {
         if (FacingEditTokenId == owner.Id && FacingPreviewDegrees is double preview)
             return preview;
         return BaronyBattleFacing.ToDegrees(wp.Facing);
     }
+
+    private RenderFragment HpBar(BaronyBattleTokenDTO token) => builder =>
+    {
+        var max = Math.Max(1, token.MaxHp);
+        var cur = Math.Clamp(token.Hp, 0, max);
+        var pct = 100.0 * cur / max;
+        var pctText = pct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "bbm-hp-bar");
+        builder.AddAttribute(2, "title", $"HP {cur}/{max}");
+        builder.OpenElement(3, "div");
+        builder.AddAttribute(4, "class", "bbm-hp-bar__fill");
+        builder.AddAttribute(5, "style", $"width:{pctText}%");
+        builder.CloseElement();
+        builder.CloseElement();
+    };
 
     private RenderFragment TokenIcon(string? iconKey, string label) => builder =>
     {
@@ -480,12 +607,14 @@
         if (FacingEditTokenId is null)
             return;
         var token = Tokens.FirstOrDefault(t => t.Id == FacingEditTokenId);
-        var tip = token?.LastWaypoint;
-        if (token is null || tip is null)
+        if (token is null)
             return;
 
         var size = TokenSize(token);
-        var (cx, cy) = CellCenter(tip.X, tip.Y, size);
+        var tip = token.LastWaypoint;
+        var (cx, cy) = tip is not null
+            ? CellCenter(tip.X, tip.Y, size)
+            : CellCenter(token.X, token.Y, size);
         var deg = BaronyBattleFacing.DegreesToward(cx, cy, e.OffsetX, e.OffsetY);
         await OnFacingPreview.InvokeAsync(deg);
     }

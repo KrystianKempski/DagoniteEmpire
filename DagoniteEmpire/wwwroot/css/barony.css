@@ -942,6 +942,16 @@
     border-color: var(--barony-border-strong);
 }
 
+.unit-draft-card__icon-btn--danger {
+    color: #8b3a3a;
+}
+
+.unit-draft-card__icon-btn--danger:hover:not(:disabled) {
+    background: color-mix(in srgb, #8b3a3a 12%, var(--barony-surface));
+    border-color: #8b3a3a;
+    color: #6e2e2e;
+}
+
 .unit-draft-card__icon-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -5898,17 +5908,58 @@ a.city-building-name-text--link:hover {
 
 .ppb-table--catalog .catalog-col-name,
 .ppb-table--catalog .catalog-cell-name {
-    min-width: 110px;
-    width: 110px;
-    max-width: 110px;
+    min-width: 140px;
+    width: 140px;
+    max-width: 160px;
     text-align: left;
     white-space: normal;
     word-break: break-word;
-    vertical-align: top;
+    vertical-align: middle;
 }
 
 .ppb-table--catalog .catalog-cell-name {
     font-weight: 600;
+}
+
+.catalog-name-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    min-height: 1.5rem;
+}
+
+.catalog-name-cell__text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.catalog-name-cell__build {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+.catalog-name-cell__build:hover {
+    opacity: 1;
+    background: rgba(47, 42, 36, 0.08);
+}
+
+.catalog-name-cell__build-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+    display: block;
+    object-fit: contain;
 }
 
 .ppb-table--catalog .catalog-col-lordship {
@@ -6903,11 +6954,13 @@ a.city-building-name-text--link:hover {
 
 .trade-goods-table col.trade-goods-col-check { width: 72px; }
 .trade-goods-table col.trade-goods-col-name { width: 150px; }
+.trade-goods-table col.trade-goods-col-source { width: 120px; }
 .trade-goods-table col.trade-goods-col-desc { width: 200px; }
 .trade-goods-table col.trade-goods-col-bonus { width: 130px; }
 .trade-goods-table col.trade-goods-col-unlock { width: 150px; }
 .trade-goods-table col.trade-goods-col-building { width: 150px; }
 .trade-goods-table col.trade-goods-col-req { width: 140px; }
+.trade-goods-table col.trade-goods-col-override { width: 88px; }
 
 .trade-goods-table th,
 .trade-goods-table td {
@@ -6991,6 +7044,13 @@ a.city-building-name-text--link:hover {
 
 .trade-goods-row--available td.trade-goods-col-name {
     color: var(--barony-accent, #6b4423);
+}
+
+.trade-goods-source-hint {
+    margin-top: 0.15rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--barony-muted);
 }
 
 /* ---- Luxury goods access ---- */
@@ -8044,6 +8104,20 @@ a.city-building-name-text--link:hover {
     border-color: #866828;
 }
 
+.barony-scope .bbm-map-btn--end-battle {
+    border: 1.5px solid #8b3a3a;
+    background: #8b3a3a;
+    color: #f5f0e6;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    box-shadow: 0 1px 0 rgba(47, 42, 36, 0.2);
+}
+
+.barony-scope .bbm-map-btn--end-battle:hover:not(:disabled) {
+    background: #6e2e2e;
+    border-color: #6e2e2e;
+}
+
 .barony-scope .bbm-init-side {
     display: inline-flex;
     align-items: center;
@@ -8405,6 +8479,21 @@ a.city-building-name-text--link:hover {
     white-space: nowrap;
 }
 
+.barony-scope .bbm-name--ally {
+    color: var(--barony-accent);
+    font-weight: 700;
+}
+
+.barony-scope .bbm-name--enemy {
+    color: #8b3a3a;
+    font-weight: 700;
+}
+
+.barony-scope .bbm-map-log__text .bbm-name--ally,
+.barony-scope .bbm-map-log__text .bbm-name--enemy {
+    font-style: normal;
+}
+
 .barony-scope .bbm-force-card__hp {
     font-size: 0.75rem;
     font-weight: 700;
@@ -8502,6 +8591,17 @@ a.city-building-name-text--link:hover {
     margin-top: 0.35rem;
     padding-top: 0.35rem;
     border-top: 1px dashed var(--barony-border);
+}
+
+.barony-scope .bbm-enemy-form--editing {
+    border-top-color: color-mix(in srgb, #8b3a3a 45%, var(--barony-border));
+    background: color-mix(in srgb, #8b3a3a 6%, transparent);
+    padding: 0.45rem 0.4rem 0.4rem;
+    border-radius: 4px;
+}
+
+.barony-scope .bbm-force-card.enemy.editing {
+    outline: 1px solid color-mix(in srgb, #8b3a3a 55%, transparent);
 }
 
 .barony-scope .bbm-enemy-form__top {
@@ -9157,6 +9257,97 @@ a.city-building-name-text--link:hover {
     stroke: rgb(183, 56, 56);
 }
 
+.barony-scope .bbm-attack-plan-arrow--focus {
+    stroke-opacity: 0.9;
+}
+
+.barony-scope .bbm-combat-fx-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 12;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.barony-scope .bbm-combat-clash {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+    display: grid;
+    place-items: center;
+    animation: bbm-combat-clash-in 0.35s ease-out both;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+}
+
+.barony-scope .bbm-combat-clash img {
+    width: 40px;
+    height: 40px;
+    display: block;
+}
+
+.barony-scope .bbm-combat-float {
+    position: absolute;
+    transform: translate(-50%, -30%);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 800;
+    font-size: 1.25rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-shadow:
+        0 1px 0 rgba(255, 248, 235, 0.9),
+        0 2px 4px rgba(0, 0, 0, 0.45);
+    animation: bbm-combat-float 3s ease-out both;
+    white-space: nowrap;
+}
+
+.barony-scope .bbm-combat-float--hit {
+    color: #9b1c1c;
+}
+
+.barony-scope .bbm-combat-float--riposte {
+    color: #7a3e12;
+    animation-delay: 0.12s;
+}
+
+@keyframes bbm-combat-clash-in {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-18deg); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+}
+
+@keyframes bbm-combat-float {
+    0% { opacity: 0; transform: translate(-50%, 10%) scale(0.75); }
+    18% { opacity: 1; transform: translate(-50%, -40%) scale(1.12); }
+    72% { opacity: 1; transform: translate(-50%, -90%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -120%) scale(0.95); }
+}
+
+.barony-scope .bbm-hp-bar {
+    position: absolute;
+    top: 2px;
+    left: 10%;
+    width: 80%;
+    height: 5px;
+    z-index: 6;
+    border-radius: 2px;
+    background: #8b2a2a;
+    box-shadow: 0 0 0 1px rgba(20, 16, 12, 0.55);
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.barony-scope .bbm-hp-bar__fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(180deg, #7dcf6b 0%, #3f9a45 100%);
+    transition: width 0.35s ease-out;
+}
+
+.barony-scope .bbm-token-slot.large .bbm-hp-bar {
+    height: 6px;
+    top: 3px;
+}
+
 .barony-scope .bbm-token-icon {
     width: 70%;
     height: 78%;
@@ -9192,6 +9383,14 @@ a.city-building-name-text--link:hover {
     text-shadow: 0 0 3px #f5f0e6, 0 0 3px #f5f0e6, 0 0 3px #f5f0e6;
     pointer-events: none;
     z-index: 4;
+}
+
+.barony-scope .bbm-token-label.bbm-name--ally {
+    color: var(--barony-accent);
+}
+
+.barony-scope .bbm-token-label.bbm-name--enemy {
+    color: #8b3a3a;
 }
 
 .barony-scope .bbm-legend {

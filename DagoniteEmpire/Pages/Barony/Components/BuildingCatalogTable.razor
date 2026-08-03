@@ -39,7 +39,21 @@
         @foreach (var item in SortedItems)
         {
             <tr>
-                <td class="catalog-col-name catalog-cell-name">@item.Name</td>
+                <td class="catalog-col-name catalog-cell-name">
+                    <div class="catalog-name-cell">
+                        <span class="catalog-name-cell__text">@item.Name</span>
+                        @if (CanProposeBuild && IsCityBuilding(item))
+                        {
+                            <button type="button"
+                                    class="catalog-name-cell__build"
+                                    title="Start building project"
+                                    @onclick="() => ProposeBuildAsync(item)"
+                                    @onclick:stopPropagation="true">
+                                <img src="/icons/trample.svg" alt="" class="catalog-name-cell__build-icon" />
+                            </button>
+                        }
+                    </div>
+                </td>
                 <td class="catalog-col-lordship">@FmtLevel(item.RequiredLordshipLevel)</td>
                 <td class="catalog-col-kind">@TypeLabel(item.Kind)</td>
                 <td class="catalog-col-cost">@FmtCost(item.ProductionCost)</td>
@@ -84,11 +98,18 @@
     private const string SortGoldCost = "goldcost";
 
     [Parameter] public IEnumerable<BuildingTemplateDTO> Items { get; set; } = Array.Empty<BuildingTemplateDTO>();
+    [Parameter] public bool CanProposeBuild { get; set; }
+    [Parameter] public EventCallback<BuildingTemplateDTO> OnProposeBuild { get; set; }
 
     private string _sortKey = SortName;
     private bool _sortDesc;
 
     private IEnumerable<BuildingTemplateDTO> SortedItems => ApplySort(Items);
+
+    private static bool IsCityBuilding(BuildingTemplateDTO item) =>
+        string.Equals(item.Kind, BuildingKind.Building, StringComparison.OrdinalIgnoreCase);
+
+    private Task ProposeBuildAsync(BuildingTemplateDTO item) => OnProposeBuild.InvokeAsync(item);
 
     private static string PpbSortKey(Ppb p) => $"ppb:{p}";
 

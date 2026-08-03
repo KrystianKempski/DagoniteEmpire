@@ -1,0 +1,103 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                City building project — when finished, adds this building to Domain Panel (City and Buildings).
+                Paid with Gold &amp; Production only.
+            </MudText>
+
+            <MudText Typo="Typo.subtitle2" Class="mb-1">@Template.Name</MudText>
+            @if (!string.IsNullOrWhiteSpace(Template.Description))
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                    @Template.Description
+                </MudText>
+            }
+
+            <MudTextField @bind-Value="_name"
+                          Label="Project name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Class="baron-influence-field" />
+
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Cost (forced)</MudText>
+            <div class="terrain-build-project-cost">
+                <span>Gold: <b>@Fmt(Template.GoldCost)</b></span>
+                <span>Production: <b>@Fmt(Template.ProductionCost)</b></span>
+            </div>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
+                Output type: @ProjectOutputKind.Building · Payment: Gold &amp; Production only
+            </MudText>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Close</MudButton>
+        <MudButton Class="baron-influence-save-btn"
+                   Variant="Variant.Filled"
+                   OnClick="MakeProject">
+            Make project
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public BuildingTemplateDTO Template { get; set; } = new();
+
+    private string _name = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _name = $"Build {Template.Name}";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void MakeProject()
+    {
+        if (Template.Id <= 0)
+        {
+            _snackBar.Add("Invalid building template.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Project name is required.", Severity.Warning);
+            return;
+        }
+
+        var cost = new PpbVector();
+        cost[Ppb.Treasury] = Math.Max(0m, Template.GoldCost);
+        cost[Ppb.Production] = Math.Max(0m, Template.ProductionCost);
+
+        var project = new BaronyProjectDTO
+        {
+            BaronyId = BaronyId,
+            Name = _name.Trim(),
+            Description = string.IsNullOrWhiteSpace(Template.Description) ? string.Empty : Template.Description.Trim(),
+            OutputKind = ProjectOutputKind.Building,
+            AllowedCostModes = ProjectAllowedCostModes.GoldProductionOnly,
+            SelectedCostMode = ProjectCostMode.GoldProduction,
+            CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(cost),
+            CostMaterials = new(),
+            ResultAdditive = Template.EffectAdditive.Clone(),
+            ResultPercent = Template.EffectPercent.Clone(),
+            ResultDescription = $"Construct {Template.Name} in the city.",
+            Status = ProjectStatus.ResourceAllocation,
+            BuildingTemplateId = Template.Id,
+        };
+
+        MudDialog.Close(DialogResult.Ok(project));
+    }
+
+    private static string Fmt(decimal v) => PpbFormat.Number(v);
+}

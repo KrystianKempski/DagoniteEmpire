@@ -2,6 +2,7 @@
 @layout BaronyLayout
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject IDialogService _dialogService
 
 <PageTitle>Dagonite Empire | Buildings</PageTitle>
 
@@ -24,6 +25,10 @@ else
 
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="buildings-page__intro">
             Catalog of buildings and terrain improvements. PPB columns use separate additive (+) and percent (%) subcolumns. Click headers to sort.
+            @if (CanEdit)
+            {
+                <text> Use the hammer on a city building to start a construction project (adds to Domain Panel when finished).</text>
+            }
         </MudText>
 
         @if (_templates.Count == 0)
@@ -67,7 +72,9 @@ else
             {
                 <div class="buildings-page__table-area">
                     <div class="buildings-catalog-scroll">
-                        <BuildingCatalogTable Items="@FilteredTemplates" />
+                        <BuildingCatalogTable Items="@FilteredTemplates"
+                                              CanProposeBuild="@CanEdit"
+                                              OnProposeBuild="OnProposeBuildAsync" />
                     </div>
                 </div>
             }
@@ -101,5 +108,42 @@ else
             return;
 
         _templates = await _baronyRepo.GetBuildingTemplates();
+    }
+
+    private async Task OnProposeBuildAsync(BuildingTemplateDTO template)
+    {
+        if (!CanEdit || Barony is null)
+            return;
+
+        if (!string.Equals(template.Kind, BuildingKind.Building, StringComparison.OrdinalIgnoreCase))
+        {
+            _snackBar.Add("Terrain improvements are built from the Terrain map.", Severity.Info);
+            return;
+        }
+
+        var parameters = new DialogParameters<CreateCityBuildingProjectDialog>
+        {
+            { x => x.BaronyId, Barony.Id },
+            { x => x.Template, template },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CreateCityBuildingProjectDialog>(
+            "New building project",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyProjectDTO project)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveProject(project);
+            _snackBar.Add("Building project added — see the Projects tab.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not create project: " + ex.Message, Severity.Error);
+        }
     }
 }

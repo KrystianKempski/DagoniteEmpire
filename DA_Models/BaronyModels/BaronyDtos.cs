@@ -60,6 +60,15 @@ namespace DA_Models.BaronyModels
 
         public string? Notes { get; set; }
 
+        /// <summary>MG override keys — force goods available even without local production / treaty.</summary>
+        public List<string> TradeGoodMgOverrideKeys { get; set; } = new();
+
+        /// <summary>Key from <see cref="LuxuryGoodsAccessCatalog"/>.</summary>
+        public string LuxuryGoodsAccessKey { get; set; } = LuxuryGoodsAccessCatalog.DefaultKey;
+
+        /// <summary>Active trade treaties for this barony.</summary>
+        public List<BaronyTradeTreaty> TradeTreaties { get; set; } = new();
+
         /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
         public bool PlayerTurnReady { get; set; }
     }

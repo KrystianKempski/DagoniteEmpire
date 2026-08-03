@@ -18,23 +18,27 @@ else
     <BaronyPageHeader Title="Trade goods">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_available.Count / @TradeGoodsCatalog.All.Count available</span>
+                <span class="projects-summary__item">@_availability.AvailableKeys.Count / @TradeGoodsCatalog.All.Count available</span>
+                <span class="projects-summary__item">@_availability.ProducedKeys.Count produced</span>
+                <span class="projects-summary__item">@_availability.TreatyReceivedKeys.Count from trade</span>
             </span>
         </Summary>
     </BaronyPageHeader>
 
     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-        Mark which strategic goods this barony can produce, stock, or import reliably. PPB totals include checked goods, luxury access, and goods received from trade treaties.
+        Goods are available when produced by a city building or terrain improvement, or received via a trade treaty.
+        Only locally produced goods (or MG overrides) can be granted in treaties — treaty imports cannot be re-exported.
+        PPB totals also include luxury access and trade-route economy.
     </MudText>
 
-    <TradeGoodsPpbSummarySection Selected="@SelectedGoods"
-                                 TreatyGoods="@_treatyGoods"
+    <TradeGoodsPpbSummarySection Selected="@AvailableGoods"
+                                 TreatyGoods="@_noExtraTreatyGoods"
                                  TreatyRouteEconomyBonus="@_treatyRouteEconomy"
                                  LuxuryAccessKey="@_luxuryKey" />
 
     <TradeTreatiesSection BaronyId="@BaronyId"
                           Treaties="@_treaties"
-                          BaronyAvailableGoodKeys="@_available"
+                          BaronyAvailableGoodKeys="@_availability.GrantableKeys"
                           BorderLordKeys="@_borderLordKeys"
                           CanEdit="@CanEdit"
                           TreatiesChanged="OnTreatiesChangedAsync" />
@@ -52,24 +56,23 @@ else
         <TradeGoodsSection SectionKey="@tradeSection.Key"
                            SectionLabel="@tradeSection.LabelEn"
                            Items="@items"
-                           AvailableKeys="@_available"
-                           CanEdit="@CanEdit"
-                           OnToggle="OnToggleAsync" />
+                           Availability="@_availability"
+                           CanOverride="@CanManageAsMg"
+                           OverrideDisabled="@_saving"
+                           OnOverrideToggle="OnOverrideToggleAsync" />
     }
 }
 
 @code {
-    private HashSet<string> _available = new(StringComparer.OrdinalIgnoreCase);
+    private TradeGoodAvailabilitySnapshot _availability = new();
     private string _luxuryKey = LuxuryGoodsAccessCatalog.DefaultKey;
     private List<BaronyTradeTreaty> _treaties = new();
     private HashSet<string> _borderLordKeys = new(StringComparer.OrdinalIgnoreCase);
     private bool _saving;
+    private readonly IReadOnlyList<TradeGoodEntry> _noExtraTreatyGoods = Array.Empty<TradeGoodEntry>();
 
-    private IReadOnlyList<TradeGoodEntry> SelectedGoods =>
-        TradeGoodsCatalog.All.Where(g => _available.Contains(g.Key)).ToList();
-
-    private IReadOnlyList<TradeGoodEntry> _treatyGoods =>
-        TradeTreatyCalculator.BaronyReceivedGoods(_treaties);
+    private IReadOnlyList<TradeGoodEntry> AvailableGoods =>
+        TradeGoodsCatalog.All.Where(g => _availability.AvailableKeys.Contains(g.Key)).ToList();
 
     private decimal _treatyRouteEconomy => TradeTreatyCalculator.TotalRouteEconomyBonus(_treaties);
 
@@ -79,10 +82,17 @@ else
         if (Barony is null)
             return;
 
-        _available = await _baronyRepo.GetAvailableTradeGoodKeys(Barony.Id);
+        await ReloadAvailabilityAsync();
         _luxuryKey = await _baronyRepo.GetLuxuryGoodsAccessKey(Barony.Id);
         _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
         _borderLordKeys = await LoadBorderLordKeysAsync(Barony.Id);
+    }
+
+    private async Task ReloadAvailabilityAsync()
+    {
+        if (Barony is null)
+            return;
+        _availability = await _baronyRepo.GetTradeGoodAvailability(Barony.Id);
     }
 
     private async Task<HashSet<string>> LoadBorderLordKeysAsync(int baronyId)
@@ -109,12 +119,14 @@ else
         {
             await _baronyRepo.SaveTradeTreaties(Barony.Id, treaties);
             _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
+            await ReloadAvailabilityAsync();
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             _snackBar.Add("Could not save trade treaties: " + ex.Message, Severity.Error);
             _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
+            await ReloadAvailabilityAsync();
         }
         finally
         {
@@ -145,26 +157,28 @@ else
         }
     }
 
-    private async Task OnToggleAsync((string Key, bool Available) args)
+    private async Task OnOverrideToggleAsync((string Key, bool Enabled) args)
     {
-        if (!CanEdit || Barony is null || _saving)
+        if (!CanManageAsMg || Barony is null || _saving)
             return;
 
-        if (args.Available)
-            _available.Add(args.Key);
+        var overrides = new HashSet<string>(_availability.OverrideKeys, StringComparer.OrdinalIgnoreCase);
+        if (args.Enabled)
+            overrides.Add(args.Key);
         else
-            _available.Remove(args.Key);
+            overrides.Remove(args.Key);
 
         _saving = true;
         try
         {
-            await _baronyRepo.SetAvailableTradeGoodKeys(Barony.Id, _available);
+            await _baronyRepo.SetTradeGoodMgOverrideKeys(Barony.Id, overrides);
+            await ReloadAvailabilityAsync();
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save trade goods: " + ex.Message, Severity.Error);
-            _available = await _baronyRepo.GetAvailableTradeGoodKeys(Barony.Id);
+            _snackBar.Add("Could not save trade good override: " + ex.Message, Severity.Error);
+            await ReloadAvailabilityAsync();
         }
         finally
         {

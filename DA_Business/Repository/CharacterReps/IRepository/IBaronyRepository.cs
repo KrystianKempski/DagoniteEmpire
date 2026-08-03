@@ -182,8 +182,13 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<int> DeletePurseSource(int id);
 
         // --- Towary strategiczne (dostępność w baronii) ---
-        Task<HashSet<string>> GetAvailableTradeGoodKeys(int baronyId);
-        Task SetAvailableTradeGoodKeys(int baronyId, IReadOnlyCollection<string> keys);
+        /// <summary>MG override keys stored on the barony (not derived production/treaty).</summary>
+        Task<HashSet<string>> GetTradeGoodMgOverrideKeys(int baronyId);
+        Task SetTradeGoodMgOverrideKeys(int baronyId, IReadOnlyCollection<string> keys);
+
+        /// <summary>Derived availability: produced ∪ treaty-received ∪ MG override.</summary>
+        Task<TradeGoodAvailabilitySnapshot> GetTradeGoodAvailability(int baronyId);
+
         Task<string> GetLuxuryGoodsAccessKey(int baronyId);
         Task SetLuxuryGoodsAccessKey(int baronyId, string key);
 

@@ -8,13 +8,13 @@
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
     <ChildContent>
-        @if (Decrees.Count == 0)
+        @if (Decrees.Count == 0 && TradeGoodRows.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No decrees or technologies yet.
+                No decrees, technologies, or trade-good bonuses yet.
                 @if (CanManage)
                 {
-                    <text> Add one below.</text>
+                    <text> Add a decree below.</text>
                 }
             </MudText>
         }
@@ -94,6 +94,37 @@
                             </tr>
                         }
 
+                        @foreach (var row in TradeGoodRows)
+                        {
+                            <tr>
+                                <td class="city-building-col-name">
+                                    <div class="city-building-name-cell">
+                                        <BaronyTooltip Title="@row.Label" Text="@(row.Note ?? "Trade goods / luxury — always active")">
+                                            <span class="city-building-name-text">@row.Label</span>
+                                        </BaronyTooltip>
+                                    </div>
+                                </td>
+                                <td class="decree-col-active">
+                                    <div class="decree-active-cell">
+                                        <MudCheckBox T="bool"
+                                                     Value="true"
+                                                     Disabled="true"
+                                                     ReadOnly="true"
+                                                     Size="Size.Small"
+                                                     Dense="true"
+                                                     Color="Color.Primary"
+                                                     Class="decree-active-checkbox"
+                                                     title="Always active" />
+                                    </div>
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@PpbCellClass(info.Key, row.Additive[info.Key], inactive: false)">@FmtAdd(row.Additive[info.Key])</td>
+                                    <td class="@PpbCellClass(info.Key, row.Percent[info.Key], inactive: false)">@FmtPct(row.Percent[info.Key])</td>
+                                }
+                            </tr>
+                        }
+
                         <tr class="ppb-summary-row">
                             <td class="ppb-row-label city-building-col-name">Σ section</td>
                             <td class="decree-col-active decree-col-active--summary"></td>
@@ -124,6 +155,7 @@
 @code {
     [Parameter] public int BaronyId { get; set; }
     [Parameter] public List<DecreeDTO> Decrees { get; set; } = new();
+    [Parameter] public List<PpbModifierRow> TradeGoodRows { get; set; } = new();
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public bool CanToggleActive { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
@@ -133,9 +165,15 @@
 
     private IEnumerable<DecreeDTO> ActiveDecrees => Decrees.Where(d => d.IsActive);
 
-    private PpbVector AdditiveSum => PpbVector.Sum(ActiveDecrees.Select(d => d.Additive));
-    private PpbVector PercentSum => PpbVector.Sum(ActiveDecrees.Select(d => d.Percent));
-    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.DecreeRows(Decrees));
+    private PpbVector AdditiveSum =>
+        PpbVector.Sum(ActiveDecrees.Select(d => d.Additive).Concat(TradeGoodRows.Select(r => r.Additive)));
+
+    private PpbVector PercentSum =>
+        PpbVector.Sum(ActiveDecrees.Select(d => d.Percent).Concat(TradeGoodRows.Select(r => r.Percent)));
+
+    private PpbVector Glance =>
+        BaronyCalc.SectionGlance(
+            BaronyCalc.DecreeRows(Decrees).Concat(TradeGoodRows));
 
     private static string? NameTooltip(DecreeDTO item) =>
         string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim();

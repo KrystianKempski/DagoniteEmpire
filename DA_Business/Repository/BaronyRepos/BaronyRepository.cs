@@ -189,7 +189,7 @@ namespace DA_Business.Repository.BaronyRepos
             }
         }
 
-        public async Task<HashSet<string>> GetAvailableTradeGoodKeys(int baronyId)
+        public async Task<HashSet<string>> GetTradeGoodMgOverrideKeys(int baronyId)
         {
             try
             {
@@ -198,23 +198,16 @@ namespace DA_Business.Repository.BaronyRepos
                     .Where(b => b.Id == baronyId)
                     .Select(b => b.AvailableTradeGoodsJson)
                     .FirstOrDefaultAsync();
-                return ParseTradeGoodKeys(json);
+                return TradeGoodAvailability.NormalizeOverrideKeys(ParseTradeGoodKeys(json));
             }
-            catch (System.Exception ex) { throw Err(ex, nameof(GetAvailableTradeGoodKeys)); }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetTradeGoodMgOverrideKeys)); }
         }
 
-        public async Task SetAvailableTradeGoodKeys(int baronyId, IReadOnlyCollection<string> keys)
+        public async Task SetTradeGoodMgOverrideKeys(int baronyId, IReadOnlyCollection<string> keys)
         {
             try
             {
-                var known = new HashSet<string>(
-                    TradeGoodsCatalog.All.Select(g => g.Key),
-                    StringComparer.OrdinalIgnoreCase);
-                var normalized = keys
-                    .Where(k => !string.IsNullOrWhiteSpace(k))
-                    .Select(k => k.Trim())
-                    .Where(known.Contains)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                var normalized = TradeGoodAvailability.NormalizeOverrideKeys(keys)
                     .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
@@ -226,8 +219,58 @@ namespace DA_Business.Repository.BaronyRepos
             }
             catch (System.Exception ex) when (ex is not InvalidOperationException)
             {
-                throw Err(ex, nameof(SetAvailableTradeGoodKeys));
+                throw Err(ex, nameof(SetTradeGoodMgOverrideKeys));
             }
+        }
+
+        public async Task<TradeGoodAvailabilitySnapshot> GetTradeGoodAvailability(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.AsNoTracking()
+                    .FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var buildingNames = await ctx.BaronyBuildings.AsNoTracking()
+                    .Where(b => b.BaronyId == baronyId)
+                    .Select(b => b.Name)
+                    .ToListAsync();
+
+                var improvementNames = await LoadPrimaryDomainActiveImprovementNamesAsync(ctx, baronyId);
+                var facilityNames = buildingNames.Concat(improvementNames);
+                var treaties = ParseTradeTreaties(barony.TradeTreatiesJson);
+                var overrides = TradeGoodAvailability.NormalizeOverrideKeys(ParseTradeGoodKeys(barony.AvailableTradeGoodsJson));
+                return TradeGoodAvailability.Resolve(facilityNames, treaties, overrides);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(GetTradeGoodAvailability));
+            }
+        }
+
+        private static async Task<List<string>> LoadPrimaryDomainActiveImprovementNamesAsync(
+            ApplicationDbContext ctx,
+            int baronyId)
+        {
+            var primaryDomainId = await ctx.TerrainMapDomains.AsNoTracking()
+                .Where(d => d.BaronyId == baronyId && d.IsPrimary)
+                .Select(d => (int?)d.Id)
+                .FirstOrDefaultAsync();
+
+            var tileQuery = ctx.TerrainTiles.AsNoTracking().Where(t => t.BaronyId == baronyId);
+            if (primaryDomainId is int pid)
+                tileQuery = tileQuery.Where(t => t.MapDomainId == pid);
+
+            var playerTileIds = await tileQuery.Select(t => t.Id).ToListAsync();
+            var tileIdSet = playerTileIds.ToHashSet();
+
+            return (await ctx.TerrainImprovements.AsNoTracking()
+                    .Where(x => x.BaronyId == baronyId && x.IsActive)
+                    .ToListAsync())
+                .Where(e => e.TileId is int tid && tileIdSet.Contains(tid))
+                .SelectMany(e => TradeGoodAvailability.FacilityNamesFromMapImprovement(e.Name, e.Description))
+                .ToList();
         }
 
         public async Task<string> GetLuxuryGoodsAccessKey(int baronyId)
@@ -1008,13 +1051,41 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 var existing = await ctx.TerrainImprovements
                     .FirstOrDefaultAsync(i => i.BaronyId == barony.Id && i.TileId == tileId);
-                var name = template?.Name
-                    ?? (string.IsNullOrWhiteSpace(project.Name) ? "Improvement" : project.Name.Trim());
+                var tile = await ctx.TerrainTiles.AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == tileId && t.BaronyId == barony.Id);
+
+                var catalogName = template?.Name?.Trim();
+                if (string.IsNullOrWhiteSpace(catalogName))
+                    catalogName = null;
+
+                var mapKind = TerrainImprovementCatalogMap.MapKindFromCatalogTemplateName(catalogName)
+                    ?? MapImprovement.Custom;
+                var name = mapKind;
+                // Match MG brush: Name = map kind (icons); Description = catalog name (Domain Panel label).
+                // Village/Town place names are unknown here — keep catalog name so the label stays useful.
+                var description = catalogName
+                    ?? (!string.IsNullOrWhiteSpace(project.ResultDescription)
+                        ? project.ResultDescription.Trim()
+                        : template?.Description);
+
                 var additive = template is not null ? De(template.EffectAdditiveJson) : project.ResultAdditive.Clone();
                 var percent = template is not null ? De(template.EffectPercentJson) : project.ResultPercent.Clone();
-                var description = !string.IsNullOrWhiteSpace(project.ResultDescription)
-                    ? project.ResultDescription
-                    : template?.Description;
+
+                if (string.Equals(mapKind, MapImprovement.Village, StringComparison.OrdinalIgnoreCase)
+                    && tile is not null)
+                {
+                    var population = existing?.Population ?? 0;
+                    var hasPalisade = existing?.HasPalisade ?? false;
+                    additive = VillagePpbFormulas.Compute(population, tile.Fertility, hasPalisade);
+                    percent = new PpbVector();
+                }
+                else if (string.Equals(mapKind, MapImprovement.FishingHarbor, StringComparison.OrdinalIgnoreCase)
+                         && tile is not null
+                         && TerrainImprovementCatalogMap.HasFisheryBonus(tile.Resource))
+                {
+                    additive[Ppb.Food] += TerrainImprovementCatalogMap.FishingHarborFisheryFoodBonus;
+                    additive[Ppb.Treasury] += TerrainImprovementCatalogMap.FishingHarborFisheryTreasuryBonus;
+                }
 
                 if (existing is null)
                 {
@@ -1043,8 +1114,18 @@ namespace DA_Business.Repository.BaronyRepos
                     existing.InactiveReason = null;
                 }
 
-                notes.Add($"Map improvement placed: {name} (tile #{tileId}).");
+                notes.Add($"Map improvement placed: {catalogName ?? name} ({mapKind}, tile #{tileId}).");
                 return new ProjectApplyResult(notes, Applied: true);
+            }
+
+            // Map catalog improvements must not fall through into city buildings when TileId is missing.
+            if (template is not null
+                && string.Equals(template.Kind, BuildingKind.Improvement, StringComparison.OrdinalIgnoreCase)
+                && TerrainImprovementCatalogMap.MapKindFromCatalogTemplateName(template.Name) is not null)
+            {
+                notes.Add(
+                    $"{project.Name}: catalog improvement “{template.Name}” requires a map tile (TileId) and was not applied.");
+                return new ProjectApplyResult(notes, Applied: false);
             }
 
             if (string.Equals(kind, ProjectOutputKind.Building, StringComparison.OrdinalIgnoreCase)
@@ -1054,17 +1135,23 @@ namespace DA_Business.Repository.BaronyRepos
                     ?? (string.IsNullOrWhiteSpace(project.Name) ? "Building" : project.Name.Trim());
                 var additive = template is not null ? De(template.EffectAdditiveJson) : project.ResultAdditive.Clone();
                 var percent = template is not null ? De(template.EffectPercentJson) : project.ResultPercent.Clone();
+                var buildingKind = template is not null && !string.IsNullOrWhiteSpace(template.Kind)
+                    ? template.Kind.Trim()
+                    : (string.Equals(kind, ProjectOutputKind.Improvement, StringComparison.OrdinalIgnoreCase)
+                        ? BuildingKind.Improvement
+                        : BuildingKind.Building);
+                var description = !string.IsNullOrWhiteSpace(template?.Description)
+                    ? template!.Description
+                    : (!string.IsNullOrWhiteSpace(project.ResultDescription)
+                        ? project.ResultDescription
+                        : null);
                 ctx.BaronyBuildings.Add(new BaronyBuilding
                 {
                     BaronyId = barony.Id,
                     TemplateId = template?.Id,
                     Name = name,
-                    Kind = string.Equals(kind, ProjectOutputKind.Improvement, StringComparison.OrdinalIgnoreCase)
-                        ? BuildingKind.Improvement
-                        : BuildingKind.Building,
-                    Description = !string.IsNullOrWhiteSpace(project.ResultDescription)
-                        ? project.ResultDescription
-                        : template?.Description,
+                    Kind = buildingKind,
+                    Description = description,
                     AdditiveJson = Ser(additive),
                     PercentJson = Ser(percent),
                 });
@@ -3876,6 +3963,11 @@ namespace DA_Business.Repository.BaronyRepos
                 Fear = e.Fear,
                 BaseParameters = De(e.BaseParametersJson),
                 Notes = e.Notes,
+                TradeGoodMgOverrideKeys = TradeGoodAvailability.NormalizeOverrideKeys(ParseTradeGoodKeys(e.AvailableTradeGoodsJson))
+                    .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
+                LuxuryGoodsAccessKey = LuxuryGoodsAccessCatalog.Find(e.LuxuryGoodsAccessKey).Key,
+                TradeTreaties = ParseTradeTreaties(e.TradeTreatiesJson),
                 PlayerTurnReady = e.PlayerTurnReady,
             };
         }
@@ -4687,8 +4779,17 @@ namespace DA_Business.Repository.BaronyRepos
             e.Status = d.Status;
             e.TurnsRemaining = d.TurnsRemaining;
             e.Notes = d.Notes;
-            e.TileId = d.TileId is > 0 ? d.TileId : null;
-            e.BuildingTemplateId = d.BuildingTemplateId is > 0 ? d.BuildingTemplateId : null;
+            // Never wipe map-construction links on partial updates that omit them.
+            if (d.TileId is > 0)
+                e.TileId = d.TileId;
+            else if (d.Id <= 0)
+                e.TileId = null;
+
+            if (d.BuildingTemplateId is > 0)
+                e.BuildingTemplateId = d.BuildingTemplateId;
+            else if (d.Id <= 0)
+                e.BuildingTemplateId = null;
+
             e.UnitId = d.UnitId is > 0 ? d.UnitId : null;
         }
 

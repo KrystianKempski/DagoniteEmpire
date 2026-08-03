@@ -198,6 +198,7 @@ else if (_overview is not null)
                                 OnChanged="ReloadOverviewAsync" />
     <DecreesSection BaronyId="@BaronyId"
                     Decrees="@_overview.Decrees"
+                    TradeGoodRows="@_tradeGoodRows"
                     CanManage="@CanManageAsMg"
                     CanToggleActive="@CanEdit"
                     OnChanged="ReloadOverviewAsync" />
@@ -276,6 +277,7 @@ else if (_overview is not null)
     private List<PpbModifierRow> _socialRows = new();
     private List<PpbModifierRow> _improvementRows = new();
     private List<PpbModifierRow> _decreeRows = new();
+    private List<PpbModifierRow> _tradeGoodRows = new();
     private List<PpbModifierRow> _eventRows = new();
     private List<PpbModifierRow> _armyRows = new();
     private List<PpbModifierRow> _communityRows = new();
@@ -313,6 +315,7 @@ else if (_overview is not null)
         _socialRows = panel.SocialRows;
         _improvementRows = panel.ImprovementRows;
         _decreeRows = panel.DecreeRows;
+        _tradeGoodRows = panel.TradeGoodRows;
         _eventRows = panel.EventRows;
         _armyRows = panel.ArmyRows;
         _communityRows = panel.CommunityRows;
@@ -344,6 +347,7 @@ else if (_overview is not null)
         _socialRows = panel.SocialRows;
         _improvementRows = panel.ImprovementRows;
         _decreeRows = panel.DecreeRows;
+        _tradeGoodRows = panel.TradeGoodRows;
         _eventRows = panel.EventRows;
         _armyRows = panel.ArmyRows;
         _communityRows = panel.CommunityRows;

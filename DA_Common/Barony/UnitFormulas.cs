@@ -522,7 +522,7 @@ namespace DA_Common.Barony
                 + (shield?.MovePenalty ?? 0);
             var move = baseMove + movePenalty + otherMove;
 
-            var armorFromGear = (armor?.ArmorValue ?? 0) + (shield?.ArmorValue ?? 0);
+            var armorFromGear = armor?.ArmorValue ?? 0;
             var armorRating = armorFromGear + otherArmor;
 
             var endurance = skillTotals.TryGetValue(UnitSkillKey.Endurance, out var endVal) ? endVal : 0;

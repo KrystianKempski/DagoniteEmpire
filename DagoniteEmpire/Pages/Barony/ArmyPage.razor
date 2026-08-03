@@ -3,6 +3,7 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject ISnackbar _snackBar
+@inject IBaronyBattleMapRepository _battleMapRepo
 
 <PageTitle>Dagonite Empire | Army</PageTitle>
 
@@ -26,6 +27,13 @@ else if (Barony is not null)
         </Summary>
     </BaronyPageHeader>
 
+    @if (_battleInProgress)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-2" Dense="true">
+            A battle is in progress. Unit cards are locked — HP and roster updates apply when the Game Master presses <b>End battle</b> on the Battle Map.
+        </MudAlert>
+    }
+
     <BaronySection Title="Units">
         <Summary>
             <span class="projects-summary__item">Two cards per row · same layout as the generator preview</span>
@@ -42,7 +50,7 @@ else if (Barony is not null)
                         </div>
                     </BaronyTooltip>
                     <BaronyTooltip Title="Troops"
-                                   Text="Sum of troop counts across all units (one unit is usually 50).">
+                                   Text="Sum of troop counts across all units.">
                         <div class="army-roster-summary__item">
                             <span class="army-roster-summary__label">Troops</span>
                             <span class="army-roster-summary__value">@_rosterTroops</span>
@@ -99,8 +107,8 @@ else if (Barony is not null)
                     {
                         <UnitCardSection @key="unit.Id"
                                          Unit="@unit"
-                                         CanEdit="@CanEdit"
-                                         CanManageAsMg="@CanManageAsMg"
+                                         CanEdit="@RosterCanEdit"
+                                         CanManageAsMg="@RosterCanManage"
                                          OnChanged="ReloadAsync" />
                     }
                 </div>
@@ -109,13 +117,17 @@ else if (Barony is not null)
     </BaronySection>
 
     <UnitGeneratorSection BaronyId="@Barony.Id"
-                          CanEdit="@CanEdit"
-                          CanManageAsMg="@CanManageAsMg"
+                          CanEdit="@RosterCanEdit"
+                          CanManageAsMg="@RosterCanManage"
                           OnStarted="OnTrainingStarted" />
 }
 
 @code {
     private List<BaronyUnitDTO> _units = new();
+    private bool _battleInProgress;
+
+    private bool RosterCanEdit => CanEdit && !_battleInProgress;
+    private bool RosterCanManage => CanManageAsMg && !_battleInProgress;
 
     private int _rosterUnits => _units.Count;
     private int _rosterTroops => _units.Sum(u => u.TroopCount);
@@ -136,6 +148,15 @@ else if (Barony is not null)
         if (Barony is null)
             return;
         _units = await _baronyRepo.GetUnits(Barony.Id);
+        try
+        {
+            var map = await _battleMapRepo.GetOrCreate(Barony.Id);
+            _battleInProgress = string.Equals(map.Phase, BaronyBattlePhases.Battle, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            _battleInProgress = false;
+        }
         await InvokeAsync(StateHasChanged);
     }
 

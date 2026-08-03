@@ -80,7 +80,10 @@ namespace DA_DataAccess.BaronyData
 
         public string? Notes { get; set; }
 
-        /// <summary>JSON array of <see cref="DA_Common.Barony.TradeGoodsCatalog"/> keys available in this barony.</summary>
+        /// <summary>
+        /// JSON array of <see cref="DA_Common.Barony.TradeGoodsCatalog"/> keys forced available by MG override.
+        /// Derived availability also includes goods produced by buildings/improvements and goods received via trade treaties.
+        /// </summary>
         public string AvailableTradeGoodsJson { get; set; } = "[]";
 
         /// <summary>Key from <see cref="DA_Common.Barony.LuxuryGoodsAccessCatalog"/> — luxury market reach for this barony.</summary>

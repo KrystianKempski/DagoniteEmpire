@@ -82,8 +82,24 @@
         </BaronyTooltip>
         @if (ShowCurrentHp)
         {
-            <BaronyTooltip Title="Hit points" Text="Current / maximum hit points." Placement="Placement.Bottom">
-                <span class="unit-draft-card__meta-item"><em>HP</em> <b>@Unit.CurrentHp/@_combat.MaxHp</b></span>
+            <BaronyTooltip Title="Hit points" Text="@HpTip" Placement="Placement.Bottom">
+                <span class="unit-draft-card__meta-item">
+                    <em>HP</em>
+                    @if (CanManageAsMg)
+                    {
+                        <button type="button"
+                                class="unit-draft-card__meta-btn @(Unit.CurrentHp < _combat.MaxHp ? "unit-draft-card__meta-btn--loss" : null)"
+                                @onclick="EditCurrentHpAsync">
+                            @Unit.CurrentHp/@_combat.MaxHp
+                        </button>
+                    }
+                    else
+                    {
+                        <b class="@(Unit.CurrentHp < _combat.MaxHp ? "unit-draft-card__meta-val--loss" : null)">
+                            @Unit.CurrentHp/@_combat.MaxHp
+                        </b>
+                    }
+                </span>
             </BaronyTooltip>
         }
     </div>
@@ -170,7 +186,7 @@
                         </BaronyTooltip>
                     </th>
                     <th>
-                        <BaronyTooltip Title="Shield" Text="Shield: Def defense, Arm armor value, Mov move penalty." Placement="Placement.Top">
+                        <BaronyTooltip Title="Shield" Text="Shield: Def defense, Mov move penalty. Shields do not add Armor." Placement="Placement.Top">
                             <span>Shield</span>
                         </BaronyTooltip>
                     </th>
@@ -216,7 +232,7 @@
                     <td>
                         @if (_shield is not null)
                         {
-                            <text>Def @_shield.Defense · Arm @_shield.ArmorValue · Mov @_shield.MovePenalty</text>
+                            <text>Def @_shield.Defense · Mov @_shield.MovePenalty</text>
                         }
                         else { <text>—</text> }
                     </td>
@@ -567,6 +583,10 @@
         }
     }
 
+    private string HpTip => CanManageAsMg
+        ? "Current / maximum hit points.\n\nClick to set current HP (MG)."
+        : "Current / maximum hit points.";
+
     private void RefreshCombat()
     {
         _combat = UnitStatHelper.Compute(Unit);
@@ -594,6 +614,27 @@
         RefreshCombat();
         if (Unit.CurrentHp > _combat.MaxHp)
             Unit.CurrentHp = _combat.MaxHp;
+        await SkillsChanged.InvokeAsync();
+    }
+
+    private async Task EditCurrentHpAsync()
+    {
+        if (!CanManageAsMg || !ShowCurrentHp) return;
+
+        RefreshCombat();
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitHpEditDialog.UnitName)] = Unit.Name,
+            [nameof(UnitHpEditDialog.Value)] = Unit.CurrentHp,
+            [nameof(UnitHpEditDialog.MaxHp)] = _combat.MaxHp,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitHpEditDialog>("Hit points", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int hp)
+            return;
+
+        Unit.CurrentHp = Math.Clamp(hp, 0, _combat.MaxHp);
         await SkillsChanged.InvokeAsync();
     }
 

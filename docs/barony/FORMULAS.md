@@ -287,7 +287,7 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 - **Damage** = **Attr** (linked to primary weapon skill, e.g. Heavy weapons → Build, Bows → Agility) + Gear (weapon Dmg ± quality) + Oth
 - **Move** = Race (`UnitRaceCatalog`, Humans **+3**) + `floor(Run/3)` + Gear (Mov penalties) + Oth
   Only Human race is playable for now; `RaceKey` on the unit defaults to `human`.
-- **Armor** = Gear (armor/shield Arm) + Oth
+- **Armor** = Gear (body armor Arm only — shields do **not** add Armor) + Oth
 - **Max HP** = Build×2 + Will×2 + Endurance + Discipline×3 + Oth + **Loss**
 - Combat **Oth** / skill **Other** = sum of named sources (MG dialog). Persist in `CombatOtherJson` / `SkillOtherSourcesJson`; totals synced to `OtherAttack`… / `SkillOther`.
 - **Casualty Loss** (`UnitCasualtyFormulas`): nominal full strength = **50**. For each full **10%** of strength missing: **−1** Attack, **−1** Defense, **−4** Max HP. Example: 10/50 → 8 steps → −8 Atk/Def, −32 HP. While depleted (steps > 0): floors Atk/Def ≥ **1**, Max HP ≥ **10**. MG edits troop count by clicking Troops on the unit card.
@@ -295,14 +295,19 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 ### Battle Map — combat damage (`BattleMapPage.ResolveCombatRoundDamage`)
 Phases: Movement → Attack planning → Combat. Stats are frozen on the token at deploy (`UnitCombatFormulas` / MG enemy draft). Attacks resolve in reverse initiative order (highest first). Skip if attacker/defender dead, no target, or not adjacent. No separate melee/ranged damage path — adjacency only.
 
-- **dealt** = `max(1, round((Damage + k6 − Armor) × (Attack+k6) / max(1, Defense+k6) × front))`
+- **dealt** = `max(1, round((Damage + k4 − Armor) × (Attack+k6) / max(1, Defense+k6) × front))`
   - Rounding: away from zero (`MidpointRounding.AwayFromZero`)
-  - **front** = AimBase + ExposureBonus (`GetFrontMultiplier`), range **1–6**
+  - **front** = AimBase + ExposureBonus (`GetFrontBreakdown`), range **1–6**
     - **Aim** — attacker facing toward defender: front **3**, corner **2**, side/rear-corner/rear **1**
     - **Exposure** — attacker position vs defender facing: front **+0**, corner **+1**, side **+2**, rear-corner **+2**, rear **+3**
-    - Example log: `(Dmg+k6-Arm=5+5−3=7) × (7+k6=12)/(12+k6=16) ×4 (Front Vs Corner) => 12 dmg.`
-  - If `Damage + k6 < Armor`, raw can be ≤ 0, but dealt is still floored at **1**
-- Defender HP = `max(0, HP − dealt)`; at 0 the token flees and is removed from the map.
+    - Example log: `(Dmg+k4−Arm=5+3−3=5) × (7+k6=12)/(12+k6=16) ×4 (Front Vs Corner) => 15 dmg.`
+  - If `Damage + k4 < Armor`, raw can be ≤ 0, but dealt is still floored at **1**
+- **defensive dealt** (same exchange) = `max(1, round((Dmg_def + k4 − Arm_atk) × (Def_def + k6) / max(1, Def_atk + k6) × front_def))`
+  - Ratio is **Defense vs Defense** (not Attack), both sides roll k6
+  - **front_def** = same Aim/Exposure rules with roles swapped (`GetFrontBreakdown(defender, attacker)`)
+  - Example log: `(Dmg+k4−Arm=4+2−1=5) × (12+k6=15)/(10+k6=14) ×3 (Front Vs Front) => 16 dmg.` tagged `(defensive)`
+- Both sides may flee at HP ≤ 0 after the exchange. Defender still returns defensive damage even if reduced to 0 by the attack.
+- **End battle** (MG): ends immediately regardless of field state; writes a summary log; syncs each deployed ally’s token HP → `BaronyUnit.CurrentHp` (fled allies → **0**). Army roster is locked while `Phase = battle`.
 - **Troop recovery**: understrength units (not Disbanded) regain **+5** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.
 - **Reinforce project** (`ProjectOutputKind.UnitReinforce`): button on understrength Active units with no open project. People cost = Selected volunteers + Standard, scaled `× N/50` (floor). Gear = current loadout at **50%** salvage × same scale (`× N/100` of full gear). Acquire modes Craft/Buy/Defense like the generator. On complete: add N troops (cap 50) and sync Max HP.
 - **Change equipment project** (`ProjectOutputKind.UnitChangeEquipment`): button on Active units with no open project. Dialog picks new loadout + Craft/Buy/Defense pay modes (unit generator Gear UX). Cost = full gear `SumGear` scaled `× troopCount/50`; turns = max(1, Standard×N/50). Starts in Resource allocation. On complete: write keys/quality, refresh agility penalty / Defense skill / Max HP.
