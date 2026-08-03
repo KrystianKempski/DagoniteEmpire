@@ -190,6 +190,11 @@
                             <span>Shield</span>
                         </BaronyTooltip>
                     </th>
+                    <th>
+                        <BaronyTooltip Title="Mount" Text="Optional horses / war horses: Atk, Def, Dmg, Mov bonuses. Requires Riding and trade access." Placement="Placement.Top">
+                            <span>Mount</span>
+                        </BaronyTooltip>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -204,6 +209,7 @@
                     <td>@(_w2?.Name ?? "—")</td>
                     <td>@(_armor?.Name ?? "—")</td>
                     <td>@(_shield?.Name ?? "—")</td>
+                    <td>@(_mount?.Name ?? "—")</td>
                 </tr>
                 <tr class="unit-draft-equip__stats">
                     <td>
@@ -233,6 +239,13 @@
                         @if (_shield is not null)
                         {
                             <text>Def @_shield.Defense · Mov @_shield.MovePenalty</text>
+                        }
+                        else { <text>—</text> }
+                    </td>
+                    <td>
+                        @if (_mount is not null)
+                        {
+                            <text>Atk +@_mount.Attack · Def +@_mount.Defense · Dmg +@_mount.Damage · Mov +@_mount.MoveBonus</text>
                         }
                         else { <text>—</text> }
                     </td>
@@ -293,6 +306,7 @@
     private UnitWeaponDef? _w2;
     private UnitArmorDef? _armor;
     private UnitArmorDef? _shield;
+    private UnitMountDef? _mount;
     private UnitRaceDef _race => UnitRaceCatalog.Find(Unit.RaceKey);
 
     private string ResolvedTitleEyebrow =>
@@ -327,6 +341,7 @@
         _w2 = UnitWeaponCatalog.Find(Unit.Weapon2Key);
         _armor = UnitArmorCatalog.Find(Unit.ArmorKey);
         _shield = UnitArmorCatalog.Find(Unit.ShieldKey);
+        _mount = UnitMountCatalog.Find(Unit.MountKey);
     }
 
     private RenderFragment AttrChip(

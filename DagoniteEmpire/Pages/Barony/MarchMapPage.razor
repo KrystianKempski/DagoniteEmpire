@@ -35,7 +35,15 @@ else
                         {
                             <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--player-seat"></i> Your seat</span>
                         }
-                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--blocked"></i> Blocked</span>
+                        <span class="march-map-legend__item">
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Class="march-map-legend__lock-icon" /> Blocked
+                        </span>
+                    </span>
+                    <span class="march-map-legend march-map-legend--toggles">
+                        <label class="march-map-legend__toggle">
+                            <input type="checkbox" checked="@_showProducedGoods" @onchange="OnShowProducedGoodsChanged" />
+                            <span>Show goods</span>
+                        </label>
                     </span>
                     @if (_tradeRouteOverlays.Count > 0)
                     {
@@ -178,6 +186,8 @@ else
                             PlayerSeatNodeId="@_playerSeatNodeId"
                             PlayerBarony="@_playerBarony"
                             BlockedLordKeys="@_blockedLordKeys"
+                            ShowProducedGoods="@_showProducedGoods"
+                            PlayerProducedGoodKeys="@_availableGoods"
                         DesignPathNodeIds="@_designPathNodeIds"
                         DesignRouteManualMode="@_routeDesignManual"
                         DesignRouteReachableNodeIds="@_manualReachableNodeIds"
@@ -199,6 +209,7 @@ else
     private string? _playerSeatNodeId;
     private MarchMapPlayerBaronyContext? _playerBarony;
     private HashSet<string> _blockedLordKeys = new(StringComparer.OrdinalIgnoreCase);
+    private bool _showProducedGoods = true;
     private List<BaronyTradeTreaty> _treaties = new();
     private HashSet<string> _availableGoods = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> _borderLordKeys = new(StringComparer.OrdinalIgnoreCase);
@@ -411,6 +422,14 @@ else
         {
             _tool = MarchMapCanvas.MarchMapTool.View;
         }
+    }
+
+    private void OnShowProducedGoodsChanged(ChangeEventArgs e)
+    {
+        _showProducedGoods = e.Value is bool b
+            ? b
+            : string.Equals(e.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase)
+              || string.Equals(e.Value?.ToString(), "on", StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnToolChanged(MarchMapCanvas.MarchMapTool tool)

@@ -98,6 +98,15 @@ namespace DA_Models.BaronyModels
         /// <summary>Target token ID assigned during attack-planning phase; null = no attack.</summary>
         public string? AttackTargetId { get; set; }
 
+        /// <summary>
+        /// Successful charge this turn: +2 Attack / +2 Damage vs <see cref="ChargeTargetId"/> in Combat.
+        /// Cleared when the charge target is changed or at end of combat.
+        /// </summary>
+        public bool ChargeBonus { get; set; }
+
+        /// <summary>Enemy token the charge locked onto (must match <see cref="AttackTargetId"/> for the bonus).</summary>
+        public string? ChargeTargetId { get; set; }
+
         public int InitiativeDie { get; set; }
         public int InitiativeTotal { get; set; }
 

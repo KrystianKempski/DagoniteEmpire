@@ -47,6 +47,10 @@
                                 {
                                     <div class="bbm-range"></div>
                                 }
+                                @if (ChargePreviewCells.Contains((cx, cy)))
+                                {
+                                    <div class="bbm-charge-preview"></div>
+                                }
                                 @if (cell?.Terrain == BaronyBattleTerrain.Difficult)
                                 {
                                     <div class="bbm-terrain bbm-terrain--difficult" title="Difficult">∿</div>
@@ -85,6 +89,16 @@
                                                     @onclick:stopPropagation="true"
                                                     @onclick="@(() => OnFacingButton.InvokeAsync(token.Id))">
                                                 <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
+                                            </button>
+                                        }
+                                        @if (ShowOriginChargeButton(token))
+                                        {
+                                            <button type="button"
+                                                    class="bbm-charge-btn"
+                                                    title="Charge (min 2 tiles, straight line)"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="@(() => OnChargeButton.InvokeAsync(token.Id))">
+                                                <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
                                             </button>
                                         }
                                     </div>
@@ -326,9 +340,9 @@
                         }
                     </div>
                 }
-                @if (IsFacingEdit)
+                @if (IsFacingEdit || IsChargeEdit)
                 {
-                    <div class="bbm-facing-overlay"
+                    <div class="bbm-facing-overlay @(IsChargeEdit ? "bbm-facing-overlay--charge" : null)"
                          @onmousemove="OnFacingMouseMove"
                          @onclick="OnFacingOverlayClick"></div>
                 }
@@ -373,10 +387,15 @@
     [Parameter] public BattleCombatFx? CombatFx { get; set; }
     [Parameter] public string? FacingEditTokenId { get; set; }
     [Parameter] public double? FacingPreviewDegrees { get; set; }
+    /// <summary>When set, overlay confirms a charge direction instead of facing.</summary>
+    [Parameter] public string? ChargeEditTokenId { get; set; }
+    [Parameter] public HashSet<(int X, int Y)> ChargePreviewCells { get; set; } = new();
     [Parameter] public EventCallback<(int X, int Y)> OnCellClick { get; set; }
     [Parameter] public EventCallback<string> OnFacingButton { get; set; }
+    [Parameter] public EventCallback<string> OnChargeButton { get; set; }
     [Parameter] public EventCallback<double> OnFacingPreview { get; set; }
     [Parameter] public EventCallback OnFacingConfirm { get; set; }
+    [Parameter] public EventCallback OnChargeConfirm { get; set; }
 
     private (int X, int Y)? _hoverCell;
 
@@ -386,6 +405,9 @@
     private bool IsFacingEdit =>
         !string.IsNullOrEmpty(FacingEditTokenId)
         && Tokens.Any(t => t.Id == FacingEditTokenId);
+    private bool IsChargeEdit =>
+        !string.IsNullOrEmpty(ChargeEditTokenId)
+        && Tokens.Any(t => t.Id == ChargeEditTokenId);
 
     private bool IsTokenAnimating(string tokenId) =>
         AnimatingTokens.Any(a => a.TokenId == tokenId);
@@ -452,7 +474,7 @@
 
     private bool ShowOriginFacingButton(BaronyBattleTokenDTO token)
     {
-        if (IsAnimating || IsFacingEdit || !Interactive)
+        if (IsAnimating || IsFacingEdit || IsChargeEdit || !Interactive)
             return false;
 
         // Setup / deploy: rotate any selected token for free.
@@ -470,6 +492,21 @@
         return moveLeft >= 1 || paid > 0;
     }
 
+    private bool ShowOriginChargeButton(BaronyBattleTokenDTO token)
+    {
+        if (IsAnimating || IsFacingEdit || IsChargeEdit || !Interactive)
+            return false;
+        if (AllowSetupFacing)
+            return false;
+        if (ActiveTokenId != token.Id)
+            return false;
+        var tip = token.LastWaypoint;
+        if (tip is not null && !IsInPlaceTip(token, tip))
+            return false;
+        var moveLeft = tip?.RemainingMoveAfter ?? token.RemainingMove;
+        return moveLeft >= 2;
+    }
+
     private int OriginMoveBadge(BaronyBattleTokenDTO token)
     {
         var tip = token.LastWaypoint;
@@ -480,7 +517,7 @@
 
     private bool ShowFacingButton(BaronyBattleTokenDTO owner, BaronyBattleWaypointDTO wp)
     {
-        if (IsAnimating || IsFacingEdit)
+        if (IsAnimating || IsFacingEdit || IsChargeEdit)
             return false;
         if (ActiveTokenId != owner.Id)
             return false;
@@ -491,7 +528,8 @@
 
     private double FacingDegreesForToken(BaronyBattleTokenDTO token)
     {
-        if (FacingEditTokenId == token.Id && FacingPreviewDegrees is double preview)
+        if ((FacingEditTokenId == token.Id || ChargeEditTokenId == token.Id)
+            && FacingPreviewDegrees is double preview)
             return preview;
         var tip = token.LastWaypoint;
         if (tip is not null && IsInPlaceTip(token, tip))
@@ -501,7 +539,8 @@
 
     private double FacingDegreesForTip(BaronyBattleTokenDTO owner, BaronyBattleWaypointDTO wp)
     {
-        if (FacingEditTokenId == owner.Id && FacingPreviewDegrees is double preview)
+        if ((FacingEditTokenId == owner.Id || ChargeEditTokenId == owner.Id)
+            && FacingPreviewDegrees is double preview)
             return preview;
         return BaronyBattleFacing.ToDegrees(wp.Facing);
     }
@@ -604,9 +643,10 @@
 
     private async Task OnFacingMouseMove(MouseEventArgs e)
     {
-        if (FacingEditTokenId is null)
+        var editId = FacingEditTokenId ?? ChargeEditTokenId;
+        if (editId is null)
             return;
-        var token = Tokens.FirstOrDefault(t => t.Id == FacingEditTokenId);
+        var token = Tokens.FirstOrDefault(t => t.Id == editId);
         if (token is null)
             return;
 
@@ -615,6 +655,14 @@
         var (cx, cy) = tip is not null
             ? CellCenter(tip.X, tip.Y, size)
             : CellCenter(token.X, token.Y, size);
+        // Charge preview aims from the planned origin (token / last locked tip).
+        if (ChargeEditTokenId == token.Id)
+        {
+            var locked = token.Path.LastOrDefault(w => w.Locked);
+            (cx, cy) = locked is not null
+                ? CellCenter(locked.X, locked.Y, size)
+                : CellCenter(token.X, token.Y, size);
+        }
         var deg = BaronyBattleFacing.DegreesToward(cx, cy, e.OffsetX, e.OffsetY);
         await OnFacingPreview.InvokeAsync(deg);
     }
@@ -623,6 +671,9 @@
     {
         // Final preview from click position, then confirm snap.
         await OnFacingMouseMove(e);
-        await OnFacingConfirm.InvokeAsync();
+        if (IsChargeEdit)
+            await OnChargeConfirm.InvokeAsync();
+        else
+            await OnFacingConfirm.InvokeAsync();
     }
 }

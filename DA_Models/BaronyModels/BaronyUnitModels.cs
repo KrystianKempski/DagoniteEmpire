@@ -54,6 +54,7 @@ namespace DA_Models.BaronyModels
         public string? Weapon2Key { get; set; }
         public string? ArmorKey { get; set; }
         public string? ShieldKey { get; set; }
+        public string? MountKey { get; set; }
         public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
         public string Weapon2Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
 
@@ -104,11 +105,13 @@ namespace DA_Models.BaronyModels
         public string? Weapon2Key { get; set; }
         public string? ArmorKey { get; set; }
         public string? ShieldKey { get; set; }
+        public string? MountKey { get; set; }
         public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
         public string Weapon1AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public string Weapon2AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public string ArmorAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public string ShieldAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string MountAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public int AccelerateTurns { get; set; }
         public string DefenseSkillKey { get; set; } = DA_Common.Barony.UnitSkillKey.Dodges;
         public Dictionary<string, int> SkillBase { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -147,6 +150,7 @@ namespace DA_Models.BaronyModels
         public string Weapon2AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public string ArmorAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public string ShieldAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string MountAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
     }
 
     public class StartUnitReinforceResult
@@ -164,11 +168,13 @@ namespace DA_Models.BaronyModels
         public string? Weapon2Key { get; set; }
         public string? ArmorKey { get; set; }
         public string? ShieldKey { get; set; }
+        public string? MountKey { get; set; }
         public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
         public string Weapon1AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public string Weapon2AcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public string ArmorAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
         public string ShieldAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
+        public string MountAcquireMode { get; set; } = DA_Common.Barony.UnitEquipmentAcquireMode.Craft;
     }
 
     public class StartUnitChangeEquipmentResult

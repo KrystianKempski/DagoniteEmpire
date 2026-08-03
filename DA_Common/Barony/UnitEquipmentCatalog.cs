@@ -153,7 +153,42 @@ namespace DA_Common.Barony
             keys.Select(Find).Where(x => x is not null).Cast<UnitArmorDef>();
     }
 
-    /// <summary>Build / Agility / Armor-skill gates for unit gear (Excel Bld / Agi / Ask).</summary>
+    /// <summary>Optional cavalry mount. Combat bonuses stack on top of weapons/armor.</summary>
+    public sealed record UnitMountDef(
+        string Key,
+        string Name,
+        int Attack,
+        int Defense,
+        int Damage,
+        int MoveBonus,
+        int RequiredRiding,
+        int ProductionCost,
+        int GoldCost,
+        int MarketGold,
+        string RequiredTradeGoodKey);
+
+    public static class UnitMountCatalog
+    {
+        public static readonly IReadOnlyList<UnitMountDef> All = new[]
+        {
+            // Mkt 200 → Defense acquire = 400; Mkt 300 → Defense = 600.
+            M("horses", "Horses", atk: 2, def: 2, dmg: 1, move: 3, riding: 6, prod: 150, gold: 150, mkt: 200,
+                UnitEquipmentTradeAccess.Horses),
+            M("war-horses", "War horses", atk: 4, def: 4, dmg: 2, move: 3, riding: 8, prod: 250, gold: 250, mkt: 300,
+                UnitEquipmentTradeAccess.WarHorses),
+        };
+
+        private static UnitMountDef M(
+            string key, string name,
+            int atk, int def, int dmg, int move, int riding,
+            int prod, int gold, int mkt, string tradeGood) =>
+            new(key, name, atk, def, dmg, move, riding, prod, gold, mkt, tradeGood);
+
+        public static UnitMountDef? Find(string? key) =>
+            All.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>Build / Agility / Armor-skill / Riding gates for unit gear (Excel Bld / Agi / Ask).</summary>
     public static class UnitEquipmentRequirements
     {
         public static bool MeetsWeapon(UnitWeaponDef w, int build, int agility, out string reason)
@@ -182,6 +217,17 @@ namespace DA_Common.Barony
             if (armorSkill < a.RequiredArmorSkill)
             {
                 reason = $"{a.Name}: need Armor skill {a.RequiredArmorSkill} (have {armorSkill}).";
+                return false;
+            }
+            reason = string.Empty;
+            return true;
+        }
+
+        public static bool MeetsMount(UnitMountDef m, int ridingSkill, out string reason)
+        {
+            if (ridingSkill < m.RequiredRiding)
+            {
+                reason = $"{m.Name}: need Riding {m.RequiredRiding} (have {ridingSkill}).";
                 return false;
             }
             reason = string.Empty;

@@ -14,6 +14,7 @@ namespace DA_Business.Repository.BaronyRepos
             string? weapon2Key,
             string? armorKey,
             string? shieldKey,
+            string? mountKey,
             string weaponQuality,
             UnitTrainingCostSummary costs)
         {
@@ -42,6 +43,7 @@ namespace DA_Business.Repository.BaronyRepos
                 Weapon2Key = weapon2Key,
                 ArmorKey = armorKey,
                 ShieldKey = shieldKey,
+                MountKey = mountKey,
                 Weapon1Quality = string.IsNullOrWhiteSpace(weaponQuality)
                     ? UnitWeaponQuality.Normal
                     : weaponQuality,

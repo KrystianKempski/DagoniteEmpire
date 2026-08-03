@@ -27,14 +27,24 @@ DESCRIPTIONS: dict[str, tuple[str, str | None]] = {
         "It does not create a trade good by itself, but turns Honey & Wax into everyday light and ritual goods.",
         None,
     ),
-    "Armorer (plate worker)": (
-        "A specialized forge where mail, brigandine, and plate are fitted for soldiers who can afford real protection. "
-        "Needs a steady supply of iron and leather; without them the shop cannot finish medium or heavy harness.",
-        "Produces Medium & Heavy Armor",
+    "Armorer": (
+        "A specialized workshop fitting mail, brigandine, and cuirasses. "
+        "Needs iron or dagoferrite (and leather for straps and padding).",
+        "Produces Medium Armor",
     ),
-    "Blacksmith Workshop": (
-        "A working smithy with a master and apprentices at one forge. "
-        "Enough to arm light infantry and keep tools, horseshoes, and household ironware in repair.",
+    "Plate Workshop": (
+        "A master plate shop and armorers' guild hall for full and partial plate harness. "
+        "Requires iron or dagoferrite and skilled plate-workers.",
+        "Produces Heavy Armor",
+    ),
+    "Smithy": (
+        "A small forge for tools, fittings, and simple weapons when soft metals or iron are available. "
+        "Can be expanded into a full Forge for military-grade arms.",
+        "Produces Simple Weapons",
+    ),
+    "Forge": (
+        "A large military forge for swords, polearms, and war-grade blades. "
+        "Requires iron or dagoferrite in the supply chain.",
         "Produces Military Weapons",
     ),
     "Brewery": (
@@ -61,6 +71,26 @@ DESCRIPTIONS: dict[str, tuple[str, str | None]] = {
         "Warm-climate fields growing cotton for yarn and cloth. "
         "Needs fertile ground and heat; the crop feeds weavers and dyers once harvested.",
         "Produces Cotton",
+    ),
+    "Woad farm": (
+        "Fields of woad (Isatis tinctoria) grown for blue dye. "
+        "Leaves are harvested and fermented for the vat; unlocks the dyer's workshop.",
+        "Produces Woad",
+    ),
+    "Madder farm": (
+        "Beds of madder (Rubia tinctorum) grown for red dye. "
+        "Roots are dug after a few seasons; unlocks the dyer's workshop.",
+        "Produces Madder",
+    ),
+    "Weld farm": (
+        "Plots of weld (Reseda luteola) grown for yellow dye. "
+        "Flowering stalks are cut and dried for the mordant bath; unlocks the dyer's workshop.",
+        "Produces Weld",
+    ),
+    "Farm (Dye plant)": (
+        "Fields planted with the medieval dye triad—woad (blue), madder (red), and weld (yellow). "
+        "Any of the three crops unlocks a dyer's workshop and feeds its vats.",
+        "Produces Woad, Madder & Weld",
     ),
     "Dyer's workshop": (
         "Vats and drying racks for coloring cloth, banners, and uniforms. "
@@ -139,7 +169,8 @@ DESCRIPTIONS: dict[str, tuple[str, str | None]] = {
     ),
     "Pastures (cattle)": (
         "Open grazing for cattle herds that supply meat, hides, and draft strength. "
-        "Gold cost is high because the herd itself must be bought and stocked—pasture alone does not create cattle.",
+        "Gold cost is high because the herd itself must be bought and stocked—pasture alone does not create cattle. "
+        "Requires trade access to Cattle (breeding stock via treaty, import, or MG). Once built, this site becomes a local source.",
         "Produces Cattle",
     ),
     "Potter's workshop": (
@@ -189,13 +220,27 @@ DESCRIPTIONS: dict[str, tuple[str, str | None]] = {
     ),
     "Sheep pastures": (
         "Pastures stocked with sheep for wool, meat, and manure on milder slopes. "
-        "Cheaper than cattle herds, yet the fleece feeds the entire cloth chain.",
-        "Produces Wool",
+        "Cheaper than cattle herds, yet the fleece feeds the entire cloth chain. "
+        "Requires trade access to Sheep (breeding stock via treaty, import, or MG). Once built, this site becomes a local source.",
+        "Produces Sheep & Wool",
     ),
-    "Stables": (
-        "Stables for the army, the ruler, and wealthy riders—holding mounts for patrol and war. "
-        "Required for cavalry; can support ordinary horses, war chargers, and noble show breeds.",
-        "Produces Horses, War Horses & Noble Horses",
+    "Horse Stud (regular)": (
+        "A stud farm breeding ordinary riding stock for patrols and light cavalry. "
+        "Gold cost covers buying and stocking the herd—pasture alone does not create horses. "
+        "Requires trade access to Horses (breeding stock via treaty, import, or MG). Once built, this site becomes a local source.",
+        "Produces Horses",
+    ),
+    "Horse Stud (military)": (
+        "A war-horse stud training chargers for medium and heavy cavalry. "
+        "Demanding feed and handlers; mounts must be bred and drilled for battle. "
+        "Requires trade access to War horses (breeding stock via treaty, import, or MG). Once built, this site becomes a local source.",
+        "Produces War Horses",
+    ),
+    "Horse Stud (noble)": (
+        "A prestigious stud for show and tourney breeds favored by the richest lords. "
+        "Costly to maintain, but the mounts bring culture and prestige. "
+        "Requires trade access to Noble horses (breeding stock via treaty, import, or MG). Once built, this site becomes a local source.",
+        "Produces Noble Horses",
     ),
     "Tannery": (
         "A foul but necessary yard where hides become leather for boots, straps, and light armor. "

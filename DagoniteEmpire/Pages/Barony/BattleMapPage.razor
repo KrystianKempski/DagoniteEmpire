@@ -161,7 +161,7 @@ else
                                      SelectedTokenId="@_selectedTokenId"
                                      ActiveTokenId="@ActiveTokenId"
                                      RangeCells="@_rangeCells"
-                                     Interactive="@(!_isResolvingMovement && !_isResolvingCombat && _facingEditTokenId is null)"
+                                     Interactive="@(!_isResolvingMovement && !_isResolvingCombat && _facingEditTokenId is null && _chargeEditTokenId is null)"
                                      ShowActiveMoveBadge="@(IsMovementPhase && !_isResolvingMovement)"
                                      AnimatingTokens="@_animFrames"
                                      AnimTransitions="@_animTransitionsOn"
@@ -177,10 +177,14 @@ else
                                      ThreatFactor="@TokenThreatFactor"
                                      FacingEditTokenId="@_facingEditTokenId"
                                      FacingPreviewDegrees="@_facingPreviewDeg"
+                                     ChargeEditTokenId="@_chargeEditTokenId"
+                                     ChargePreviewCells="@_chargePreviewCells"
                                      OnCellClick="HandleCellClick"
                                      OnFacingButton="StartFacingEdit"
+                                     OnChargeButton="StartChargeEdit"
                                      OnFacingPreview="OnFacingPreview"
-                                     OnFacingConfirm="ConfirmFacingEdit" />
+                                     OnFacingConfirm="ConfirmFacingEdit"
+                                     OnChargeConfirm="ConfirmChargeEdit" />
 
                 @if (ShowMovementControls || (CanManageAsMg && IsMovementPhase && !_isResolvingMovement && !_isResolvingCombat) || (CanManageAsMg && IsCombatPhase) || (IsAttackPlanningPhase && (CanEdit || CanManageAsMg) && !_isResolvingCombat))
                 {
@@ -580,6 +584,8 @@ else
     private string? _facingEditTokenId;
     private double? _facingPreviewDeg;
     private int _facingEditStartFacing;
+    private string? _chargeEditTokenId;
+    private HashSet<(int X, int Y)> _chargePreviewCells = new();
     private bool _battleLogCollapsed;
     private bool _showThreatRadius;
     /// <summary>Ally unitId → HP at Begin battle.</summary>
@@ -942,7 +948,14 @@ else
                     else
                     {
                         // Toggle: click same target again to clear
-                        attacker.AttackTargetId = attacker.AttackTargetId == planClicked.Id ? null : planClicked.Id;
+                        var nextTarget = attacker.AttackTargetId == planClicked.Id ? null : planClicked.Id;
+                        attacker.AttackTargetId = nextTarget;
+                        if (nextTarget is null
+                            || !string.Equals(nextTarget, attacker.ChargeTargetId, StringComparison.Ordinal))
+                        {
+                            attacker.ChargeBonus = false;
+                            attacker.ChargeTargetId = null;
+                        }
                         var msg = attacker.AttackTargetId is null
                             ? $"{attacker.Label} cleared attack order."
                             : $"{attacker.Label} attack target: {planClicked.Label}";
@@ -1087,6 +1100,8 @@ else
         {
             if (string.Equals(other.AttackTargetId, token.Id, StringComparison.Ordinal))
                 other.AttackTargetId = null;
+            if (string.Equals(other.ChargeTargetId, token.Id, StringComparison.Ordinal))
+                ClearCharge(other);
         }
 
         if (Map.TurnState.InitiativeOrder.Count > 0)
@@ -1312,8 +1327,10 @@ else
         if (nx == token.X && ny == token.Y)
         {
             CancelFacingEdit();
+            CancelChargeEdit();
             token.ClearPath();
             token.RemainingMove = token.Move;
+            ClearCharge(token);
             _selectedTokenId = token.Id;
             await SaveAsync(systemMessage: $"{token.Label} cleared movement path.");
             RefreshRange();
@@ -1371,6 +1388,7 @@ else
         }
 
         var remaining = Math.Max(0, budget - cost - (provisional?.FacingCostPaid ?? 0));
+        ClearCharge(token);
         if (provisional is not null)
         {
             provisional.X = nx;
@@ -1405,6 +1423,303 @@ else
         _facingPreviewDeg = null;
     }
 
+    private void CancelChargeEdit()
+    {
+        _chargeEditTokenId = null;
+        _chargePreviewCells = new();
+        if (_facingEditTokenId is null)
+            _facingPreviewDeg = null;
+    }
+
+    private Task StartChargeEdit(string tokenId)
+    {
+        if (Map is null || _isResolvingMovement || !IsMovementPhase)
+            return Task.CompletedTask;
+        var token = Map.Tokens.FirstOrDefault(t => t.Id == tokenId);
+        if (token is null || !CanSelectToken(token) || !CanControlToken(token))
+            return Task.CompletedTask;
+        if (ActiveTokenId != token.Id)
+            return Task.CompletedTask;
+
+        var (_, _, budget) = GetPlanOrigin(token);
+        if (budget < 2)
+        {
+            _snackBar.Add("Need at least 2 move points to charge.", Severity.Warning);
+            return Task.CompletedTask;
+        }
+
+        CancelFacingEdit();
+        _chargeEditTokenId = tokenId;
+        _facingPreviewDeg = BaronyBattleFacing.ToDegrees(token.PlannedFacing());
+        RefreshChargePreview(token, BaronyBattleFacing.SnapFromDegrees(_facingPreviewDeg.Value));
+        return Task.CompletedTask;
+    }
+
+    private void OnFacingPreview(double degrees)
+    {
+        if (_facingEditTokenId is null && _chargeEditTokenId is null)
+            return;
+        _facingPreviewDeg = degrees;
+        if (_chargeEditTokenId is not null && Map is not null)
+        {
+            var token = Map.Tokens.FirstOrDefault(t => t.Id == _chargeEditTokenId);
+            if (token is not null)
+                RefreshChargePreview(token, BaronyBattleFacing.SnapFromDegrees(degrees));
+        }
+    }
+
+    private void RefreshChargePreview(BaronyBattleTokenDTO token, int facing)
+    {
+        var preview = new HashSet<(int X, int Y)>();
+        if (TryBuildChargePath(token, facing, previewOnly: true, out var result) && result is not null)
+        {
+            foreach (var cell in result.PathCells)
+                preview.Add(cell);
+        }
+        _chargePreviewCells = preview;
+    }
+
+    private async Task ConfirmChargeEdit()
+    {
+        if (Map is null || _chargeEditTokenId is null)
+            return;
+        var token = Map.Tokens.FirstOrDefault(t => t.Id == _chargeEditTokenId);
+        if (token is null)
+        {
+            CancelChargeEdit();
+            return;
+        }
+
+        var facing = BaronyBattleFacing.SnapFromDegrees(
+            _facingPreviewDeg ?? BaronyBattleFacing.ToDegrees(token.PlannedFacing()));
+
+        if (!TryBuildChargePath(token, facing, previewOnly: false, out var built) || built is null)
+        {
+            _snackBar.Add(built?.FailReason ?? "Charge failed — no valid target or path blocked before 2 tiles.", Severity.Warning);
+            CancelChargeEdit();
+            RefreshRange();
+            return;
+        }
+
+        // Replace any existing plan with the locked charge path.
+        token.ClearPath();
+        token.Facing = facing;
+        foreach (var (wx, wy, rem) in built.Waypoints)
+        {
+            token.Path.Add(new BaronyBattleWaypointDTO
+            {
+                X = wx,
+                Y = wy,
+                Locked = true,
+                Facing = facing,
+                RemainingMoveAfter = rem,
+                FacingCostPaid = 0,
+            });
+        }
+        token.RemainingMove = built.RemainingAfter;
+        token.ChargeBonus = true;
+        token.ChargeTargetId = built.Target.Id;
+        token.AttackTargetId = built.Target.Id;
+
+        CancelChargeEdit();
+        await SaveAsync(systemMessage:
+            $"{token.Label} charges ({facing * 45}°) at {built.Target.Label} — +2 Atk/+2 Dmg if contact holds.");
+        RefreshRange();
+    }
+
+    private sealed class ChargeBuildResult
+    {
+        public required BaronyBattleTokenDTO Target { get; init; }
+        public required List<(int X, int Y)> PathCells { get; init; }
+        public required List<(int X, int Y, int Remaining)> Waypoints { get; init; }
+        public int RemainingAfter { get; init; }
+        public string? FailReason { get; init; }
+    }
+
+    /// <summary>
+    /// Straight-line charge: min 2 steps, up to remaining move. Enemy before step 2 = fail.
+    /// Enemy on step ≥2 = stop before them. Else full run + enemy in front = success.
+    /// </summary>
+    private bool TryBuildChargePath(
+        BaronyBattleTokenDTO token,
+        int facing,
+        bool previewOnly,
+        out ChargeBuildResult? result)
+    {
+        _ = previewOnly;
+        result = null;
+        if (Map is null)
+            return false;
+
+        facing = BaronyBattleFacing.Clamp(facing);
+        var (dx, dy) = BaronyBattleFacing.StepDelta(facing);
+        int ox, oy, budget;
+        var locked = token.Path.Where(w => w.Locked).ToList();
+        if (locked.Count > 0)
+        {
+            var last = locked[^1];
+            ox = last.X;
+            oy = last.Y;
+            budget = last.RemainingMoveAfter;
+        }
+        else
+        {
+            ox = token.X;
+            oy = token.Y;
+            budget = token.RemainingMove > 0 ? token.RemainingMove : token.Move;
+        }
+
+        if (budget < 2)
+        {
+            result = new ChargeBuildResult
+            {
+                Target = token,
+                PathCells = new(),
+                Waypoints = new(),
+                RemainingAfter = budget,
+                FailReason = "Need at least 2 move points to charge.",
+            };
+            return false;
+        }
+
+        var size = TokenSize(token);
+        var pathCells = new List<(int X, int Y)>();
+        var waypoints = new List<(int X, int Y, int Remaining)>();
+        var cx = ox;
+        var cy = oy;
+        var remaining = budget;
+        var steps = 0;
+
+        BaronyBattleTokenDTO? hitEnemy = null;
+        var blockedEarly = false;
+        string? fail = null;
+
+        while (remaining > 0)
+        {
+            var nx = cx + dx;
+            var ny = cy + dy;
+            var stepCost = 1;
+            if (FootprintEntersDifficult(cx, cy, nx, ny, size))
+                stepCost = 2;
+            if (remaining < stepCost)
+                break;
+
+            // Map / impassable
+            if (nx < 0 || ny < 0 || nx + size > Map.Width || ny + size > Map.Height
+                || IsFootprintBlocked(token, nx, ny, size, ignoreUnits: true))
+            {
+                if (steps < 2)
+                {
+                    blockedEarly = true;
+                    fail = "Charge path blocked before 2 tiles.";
+                }
+                break;
+            }
+
+            var occupant = FindFootprintOccupant(token, nx, ny, size);
+            if (occupant is not null)
+            {
+                if (occupant.IsEnemy == token.IsEnemy)
+                {
+                    // Ally in the way
+                    if (steps < 2)
+                    {
+                        blockedEarly = true;
+                        fail = "Ally blocks the charge before 2 tiles.";
+                    }
+                    break;
+                }
+
+                // Enemy collision
+                if (steps < 2)
+                {
+                    blockedEarly = true;
+                    fail = "Enemy blocks the charge before 2 tiles — charge fails.";
+                    break;
+                }
+
+                hitEnemy = occupant;
+                break;
+            }
+
+            // Empty cell — step onto it
+            remaining -= stepCost;
+            cx = nx;
+            cy = ny;
+            steps++;
+            pathCells.Add((cx, cy));
+            waypoints.Add((cx, cy, remaining));
+        }
+
+        if (blockedEarly || steps < 2)
+        {
+            result = new ChargeBuildResult
+            {
+                Target = token,
+                PathCells = pathCells,
+                Waypoints = waypoints,
+                RemainingAfter = remaining,
+                FailReason = fail ?? "Charge needs at least 2 clear tiles.",
+            };
+            return false;
+        }
+
+        if (hitEnemy is not null)
+        {
+            result = new ChargeBuildResult
+            {
+                Target = hitEnemy,
+                PathCells = pathCells,
+                Waypoints = waypoints,
+                RemainingAfter = remaining,
+            };
+            return true;
+        }
+
+        // Full run: attack enemy standing in front of the final cell.
+        var fx = cx + dx;
+        var fy = cy + dy;
+        var frontEnemy = FindFootprintOccupant(token, fx, fy, size);
+        if (frontEnemy is not null && frontEnemy.IsEnemy != token.IsEnemy && frontEnemy.Hp > 0)
+        {
+            result = new ChargeBuildResult
+            {
+                Target = frontEnemy,
+                PathCells = pathCells,
+                Waypoints = waypoints,
+                RemainingAfter = remaining,
+            };
+            return true;
+        }
+
+        result = new ChargeBuildResult
+        {
+            Target = token,
+            PathCells = pathCells,
+            Waypoints = waypoints,
+            RemainingAfter = remaining,
+            FailReason = "No enemy on the charge path or in front after the run.",
+        };
+        return false;
+    }
+
+    private BaronyBattleTokenDTO? FindFootprintOccupant(
+        BaronyBattleTokenDTO mover, int ax, int ay, int size)
+    {
+        if (Map is null)
+            return null;
+        for (var dx = 0; dx < size; dx++)
+        {
+            for (var dy = 0; dy < size; dy++)
+            {
+                var occ = GetTokenAt(ax + dx, ay + dy);
+                if (occ is not null && occ.Id != mover.Id && occ.Hp > 0)
+                    return occ;
+            }
+        }
+        return null;
+    }
+
     private Task StartFacingEdit(string tokenId)
     {
         if (Map is null || _isResolvingMovement)
@@ -1416,6 +1731,7 @@ else
         // Setup / deploy: free facing change on the selected token (no move cost).
         if (IsSetupPhase)
         {
+            CancelChargeEdit();
             _selectedTokenId = token.Id;
             _facingEditTokenId = tokenId;
             _facingEditStartFacing = BaronyBattleFacing.Clamp(token.Facing);
@@ -1426,6 +1742,7 @@ else
         if (!IsMovementPhase || ActiveTokenId != token.Id)
             return Task.CompletedTask;
 
+        CancelChargeEdit();
         var tip = token.LastWaypoint;
         // Stay-put facing: create a same-cell tip to hold facing + move cost.
         if (tip is null)
@@ -1458,13 +1775,6 @@ else
         _facingEditStartFacing = BaronyBattleFacing.Clamp(tip.Facing);
         _facingPreviewDeg = BaronyBattleFacing.ToDegrees(tip.Facing);
         return Task.CompletedTask;
-    }
-
-    private void OnFacingPreview(double degrees)
-    {
-        if (_facingEditTokenId is null)
-            return;
-        _facingPreviewDeg = degrees;
     }
 
     private async Task ConfirmFacingEdit()
@@ -1758,19 +2068,25 @@ else
             var damageDie = rng.Next(1, 5);
             var attackDie = rng.Next(1, 7);
             var defenseDie = rng.Next(1, 7);
-            var attackRoll = attacker.Attack + attackDie;
+            var chargeBonus = attacker.ChargeBonus
+                && string.Equals(attacker.ChargeTargetId, defender.Id, StringComparison.Ordinal)
+                && string.Equals(attacker.AttackTargetId, defender.Id, StringComparison.Ordinal);
+            var attackStat = attacker.Attack + (chargeBonus ? 2 : 0);
+            var damageStat = attacker.Damage + (chargeBonus ? 2 : 0);
+            var attackRoll = attackStat + attackDie;
             var defenseRoll = defender.Defense + defenseDie;
             var ratio = attackRoll / (double)Math.Max(1, defenseRoll);
             var front = GetFrontBreakdown(attacker, defender);
-            var baseDamage = attacker.Damage + damageDie - defender.Armor;
+            var baseDamage = damageStat + damageDie - defender.Armor;
             var rawDamage = baseDamage * ratio * front.Multiplier;
             var dealt = Math.Max(1, (int)Math.Round(rawDamage, MidpointRounding.AwayFromZero));
             defHp = Math.Max(0, defHp - dealt);
+            var chargeNote = chargeBonus ? " [charge +2/+2]" : "";
             notes.Add(
                 $"{attacker.Label} -> {defender.Label}: " +
-                $"(Dmg+k4−Arm={attacker.Damage}+{damageDie}−{defender.Armor}={baseDamage}) " +
-                $"× ({attacker.Attack}+k6={attackRoll})/({defender.Defense}+k6={defenseRoll}) " +
-                $"×{front.Multiplier} ({front.AimLabel} Vs {front.ExposureLabel}) => {dealt} dmg.");
+                $"(Dmg+k4−Arm={damageStat}+{damageDie}−{defender.Armor}={baseDamage}) " +
+                $"× ({attackStat}+k6={attackRoll})/({defender.Defense}+k6={defenseRoll}) " +
+                $"×{front.Multiplier} ({front.AimLabel} Vs {front.ExposureLabel}) => {dealt} dmg.{chargeNote}");
             notes.Add($"{defender.Label} takes {dealt} damage (HP: {defHp}/{defender.MaxHp}).");
 
             var defDamageDie = rng.Next(1, 5);
@@ -2053,6 +2369,7 @@ else
         foreach (var token in Map.Tokens)
         {
             token.AttackTargetId = null;
+            ClearCharge(token);
             token.RemainingMove = token.Move;
             token.ClearPath();
         }
@@ -2207,6 +2524,12 @@ else
             return;
         }
 
+        if (_chargeEditTokenId == active.Id)
+        {
+            CancelChargeEdit();
+            return;
+        }
+
         if (!active.HasPath)
         {
             _snackBar.Add("Nothing to undo.", Severity.Info);
@@ -2216,6 +2539,7 @@ else
         var removed = active.Path[^1];
         active.Path.RemoveAt(active.Path.Count - 1);
         ApplyTravelFacings(active);
+        ClearCharge(active);
 
         if (active.HasPath)
         {
@@ -2432,8 +2756,11 @@ else
             _plannedRoutes = new();
 
             var moved = 0;
+            var chargeSteps = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (var (token, _, _) in movers)
             {
+                if (token.ChargeBonus)
+                    chargeSteps[token.Id] = token.Path.Count;
                 var end = token.PlannedEnd();
                 token.X = end.X;
                 token.Y = end.Y;
@@ -2441,6 +2768,9 @@ else
                 token.ClearPath();
                 moved++;
             }
+
+            foreach (var note in ValidateChargesAfterMovement(chargeSteps))
+                AppendLocalLog(string.Empty, "charge", note);
 
             Map.TurnState.SubPhase = BaronyBattleSubPhases.AttackPlanning;
             Map.TurnState.CurrentIndex = 0;
@@ -2756,6 +3086,43 @@ else
         return cells;
     }
 
+    private static void ClearCharge(BaronyBattleTokenDTO token)
+    {
+        token.ChargeBonus = false;
+        token.ChargeTargetId = null;
+    }
+
+    /// <summary>
+    /// After movement settles: charge needs ≥2 path steps and adjacency to the charge target.
+    /// </summary>
+    private List<string> ValidateChargesAfterMovement(IReadOnlyDictionary<string, int> chargeSteps)
+    {
+        var notes = new List<string>();
+        if (Map is null)
+            return notes;
+
+        foreach (var token in Map.Tokens)
+        {
+            if (!token.ChargeBonus)
+                continue;
+
+            chargeSteps.TryGetValue(token.Id, out var steps);
+            var target = string.IsNullOrWhiteSpace(token.ChargeTargetId)
+                ? null
+                : Map.Tokens.FirstOrDefault(t => t.Id == token.ChargeTargetId);
+
+            if (steps < 2 || target is null || target.Hp <= 0 || !AreAdjacent(token, target))
+            {
+                notes.Add($"{token.Label} charge failed (blocked early or lost contact).");
+                if (string.Equals(token.AttackTargetId, token.ChargeTargetId, StringComparison.Ordinal))
+                    token.AttackTargetId = null;
+                ClearCharge(token);
+            }
+        }
+
+        return notes;
+    }
+
     private static bool FootprintsOverlap(int ax, int ay, int aSize, int bx, int by, int bSize) =>
         ax < bx + bSize && ax + aSize > bx && ay < by + bSize && ay + aSize > by;
 
@@ -2849,6 +3216,7 @@ else
         foreach (var token in Map.Tokens)
         {
             token.AttackTargetId = null;
+            ClearCharge(token);
             token.RemainingMove = token.Move;
             token.ClearPath();
         }

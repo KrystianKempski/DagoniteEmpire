@@ -2910,6 +2910,21 @@ namespace DagoniteEmpire.Service
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Inn")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Brewery")
                 || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Candlemaker")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm (Dye plant)")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Smithy")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Forge")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Armorer")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Plate Workshop")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Horse Stud (regular)")
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Sheep pastures"
+                    && (t.Description == null || !t.Description.Contains("Requires trade access to Sheep")))
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Pastures (cattle)"
+                    && (t.Description == null || !t.Description.Contains("Requires trade access to Cattle")))
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Horse Stud (regular)"
+                    && (t.Description == null || !t.Description.Contains("Requires trade access to Horses")))
                 // Trade-building lore: Pastures / Vineyard cost explanations + Produces lines.
                 || await ctx.BuildingTemplates.AnyAsync(t =>
                     t.Name == "Pastures (cattle)"

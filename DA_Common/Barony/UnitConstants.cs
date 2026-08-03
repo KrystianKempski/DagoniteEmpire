@@ -217,6 +217,7 @@ namespace DA_Common.Barony
                 [UnitSkillKey.AgilitySkill] = 0,
                 [UnitSkillKey.Urban] = 0,
                 [UnitSkillKey.Scout] = 0,
+                [UnitSkillKey.Riding] = 0,
             };
 
         public static Dictionary<string, int> CreateSkillBase(

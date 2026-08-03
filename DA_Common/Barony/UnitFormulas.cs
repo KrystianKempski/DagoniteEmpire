@@ -47,7 +47,8 @@ namespace DA_Common.Barony
         string Weapon1 = UnitEquipmentAcquireMode.Craft,
         string Weapon2 = UnitEquipmentAcquireMode.Craft,
         string Armor = UnitEquipmentAcquireMode.Craft,
-        string Shield = UnitEquipmentAcquireMode.Craft);
+        string Shield = UnitEquipmentAcquireMode.Craft,
+        string Mount = UnitEquipmentAcquireMode.Craft);
 
     public static class UnitTrainingCostFormulas
     {
@@ -73,21 +74,34 @@ namespace DA_Common.Barony
             };
         }
 
+        public static (int Prod, int Gold, int Def) SliceMount(UnitMountDef? m, string mode)
+        {
+            if (m is null) return (0, 0, 0);
+            return UnitEquipmentAcquireMode.Normalize(mode) switch
+            {
+                UnitEquipmentAcquireMode.Buy => (0, m.MarketGold, 0),
+                UnitEquipmentAcquireMode.Defense => (0, 0, m.MarketGold * 2),
+                _ => (m.ProductionCost, m.GoldCost, 0),
+            };
+        }
+
         public static (int Prod, int Gold, int Def) SumGear(
             UnitWeaponDef? weapon1,
             UnitWeaponDef? weapon2,
             UnitArmorDef? armor,
             UnitArmorDef? shield,
+            UnitMountDef? mount,
             UnitEquipmentPayModes payModes)
         {
             var w1 = SliceWeapon(weapon1, payModes.Weapon1);
             var w2 = SliceWeapon(weapon2, payModes.Weapon2);
             var ar = SliceArmor(armor, payModes.Armor);
             var sh = SliceArmor(shield, payModes.Shield);
+            var mt = SliceMount(mount, payModes.Mount);
             return (
-                w1.Prod + w2.Prod + ar.Prod + sh.Prod,
-                w1.Gold + w2.Gold + ar.Gold + sh.Gold,
-                w1.Def + w2.Def + ar.Def + sh.Def);
+                w1.Prod + w2.Prod + ar.Prod + sh.Prod + mt.Prod,
+                w1.Gold + w2.Gold + ar.Gold + sh.Gold + mt.Gold,
+                w1.Def + w2.Def + ar.Def + sh.Def + mt.Def);
         }
 
         public static UnitTrainingCostSummary Compute(
@@ -97,10 +111,11 @@ namespace DA_Common.Barony
             UnitWeaponDef? weapon2,
             UnitArmorDef? armor,
             UnitArmorDef? shield,
+            UnitMountDef? mount,
             UnitEquipmentPayModes payModes,
             int accelerateTurns)
         {
-            var (prod, goldEq, defEq) = SumGear(weapon1, weapon2, armor, shield, payModes);
+            var (prod, goldEq, defEq) = SumGear(weapon1, weapon2, armor, shield, mount, payModes);
 
             var accel = Math.Clamp(accelerateTurns, 0, training.Turns);
             var turns = Math.Max(0, training.Turns - accel);
@@ -156,6 +171,7 @@ namespace DA_Common.Barony
             UnitWeaponDef? weapon2,
             UnitArmorDef? armor,
             UnitArmorDef? shield,
+            UnitMountDef? mount,
             UnitEquipmentPayModes payModes,
             int? reinforceTroops = null)
         {
@@ -171,7 +187,7 @@ namespace DA_Common.Barony
             var recruit = UnitRecruitSelectionCatalog.SelectedVolunteers;
             var training = UnitTrainingTypeCatalog.Standard;
             var (fullProd, fullGold, fullDef) = UnitTrainingCostFormulas.SumGear(
-                weapon1, weapon2, armor, shield, payModes);
+                weapon1, weapon2, armor, shield, mount, payModes);
 
             // People: Selected volunteers Defense + Standard gold, × N/50 (floor).
             var goldPeople = n <= 0 ? 0 : training.GoldCost * n / full;
@@ -219,13 +235,14 @@ namespace DA_Common.Barony
             UnitWeaponDef? weapon2,
             UnitArmorDef? armor,
             UnitArmorDef? shield,
+            UnitMountDef? mount,
             UnitEquipmentPayModes payModes,
             int troopCount)
         {
             var full = UnitRules.DefaultTroopCount;
             var n = Math.Clamp(troopCount, 1, full);
             var (fullProd, fullGold, fullDef) = UnitTrainingCostFormulas.SumGear(
-                weapon1, weapon2, armor, shield, payModes);
+                weapon1, weapon2, armor, shield, mount, payModes);
 
             var prod = fullProd * n / full;
             var gold = fullGold * n / full;
@@ -264,13 +281,15 @@ namespace DA_Common.Barony
             string? weapon1Key,
             string? weapon2Key,
             string? armorKey,
-            string? shieldKey)
+            string? shieldKey,
+            string? mountKey = null)
         {
             var sum = 0;
             if (UnitWeaponCatalog.Find(weapon1Key) is { } w1) sum += w1.MarketGold;
             if (UnitWeaponCatalog.Find(weapon2Key) is { } w2) sum += w2.MarketGold;
             if (UnitArmorCatalog.Find(armorKey) is { } ar) sum += ar.MarketGold;
             if (UnitArmorCatalog.Find(shieldKey) is { } sh) sum += sh.MarketGold;
+            if (UnitMountCatalog.Find(mountKey) is { } mt) sum += mt.MarketGold;
             return Math.Max(0, sum);
         }
 
@@ -287,9 +306,10 @@ namespace DA_Common.Barony
             string? weapon1Key,
             string? weapon2Key,
             string? armorKey,
-            string? shieldKey)
+            string? shieldKey,
+            string? mountKey = null)
         {
-            var mkt = EquipmentMarketGold(weapon1Key, weapon2Key, armorKey, shieldKey);
+            var mkt = EquipmentMarketGold(weapon1Key, weapon2Key, armorKey, shieldKey, mountKey);
             var blocks = mkt / UnitRules.GearUpkeepMarketGoldPerBlock; // floor for non-negative
             var gearGold = blocks * UnitRules.GearUpkeepGoldPerBlock;
             var gearDef = blocks * UnitRules.GearUpkeepDefensePerBlock;
@@ -497,21 +517,27 @@ namespace DA_Common.Barony
             int otherHp = 0,
             int raceMoveBonus = UnitRules.RaceMoveBonus,
             int troopCount = UnitRules.DefaultTroopCount,
-            int fullTroopCount = UnitRules.DefaultTroopCount)
+            int fullTroopCount = UnitRules.DefaultTroopCount,
+            UnitMountDef? mount = null)
         {
             var quality = UnitWeaponQuality.AttackDamageBonus(weaponQuality);
             var skillKey = UnitSkillTree.SkillKeyForWeaponType(primaryWeapon?.WeaponType);
             var attackSkill = skillKey is not null && skillTotals.TryGetValue(skillKey, out var asv) ? asv : 0;
             var weaponAt = (primaryWeapon?.Attack ?? 0) + quality;
+            var mountAt = mount?.Attack ?? 0;
 
             var defKey = ResolveDefenseSkillKey(skillTotals, hasShield: shield is not null, hasArmor: armor is not null);
             var defenseSkill = skillTotals.TryGetValue(defKey, out var dsv) ? dsv : 0;
-            var gearDef = (primaryWeapon?.Defense ?? 0) + (armor?.Defense ?? 0) + (shield?.Defense ?? 0);
+            var gearDef = (primaryWeapon?.Defense ?? 0)
+                + (armor?.Defense ?? 0)
+                + (shield?.Defense ?? 0)
+                + (mount?.Defense ?? 0);
 
             var weaponDmg = (primaryWeapon?.Damage ?? 0) + quality;
+            var mountDmg = mount?.Damage ?? 0;
             var damageAttrKey = UnitSkillTree.Find(skillKey)?.LinkedAttr ?? UnitAttr.Build;
             var attrDmg = AttrValue(build, agility, will, perception, damageAttrKey);
-            var damage = weaponDmg + attrDmg + otherDamage;
+            var damage = weaponDmg + mountDmg + attrDmg + otherDamage;
 
             var run = skillTotals.TryGetValue(UnitSkillKey.Run, out var runVal) ? runVal : 0;
             var raceMove = raceMoveBonus;
@@ -520,7 +546,8 @@ namespace DA_Common.Barony
             var movePenalty = (primaryWeapon?.MovePenalty ?? 0)
                 + (armor?.MovePenalty ?? 0)
                 + (shield?.MovePenalty ?? 0);
-            var move = baseMove + movePenalty + otherMove;
+            var mountMove = mount?.MoveBonus ?? 0;
+            var move = baseMove + movePenalty + mountMove + otherMove;
 
             var armorFromGear = armor?.ArmorValue ?? 0;
             var armorRating = armorFromGear + otherArmor;
@@ -528,7 +555,7 @@ namespace DA_Common.Barony
             var endurance = skillTotals.TryGetValue(UnitSkillKey.Endurance, out var endVal) ? endVal : 0;
             var loss = UnitCasualtyFormulas.Compute(troopCount, fullTroopCount);
 
-            var attack = attackSkill + weaponAt + commanderAttack + otherAttack + loss.Attack;
+            var attack = attackSkill + weaponAt + mountAt + commanderAttack + otherAttack + loss.Attack;
             var defense = defenseSkill + gearDef + commanderDefense + otherDefense + loss.Defense;
             var maxHp = build * 2 + will * 2 + endurance + discipline * 3 + otherHp + loss.Hp;
 
@@ -548,9 +575,9 @@ namespace DA_Common.Barony
                 MaxHp: maxHp,
                 AttackSkill: attackSkill,
                 DefenseSkill: defenseSkill,
-                WeaponAttackBonus: weaponAt,
+                WeaponAttackBonus: weaponAt + mountAt,
                 WeaponDefenseBonus: gearDef,
-                WeaponDamageBonus: weaponDmg,
+                WeaponDamageBonus: weaponDmg + mountDmg,
                 AttrDamageBonus: attrDmg,
                 DamageAttrKey: damageAttrKey,
                 EquipmentMovePenalty: movePenalty,

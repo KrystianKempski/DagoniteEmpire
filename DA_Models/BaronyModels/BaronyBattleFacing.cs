@@ -63,6 +63,23 @@ public static class BaronyBattleFacing
     }
 
     /// <summary>
+    /// Unit grid step for a facing (Y increases south / down).
+    /// N=(0,-1), NE=(1,-1), E=(1,0), … NW=(-1,-1).
+    /// </summary>
+    public static (int Dx, int Dy) StepDelta(int facing) => Clamp(facing) switch
+    {
+        North => (0, -1),
+        NorthEast => (1, -1),
+        East => (1, 0),
+        SouthEast => (1, 1),
+        South => (0, 1),
+        SouthWest => (-1, 1),
+        West => (-1, 0),
+        NorthWest => (-1, -1),
+        _ => (0, -1),
+    };
+
+    /// <summary>
     /// Adjust continuous degrees so CSS rotation takes the shortest turn toward <paramref name="targetDeg"/>.
     /// </summary>
     public static double ShortestTurnTarget(double currentDeg, double targetDeg)

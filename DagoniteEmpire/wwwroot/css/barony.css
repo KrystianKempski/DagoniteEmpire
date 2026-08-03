@@ -6001,6 +6001,12 @@ a.city-building-name-text--link:hover {
     color: var(--barony-ink, #2f2a24);
 }
 
+.ppb-table--catalog .catalog-desc__requires {
+    margin-top: 0.15em;
+    line-height: 1.3;
+    color: var(--barony-muted, #6b635a);
+}
+
 .ppb-table--catalog thead th.catalog-col-name {
     position: sticky;
     left: 0;
@@ -7404,6 +7410,81 @@ a.city-building-name-text--link:hover {
     opacity: 0.85;
 }
 
+.march-map-legend__lock-icon.mud-icon-root {
+    width: 12px !important;
+    height: 12px !important;
+    font-size: 12px !important;
+    color: #5a4545;
+    flex-shrink: 0;
+}
+
+.march-map-legend--toggles {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid color-mix(in srgb, var(--barony-border-strong) 45%, transparent);
+}
+
+.march-map-legend__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--barony-ink);
+    cursor: pointer;
+    user-select: none;
+}
+
+.march-map-legend__toggle input {
+    accent-color: var(--barony-accent, #6b4423);
+    margin: 0;
+    cursor: pointer;
+}
+
+.march-map-marker__goods-fo {
+    overflow: visible;
+}
+
+.march-map-marker__goods {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.march-map-marker__good-icon.trade-good-icon {
+    width: 16px;
+    height: 16px;
+    filter: drop-shadow(0 0 0.6px rgba(0, 0, 0, 0.85))
+            drop-shadow(0 0 1px rgba(255, 255, 255, 0.5));
+}
+
+.march-map-marker__lock-fo {
+    overflow: visible;
+}
+
+.march-map-marker__lock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.march-map-marker__lock-icon.mud-icon-root {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 18px !important;
+    color: #5a3030;
+    filter: drop-shadow(0 0 0.6px rgba(255, 255, 255, 0.95))
+            drop-shadow(0 0 1px rgba(0, 0, 0, 0.7));
+}
+
 .march-map-canvas {
     position: relative;
     flex: 1 1 auto;
@@ -7527,12 +7608,6 @@ a.city-building-name-text--link:hover {
     flex-wrap: wrap;
     align-items: center;
     gap: 10px;
-}
-
-.march-map-marker--blocked .march-map-marker__dot {
-    fill: #6a6060;
-    stroke: #2a2222;
-    opacity: 0.75;
 }
 
 .march-map-marker--design .march-map-marker__dot {
@@ -9069,6 +9144,47 @@ a.city-building-name-text--link:hover {
     pointer-events: none;
 }
 
+.barony-scope .bbm-charge-btn {
+    position: absolute;
+    left: -3px;
+    top: -3px;
+    z-index: 7;
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    border: 1.5px solid #8a5a2b;
+    border-radius: 3px;
+    background: rgba(245, 240, 230, 0.95);
+    cursor: pointer;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.barony-scope .bbm-charge-btn:hover {
+    background: #f3e6d4;
+}
+
+.barony-scope .bbm-charge-btn__icon {
+    display: block;
+    width: 0.72rem;
+    height: 0.72rem;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.barony-scope .bbm-charge-preview {
+    position: absolute;
+    inset: 1px;
+    border-radius: 2px;
+    background: rgba(138, 90, 43, 0.28);
+    box-shadow: inset 0 0 0 1.5px rgba(138, 90, 43, 0.65);
+    pointer-events: none;
+    z-index: 2;
+}
+
 .barony-scope .bbm-facing-overlay {
     position: absolute;
     left: 0;
@@ -9078,6 +9194,10 @@ a.city-building-name-text--link:hover {
     z-index: 12;
     cursor: crosshair;
     background: rgba(47, 42, 36, 0.06);
+}
+
+.barony-scope .bbm-facing-overlay--charge {
+    background: rgba(138, 90, 43, 0.1);
 }
 
 .barony-scope .bbm-move-badge {

@@ -18,6 +18,14 @@
             }
             else
             {
+                @if (LockedHerdNotes.Count > 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                        Locked until you have breeding stock from trade:
+                        @string.Join("; ", LockedHerdNotes)
+                    </MudAlert>
+                }
+
                 <MudSelect T="int"
                            Label="Improvement"
                            Value="_templateId"
@@ -73,6 +81,8 @@
     [Parameter] public int BaronyId { get; set; }
     [Parameter] public TerrainTileDTO Tile { get; set; } = new();
     [Parameter] public List<BuildingTemplateDTO> Templates { get; set; } = new();
+    /// <summary>Herd/stud templates excluded because the barony lacks trade access to breeding stock.</summary>
+    [Parameter] public List<string> LockedHerdNotes { get; set; } = new();
 
     private int _templateId;
     private string _name = string.Empty;

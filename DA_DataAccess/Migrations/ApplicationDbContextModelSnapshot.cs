@@ -582,6 +582,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("MaxBaseSkillAtGraduation")
                         .HasColumnType("integer");
 
+                    b.Property<string>("MountKey")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");

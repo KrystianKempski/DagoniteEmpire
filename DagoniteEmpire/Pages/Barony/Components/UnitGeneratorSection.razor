@@ -405,6 +405,8 @@
                                 _payArmor, OnPayArmorChanged, required: false)
                             @GearPayRow("Shd", _shieldDef?.Name, _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold,
                                 _payShield, OnPayShieldChanged, required: false)
+                            @GearPayRow("Mnt", _mountDef?.Name, _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold,
+                                _payMount, OnPayMountChanged, required: false)
                         </div>
                     </section>
 
@@ -462,11 +464,14 @@
                                  Weapon2Key="@_weapon2"
                                  ArmorKey="@_armorKey"
                                  ShieldKey="@_shieldKey"
+                                 MountKey="@_mountKey"
                                  CanEdit="@CanEdit"
+                                 Availability="@_availability"
                                  Weapon1Changed="OnWeapon1Changed"
                                  Weapon2Changed="OnWeapon2Changed"
                                  ArmorChanged="OnArmorChanged"
-                                 ShieldChanged="OnShieldChanged" />
+                                 ShieldChanged="OnShieldChanged"
+                                 MountChanged="OnMountChanged" />
         </div>
     </ChildContent>
 </BaronySection>
@@ -480,15 +485,17 @@
     private string _name = string.Empty;
     private string _recruitKey = UnitRecruitSelectionCatalog.BestAvailable.Key;
     private string _trainingKey = UnitTrainingTypeCatalog.Standard.Key;
-    private string _weapon1 = "longswords";
+    private string _weapon1 = "short-spears";
     private string? _weapon2 = "simple-bows";
-    private string? _armorKey = "mail-and-gambeson";
-    private string? _shieldKey = "studded-medium-shield";
+    private string? _armorKey = null;
+    private string? _shieldKey = "wooden-medium-shield";
+    private string? _mountKey = null;
     private string _quality = UnitWeaponQuality.Normal;
     private string _payW1 = UnitEquipmentAcquireMode.Craft;
     private string _payW2 = UnitEquipmentAcquireMode.Craft;
     private string _payArmor = UnitEquipmentAcquireMode.Craft;
     private string _payShield = UnitEquipmentAcquireMode.Craft;
+    private string _payMount = UnitEquipmentAcquireMode.Craft;
     private int _accelerate;
     private bool _busy;
     private string? _raceBonus1;
@@ -500,8 +507,10 @@
     private UnitWeaponDef? _w1;
     private UnitArmorDef? _armorDef;
     private UnitArmorDef? _shieldDef;
+    private UnitMountDef? _mountDef;
     private UnitRaceDef _race => UnitRaceCatalog.Find(_draft.RaceKey);
     private bool _sanitizingGear;
+    private TradeGoodAvailabilitySnapshot? _availability;
 
     private string WageTurnTip => UnitUpkeepFormulas.Explain(_previewUpkeep)
         + " Food defaults to 0.5/turn once Active (Domain Panel → Army).";
@@ -524,6 +533,8 @@
         // Recalc before any await so the first render never sees a null upkeep preview.
         Recalc();
         await LoadBaronyQualityAsync();
+        if (BaronyId > 0)
+            _availability = await _baronyRepo.GetTradeGoodAvailability(BaronyId);
         Recalc();
     }
 
@@ -640,17 +651,27 @@
         Recalc();
         return Task.CompletedTask;
     }
+
+    private Task OnMountChanged(string? v)
+    {
+        _mountKey = string.IsNullOrWhiteSpace(v) ? null : v;
+        if (_mountKey is null) _payMount = UnitEquipmentAcquireMode.Craft;
+        Recalc();
+        return Task.CompletedTask;
+    }
     private Task OnPayW1Changed(string v) { _payW1 = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
     private Task OnPayW2Changed(string v) { _payW2 = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
     private Task OnPayArmorChanged(string v) { _payArmor = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
     private Task OnPayShieldChanged(string v) { _payShield = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
+    private Task OnPayMountChanged(string v) { _payMount = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
     private Task OnAccelerateChanged(int v) { _accelerate = Math.Clamp(v, 0, _maxAccel); Recalc(); return Task.CompletedTask; }
 
     private UnitEquipmentPayModes CurrentPayModes => new(
         UnitEquipmentAcquireMode.Normalize(_payW1),
         _weapon2 is null ? UnitEquipmentAcquireMode.Craft : UnitEquipmentAcquireMode.Normalize(_payW2),
         _armorKey is null ? UnitEquipmentAcquireMode.Craft : UnitEquipmentAcquireMode.Normalize(_payArmor),
-        _shieldKey is null ? UnitEquipmentAcquireMode.Craft : UnitEquipmentAcquireMode.Normalize(_payShield));
+        _shieldKey is null ? UnitEquipmentAcquireMode.Craft : UnitEquipmentAcquireMode.Normalize(_payShield),
+        _mountKey is null ? UnitEquipmentAcquireMode.Craft : UnitEquipmentAcquireMode.Normalize(_payMount));
 
     private RenderFragment GearPayRow(
         string slot,
@@ -719,6 +740,7 @@
         _w1 = UnitWeaponCatalog.Find(_weapon1);
         _armorDef = UnitArmorCatalog.Find(_armorKey);
         _shieldDef = UnitArmorCatalog.Find(_shieldKey);
+        _mountDef = UnitMountCatalog.Find(_mountKey);
 
         _costs = UnitTrainingCostFormulas.Compute(
             recruit, training,
@@ -726,6 +748,7 @@
             UnitWeaponCatalog.Find(_weapon2),
             _armorDef,
             _shieldDef,
+            _mountDef,
             CurrentPayModes, _accelerate);
 
         var sameRecruitTraining =
@@ -760,7 +783,7 @@
 
         _draft = UnitDraftFactory.FromGenerator(
             _name, _recruitKey, _trainingKey,
-            _weapon1, _weapon2, _armorKey, _shieldKey, _quality,
+            _weapon1, _weapon2, _armorKey, _shieldKey, _mountKey, _quality,
             _costs);
 
         if (sameRecruitTraining)
@@ -822,20 +845,21 @@
     }
 
     /// <summary>
-    /// Drop armor/shield/weapons the draft can no longer wear (Build / Agility / Armor skill).
+    /// Drop armor/shield/mount/weapons the draft can no longer wear (stats / Riding / trade access).
     /// Returns true when keys changed and Recalc must run again.
     /// </summary>
     private bool SanitizeGearKeys()
     {
         var build = _draft.EffectiveBuild;
-        var armorSkill = UnitStatHelper.BuildSkillTotals(_draft)
-            .GetValueOrDefault(UnitSkillKey.ArmorSkill);
+        var skillTotals = UnitStatHelper.BuildSkillTotals(_draft);
+        var armorSkill = skillTotals.GetValueOrDefault(UnitSkillKey.ArmorSkill);
+        var ridingSkill = skillTotals.GetValueOrDefault(UnitSkillKey.Riding);
         var changed = false;
 
         if (_armorKey is not null)
         {
             var a = UnitArmorCatalog.Find(_armorKey);
-            if (a is null || !UnitEquipmentRequirements.MeetsArmor(a, build, armorSkill, out _))
+            if (a is null || !UnitEquipmentTradeAccess.MeetsArmor(a, build, armorSkill, _availability, out _))
             {
                 _armorKey = null;
                 _payArmor = UnitEquipmentAcquireMode.Craft;
@@ -846,10 +870,21 @@
         if (_shieldKey is not null)
         {
             var s = UnitArmorCatalog.Find(_shieldKey);
-            if (s is null || !UnitEquipmentRequirements.MeetsArmor(s, build, armorSkill, out _))
+            if (s is null || !UnitEquipmentTradeAccess.MeetsArmor(s, build, armorSkill, _availability, out _))
             {
                 _shieldKey = null;
                 _payShield = UnitEquipmentAcquireMode.Craft;
+                changed = true;
+            }
+        }
+
+        if (_mountKey is not null)
+        {
+            var m = UnitMountCatalog.Find(_mountKey);
+            if (m is null || !UnitEquipmentTradeAccess.MeetsMount(m, ridingSkill, _availability, out _))
+            {
+                _mountKey = null;
+                _payMount = UnitEquipmentAcquireMode.Craft;
                 changed = true;
             }
         }
@@ -860,9 +895,9 @@
 
         var agility = _draft.EffectiveAgility;
         var w1 = UnitWeaponCatalog.Find(_weapon1);
-        if (w1 is null || !UnitEquipmentRequirements.MeetsWeapon(w1, build, agility, out _))
+        if (w1 is null || !UnitEquipmentTradeAccess.MeetsWeapon(w1, build, agility, _availability, out _))
         {
-            _weapon1 = UnitEquipmentRequirements.FirstEligibleWeaponKey(build, agility) ?? "short-spears";
+            _weapon1 = UnitEquipmentTradeAccess.FirstEligibleWeaponKey(build, agility, _availability) ?? "short-spears";
             _payW1 = UnitEquipmentAcquireMode.Craft;
             changed = true;
         }
@@ -872,7 +907,7 @@
             var w2 = UnitWeaponCatalog.Find(_weapon2);
             if (w2 is null
                 || string.Equals(_weapon2, _weapon1, StringComparison.OrdinalIgnoreCase)
-                || !UnitEquipmentRequirements.MeetsWeapon(w2, build, agility, out _))
+                || !UnitEquipmentTradeAccess.MeetsWeapon(w2, build, agility, _availability, out _))
             {
                 _weapon2 = null;
                 _payW2 = UnitEquipmentAcquireMode.Craft;
@@ -899,7 +934,7 @@
     {
         var cap = dto.MaxBaseSkillAtGraduation;
         if (cap <= 0) return;
-        foreach (var def in UnitRaceSkillBonus.EligibleBaseSkills)
+        foreach (var def in UnitSkillTree.All.Where(d => d.IsBase))
         {
             if (dto.SkillBase.TryGetValue(def.Key, out var v) && v > cap)
                 dto.SkillBase[def.Key] = cap;
@@ -985,11 +1020,13 @@
                 Weapon2Key = _weapon2,
                 ArmorKey = _armorKey,
                 ShieldKey = _shieldKey,
+                MountKey = _mountKey,
                 Weapon1Quality = _quality,
                 Weapon1AcquireMode = _payW1,
                 Weapon2AcquireMode = _payW2,
                 ArmorAcquireMode = _payArmor,
                 ShieldAcquireMode = _payShield,
+                MountAcquireMode = _payMount,
                 AccelerateTurns = _accelerate,
                 DefenseSkillKey = _draft.DefenseSkillKey,
                 SkillBase = new Dictionary<string, int>(_draft.SkillBase, StringComparer.OrdinalIgnoreCase),

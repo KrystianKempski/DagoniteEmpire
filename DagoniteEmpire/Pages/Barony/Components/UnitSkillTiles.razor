@@ -146,7 +146,7 @@
                 <span>From</span>
             </BaronyTooltip>
             <BaronyTooltip Title="Base"
-                           Text="Base rank. Baron spends XP after graduation (base skill = level × 3; specialization = level × 1). MG can set freely."
+                           Text="Base rank. Baron spends XP after graduation (base skills and Riding = level × 3; specialization = level × 1). MG can set freely."
                            Placement="Placement.Top">
                 <span>Base</span>
             </BaronyTooltip>
@@ -246,7 +246,7 @@
         int cost;
         bool canRaise;
         string tip;
-        if (def.IsBase && def.Key != UnitSkillKey.Riding)
+        if (def.IsBase)
         {
             var maxBase = BaseSkillRaiseCap;
             if (!UnitPdFormulas.CanRaiseBaseSkill(currentBase, maxBase, Unit.RemainingPd, out cost))
@@ -257,7 +257,7 @@
         }
         else
         {
-            var parentKey = def.Key == UnitSkillKey.Riding ? UnitSkillKey.Melee : def.ParentKey!;
+            var parentKey = def.ParentKey!;
             Unit.SkillBase.TryGetValue(parentKey, out var parentBase);
             cost = UnitRules.SpecialSkillRaiseCost(currentBase + 1);
             canRaise = currentBase + 1 <= parentBase && Unit.RemainingPd >= cost;
@@ -419,7 +419,7 @@
         else
         {
             var def = UnitSkillTree.Find(_editKey);
-            if (def is not null && def.IsBase && def.Key != UnitSkillKey.Riding
+            if (def is not null && def.IsBase
                 && BaseSkillRaiseCap < int.MaxValue)
             {
                 v = Math.Min(v, BaseSkillRaiseCap);
@@ -436,7 +436,7 @@
         if (!CanSpendPd) return;
         Unit.SkillBase.TryGetValue(def.Key, out var current);
         int cost;
-        if (def.IsBase && def.Key != UnitSkillKey.Riding)
+        if (def.IsBase)
         {
             if (!UnitPdFormulas.CanRaiseBaseSkill(current, BaseSkillRaiseCap, Unit.RemainingPd, out cost))
             {
@@ -450,7 +450,7 @@
         }
         else
         {
-            var parentKey = def.Key == UnitSkillKey.Riding ? UnitSkillKey.Melee : def.ParentKey!;
+            var parentKey = def.ParentKey!;
             Unit.SkillBase.TryGetValue(parentKey, out var parentBase);
             if (!UnitPdFormulas.CanRaiseSpecialSkill(current, parentBase, Unit.RemainingPd, out cost))
             {

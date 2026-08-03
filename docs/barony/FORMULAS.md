@@ -29,6 +29,27 @@ final             = Σ Additive + percent_effect
 
 ---
 
+## Trade goods — herd / stud founding
+
+Logic: `HerdStockRequirements` + `TradeGoodAvailability`.
+
+To **found** these improvements you must already have the matching good available
+(treaty, import, or MG override). After the improvement is built it becomes a
+**local production** source of that good:
+
+| Improvement | Requires trade access | Then produces |
+|---|---|---|
+| Sheep pastures | Sheep | Sheep & Wool |
+| Pastures (cattle) | Cattle | Cattle |
+| Horse Stud (regular) | Horses | Horses |
+| Horse Stud (military) | War horses | War horses |
+| Horse Stud (noble) | Noble horses | Noble horses |
+
+Shown in the Buildings catalog description as **Requires trade access…** / **Produces…**.
+Player construction on Terrain filters out locked herd templates until stock is available.
+
+---
+
 ## Social Groups — Tax
 
 - Default rates: `SocialGroup.DefaultTax` — Nobility 5%, Burghers 15%, Peasants 30%.
@@ -259,6 +280,8 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 
 ### Creation costs
 - Recruit cost from selection catalog: usually Defense; **Mercenaries** = **80** gold (0 Defense); **Forced hire** = 0/0 and creates event **Forced hire** (Loyalty −7, Stability −7 for 3 turns) when training starts
+- **Gear trade access** (`UnitEquipmentTradeAccess`): military weapons need **Military weapons**; powder weapons need **Firearms**; Simple / Medium / Heavy armor (and shields in those Excel tiers) need **Light / Medium / Heavy armor** respectively. Simple weapons need no trade good. Mounts: **Horses** / **War horses**. Generator and re-equip dialog grey locked rows; training / change-equipment APIs reject gear without access.
+- **Mounts** (`UnitMountCatalog`): optional. Horses = +3 Move, +2 Atk/Def, +1 Dmg; Craft 150 Prod + 150 Gold or Buy Mkt **200** or Defense **400**; Riding **6**. War horses = +3 Move, +4 Atk/Def, +2 Dmg; Craft 250+250 / Mkt **300** / Defense **600**; Riding **8**. Bonuses stack on combat totals; Mkt counts toward upkeep.
 - Per-item acquire mode:
   - **Craft** = Production + catalog Gold
   - **Buy** = Market gold (`Mkt`) only (no Production)
@@ -307,6 +330,7 @@ Phases: Movement → Attack planning → Combat. Stats are frozen on the token a
   - **front_def** = same Aim/Exposure rules with roles swapped (`GetFrontBreakdown(defender, attacker)`)
   - Example log: `(Dmg+k4−Arm=4+2−1=5) × (12+k6=15)/(10+k6=14) ×3 (Front Vs Front) => 16 dmg.` tagged `(defensive)`
 - Both sides may flee at HP ≤ 0 after the exchange. Defender still returns defensive damage even if reduced to 0 by the attack.
+- **Charge** (Movement phase): any unit may charge in a straight line (8 directions). Path length **≥ 2** tiles, up to remaining Move (terrain costs as normal). Blocked by ally/terrain/enemy before the 2nd tile → charge fails. From step ≥2: enemy on the path → stop on the tile before them, set attack target, **ChargeBonus**. After N≥2 empty tiles: success also if an enemy stands in the charge direction from the end tile. In Combat vs that charge target: use **Attack+2** and **Damage+2**. Changing attack target or losing contact after movement clears the bonus.
 - **End battle** (MG): ends immediately regardless of field state; writes a summary log; syncs each deployed ally’s token HP → `BaronyUnit.CurrentHp` (fled allies → **0**). Army roster is locked while `Phase = battle`.
 - **Troop recovery**: understrength units (not Disbanded) regain **+5** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.
 - **Reinforce project** (`ProjectOutputKind.UnitReinforce`): button on understrength Active units with no open project. People cost = Selected volunteers + Standard, scaled `× N/50` (floor). Gear = current loadout at **50%** salvage × same scale (`× N/100` of full gear). Acquire modes Craft/Buy/Defense like the generator. On complete: add N troops (cap 50) and sync Max HP.
@@ -316,7 +340,7 @@ Phases: Movement → Attack planning → Combat. Stats are frozen on the token a
 - **Base skills** (Melee, Ranged, Athletics, Agility, Urban, Scout): `Razem = Bazowo + Inne` — **no** attribute.
 - **Starting Bazowo** (Humans): all base skills at **0**. Racial skill bonus = only the two **+1 Other** picks. Riding starts at 0. Raised later with XP / MG edit.
 - **Specializations**: `Razem = parent Razem + linked attr + Bazowo + Inne` (specialization Bazowo starts at 0).
-- **Riding**: treated as a Melee specialization (`parent = Melee Razem + Agility + base + other`), shown on its own row.
+- **Riding**: total like a Melee specialization (`parent = Melee Razem + Agility + base + other`), shown on its own row. **XP raise** costs like a base skill (`level × 3`) and uses the training max-base cap — not limited by Melee base.
 - Attr letters: B Build / A Agility / W Will / P Perception (Excel S = Sprawność).
 - Linked attribute only appears on specializations (and Riding); changing recruit attributes updates those totals live.
 
@@ -324,7 +348,7 @@ Skill total (legacy one-liner, specializations only) = parent + linked attribute
 
 ### XP spend (Active units)
 - Attribute → level×10
-- Base skill → level×3
+- Base skill (incl. **Riding**) → level×3
 - Special skill → level×1 and ≤ parent base
 - Discipline (1–18) → cost = current level
 - MG may set Base / Other freely; Baron raises Base with XP when Active.

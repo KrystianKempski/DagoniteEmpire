@@ -70,7 +70,9 @@ namespace DA_Business.Repository.BaronyRepos
                 dto.CommanderAttack, dto.CommanderDefense,
                 dto.OtherAttack, dto.OtherDefense, dto.OtherDamage, dto.OtherMove, dto.OtherArmor, dto.OtherHp,
                 UnitRaceCatalog.Find(dto.RaceKey).MoveBonus,
-                dto.TroopCount);
+                dto.TroopCount,
+                UnitRules.DefaultTroopCount,
+                UnitMountCatalog.Find(dto.MountKey));
             if (!string.IsNullOrWhiteSpace(combat.DefenseSkillKeyUsed))
                 dto.DefenseSkillKey = combat.DefenseSkillKeyUsed;
             return combat;
@@ -79,6 +81,6 @@ namespace DA_Business.Repository.BaronyRepos
         public static UnitUpkeepTotals ComputeUpkeep(BaronyUnitDTO dto) =>
             UnitUpkeepFormulas.Compute(
                 dto.Wage, dto.UpkeepFood, dto.UpkeepDefense,
-                dto.Weapon1Key, dto.Weapon2Key, dto.ArmorKey, dto.ShieldKey);
+                dto.Weapon1Key, dto.Weapon2Key, dto.ArmorKey, dto.ShieldKey, dto.MountKey);
     }
 }

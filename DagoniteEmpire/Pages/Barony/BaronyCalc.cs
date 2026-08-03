@@ -702,7 +702,7 @@ namespace DagoniteEmpire.Pages.Barony
                 {
                     var upkeep = UnitUpkeepFormulas.Compute(
                         u.Wage, u.UpkeepFood, u.UpkeepDefense,
-                        u.Weapon1Key, u.Weapon2Key, u.ArmorKey, u.ShieldKey);
+                        u.Weapon1Key, u.Weapon2Key, u.ArmorKey, u.ShieldKey, u.MountKey);
                     var additive = new PpbVector();
                     additive[Ppb.Treasury] = -upkeep.Gold;
                     additive[Ppb.Food] = -upkeep.Food;

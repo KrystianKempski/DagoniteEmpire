@@ -25,7 +25,8 @@ public class TradeGoodAvailabilityTests
         {
             "Mine - Salt",
             "brewery",
-            "Stables",
+            "Horse Stud (regular)",
+            "Horse Stud (military)",
             "Import",
         });
 
@@ -33,7 +34,7 @@ public class TradeGoodAvailabilityTests
         Assert.Contains("beer", produced);
         Assert.Contains("horses", produced);
         Assert.Contains("war-horses", produced);
-        Assert.Contains("noble-horses", produced);
+        Assert.DoesNotContain("noble-horses", produced);
         Assert.DoesNotContain("olive-oil", produced);
     }
 

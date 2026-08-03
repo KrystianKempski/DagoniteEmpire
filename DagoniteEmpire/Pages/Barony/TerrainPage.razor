@@ -274,15 +274,34 @@ else
 
         var allowedNames = TerrainImprovementCatalogMap.AllowedCatalogTemplateNames(
             tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType);
-        var placeable = _improvementTemplates
-            .Where(t => allowedNames.Contains(t.Name))
-            .ToList();
+        var availability = await _baronyRepo.GetTradeGoodAvailability(Barony.Id);
+        var lockedHerd = new List<string>();
+        var placeable = new List<BuildingTemplateDTO>();
+        foreach (var t in _improvementTemplates.Where(t => allowedNames.Contains(t.Name)))
+        {
+            if (HerdStockRequirements.HasAccess(t.Name, availability))
+                placeable.Add(t);
+            else if (HerdStockRequirements.TryGetRequiredGoodKey(t.Name, out _))
+            {
+                var good = HerdStockRequirements.RequiredGoodDisplayName(t.Name) ?? "stock";
+                lockedHerd.Add($"{t.Name} (needs {good})");
+            }
+        }
 
         if (placeable.Count == 0)
         {
-            _snackBar.Add(
-                "Nothing from the improvement catalog can be built on this tile (check terrain, features, and resources).",
-                Severity.Info);
+            if (lockedHerd.Count > 0)
+            {
+                _snackBar.Add(
+                    "Herd improvements need breeding stock from trade first: " + string.Join("; ", lockedHerd),
+                    Severity.Info);
+            }
+            else
+            {
+                _snackBar.Add(
+                    "Nothing from the improvement catalog can be built on this tile (check terrain, features, and resources).",
+                    Severity.Info);
+            }
             return;
         }
 
@@ -291,6 +310,7 @@ else
             { x => x.BaronyId, Barony.Id },
             { x => x.Tile, tile },
             { x => x.Templates, placeable },
+            { x => x.LockedHerdNotes, lockedHerd },
         };
 
         var dialog = await _dialogService.ShowAsync<CreateBuildingProjectDialog>(

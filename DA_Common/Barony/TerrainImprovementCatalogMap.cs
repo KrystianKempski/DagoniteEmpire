@@ -11,6 +11,7 @@ namespace DA_Common.Barony
         public const string FishingPier = "Fishing Pier";
         public const string SawmillCommon = "Sawmill - common";
         public const string ClayPit = "Clay pit";
+        public const string FarmDyePlant = "Farm (Dye plant)";
 
         /// <summary>Extra Food when Fishing harbor sits on a Fishery deposit.</summary>
         public const decimal FishingHarborFisheryFoodBonus = 1m;
@@ -35,7 +36,7 @@ namespace DA_Common.Barony
             return mapKind switch
             {
                 MapImprovement.Farm => CanPlaceFarm(baseType, featuresMask)
-                    ? TerrainFertility.FarmTemplateName(fertility)
+                    ? ResolveFarm(fertility, resource)
                     : null,
                 MapImprovement.Mine => ResolveExtractive(resource),
                 MapImprovement.Sawmill => CanPlaceSawmill(featuresMask, resource)
@@ -115,6 +116,8 @@ namespace DA_Common.Barony
                     set.Add(name);
             }
 
+            HerdStockRequirements.AddPlaceableTemplateNames(set, fertility, featuresMask, baseType);
+
             return set;
         }
 
@@ -174,6 +177,9 @@ namespace DA_Common.Barony
             if (mapKind == MapImprovement.Mine && IsWoodResource(resource))
                 return "Cannot place a mine on timber. Use a sawmill instead.";
 
+            if (mapKind == MapImprovement.Mine && TerrainResource.IsDyePlant(resource))
+                return "Cannot place a mine on dye plants. Use a farm instead.";
+
             if (mapKind == MapImprovement.Mine && string.IsNullOrWhiteSpace(resource))
                 return "Mines require a resource deposit on the tile (metal, stone, clay, salt, sulfur, gems…).";
 
@@ -187,6 +193,18 @@ namespace DA_Common.Barony
                 return "Sawmills require forest, dense forest, or a timber deposit (Ironwood / Elven alder / Shipbuilding wood).";
 
             return null;
+        }
+
+        private static string? ResolveFarm(int fertility, string? resource)
+        {
+            if (!TerrainFertility.SupportsFarm(fertility))
+                return null;
+
+            // Woad / madder / weld deposits host the dye triad farm instead of a grain farm.
+            if (TerrainResource.IsDyePlant(resource))
+                return FarmDyePlant;
+
+            return TerrainFertility.FarmTemplateName(fertility);
         }
 
         private static bool IsWoodResource(string? resource) =>
@@ -210,6 +228,8 @@ namespace DA_Common.Barony
             TerrainResource.Obsidian => "Quarry - Obsidian",
             TerrainResource.Clay => ClayPit,
             TerrainResource.Fishery => null,
+            // Dye plants are farmed, not mined.
+            TerrainResource.Woad or TerrainResource.Madder or TerrainResource.Weld => null,
             _ => null,
         };
 

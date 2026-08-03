@@ -53,6 +53,7 @@ namespace DA_DataAccess.BaronyData
         public string? Weapon2Key { get; set; }
         public string? ArmorKey { get; set; }
         public string? ShieldKey { get; set; }
+        public string? MountKey { get; set; }
         public string Weapon1Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
         public string Weapon2Quality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
 

@@ -272,9 +272,21 @@
     {
         if (!CanChangeEquipment || _busy) return;
 
+        TradeGoodAvailabilitySnapshot? availability = null;
+        try
+        {
+            availability = await _baronyRepo.GetTradeGoodAvailability(Unit.BaronyId);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+            return;
+        }
+
         var parameters = new DialogParameters
         {
             [nameof(UnitChangeEquipmentDialog.Unit)] = Unit,
+            [nameof(UnitChangeEquipmentDialog.Availability)] = availability,
         };
         var options = new DialogOptions
         {

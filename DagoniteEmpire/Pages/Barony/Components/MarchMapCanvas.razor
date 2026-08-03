@@ -99,6 +99,9 @@
                         var onDesign = DesignPathNodeIds.Any(id => string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase));
                         var routeReachable = ActiveTool == MarchMapTool.DesignRoute && DesignRouteManualMode &&
                                              DesignRouteReachableNodeIds.Any(id => string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase));
+                        var goodKeys = ShowProducedGoods
+                            ? GoodsKeysForNode(lord, isPlayerSeat)
+                            : Array.Empty<string>();
                         <g class="march-map-marker @visual.MarkerClass @(isPlayerSeat ? "march-map-marker--player-seat" : "") @(isBlocked ? "march-map-marker--blocked" : "") @(onDesign ? "march-map-marker--design" : "") @(selected ? "march-map-marker--selected" : "") @(connectHint || routeReachable ? "march-map-marker--connect" : "")"
                            transform="translate(@Fmt(node.X), @Fmt(node.Y))"
                            @onclick:stopPropagation="true"
@@ -109,6 +112,56 @@
                            @onpointerleave="HideHoverTip"
                            @onpointercancel="HideHoverTip">
                             <circle r="@Fmt(visual.HitRadius)" class="march-map-marker__hit" />
+                            @if (goodKeys.Count > 0)
+                            {
+                                // FO uses comfortable CSS icon size; SVG scale shrinks without clipping.
+                                const double iconCss = 16;
+                                const double gapCss = 2;
+                                const double goodsScale = 0.28;
+                                var contentW = goodKeys.Count * iconCss + (goodKeys.Count - 1) * gapCss;
+                                var contentH = iconCss;
+                                var goodsBaseline = -(visual.DotRadius + 2.5);
+                                <g class="march-map-marker__goods-scale"
+                                   transform="translate(0, @Fmt(goodsBaseline)) scale(@Fmt(goodsScale))"
+                                   pointer-events="none">
+                                    <foreignObject x="@Fmt(-contentW / 2.0)"
+                                                   y="@Fmt(-contentH)"
+                                                   width="@Fmt(contentW)"
+                                                   height="@Fmt(contentH)"
+                                                   class="march-map-marker__goods-fo">
+                                        <div class="march-map-marker__goods" xmlns="http://www.w3.org/1999/xhtml">
+                                            @foreach (var goodKey in goodKeys)
+                                            {
+                                                var good = TradeGoodsCatalog.Find(goodKey);
+                                                <TradeGoodIcon GoodKey="@goodKey"
+                                                               Good="@good"
+                                                               Title="@(good?.Name ?? goodKey)"
+                                                               Class="march-map-marker__good-icon" />
+                                            }
+                                        </div>
+                                    </foreignObject>
+                                </g>
+                            }
+                            @if (isBlocked)
+                            {
+                                const double lockCss = 18;
+                                const double lockScale = 0.32;
+                                <g class="march-map-marker__lock-scale"
+                                   transform="translate(@Fmt(visual.DotRadius + 1), @Fmt(-(visual.DotRadius + 1))) scale(@Fmt(lockScale))"
+                                   pointer-events="none">
+                                    <foreignObject x="@Fmt(-lockCss / 2.0)"
+                                                   y="@Fmt(-lockCss / 2.0)"
+                                                   width="@Fmt(lockCss)"
+                                                   height="@Fmt(lockCss)"
+                                                   class="march-map-marker__lock-fo">
+                                        <div class="march-map-marker__lock" xmlns="http://www.w3.org/1999/xhtml" title="Trade blocked — no trade routes with this barony">
+                                            <MudIcon Icon="@Icons.Material.Filled.Lock"
+                                                     Class="march-map-marker__lock-icon"
+                                                     Title="Trade blocked" />
+                                        </div>
+                                    </foreignObject>
+                                </g>
+                            }
                             <circle r="@Fmt(visual.DotRadius)" class="march-map-marker__dot" />
                             <text y="@Fmt(visual.LabelYOffset)" text-anchor="middle" class="march-map-marker__label">@ShortLabel(node.Label)</text>
                         </g>
@@ -263,6 +316,10 @@
     [Parameter] public string? PlayerSeatNodeId { get; set; }
     [Parameter] public MarchMapPlayerBaronyContext? PlayerBarony { get; set; }
     [Parameter] public IReadOnlyCollection<string> BlockedLordKeys { get; set; } = Array.Empty<string>();
+    /// <summary>When true, produced goods icons are drawn above each place marker.</summary>
+    [Parameter] public bool ShowProducedGoods { get; set; } = true;
+    /// <summary>Goods keys for the player seat (produced / grantable).</summary>
+    [Parameter] public IReadOnlyCollection<string> PlayerProducedGoodKeys { get; set; } = Array.Empty<string>();
     [Parameter] public IReadOnlyList<string> DesignPathNodeIds { get; set; } = Array.Empty<string>();
     [Parameter] public bool DesignRouteManualMode { get; set; }
     [Parameter] public IReadOnlyList<string> DesignRouteReachableNodeIds { get; set; } = Array.Empty<string>();
@@ -386,6 +443,31 @@
     private bool IsBlocked(MarchMapNode node) =>
         !string.IsNullOrWhiteSpace(node.LordKey) &&
         BlockedLordKeys.Contains(node.LordKey, StringComparer.OrdinalIgnoreCase);
+
+    private const int MaxGoodsIconsPerMarker = 6;
+
+    private IReadOnlyList<string> GoodsKeysForNode(KnownLordEntry? lord, bool isPlayerSeat)
+    {
+        IEnumerable<string> keys;
+        if (isPlayerSeat)
+        {
+            keys = PlayerProducedGoodKeys;
+        }
+        else if (lord is not null)
+        {
+            keys = KnownLordsCatalog.ProducedGoodKeys(lord);
+        }
+        else
+        {
+            return Array.Empty<string>();
+        }
+
+        return keys
+            .Where(k => !string.IsNullOrWhiteSpace(k) && TradeGoodsCatalog.Find(k) is not null)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(MaxGoodsIconsPerMarker)
+            .ToList();
+    }
 
     private string RouteTypeButtonClass(string kind) =>
         string.Equals(_selectedRoute?.Kind, kind, StringComparison.OrdinalIgnoreCase)

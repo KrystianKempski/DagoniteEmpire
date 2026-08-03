@@ -231,22 +231,60 @@ namespace DA_Business.Repository.BaronyRepos
                 var barony = await ctx.Baronies.AsNoTracking()
                     .FirstOrDefaultAsync(b => b.Id == baronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
-
-                var buildingNames = await ctx.BaronyBuildings.AsNoTracking()
-                    .Where(b => b.BaronyId == baronyId)
-                    .Select(b => b.Name)
-                    .ToListAsync();
-
-                var improvementNames = await LoadPrimaryDomainActiveImprovementNamesAsync(ctx, baronyId);
-                var facilityNames = buildingNames.Concat(improvementNames);
-                var treaties = ParseTradeTreaties(barony.TradeTreatiesJson);
-                var overrides = TradeGoodAvailability.NormalizeOverrideKeys(ParseTradeGoodKeys(barony.AvailableTradeGoodsJson));
-                return TradeGoodAvailability.Resolve(facilityNames, treaties, overrides);
+                return await ResolveTradeGoodAvailabilityAsync(ctx, baronyId, barony);
             }
             catch (System.Exception ex) when (ex is not InvalidOperationException)
             {
                 throw Err(ex, nameof(GetTradeGoodAvailability));
             }
+        }
+
+        private async Task<TradeGoodAvailabilitySnapshot> ResolveTradeGoodAvailabilityAsync(
+            ApplicationDbContext ctx,
+            int baronyId,
+            Barony barony)
+        {
+            var buildingNames = await ctx.BaronyBuildings.AsNoTracking()
+                .Where(b => b.BaronyId == baronyId)
+                .Select(b => b.Name)
+                .ToListAsync();
+
+            var improvementNames = await LoadPrimaryDomainActiveImprovementNamesAsync(ctx, baronyId);
+            var facilityNames = buildingNames.Concat(improvementNames);
+            var treaties = ParseTradeTreaties(barony.TradeTreatiesJson);
+            var overrides = TradeGoodAvailability.NormalizeOverrideKeys(ParseTradeGoodKeys(barony.AvailableTradeGoodsJson));
+            return TradeGoodAvailability.Resolve(facilityNames, treaties, overrides);
+        }
+
+        private static void EnsureUnitGearMeetsRequirements(
+            BaronyUnitDTO unit,
+            UnitWeaponDef weapon1,
+            UnitWeaponDef? weapon2,
+            UnitArmorDef? armor,
+            UnitArmorDef? shield,
+            UnitMountDef? mount,
+            TradeGoodAvailabilitySnapshot availability)
+        {
+            var build = unit.EffectiveBuild;
+            var agility = unit.EffectiveAgility;
+            var skillTotals = UnitStatHelper.BuildSkillTotals(unit);
+            var armorSkill = skillTotals.GetValueOrDefault(UnitSkillKey.ArmorSkill);
+            var ridingSkill = skillTotals.GetValueOrDefault(UnitSkillKey.Riding);
+
+            if (!UnitEquipmentTradeAccess.MeetsWeapon(weapon1, build, agility, availability, out var w1Why))
+                throw new InvalidOperationException(w1Why);
+            if (weapon2 is not null
+                && !UnitEquipmentTradeAccess.MeetsWeapon(weapon2, build, agility, availability, out var w2Why))
+                throw new InvalidOperationException(w2Why);
+            if (armor is not null
+                && !UnitEquipmentTradeAccess.MeetsArmor(armor, build, armorSkill, availability, out var arWhy))
+                throw new InvalidOperationException(arWhy);
+            if (shield is not null
+                && !UnitEquipmentTradeAccess.MeetsArmor(shield, build, armorSkill, availability, out var shWhy))
+                throw new InvalidOperationException(shWhy);
+            if (mount is not null
+                && !UnitEquipmentTradeAccess.MeetsMount(mount, ridingSkill, availability, out var mtWhy))
+                throw new InvalidOperationException(mtWhy);
         }
 
         private static async Task<List<string>> LoadPrimaryDomainActiveImprovementNamesAsync(
@@ -3108,11 +3146,12 @@ namespace DA_Business.Repository.BaronyRepos
                 var weapon2 = UnitWeaponCatalog.Find(request.Weapon2Key);
                 var armor = UnitArmorCatalog.Find(request.ArmorKey);
                 var shield = UnitArmorCatalog.Find(request.ShieldKey);
+                var mount = UnitMountCatalog.Find(request.MountKey);
                 if (weapon1 is null)
                     throw new InvalidOperationException("Primary weapon is required.");
 
                 var costs = UnitTrainingCostFormulas.Compute(
-                    recruit, training, weapon1, weapon2, armor, shield,
+                    recruit, training, weapon1, weapon2, armor, shield, mount,
                     new UnitEquipmentPayModes(
                         UnitEquipmentAcquireMode.Normalize(request.Weapon1AcquireMode),
                         weapon2 is null
@@ -3123,13 +3162,17 @@ namespace DA_Business.Repository.BaronyRepos
                             : UnitEquipmentAcquireMode.Normalize(request.ArmorAcquireMode),
                         shield is null
                             ? UnitEquipmentAcquireMode.Craft
-                            : UnitEquipmentAcquireMode.Normalize(request.ShieldAcquireMode)),
+                            : UnitEquipmentAcquireMode.Normalize(request.ShieldAcquireMode),
+                        mount is null
+                            ? UnitEquipmentAcquireMode.Craft
+                            : UnitEquipmentAcquireMode.Normalize(request.MountAcquireMode)),
                     request.AccelerateTurns);
 
                 using var ctx = await _db.CreateDbContextAsync();
                 var barony = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == request.BaronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
                 var gearQuality = UnitWeaponQuality.Normalize(barony.DefaultUnitWeaponQuality);
+                var availability = await ResolveTradeGoodAvailabilityAsync(ctx, request.BaronyId, barony);
 
                 var now = DateTime.UtcNow;
                 var attr = recruit.AttributeScore;
@@ -3159,6 +3202,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Weapon2Key = weapon2?.Key,
                     ArmorKey = armor?.Key,
                     ShieldKey = shield?.Key,
+                    MountKey = mount?.Key,
                     Weapon1Quality = gearQuality,
                     Weapon2Quality = UnitWeaponQuality.Normal,
                     DefenseSkillKey = UnitSkillKey.Dodges,
@@ -3182,6 +3226,7 @@ namespace DA_Business.Repository.BaronyRepos
                 // Apply armor agility penalty to the attribute penalty column (Excel Ks).
                 unit.AttrPenaltyAgility = (armor?.AgilityPenalty ?? 0) + (shield?.AgilityPenalty ?? 0);
                 unitDtoPreview.AttrPenaltyAgility = unit.AttrPenaltyAgility;
+                EnsureUnitGearMeetsRequirements(unitDtoPreview, weapon1, weapon2, armor, shield, mount, availability);
                 var combatPreview = ComputeUnitCombat(unitDtoPreview);
                 unit.DefenseSkillKey = unitDtoPreview.DefenseSkillKey;
                 unit.CurrentHp = combatPreview.MaxHp;
@@ -3321,7 +3366,8 @@ namespace DA_Business.Repository.BaronyRepos
                     UnitEquipmentAcquireMode.Normalize(request.Weapon1AcquireMode),
                     UnitEquipmentAcquireMode.Normalize(request.Weapon2AcquireMode),
                     UnitEquipmentAcquireMode.Normalize(request.ArmorAcquireMode),
-                    UnitEquipmentAcquireMode.Normalize(request.ShieldAcquireMode));
+                    UnitEquipmentAcquireMode.Normalize(request.ShieldAcquireMode),
+                    UnitEquipmentAcquireMode.Normalize(request.MountAcquireMode));
 
                 var costs = UnitReinforceCostFormulas.Compute(
                     unit.TroopCount,
@@ -3329,6 +3375,7 @@ namespace DA_Business.Repository.BaronyRepos
                     UnitWeaponCatalog.Find(unit.Weapon2Key),
                     UnitArmorCatalog.Find(unit.ArmorKey),
                     UnitArmorCatalog.Find(unit.ShieldKey),
+                    UnitMountCatalog.Find(unit.MountKey),
                     payModes,
                     n);
 
@@ -3408,7 +3455,7 @@ namespace DA_Business.Repository.BaronyRepos
                     throw new InvalidOperationException("Unit is required.");
 
                 using var ctx = await _db.CreateDbContextAsync();
-                _ = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == request.BaronyId)
+                var barony = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == request.BaronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
 
                 var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u =>
@@ -3431,30 +3478,18 @@ namespace DA_Business.Repository.BaronyRepos
                 var weapon2 = UnitWeaponCatalog.Find(request.Weapon2Key);
                 var armor = UnitArmorCatalog.Find(request.ArmorKey);
                 var shield = UnitArmorCatalog.Find(request.ShieldKey);
+                var mount = UnitMountCatalog.Find(request.MountKey);
 
+                var availability = await ResolveTradeGoodAvailabilityAsync(ctx, request.BaronyId, barony);
                 var unitDto = ToUnitDTO(unit);
-                var build = unitDto.EffectiveBuild;
-                var agility = unitDto.EffectiveAgility;
-                var armorSkill = UnitStatHelper.BuildSkillTotals(unitDto)
-                    .GetValueOrDefault(UnitSkillKey.ArmorSkill);
-
-                if (!UnitEquipmentRequirements.MeetsWeapon(weapon1, build, agility, out var w1Why))
-                    throw new InvalidOperationException(w1Why);
-                if (weapon2 is not null
-                    && !UnitEquipmentRequirements.MeetsWeapon(weapon2, build, agility, out var w2Why))
-                    throw new InvalidOperationException(w2Why);
-                if (armor is not null
-                    && !UnitEquipmentRequirements.MeetsArmor(armor, build, armorSkill, out var arWhy))
-                    throw new InvalidOperationException(arWhy);
-                if (shield is not null
-                    && !UnitEquipmentRequirements.MeetsArmor(shield, build, armorSkill, out var shWhy))
-                    throw new InvalidOperationException(shWhy);
+                EnsureUnitGearMeetsRequirements(unitDto, weapon1, weapon2, armor, shield, mount, availability);
 
                 var sameLoadout =
                     string.Equals(unit.Weapon1Key, weapon1.Key, StringComparison.OrdinalIgnoreCase)
                     && string.Equals(unit.Weapon2Key ?? "", weapon2?.Key ?? "", StringComparison.OrdinalIgnoreCase)
                     && string.Equals(unit.ArmorKey ?? "", armor?.Key ?? "", StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(unit.ShieldKey ?? "", shield?.Key ?? "", StringComparison.OrdinalIgnoreCase);
+                    && string.Equals(unit.ShieldKey ?? "", shield?.Key ?? "", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(unit.MountKey ?? "", mount?.Key ?? "", StringComparison.OrdinalIgnoreCase);
                 if (sameLoadout)
                     throw new InvalidOperationException("Choose a different loadout than the unit already has.");
 
@@ -3468,10 +3503,13 @@ namespace DA_Business.Repository.BaronyRepos
                         : UnitEquipmentAcquireMode.Normalize(request.ArmorAcquireMode),
                     shield is null
                         ? UnitEquipmentAcquireMode.Craft
-                        : UnitEquipmentAcquireMode.Normalize(request.ShieldAcquireMode));
+                        : UnitEquipmentAcquireMode.Normalize(request.ShieldAcquireMode),
+                    mount is null
+                        ? UnitEquipmentAcquireMode.Craft
+                        : UnitEquipmentAcquireMode.Normalize(request.MountAcquireMode));
 
                 var costs = UnitChangeEquipmentCostFormulas.Compute(
-                    weapon1, weapon2, armor, shield, payModes, unit.TroopCount);
+                    weapon1, weapon2, armor, shield, mount, payModes, unit.TroopCount);
 
                 var goldCost = new PpbVector();
                 goldCost[Ppb.Treasury] = costs.Gold;
@@ -3528,7 +3566,7 @@ namespace DA_Business.Repository.BaronyRepos
                     AllocatedJson = "{}",
                     ResultDescription = $"Changes equipment on unit #{unit.Id} ({unit.Name}).",
                     Notes = BuildChangeEquipmentNote(
-                        weapon1.Key, weapon2?.Key, armor?.Key, shield?.Key, quality, payModes),
+                        weapon1.Key, weapon2?.Key, armor?.Key, shield?.Key, mount?.Key, quality, payModes),
                 };
 
                 ctx.BaronyProjects.Add(project);
@@ -4834,6 +4872,7 @@ namespace DA_Business.Repository.BaronyRepos
             Weapon2Key = e.Weapon2Key,
             ArmorKey = e.ArmorKey,
             ShieldKey = e.ShieldKey,
+            MountKey = e.MountKey,
             Weapon1Quality = e.Weapon1Quality,
             Weapon2Quality = e.Weapon2Quality,
             DefenseSkillKey = e.DefenseSkillKey,
@@ -4897,6 +4936,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.Weapon2Key = string.IsNullOrWhiteSpace(d.Weapon2Key) ? null : d.Weapon2Key.Trim();
             e.ArmorKey = string.IsNullOrWhiteSpace(d.ArmorKey) ? null : d.ArmorKey.Trim();
             e.ShieldKey = string.IsNullOrWhiteSpace(d.ShieldKey) ? null : d.ShieldKey.Trim();
+            e.MountKey = string.IsNullOrWhiteSpace(d.MountKey) ? null : d.MountKey.Trim();
             e.Weapon1Quality = string.IsNullOrWhiteSpace(d.Weapon1Quality)
                 ? UnitWeaponQuality.Normal
                 : d.Weapon1Quality.Trim();
@@ -4936,6 +4976,7 @@ namespace DA_Business.Repository.BaronyRepos
             Add("W2", request.Weapon2Key, request.Weapon2AcquireMode);
             Add("armor", request.ArmorKey, request.ArmorAcquireMode);
             Add("shield", request.ShieldKey, request.ShieldAcquireMode);
+            Add("mount", request.MountKey, request.MountAcquireMode);
             return parts.Count == 0
                 ? null
                 : $"Gear acquire: {string.Join(", ", parts)} (Buy = Mkt gold; Defense = 2×Mkt).";
@@ -4950,6 +4991,7 @@ namespace DA_Business.Repository.BaronyRepos
                 $"W2={UnitEquipmentAcquireMode.Label(pay.Weapon2)}",
                 $"armor={UnitEquipmentAcquireMode.Label(pay.Armor)}",
                 $"shield={UnitEquipmentAcquireMode.Label(pay.Shield)}",
+                $"mount={UnitEquipmentAcquireMode.Label(pay.Mount)}",
             };
             return string.Join("; ", parts)
                 + $". People = Selected volunteers + Standard × N/{UnitRules.DefaultTroopCount}; "
@@ -4961,6 +5003,7 @@ namespace DA_Business.Repository.BaronyRepos
             string? weapon2Key,
             string? armorKey,
             string? shieldKey,
+            string? mountKey,
             string weapon1Quality,
             UnitEquipmentPayModes pay)
         {
@@ -4971,11 +5014,13 @@ namespace DA_Business.Repository.BaronyRepos
                 $"W2Key={weapon2Key ?? ""}",
                 $"ArmorKey={armorKey ?? ""}",
                 $"ShieldKey={shieldKey ?? ""}",
+                $"MountKey={mountKey ?? ""}",
                 $"Qual={weapon1Quality}",
                 $"W1={UnitEquipmentAcquireMode.Label(pay.Weapon1)}",
                 $"W2={UnitEquipmentAcquireMode.Label(pay.Weapon2)}",
                 $"armor={UnitEquipmentAcquireMode.Label(pay.Armor)}",
                 $"shield={UnitEquipmentAcquireMode.Label(pay.Shield)}",
+                $"mount={UnitEquipmentAcquireMode.Label(pay.Mount)}",
             };
             return string.Join("; ", parts);
         }
@@ -4993,6 +5038,7 @@ namespace DA_Business.Repository.BaronyRepos
             var w2Key = NullIfEmpty(ReadNoteValue(project.Notes, "W2Key="));
             var armorKey = NullIfEmpty(ReadNoteValue(project.Notes, "ArmorKey="));
             var shieldKey = NullIfEmpty(ReadNoteValue(project.Notes, "ShieldKey="));
+            var mountKey = NullIfEmpty(ReadNoteValue(project.Notes, "MountKey="));
             var quality = ReadNoteValue(project.Notes, "Qual=");
             if (string.IsNullOrWhiteSpace(quality)
                 || !UnitWeaponQuality.All.Contains(quality, StringComparer.OrdinalIgnoreCase))
@@ -5004,6 +5050,8 @@ namespace DA_Business.Repository.BaronyRepos
                 armorKey = null;
             if (shieldKey is not null && UnitArmorCatalog.Find(shieldKey) is null)
                 shieldKey = null;
+            if (mountKey is not null && UnitMountCatalog.Find(mountKey) is null)
+                mountKey = null;
 
             var armor = UnitArmorCatalog.Find(armorKey);
             var shield = UnitArmorCatalog.Find(shieldKey);
@@ -5016,6 +5064,7 @@ namespace DA_Business.Repository.BaronyRepos
             unit.Weapon2Key = w2Key;
             unit.ArmorKey = armorKey;
             unit.ShieldKey = shieldKey;
+            unit.MountKey = mountKey;
             unit.Weapon1Quality = quality;
             unit.Weapon2Quality = UnitWeaponQuality.Normal;
             unit.AttrPenaltyAgility = (armor?.AgilityPenalty ?? 0) + (shield?.AgilityPenalty ?? 0);
@@ -5033,6 +5082,7 @@ namespace DA_Business.Repository.BaronyRepos
                 unit.Weapon2Key is null ? null : UnitWeaponCatalog.Find(unit.Weapon2Key)?.Name ?? unit.Weapon2Key,
                 unit.ArmorKey is null ? null : UnitArmorCatalog.Find(unit.ArmorKey)?.Name ?? unit.ArmorKey,
                 unit.ShieldKey is null ? null : UnitArmorCatalog.Find(unit.ShieldKey)?.Name ?? unit.ShieldKey,
+                unit.MountKey is null ? null : UnitMountCatalog.Find(unit.MountKey)?.Name ?? unit.MountKey,
             }.Where(s => !string.IsNullOrWhiteSpace(s)));
             return true;
         }

@@ -274,6 +274,9 @@ namespace DA_Common.Barony
         public const string Salt = "Salt";
         public const string Sulfur = "Sulfur";
         public const string Gemstones = "Gemstones";
+        public const string Woad = "Woad";
+        public const string Madder = "Madder";
+        public const string Weld = "Weld";
 
         public static readonly string[] All =
         {
@@ -281,10 +284,16 @@ namespace DA_Common.Barony
             Fishery,
             Stone, Granite, Tarnit, Obsidian,
             Clay, Ironwood, ElvenAlder, ShipbuildingWood, Salt, Sulfur, Gemstones,
+            Woad, Madder, Weld,
         };
 
         public static bool IsKnown(string? key) =>
             !string.IsNullOrWhiteSpace(key) && All.Contains(key);
+
+        public static bool IsDyePlant(string? key) =>
+            string.Equals(key, Woad, StringComparison.Ordinal)
+            || string.Equals(key, Madder, StringComparison.Ordinal)
+            || string.Equals(key, Weld, StringComparison.Ordinal);
 
         public static string DisplayName(string? key) => key switch
         {
@@ -305,6 +314,9 @@ namespace DA_Common.Barony
             Salt => "Salt",
             Sulfur => "Sulfur",
             Gemstones => "Gemstones",
+            Woad => "Woad",
+            Madder => "Madder",
+            Weld => "Weld",
             _ => key ?? "None",
         };
 
@@ -318,6 +330,9 @@ namespace DA_Common.Barony
             Clay or Salt => "/icons/coal-pile.svg",
             Ironwood or ElvenAlder or ShipbuildingWood => "/icons/wood-pile.svg",
             Gemstones => "/icons/crystal-growth.svg",
+            Woad => "/icons/three-leaves.svg",
+            Madder => "/icons/root-tip.svg",
+            Weld => "/icons/vine-flower.svg",
             _ => "/icons/metal-bar.svg",
         };
 
@@ -342,6 +357,9 @@ namespace DA_Common.Barony
             // Yellow obsidian-shaped deposit.
             Sulfur => "#e6c200",
             Gemstones => "#9b59b6",
+            Woad => "#2e6bb0",
+            Madder => "#a83c3c",
+            Weld => "#d4a017",
             _ => "#888888",
         };
 

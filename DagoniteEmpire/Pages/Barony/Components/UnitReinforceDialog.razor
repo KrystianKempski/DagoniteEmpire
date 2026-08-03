@@ -35,6 +35,7 @@
                 @PayRow("W2", _w2?.Name, _w2?.ProductionCost, _w2?.GoldCost, _w2?.MarketGold, _payW2, v => { _payW2 = v; Recalc(); }, required: false)
                 @PayRow("Armor", _armor?.Name, _armor?.ProductionCost, _armor?.GoldCost, _armor?.MarketGold, _payArmor, v => { _payArmor = v; Recalc(); }, required: false)
                 @PayRow("Shield", _shield?.Name, _shield?.ProductionCost, _shield?.GoldCost, _shield?.MarketGold, _payShield, v => { _payShield = v; Recalc(); }, required: false)
+                @PayRow("Mount", _mount?.Name, _mount?.ProductionCost, _mount?.GoldCost, _mount?.MarketGold, _payMount, v => { _payMount = v; Recalc(); }, required: false)
             </div>
 
             <MudText Typo="Typo.subtitle2" Class="mb-1">Project cost</MudText>
@@ -76,10 +77,12 @@
     private string _payW2 = UnitEquipmentAcquireMode.Craft;
     private string _payArmor = UnitEquipmentAcquireMode.Craft;
     private string _payShield = UnitEquipmentAcquireMode.Craft;
+    private string _payMount = UnitEquipmentAcquireMode.Craft;
     private UnitWeaponDef? _w1;
     private UnitWeaponDef? _w2;
     private UnitArmorDef? _armor;
     private UnitArmorDef? _shield;
+    private UnitMountDef? _mount;
     private UnitReinforceCostSummary _costs;
 
     protected override void OnInitialized()
@@ -88,6 +91,7 @@
         _w2 = UnitWeaponCatalog.Find(Unit.Weapon2Key);
         _armor = UnitArmorCatalog.Find(Unit.ArmorKey);
         _shield = UnitArmorCatalog.Find(Unit.ShieldKey);
+        _mount = UnitMountCatalog.Find(Unit.MountKey);
         _missing = Math.Max(0, UnitRules.DefaultTroopCount - Unit.TroopCount);
         _troopCount = Math.Max(1, _missing);
         Recalc();
@@ -101,8 +105,8 @@
 
         _costs = UnitReinforceCostFormulas.Compute(
             Unit.TroopCount,
-            _w1, _w2, _armor, _shield,
-            new UnitEquipmentPayModes(_payW1, _payW2, _payArmor, _payShield),
+            _w1, _w2, _armor, _shield, _mount,
+            new UnitEquipmentPayModes(_payW1, _payW2, _payArmor, _payShield, _payMount),
             _troopCount);
     }
 
@@ -159,6 +163,7 @@
             Weapon2AcquireMode = _payW2,
             ArmorAcquireMode = _payArmor,
             ShieldAcquireMode = _payShield,
+            MountAcquireMode = _payMount,
         }));
     }
 }
