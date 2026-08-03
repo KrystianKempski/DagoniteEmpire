@@ -72,7 +72,7 @@
                                              title="@token.Label">
                                             @TokenIcon(token.IconKey, token.Label)
                                         </div>
-                                        <span class="bbm-token-label">@token.Label</span>
+                                        <div class="bbm-token-label">@token.Label</div>
                                         @if (ShowMoveBadge(token))
                                         {
                                             <span class="bbm-move-badge" title="Move points">@token.Move</span>
@@ -84,9 +84,9 @@
                                             <img class="bbm-engage-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
                                         </span>
                                     }
-                                    @if (IsAttackTarget(token.Id))
+                                    @if (HasAttackEngagement(token.Id))
                                     {
-                                        <span class="bbm-attack-target-badge" title="Attack target">
+                                        <span class="bbm-attack-target-badge" title="Nawiązanie walki">
                                             <img class="bbm-attack-target-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
                                         </span>
                                     }
@@ -104,7 +104,7 @@
                                              title="@(wp.Locked ? $"{owner.Label} (locked)" : $"{owner.Label} (destination)")">
                                             @TokenIcon(owner.IconKey, owner.Label)
                                         </div>
-                                        <span class="bbm-token-label">@owner.Label</span>
+                                        <div class="bbm-token-label">@owner.Label</div>
                                         <span class="bbm-move-badge" title="Move left">@wp.RemainingMoveAfter</span>
                                         @if (wp.Locked)
                                         {
@@ -159,6 +159,76 @@
                         }
                     }
                 </svg>
+                <svg class="bbm-path-overlay bbm-attack-plan-overlay" width="@arrowGw" height="@arrowGh" viewBox="0 0 @arrowGw @arrowGh" style="pointer-events:none" aria-hidden="true">
+                    <defs>
+                        <marker id="bbm-attack-arrow-ally" markerWidth="2" markerHeight="2" refX="-0.5" refY="1" orient="auto" markerUnits="strokeWidth">
+                            <path d="M0,0 L2,1 L0,2 Z" fill="rgb(199, 144, 26)" fill-opacity="0.58" />
+                        </marker>
+                        <marker id="bbm-attack-arrow-enemy" markerWidth="2" markerHeight="2" refX="-0.5" refY="1" orient="auto" markerUnits="strokeWidth">
+                            <path d="M0,0 L2,1 L0,2 Z" fill="rgb(183, 56, 56)" fill-opacity="0.58" />
+                        </marker>
+                    </defs>
+                    @foreach (var attacker in Tokens)
+                    {
+                        if (string.IsNullOrWhiteSpace(attacker.AttackTargetId)) continue;
+                        var target = Tokens.FirstOrDefault(t => t.Id == attacker.AttackTargetId);
+                        if (target is null) continue;
+
+                        var baseFrom = CellCenter(attacker.X, attacker.Y, TokenSize(attacker));
+                        var baseTo = CellCenter(target.X, target.Y, TokenSize(target));
+                        var dx = baseTo.cx - baseFrom.cx;
+                        var dy = baseTo.cy - baseFrom.cy;
+                        var len = Math.Sqrt(dx * dx + dy * dy);
+                        var from = baseFrom;
+                        var to = baseTo;
+
+                        // If both units target each other, draw two parallel arrows on opposite sides.
+                        if (!string.IsNullOrWhiteSpace(target.AttackTargetId)
+                            && string.Equals(target.AttackTargetId, attacker.Id, StringComparison.Ordinal)
+                            && len > 0.001)
+                        {
+                            var firstIsAttacker = string.CompareOrdinal(attacker.Id, target.Id) <= 0;
+                            var p1 = firstIsAttacker ? baseFrom : baseTo;
+                            var p2 = firstIsAttacker ? baseTo : baseFrom;
+                            var pdx = p2.cx - p1.cx;
+                            var pdy = p2.cy - p1.cy;
+                            var plen = Math.Sqrt(pdx * pdx + pdy * pdy);
+                            if (plen > 0.001)
+                            {
+                                var nx = -pdy / plen;
+                                var ny = pdx / plen;
+                                var side = firstIsAttacker ? 1.0 : -1.0;
+                                const double parallelOffsetPx = 8.0;
+                                var ox = nx * parallelOffsetPx * side;
+                                var oy = ny * parallelOffsetPx * side;
+                                from = (baseFrom.cx + ox, baseFrom.cy + oy);
+                                to = (baseTo.cx + ox, baseTo.cy + oy);
+                                dx = to.cx - from.cx;
+                                dy = to.cy - from.cy;
+                                len = Math.Sqrt(dx * dx + dy * dy);
+                            }
+                        }
+
+                        const double headLenPx = 32.0; // marker tip span (2) * stroke-width (16)
+                        var pullBack = Math.Min(headLenPx, Math.Max(0.0, len - 1.0));
+                        var isDiagonal = Math.Abs(dx) > 0.001 && Math.Abs(dy) > 0.001;
+                        if (isDiagonal)
+                            pullBack = Math.Max(0.0, pullBack - 1.0);
+                        var shaftToX = len > 0.001 ? to.cx - dx / len * pullBack : to.cx;
+                        var shaftToY = len > 0.001 ? to.cy - dy / len * pullBack : to.cy;
+                        var arrowClass = attacker.IsEnemy
+                            ? "bbm-attack-plan-arrow bbm-attack-plan-arrow--enemy"
+                            : "bbm-attack-plan-arrow bbm-attack-plan-arrow--ally";
+                        var markerId = attacker.IsEnemy ? "bbm-attack-arrow-enemy" : "bbm-attack-arrow-ally";
+
+                        <line class="@arrowClass"
+                              x1="@from.cx.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                              y1="@from.cy.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                            x2="@shaftToX.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                            y2="@shaftToY.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                              marker-end="url(#@markerId)" />
+                    }
+                </svg>
                 @if (ShowThreatRadius)
                 {
                     var gw = Width * (CellPx + GridGap) - GridGap;
@@ -200,7 +270,7 @@
                                      title="@token.Label">
                                     @TokenIcon(token.IconKey, token.Label)
                                 </div>
-                                <span class="bbm-token-label">@token.Label</span>
+                                <div class="bbm-token-label">@token.Label</div>
                                 @if (IsEngagedToken(token.Id))
                                 {
                                     <span class="bbm-engage-badge" title="Engaged">
@@ -275,6 +345,12 @@
 
     private bool IsAttackTarget(string tokenId) =>
         AttackTargetIds.Contains(tokenId);
+
+    private bool IsAttackingToken(string tokenId) =>
+        Tokens.Any(t => t.Id == tokenId && !string.IsNullOrWhiteSpace(t.AttackTargetId));
+
+    private bool HasAttackEngagement(string tokenId) =>
+        IsAttackTarget(tokenId) || IsAttackingToken(tokenId);
 
     private BaronyBattleCellDTO? GetCell(int x, int y) =>
         Cells.FirstOrDefault(c => c.X == x && c.Y == y);

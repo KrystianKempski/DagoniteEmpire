@@ -26,6 +26,15 @@ namespace DA_Common.Barony
             Perception => "Perception",
             _ => key,
         };
+
+        public static string Letter(string key) => key switch
+        {
+            Build => "B",
+            Agility => "A",
+            Will => "W",
+            Perception => "P",
+            _ => "?",
+        };
     }
 
     public readonly struct UnitWeaponQuality

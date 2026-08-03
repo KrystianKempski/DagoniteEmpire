@@ -9,4 +9,6 @@ public sealed class BattleMoveAnimFrame
     public int Size { get; set; } = 1;
     /// <summary>Continuous facing degrees (may unwrap beyond 0–360 for shortest turns).</summary>
     public double FacingDeg { get; set; }
+    /// <summary>Duration for the CSS left/top transition on this frame (0 = instant).</summary>
+    public int TransitionMs { get; set; }
 }

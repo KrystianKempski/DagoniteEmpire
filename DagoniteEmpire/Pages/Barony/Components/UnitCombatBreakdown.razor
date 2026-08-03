@@ -22,9 +22,13 @@
         Combat.Defense)
 
     @Block("Damage",
-        "Weapon damage (± quality) + other.",
+        $"Weapon damage (± quality) + {UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build)} (from primary weapon skill) + other.",
         UnitCombatStatKey.Damage,
         lossValue: null,
+        (UnitAttr.Letter(Combat.DamageAttrKey ?? UnitAttr.Build),
+            UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build),
+            Combat.AttrDamageBonus,
+            $"{UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build)} linked to the equipped weapon's skill"),
         ("Gear", "Gear", Combat.WeaponDamageBonus, "Weapon damage including quality"),
         Combat.Damage)
 

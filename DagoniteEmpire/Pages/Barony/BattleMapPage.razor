@@ -219,6 +219,11 @@ else
                         @if (IsAttackPlanningPhase && (CanEdit || CanManageAsMg))
                         {
                             <button type="button"
+                                    class="bbm-map-btn bbm-map-btn--ghost"
+                                    @onclick="AutoAssignAttackTargets">
+                                Auto-assign attacks
+                            </button>
+                            <button type="button"
                                     class="bbm-map-btn bbm-map-btn--solid"
                                     @onclick="AdvanceToCombat">
                                 Begin combat
@@ -252,8 +257,12 @@ else
                         <div class="bbm-map-log__entries">
                             @foreach (var entry in Map.Log.OrderByDescending(e => e.Utc).Take(40))
                             {
-                                <div class="bbm-map-log__entry bbm-map-log__entry--@entry.Kind">
-                                    <span class="bbm-map-log__author">@entry.Author</span>
+                                var isChat = string.Equals(entry.Kind, "chat", StringComparison.OrdinalIgnoreCase);
+                                <div class="bbm-map-log__entry bbm-map-log__entry--@(isChat ? "chat" : "auto") bbm-map-log__entry--@entry.Kind">
+                                    @if (isChat && !string.IsNullOrWhiteSpace(entry.Author))
+                                    {
+                                        <span class="bbm-map-log__author">@entry.Author</span>
+                                    }
                                     <span class="bbm-map-log__text">@entry.Text</span>
                                 </div>
                             }
@@ -459,6 +468,22 @@ else
                                 </li>
                             }
                         </ol>
+
+                        var recentCombat = Map.Log
+                            .Where(e => string.Equals(e.Kind, "combat", StringComparison.OrdinalIgnoreCase))
+                            .OrderByDescending(e => e.Utc)
+                            .Take(8)
+                            .ToList();
+                        @if (recentCombat.Count > 0)
+                        {
+                            <p class="bbm-hint" style="margin-top:0.6rem;">Recent combat summary:</p>
+                            <ul class="bbm-initiative" style="margin-top:0.2rem;">
+                                @foreach (var entry in recentCombat)
+                                {
+                                    <li><span class="bbm-force-meta">@entry.Utc.ToLocalTime().ToString("HH:mm:ss")</span> @entry.Text</li>
+                                }
+                            </ul>
+                        }
                     }
                 </BaronySection>
             </aside>
@@ -1295,6 +1320,236 @@ else
         return Math.Max(gx, gy) == 0;
     }
 
+    private bool CanIssueAttackOrder(BaronyBattleTokenDTO token) =>
+        CanManageAsMg || (CanEdit && !token.IsEnemy);
+
+    private bool HasAdjacentEnemyTargetOpportunity(BaronyBattleTokenDTO token)
+    {
+        if (Map is null)
+            return false;
+        foreach (var other in Map.Tokens)
+        {
+            if (other.Id == token.Id)
+                continue;
+            if (other.IsEnemy == token.IsEnemy)
+                continue;
+            if (other.Hp <= 0)
+                continue;
+            if (AreAdjacent(token, other))
+                return true;
+        }
+        return false;
+    }
+
+    private IEnumerable<BaronyBattleTokenDTO> AdjacentEnemyCandidates(BaronyBattleTokenDTO attacker)
+    {
+        if (Map is null)
+            return Enumerable.Empty<BaronyBattleTokenDTO>();
+
+        return Map.Tokens
+            .Where(t => t.Id != attacker.Id)
+            .Where(t => t.IsEnemy != attacker.IsEnemy)
+            .Where(t => t.Hp > 0)
+            .Where(t => AreAdjacent(attacker, t));
+    }
+
+    private async Task AutoAssignAttackTargets()
+    {
+        if (Map is null || !IsAttackPlanningPhase || (!CanEdit && !CanManageAsMg))
+            return;
+
+        var assigned = 0;
+        var cleared = 0;
+
+        var attackers = Map.Tokens
+            .Where(t => t.Hp > 0)
+            .Where(CanIssueAttackOrder)
+            .OrderByDescending(t => t.InitiativeTotal)
+            .ThenBy(t => t.Label)
+            .ToList();
+
+        foreach (var attacker in attackers)
+        {
+            var currentTarget = attacker.AttackTargetId is null
+                ? null
+                : Map.Tokens.FirstOrDefault(t => t.Id == attacker.AttackTargetId);
+
+            var isCurrentValid = currentTarget is not null
+                && currentTarget.Hp > 0
+                && currentTarget.IsEnemy != attacker.IsEnemy
+                && AreAdjacent(attacker, currentTarget);
+
+            if (isCurrentValid)
+                continue;
+
+            if (attacker.AttackTargetId is not null)
+            {
+                attacker.AttackTargetId = null;
+                cleared++;
+            }
+
+            var bestTarget = AdjacentEnemyCandidates(attacker)
+                .OrderBy(t => t.Hp)
+                .ThenByDescending(t => t.InitiativeTotal)
+                .ThenBy(t => t.Label)
+                .FirstOrDefault();
+
+            if (bestTarget is not null)
+            {
+                attacker.AttackTargetId = bestTarget.Id;
+                assigned++;
+            }
+        }
+
+        if (assigned == 0 && cleared == 0)
+        {
+            _snackBar.Add("No attack targets could be auto-assigned.", Severity.Info);
+            return;
+        }
+
+        await SaveAsync(systemMessage: $"Auto-assign attacks: {assigned} assigned, {cleared} cleared.");
+        RefreshRange();
+    }
+
+    /// <summary>
+    /// Front multiplier = AimBase + ExposureBonus.
+    /// Aim: attacker facing toward defender (front 3 / corner 2 / else 1).
+    /// Exposure: attacker position vs defender facing (front +0 / corner +1 / side|rear-corner +2 / rear +3).
+    /// </summary>
+    private readonly record struct FrontBreakdown(int Multiplier, string AimLabel, string ExposureLabel);
+
+    private static FrontBreakdown GetFrontBreakdown(BaronyBattleTokenDTO attacker, BaronyBattleTokenDTO defender)
+    {
+        var attackerCenterX = attacker.X + TokenSize(attacker) * 0.5;
+        var attackerCenterY = attacker.Y + TokenSize(attacker) * 0.5;
+        var defenderCenterX = defender.X + TokenSize(defender) * 0.5;
+        var defenderCenterY = defender.Y + TokenSize(defender) * 0.5;
+
+        // Exposure: where the attacker stands relative to the defender's front.
+        var fromDefenderToAttacker = BaronyBattleFacing.FromScreenVector(
+            attackerCenterX - defenderCenterX,
+            attackerCenterY - defenderCenterY);
+        var exposureDiff = BaronyBattleFacing.CircularDiff(fromDefenderToAttacker, defender.Facing);
+        var exposureBonus = exposureDiff switch
+        {
+            0 => 0, // front
+            1 => 1, // corner
+            2 => 2, // side
+            3 => 2, // rear-corner
+            _ => 3, // rear
+        };
+
+        // Aim: how the attacker faces toward the defender.
+        var fromAttackerToDefender = BaronyBattleFacing.FromScreenVector(
+            defenderCenterX - attackerCenterX,
+            defenderCenterY - attackerCenterY);
+        var aimDiff = BaronyBattleFacing.CircularDiff(fromAttackerToDefender, attacker.Facing);
+        var aimBase = aimDiff switch
+        {
+            0 => 3, // front
+            1 => 2, // corner
+            _ => 1, // side / rear-corner / rear
+        };
+
+        return new FrontBreakdown(
+            aimBase + exposureBonus,
+            FacingBandLabel(aimDiff),
+            FacingBandLabel(exposureDiff));
+    }
+
+    private static string FacingBandLabel(int circularDiff) => circularDiff switch
+    {
+        0 => "Front",
+        1 => "Corner",
+        2 => "Side",
+        3 => "Rear Corner",
+        _ => "Rear",
+    };
+
+    private List<string> ResolveCombatRoundDamage(Random rng)
+    {
+        var notes = new List<string>();
+        if (Map is null)
+            return notes;
+
+        var orderedIds = Map.TurnState.InitiativeOrder
+            .Reverse<string>()
+            .Concat(Map.Tokens
+                .Where(t => !Map.TurnState.InitiativeOrder.Contains(t.Id))
+                .OrderByDescending(t => t.InitiativeTotal)
+                .Select(t => t.Id))
+            .ToList();
+
+        var fledIds = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var attackerId in orderedIds)
+        {
+            var attacker = Map.Tokens.FirstOrDefault(t => t.Id == attackerId);
+            if (attacker is null)
+                continue;
+            if (attacker.Hp <= 0)
+                continue;
+            if (string.IsNullOrWhiteSpace(attacker.AttackTargetId))
+                continue;
+
+            var defender = Map.Tokens.FirstOrDefault(t => t.Id == attacker.AttackTargetId);
+            if (defender is null || defender.Hp <= 0)
+                continue;
+            if (!AreAdjacent(attacker, defender))
+                continue;
+
+            var damageDie = rng.Next(1, 7);
+            var attackDie = rng.Next(1, 7);
+            var defenseDie = rng.Next(1, 7);
+            var attackRoll = attacker.Attack + attackDie;
+            var defenseRoll = defender.Defense + defenseDie;
+            var ratio = attackRoll / (double)Math.Max(1, defenseRoll);
+            var front = GetFrontBreakdown(attacker, defender);
+            var baseDamage = attacker.Damage + damageDie - defender.Armor;
+            var rawDamage = baseDamage * ratio * front.Multiplier;
+            var dealt = Math.Max(1, (int)Math.Round(rawDamage, MidpointRounding.AwayFromZero));
+            notes.Add(
+                $"{attacker.Label} -> {defender.Label}: " +
+                $"(Dmg+k6-Arm={attacker.Damage}+{damageDie}−{defender.Armor}={baseDamage}) " +
+                $"× ({attacker.Attack}+k6={attackRoll})/({defender.Defense}+k6={defenseRoll}) " +
+                $"×{front.Multiplier} ({front.AimLabel} Vs {front.ExposureLabel}) => {dealt} dmg.");
+
+            defender.Hp = Math.Max(0, defender.Hp - dealt);
+            notes.Add($"{defender.Label} otrzymuje {dealt} obrażeń (HP: {defender.Hp}/{defender.MaxHp}).");
+
+            if (defender.Hp <= 0)
+                fledIds.Add(defender.Id);
+        }
+
+        if (notes.Count == 0)
+        {
+            notes.Add("Brak rozstrzygniętych ataków w tej rundzie.");
+            return notes;
+        }
+
+        if (fledIds.Count > 0)
+        {
+            var fledTokens = Map.Tokens.Where(t => fledIds.Contains(t.Id)).ToList();
+            foreach (var fled in fledTokens)
+            {
+                notes.Add($"{fled.Label} ucieka z pola bitwy.");
+                Map.Tokens.Remove(fled);
+            }
+
+            foreach (var token in Map.Tokens)
+            {
+                if (token.AttackTargetId is not null && fledIds.Contains(token.AttackTargetId))
+                    token.AttackTargetId = null;
+            }
+
+            Map.TurnState.InitiativeOrder = Map.TurnState.InitiativeOrder
+                .Where(id => !fledIds.Contains(id))
+                .ToList();
+        }
+
+        return notes;
+    }
+
     private void EnsureBattleSubPhase()
     {
         if (Map is null || !IsBattlePhase)
@@ -1344,7 +1599,7 @@ else
         var lines = Map.Tokens
             .OrderBy(t => t.InitiativeTotal)
             .Select(t => $"{t.Label}: {t.Discipline}+{t.InitiativeDie}={t.InitiativeTotal}");
-        AppendLocalLog("System", "phase",
+        AppendLocalLog(string.Empty, "phase",
             $"+=========Początek Fazy Ruchu nr{Map.TurnState.Round} ===========+");
         await SaveAsync(systemMessage: "Battle begins — movement phase (low → high initiative). " + string.Join("; ", lines));
         _selectedTokenId = ActiveTokenId;
@@ -1397,7 +1652,7 @@ else
         var next = Map.TurnState.CurrentIndex + 1;
         if (next >= Map.TurnState.InitiativeOrder.Count)
         {
-            AppendLocalLog("System", "system", msg);
+            AppendLocalLog(string.Empty, "system", msg);
             await ResolveMovementPhase();
             return;
         }
@@ -1663,11 +1918,11 @@ else
 
             var round = Math.Max(1, Map.TurnState.Round);
             foreach (var note in collisionNotes)
-                AppendLocalLog("System", "collision", note);
+                AppendLocalLog(string.Empty, "collision", note);
 
-            AppendLocalLog("System", "phase",
+            AppendLocalLog(string.Empty, "phase",
                 $"+=========Koniec Fazy Ruchu nr{round} ===========");
-            AppendLocalLog("System", "phase",
+            AppendLocalLog(string.Empty, "phase",
                 $"+=========Początek Fazy Planowania Ataku nr{round} ===========");
 
             var summary = moved > 0
@@ -2020,13 +2275,38 @@ else
         if (Map is null || !IsAttackPlanningPhase || (!CanEdit && !CanManageAsMg))
             return;
 
+        var missingOrders = Map.Tokens
+            .Where(t => t.Hp > 0)
+            .Where(CanIssueAttackOrder)
+            .Where(t => string.IsNullOrWhiteSpace(t.AttackTargetId))
+            .Where(HasAdjacentEnemyTargetOpportunity)
+            .ToList();
+
+        if (missingOrders.Count > 0)
+        {
+            var sample = string.Join(", ", missingOrders.Take(6).Select(t => t.Label));
+            var suffix = missingOrders.Count > 6 ? " ..." : string.Empty;
+            var proceed = await _dialogService.ShowMessageBoxAsync(
+                "Niewydane ataki",
+                $"Nie wszystkie oddziały z okazją do ataku mają wybrany cel: {sample}{suffix}. Czy na pewno chcesz zakończyć fazę planowania?",
+                yesText: "Tak, rozpocznij walkę",
+                cancelText: "Wróć");
+            if (proceed != true)
+                return;
+        }
+
         var round = Math.Max(1, Map.TurnState.Round);
         Map.TurnState.SubPhase = BaronyBattleSubPhases.Combat;
-        AppendLocalLog("System", "phase",
+        AppendLocalLog(string.Empty, "phase",
             $"+=========Koniec Fazy Planowania Ataku nr{round} ===========");
-        AppendLocalLog("System", "phase",
+        AppendLocalLog(string.Empty, "phase",
             $"+=========Początek Fazy Walki nr{round} ===========");
-        await SaveAsync(systemMessage: $"Attack planning done — round {round} combat begins.");
+
+        var combatNotes = ResolveCombatRoundDamage(Random.Shared);
+        foreach (var note in combatNotes)
+            AppendLocalLog(string.Empty, "combat", note);
+
+        await SaveAsync(systemMessage: $"Attack planning done — round {round} combat begins and attacks are resolved.");
         _selectedTokenId = null;
         RefreshRange();
     }
@@ -2044,13 +2324,13 @@ else
         }
 
         var endedCombatRound = Math.Max(1, Map.TurnState.Round);
-        AppendLocalLog("System", "phase",
+        AppendLocalLog(string.Empty, "phase",
             $"+=========Koniec Fazy Walki nr{endedCombatRound} ===========+");
 
         Map.TurnState.SubPhase = BaronyBattleSubPhases.Movement;
         Map.TurnState.CurrentIndex = 0;
         Map.TurnState.Round = endedCombatRound + 1;
-        AppendLocalLog("System", "phase",
+        AppendLocalLog(string.Empty, "phase",
             $"+=========Początek Fazy Ruchu nr{Map.TurnState.Round} ===========+");
         await SaveAsync(systemMessage: $"Round {Map.TurnState.Round} — movement phase (low → high initiative).");
         _selectedTokenId = ActiveTokenId;
@@ -2117,7 +2397,7 @@ else
         if (Map is null)
             return;
         if (!string.IsNullOrWhiteSpace(systemMessage))
-            AppendLocalLog("System", "system", systemMessage);
+            AppendLocalLog(string.Empty, "system", systemMessage);
         try
         {
             Map = await _battleMapRepo.Update(Map);

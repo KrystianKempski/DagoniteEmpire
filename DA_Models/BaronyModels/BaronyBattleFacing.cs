@@ -14,6 +14,15 @@ public static class BaronyBattleFacing
 
     public static int Clamp(int facing) => ((facing % 8) + 8) % 8;
 
+    /// <summary>Shortest facing distance on the 8-way compass, folded to 0–4.</summary>
+    public static int CircularDiff(int a, int b)
+    {
+        var diff = Math.Abs(Clamp(a) - Clamp(b)) % 8;
+        if (diff > 4)
+            diff = 8 - diff;
+        return diff;
+    }
+
     /// <summary>CSS degrees: 0 = North (up), clockwise.</summary>
     public static double ToDegrees(int facing) => Clamp(facing) * 45.0;
 

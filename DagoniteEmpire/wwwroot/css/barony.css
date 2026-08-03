@@ -8213,22 +8213,39 @@ a.city-building-name-text--link:hover {
     color: var(--barony-ink);
 }
 
+.barony-scope .bbm-map-log__entry--auto .bbm-map-log__text {
+    color: var(--barony-muted);
+    font-style: italic;
+}
+
+.barony-scope .bbm-map-log__entry--chat .bbm-map-log__text {
+    color: var(--barony-ink);
+    font-style: normal;
+}
+
 .barony-scope .bbm-map-log__entry--system .bbm-map-log__text {
     color: var(--barony-muted);
     font-style: italic;
 }
 
+.barony-scope .bbm-map-log__entry--combat .bbm-map-log__text {
+    color: #5a4a3a;
+    font-style: italic;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre-wrap;
+}
+
 .barony-scope .bbm-map-log__entry--collision .bbm-map-log__text {
     color: #c62828;
     font-weight: 700;
-    font-style: normal;
+    font-style: italic;
 }
 
 .barony-scope .bbm-map-log__entry--phase .bbm-map-log__text {
     color: var(--barony-ink);
     font-weight: 700;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-style: normal;
+    font-style: italic;
     letter-spacing: 0.01em;
     white-space: pre-wrap;
 }
@@ -9039,11 +9056,11 @@ a.city-building-name-text--link:hover {
 .barony-scope .bbm-attack-target-badge {
     position: absolute;
     left: 2px;
-    bottom: 2px;
+    top: 2px;
     width: 1rem;
     height: 1rem;
     border-radius: 999px;
-    background: rgba(200, 130, 30, 0.92);
+    background: rgba(168, 52, 52, 0.96);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -9120,6 +9137,26 @@ a.city-building-name-text--link:hover {
     stroke: rgba(168, 52, 52, 0.5);
 }
 
+.barony-scope .bbm-attack-plan-overlay {
+    z-index: 7;
+}
+
+.barony-scope .bbm-attack-plan-arrow {
+    fill: none;
+    stroke-width: 16;
+    stroke-linecap: square;
+    stroke-linejoin: square;
+    stroke-opacity: 0.58;
+}
+
+.barony-scope .bbm-attack-plan-arrow--ally {
+    stroke: rgb(199, 144, 26);
+}
+
+.barony-scope .bbm-attack-plan-arrow--enemy {
+    stroke: rgb(183, 56, 56);
+}
+
 .barony-scope .bbm-token-icon {
     width: 70%;
     height: 78%;
@@ -9138,16 +9175,19 @@ a.city-building-name-text--link:hover {
     left: 0;
     right: 0;
     bottom: 1px;
-    display: block;
+    display: block !important;
     max-width: 100%;
     padding: 0 1px;
-    font-size: 0.62rem;
-    line-height: 1.1;
+    font-size: 0.88rem !important;
+    line-height: 1;
     font-weight: 700;
     text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    hyphens: auto;
     color: var(--barony-ink);
     text-shadow: 0 0 3px #f5f0e6, 0 0 3px #f5f0e6, 0 0 3px #f5f0e6;
     pointer-events: none;
