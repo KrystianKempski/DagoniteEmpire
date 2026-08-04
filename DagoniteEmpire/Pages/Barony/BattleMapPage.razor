@@ -167,8 +167,6 @@ else
                                      AnimatingTokens="@_animFrames"
                                      AnimTransitions="@_animTransitionsOn"
                                      PlannedRoutes="@_plannedRoutes"
-                                     EngagedTokenIds="@_engagedTokenIds"
-                                     AttackTargetIds="@_attackTargetIds"
                                      CombatAnimActive="@_combatAnimActive"
                                      CombatFocusAttackerId="@_combatFocusAttackerId"
                                      CombatFx="@_combatFx"
@@ -460,6 +458,7 @@ else
                                     <label>Discipline <input type="number" @bind="_enemyDraft.Discipline" /></label>
                                     <label>Men <input type="number" @bind="_enemyDraft.TroopCount" /></label>
                                     <label>Move <input type="number" @bind="_enemyDraft.Move" /></label>
+                                    <label>Range <input type="number" @bind="_enemyDraft.Range" title="0 = melee only; >0 = ranged unit" /></label>
                                 </div>
                             </div>
                         }
@@ -510,7 +509,7 @@ else
                             @(IsMovementPhase
                                 ? "Plan a path: place destination, lock, optional facing turn (1 move). Or rotate in place with the facing icon. Use the bar below to undo or finish."
                                 : IsAttackPlanningPhase
-                                    ? "Select a unit, then click a highlighted adjacent enemy to assign an attack target. Click again to clear the order."
+                                    ? "Select a unit, then click a highlighted enemy to assign an attack. Ranged units shoot at distance (no return fire) unless engaged in melee."
                                     : "Combat phase — damage is resolving; wait for the Game Master to advance.")
                         </p>
                         <ol class="bbm-initiative">
@@ -581,8 +580,7 @@ else
     private List<BattleMoveAnimFrame> _animFrames = new();
     /// <summary>Full cell-by-cell routes (per token id) for drawing planned-path arrows.</summary>
     private Dictionary<string, List<(int X, int Y)>> _plannedRoutes = new();
-    private HashSet<string> _engagedTokenIds = new();
-    private HashSet<string> _attackTargetIds = new();
+    /// <summary>Cells of engaged enemies' threat zones, shown while planning a move out of contact.</summary>
     private string? _facingEditTokenId;
     private double? _facingPreviewDeg;
     private int _facingEditStartFacing;
@@ -605,6 +603,8 @@ else
     private const int CombatClashLeadMs = 500;
     /// <summary>Floating −HP numbers duration.</summary>
     private const int CombatDamageMs = 3000;
+    /// <summary>Beat after a disengage hit clears, so the victim does not bolt the instant it lands.</summary>
+    private const int DisengageHitHoldMs = 500;
     /// <summary>Threat circle radius = ThreatFactor × size × 0.5 cells (1.0 = exact footprint edge).</summary>
     private const double TokenThreatFactor = 0.82;
 
@@ -944,7 +944,7 @@ else
             return;
         }
 
-        // Attack planning: select token, then click an adjacent opponent to assign target
+        // Attack planning: select token, then click a valid opponent to assign target
         if (IsAttackPlanningPhase)
         {
             var planClicked = GetTokenAt(x, y);
@@ -955,9 +955,14 @@ else
                 var attacker = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
                 if (attacker is not null && attacker.IsEnemy != planClicked.IsEnemy && CanControlToken(attacker))
                 {
-                    if (!AreAdjacent(attacker, planClicked))
+                    if (!CanTarget(attacker, planClicked))
                     {
-                        _snackBar.Add("Unit is not adjacent to the selected target.", Severity.Warning);
+                        if (attacker.Range > 0 && IsPinned(attacker) && !AreAdjacent(attacker, planClicked))
+                            _snackBar.Add($"{attacker.Label} is engaged — can only fight adjacent enemies.", Severity.Warning);
+                        else if (attacker.Range > 0)
+                            _snackBar.Add("Target is out of range.", Severity.Warning);
+                        else
+                            _snackBar.Add("Unit is not adjacent to the selected target.", Severity.Warning);
                     }
                     else
                     {
@@ -983,7 +988,9 @@ else
                         }
                         var msg = attacker.AttackTargetId is null
                             ? $"{attacker.Label} cleared attack order."
-                            : $"{attacker.Label} attack target: {planClicked.Label}";
+                            : IsShotAt(attacker, planClicked)
+                                ? $"{attacker.Label} shoot target: {planClicked.Label}{ShotPenaltyLabel(attacker, planClicked)}"
+                                : $"{attacker.Label} attack target: {planClicked.Label}";
                         await SaveAsync(systemMessage: msg);
                     }
                     RefreshRange();
@@ -1081,6 +1088,7 @@ else
             Armor = stats.Armor,
             Move = Math.Max(0, stats.Move),
             RemainingMove = Math.Max(0, stats.Move),
+            Range = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Range ?? 0),
         };
         Map.Tokens.Add(token);
         _deployUnitId = null;
@@ -1133,6 +1141,7 @@ else
                 other.AttackTargetId = null;
             if (string.Equals(other.ChargeTargetId, token.Id, StringComparison.Ordinal))
                 ClearCharge(other);
+            other.EngagedEnemyIds.Remove(token.Id);
         }
 
         if (Map.TurnState.InitiativeOrder.Count > 0)
@@ -1144,8 +1153,6 @@ else
                 Map.TurnState.CurrentIndex = Math.Max(0, Map.TurnState.InitiativeOrder.Count - 1);
         }
 
-        _engagedTokenIds.Remove(token.Id);
-        _attackTargetIds.Remove(token.Id);
         _plannedRoutes.Remove(token.Id);
 
         await SaveAsync(systemMessage: $"Enemy {token.Label} removed.");
@@ -1224,6 +1231,7 @@ else
         token.Armor = _enemyDraft.Armor;
         token.Move = move;
         token.RemainingMove = Math.Clamp(token.RemainingMove, 0, move);
+        token.Range = Math.Max(0, _enemyDraft.Range);
 
         var label = token.Label;
         CancelEditEnemy();
@@ -1259,6 +1267,7 @@ else
             Armor = _enemyDraft.Armor,
             Move = Math.Max(0, _enemyDraft.Move),
             RemainingMove = Math.Max(0, _enemyDraft.Move),
+            Range = Math.Max(0, _enemyDraft.Range),
             Facing = BaronyBattleFacing.South,
         };
         Map.Tokens.Add(token);
@@ -1428,6 +1437,7 @@ else
         }
 
         var remaining = Math.Max(0, budget - cost - (provisional?.FacingCostPaid ?? 0));
+        var wasStationary = !token.Path.Any(w => w.X != token.X || w.Y != token.Y);
         if (provisional is not null)
         {
             provisional.X = nx;
@@ -1448,6 +1458,19 @@ else
         }
 
         ApplyTravelFacings(token);
+
+        if (wasStationary && (nx != token.X || ny != token.Y))
+        {
+            var freeHits = CountEngagementPenalties(token);
+            if (freeHits > 0)
+            {
+                _snackBar.Add(
+                    freeHits == 1
+                        ? $"{token.Label} is engaged — moving at all costs a free half-strength hit."
+                        : $"{token.Label} is engaged — moving at all costs {freeHits} free half-strength hits.",
+                    Severity.Warning);
+            }
+        }
 
         // RemainingMove is spent only when the ghost is locked (or charge/finish commits).
         _selectedTokenId = token.Id;
@@ -1979,15 +2002,131 @@ else
 
     private static int GetPlanBudget(BaronyBattleTokenDTO token) => GetPlanOrigin(token).Budget;
 
-    /// <summary>Two tokens are adjacent (footprints touch, Chebyshev gap = 0).</summary>
     /// <summary>True when two tokens touch along an edge or a corner — melee contact range.</summary>
     private static bool AreAdjacent(BaronyBattleTokenDTO a, BaronyBattleTokenDTO b) =>
         BattleMovementRules.FootprintsAdjacent(
             a.X, a.Y, TokenSize(a),
             b.X, b.Y, TokenSize(b));
 
+    /// <summary>True when the unit has at least one living engaged enemy still in contact.</summary>
+    private bool IsPinned(BaronyBattleTokenDTO token)
+    {
+        if (Map is null || token.EngagedEnemyIds.Count == 0)
+            return false;
+        return token.EngagedEnemyIds.Any(enemyId =>
+        {
+            var enemy = Map.Tokens.FirstOrDefault(t => t.Id == enemyId);
+            return enemy is not null && enemy.Hp > 0 && AreAdjacent(token, enemy);
+        });
+    }
+
+    /// <summary>Ranged unit that is not locked in melee — free to shoot.</summary>
+    private bool CanShoot(BaronyBattleTokenDTO token) =>
+        token.Range > 0 && !IsPinned(token);
+
+    /// <summary>
+    /// True when the attacker will resolve this order as a shot (no defensive return, no engagement).
+    /// Point-blank shots count: adjacency alone does not force melee when the unit can shoot.
+    /// </summary>
+    private bool IsShotAt(BaronyBattleTokenDTO attacker, BaronyBattleTokenDTO target) =>
+        CanShoot(attacker)
+        && BattleMovementRules.IsInShotRange(
+            attacker.X, attacker.Y, TokenSize(attacker),
+            target.X, target.Y, TokenSize(target),
+            attacker.Range);
+
+    /// <summary>Melee contact, or a free shot that reaches the target.</summary>
+    private bool CanTarget(BaronyBattleTokenDTO attacker, BaronyBattleTokenDTO target) =>
+        AreAdjacent(attacker, target) || IsShotAt(attacker, target);
+
+    /// <summary>Distance penalty of a planned shot, as a suffix for order messages. Empty at point-blank.</summary>
+    private static string ShotPenaltyLabel(BaronyBattleTokenDTO attacker, BaronyBattleTokenDTO target)
+    {
+        var penalty = BattleMovementRules.ShotAttackPenalty(
+            BattleMovementRules.FootprintShotHalfCost(
+                attacker.X, attacker.Y, TokenSize(attacker),
+                target.X, target.Y, TokenSize(target)));
+        return penalty > 0 ? $" (−{penalty} attack at range)" : "";
+    }
+
+    private static void BindEngagement(BaronyBattleTokenDTO a, BaronyBattleTokenDTO b)
+    {
+        if (ReferenceEquals(a, b) || a.IsEnemy == b.IsEnemy)
+            return;
+        if (!a.EngagedEnemyIds.Contains(b.Id, StringComparer.Ordinal))
+            a.EngagedEnemyIds.Add(b.Id);
+        if (!b.EngagedEnemyIds.Contains(a.Id, StringComparer.Ordinal))
+            b.EngagedEnemyIds.Add(a.Id);
+    }
+
+    private static void UnbindEngagement(BaronyBattleTokenDTO a, BaronyBattleTokenDTO b)
+    {
+        a.EngagedEnemyIds.RemoveAll(id => string.Equals(id, b.Id, StringComparison.Ordinal));
+        b.EngagedEnemyIds.RemoveAll(id => string.Equals(id, a.Id, StringComparison.Ordinal));
+    }
+
+    private void ClearEngagementsWith(string tokenId)
+    {
+        if (Map is null)
+            return;
+        foreach (var other in Map.Tokens)
+            other.EngagedEnemyIds.RemoveAll(id => string.Equals(id, tokenId, StringComparison.Ordinal));
+        var token = Map.Tokens.FirstOrDefault(t => t.Id == tokenId);
+        token?.EngagedEnemyIds.Clear();
+    }
+
+    /// <summary>
+    /// Drops ghost engagements (missing partners, same side, or no longer adjacent) without a leave penalty.
+    /// Keeps the lists symmetric.
+    /// </summary>
+    private void ReconcileEngagements()
+    {
+        if (Map is null)
+            return;
+
+        var byId = Map.Tokens.ToDictionary(t => t.Id, StringComparer.Ordinal);
+        foreach (var token in Map.Tokens)
+        {
+            token.EngagedEnemyIds = token.EngagedEnemyIds
+                .Where(id => byId.TryGetValue(id, out var other)
+                             && other.IsEnemy != token.IsEnemy
+                             && other.Hp > 0
+                             && AreAdjacent(token, other))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+        }
+
+        // Ensure symmetry: if A lists B, B must list A.
+        foreach (var token in Map.Tokens)
+        {
+            foreach (var otherId in token.EngagedEnemyIds.ToList())
+            {
+                if (!byId.TryGetValue(otherId, out var other))
+                    continue;
+                if (!other.EngagedEnemyIds.Contains(token.Id, StringComparer.Ordinal))
+                    other.EngagedEnemyIds.Add(token.Id);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Free hits the unit will take for budging at all: one per live engaged enemy, wherever it goes.
+    /// </summary>
+    private int CountEngagementPenalties(BaronyBattleTokenDTO token)
+    {
+        if (Map is null || token.EngagedEnemyIds.Count == 0)
+            return 0;
+
+        return token.EngagedEnemyIds.Count(enemyId =>
+        {
+            var enemy = Map.Tokens.FirstOrDefault(t => t.Id == enemyId);
+            return enemy is not null && enemy.Hp > 0 && AreAdjacent(token, enemy);
+        });
+    }
+
     private bool CanIssueAttackOrder(BaronyBattleTokenDTO token) =>
         CanManageAsMg || (CanEdit && !token.IsEnemy);
+
 
     /// <summary>
     /// After movement resolve, a successful charge attack cannot be cleared or retargeted.
@@ -1997,7 +2136,7 @@ else
         && !string.IsNullOrWhiteSpace(token.ChargeTargetId)
         && string.Equals(token.AttackTargetId, token.ChargeTargetId, StringComparison.Ordinal);
 
-    private bool HasAdjacentEnemyTargetOpportunity(BaronyBattleTokenDTO token)
+    private bool HasAttackTargetOpportunity(BaronyBattleTokenDTO token)
     {
         if (Map is null)
             return false;
@@ -2009,13 +2148,13 @@ else
                 continue;
             if (other.Hp <= 0)
                 continue;
-            if (AreAdjacent(token, other))
+            if (CanTarget(token, other))
                 return true;
         }
         return false;
     }
 
-    private IEnumerable<BaronyBattleTokenDTO> AdjacentEnemyCandidates(BaronyBattleTokenDTO attacker)
+    private IEnumerable<BaronyBattleTokenDTO> AttackCandidates(BaronyBattleTokenDTO attacker)
     {
         if (Map is null)
             return Enumerable.Empty<BaronyBattleTokenDTO>();
@@ -2024,7 +2163,7 @@ else
             .Where(t => t.Id != attacker.Id)
             .Where(t => t.IsEnemy != attacker.IsEnemy)
             .Where(t => t.Hp > 0)
-            .Where(t => AreAdjacent(attacker, t));
+            .Where(t => CanTarget(attacker, t));
     }
 
     private async Task AutoAssignAttackTargets()
@@ -2055,7 +2194,7 @@ else
             var isCurrentValid = currentTarget is not null
                 && currentTarget.Hp > 0
                 && currentTarget.IsEnemy != attacker.IsEnemy
-                && AreAdjacent(attacker, currentTarget);
+                && CanTarget(attacker, currentTarget);
 
             if (isCurrentValid)
                 continue;
@@ -2066,7 +2205,7 @@ else
                 cleared++;
             }
 
-            var bestTarget = AdjacentEnemyCandidates(attacker)
+            var bestTarget = AttackCandidates(attacker)
                 .OrderBy(t => t.Hp)
                 .ThenByDescending(t => t.InitiativeTotal)
                 .ThenBy(t => t.Label)
@@ -2093,10 +2232,15 @@ else
     /// Front multiplier = AimBase + ExposureBonus.
     /// Aim: attacker facing toward defender (front 2.5 / corner 1.5 / else 1).
     /// Exposure: attacker position vs defender facing (front +0 / corner +0.5 / side|rear-corner +1.5 / rear +2).
+    /// When <paramref name="forceFrontAim"/> is true (ranged shot), Aim is locked to front —
+    /// the shooter always aims well; only the target's exposure still matters.
     /// </summary>
     private readonly record struct FrontBreakdown(double Multiplier, string AimLabel, string ExposureLabel);
 
-    private static FrontBreakdown GetFrontBreakdown(BaronyBattleTokenDTO attacker, BaronyBattleTokenDTO defender)
+    private static FrontBreakdown GetFrontBreakdown(
+        BaronyBattleTokenDTO attacker,
+        BaronyBattleTokenDTO defender,
+        bool forceFrontAim = false)
     {
         var attackerCenterX = attacker.X + TokenSize(attacker) * 0.5;
         var attackerCenterY = attacker.Y + TokenSize(attacker) * 0.5;
@@ -2117,17 +2261,27 @@ else
             _ => 2.0, // rear
         };
 
-        // Aim: how the attacker faces toward the defender.
-        var fromAttackerToDefender = BaronyBattleFacing.FromScreenVector(
-            defenderCenterX - attackerCenterX,
-            defenderCenterY - attackerCenterY);
-        var aimDiff = BaronyBattleFacing.CircularDiff(fromAttackerToDefender, attacker.Facing);
-        var aimBase = aimDiff switch
+        // Aim: how the attacker faces toward the defender (shots always aim front).
+        int aimDiff;
+        double aimBase;
+        if (forceFrontAim)
         {
-            0 => 2.5, // front
-            1 => 1.5, // corner
-            _ => 1.0, // side / rear-corner / rear
-        };
+            aimDiff = 0;
+            aimBase = 2.5;
+        }
+        else
+        {
+            var fromAttackerToDefender = BaronyBattleFacing.FromScreenVector(
+                defenderCenterX - attackerCenterX,
+                defenderCenterY - attackerCenterY);
+            aimDiff = BaronyBattleFacing.CircularDiff(fromAttackerToDefender, attacker.Facing);
+            aimBase = aimDiff switch
+            {
+                0 => 2.5, // front
+                1 => 1.5, // corner
+                _ => 1.0, // side / rear-corner / rear
+            };
+        }
 
         return new FrontBreakdown(
             aimBase + exposureBonus,
@@ -2154,6 +2308,7 @@ else
         int DefDealt,
         bool AttackerFlees,
         bool DefenderFlees,
+        bool IsShot,
         IReadOnlyList<string> Notes);
 
     private List<CombatExchangePlan> PlanCombatExchanges(Random rng)
@@ -2207,52 +2362,69 @@ else
                 continue;
             if (!hp.TryGetValue(defender.Id, out var defHp) || defHp <= 0)
                 continue;
-            if (!AreAdjacent(attacker, defender))
+            if (!CanTarget(attacker, defender))
                 continue;
 
+            var isShot = IsShotAt(attacker, defender);
             var notes = new List<string>();
             var damageDie = rng.Next(1, 5);
             var attackDie = rng.Next(1, 7);
             var defenseDie = rng.Next(1, 7);
-            var chargeBonus = attacker.ChargeBonus
+            var chargeBonus = !isShot
+                && attacker.ChargeBonus
                 && string.Equals(attacker.ChargeTargetId, defender.Id, StringComparison.Ordinal)
                 && string.Equals(attacker.AttackTargetId, defender.Id, StringComparison.Ordinal)
                 && IsValidChargeContact(attacker, defender);
-            var attackStat = attacker.Attack + (chargeBonus ? 2 : 0);
+            var shotHalf = isShot
+                ? BattleMovementRules.FootprintShotHalfCost(
+                    attacker.X, attacker.Y, TokenSize(attacker),
+                    defender.X, defender.Y, TokenSize(defender))
+                : 0;
+            var rangePenalty = isShot ? BattleMovementRules.ShotAttackPenalty(shotHalf) : 0;
+            var attackStat = attacker.Attack + (chargeBonus ? 2 : 0) - rangePenalty;
             var damageStat = attacker.Damage + (chargeBonus ? 1 : 0);
             var attackRoll = attackStat + attackDie;
             var defenseRoll = defender.Defense + defenseDie;
-            var ratio = attackRoll / (double)Math.Max(1, defenseRoll);
-            var front = GetFrontBreakdown(attacker, defender);
+            var ratio = Math.Max(1, attackRoll) / (double)Math.Max(1, defenseRoll);
+            var front = GetFrontBreakdown(attacker, defender, forceFrontAim: isShot);
             var baseDamage = damageStat + damageDie - defender.Armor;
             var rawDamage = baseDamage * ratio * front.Multiplier;
             var dealt = Math.Max(1, (int)Math.Round(rawDamage, MidpointRounding.AwayFromZero));
             defHp = Math.Max(0, defHp - dealt);
-            var chargeNote = chargeBonus ? " [charge +2/+1]" : "";
+            var modifierNote = chargeBonus ? " [charge +2/+1]" : "";
+            if (rangePenalty > 0)
+                modifierNote += $" [range −{rangePenalty} att]";
+            var verb = isShot ? "shoots" : "->";
             notes.Add(
-                $"{attacker.Label} -> {defender.Label}: " +
-                $"(Dmg+k4−Arm={damageStat}+{damageDie}−{defender.Armor}={baseDamage}) " +
+                $"{attacker.Label} {verb} {defender.Label}" +
+                (isShot ? $" at {BattleMovementRules.SpentMovePoints(shotHalf)} tiles" : "") +
+                $": (Dmg+k4−Arm={damageStat}+{damageDie}−{defender.Armor}={baseDamage}) " +
                 $"× ({attackStat}+k6={attackRoll})/({defender.Defense}+k6={defenseRoll}) " +
-                $"×{FormatFrontMultiplier(front.Multiplier)} ({front.AimLabel} Vs {front.ExposureLabel}) => {dealt} dmg.{chargeNote}");
+                $"×{FormatFrontMultiplier(front.Multiplier)} ({front.AimLabel} Vs {front.ExposureLabel}) => {dealt} dmg.{modifierNote}" +
+                (isShot ? " (no defensive return)" : ""));
             notes.Add($"{defender.Label} takes {dealt} damage (HP: {defHp}/{defender.MaxHp}).");
 
-            var defDamageDie = rng.Next(1, 5);
-            var defDefDie = rng.Next(1, 7);
-            var atkDefDie = rng.Next(1, 7);
-            var defDefenseRoll = defender.Defense + defDefDie;
-            var atkDefenseRoll = attacker.Defense + atkDefDie;
-            var defRatio = defDefenseRoll / (double)Math.Max(1, atkDefenseRoll);
-            var defFront = GetFrontBreakdown(defender, attacker);
-            var defBaseDamage = defender.Damage + defDamageDie - attacker.Armor;
-            var defRaw = defBaseDamage * defRatio * defFront.Multiplier;
-            var defDealt = Math.Max(1, (int)Math.Round(defRaw, MidpointRounding.AwayFromZero));
-            atkHp = Math.Max(0, atkHp - defDealt);
-            notes.Add(
-                $"{defender.Label} -> {attacker.Label} (defensive): " +
-                $"(Dmg+k4−Arm={defender.Damage}+{defDamageDie}−{attacker.Armor}={defBaseDamage}) " +
-                $"× ({defender.Defense}+k6={defDefenseRoll})/({attacker.Defense}+k6={atkDefenseRoll}) " +
-                $"×{FormatFrontMultiplier(defFront.Multiplier)} ({defFront.AimLabel} Vs {defFront.ExposureLabel}) => {defDealt} dmg.");
-            notes.Add($"{attacker.Label} takes {defDealt} defensive damage (HP: {atkHp}/{attacker.MaxHp}).");
+            var defDealt = 0;
+            if (!isShot)
+            {
+                var defDamageDie = rng.Next(1, 5);
+                var defDefDie = rng.Next(1, 7);
+                var atkDefDie = rng.Next(1, 7);
+                var defDefenseRoll = defender.Defense + defDefDie;
+                var atkDefenseRoll = attacker.Defense + atkDefDie;
+                var defRatio = defDefenseRoll / (double)Math.Max(1, atkDefenseRoll);
+                var defFront = GetFrontBreakdown(defender, attacker);
+                var defBaseDamage = defender.Damage + defDamageDie - attacker.Armor;
+                var defRaw = defBaseDamage * defRatio * defFront.Multiplier;
+                defDealt = Math.Max(1, (int)Math.Round(defRaw, MidpointRounding.AwayFromZero));
+                atkHp = Math.Max(0, atkHp - defDealt);
+                notes.Add(
+                    $"{defender.Label} -> {attacker.Label} (defensive): " +
+                    $"(Dmg+k4−Arm={defender.Damage}+{defDamageDie}−{attacker.Armor}={defBaseDamage}) " +
+                    $"× ({defender.Defense}+k6={defDefenseRoll})/({attacker.Defense}+k6={atkDefenseRoll}) " +
+                    $"×{FormatFrontMultiplier(defFront.Multiplier)} ({defFront.AimLabel} Vs {defFront.ExposureLabel}) => {defDealt} dmg.");
+                notes.Add($"{attacker.Label} takes {defDealt} defensive damage (HP: {atkHp}/{attacker.MaxHp}).");
+            }
 
             hp[defender.Id] = defHp;
             hp[attacker.Id] = atkHp;
@@ -2270,6 +2442,7 @@ else
                 defDealt,
                 attackerFlees,
                 defenderFlees,
+                isShot,
                 notes));
         }
 
@@ -2285,7 +2458,6 @@ else
         _combatAnimActive = true;
         _combatFocusAttackerId = null;
         _combatFx = null;
-        _attackTargetIds = new HashSet<string>();
         StateHasChanged();
         await Task.Delay(120);
 
@@ -2306,7 +2478,6 @@ else
 
                 // 1) Attack arrow + clash icon together
                 _combatFocusAttackerId = plan.AttackerId;
-                _attackTargetIds = new HashSet<string>(StringComparer.Ordinal) { plan.DefenderId };
                 _combatFx = new BattleCombatFx
                 {
                     AttackerId = plan.AttackerId,
@@ -2315,6 +2486,7 @@ else
                     DealtToAttacker = plan.DefDealt,
                     ShowClash = true,
                     ShowDamage = false,
+                    IsShot = plan.IsShot,
                 };
                 StateHasChanged();
                 await Task.Delay(CombatClashLeadMs);
@@ -2327,6 +2499,15 @@ else
 
                 foreach (var note in plan.Notes)
                     AppendLocalLog(string.Empty, "combat", note);
+
+                // Surviving melee exchanges lock both sides; shots never bind engagement.
+                if (!plan.IsShot
+                    && !plan.AttackerFlees && !plan.DefenderFlees
+                    && Map.Tokens.Any(t => t.Id == plan.AttackerId)
+                    && Map.Tokens.Any(t => t.Id == plan.DefenderId))
+                {
+                    BindEngagement(attacker, defender);
+                }
 
                 _combatFx.ShowDamage = true;
                 StateHasChanged();
@@ -2349,6 +2530,7 @@ else
                     var fledIds = fledThisExchange.Select(t => t.Id).ToHashSet(StringComparer.Ordinal);
                     foreach (var fled in fledThisExchange)
                     {
+                        ClearEngagementsWith(fled.Id);
                         await MarkAllyFledAsync(fled);
                         Map.Tokens.Remove(fled);
                     }
@@ -2366,8 +2548,7 @@ else
 
                 _combatFx = null;
                 _combatFocusAttackerId = null;
-                _attackTargetIds = new HashSet<string>();
-                StateHasChanged();
+                        StateHasChanged();
                 await Task.Delay(80);
             }
         }
@@ -2425,6 +2606,8 @@ else
             SubPhase = BaronyBattleSubPhases.Movement,
             Round = 1,
         };
+        foreach (var token in Map.Tokens)
+            token.EngagedEnemyIds.Clear();
         _tool = "token";
         SnapshotAllyStartHp();
 
@@ -2522,8 +2705,6 @@ else
         _combatFx = null;
         _animFrames = new();
         _animTransitionsOn = false;
-        _engagedTokenIds = new();
-        _attackTargetIds = new();
         _plannedRoutes = new();
 
         // Capture survivors still on the map.
@@ -2805,14 +2986,62 @@ else
                 .Select(t => t.Id)
                 .ToHashSet(StringComparer.Ordinal);
 
-            // One simulation decides everything: who gets where, who runs into whom, and when.
-            // The animation below is a replay of it, not a second calculation.
-            var simulation = BattleMovementSimulator.Simulate(BuildMovementRequest());
+            ReconcileEngagements();
 
-            if (simulation.Legs.Count > 0)
+            // Snapshot start-of-phase pose so leave-engagement hits use the facing/position
+            // from before anyone moved.
+            var poseSnap = Map.Tokens.ToDictionary(
+                t => t.Id,
+                t => (t.X, t.Y, Facing: BaronyBattleFacing.Clamp(t.Facing), Size: TokenSize(t), Hp: t.Hp),
+                StringComparer.Ordinal);
+
+            var engagementHits = PreRollEngagementHits(poseSnap);
+            var stopCaps = new Dictionary<string, int>(StringComparer.Ordinal);
+            BattleMovementResult simulation = BattleMovementSimulator.Simulate(BuildMovementRequest(stopCaps));
+            var workingHp = poseSnap.ToDictionary(e => e.Key, e => e.Value.Hp, StringComparer.Ordinal);
+            var appliedEngagementHits = new List<(BattleMovementEvent Ev, EngagementHitPlan Hit)>();
+
+            for (var attempt = 0; attempt <= Map.Tokens.Count; attempt++)
+            {
+                simulation = BattleMovementSimulator.Simulate(BuildMovementRequest(stopCaps));
+                workingHp = poseSnap.ToDictionary(e => e.Key, e => e.Value.Hp, StringComparer.Ordinal);
+                appliedEngagementHits.Clear();
+                var newDeath = false;
+
+                foreach (var ev in simulation.Events
+                             .Where(e => e.Kind == BattleMovementEventKind.MovedWhileEngaged)
+                             .OrderBy(e => e.AtMs)
+                             .ThenBy(e => e.MoverId, StringComparer.Ordinal))
+                {
+                    if (ev.OtherMoverId is null)
+                        continue;
+                    if (!engagementHits.TryGetValue((ev.OtherMoverId, ev.MoverId), out var hit))
+                        continue;
+                    if (!workingHp.TryGetValue(hit.DefenderId, out var hp) || hp <= 0)
+                        continue;
+                    // A unit already cut down this phase swings at nobody.
+                    if (!workingHp.TryGetValue(hit.AttackerId, out var atkHp) || atkHp <= 0)
+                        continue;
+
+                    hp = Math.Max(0, hp - hit.Dealt);
+                    workingHp[hit.DefenderId] = hp;
+                    appliedEngagementHits.Add((ev, hit));
+
+                    if (hp <= 0 && !stopCaps.ContainsKey(hit.DefenderId))
+                    {
+                        stopCaps[hit.DefenderId] = ev.AtMs;
+                        newDeath = true;
+                    }
+                }
+
+                if (!newDeath)
+                    break;
+            }
+
+            if (simulation.Legs.Count > 0 || appliedEngagementHits.Count > 0)
             {
                 _plannedRoutes = arrowRoutes;
-                await ReplayMovementAsync(simulation);
+                await ReplayMovementAsync(simulation, appliedEngagementHits);
             }
 
             _animFrames = new();
@@ -2820,6 +3049,47 @@ else
             _plannedRoutes = new();
 
             var moved = ApplyMovementOutcomes(simulation, movingTokenIds);
+
+            // Apply disengage-hit HP after positions settle; dead units stay as blockers until now.
+            foreach (var (tokenId, hp) in workingHp)
+            {
+                var token = Map.Tokens.FirstOrDefault(t => t.Id == tokenId);
+                if (token is null)
+                    continue;
+                token.Hp = hp;
+                RecordAllyOutcome(token);
+            }
+
+            // Pairs that stayed in contact remain engaged; ReconcileEngagements drops the rest below.
+            foreach (var (_, hit) in appliedEngagementHits)
+                foreach (var note in hit.Notes)
+                    AppendLocalLog(string.Empty, "engagement", note);
+
+            var fledFromLeave = Map.Tokens.Where(t => workingHp.TryGetValue(t.Id, out var hp) && hp <= 0).ToList();
+            if (fledFromLeave.Count > 0)
+            {
+                var fledIds = fledFromLeave.Select(t => t.Id).ToHashSet(StringComparer.Ordinal);
+                foreach (var fled in fledFromLeave)
+                {
+                    ClearEngagementsWith(fled.Id);
+                    AppendLocalLog(string.Empty, "engagement",
+                        $"{fled.Label} is destroyed disengaging and flees the battlefield.");
+                    await MarkAllyFledAsync(fled);
+                    Map.Tokens.Remove(fled);
+                }
+
+                foreach (var token in Map.Tokens)
+                {
+                    if (token.AttackTargetId is not null && fledIds.Contains(token.AttackTargetId))
+                        token.AttackTargetId = null;
+                    if (token.ChargeTargetId is not null && fledIds.Contains(token.ChargeTargetId))
+                        ClearCharge(token);
+                }
+
+                Map.TurnState.InitiativeOrder = Map.TurnState.InitiativeOrder
+                    .Where(id => !fledIds.Contains(id))
+                    .ToList();
+            }
 
             foreach (var note in DescribeMovementEvents(simulation))
                 AppendLocalLog(string.Empty, "collision", note);
@@ -2834,6 +3104,8 @@ else
 
             foreach (var note in ValidateChargesAfterMovement(chargeSteps))
                 AppendLocalLog(string.Empty, "charge", note);
+
+            ReconcileEngagements();
 
             Map.TurnState.SubPhase = BaronyBattleSubPhases.AttackPlanning;
             Map.TurnState.CurrentIndex = 0;
@@ -2859,10 +3131,99 @@ else
         }
     }
 
+    private sealed record EngagementHitPlan(
+        string AttackerId,
+        string DefenderId,
+        int Dealt,
+        IReadOnlyList<string> Notes);
+
+    /// <summary>
+    /// Pre-rolls the free half-strength hits for every engaged pair, using start-of-phase pose.
+    /// Key is (attackerId, defenderId) — attacker is the one holding contact, defender the one who budges.
+    /// </summary>
+    private Dictionary<(string AttackerId, string DefenderId), EngagementHitPlan> PreRollEngagementHits(
+        IReadOnlyDictionary<string, (int X, int Y, int Facing, int Size, int Hp)> poseSnap)
+    {
+        var result = new Dictionary<(string, string), EngagementHitPlan>();
+        if (Map is null)
+            return result;
+
+        var rng = Random.Shared;
+        var seen = new HashSet<(string, string)>();
+
+        foreach (var defender in Map.Tokens)
+        {
+            foreach (var attackerId in defender.EngagedEnemyIds)
+            {
+                var key = (attackerId, defender.Id);
+                if (!seen.Add(key))
+                    continue;
+                if (!poseSnap.TryGetValue(attackerId, out var atkPose)
+                    || !poseSnap.TryGetValue(defender.Id, out var defPose))
+                    continue;
+
+                var attacker = Map.Tokens.FirstOrDefault(t => t.Id == attackerId);
+                if (attacker is null || attacker.IsEnemy == defender.IsEnemy)
+                    continue;
+
+                var hit = RollEngagementHit(attacker, defender, atkPose, defPose, rng);
+                result[key] = hit;
+            }
+        }
+
+        return result;
+    }
+
+    private EngagementHitPlan RollEngagementHit(
+        BaronyBattleTokenDTO attacker,
+        BaronyBattleTokenDTO defender,
+        (int X, int Y, int Facing, int Size, int Hp) atkPose,
+        (int X, int Y, int Facing, int Size, int Hp) defPose,
+        Random rng)
+    {
+        // Temporary pose override so front math uses the start-of-phase facing/position.
+        var ax = attacker.X; var ay = attacker.Y; var af = attacker.Facing;
+        var dx = defender.X; var dy = defender.Y; var df = defender.Facing;
+        attacker.X = atkPose.X; attacker.Y = atkPose.Y; attacker.Facing = atkPose.Facing;
+        defender.X = defPose.X; defender.Y = defPose.Y; defender.Facing = defPose.Facing;
+
+        try
+        {
+            var damageDie = rng.Next(1, 5);
+            var attackDie = rng.Next(1, 7);
+            var defenseDie = rng.Next(1, 7);
+            var attackRoll = attacker.Attack + attackDie;
+            var defenseRoll = defender.Defense + defenseDie;
+            var ratio = attackRoll / (double)Math.Max(1, defenseRoll);
+            var front = GetFrontBreakdown(attacker, defender);
+            var baseDamage = attacker.Damage + damageDie - defender.Armor;
+            var rawDamage = baseDamage * ratio * front.Multiplier;
+            var full = Math.Max(1, (int)Math.Round(rawDamage, MidpointRounding.AwayFromZero));
+            var dealt = Math.Max(1, (int)Math.Round(full / 2.0, MidpointRounding.AwayFromZero));
+
+            var notes = new List<string>
+            {
+                $"{attacker.Label} free hit as {defender.Label} moves while engaged: " +
+                $"(Dmg+k4−Arm={attacker.Damage}+{damageDie}−{defender.Armor}={baseDamage}) " +
+                $"× ({attacker.Attack}+k6={attackRoll})/({defender.Defense}+k6={defenseRoll}) " +
+                $"×{FormatFrontMultiplier(front.Multiplier)} ({front.AimLabel} Vs {front.ExposureLabel}) " +
+                $"= {full}, half => {dealt} dmg (no defensive return).",
+                $"{defender.Label} takes {dealt} disengage damage.",
+            };
+
+            return new EngagementHitPlan(attacker.Id, defender.Id, dealt, notes);
+        }
+        finally
+        {
+            attacker.X = ax; attacker.Y = ay; attacker.Facing = af;
+            defender.X = dx; defender.Y = dy; defender.Facing = df;
+        }
+    }
+
     /// <summary>
     /// Translates the map and every planned path into the input the movement simulation runs on.
     /// </summary>
-    private BattleMovementRequest BuildMovementRequest()
+    private BattleMovementRequest BuildMovementRequest(IReadOnlyDictionary<string, int>? stopAtMs = null)
     {
         var impassable = new List<BattleGridPoint>();
         var difficult = new List<BattleGridPoint>();
@@ -2900,6 +3261,11 @@ else
                 ChargeStartStep = token.ChargeBonus && chargeOrigin is (int cx, int cy)
                     ? StepsToCell(route, (cx, cy))
                     : 0,
+                EngagedEnemyIds = token.EngagedEnemyIds.ToList(),
+                IsPinned = IsPinned(token),
+                StopAtMs = stopAtMs is not null && stopAtMs.TryGetValue(token.Id, out var cap)
+                    ? cap
+                    : null,
                 Route = route.Select(p => new BattleGridPoint(p.X, p.Y)).ToList(),
             });
         }
@@ -2913,9 +3279,11 @@ else
 
     /// <summary>
     /// Plays the simulated run back on screen: everyone turns toward their first step, then each
-    /// leg is applied on the simulation's own clock.
+    /// leg is applied on the simulation's own clock. Disengage hits flash at their event times.
     /// </summary>
-    private async Task ReplayMovementAsync(BattleMovementResult simulation)
+    private async Task ReplayMovementAsync(
+        BattleMovementResult simulation,
+        IReadOnlyList<(BattleMovementEvent Ev, EngagementHitPlan Hit)> engagementHits)
     {
         var firstLegByToken = simulation.Legs
             .GroupBy(l => l.MoverId, StringComparer.Ordinal)
@@ -2950,29 +3318,78 @@ else
         StateHasChanged();
         await Task.Delay(AnimTurnMs);
 
+        var legsAt = simulation.Legs
+            .GroupBy(l => l.StartMs)
+            .ToDictionary(g => g.Key, g => g.ToList());
+        var hitsAt = engagementHits
+            .GroupBy(h => h.Ev.AtMs)
+            .ToDictionary(g => g.Key, g => g.Select(h => h.Hit).ToList());
+        var stamps = legsAt.Keys.Concat(hitsAt.Keys).Distinct().OrderBy(t => t).ToList();
+
         var elapsedMs = 0;
-        foreach (var beat in simulation.Legs.GroupBy(l => l.StartMs).OrderBy(g => g.Key))
+        foreach (var atMs in stamps)
         {
-            var wait = beat.Key - elapsedMs;
+            var wait = atMs - elapsedMs;
             if (wait > 0)
                 await Task.Delay(wait);
-            elapsedMs = beat.Key;
+            elapsedMs = atMs;
 
-            foreach (var leg in beat)
+            // Free hits play before this tick's legs start: every sprite has just landed, so the
+            // field is frozen while the swing reads, and one hit at a time so two attackers on the
+            // same victim show two separate damage numbers.
+            if (hitsAt.TryGetValue(atMs, out var hits))
             {
-                var frame = _animFrames.FirstOrDefault(f => f.TokenId == leg.MoverId);
-                if (frame is null)
-                    continue;
-                frame.FacingDeg = BaronyBattleFacing.ShortestTurnTarget(
-                    frame.FacingDeg, BaronyBattleFacing.ToDegrees(leg.Facing));
-                frame.TransitionMs = leg.DurationMs;
-                frame.LeftPx = leg.ToX * AnimCellPx;
-                frame.TopPx = leg.ToY * AnimCellPx;
+                foreach (var hit in hits)
+                {
+                    // Same beats as a Combat exchange: clash lands first, damage floats after.
+                    _combatAnimActive = true;
+                    _combatFocusAttackerId = hit.AttackerId;
+                    _combatFx = new BattleCombatFx
+                    {
+                        AttackerId = hit.AttackerId,
+                        DefenderId = hit.DefenderId,
+                        DealtToDefender = hit.Dealt,
+                        DealtToAttacker = 0,
+                        ShowClash = true,
+                        ShowDamage = false,
+                    };
+                    StateHasChanged();
+                    await Task.Delay(CombatClashLeadMs);
+
+                    _combatFx.ShowDamage = true;
+                    StateHasChanged();
+                    await Task.Delay(CombatDamageMs);
+
+                    _combatFx = null;
+                    _combatFocusAttackerId = null;
+                    _combatAnimActive = false;
+                    StateHasChanged();
+                    await Task.Delay(DisengageHitHoldMs);
+                }
             }
-            StateHasChanged();
+
+            if (legsAt.TryGetValue(atMs, out var legs))
+            {
+                foreach (var leg in legs)
+                {
+                    var frame = _animFrames.FirstOrDefault(f => f.TokenId == leg.MoverId);
+                    if (frame is null)
+                        continue;
+                    frame.FacingDeg = BaronyBattleFacing.ShortestTurnTarget(
+                        frame.FacingDeg, BaronyBattleFacing.ToDegrees(leg.Facing));
+                    frame.TransitionMs = leg.DurationMs;
+                    frame.LeftPx = leg.ToX * AnimCellPx;
+                    frame.TopPx = leg.ToY * AnimCellPx;
+                }
+                StateHasChanged();
+            }
         }
 
         await Task.Delay(Math.Max(0, simulation.DurationMs - elapsedMs) + 80);
+
+        _combatFx = null;
+        _combatFocusAttackerId = null;
+        _combatAnimActive = false;
 
         // Settle on the facing the simulation ended with: the planned heading, or the enemy
         // that brought the unit to a halt.
@@ -3005,7 +3422,6 @@ else
     private int ApplyMovementOutcomes(BattleMovementResult simulation, ISet<string> movingTokenIds)
     {
         var moved = 0;
-        var engaged = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var token in Map!.Tokens)
         {
@@ -3022,14 +3438,14 @@ else
             token.RemainingMove = outcome.RemainingMove;
             token.ClearPath();
 
-            if (outcome.EngagedWithMoverId is not null)
+            if (outcome.EngagedWithMoverId is string foeId)
             {
-                engaged.Add(token.Id);
-                engaged.Add(outcome.EngagedWithMoverId);
+                var foe = Map.Tokens.FirstOrDefault(t => t.Id == foeId);
+                if (foe is not null)
+                    BindEngagement(token, foe);
             }
         }
 
-        _engagedTokenIds = engaged;
         return moved;
     }
 
@@ -3039,6 +3455,9 @@ else
         var notes = new List<string>();
         foreach (var ev in simulation.Events.OrderBy(e => e.AtMs))
         {
+            if (ev.Kind == BattleMovementEventKind.MovedWhileEngaged)
+                continue; // Logged separately with damage numbers.
+
             var mover = Map?.Tokens.FirstOrDefault(t => t.Id == ev.MoverId);
             if (mover is null)
                 continue;
@@ -3100,6 +3519,17 @@ else
             {
                 charger.AttackTargetId = foe.Id;
                 notes.Add($"{charger.Label} keeps charge contact with {foe.Label} ({steps} tiles).");
+            }
+            else if (IsValidChargeContact(charger, foe))
+            {
+                // Someone else stepped into the lance. A body in the forward arc is a body worth
+                // hitting, so the charge switches to whoever actually stopped it.
+                var intended = Map.Tokens.FirstOrDefault(t => t.Id == charger.ChargeTargetId);
+                charger.ChargeTargetId = foe.Id;
+                charger.AttackTargetId = foe.Id;
+                notes.Add(
+                    $"{charger.Label} charge intercepted by {foe.Label} " +
+                    $"— hits the interceptor instead of {intended?.Label ?? "its target"} ({steps} tiles).");
             }
         }
 
@@ -3270,7 +3700,7 @@ else
             .Where(t => t.Hp > 0)
             .Where(CanIssueAttackOrder)
             .Where(t => string.IsNullOrWhiteSpace(t.AttackTargetId))
-            .Where(HasAdjacentEnemyTargetOpportunity)
+            .Where(HasAttackTargetOpportunity)
             .ToList();
 
         if (missingOrders.Count > 0)
@@ -3321,6 +3751,7 @@ else
         Map.TurnState.SubPhase = BaronyBattleSubPhases.Movement;
         Map.TurnState.CurrentIndex = 0;
         Map.TurnState.Round = endedCombatRound + 1;
+        ReconcileEngagements();
         AppendLocalLog(string.Empty, "phase",
             PhaseBanner($"Start of Movement Phase {Map.TurnState.Round}"));
         await SaveAsync(systemMessage: $"Round {Map.TurnState.Round} — movement phase (low → high initiative).");
@@ -3458,6 +3889,7 @@ else
             // A declared charge accepts no further orders, so there is no range left to offer.
             if (token.ChargeBonus)
                 return;
+
             var (fx, fy, budget) = _chargeEditTokenId == token.Id
                 ? GetTipPlanOrigin(token)
                 : GetPlanOrigin(token);
@@ -3472,12 +3904,12 @@ else
         }
         else if (IsAttackPlanningPhase)
         {
-            // Highlight all cells occupied by adjacent opposing tokens
+            // Highlight cells occupied by opposing tokens this unit can attack or shoot
             var attacker = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
             if (attacker is null) return;
-            foreach (var opponent in Map.Tokens.Where(t => t.IsEnemy != attacker.IsEnemy))
+            foreach (var opponent in Map.Tokens.Where(t => t.IsEnemy != attacker.IsEnemy && t.Hp > 0))
             {
-                if (!AreAdjacent(attacker, opponent)) continue;
+                if (!CanTarget(attacker, opponent)) continue;
                 int s = TokenSize(opponent);
                 for (int dx = 0; dx < s; dx++)
                     for (int dy = 0; dy < s; dy++)
@@ -3554,11 +3986,6 @@ else
     /// <summary>Recomputes the exact tile routes for every token that has a planned path.</summary>
     private void RebuildPlannedRoutes()
     {
-        _attackTargetIds = Map?.Tokens
-            .Where(t => t.AttackTargetId is not null)
-            .Select(t => t.AttackTargetId!)
-            .ToHashSet() ?? new();
-
         var routes = new Dictionary<string, List<(int X, int Y)>>();
         if (Map is not null)
         {
@@ -3676,13 +4103,35 @@ else
         return true;
     }
 
+    /// <summary>
+    /// Tiles a route may not cross: impassable ground, hostile bodies, and comrades pinned in
+    /// melee. A comrade standing free is crossable — see <see cref="IsFootprintSlowedByAlly"/>.
+    /// </summary>
     private bool IsBlockedFor(BaronyBattleTokenDTO mover, int x, int y)
     {
         if (GetCell(x, y)?.Terrain == BaronyBattleTerrain.Impassable)
             return true;
         var occupant = GetTokenAt(x, y);
-        if (occupant is not null && occupant.Id != mover.Id && occupant.IsEnemy != mover.IsEnemy)
-            return true;
+        if (occupant is null || occupant.Id == mover.Id)
+            return false;
+        return occupant.IsEnemy != mover.IsEnemy || IsPinned(occupant);
+    }
+
+    /// <summary>
+    /// True when the footprint would come down on a comrade standing free. Working through one
+    /// costs the same as difficult ground.
+    /// </summary>
+    private bool IsFootprintSlowedByAlly(BaronyBattleTokenDTO mover, int ax, int ay, int size)
+    {
+        for (int dx = 0; dx < size; dx++)
+        {
+            for (int dy = 0; dy < size; dy++)
+            {
+                var occupant = GetTokenAt(ax + dx, ay + dy);
+                if (occupant is not null && occupant.Id != mover.Id && occupant.IsEnemy == mover.IsEnemy)
+                    return true;
+            }
+        }
         return false;
     }
 
@@ -3724,6 +4173,18 @@ else
         return false;
     }
 
+    /// <summary>
+    /// Half-points one planned step costs: difficult-ground rates when it drags the footprint onto
+    /// rough terrain or onto a comrade the unit would have to work through.
+    /// </summary>
+    private int PlannedStepHalfCost(
+        BaronyBattleTokenDTO mover, int fromX, int fromY, int toX, int toY, int size,
+        bool ignoreUnits = false) =>
+        BattleMovementRules.StepHalfCost(
+            fromX, fromY, toX, toY,
+            FootprintEntersDifficult(fromX, fromY, toX, toY, size)
+            || (!ignoreUnits && IsFootprintSlowedByAlly(mover, toX, toY, size)));
+
     private HashSet<(int X, int Y)> ComputeReachableAnchorsFrom(
         BaronyBattleTokenDTO mover, int fromX, int fromY, int range)
     {
@@ -3757,10 +4218,7 @@ else
                     int ny = cy + dy;
                     if (IsFootprintBlocked(mover, nx, ny, size))
                         continue;
-                    int stepCost = (dx != 0 && dy != 0) ? 3 : 2;
-                    if (FootprintEntersDifficult(cx, cy, nx, ny, size))
-                        stepCost *= 2;
-                    int newCost = baseCost + stepCost;
+                    int newCost = baseCost + PlannedStepHalfCost(mover, cx, cy, nx, ny, size);
                     if (newCost > budget) continue;
                     if (newCost < dist[nx, ny])
                     {
@@ -3847,9 +4305,7 @@ else
                 if (dx == 0 && dy == 0) continue;
                 int nx = cx + dx, ny = cy + dy;
                 if (IsFootprintBlocked(mover, nx, ny, size, ignoreUnits)) continue;
-                int stepCost = (dx != 0 && dy != 0) ? 3 : 2;
-                if (FootprintEntersDifficult(cx, cy, nx, ny, size)) stepCost *= 2;
-                int newCost = baseCost + stepCost;
+                int newCost = baseCost + PlannedStepHalfCost(mover, cx, cy, nx, ny, size, ignoreUnits);
                 if (newCost > budget) continue;
                 if (newCost < dist[nx, ny])
                 {
@@ -3912,9 +4368,7 @@ else
                 if (dx == 0 && dy == 0) continue;
                 int nx = cx + dx, ny = cy + dy;
                 if (IsFootprintBlocked(mover, nx, ny, size)) continue;
-                int stepCost = (dx != 0 && dy != 0) ? 3 : 2;
-                if (FootprintEntersDifficult(cx, cy, nx, ny, size)) stepCost *= 2;
-                int newCost = baseCost + stepCost;
+                int newCost = baseCost + PlannedStepHalfCost(mover, cx, cy, nx, ny, size);
                 if (newCost > budget) continue;
                 if (newCost < dist[nx, ny])
                 {
@@ -3952,6 +4406,8 @@ else
         public int Discipline { get; set; } = 9;
         public int TroopCount { get; set; } = 50;
         public int Move { get; set; } = 4;
+        /// <summary>0 = melee only; &gt;0 = ranged unit (shot reach in move-points).</summary>
+        public int Range { get; set; }
 
         public static EnemyDraft Default() => new();
 
@@ -3967,6 +4423,7 @@ else
             Discipline = token.Discipline,
             TroopCount = token.TroopCount,
             Move = token.Move,
+            Range = token.Range,
         };
     }
 }

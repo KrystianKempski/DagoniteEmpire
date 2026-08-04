@@ -318,17 +318,33 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 ### Battle Map — movement phase (`BattleMovementSimulator` / `BattleMovementRules`)
 Movement is resolved by one deterministic simulation in `DA_Common/Barony/Battle`, shared by planning, resolution and the replay animation — the animation is a playback of the run that produced the final positions, not a second calculation. Every unit sets off at the same instant and reacts to the field as it actually is at that moment. Covered by `DA_Business.Tests/Barony/BattleMovementSimulatorTests.cs`.
 
-- **Step cost** (half-move points): ortho **2**, diagonal **3**, ×**2** when the step pulls new difficult tiles under the footprint. Budget = `Move × 2 + 1`; displayed spend = `floor(half / 2)`.
+- **Step cost** (half-move points): ortho **2**, diagonal **3**, ×**2** when the step pulls new difficult tiles under the footprint **or lands on a friendly body being worked through**. Budget = `Move × 2 + 1`; displayed spend = `floor(half / 2)`.
 - **Step duration** = `halfCost × 2800 / (2 × Move)` ms — ortho at Move 4 = **700 ms**, diagonal = **1050 ms**. Speed is proportional to `Move`, and since a diagonal costs half again as much time as a straight step, physical speed is identical in all eight directions.
 - **Occupancy**: a unit holds the tile it is stepping into for the whole step; a hostile unit additionally screens the tile it is vacating. Nothing passes through anything.
 - **Hostile contact** ends movement on the spot (`EnemyContact`) and the unit turns to face whoever stopped it.
-- **Friendly block** only delays: the unit waits and retries each tick, halting only after `3 × orthoStep` ms without progress (`BlockedByAlly`).
+- **Friendly block** first only delays: the unit waits and retries each tick, so a marching column files through at normal cost. After `3 × orthoStep` ms without progress it tries to **work through** the body instead, and halts (`BlockedByAlly`) only if it cannot.
+- **Working through a friendly** (`TrySlipPast`): allowed only when the blocker is **not pinned** (`BattleMovementMover.IsPinned`, set from the page's `IsPinned` — a living engaged enemy still in contact) and the step is not also a diagonal squeeze. The route is followed past consecutive friendly bodies until the first tile nobody holds; every occupied tile is charged at difficult-ground rates. The whole pass is committed as one uninterrupted motion (several legs, one transit window) and the tile claim jumps straight to the far side, so a unit is **never left at rest on top of anyone**. If the far side is off-route, unaffordable, past the `StopAtMs` cap, or blocked by anything else, nothing is committed and the mover falls back to `BlockedByAlly`.
+- Planning mirrors this: `IsBlockedFor` treats pinned friendlies as impassable, `PlannedStepHalfCost` doubles steps onto free-standing friendlies, and `CanPlaceWaypoint` still rejects any anchor on another unit's tile or planned end.
 - **Contested tile** priority: charge, then `InitiativeTotal`, then `InitiativeDie`, then token id — fully deterministic, no random tie-breaks.
 - **Diagonal** steps are refused when both flanking tiles are held, which also stops two units swapping across the same diagonal.
 - Output: timed legs for the animation, plus per-unit outcomes (final tile, facing, remaining move, charge tiles travelled, who stopped it) and log events.
+- **Moving while engaged**: the first completed step of a mover listed against `EngagedEnemyIds` emits `MovedWhileEngaged` once per engaged pair, whether or not contact was actually broken. `StopAtMs` on a mover hard-caps further steps (used when the free hit kills mid-phase); the corpse stays as an obstacle until the phase ends.
 
-### Battle Map — combat damage (`BattleMapPage.ResolveCombatRoundDamage`)
-Phases: Movement → Attack planning → Combat. Stats are frozen on the token at deploy (`UnitCombatFormulas` / MG enemy draft). Attacks resolve in reverse initiative order (highest first). Skip if attacker/defender dead, no target, or not adjacent. No separate melee/ranged damage path — adjacency only.
+### Battle Map — disengage hit
+Stored on tokens as `EngagedEnemyIds` (JSON in `TokensJson`, no EF migration). Created by hostile movement collisions and by surviving **melee** combat exchanges; cleared when contact breaks or a unit flees. Ranged shots never bind engagement.
+
+- Trigger is **any** movement, not leaving the adjacency ring: a sidestep next to the same enemy costs the same as running away. Standing still (including an in-place facing change) costs nothing.
+- **dealt** = `max(1, round(full / 2))` where `full` is the normal attack formula using **start-of-phase** positions and facings (same Aim/Exposure as Combat).
+- No defensive return from the unit that moved, and a unit already killed this phase delivers no hit.
+- Pre-rolled before the simulation so the animation is a pure replay; if a hit kills, `StopAtMs` is set and the simulation is re-run.
+- Pairs that moved but stayed in contact remain engaged; `ReconcileEngagements` drops only pairs that are no longer adjacent.
+- Replay: each hit plays on its own (`CombatClashLeadMs` clash, then `CombatDamageMs` damage) **before** the legs scheduled at the same timestamp, so the field is frozen while it reads and two attackers on one victim show two numbers. Overlays anchor to the animation frame, not the DTO tile, which still holds the start-of-phase position mid-replay.
+
+### Battle Map — charge interception (`LockChargeContacts`)
+A charge that already covered `ChargeSuccessSteps` but was stopped by a hostile other than its declared target retargets onto that interceptor when `IsValidChargeContact` holds (adjacent and in the charger's forward arc — straight or either front diagonal). Since `EnemyContact` turns the mover to face whoever stopped it, a body that steps into the lance normally qualifies. `ChargeTargetId` and `AttackTargetId` both move to the interceptor, so the charge bonus applies to it in Combat.
+
+### Battle Map — combat damage (`BattleMapPage.PlanCombatExchanges`)
+Phases: Movement → Attack planning → Combat. Stats are frozen on the token at deploy (`UnitCombatFormulas` / MG enemy draft). Attacks resolve in reverse initiative order (highest first). Skip if attacker/defender dead, no target, or neither adjacent nor in shot range.
 
 User-facing flow/rules guide: [`BATTLE_MAP_GUIDE.md`](./BATTLE_MAP_GUIDE.md)
 
@@ -339,11 +355,22 @@ User-facing flow/rules guide: [`BATTLE_MAP_GUIDE.md`](./BATTLE_MAP_GUIDE.md)
     - **Exposure** — attacker position vs defender facing: front **+0**, corner **+0.5**, side **+1.5**, rear-corner **+1.5**, rear **+2**
     - Example log: `(Dmg+k4−Arm=5+3−3=5) × (7+k6=12)/(12+k6=16) ×3 (Front Vs Corner) => 11 dmg.`
   - If `Damage + k4 < Armor`, raw can be ≤ 0, but dealt is still floored at **1**
-- **defensive dealt** (same exchange) = `max(1, round((Dmg_def + k4 − Arm_atk) × (Def_def + k6) / max(1, Def_atk + k6) × front_def))`
+- **defensive dealt** (melee exchange only) = `max(1, round((Dmg_def + k4 − Arm_atk) × (Def_def + k6) / max(1, Def_atk + k6) × front_def))`
   - Ratio is **Defense vs Defense** (not Attack), both sides roll k6
   - **front_def** = same Aim/Exposure rules with roles swapped (`GetFrontBreakdown(defender, attacker)`)
   - Example log: `(Dmg+k4−Arm=4+2−1=5) × (12+k6=15)/(10+k6=14) ×3 (Front Vs Front) => 16 dmg.` tagged `(defensive)`
-- Both sides may flee at HP ≤ 0 after the exchange. Defender still returns defensive damage even if reduced to 0 by the attack.
+- Both sides may flee at HP ≤ 0 after the exchange. Defender still returns defensive damage even if reduced to 0 by the attack (melee only).
+- Surviving **melee** exchanges bind engagement; shots never do.
+
+### Battle Map — ranged attacks (`token.Range`, `BattleMovementRules.IsInShotRange`)
+- Token field `Range` (JSON in `TokensJson`): allies copy `UnitWeaponCatalog.Find(Weapon1Key).Range` at deploy; MG enemies set it in the draft form (default 0).
+- `Range > 0` and not pinned by a living engaged enemy → unit may shoot. Shot reach uses the same half-point metric as movement (`FootprintShotHalfCost`: ortho 2 / diagonal 3 between closest footprint edges; budget `MoveHalfBudget(Range)`), but **terrain and units never block**.
+- A shot resolves with the normal attack formula, **Aim forced to front (2.5)**, Exposure still from the target's facing. `defDealt = 0` (no defensive return). Charge bonus never applies to a shot.
+- **Distance penalty** (`ShotAttackPenalty`) = `2 × max(0, floor(shotHalfCost / 2) − 1)`, subtracted from `Attack` only. Point-blank (adjacent, including diagonally) is unpenalised; each further tile of flight costs another **−2**, measured on the movement metric so two diagonals count as three (−4). Logged as `[range −N att]`. The attack roll is floored at **1** in the ratio so a hopeless shot still deals the minimum 1 damage rather than negative.
+- Point-blank: an unengaged ranged unit shooting an adjacent enemy is still a shot (no return fire, no engagement bind). An engaged ranged unit may only melee adjacent enemies.
+- Covered by `DA_Business.Tests/Barony/BattleMovementRulesShotTests.cs`.
+
+### Battle Map — charge (continued from combat)
 - **Charge** (Movement phase): any unit may charge in a straight line (8 directions). To **start** a charge: minimum path length **3** tiles on cardinal directions (N/E/S/W), **2** tiles on diagonals — both require **3** move points on open ground. Charge steps use the same costs as normal movement (half-move budget `Move*2+1`: ortho 2, diagonal 3 → displayed MP `floor(spent/2)`; e.g. Move 4 = 4 cardinal tiles or 3 diagonal; Move 5 = 3 diagonal; Move 6 = 4 diagonal; difficult ×2). Blocked before required start minimum → charge fails. A charge always runs as far as it can — until move points run out or something is in the way — and once declared the unit accepts no further orders (no extra waypoints, no facing change, no second charge); undo the plan to change it. After the start minimum, an enemy on the path means stop before contact and set charge target. A charge may also be planned "blind" (without immediate target). A charge **counts as successful once the unit has actually covered 2 tiles** (`ChargeSuccessSteps`), regardless of direction or whether it was aimed or blind; from there it locks a target on collision and earns the bonus. If another unit cuts the path before those 2 tiles, the charge is interrupted (journal note). Charges get **priority on contested tiles** rather than a head start: when a charger and another unit reach for the same tile in the same instant the charger takes it, and between two chargers the higher initiative wins. At the end of a full charge path, an enemy in the **forward arc** (straight ahead or either forward diagonal) can also be locked as the charge target. In Combat vs charge target: use **Attack+2** and **Damage+1**, but only while the target remains in the charger's **forward arc** (front or forward diagonal). Side / rear / rear-corner contact after movement clears the charge. Charge attacks resolve before non-charge attacks; changing target or losing valid contact clears the charge bonus.
 - **End battle** (MG): ends immediately regardless of field state; writes a summary log; syncs each deployed ally’s token HP → `BaronyUnit.CurrentHp` (fled allies → **0**). Army roster is locked while `Phase = battle`.
 - **Troop recovery**: understrength units (not Disbanded) regain **+5** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.

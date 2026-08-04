@@ -95,6 +95,12 @@ namespace DA_Models.BaronyModels
         public int Move { get; set; }
         public int RemainingMove { get; set; }
 
+        /// <summary>
+        /// Ranged attack reach in move-points (same half-point metric as movement).
+        /// 0 = melee only. Allies copy it from their primary weapon; MG enemies set it by hand.
+        /// </summary>
+        public int Range { get; set; }
+
         /// <summary><see cref="BaronyBattleFacing"/> — current front (0 = North).</summary>
         public int Facing { get; set; } = BaronyBattleFacing.North;
 
@@ -122,6 +128,12 @@ namespace DA_Models.BaronyModels
         /// </summary>
         public int? ChargeOriginX { get; set; }
         public int? ChargeOriginY { get; set; }
+
+        /// <summary>
+        /// Hostile tokens this unit is locked in melee with. Leaving their reach costs a free hit.
+        /// Populated by movement collisions and combat exchanges; cleared when contact breaks or a unit flees.
+        /// </summary>
+        public List<string> EngagedEnemyIds { get; set; } = new();
 
         public int InitiativeDie { get; set; }
         public int InitiativeTotal { get; set; }

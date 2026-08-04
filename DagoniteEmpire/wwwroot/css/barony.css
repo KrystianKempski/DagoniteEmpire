@@ -9266,18 +9266,25 @@ a.city-building-name-text--link:hover {
 
 .barony-scope .bbm-engage-badge {
     position: absolute;
-    right: 2px;
-    bottom: 2px;
-    width: 1rem;
+    left: 2px;
+    top: 2px;
+    min-width: 1rem;
     height: 1rem;
+    padding: 0 2px;
     border-radius: 999px;
     background: rgba(168, 52, 52, 0.92);
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 1px;
     z-index: 6;
     pointer-events: none;
     box-shadow: 0 0 0 1px rgba(245, 240, 230, 0.6);
+}
+
+/* Clears the charge button, which owns the same corner while a unit is still taking orders. */
+.barony-scope .bbm-engage-badge.shifted {
+    top: 1.2rem;
 }
 
 .barony-scope .bbm-engage-badge__icon {
@@ -9288,28 +9295,51 @@ a.city-building-name-text--link:hover {
     filter: brightness(0) invert(1);
 }
 
-.barony-scope .bbm-attack-target-badge {
+.barony-scope .bbm-engage-badge__count {
+    color: #fff;
+    font-size: 0.55rem;
+    font-weight: 700;
+    line-height: 1;
+    padding-right: 1px;
+}
+
+.barony-scope .bbm-ranged-badge {
     position: absolute;
-    left: 2px;
-    top: 2px;
-    width: 1rem;
+    right: 2px;
+    bottom: 2px;
+    min-width: 1rem;
     height: 1rem;
+    padding: 0 2px;
     border-radius: 999px;
-    background: rgba(168, 52, 52, 0.96);
+    background: rgba(72, 110, 62, 0.94);
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 1px;
     z-index: 6;
     pointer-events: none;
     box-shadow: 0 0 0 1px rgba(245, 240, 230, 0.6);
 }
 
-.barony-scope .bbm-attack-target-badge__icon {
+.barony-scope .bbm-ranged-badge__icon {
     width: 0.68rem;
     height: 0.68rem;
     object-fit: contain;
     display: block;
     filter: brightness(0) invert(1);
+}
+
+.barony-scope .bbm-ranged-badge__count {
+    color: #fff;
+    font-size: 0.55rem;
+    font-weight: 700;
+    line-height: 1;
+    padding-right: 1px;
+}
+
+.barony-scope .bbm-combat-clash--shot {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45))
+            drop-shadow(0 0 6px rgba(72, 110, 62, 0.55));
 }
 
 .barony-scope .bbm-grid-stack {

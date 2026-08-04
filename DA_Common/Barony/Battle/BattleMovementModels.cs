@@ -86,6 +86,24 @@ public sealed class BattleMovementMover
     /// <summary>Index in <see cref="Route"/> where the charge run begins.</summary>
     public int ChargeStartStep { get; init; }
 
+    /// <summary>
+    /// Hostile units this mover is locked in melee with at the start of the phase.
+    /// Used to emit <see cref="BattleMovementEventKind.MovedWhileEngaged"/> once the mover budges.
+    /// </summary>
+    public IReadOnlyList<string> EngagedEnemyIds { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// True when this unit is held in a melee it cannot shrug off. A friendly unit standing free
+    /// can be squeezed past; one that is pinned holds its tile against its own side too.
+    /// </summary>
+    public bool IsPinned { get; init; }
+
+    /// <summary>
+    /// Hard wall-clock cap: the mover stops once the simulation clock reaches this time.
+    /// Used on re-runs after a unit is destroyed mid-movement by a leave-engagement hit.
+    /// </summary>
+    public int? StopAtMs { get; init; }
+
     /// <summary>Planned tiles including the starting tile. A single entry means "stay put".</summary>
     public IReadOnlyList<BattleGridPoint> Route { get; init; } = Array.Empty<BattleGridPoint>();
 }
@@ -148,6 +166,12 @@ public enum BattleMovementEventKind
     AllyDeadlock,
     OutOfMovePoints,
     BlockedByTerrain,
+    /// <summary>
+    /// <see cref="BattleMovementEvent.MoverId"/> budged while locked in melee with
+    /// <see cref="BattleMovementEvent.OtherMoverId"/>, who gets a free hit for it.
+    /// Fires once per pair, on the mover's first completed step.
+    /// </summary>
+    MovedWhileEngaged,
 }
 
 public sealed class BattleMovementEvent

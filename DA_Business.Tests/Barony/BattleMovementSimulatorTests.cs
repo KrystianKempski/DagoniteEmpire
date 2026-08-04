@@ -185,6 +185,7 @@ public class BattleMovementSimulatorTests
     [Fact]
     public void UnitGivesUpWhenTheFriendlyUnitInFrontNeverMoves()
     {
+        // The route ends on the comrade's tile, so there is no open ground to work through to.
         var result = Simulate(
             Mover("a", Ally, move: 0, initiative: 10, (1, 0)),
             Mover("b", Ally, move: 4, initiative: 20, (0, 0), (1, 0)));
@@ -194,6 +195,102 @@ public class BattleMovementSimulatorTests
         Assert.Equal((0, 0), (b.X, b.Y));
         Assert.Equal(0, b.TilesTravelled);
         Assert.Contains(result.Events, e => e.Kind == BattleMovementEventKind.AllyDeadlock && e.MoverId == "b");
+    }
+
+    // --- Working through friendly bodies ---
+
+    [Fact]
+    public void UnitWorksItsWayThroughAFriendlyUnitThatWillNeverMove()
+    {
+        var result = Simulate(
+            Mover("a", Ally, move: 0, initiative: 10, (1, 0)),
+            Mover("b", Ally, move: 4, initiative: 20, (0, 0), (1, 0), (2, 0)));
+
+        var b = result.Outcomes["b"];
+        Assert.Equal(BattleMovementStopReason.RouteComplete, b.StopReason);
+        Assert.Equal((2, 0), (b.X, b.Y));
+        Assert.Equal((1, 0), (result.Outcomes["a"].X, result.Outcomes["a"].Y));
+        AssertNoOverlap(result);
+    }
+
+    [Fact]
+    public void SqueezingPastAFriendlyBodyCostsAsMuchAsDifficultGround()
+    {
+        var result = Simulate(
+            Mover("a", Ally, move: 0, initiative: 10, (1, 0)),
+            Mover("b", Ally, move: 4, initiative: 20, (0, 0), (1, 0), (2, 0)));
+
+        // Two straight steps would cost 2 move points; the tile held by "a" is charged double.
+        Assert.Equal(3, result.Outcomes["b"].SpentMovePoints);
+    }
+
+    [Fact]
+    public void UnitHaltsAgainstAFriendlyUnitPinnedInMelee()
+    {
+        var pinned = Pinned(Mover("a", Ally, move: 0, initiative: 10, (1, 0)));
+        var result = Simulate(
+            pinned,
+            Mover("b", Ally, move: 4, initiative: 20, (0, 0), (1, 0), (2, 0)));
+
+        var b = result.Outcomes["b"];
+        Assert.Equal(BattleMovementStopReason.BlockedByAlly, b.StopReason);
+        Assert.Equal((0, 0), (b.X, b.Y));
+    }
+
+    [Fact]
+    public void UnitWithoutTheMovePointsToComeOutTheOtherSideStaysPut()
+    {
+        // Move 2 buys five half-points: 4 for the doubled body tile leaves too little for the exit.
+        var result = Simulate(
+            Mover("a", Ally, move: 0, initiative: 10, (1, 0)),
+            Mover("b", Ally, move: 2, initiative: 20, (0, 0), (1, 0), (2, 0)));
+
+        var b = result.Outcomes["b"];
+        Assert.Equal(BattleMovementStopReason.BlockedByAlly, b.StopReason);
+        Assert.Equal((0, 0), (b.X, b.Y));
+    }
+
+    [Fact]
+    public void TwoFriendlyBodiesInARowAreClearedInOneMotion()
+    {
+        var result = Simulate(
+            Mover("a", Ally, move: 0, initiative: 10, (1, 0)),
+            Mover("b", Ally, move: 0, initiative: 9, (2, 0)),
+            Mover("c", Ally, move: 6, initiative: 20, (0, 0), (1, 0), (2, 0), (3, 0)));
+
+        var c = result.Outcomes["c"];
+        Assert.Equal((3, 0), (c.X, c.Y));
+        // Two doubled body tiles plus a clear exit step: 4 + 4 + 2 half-points.
+        Assert.Equal(5, c.SpentMovePoints);
+        AssertNoOverlap(result);
+    }
+
+    [Fact]
+    public void MarchingColumnStillFilesThroughInsteadOfShovingPastEachOther()
+    {
+        // "b" is processed first and finds "a" in its way, but "a" clears the tile at once.
+        var result = Simulate(
+            Mover("a", Ally, move: 4, initiative: 10, (1, 0), (2, 0), (3, 0)),
+            Mover("b", Ally, move: 4, initiative: 20, (0, 0), (1, 0), (2, 0)));
+
+        // Nobody was shoved through, so nobody paid difficult-ground rates.
+        Assert.Equal(2, result.Outcomes["a"].SpentMovePoints);
+        Assert.Equal(2, result.Outcomes["b"].SpentMovePoints);
+        Assert.Equal((3, 0), (result.Outcomes["a"].X, result.Outcomes["a"].Y));
+        Assert.Equal((2, 0), (result.Outcomes["b"].X, result.Outcomes["b"].Y));
+        AssertNoOverlap(result);
+    }
+
+    [Fact]
+    public void HostileUnitsAreStillImpassable()
+    {
+        var result = Simulate(
+            Mover("a", Enemy, move: 0, initiative: 10, (1, 0)),
+            Mover("b", Ally, move: 6, initiative: 20, (0, 0), (1, 0), (2, 0)));
+
+        var b = result.Outcomes["b"];
+        Assert.Equal(BattleMovementStopReason.EnemyContact, b.StopReason);
+        Assert.Equal((0, 0), (b.X, b.Y));
     }
 
     [Fact]
@@ -301,6 +398,141 @@ public class BattleMovementSimulatorTests
         Assert.Equal("b", a.EngagedWithMoverId);
     }
 
+    // --- Moving while engaged ---
+
+    [Fact]
+    public void MovingAwayFromAnEngagedEnemyEmitsThePenaltyAtStepEnd()
+    {
+        var leaver = Engaged(
+            Mover("a", Ally, move: 4, initiative: 10, (1, 0), (2, 0), (3, 0)),
+            "b");
+        var foe = Engaged(
+            Mover("b", Enemy, move: 0, initiative: 5, (0, 0)),
+            "a");
+
+        var result = Simulate(leaver, foe);
+
+        var penalty = Assert.Single(result.Events, e => e.Kind == BattleMovementEventKind.MovedWhileEngaged);
+        Assert.Equal("a", penalty.MoverId);
+        Assert.Equal("b", penalty.OtherMoverId);
+        Assert.True(penalty.AtMs > 0);
+        Assert.Equal((3, 0), (result.Outcomes["a"].X, result.Outcomes["a"].Y));
+    }
+
+    [Fact]
+    public void SidesteppingWhileStayingAdjacentStillCostsThePenalty()
+    {
+        // a sidesteps but stays next to b at (0,0) — budging at all is enough.
+        var mover = Engaged(
+            Mover("a", Ally, move: 4, initiative: 10, (1, 0), (0, 1)),
+            "b");
+        var foe = Engaged(
+            Mover("b", Enemy, move: 0, initiative: 5, (0, 0)),
+            "a");
+
+        var result = Simulate(mover, foe);
+
+        var penalty = Assert.Single(result.Events, e => e.Kind == BattleMovementEventKind.MovedWhileEngaged);
+        Assert.Equal("a", penalty.MoverId);
+        Assert.Equal("b", penalty.OtherMoverId);
+        Assert.Equal((0, 1), (result.Outcomes["a"].X, result.Outcomes["a"].Y));
+    }
+
+    [Fact]
+    public void StandingStillWhileEngagedCostsNothing()
+    {
+        var holder = Engaged(Mover("a", Ally, move: 4, initiative: 10, (1, 0)), "b");
+        var foe = Engaged(Mover("b", Enemy, move: 0, initiative: 5, (0, 0)), "a");
+
+        var result = Simulate(holder, foe);
+
+        Assert.DoesNotContain(result.Events, e => e.Kind == BattleMovementEventKind.MovedWhileEngaged);
+    }
+
+    [Fact]
+    public void ALongMarchWhileEngagedIsPenalisedOnlyOncePerPair()
+    {
+        var mover = Engaged(
+            Mover("a", Ally, move: 6, initiative: 10, (1, 0), (2, 0), (3, 0), (4, 0)),
+            "b");
+        var foe = Engaged(Mover("b", Enemy, move: 0, initiative: 5, (0, 0)), "a");
+
+        var result = Simulate(mover, foe);
+
+        Assert.Single(result.Events, e => e.Kind == BattleMovementEventKind.MovedWhileEngaged);
+    }
+
+    [Fact]
+    public void PartnerWhoStepsAwayIsTheOneWhoPays()
+    {
+        var stay = Engaged(
+            Mover("a", Ally, move: 0, initiative: 10, (0, 0)),
+            "b");
+        var leaver = Engaged(
+            Mover("b", Enemy, move: 4, initiative: 5, (1, 0), (2, 0), (3, 0)),
+            "a");
+
+        var result = Simulate(stay, leaver);
+
+        var penalty = Assert.Single(result.Events, e => e.Kind == BattleMovementEventKind.MovedWhileEngaged);
+        Assert.Equal("b", penalty.MoverId);
+        Assert.Equal("a", penalty.OtherMoverId);
+    }
+
+    [Fact]
+    public void MovingWhileEngagedWithTwoEnemiesEmitsTwoEvents()
+    {
+        var leaver = Engaged(
+            Mover("a", Ally, move: 4, initiative: 10, (1, 1), (2, 1), (3, 1)),
+            "b", "c");
+        var b = Engaged(Mover("b", Enemy, move: 0, initiative: 5, (0, 0)), "a");
+        var c = Engaged(Mover("c", Enemy, move: 0, initiative: 6, (0, 2)), "a");
+
+        var result = Simulate(leaver, b, c);
+
+        var penalties = result.Events
+            .Where(e => e.Kind == BattleMovementEventKind.MovedWhileEngaged)
+            .OrderBy(e => e.OtherMoverId, StringComparer.Ordinal)
+            .ToList();
+        Assert.Equal(2, penalties.Count);
+        Assert.All(penalties, e => Assert.Equal("a", e.MoverId));
+        Assert.Equal(new[] { "b", "c" }, penalties.Select(e => e.OtherMoverId).ToArray());
+    }
+
+    [Fact]
+    public void StopAtMsCutsTheRouteAtTheCap()
+    {
+        var stepMs = BattleMovementRules.StepDurationMs(6, BattleMovementRules.OrthogonalStepCost);
+        var capped = WithStopAt(
+            Mover("a", Ally, move: 6, initiative: 20, (0, 0), (1, 0), (2, 0), (3, 0)),
+            // Cap exactly when the first step lands — no further steps may start.
+            stopAtMs: stepMs);
+
+        var result = Simulate(capped);
+
+        Assert.Equal((1, 0), (result.Outcomes["a"].X, result.Outcomes["a"].Y));
+        Assert.Equal(1, result.Outcomes["a"].TilesTravelled);
+        Assert.Single(result.Legs);
+    }
+
+    [Fact]
+    public void StopAtMsZeroKeepsTheUnitInPlaceAsAnObstacle()
+    {
+        var corpse = WithStopAt(
+            Mover("a", Ally, move: 6, initiative: 20, (2, 0), (3, 0), (4, 0)),
+            stopAtMs: 0);
+        var walker = Mover("b", Enemy, move: 4, initiative: 10, (0, 0), (1, 0), (2, 0));
+
+        var result = Simulate(corpse, walker);
+
+        Assert.Equal((2, 0), (result.Outcomes["a"].X, result.Outcomes["a"].Y));
+        Assert.Equal(0, result.Outcomes["a"].TilesTravelled);
+        // Walker runs into the stationary corpse and stops in contact.
+        Assert.Equal(BattleMovementStopReason.EnemyContact, result.Outcomes["b"].StopReason);
+        Assert.Equal("a", result.Outcomes["b"].EngagedWithMoverId);
+        Assert.Equal((1, 0), (result.Outcomes["b"].X, result.Outcomes["b"].Y));
+    }
+
     // --- Determinism ---
 
     [Fact]
@@ -377,8 +609,42 @@ public class BattleMovementSimulatorTests
     private static BattleMovementMover Sized(BattleMovementMover mover, int size) =>
         Clone(mover, charging: mover.IsCharging, chargeStartStep: mover.ChargeStartStep, size: size);
 
+    private static BattleMovementMover Engaged(BattleMovementMover mover, params string[] enemyIds) =>
+        Clone(
+            mover,
+            charging: mover.IsCharging,
+            chargeStartStep: mover.ChargeStartStep,
+            size: mover.Size,
+            engagedEnemyIds: enemyIds,
+            stopAtMs: mover.StopAtMs);
+
+    private static BattleMovementMover WithStopAt(BattleMovementMover mover, int stopAtMs) =>
+        Clone(
+            mover,
+            charging: mover.IsCharging,
+            chargeStartStep: mover.ChargeStartStep,
+            size: mover.Size,
+            engagedEnemyIds: mover.EngagedEnemyIds,
+            stopAtMs: stopAtMs);
+
+    private static BattleMovementMover Pinned(BattleMovementMover mover) =>
+        Clone(
+            mover,
+            charging: mover.IsCharging,
+            chargeStartStep: mover.ChargeStartStep,
+            size: mover.Size,
+            engagedEnemyIds: mover.EngagedEnemyIds,
+            stopAtMs: mover.StopAtMs,
+            pinned: true);
+
     private static BattleMovementMover Clone(
-        BattleMovementMover mover, bool charging, int chargeStartStep, int size) =>
+        BattleMovementMover mover,
+        bool charging,
+        int chargeStartStep,
+        int size,
+        IReadOnlyList<string>? engagedEnemyIds = null,
+        int? stopAtMs = null,
+        bool? pinned = null) =>
         new()
         {
             Id = mover.Id,
@@ -391,6 +657,9 @@ public class BattleMovementSimulatorTests
             PlannedFacing = mover.PlannedFacing,
             IsCharging = charging,
             ChargeStartStep = chargeStartStep,
+            EngagedEnemyIds = engagedEnemyIds ?? mover.EngagedEnemyIds,
+            IsPinned = pinned ?? mover.IsPinned,
+            StopAtMs = stopAtMs ?? mover.StopAtMs,
             Route = mover.Route,
         };
 

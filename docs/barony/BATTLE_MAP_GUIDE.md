@@ -26,6 +26,8 @@ widać na mapie, jest jej wiernym odtworzeniem — animacja i wynik nigdy się n
 
 - Krok prosto (N/E/S/W) kosztuje **1** punkt ruchu, krok na skos **1,5**.
 - Pole **Difficult** podwaja koszt kroku, pole **Impassable** blokuje przejście.
+- Wejście na pole zajęte przez **własny oddział** liczy się jak trudny teren (×2) — patrz
+  „Przejście przez sojusznika” niżej.
 - Budżet oddziału to `Move` punktów z zapasem pół punktu, stąd tabela skosów:
   Move 3 → 2 skosy, Move 4 → 3, Move 5 → 3, Move 6 → 4.
 - Trasę planuje się waypointami; obrót oddziału również kosztuje.
@@ -44,14 +46,28 @@ widać na mapie, jest jej wiernym odtworzeniem — animacja i wynik nigdy się n
   nie prześlizgnie. Wrogi oddział osłania dodatkowo pole, które właśnie opuszcza.
 - **Wróg na drodze zatrzymuje ruch** na miejscu, w kontakcie bojowym — oddział obraca się
   przodem do przeciwnika.
-- **Sojusznik na drodze tylko opóźnia**: oddział czeka, aż pole się zwolni. Jeśli zator nie
-  ustąpi (mniej więcej czas trzech kroków), oddział zatrzymuje się przed nim i trafia to do
-  journalu.
+- **Sojusznik na drodze najpierw tylko opóźnia**: oddział czeka, aż pole się zwolni. Kolumna
+  marszowa przepuszcza się więc sama, bez żadnej dodatkowej opłaty.
 - Gdy dwa oddziały sięgają po to samo pole w tej samej chwili, pierwszeństwo ma **szarża**,
   a w jej braku **wyższa inicjatywa**.
 - Krok na skos jest niemożliwy, gdy zajęte są **oba** sąsiednie pola narożne — nie da się
   przecisnąć między dwoma oddziałami ani przeniknąć przez siebie po krzyżujących się skosach.
 - Dwa oddziały nigdy nie kończą ruchu na tym samym polu.
+
+### Przejście przez sojusznika
+
+- Jeśli zator nie ustąpi sam (mniej więcej czas trzech kroków), oddział **przepycha się przez
+  sojusznika** stojącego mu na drodze.
+- Warunek: sojusznik, przez którego się przechodzi, **nie może być związany walką**. Oddział
+  wbity w melee trzyma swoje pole także przed swoimi — przed nim marsz się zatrzymuje
+  (wpis w journalu).
+- Każde pole zajęte przez sojusznika kosztuje jak **trudny teren** (×2). Kilka ciał jeden za
+  drugim pokonuje się jednym ruchem, płacąc podwójnie za każde z nich.
+- **Nie da się stanąć na sojuszniku**: przepchnięcie zaczyna się tylko wtedy, gdy po drugiej
+  stronie jest wolne pole i starczy punktów ruchu, by na nie wyjść. W przeciwnym razie oddział
+  zostaje tam, gdzie stał.
+- Planując trasę, zasięg ruchu uwzględnia już podwójny koszt pól z sojusznikami, a waypointa
+  nadal nie można postawić na cudzym polu ani na cudzym zaplanowanym końcu trasy.
 
 ## Szarża (Charge)
 
@@ -85,6 +101,7 @@ Szarża jest specjalnym wariantem ruchu wykonywanym w fazie **Movement**.
   cel szarży i może dostać bonus.
 - Po dojściu na koniec ścieżki ślepa szarża może też złapać wroga stojącego **na skos** w łuku do przodu.
 - Jeśli inny oddział przetnie drogę, **zanim szarża przebiegnie 2 kafelki**, szarża jest **przerwana** — w journalu pojawia się komunikat o przerwaniu rozpędu.
+- Jeśli natomiast rozpęd był już wystarczający, a w szarżę wejdzie **inny wrogi oddział** niż wybrany cel, szarża **przenosi się na przechwytującego** (o ile stoi w łuku do przodu — prosto lub na skos) i to on obrywa razem z bonusem. Cel szarży i cel ataku są przepinane automatycznie, z wpisem w journalu.
 - Szarża nie daje fory na starcie, tylko **pierwszeństwo w sporze o pole**: gdy szarżujący i inny oddział sięgają po to samo pole w tej samej chwili, pole bierze szarża. Spór dwóch szarż rozstrzyga inicjatywa.
 
 ### Bonus szarży
@@ -96,9 +113,61 @@ Przy poprawnym ataku w Combat na przypięty cel szarży:
 
 Bonus działa tylko dla właściwego celu szarży stojącego w **łuku do przodu** (prosto lub skos frontowy) i jest czyszczony, jeśli warunki kontaktu nie zostaną utrzymane (np. wróg odsunie się na bok / tylny róg).
 
+## Związanie walką (Engagement)
+
+Ikona skrzyżowanych mieczy na żetonie oznacza, że oddział jest **związany walką** z jednym lub więcej wrogami. Licznik na ikonie pojawia się przy więcej niż jednym przeciwniku; tooltip wymienia ich nazwy.
+
+### Kiedy powstaje
+
+- **Kolizja w ruchu** — dwa wrogie oddziały zderzą się podczas resolve fazy Movement.
+- **Wymiana ciosów wręcz w Combat** — atakujący i atakowany wiążą się wzajemnie (o ile obaj przeżyją). **Strzał nie tworzy związania.**
+
+### Kiedy trwa / gaśnie
+
+- Związanie trwa, dopóki footprinty się **stykają** (8 kierunków, w tym narożniki).
+- Gaśnie, gdy po ruchu oddziały przestaną się stykać albo gdy partner **zginie / ucieknie**.
+- Na starcie i na końcu fazy ruchu pary, które się już nie stykają, są cicho zrywane (bez dodatkowej kary).
+
+### Kara za ruch w związaniu
+
+- **Jakikolwiek ruch** związanego oddziału kosztuje darmowy cios — nie tylko wyjście ze strefy. Krok w bok obok tego samego wroga jest karany tak samo jak ucieczka.
+- Ruch jest dozwolony, ale przy planowaniu pierwszego pola pojawia się ostrzeżenie z liczbą ciosów, które oddział przyjmie.
+- Podczas resolve ruchu, w chwili gdy **pierwszy krok** się kończy, każdy związany wróg zadaje **darmowy atak za połowę** normalnych obrażeń (min. 1). Każda para płaci raz na fazę, niezależnie od długości marszu.
+- Front i pozycje do tego ataku biorą się ze stanu **sprzed rozpoczęcia ruchu**.
+- Ruszający się **nie** oddaje ataku obronnego.
+- Jeśli atak zniszczy ruszającego się, zatrzymuje się on na polu, na którym padł, i zostaje przeszkodą do końca fazy ruchu.
+- Stanie w miejscu nie kosztuje nic — obrót w miejscu też nie jest ruchem w tym sensie.
+
+## Jednostki zasięgowe (łucznicy)
+
+Zielona odznaka z łukiem i liczbą na żetonie oznacza jednostkę zasięgową (`Range > 0`).
+
+### Skąd bierze się zasięg
+
+- **Sojusznicy** — z wyposażonej broni głównej (`UnitWeaponDef.Range`: proce 2, proste łuki 3, wojenne 4, długie 5; broń biała 0).
+- **Wrogowie** — ręczne pole **Range** w formularzu MG (domyślnie 0 = wręcz).
+
+### Zasady strzału
+
+- Zasięg liczony **tą samą metryką co ruch** (prosto 2, skos 3 pół-punktu, budżet `Range × 2 + 1`), ale strzał leci ponad wszystkim — teren i oddziały **nie blokują**.
+- Strzał **nie wywołuje obrażeń obronnych** i **nie wiąże walką**.
+- Strzelec zawsze celuje dobrze (Aim = front); ekspozycja celu nadal działa (strzał w plecy boli bardziej).
+- **Związany walką łucznik nie strzela** — może tylko bić się wręcz z sąsiadem (z pełną wymianą ciosów). Sam kontakt bez związania nie przeszkadza.
+- Strzał do sąsiada (gdy nie ma związania) to nadal strzał — bez obrażeń obronnych.
+
+### Kara za dystans
+
+- Cel **tuż obok** strzelca (kontakt, w tym po skosie) dostaje **pełne** obrażenia — bez kary.
+- Każdy dalszy kafelek lotu to **−2 do ataku**: 1 kafelek odstępu −2, 2 kafelki −4, 3 kafelki −6
+  i tak dalej.
+- Dystans liczony jest tą samą metryką co zasięg, więc skosy kosztują jak w ruchu (dwa skosy =
+  3 punkty lotu = −4).
+- Kara obniża tylko **atak**, więc nie zeruje trafienia — daleki strzał robi się jednak
+  wyraźnie słabszy. Journal pokazuje ją jako `[range −N att]`.
+
 ## Attack Planning
 
-- Atak można zaplanować tylko przy kontakcie (adjacency) z przeciwnikiem.
+- Atak wręcz wymaga kontaktu (adjacency); jednostki zasięgowe mogą celować w każdego wroga w zasięgu (podświetlone pola).
 - Dla oddziału po udanej szarży cel ataku jest **zablokowany** po resolve ruchu — nie da się go odwołać ani zmienić w Attack Planning.
 - Po kolizjach i przeliczeniu ruchu cele mogą zostać skorygowane przez system.
 
@@ -106,7 +175,7 @@ Bonus działa tylko dla właściwego celu szarży stojącego w **łuku do przodu
 
 - Wymiany obrażeń liczone są na podstawie statystyk tokena i rzutów (szczegóły wzorów w [`FORMULAS.md`](./FORMULAS.md)).
 - Ataki szarży są rozpatrywane **przed** pozostałymi atakami (z pominięciem globalnej inicjatywy).
-- Wciąż obowiązuje kontratak defensywny w ramach wymiany.
+- Wymiana wręcz nadal ma kontratak defensywny; **strzał go nie ma**.
 - Jednostki z HP <= 0 uciekają/schodzą zgodnie z logiką bitwy.
 
 ## Szybki skrót dla gracza
@@ -115,5 +184,7 @@ Bonus działa tylko dla właściwego celu szarży stojącego w **łuku do przodu
 - By **zacząć** szarżę prosto: potrzeba 3 pól; skos: 2.
 - Żeby szarża **się liczyła**, wystarczą **2** faktycznie przebiegnięte pola.
 - Szarża to decyzja ostateczna — po jej zadeklarowaniu oddział nie przyjmuje już rozkazów.
-- Jeśli ktoś przetnie drogę za wcześnie — szarża jest przerwana (wpis w logu).
+- Jeśli ktoś przetnie drogę za wcześnie — szarża jest przerwana (wpis w logu). Po rozpędzie szarża po prostu przeskakuje na tego, kto ją zatrzymał.
 - Bonus dotyczy tylko ataku na przypięty cel szarży.
+- Skrzyżowane miecze = związanie walką. Każde ruszenie się w związaniu = darmowy atak za pół obrażeń od każdego związanego wroga (bez kontrataku).
+- Zielony łuk = jednostka zasięgowa. Strzał na dystans bez kontrataku; związanie walką blokuje strzał (zostaje tylko wręcz).

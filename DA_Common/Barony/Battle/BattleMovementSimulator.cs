@@ -13,12 +13,17 @@ namespace DA_Common.Barony.Battle;
 /// <item>A unit claims the tile it is stepping into for the whole step, so nothing can pass
 /// through it. A hostile unit additionally screens the tile it is vacating.</item>
 /// <item>Running into a hostile unit ends the movement then and there, in contact.</item>
-/// <item>A friendly unit in the way only makes the mover wait; it halts only if the jam never
-/// clears.</item>
+/// <item>A friendly unit in the way makes the mover wait. If the jam does not clear, the mover
+/// works its way through in one motion — at difficult-ground rates, and only when there is open
+/// ground to come out on, so no two units ever share a tile at rest. A friendly unit pinned in
+/// melee cannot be worked through, and the mover halts against it.</item>
 /// <item>When two units reach for the same tile in the same instant, a charge wins over a
 /// march, then the higher initiative wins.</item>
 /// <item>A diagonal step is refused when both flanking tiles are held, which also stops two
 /// units from swapping through each other across a diagonal.</item>
+/// <item>Budging at all while locked in melee with a unit listed in
+/// <see cref="BattleMovementMover.EngagedEnemyIds"/> emits a
+/// <see cref="BattleMovementEventKind.MovedWhileEngaged"/> event for that pair.</item>
 /// </list>
 /// The result is a timed list of legs, so the on-screen animation replays exactly the run that
 /// produced the final positions rather than recomputing its own.
@@ -29,6 +34,7 @@ public static class BattleMovementSimulator
     {
         var terrain = request.Terrain;
         var states = request.Movers.Select(m => new MoverState(m)).ToList();
+        var byId = states.ToDictionary(s => s.Spec.Id, StringComparer.Ordinal);
 
         // Disputes are settled by this order: a charge outranks a march, then initiative.
         var order = states
@@ -45,6 +51,8 @@ public static class BattleMovementSimulator
         {
             if (state.Spec.Route.Count <= 1)
                 Stop(state, BattleMovementStopReason.RouteComplete, 0, null, events);
+            else if (state.Spec.StopAtMs is int stopAt && stopAt <= 0)
+                Stop(state, BattleMovementStopReason.RouteComplete, 0, null, events);
         }
 
         var now = 0;
@@ -53,13 +61,22 @@ public static class BattleMovementSimulator
             foreach (var state in order)
             {
                 if (state.InTransit && state.TransitEndMs <= now)
+                {
                     state.InTransit = false;
+                    EmitEngagementPenalties(state, byId, now, events);
+                }
             }
 
             foreach (var state in order)
             {
                 if (!state.Active || state.InTransit)
                     continue;
+
+                if (state.Spec.StopAtMs is int stopAt && now >= stopAt)
+                {
+                    Stop(state, BattleMovementStopReason.RouteComplete, now, null, events);
+                    continue;
+                }
 
                 if (state.RouteIndex >= state.Spec.Route.Count - 1)
                 {
@@ -117,8 +134,17 @@ public static class BattleMovementSimulator
             return;
         }
 
-        var blocker = FindBlocker(states, mover, to.X, to.Y)
-                      ?? FindDiagonalObstruction(states, mover, from, to);
+        var duration = BattleMovementRules.StepDurationMs(mover.Spec.MovePoints, halfCost);
+        if (mover.Spec.StopAtMs is int stopAt && now + duration > stopAt)
+        {
+            // A hard cap mid-step means this step is forbidden; the unit already rests here.
+            Stop(mover, BattleMovementStopReason.RouteComplete, now, null, events);
+            return;
+        }
+
+        var occupant = FindBlocker(states, mover, to.X, to.Y);
+        var diagonalObstruction = FindDiagonalObstruction(states, mover, from, to);
+        var blocker = occupant ?? diagonalObstruction;
 
         if (blocker is not null)
         {
@@ -129,13 +155,25 @@ public static class BattleMovementSimulator
             }
 
             if (mover.WaitingSinceMs < 0)
+            {
                 mover.WaitingSinceMs = now;
-            else if (now - mover.WaitingSinceMs >= BattleMovementRules.StallLimitMs(mover.Spec.MovePoints))
-                Stop(mover, BattleMovementStopReason.BlockedByAlly, now, blocker, events);
+                return;
+            }
+
+            if (now - mover.WaitingSinceMs < BattleMovementRules.StallLimitMs(mover.Spec.MovePoints))
+                return;
+
+            // The jam is not clearing on its own. A comrade standing free can still be worked
+            // through — one pinned in melee cannot, and nobody pushes past a body while also
+            // squeezing between two others on the diagonal.
+            if (occupant is not null && diagonalObstruction is null && CanSlipPast(mover, occupant)
+                && TrySlipPast(mover, states, terrain, now, legs))
+                return;
+
+            Stop(mover, BattleMovementStopReason.BlockedByAlly, now, blocker, events);
             return;
         }
 
-        var duration = BattleMovementRules.StepDurationMs(mover.Spec.MovePoints, halfCost);
         var facing = BattleMovementRules.FacingFromStep(from.X, from.Y, to.X, to.Y);
 
         legs.Add(new BattleMovementLeg
@@ -160,6 +198,133 @@ public static class BattleMovementSimulator
         mover.SpentHalfPoints += halfCost;
         mover.Facing = facing;
         mover.WaitingSinceMs = -1;
+    }
+
+    /// <summary>
+    /// True when the other unit is a comrade standing free — the only kind of body a unit may
+    /// work its way through. A comrade pinned in melee holds its ground against its own side too.
+    /// </summary>
+    private static bool CanSlipPast(MoverState mover, MoverState other) =>
+        other.Spec.IsEnemy == mover.Spec.IsEnemy && !other.Spec.IsPinned;
+
+    /// <summary>
+    /// Pushing through a comrade is only worth starting when the unit comes out the other side, so
+    /// the route is followed until the first tile nobody holds, paying difficult-ground rates for
+    /// every body squeezed past. The whole slip is committed as one uninterrupted motion and the
+    /// unit's tile claim jumps straight to the far side, so it can never be left standing on
+    /// someone. Returns false — leaving the mover untouched — when the far side is out of reach.
+    /// </summary>
+    private static bool TrySlipPast(
+        MoverState mover,
+        List<MoverState> states,
+        BattleMovementTerrain terrain,
+        int now,
+        List<BattleMovementLeg> legs)
+    {
+        var size = mover.Spec.Size;
+        var route = mover.Spec.Route;
+        var budget = BattleMovementRules.MoveHalfBudget(mover.Spec.MovePoints);
+        var spent = mover.SpentHalfPoints;
+        var index = mover.RouteIndex;
+        var clock = now;
+        var hops = new List<BattleMovementLeg>();
+        var landed = false;
+
+        while (index + 1 < route.Count)
+        {
+            var from = route[index];
+            var to = route[index + 1];
+
+            if (!terrain.IsFootprintInBounds(to.X, to.Y, size) ||
+                terrain.IsFootprintImpassable(to.X, to.Y, size))
+                return false;
+
+            if (FindDiagonalObstruction(states, mover, from, to) is not null)
+                return false;
+
+            var occupant = FindBlocker(states, mover, to.X, to.Y);
+            if (occupant is not null && !CanSlipPast(mover, occupant))
+                return false;
+
+            var slowed = occupant is not null
+                         || terrain.FootprintEntersDifficult(from.X, from.Y, to.X, to.Y, size);
+            var halfCost = BattleMovementRules.StepHalfCost(from.X, from.Y, to.X, to.Y, slowed);
+            if (spent + halfCost > budget)
+                return false;
+
+            var duration = BattleMovementRules.StepDurationMs(mover.Spec.MovePoints, halfCost);
+            if (mover.Spec.StopAtMs is int stopAt && clock + duration > stopAt)
+                return false;
+
+            hops.Add(new BattleMovementLeg
+            {
+                MoverId = mover.Spec.Id,
+                StartMs = clock,
+                DurationMs = duration,
+                FromX = from.X,
+                FromY = from.Y,
+                ToX = to.X,
+                ToY = to.Y,
+                Facing = BattleMovementRules.FacingFromStep(from.X, from.Y, to.X, to.Y),
+            });
+
+            spent += halfCost;
+            clock += duration;
+            index++;
+
+            if (occupant is null)
+            {
+                landed = true;
+                break;
+            }
+        }
+
+        if (!landed)
+            return false;
+
+        legs.AddRange(hops);
+        mover.TrailAnchor = route[mover.RouteIndex];
+        mover.Anchor = route[index];
+        mover.InTransit = true;
+        mover.TransitEndMs = clock;
+        mover.RouteIndex = index;
+        mover.TilesTravelled += hops.Count;
+        mover.SpentHalfPoints = spent;
+        mover.Facing = hops[^1].Facing;
+        mover.WaitingSinceMs = -1;
+        return true;
+    }
+
+    /// <summary>
+    /// A unit locked in melee cannot shift its feet for free: the first completed step earns every
+    /// engaged partner a free hit. Fires once per pair, whether or not contact was actually broken.
+    /// </summary>
+    private static void EmitEngagementPenalties(
+        MoverState mover,
+        Dictionary<string, MoverState> byId,
+        int atMs,
+        List<BattleMovementEvent> events)
+    {
+        if (mover.OpenEngagements.Count == 0)
+            return;
+
+        foreach (var partnerId in mover.Spec.EngagedEnemyIds)
+        {
+            if (!byId.ContainsKey(partnerId))
+                continue;
+            if (!mover.OpenEngagements.Remove(partnerId))
+                continue;
+
+            events.Add(new BattleMovementEvent
+            {
+                AtMs = atMs,
+                Kind = BattleMovementEventKind.MovedWhileEngaged,
+                MoverId = mover.Spec.Id,
+                OtherMoverId = partnerId,
+                X = mover.Anchor.X,
+                Y = mover.Anchor.Y,
+            });
+        }
     }
 
     /// <summary>
@@ -313,6 +478,7 @@ public static class BattleMovementSimulator
             Anchor = spec.Route.Count > 0 ? spec.Route[0] : new BattleGridPoint(0, 0);
             TrailAnchor = Anchor;
             Facing = spec.StartFacing;
+            OpenEngagements = new HashSet<string>(spec.EngagedEnemyIds, StringComparer.Ordinal);
         }
 
         public BattleMovementMover Spec { get; }
@@ -346,5 +512,8 @@ public static class BattleMovementSimulator
         public string? EngagedWithMoverId { get; set; }
 
         public int ArrivalMs { get; set; }
+
+        /// <summary>Engagements still open for this mover (removed as leave events fire).</summary>
+        public HashSet<string> OpenEngagements { get; }
     }
 }

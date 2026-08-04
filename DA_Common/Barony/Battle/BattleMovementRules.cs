@@ -15,6 +15,12 @@ public static class BattleMovementRules
     /// <summary>Cost multiplier for a step that brings new tiles of difficult terrain under the footprint.</summary>
     public const int DifficultTerrainMultiplier = 2;
 
+    /// <summary>Squeezing past a body costs the same as crossing difficult ground.</summary>
+    public const int SlipPastAllyMultiplier = DifficultTerrainMultiplier;
+
+    /// <summary>Attack lost per tile of flight beyond point-blank range.</summary>
+    public const int ShotAttackPenaltyPerTile = 2;
+
     /// <summary>
     /// Wall-clock time in which a unit spends its whole move allowance. Step duration is
     /// proportional to the step's cost and inversely proportional to <c>Move</c>, so a Move 8
@@ -107,6 +113,51 @@ public static class BattleMovementRules
         var gapY = Math.Max(0, Math.Max(ay, by) - Math.Min(ay + aSize, by + bSize));
         return Math.Max(gapX, gapY) == 0;
     }
+
+    /// <summary>
+    /// Half-move points a shot spends to reach another footprint, over open ground.
+    /// Same metric as walking (ortho 2 / diagonal 3), but terrain and units never block.
+    /// Overlapping / identical footprints cost 0; adjacent footprints cost one ortho step (2).
+    /// </summary>
+    public static int FootprintShotHalfCost(
+        int ax, int ay, int aSize,
+        int bx, int by, int bSize)
+    {
+        var gx = AxisGap(ax, aSize, bx, bSize);
+        var gy = AxisGap(ay, aSize, by, bSize);
+        var min = Math.Min(gx, gy);
+        return DiagonalStepCost * min + OrthogonalStepCost * (Math.Max(gx, gy) - min);
+    }
+
+    /// <summary>
+    /// True when a ranged unit with the given reach can shoot the other footprint.
+    /// Reach is in move-points; budget uses <see cref="MoveHalfBudget"/>.
+    /// </summary>
+    public static bool IsInShotRange(
+        int ax, int ay, int aSize,
+        int bx, int by, int bSize,
+        int rangePoints)
+    {
+        if (rangePoints <= 0)
+            return false;
+        var cost = FootprintShotHalfCost(ax, ay, aSize, bx, by, bSize);
+        return cost > 0 && cost <= MoveHalfBudget(rangePoints);
+    }
+
+    /// <summary>
+    /// Attack a shot gives up to distance. A point-blank shot at a neighbour is unpenalised;
+    /// every further tile of flight costs another <see cref="ShotAttackPenaltyPerTile"/>.
+    /// </summary>
+    /// <param name="shotHalfCost">Result of <see cref="FootprintShotHalfCost"/>.</param>
+    public static int ShotAttackPenalty(int shotHalfCost) =>
+        ShotAttackPenaltyPerTile * Math.Max(0, SpentMovePoints(shotHalfCost) - 1);
+
+    /// <summary>
+    /// Inclusive-cell gap between two intervals on one axis: 0 when they touch or overlap,
+    /// 1 when adjacent cells sit next to each other, and so on.
+    /// </summary>
+    private static int AxisGap(int a, int aSize, int b, int bSize) =>
+        Math.Max(0, Math.Max(a, b) - Math.Min(a + aSize - 1, b + bSize - 1));
 
     private static int FacingFromDelta(int sx, int sy) => (sx, sy) switch
     {
