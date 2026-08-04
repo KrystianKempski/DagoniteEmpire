@@ -95,7 +95,7 @@
                                         {
                                             <button type="button"
                                                     class="bbm-charge-btn"
-                                                    title="Charge (min 2 tiles, straight line)"
+                                                    title="Charge (min 3 move; 3 straight / 2 diagonal tiles)"
                                                     @onclick:stopPropagation="true"
                                                     @onclick="@(() => OnChargeButton.InvokeAsync(token.Id))">
                                                 <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
@@ -121,6 +121,7 @@
                                     var ghostLarge = TokenSize(owner) > 1;
                                     var tipFacingDeg = FacingDegreesForTip(owner, wp);
                                     var showFacingBtn = ShowFacingButton(owner, wp);
+                                    var showChargeBtn = ShowChargeButton(owner, wp);
                                     <div class="bbm-token-slot bbm-token-slot--ghost @(ghostLarge ? "large" : null) @(wp.Locked ? "locked" : null)"
                                          style="@TokenFootprintStyle(owner)">
                                         <div class="bbm-token-rect bbm-token-rect--ghost @(owner.IsEnemy ? "enemy" : "ally") @(wp.Locked ? "locked" : null)"
@@ -144,6 +145,16 @@
                                                 <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
                                             </button>
                                         }
+                                        @if (showChargeBtn)
+                                        {
+                                            <button type="button"
+                                                    class="bbm-charge-btn"
+                                                    title="Charge (min 3 move; 3 straight / 2 diagonal tiles)"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="@(() => OnChargeButton.InvokeAsync(owner.Id))">
+                                                <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
+                                            </button>
+                                        }
                                     </div>
                                 }
                             </div>
@@ -165,7 +176,7 @@
                     </defs>
                     @foreach (var token in Tokens)
                     {
-                        var points = RouteCellsFor(token);
+                        var points = NonChargeRoutePoints(token);
                         if (points.Count < 2) continue;
                         var arrowClass = token.IsEnemy ? "bbm-path-arrow bbm-path-arrow--enemy" : "bbm-path-arrow bbm-path-arrow--ally";
                         var markerId = token.IsEnemy ? "bbm-arrow-enemy" : "bbm-arrow-ally";
@@ -192,6 +203,31 @@
                             <path d="M0,0 L2,1 L0,2 Z" fill="rgb(183, 56, 56)" fill-opacity="0.58" />
                         </marker>
                     </defs>
+                    @foreach (var charger in Tokens)
+                    {
+                        var chargePoints = ChargeArrowPoints(charger);
+                        if (chargePoints.Count < 2) continue;
+                        // One continuous shaft + single head (charges are always straight).
+                        var a = chargePoints[0];
+                        var b = chargePoints[^1];
+                        var arrowClass = charger.IsEnemy
+                            ? "bbm-attack-plan-arrow bbm-attack-plan-arrow--enemy"
+                            : "bbm-attack-plan-arrow bbm-attack-plan-arrow--ally";
+                        var markerId = charger.IsEnemy ? "bbm-attack-arrow-enemy" : "bbm-attack-arrow-ally";
+                        var dx = b.cx - a.cx;
+                        var dy = b.cy - a.cy;
+                        var len = Math.Sqrt(dx * dx + dy * dy);
+                        const double headLenPx = 32.0;
+                        var pullBack = Math.Min(headLenPx, Math.Max(0.0, len - 1.0));
+                        var shaftToX = len > 0.001 ? b.cx - dx / len * pullBack : b.cx;
+                        var shaftToY = len > 0.001 ? b.cy - dy / len * pullBack : b.cy;
+                        <line class="@arrowClass"
+                              x1="@a.cx.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                              y1="@a.cy.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                              x2="@shaftToX.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                              y2="@shaftToY.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                              marker-end="url(#@markerId)" />
+                    }
                     @foreach (var attacker in Tokens)
                     {
                         if (!ShouldDrawAttackArrow(attacker)) continue;
@@ -438,10 +474,74 @@
     {
         if (string.IsNullOrWhiteSpace(attacker.AttackTargetId))
             return false;
+        // While a charge path is still planned/animating, show the long charge arrow instead.
+        if (attacker.ChargeBonus && (attacker.HasPath || IsTokenAnimating(attacker.Id)))
+            return false;
         if (!CombatAnimActive)
             return true;
         return !string.IsNullOrWhiteSpace(CombatFocusAttackerId)
             && string.Equals(attacker.Id, CombatFocusAttackerId, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Long attack-style arrow along a declared charge (full charge length), not toward the enemy's current tile.
+    /// Starts at the charge origin (ChargeOrigin / last non-charge waypoint), never at an earlier march segment.
+    /// </summary>
+    private List<(double cx, double cy)> ChargeArrowPoints(BaronyBattleTokenDTO token)
+    {
+        if (!token.ChargeBonus)
+            return new List<(double cx, double cy)>();
+
+        var size = TokenSize(token);
+        var origin = ResolveChargeOrigin(token);
+        var chargeWps = token.Path.Where(w => w.IsCharge).ToList();
+
+        // Prefer exact tile hops when available (planning + resolve animation).
+        if (PlannedRoutes is not null
+            && PlannedRoutes.TryGetValue(token.Id, out var cells)
+            && cells.Count > 1)
+        {
+            var startIdx = cells.FindIndex(c => c.X == origin.X && c.Y == origin.Y);
+            // Origin not on this route (truncated before charge) → no charge arrow.
+            if (startIdx < 0)
+                return new List<(double cx, double cy)>();
+
+            // During resolve animation PlannedRoutes is the pre-collision plan — keep the
+            // full charge shaft even if the live Path was truncated by a collision.
+            if (IsAnimating || chargeWps.Count == 0)
+            {
+                if (startIdx < cells.Count - 1)
+                    return cells.Skip(startIdx).Select(c => CellCenter(c.X, c.Y, size)).ToList();
+                return new List<(double cx, double cy)>();
+            }
+
+            var end = chargeWps[^1];
+            var endIdx = cells.FindLastIndex(c => c.X == end.X && c.Y == end.Y);
+            if (endIdx > startIdx)
+                return cells.Skip(startIdx).Take(endIdx - startIdx + 1)
+                    .Select(c => CellCenter(c.X, c.Y, size)).ToList();
+
+            if (startIdx < cells.Count - 1)
+                return cells.Skip(startIdx).Select(c => CellCenter(c.X, c.Y, size)).ToList();
+
+            return new List<(double cx, double cy)>();
+        }
+
+        if (chargeWps.Count == 0)
+            return new List<(double cx, double cy)>();
+
+        var points = new List<(double cx, double cy)> { CellCenter(origin.X, origin.Y, size) };
+        foreach (var wp in chargeWps)
+            points.Add(CellCenter(wp.X, wp.Y, size));
+        return points;
+    }
+
+    private static (int X, int Y) ResolveChargeOrigin(BaronyBattleTokenDTO token)
+    {
+        if (token.ChargeOriginX is int ox && token.ChargeOriginY is int oy)
+            return (ox, oy);
+        var prior = token.Path.LastOrDefault(w => !w.IsCharge);
+        return prior is not null ? (prior.X, prior.Y) : (token.X, token.Y);
     }
 
     private BaronyBattleCellDTO? GetCell(int x, int y) =>
@@ -460,8 +560,14 @@
         foreach (var t in Tokens)
         {
             var wp = t.Path.FirstOrDefault(w => w.X == x && w.Y == y && (w.X != t.X || w.Y != t.Y));
-            if (wp is not null)
-                return (t, wp);
+            if (wp is null)
+                continue;
+
+            // Charge is visualized with a single destination ghost (not one per tile).
+            if (wp.IsCharge && !ReferenceEquals(wp, t.Path.LastOrDefault(w => w.IsCharge)))
+                continue;
+
+            return (t, wp);
         }
         return null;
     }
@@ -483,6 +589,9 @@
 
         if (ActiveTokenId != token.Id)
             return false;
+        // A declared charge fixes the heading and takes no further orders.
+        if (token.ChargeBonus)
+            return false;
         var tip = token.LastWaypoint;
         // Destination tip elsewhere already has its own facing button.
         if (tip is not null && !IsInPlaceTip(token, tip))
@@ -500,11 +609,14 @@
             return false;
         if (ActiveTokenId != token.Id)
             return false;
+        // One charge per unit per round.
+        if (token.ChargeBonus)
+            return false;
         var tip = token.LastWaypoint;
         if (tip is not null && !IsInPlaceTip(token, tip))
             return false;
         var moveLeft = tip?.RemainingMoveAfter ?? token.RemainingMove;
-        return moveLeft >= 2;
+        return moveLeft >= 3;
     }
 
     private int OriginMoveBadge(BaronyBattleTokenDTO token)
@@ -521,17 +633,37 @@
             return false;
         if (ActiveTokenId != owner.Id)
             return false;
+        // A declared charge fixes the heading and takes no further orders.
+        if (owner.ChargeBonus)
+            return false;
         if (owner.LastWaypoint != wp)
             return false;
         return wp.RemainingMoveAfter >= 1 || wp.FacingCostPaid > 0;
     }
 
+    private bool ShowChargeButton(BaronyBattleTokenDTO owner, BaronyBattleWaypointDTO wp)
+    {
+        if (IsAnimating || IsFacingEdit || IsChargeEdit || AllowSetupFacing)
+            return false;
+        if (ActiveTokenId != owner.Id)
+            return false;
+        // One charge per unit per round.
+        if (owner.ChargeBonus)
+            return false;
+        if (owner.LastWaypoint != wp)
+            return false;
+        return wp.RemainingMoveAfter >= 3;
+    }
+
     private double FacingDegreesForToken(BaronyBattleTokenDTO token)
     {
-        if ((FacingEditTokenId == token.Id || ChargeEditTokenId == token.Id)
-            && FacingPreviewDegrees is double preview)
-            return preview;
         var tip = token.LastWaypoint;
+        var hasSeparateTip = tip is not null && !IsInPlaceTip(token, tip);
+        if ((FacingEditTokenId == token.Id || ChargeEditTokenId == token.Id)
+            && FacingPreviewDegrees is double preview
+            // When token has a separate destination ghost, preview should rotate only the ghost.
+            && !hasSeparateTip)
+            return preview;
         if (tip is not null && IsInPlaceTip(token, tip))
             return BaronyBattleFacing.ToDegrees(tip.Facing);
         return BaronyBattleFacing.ToDegrees(token.Facing);
@@ -604,6 +736,44 @@
         return new List<(double cx, double cy)>();
     }
 
+    /// <summary>Movement path before a charge segment (ordinary path arrows).</summary>
+    private List<(double cx, double cy)> NonChargeRoutePoints(BaronyBattleTokenDTO token)
+    {
+        var size = TokenSize(token);
+        var hasChargeSegment = token.ChargeBonus
+            || token.Path.Any(w => w.IsCharge)
+            || (token.ChargeOriginX is not null && token.ChargeOriginY is not null);
+        if (!hasChargeSegment)
+            return RouteCellsFor(token);
+
+        var end = ResolveChargeOrigin(token);
+        // Charge from standstill — no separate movement arrow.
+        if (end.X == token.X && end.Y == token.Y)
+            return new List<(double cx, double cy)>();
+
+        if (PlannedRoutes is not null
+            && PlannedRoutes.TryGetValue(token.Id, out var cells)
+            && cells.Count > 1)
+        {
+            var endIdx = cells.FindIndex(c => c.X == end.X && c.Y == end.Y);
+            if (endIdx > 0)
+                return cells.Take(endIdx + 1).Select(c => CellCenter(c.X, c.Y, size)).ToList();
+            // Truncated before reaching charge origin — show the whole remaining march as movement.
+            return cells.Select(c => CellCenter(c.X, c.Y, size)).ToList();
+        }
+
+        var points = new List<(double cx, double cy)> { CellCenter(token.X, token.Y, size) };
+        foreach (var wp in token.Path.Where(w => !w.IsCharge))
+        {
+            if (wp.X == token.X && wp.Y == token.Y)
+                continue;
+            points.Add(CellCenter(wp.X, wp.Y, size));
+            if (wp.X == end.X && wp.Y == end.Y)
+                break;
+        }
+        return points.Count > 1 ? points : new List<(double cx, double cy)>();
+    }
+
     // Each CSS-grid cell is CellPx wide plus 1px gap, so true DOM offset = x * (CellPx + 1).
     private const int GridGap = 1;
     private static (double cx, double cy) CellCenter(int x, int y, int size)
@@ -651,18 +821,12 @@
             return;
 
         var size = TokenSize(token);
+        // Aim from the same cell the next plan segment starts from (ghost tip, else token).
+        // Charge after a move must use the tip — not the real token — or cursor angles drift.
         var tip = token.LastWaypoint;
         var (cx, cy) = tip is not null
             ? CellCenter(tip.X, tip.Y, size)
             : CellCenter(token.X, token.Y, size);
-        // Charge preview aims from the planned origin (token / last locked tip).
-        if (ChargeEditTokenId == token.Id)
-        {
-            var locked = token.Path.LastOrDefault(w => w.Locked);
-            (cx, cy) = locked is not null
-                ? CellCenter(locked.X, locked.Y, size)
-                : CellCenter(token.X, token.Y, size);
-        }
         var deg = BaronyBattleFacing.DegreesToward(cx, cy, e.OffsetX, e.OffsetY);
         await OnFacingPreview.InvokeAsync(deg);
     }

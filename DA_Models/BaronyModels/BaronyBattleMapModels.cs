@@ -68,6 +68,9 @@ namespace DA_Models.BaronyModels
         public int Facing { get; set; } = BaronyBattleFacing.North;
         /// <summary>1 if a facing change already spent a move point at this tip.</summary>
         public int FacingCostPaid { get; set; }
+
+        /// <summary>True when this waypoint belongs to a declared charge segment.</summary>
+        public bool IsCharge { get; set; }
     }
 
     public class BaronyBattleTokenDTO
@@ -99,13 +102,26 @@ namespace DA_Models.BaronyModels
         public string? AttackTargetId { get; set; }
 
         /// <summary>
-        /// Successful charge this turn: +2 Attack / +2 Damage vs <see cref="ChargeTargetId"/> in Combat.
+        /// Charge intent this turn: +2 Attack / +1 Damage vs <see cref="ChargeTargetId"/> in Combat.
         /// Cleared when the charge target is changed or at end of combat.
         /// </summary>
         public bool ChargeBonus { get; set; }
 
+        /// <summary>
+        /// True when the charge was declared without an immediate target (blind).
+        /// Blind charges can lock a target after only 2 tiles of travel on collision.
+        /// </summary>
+        public bool ChargeBlind { get; set; }
+
         /// <summary>Enemy token the charge locked onto (must match <see cref="AttackTargetId"/> for the bonus).</summary>
         public string? ChargeTargetId { get; set; }
+
+        /// <summary>
+        /// Grid cell where the charge segment begins (after any pre-charge march).
+        /// Kept across collision path truncates so arrows/validation still know the split.
+        /// </summary>
+        public int? ChargeOriginX { get; set; }
+        public int? ChargeOriginY { get; set; }
 
         public int InitiativeDie { get; set; }
         public int InitiativeTotal { get; set; }
