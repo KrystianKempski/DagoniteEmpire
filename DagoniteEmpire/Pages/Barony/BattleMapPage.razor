@@ -4,6 +4,7 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @using DA_Business.Repository.BaronyRepos
 @using DA_Common.Barony
+@using DA_Common.Barony.Battle
 @using DA_Models.BaronyModels
 @using DA_Models.ChatModels
 @using Microsoft.AspNetCore.SignalR.Client
@@ -599,7 +600,6 @@ else
     // Cell pitch in px for the animation layer = grid cell (64) + 1px grid gap, so
     // animated tokens stay aligned with the underlying grid columns/rows.
     private const int AnimCellPx = 65;
-    private const int AnimHopMs = 1000;
     private const int AnimTurnMs = 1000;
     /// <summary>Arrow + clash icon beat before floating damage.</summary>
     private const int CombatClashLeadMs = 500;
@@ -607,46 +607,6 @@ else
     private const int CombatDamageMs = 3000;
     /// <summary>Threat circle radius = ThreatFactor × size × 0.5 cells (1.0 = exact footprint edge).</summary>
     private const double TokenThreatFactor = 0.82;
-
-    /// <summary>Milliseconds per tile; scales inversely with Move (Move 4 ≈ 700ms).</summary>
-    private static int AnimCellMsFor(int move) =>
-        Math.Clamp(2800 / Math.Max(1, move), 350, 1200);
-
-    /// <summary>True when <paramref name="a"/> has strictly higher initiative than <paramref name="b"/>.</summary>
-    private static bool HasHigherInitiative(BaronyBattleTokenDTO a, BaronyBattleTokenDTO b) =>
-        a.InitiativeTotal > b.InitiativeTotal
-        || (a.InitiativeTotal == b.InitiativeTotal && a.InitiativeDie > b.InitiativeDie)
-        || (a.InitiativeTotal == b.InitiativeTotal
-            && a.InitiativeDie == b.InitiativeDie
-            && string.CompareOrdinal(a.Id, b.Id) < 0);
-
-    /// <summary>
-    /// Start delays so charges resolve high→low initiative: each lower-ranked charger
-    /// waits one tile-tempo behind the next higher, giving the higher charge a head start.
-    /// Non-chargers start immediately (delay 0).
-    /// </summary>
-    private static Dictionary<string, int> BuildChargeInitiativeStartDelays(
-        IEnumerable<BaronyBattleTokenDTO> tokens)
-    {
-        var delays = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var t in tokens)
-            delays[t.Id] = 0;
-
-        var chargers = tokens
-            .Where(t => t.ChargeBonus)
-            .OrderByDescending(t => t.InitiativeTotal)
-            .ThenByDescending(t => t.InitiativeDie)
-            .ThenBy(t => t.Id, StringComparer.Ordinal)
-            .ToList();
-
-        for (var rank = 0; rank < chargers.Count; rank++)
-        {
-            var cellMs = AnimCellMsFor(chargers[rank].Move);
-            delays[chargers[rank].Id] = rank * Math.Max(1, cellMs / 2);
-        }
-
-        return delays;
-    }
 
     private static readonly string[] Swatches =
     {
@@ -1991,13 +1951,11 @@ else
     private static int GetPlanBudget(BaronyBattleTokenDTO token) => GetPlanOrigin(token).Budget;
 
     /// <summary>Two tokens are adjacent (footprints touch, Chebyshev gap = 0).</summary>
-    private static bool AreAdjacent(BaronyBattleTokenDTO a, BaronyBattleTokenDTO b)
-    {
-        int sa = TokenSize(a), sb = TokenSize(b);
-        int gx = Math.Max(0, Math.Max(a.X, b.X) - Math.Min(a.X + sa, b.X + sb));
-        int gy = Math.Max(0, Math.Max(a.Y, b.Y) - Math.Min(a.Y + sa, b.Y + sb));
-        return Math.Max(gx, gy) == 0;
-    }
+    /// <summary>True when two tokens touch along an edge or a corner — melee contact range.</summary>
+    private static bool AreAdjacent(BaronyBattleTokenDTO a, BaronyBattleTokenDTO b) =>
+        BattleMovementRules.FootprintsAdjacent(
+            a.X, a.Y, TokenSize(a),
+            b.X, b.Y, TokenSize(b));
 
     private bool CanIssueAttackOrder(BaronyBattleTokenDTO token) =>
         CanManageAsMg || (CanEdit && !token.IsEnemy);
@@ -2802,8 +2760,7 @@ else
                 }
             }
 
-            // Snapshot full planned tile routes before collision truncates paths — used for
-            // march/charge arrows during the animation (tokens still stop on truncated routes).
+            // Arrows show the full plan even where the simulation cuts a unit short.
             var arrowRoutes = new Dictionary<string, List<(int X, int Y)>>(StringComparer.Ordinal);
             foreach (var token in Map.Tokens.Where(t => t.HasPath))
             {
@@ -2812,187 +2769,52 @@ else
                     arrowRoutes[token.Id] = planned;
             }
 
-            var (collisionNotes, collisionChargeSteps) = ResolveHostilePathCollisions();
+            // Units that only paid for a facing change already had their plan collapsed above,
+            // so their move points must survive the outcome pass untouched.
+            var movingTokenIds = Map.Tokens
+                .Where(t => t.HasPath)
+                .Select(t => t.Id)
+                .ToHashSet(StringComparer.Ordinal);
 
-            var movers = new List<(BaronyBattleTokenDTO Token, List<(int X, int Y)> Route, int FinalFacing)>();
-            foreach (var token in Map.Tokens.Where(t => t.HasPath))
+            // A charge's minimum run length is read off the plan, so capture it while the plan exists.
+            var chargeMinSteps = Map.Tokens
+                .Where(t => t.ChargeBonus)
+                .ToDictionary(t => t.Id, MinChargeSuccessSteps, StringComparer.Ordinal);
+
+            // One simulation decides everything: who gets where, who runs into whom, and when.
+            // The animation below is a replay of it, not a second calculation.
+            var simulation = BattleMovementSimulator.Simulate(BuildMovementRequest());
+
+            if (simulation.Legs.Count > 0)
             {
-                var route = BuildCellRoute(token, ignoreUnits: true);
-                if (route.Count < 2)
-                {
-                    // Same-cell / degenerate path — apply planned facing and keep spent move.
-                    token.Facing = token.PlannedFacing();
-                    token.RemainingMove = token.LastWaypoint?.RemainingMoveAfter ?? token.RemainingMove;
-                    token.ClearPath();
-                    continue;
-                }
-
-                movers.Add((token, route, token.PlannedFacing()));
-            }
-
-            if (movers.Count > 0)
-            {
-                // Arrows keep the pre-collision plan (march + charge split). Token animation
-                // still follows post-collision mover routes below.
-                _plannedRoutes = arrowRoutes.Count > 0
-                    ? arrowRoutes
-                    : movers.ToDictionary(m => m.Token.Id, m => m.Route);
-
-                _animFrames = movers.Select(m => new BattleMoveAnimFrame
-                {
-                    TokenId = m.Token.Id,
-                    LeftPx = m.Route[0].X * AnimCellPx,
-                    TopPx = m.Route[0].Y * AnimCellPx,
-                    Size = TokenSize(m.Token),
-                    FacingDeg = BaronyBattleFacing.ToDegrees(m.Token.Facing),
-                    TransitionMs = 0,
-                }).ToList();
-                StateHasChanged();
-                await Task.Delay(40);
-
-                _animTransitionsOn = true;
-                StateHasChanged();
-                await Task.Delay(40);
-
-                // Phase 1: turn each mover to face its first travelled tile step.
-                foreach (var frame in _animFrames)
-                {
-                    var mover = movers.First(m => m.Token.Id == frame.TokenId);
-                    if (mover.Route.Count < 2) continue;
-                    var travelFacing = BaronyBattleFacing.FromGridStep(
-                        mover.Route[0].X, mover.Route[0].Y, mover.Route[1].X, mover.Route[1].Y);
-                    frame.FacingDeg = BaronyBattleFacing.ShortestTurnTarget(
-                        frame.FacingDeg, BaronyBattleFacing.ToDegrees(travelFacing));
-                    frame.TransitionMs = 0;
-                }
-                StateHasChanged();
-                await Task.Delay(AnimTurnMs);
-
-                // Phase 2: cell-by-cell ("rynnowy") march. Charges with higher initiative
-                // start earlier (same delays as collision resolution).
-                var startDelays = BuildChargeInitiativeStartDelays(movers.Select(m => m.Token));
-                var moveEvents = new List<(int AtMs, string TokenId, int Hop)>();
-                foreach (var mover in movers)
-                {
-                    var cellMs = AnimCellMsFor(mover.Token.Move);
-                    startDelays.TryGetValue(mover.Token.Id, out var delay);
-                    for (var hop = 1; hop < mover.Route.Count; hop++)
-                        moveEvents.Add((delay + hop * cellMs, mover.Token.Id, hop));
-                }
-                moveEvents.Sort((a, b) =>
-                {
-                    var c = a.AtMs.CompareTo(b.AtMs);
-                    return c != 0 ? c : string.CompareOrdinal(a.TokenId, b.TokenId);
-                });
-
-                var elapsedMs = 0;
-                foreach (var ev in moveEvents)
-                {
-                    var wait = ev.AtMs - elapsedMs;
-                    if (wait > 0)
-                        await Task.Delay(wait);
-                    elapsedMs = ev.AtMs;
-
-                    var frame = _animFrames.FirstOrDefault(f => f.TokenId == ev.TokenId);
-                    var mover = movers.First(m => m.Token.Id == ev.TokenId);
-                    if (frame is null || ev.Hop >= mover.Route.Count)
-                        continue;
-
-                    var prev = mover.Route[ev.Hop - 1];
-                    var next = mover.Route[ev.Hop];
-                    var travelFacing = BaronyBattleFacing.FromGridStep(prev.X, prev.Y, next.X, next.Y);
-                    frame.FacingDeg = BaronyBattleFacing.ShortestTurnTarget(
-                        frame.FacingDeg, BaronyBattleFacing.ToDegrees(travelFacing));
-                    frame.TransitionMs = AnimCellMsFor(mover.Token.Move);
-                    frame.LeftPx = next.X * AnimCellPx;
-                    frame.TopPx = next.Y * AnimCellPx;
-                    StateHasChanged();
-                }
-                // Wait for the last CSS transition to fully complete.
-                var lastCellMs = movers.Count == 0 ? 0 : movers.Max(m => AnimCellMsFor(m.Token.Move));
-                await Task.Delay(lastCellMs + 80);
-
-                var skipFinalTurnAfterCollision = _engagedTokenIds.Count > 0;
-                var animatedFacingByToken = _animFrames.ToDictionary(
-                    f => f.TokenId,
-                    f => BaronyBattleFacing.SnapFromDegrees(f.FacingDeg));
-
-                // Phase 3: settle on planned end facing (manual facing / combat face),
-                // unless a collision happened (then no one rotates after impact).
-                if (!skipFinalTurnAfterCollision)
-                {
-                    var needsFinalTurn = false;
-                    foreach (var frame in _animFrames)
-                    {
-                        var mover = movers.First(m => m.Token.Id == frame.TokenId);
-                        var target = BaronyBattleFacing.ToDegrees(mover.FinalFacing);
-                        var nextDeg = BaronyBattleFacing.ShortestTurnTarget(frame.FacingDeg, target);
-                        if (Math.Abs(nextDeg - frame.FacingDeg) > 0.5)
-                        {
-                            frame.FacingDeg = nextDeg;
-                            needsFinalTurn = true;
-                        }
-                    }
-                    if (needsFinalTurn)
-                    {
-                        StateHasChanged();
-                        await Task.Delay(AnimTurnMs);
-                    }
-                    else
-                    {
-                        await Task.Delay(80);
-                    }
-                }
-                else
-                {
-                    await Task.Delay(80);
-                }
-
-                foreach (var (token, _, finalFacing) in movers)
-                {
-                    if (skipFinalTurnAfterCollision && animatedFacingByToken.TryGetValue(token.Id, out var facingFromAnim))
-                        token.Facing = facingFromAnim;
-                    else
-                        token.Facing = finalFacing;
-                }
+                _plannedRoutes = arrowRoutes;
+                await ReplayMovementAsync(simulation);
             }
 
             _animFrames = new();
             _animTransitionsOn = false;
             _plannedRoutes = new();
 
-            var moved = 0;
-            // Path.Count after TruncatePathForCollision is often 1 — use real tile hops instead.
-            var chargeSteps = new Dictionary<string, int>(collisionChargeSteps, StringComparer.Ordinal);
-            foreach (var (token, route, _) in movers)
-            {
-                if (token.ChargeBonus)
-                {
-                    var hops = Math.Max(0, route.Count - 1);
-                    if (!chargeSteps.TryGetValue(token.Id, out var prior) || hops > prior)
-                        chargeSteps[token.Id] = hops;
-                }
-                var end = token.PlannedEnd();
-                token.X = end.X;
-                token.Y = end.Y;
-                token.RemainingMove = token.Path.Count > 0 ? token.Path[^1].RemainingMoveAfter : 0;
-                token.ClearPath();
-                moved++;
-            }
+            var moved = ApplyMovementOutcomes(simulation, movingTokenIds);
 
-            foreach (var note in DeconflictOverlappingTokenPositions())
+            foreach (var note in DescribeMovementEvents(simulation))
                 AppendLocalLog(string.Empty, "collision", note);
 
-            foreach (var note in ValidateChargesAfterMovement(chargeSteps))
+            var chargeSteps = simulation.Outcomes.ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value.ChargeTilesTravelled,
+                StringComparer.Ordinal);
+
+            foreach (var note in LockChargeContacts(simulation, chargeMinSteps))
+                AppendLocalLog(string.Empty, "charge", note);
+
+            foreach (var note in ValidateChargesAfterMovement(chargeSteps, chargeMinSteps))
                 AppendLocalLog(string.Empty, "charge", note);
 
             Map.TurnState.SubPhase = BaronyBattleSubPhases.AttackPlanning;
             Map.TurnState.CurrentIndex = 0;
 
             var round = Math.Max(1, Map.TurnState.Round);
-            foreach (var note in collisionNotes)
-                AppendLocalLog(string.Empty, "collision", note);
-
             AppendLocalLog(string.Empty, "phase",
                 PhaseBanner($"End of Movement Phase {round}"));
             AppendLocalLog(string.Empty, "phase",
@@ -3014,644 +2836,260 @@ else
     }
 
     /// <summary>
-    /// Hostile units whose footprints overlap in wall-clock time (same scale as march animation) stop and drop the rest of the route.
-    /// Also returns charge travel steps recorded at impact (for post-move charge validation).
+    /// Translates the map and every planned path into the input the movement simulation runs on.
     /// </summary>
-    private (List<string> Notes, Dictionary<string, int> ChargeStepsAtImpact) ResolveHostilePathCollisions()
+    private BattleMovementRequest BuildMovementRequest()
     {
-        var notes = new List<string>();
-        var chargeStepsAtImpact = new Dictionary<string, int>(StringComparer.Ordinal);
-        if (Map is null)
+        var impassable = new List<BattleGridPoint>();
+        var difficult = new List<BattleGridPoint>();
+        foreach (var cell in Map!.Cells)
         {
-            _engagedTokenIds = new();
-            return (notes, chargeStepsAtImpact);
+            if (cell.Terrain == BaronyBattleTerrain.Impassable)
+                impassable.Add(new BattleGridPoint(cell.X, cell.Y));
+            else if (cell.Terrain == BaronyBattleTerrain.Difficult)
+                difficult.Add(new BattleGridPoint(cell.X, cell.Y));
         }
 
-        var engagedTokenIds = new HashSet<string>();
-
-        // Each hostile pair is resolved at most once to prevent re-detection of the rest position.
-        var resolvedPairs = new HashSet<(string, string)>();
-
-            // Charges resolve high→low initiative via start delays (recomputed each pass).
-        for (var guard = 0; guard < 32; guard++)
+        var movers = new List<BattleMovementMover>();
+        foreach (var token in Map.Tokens)
         {
-            var startDelays = BuildChargeInitiativeStartDelays(Map.Tokens);
+            var route = token.HasPath
+                ? BuildCellRoute(token, ignoreUnits: true)
+                : new List<(int X, int Y)>();
+            if (route.Count == 0)
+                route.Add((token.X, token.Y));
 
-            var timelines = Map.Tokens.Select(t =>
+            var chargeOrigin = GetChargeOriginCell(token);
+            movers.Add(new BattleMovementMover
             {
-                var cells = t.HasPath
-                    ? BuildCellRoute(t, ignoreUnits: true)
-                    : new List<(int X, int Y)> { (t.X, t.Y) };
-                if (cells.Count == 0)
-                    cells.Add((t.X, t.Y));
-                startDelays.TryGetValue(t.Id, out var delay);
-                return (
-                    Token: t,
-                    Cells: cells,
-                    CellMs: AnimCellMsFor(t.Move),
-                    StartDelayMs: delay,
-                    Moving: t.HasPath && cells.Count > 1);
-            }).ToList();
-
-            static void OccupyWindow(bool moving, int idx, int cellCount, int cellMs, int startDelayMs, out long t0, out long t1)
-            {
-                const long hold = long.MaxValue / 4;
-                if (!moving)
-                {
-                    t0 = 0;
-                    t1 = hold;
-                    return;
-                }
-
-                // Hold the start cell from t=0 through the initiative delay (and first hop),
-                // otherwise a higher-init mover "walks through" a delayed unit that isn't
-                // occupying anything yet — which caused stacked landings / broken charges.
-                if (idx == 0)
-                {
-                    t0 = 0;
-                    t1 = startDelayMs + cellMs;
-                    return;
-                }
-
-                t0 = startDelayMs + (long)idx * cellMs;
-                t1 = idx + 1 < cellCount ? t0 + cellMs : hold;
-            }
-
-            bool SweptThreatOverlap(
-                (int X, int Y) aFrom, (int X, int Y) aTo, int aSize,
-                (int X, int Y) bFrom, (int X, int Y) bTo, int bSize,
-                long aT0, int aCellMs, long bT0, int bCellMs,
-                out int hitMs)
-            {
-                hitMs = 0;
-                var start = Math.Max(aT0, bT0);
-                var end = Math.Min(aT0 + aCellMs, bT0 + bCellMs);
-                if (end <= start)
-                    return false;
-
-                var a0x = aFrom.X + aSize * 0.5;
-                var a0y = aFrom.Y + aSize * 0.5;
-                var a1x = aTo.X + aSize * 0.5;
-                var a1y = aTo.Y + aSize * 0.5;
-
-                var b0x = bFrom.X + bSize * 0.5;
-                var b0y = bFrom.Y + bSize * 0.5;
-                var b1x = bTo.X + bSize * 0.5;
-                var b1y = bTo.Y + bSize * 0.5;
-
-                var avx = (a1x - a0x) / aCellMs;
-                var avy = (a1y - a0y) / aCellMs;
-                var bvx = (b1x - b0x) / bCellMs;
-                var bvy = (b1y - b0y) / bCellMs;
-
-                var dtA = start - aT0;
-                var dtB = start - bT0;
-                var axS = a0x + avx * dtA;
-                var ayS = a0y + avy * dtA;
-                var bxS = b0x + bvx * dtB;
-                var byS = b0y + bvy * dtB;
-
-                var rx = axS - bxS;
-                var ry = ayS - byS;
-                var rvx = avx - bvx;
-                var rvy = avy - bvy;
-
-                var span = (double)(end - start);
-                var rv2 = rvx * rvx + rvy * rvy;
-                var tau = 0.0;
-                if (rv2 > 1e-12)
-                {
-                    tau = -(rx * rvx + ry * rvy) / rv2;
-                    tau = Math.Clamp(tau, 0.0, span);
-                }
-
-                var dx = rx + rvx * tau;
-                var dy = ry + rvy * tau;
-                var combined = TokenThreatFactor * (aSize + bSize) * 0.5;
-                if (dx * dx + dy * dy >= combined * combined)
-                    return false;
-
-                hitMs = (int)Math.Round(start + tau);
-                return true;
-            }
-
-            (int HitMs, int IdxA, int IdxB, BaronyBattleTokenDTO A, BaronyBattleTokenDTO B)? hit = null;
-
-            bool PreferCandidate(
-                int tHit, BaronyBattleTokenDTO candA, BaronyBattleTokenDTO candB)
-            {
-                if (hit is null)
-                    return true;
-                if (tHit != hit.Value.HitMs)
-                    return tHit < hit.Value.HitMs;
-
-                // Same clock time: prefer the pair whose higher-init unit is charging,
-                // else the pair with the higher top initiative (charges resolve high→low).
-                static int PairPriority(BaronyBattleTokenDTO x, BaronyBattleTokenDTO y)
-                {
-                    var high = HasHigherInitiative(x, y) ? x : y;
-                    var low = ReferenceEquals(high, x) ? y : x;
-                    var chargeBoost = high.ChargeBonus ? 1_000_000 : 0;
-                    return chargeBoost + high.InitiativeTotal * 100 + high.InitiativeDie;
-                }
-
-                return PairPriority(candA, candB) > PairPriority(hit.Value.A, hit.Value.B);
-            }
-
-            for (var i = 0; i < timelines.Count; i++)
-            for (var j = i + 1; j < timelines.Count; j++)
-            {
-                var a = timelines[i];
-                var b = timelines[j];
-                if (a.Token.IsEnemy == b.Token.IsEnemy)
-                    continue;
-                if (!a.Moving && !b.Moving)
-                    continue;
-                var pairKey = string.CompareOrdinal(a.Token.Id, b.Token.Id) < 0
-                    ? (a.Token.Id, b.Token.Id) : (b.Token.Id, a.Token.Id);
-                if (resolvedPairs.Contains(pairKey))
-                    continue;
-
-                int aSize = TokenSize(a.Token);
-                int bSize = TokenSize(b.Token);
-                for (var ia = 0; ia < a.Cells.Count; ia++)
-                for (var ib = 0; ib < b.Cells.Count; ib++)
-                {
-                    var pa = a.Cells[ia];
-                    var pb = b.Cells[ib];
-
-                    // Landing/occupation overlap (skip both-at-start to avoid false positives).
-                    if (!(ia == 0 && ib == 0) && ThreatOverlap(pa.X, pa.Y, aSize, pb.X, pb.Y, bSize))
-                    {
-                        OccupyWindow(a.Moving, ia, a.Cells.Count, a.CellMs, a.StartDelayMs, out var a0, out var a1);
-                        OccupyWindow(b.Moving, ib, b.Cells.Count, b.CellMs, b.StartDelayMs, out var b0, out var b1);
-                        if (a0 < b1 && b0 < a1)
-                        {
-                            var tHit = (int)Math.Max(a0, b0);
-                            if (PreferCandidate(tHit, a.Token, b.Token))
-                                hit = (tHit, ia, ib, a.Token, b.Token);
-                        }
-                    }
-
-                    // Crossing / pass-through on the segment itself (includes diagonal cross).
-                    if (ia + 1 < a.Cells.Count && ib + 1 < b.Cells.Count)
-                    {
-                        var aNext = a.Cells[ia + 1];
-                        var bNext = b.Cells[ib + 1];
-                        if (SweptThreatOverlap(
-                            pa, aNext, aSize,
-                            pb, bNext, bSize,
-                            a.StartDelayMs + (long)ia * a.CellMs, a.CellMs,
-                            b.StartDelayMs + (long)ib * b.CellMs, b.CellMs,
-                            out var tHit))
-                        {
-                            if (PreferCandidate(tHit, a.Token, b.Token))
-                                hit = (tHit, ia, ib, a.Token, b.Token);
-                        }
-                    }
-                }
-            }
-
-            if (hit is null)
-                break;
-
-            var (_, idxA, idxB, tokA, tokB) = hit.Value;
-            var entryA = timelines.First(x => x.Token.Id == tokA.Id);
-            var entryB = timelines.First(x => x.Token.Id == tokB.Id);
-            var cellsA = entryA.Cells;
-            var cellsB = entryB.Cells;
-            var meetA = cellsA[idxA];
-            var meetB = cellsB[idxB];
-            var prevA = idxA > 0 ? cellsA[idxA - 1] : cellsA[0];
-            var prevB = idxB > 0 ? cellsB[idxB - 1] : cellsB[0];
-
-            var aHigher = HasHigherInitiative(tokA, tokB);
-
-            (int X, int Y) stopA = meetA;
-            (int X, int Y) stopB = meetB;
-
-            // Same meeting tile: higher initiative stays on the previous tile.
-            if (meetA.X == meetB.X && meetA.Y == meetB.Y && entryA.Moving && entryB.Moving)
-            {
-                if (aHigher)
-                {
-                    stopA = prevA;
-                    stopB = meetB;
-                }
-                else
-                {
-                    stopB = prevB;
-                    stopA = meetA;
-                }
-
-                // If the higher unit has no prior tile, push the lower one back instead.
-                if (stopA.X == stopB.X && stopA.Y == stopB.Y)
-                {
-                    if (aHigher && (prevB.X != meetB.X || prevB.Y != meetB.Y))
-                        stopB = prevB;
-                    else if (!aHigher && (prevA.X != meetA.X || prevA.Y != meetA.Y))
-                        stopA = prevA;
-                }
-            }
-            else if (FootprintsOverlap(meetA.X, meetA.Y, TokenSize(tokA), meetB.X, meetB.Y, TokenSize(tokB))
-                     && entryA.Moving && entryB.Moving)
-            {
-                // Large footprints overlapping on adjacent anchors — pull higher init back one step.
-                if (aHigher)
-                    stopA = prevA;
-                else
-                    stopB = prevB;
-            }
-
-            // Threat-radius hits can leave a gap > 0. Lower initiative continues along its route
-            // (or one nudge) until footprints are attack-adjacent.
-            var sizeA = TokenSize(tokA);
-            var sizeB = TokenSize(tokB);
-            if (!FootprintsAdjacent(stopA.X, stopA.Y, sizeA, stopB.X, stopB.Y, sizeB))
-            {
-                var closerIsA = !aHigher ? entryA.Moving : (!entryB.Moving && entryA.Moving);
-                var closerIsB = aHigher ? entryB.Moving : (!entryA.Moving && entryB.Moving);
-                if (closerIsA)
-                {
-                    stopA = CloseGapToAttackRange(tokA, cellsA, stopA, stopB, sizeB);
-                }
-                else if (closerIsB)
-                {
-                    stopB = CloseGapToAttackRange(tokB, cellsB, stopB, stopA, sizeA);
-                }
-            }
-
-            // Never allow two units to share / overlap the stop tile.
-            (stopA, stopB) = EnsureDistinctCollisionStops(
-                tokA, tokB, cellsA, cellsB, stopA, stopB, prevA, prevB, aHigher);
-
-            if (entryA.Moving)
-                TruncatePathForCollision(tokA, stopA, cellsA);
-            if (entryB.Moving)
-                TruncatePathForCollision(tokB, stopB, cellsB);
-
-            var stepsA = TravelStepsToStop(cellsA, stopA, idxA, meetA);
-            var stepsB = TravelStepsToStop(cellsB, stopB, idxB, meetB);
-            var inContact = FootprintsAdjacent(stopA.X, stopA.Y, sizeA, stopB.X, stopB.Y, sizeB);
-
-            if (inContact)
-            {
-                // Higher initiative locks charge first (may interrupt the lower charger).
-                if (aHigher)
-                {
-                    TryLockChargeOnCollision(tokA, tokB, stepsA, chargeStepsAtImpact, notes);
-                    TryLockChargeOnCollision(tokB, tokA, stepsB, chargeStepsAtImpact, notes);
-                }
-                else
-                {
-                    TryLockChargeOnCollision(tokB, tokA, stepsB, chargeStepsAtImpact, notes);
-                    TryLockChargeOnCollision(tokA, tokB, stepsA, chargeStepsAtImpact, notes);
-                }
-                engagedTokenIds.Add(tokA.Id);
-                engagedTokenIds.Add(tokB.Id);
-            }
-            else
-            {
-                // Out-of-reach stop: no engage badge / no forced melee contact.
-                // Charge flags stay until ValidateChargesAfterMovement (keeps charge arrows during anim).
-            }
-
-            var resolvedKey = string.CompareOrdinal(tokA.Id, tokB.Id) < 0
-                ? (tokA.Id, tokB.Id) : (tokB.Id, tokA.Id);
-            resolvedPairs.Add(resolvedKey);
-            var meetDesc = (meetA.X == meetB.X && meetA.Y == meetB.Y)
-                ? FormatCell(meetA.X, meetA.Y)
-                : $"{FormatCell(meetA.X, meetA.Y)}/{FormatCell(meetB.X, meetB.Y)}";
-            notes.Add(inContact
-                ? $"Collision: {tokA.Label} ↔ {tokB.Label} at {meetDesc}."
-                : $"Near miss: {tokA.Label} ↔ {tokB.Label} at {meetDesc} (stopped out of melee reach).");
+                Id = token.Id,
+                IsEnemy = token.IsEnemy,
+                Size = TokenSize(token),
+                MovePoints = Math.Max(0, token.Move),
+                InitiativeTotal = token.InitiativeTotal,
+                InitiativeDie = token.InitiativeDie,
+                StartFacing = BaronyBattleFacing.Clamp(token.Facing),
+                PlannedFacing = token.HasPath
+                    ? token.PlannedFacing()
+                    : BaronyBattleFacing.Clamp(token.Facing),
+                IsCharging = token.ChargeBonus,
+                ChargeStartStep = token.ChargeBonus && chargeOrigin is (int cx, int cy)
+                    ? StepsToCell(route, (cx, cy))
+                    : 0,
+                Route = route.Select(p => new BattleGridPoint(p.X, p.Y)).ToList(),
+            });
         }
 
-        _engagedTokenIds = engagedTokenIds;
-        return (notes, chargeStepsAtImpact);
+        return new BattleMovementRequest
+        {
+            Terrain = new BattleMovementTerrain(Map.Width, Map.Height, impassable, difficult),
+            Movers = movers,
+        };
     }
 
     /// <summary>
-    /// Advance along the planned route (then optionally one nudge) until adjacent to the anchor.
+    /// Plays the simulated run back on screen: everyone turns toward their first step, then each
+    /// leg is applied on the simulation's own clock.
     /// </summary>
-    private (int X, int Y) CloseGapToAttackRange(
-        BaronyBattleTokenDTO mover,
-        IReadOnlyList<(int X, int Y)> route,
-        (int X, int Y) fromStop,
-        (int X, int Y) anchorStop,
-        int anchorSize)
+    private async Task ReplayMovementAsync(BattleMovementResult simulation)
     {
-        var mSize = TokenSize(mover);
-        if (FootprintsAdjacent(fromStop.X, fromStop.Y, mSize, anchorStop.X, anchorStop.Y, anchorSize))
-            return fromStop;
+        var firstLegByToken = simulation.Legs
+            .GroupBy(l => l.MoverId, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.OrderBy(l => l.StartMs).First(), StringComparer.Ordinal);
 
-        var startIdx = StepsToCell(route, fromStop);
-        var best = fromStop;
-        for (var i = Math.Max(0, startIdx) + 1; i < route.Count; i++)
-        {
-            var cand = route[i];
-            if (FootprintsOverlap(cand.X, cand.Y, mSize, anchorStop.X, anchorStop.Y, anchorSize))
-                break;
-            if (cand.X < 0 || cand.Y < 0 || Map is null
-                || cand.X + mSize > Map.Width || cand.Y + mSize > Map.Height
-                || IsFootprintBlocked(mover, cand.X, cand.Y, mSize, ignoreUnits: true))
-                break;
-
-            best = cand;
-            if (FootprintsAdjacent(best.X, best.Y, mSize, anchorStop.X, anchorStop.Y, anchorSize))
-                return best;
-        }
-
-        if (!FootprintsAdjacent(best.X, best.Y, mSize, anchorStop.X, anchorStop.Y, anchorSize))
-        {
-            var nudged = NudgeTowardAdjacent(mover, best, mSize, anchorStop, anchorSize);
-            if (nudged is not null)
-                best = nudged.Value;
-        }
-
-        return best;
-    }
-
-    private (int X, int Y)? NudgeTowardAdjacent(
-        BaronyBattleTokenDTO mover,
-        (int X, int Y) from,
-        int moverSize,
-        (int X, int Y) anchorStop,
-        int anchorSize)
-    {
-        if (Map is null)
-            return null;
-
-        (int X, int Y)? best = null;
-        var bestDist = double.MaxValue;
-        var ax = anchorStop.X + anchorSize * 0.5;
-        var ay = anchorStop.Y + anchorSize * 0.5;
-
-        for (var dx = -1; dx <= 1; dx++)
-        for (var dy = -1; dy <= 1; dy++)
-        {
-            if (dx == 0 && dy == 0)
-                continue;
-            var nx = from.X + dx;
-            var ny = from.Y + dy;
-            if (nx < 0 || ny < 0 || nx + moverSize > Map.Width || ny + moverSize > Map.Height)
-                continue;
-            if (IsFootprintBlocked(mover, nx, ny, moverSize, ignoreUnits: true))
-                continue;
-            if (FootprintsOverlap(nx, ny, moverSize, anchorStop.X, anchorStop.Y, anchorSize))
-                continue;
-            if (!FootprintsAdjacent(nx, ny, moverSize, anchorStop.X, anchorStop.Y, anchorSize))
-                continue;
-
-            var cx = nx + moverSize * 0.5;
-            var cy = ny + moverSize * 0.5;
-            var dist = (cx - ax) * (cx - ax) + (cy - ay) * (cy - ay);
-            if (dist < bestDist)
+        _animFrames = Map!.Tokens
+            .Where(t => firstLegByToken.ContainsKey(t.Id))
+            .Select(t => new BattleMoveAnimFrame
             {
-                bestDist = dist;
-                best = (nx, ny);
+                TokenId = t.Id,
+                LeftPx = t.X * AnimCellPx,
+                TopPx = t.Y * AnimCellPx,
+                Size = TokenSize(t),
+                FacingDeg = BaronyBattleFacing.ToDegrees(t.Facing),
+                TransitionMs = 0,
+            })
+            .ToList();
+
+        StateHasChanged();
+        await Task.Delay(40);
+        _animTransitionsOn = true;
+        StateHasChanged();
+        await Task.Delay(40);
+
+        foreach (var frame in _animFrames)
+        {
+            var leg = firstLegByToken[frame.TokenId];
+            frame.FacingDeg = BaronyBattleFacing.ShortestTurnTarget(
+                frame.FacingDeg, BaronyBattleFacing.ToDegrees(leg.Facing));
+            frame.TransitionMs = 0;
+        }
+        StateHasChanged();
+        await Task.Delay(AnimTurnMs);
+
+        var elapsedMs = 0;
+        foreach (var beat in simulation.Legs.GroupBy(l => l.StartMs).OrderBy(g => g.Key))
+        {
+            var wait = beat.Key - elapsedMs;
+            if (wait > 0)
+                await Task.Delay(wait);
+            elapsedMs = beat.Key;
+
+            foreach (var leg in beat)
+            {
+                var frame = _animFrames.FirstOrDefault(f => f.TokenId == leg.MoverId);
+                if (frame is null)
+                    continue;
+                frame.FacingDeg = BaronyBattleFacing.ShortestTurnTarget(
+                    frame.FacingDeg, BaronyBattleFacing.ToDegrees(leg.Facing));
+                frame.TransitionMs = leg.DurationMs;
+                frame.LeftPx = leg.ToX * AnimCellPx;
+                frame.TopPx = leg.ToY * AnimCellPx;
+            }
+            StateHasChanged();
+        }
+
+        await Task.Delay(Math.Max(0, simulation.DurationMs - elapsedMs) + 80);
+
+        // Settle on the facing the simulation ended with: the planned heading, or the enemy
+        // that brought the unit to a halt.
+        var needsFinalTurn = false;
+        foreach (var frame in _animFrames)
+        {
+            if (!simulation.Outcomes.TryGetValue(frame.TokenId, out var outcome))
+                continue;
+            var target = BaronyBattleFacing.ShortestTurnTarget(
+                frame.FacingDeg, BaronyBattleFacing.ToDegrees(outcome.Facing));
+            if (Math.Abs(target - frame.FacingDeg) > 0.5)
+            {
+                frame.FacingDeg = target;
+                needsFinalTurn = true;
             }
         }
 
-        return best;
-    }
-
-    /// <summary>
-    /// If collision stops overlap, push the lower-initiative unit back along its route.
-    /// </summary>
-    private static ((int X, int Y) StopA, (int X, int Y) StopB) EnsureDistinctCollisionStops(
-        BaronyBattleTokenDTO tokA,
-        BaronyBattleTokenDTO tokB,
-        IReadOnlyList<(int X, int Y)> cellsA,
-        IReadOnlyList<(int X, int Y)> cellsB,
-        (int X, int Y) stopA,
-        (int X, int Y) stopB,
-        (int X, int Y) prevA,
-        (int X, int Y) prevB,
-        bool aHigher)
-    {
-        var sizeA = Math.Clamp(tokA.Size <= 0 ? 1 : tokA.Size, 1, 3);
-        var sizeB = Math.Clamp(tokB.Size <= 0 ? 1 : tokB.Size, 1, 3);
-        if (!FootprintsOverlap(stopA.X, stopA.Y, sizeA, stopB.X, stopB.Y, sizeB))
-            return (stopA, stopB);
-
-        if (aHigher)
+        if (needsFinalTurn)
         {
-            var idx = StepsToCell(cellsB, stopB);
-            for (var i = idx - 1; i >= 0; i--)
-            {
-                var cand = cellsB[i];
-                if (!FootprintsOverlap(stopA.X, stopA.Y, sizeA, cand.X, cand.Y, sizeB))
-                    return (stopA, cand);
-            }
-
-            if (!FootprintsOverlap(stopA.X, stopA.Y, sizeA, prevB.X, prevB.Y, sizeB))
-                return (stopA, prevB);
+            StateHasChanged();
+            await Task.Delay(AnimTurnMs);
         }
         else
         {
-            var idx = StepsToCell(cellsA, stopA);
-            for (var i = idx - 1; i >= 0; i--)
-            {
-                var cand = cellsA[i];
-                if (!FootprintsOverlap(cand.X, cand.Y, sizeA, stopB.X, stopB.Y, sizeB))
-                    return (cand, stopB);
-            }
+            await Task.Delay(80);
+        }
+    }
 
-            if (!FootprintsOverlap(prevA.X, prevA.Y, sizeA, stopB.X, stopB.Y, sizeB))
-                return (prevA, stopB);
+    /// <summary>Writes the simulated end state onto the tokens. Returns how many actually moved.</summary>
+    private int ApplyMovementOutcomes(BattleMovementResult simulation, ISet<string> movingTokenIds)
+    {
+        var moved = 0;
+        var engaged = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var token in Map!.Tokens)
+        {
+            if (!movingTokenIds.Contains(token.Id)
+                || !simulation.Outcomes.TryGetValue(token.Id, out var outcome))
+                continue;
+
+            if (outcome.TilesTravelled > 0)
+                moved++;
+
+            token.X = outcome.X;
+            token.Y = outcome.Y;
+            token.Facing = BaronyBattleFacing.Clamp(outcome.Facing);
+            token.RemainingMove = outcome.RemainingMove;
+            token.ClearPath();
+
+            if (outcome.EngagedWithMoverId is not null)
+            {
+                engaged.Add(token.Id);
+                engaged.Add(outcome.EngagedWithMoverId);
+            }
         }
 
-        return (stopA, stopB);
+        _engagedTokenIds = engaged;
+        return moved;
+    }
+
+    /// <summary>Turns the simulation's events into battle-log lines.</summary>
+    private List<string> DescribeMovementEvents(BattleMovementResult simulation)
+    {
+        var notes = new List<string>();
+        foreach (var ev in simulation.Events.OrderBy(e => e.AtMs))
+        {
+            var mover = Map?.Tokens.FirstOrDefault(t => t.Id == ev.MoverId);
+            if (mover is null)
+                continue;
+
+            var other = ev.OtherMoverId is null
+                ? null
+                : Map?.Tokens.FirstOrDefault(t => t.Id == ev.OtherMoverId);
+            var where = FormatCell(ev.X, ev.Y);
+
+            notes.Add(ev.Kind switch
+            {
+                BattleMovementEventKind.EnemyContact when other is not null =>
+                    $"Collision: {mover.Label} ran into {other.Label} and stopped at {where}.",
+                BattleMovementEventKind.AllyDeadlock when other is not null =>
+                    $"{mover.Label} held up at {where} — {other.Label} never cleared the way.",
+                BattleMovementEventKind.OutOfMovePoints =>
+                    $"{mover.Label} ran out of movement at {where}.",
+                BattleMovementEventKind.BlockedByTerrain =>
+                    $"{mover.Label} stopped at {where} — the ground ahead is impassable.",
+                _ => $"{mover.Label} stopped at {where}.",
+            });
+        }
+        return notes;
     }
 
     /// <summary>
-    /// After movement settles, nudge lower-initiative units off any remaining shared tiles
-    /// (same-side paths are not collision-checked during resolve).
+    /// Locks the charge target for a charger that ended its run in contact with an enemy.
+    /// Charges that fell short are left alone here — <see cref="ValidateChargesAfterMovement"/>
+    /// clears them once the tokens have settled.
     /// </summary>
-    private List<string> DeconflictOverlappingTokenPositions()
+    private List<string> LockChargeContacts(
+        BattleMovementResult simulation, IReadOnlyDictionary<string, int> chargeMinSteps)
     {
         var notes = new List<string>();
         if (Map is null)
             return notes;
 
-        var ordered = Map.Tokens
-            .Where(t => t.Hp > 0)
-            .OrderByDescending(t => t.InitiativeTotal)
-            .ThenByDescending(t => t.InitiativeDie)
-            .ThenBy(t => t.Id, StringComparer.Ordinal)
-            .ToList();
-
-        for (var i = 0; i < ordered.Count; i++)
+        foreach (var charger in Map.Tokens.Where(t => t.ChargeBonus))
         {
-            var keeper = ordered[i];
-            var kSize = TokenSize(keeper);
-            for (var j = i + 1; j < ordered.Count; j++)
+            if (!simulation.Outcomes.TryGetValue(charger.Id, out var outcome))
+                continue;
+            if (outcome.EngagedWithMoverId is not string foeId)
+                continue;
+
+            var foe = Map.Tokens.FirstOrDefault(t => t.Id == foeId);
+            if (foe is null || foe.Hp <= 0 || foe.IsEnemy == charger.IsEnemy)
+                continue;
+
+            var steps = outcome.ChargeTilesTravelled;
+            if (steps < MinChargeStepsFor(charger, chargeMinSteps))
+                continue;
+
+            if (string.IsNullOrWhiteSpace(charger.ChargeTargetId) || charger.ChargeBlind)
             {
-                var other = ordered[j];
-                var oSize = TokenSize(other);
-                if (!FootprintsOverlap(keeper.X, keeper.Y, kSize, other.X, other.Y, oSize))
-                    continue;
-
-                var free = FindNearestFreeCell(other, other.Id);
-                if (free is null)
-                    continue;
-
-                var from = FormatCell(other.X, other.Y);
-                other.X = free.Value.X;
-                other.Y = free.Value.Y;
-                notes.Add(
-                    $"{other.Label} nudged from {from} to {FormatCell(other.X, other.Y)} " +
-                    $"(stacking with {keeper.Label}).");
+                charger.ChargeTargetId = foe.Id;
+                charger.AttackTargetId = foe.Id;
+                notes.Add($"{charger.Label} locks charge target on contact: {foe.Label} ({steps} tiles).");
+            }
+            else if (string.Equals(charger.ChargeTargetId, foe.Id, StringComparison.Ordinal))
+            {
+                charger.AttackTargetId = foe.Id;
+                notes.Add($"{charger.Label} keeps charge contact with {foe.Label} ({steps} tiles).");
             }
         }
 
         return notes;
     }
 
-    private (int X, int Y)? FindNearestFreeCell(BaronyBattleTokenDTO mover, string ignoreTokenId)
-    {
-        if (Map is null)
-            return null;
-
-        var size = TokenSize(mover);
-        var best = ((int X, int Y)?)null;
-        var bestDist = int.MaxValue;
-        for (var y = 0; y < Map.Height; y++)
-        for (var x = 0; x < Map.Width; x++)
-        {
-            if (x + size > Map.Width || y + size > Map.Height)
-                continue;
-            if (IsFootprintBlocked(mover, x, y, size, ignoreUnits: true))
-                continue;
-            if (!CanPlace(x, y, size, ignoreTokenId))
-                continue;
-
-            var dist = Math.Max(Math.Abs(x - mover.X), Math.Abs(y - mover.Y));
-            if (dist >= bestDist)
-                continue;
-            bestDist = dist;
-            best = (x, y);
-            if (dist <= 1)
-                return best;
-        }
-
-        return best;
-    }
-
-    private static int TravelStepsToStop(
-        IReadOnlyList<(int X, int Y)> route,
-        (int X, int Y) stop,
-        int meetIdx,
-        (int X, int Y) meet)
-    {
-        var steps = StepsToCell(route, stop);
-        if (steps > 0 || (route.Count > 0 && stop.X == route[0].X && stop.Y == route[0].Y))
-            return steps;
-
-        if (stop.X == meet.X && stop.Y == meet.Y)
-            return meetIdx;
-
-        // Off-route nudge after gap-close: approximate by Chebyshev from origin.
-        if (route.Count > 0)
-        {
-            var origin = route[0];
-            var approx = Math.Max(Math.Abs(stop.X - origin.X), Math.Abs(stop.Y - origin.Y));
-            return Math.Max(meetIdx, approx);
-        }
-
-        return Math.Max(0, meetIdx - 1);
-    }
-
-    private void TryLockChargeOnCollision(
-        BaronyBattleTokenDTO charger,
-        BaronyBattleTokenDTO foe,
-        int travelSteps,
-        Dictionary<string, int> chargeStepsAtImpact,
-        List<string> notes)
-    {
-        if (!charger.ChargeBonus || foe.Hp <= 0 || foe.IsEnemy == charger.IsEnemy)
-            return;
-
-        if (travelSteps > 0)
-        {
-            if (!chargeStepsAtImpact.TryGetValue(charger.Id, out var prior) || travelSteps > prior)
-                chargeStepsAtImpact[charger.Id] = travelSteps;
-        }
-
-        var minSuccess = MinChargeSuccessSteps(charger);
-        if (travelSteps < minSuccess)
-        {
-            // Keep ChargeBonus through the movement animation so charge arrows stay visible;
-            // ValidateChargesAfterMovement clears the failed charge after tokens settle.
-            return;
-        }
-
-        // Blind charge: assign the collision foe. Targeted charge: keep original target only.
-        if (string.IsNullOrWhiteSpace(charger.ChargeTargetId) || charger.ChargeBlind)
-        {
-            charger.ChargeTargetId = foe.Id;
-            charger.AttackTargetId = foe.Id;
-            notes.Add($"{charger.Label} locks charge target on collision: {foe.Label} ({travelSteps} tiles).");
-            return;
-        }
-
-        if (string.Equals(charger.ChargeTargetId, foe.Id, StringComparison.Ordinal))
-        {
-            charger.AttackTargetId = foe.Id;
-            notes.Add($"{charger.Label} keeps charge contact with {foe.Label} ({travelSteps} tiles).");
-        }
-    }
-
-    private static void TruncatePathForCollision(
-        BaronyBattleTokenDTO token, (int X, int Y) stop, IReadOnlyList<(int X, int Y)> fullRoute)
-    {
-        var face = BaronyBattleFacing.Clamp(token.Facing);
-        var chargeOrigin = GetChargeOriginCell(token);
-
-        token.ClearPath();
-        token.RemainingMove = 0;
-        if (stop.X == token.X && stop.Y == token.Y)
-        {
-            token.Facing = face;
-            return;
-        }
-
-        var stopIdx = StepsToCell(fullRoute, stop);
-        var chargeIdx = chargeOrigin is (int cox, int coy)
-            ? StepsToCell(fullRoute, (cox, coy))
-            : -1;
-        var reachedCharge = chargeIdx >= 0 && stopIdx > chargeIdx
-            && chargeOrigin is (int ox, int oy)
-            && (ox != stop.X || oy != stop.Y);
-
-        if (reachedCharge && chargeOrigin is (int chx, int chy)
-            && (chx != token.X || chy != token.Y))
-        {
-            token.Path.Add(new BaronyBattleWaypointDTO
-            {
-                X = chx,
-                Y = chy,
-                Locked = true,
-                Facing = face,
-                RemainingMoveAfter = 0,
-                FacingCostPaid = 0,
-                IsCharge = false,
-            });
-        }
-
-        token.Path.Add(new BaronyBattleWaypointDTO
-        {
-            X = stop.X,
-            Y = stop.Y,
-            Locked = true,
-            Facing = face,
-            RemainingMoveAfter = 0,
-            FacingCostPaid = 0,
-            // Charge from standstill: origin is token start (chargeIdx 0).
-            IsCharge = reachedCharge || (token.ChargeBonus && chargeIdx == 0 && stopIdx > 0),
-        });
-    }
+    /// <summary>
+    /// Charge minimums are measured while the plan still exists, so they are captured before the
+    /// simulation runs and looked up afterwards.
+    /// </summary>
+    private static int MinChargeStepsFor(
+        BaronyBattleTokenDTO token, IReadOnlyDictionary<string, int> chargeMinSteps) =>
+        chargeMinSteps.TryGetValue(token.Id, out var min) ? min : MinChargeSuccessSteps(token);
 
     private static int StepsToCell(IReadOnlyList<(int X, int Y)> route, (int X, int Y) cell)
     {
@@ -3717,7 +3155,9 @@ else
     /// After movement settles: charge needs minimum travel and contact with the charge target.
     /// Blind charges succeed from 2 tiles; targeted charges keep the facing start minimum.
     /// </summary>
-    private List<string> ValidateChargesAfterMovement(IReadOnlyDictionary<string, int> chargeSteps)
+    private List<string> ValidateChargesAfterMovement(
+        IReadOnlyDictionary<string, int> chargeSteps,
+        IReadOnlyDictionary<string, int> chargeMinSteps)
     {
         var notes = new List<string>();
         if (Map is null)
@@ -3729,7 +3169,7 @@ else
                 continue;
 
             chargeSteps.TryGetValue(token.Id, out var steps);
-            var minSteps = MinChargeSuccessSteps(token);
+            var minSteps = MinChargeStepsFor(token, chargeMinSteps);
             var target = string.IsNullOrWhiteSpace(token.ChargeTargetId)
                 ? null
                 : Map.Tokens.FirstOrDefault(t => t.Id == token.ChargeTargetId);
@@ -3772,25 +3212,6 @@ else
         }
 
         return notes;
-    }
-
-    private static bool FootprintsOverlap(int ax, int ay, int aSize, int bx, int by, int bSize) =>
-        ax < bx + bSize && ax + aSize > bx && ay < by + bSize && ay + aSize > by;
-
-    /// <summary>True when footprints touch (edge or corner) — same rule as <see cref="AreAdjacent"/>.</summary>
-    private static bool FootprintsAdjacent(int ax, int ay, int aSize, int bx, int by, int bSize)
-    {
-        var gx = Math.Max(0, Math.Max(ax, bx) - Math.Min(ax + aSize, bx + bSize));
-        var gy = Math.Max(0, Math.Max(ay, by) - Math.Min(ay + aSize, by + bSize));
-        return Math.Max(gx, gy) == 0;
-    }
-
-    private static bool ThreatOverlap(int ax, int ay, int aSize, int bx, int by, int bSize)
-    {
-        var dx = (ax + aSize * 0.5) - (bx + bSize * 0.5);
-        var dy = (ay + aSize * 0.5) - (by + bSize * 0.5);
-        var combined = TokenThreatFactor * (aSize + bSize) * 0.5;
-        return dx * dx + dy * dy < combined * combined;
     }
 
     /// <summary>
@@ -4109,10 +3530,10 @@ else
     }
 
     /// <summary>
-    /// Half-move budget used by pathfinding / charge: <c>movePoints * 2 + 1</c>.
-    /// Step costs: ortho 2, diagonal 3 (displayed MP = floor(spent / 2)).
+    /// Half-move budget used by pathfinding / charge. Shared with the movement simulation so
+    /// planning and resolution can never disagree on what a unit can afford.
     /// </summary>
-    private static int MoveHalfBudget(int movePoints) => Math.Max(0, movePoints) * 2 + 1;
+    private static int MoveHalfBudget(int movePoints) => BattleMovementRules.MoveHalfBudget(movePoints);
 
     /// <summary>
     /// Minimum tiles travelled for a declared charge to count after movement/collision.

@@ -17,11 +17,41 @@ Każda runda przebiega w fazach:
 
 ## Movement
 
-- Ruch zużywa `Move` i uwzględnia teren.
-- Pole **Difficult** kosztuje podwójnie.
-- Pole **Impassable** blokuje przejście.
-- Można planować trasę waypointami i obrót oddziału.
-- Kolizje wrogich oddziałów podczas ruchu zatrzymują trasy i mogą wymusić kontakt bojowy.
+Oddziały planują trasy po kolei, od najniższej inicjatywy, ale **wykonują ruch równocześnie**:
+po zatwierdzeniu ostatniego planu wszystkie ruszają w tej samej chwili i przez cały przebieg
+reagują na to, co faktycznie dzieje się na mapie. Cały przebieg liczy jedna symulacja, a to, co
+widać na mapie, jest jej wiernym odtworzeniem — animacja i wynik nigdy się nie rozjeżdżają.
+
+### Koszt ruchu
+
+- Krok prosto (N/E/S/W) kosztuje **1** punkt ruchu, krok na skos **1,5**.
+- Pole **Difficult** podwaja koszt kroku, pole **Impassable** blokuje przejście.
+- Budżet oddziału to `Move` punktów z zapasem pół punktu, stąd tabela skosów:
+  Move 3 → 2 skosy, Move 4 → 3, Move 5 → 3, Move 6 → 4.
+- Trasę planuje się waypointami; obrót oddziału również kosztuje.
+
+### Prędkość
+
+- Czas kroku jest proporcjonalny do jego kosztu i odwrotnie proporcjonalny do `Move`.
+  Oddział o `Move 8` przebywa w tym samym czasie dwa razy dłuższą drogę niż oddział o `Move 4`.
+- Skos trwa półtora raza dłużej niż krok prosty, więc **fizyczna prędkość jest jednakowa we
+  wszystkich ośmiu kierunkach** — marsz zygzakiem niczego nie przyspiesza.
+- Nikt nie dostaje fory na starcie; wszyscy ruszają jednocześnie.
+
+### Spotkania na mapie
+
+- Oddział rezerwuje pole, na które wchodzi, na cały czas trwania kroku, więc nikt się przez nie
+  nie prześlizgnie. Wrogi oddział osłania dodatkowo pole, które właśnie opuszcza.
+- **Wróg na drodze zatrzymuje ruch** na miejscu, w kontakcie bojowym — oddział obraca się
+  przodem do przeciwnika.
+- **Sojusznik na drodze tylko opóźnia**: oddział czeka, aż pole się zwolni. Jeśli zator nie
+  ustąpi (mniej więcej czas trzech kroków), oddział zatrzymuje się przed nim i trafia to do
+  journalu.
+- Gdy dwa oddziały sięgają po to samo pole w tej samej chwili, pierwszeństwo ma **szarża**,
+  a w jej braku **wyższa inicjatywa**.
+- Krok na skos jest niemożliwy, gdy zajęte są **oba** sąsiednie pola narożne — nie da się
+  przecisnąć między dwoma oddziałami ani przeniknąć przez siebie po krzyżujących się skosach.
+- Dwa oddziały nigdy nie kończą ruchu na tym samym polu.
 
 ## Szarża (Charge)
 
@@ -48,7 +78,7 @@ Szarża jest specjalnym wariantem ruchu wykonywanym w fazie **Movement**.
 - Jeśli ślepa szarża skoliduje z wrogiem po przebiegnięciu **co najmniej 2** kafelków, cel szarży jest przypinany automatycznie.
 - Po dojściu na koniec ścieżki ślepa szarża może też złapać wroga stojącego **na skos** w łuku do przodu.
 - Jeśli inny oddział przetnie drogę **zanim** szarża się rozpędzi (poniżej progu sukcesu), szarża jest **przerwana** — w journalu pojawia się komunikat o przerwaniu rozpędu.
-- Przy resolve ruchu **szarże rozstrzygane są od najwyższej inicjatywy do najniższej**: szarżujący z wyższą init startuje wcześniej, więc częściej dobija kontakt i może uciąć ruch / szarżę przeciwnika.
+- Szarża nie daje fory na starcie, tylko **pierwszeństwo w sporze o pole**: gdy szarżujący i inny oddział sięgają po to samo pole w tej samej chwili, pole bierze szarża. Spór dwóch szarż rozstrzyga inicjatywa.
 
 ### Bonus szarży
 
