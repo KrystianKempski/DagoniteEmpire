@@ -589,6 +589,9 @@
 
         if (ActiveTokenId != token.Id)
             return false;
+        // A declared charge fixes the heading and takes no further orders.
+        if (token.ChargeBonus)
+            return false;
         var tip = token.LastWaypoint;
         // Destination tip elsewhere already has its own facing button.
         if (tip is not null && !IsInPlaceTip(token, tip))
@@ -605,6 +608,9 @@
         if (AllowSetupFacing)
             return false;
         if (ActiveTokenId != token.Id)
+            return false;
+        // One charge per unit per round.
+        if (token.ChargeBonus)
             return false;
         var tip = token.LastWaypoint;
         if (tip is not null && !IsInPlaceTip(token, tip))
@@ -627,6 +633,9 @@
             return false;
         if (ActiveTokenId != owner.Id)
             return false;
+        // A declared charge fixes the heading and takes no further orders.
+        if (owner.ChargeBonus)
+            return false;
         if (owner.LastWaypoint != wp)
             return false;
         return wp.RemainingMoveAfter >= 1 || wp.FacingCostPaid > 0;
@@ -637,6 +646,9 @@
         if (IsAnimating || IsFacingEdit || IsChargeEdit || AllowSetupFacing)
             return false;
         if (ActiveTokenId != owner.Id)
+            return false;
+        // One charge per unit per round.
+        if (owner.ChargeBonus)
             return false;
         if (owner.LastWaypoint != wp)
             return false;

@@ -286,6 +286,21 @@ public class BattleMovementSimulatorTests
         Assert.Equal("b", a.EngagedWithMoverId);
     }
 
+    [Fact]
+    public void ChargeStoppedAfterTwoTilesStillReportsTwoTilesOfBuildUp()
+    {
+        var charger = Charging(
+            Mover("a", Ally, move: 6, initiative: 10, (0, 0), (1, 0), (2, 0), (3, 0)),
+            chargeStartStep: 0);
+
+        var result = Simulate(charger, Mover("b", Enemy, move: 0, initiative: 20, (3, 0)));
+
+        var a = result.Outcomes["a"];
+        Assert.Equal(2, a.ChargeTilesTravelled);
+        Assert.Equal((2, 0), (a.X, a.Y));
+        Assert.Equal("b", a.EngagedWithMoverId);
+    }
+
     // --- Determinism ---
 
     [Fact]

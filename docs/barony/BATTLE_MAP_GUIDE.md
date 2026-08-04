@@ -58,13 +58,18 @@ widać na mapie, jest jej wiernym odtworzeniem — animacja i wynik nigdy się n
 Szarża jest specjalnym wariantem ruchu wykonywanym w fazie **Movement**.
 
 - Szarża idzie po **prostej linii** (8 kierunków: orto + skosy).
-- Minimalny dystans:
+- **Minimalny dystans do zadeklarowania** szarży:
   - **3 kafelki** dla kierunków prostych (N/E/S/W) = **3** ruchu,
   - **2 kafelki** dla skosów = **3** ruchu.
 - Koszt skosów jak w zwykłym ruchu (1 / 2 / 1 / 2… w punktach, łącznie `floor(3n/2)`):  
   **3** move → 2 skosy, **4** → 3, **5** → 3, **6** → 4, …
+- Szarża **zawsze biegnie do końca możliwości**: aż wyczerpie punkty ruchu albo natrafi na kogoś
+  na drodze. Nie da się jej zaplanować „na skróty” ani zatrzymać w połowie.
 - Maksymalny dystans wprost/bokami = pozostały `Move` (1 kafelek = 1 ruch); na skos wg tabeli powyżej. Difficult ×2.
 - Szarżę można rozpocząć także z aktualnego końca zaplanowanej ścieżki (jeśli zostaje ≥ 3 ruchu).
+- **Po zadeklarowaniu szarży oddział nie przyjmuje już żadnych rozkazów** — ani dalszego ruchu,
+  ani obrotu, ani drugiej szarży. Żeby coś zmienić, trzeba cofnąć plan (Undo albo kliknięcie
+  w pole oddziału).
 - Gdy przed minimalnym dystansem trasę blokuje oddział lub teren, szarża jest nieudana.
 - Komunikat blokady przez jednostkę:  
   `Na drodze szarży stoi inny oddział uniemożliwiający szarżę.`
@@ -75,9 +80,11 @@ Szarża jest specjalnym wariantem ruchu wykonywanym w fazie **Movement**.
 - Jeśli po przebiegnięciu minimum wróg stoi **przed frontem** albo **na skos do przodu** (łuk: prosto + oba skosy), też łapie cel szarży.
 - Możliwa jest także **ślepa szarża**: bez celu w momencie planowania, by utrzymać prosty sprint.
 - Start ślepej szarży nadal wymaga pełnego minimum kierunku (**3** prosto / **2** skos).
-- Jeśli ślepa szarża skoliduje z wrogiem po przebiegnięciu **co najmniej 2** kafelków, cel szarży jest przypinany automatycznie.
+- **Szarża liczy się jako udana, gdy oddział przebiegł co najmniej 2 kafelki** — niezależnie od
+  kierunku i od tego, czy była wycelowana, czy ślepa. Po takim rozbiegu oddział łapie na kolizji
+  cel szarży i może dostać bonus.
 - Po dojściu na koniec ścieżki ślepa szarża może też złapać wroga stojącego **na skos** w łuku do przodu.
-- Jeśli inny oddział przetnie drogę **zanim** szarża się rozpędzi (poniżej progu sukcesu), szarża jest **przerwana** — w journalu pojawia się komunikat o przerwaniu rozpędu.
+- Jeśli inny oddział przetnie drogę, **zanim szarża przebiegnie 2 kafelki**, szarża jest **przerwana** — w journalu pojawia się komunikat o przerwaniu rozpędu.
 - Szarża nie daje fory na starcie, tylko **pierwszeństwo w sporze o pole**: gdy szarżujący i inny oddział sięgają po to samo pole w tej samej chwili, pole bierze szarża. Spór dwóch szarż rozstrzyga inicjatywa.
 
 ### Bonus szarży
@@ -104,8 +111,9 @@ Bonus działa tylko dla właściwego celu szarży stojącego w **łuku do przodu
 
 ## Szybki skrót dla gracza
 
-- Chcesz bonus szarży? Utrzymaj linię, dystans minimalny i kontakt z celem.
+- Chcesz bonus szarży? Utrzymaj linię, rozbieg i kontakt z celem.
 - By **zacząć** szarżę prosto: potrzeba 3 pól; skos: 2.
-- Ślepa szarża może „załapać” cel na kolizji już po **2** przebiegniętych polach.
+- Żeby szarża **się liczyła**, wystarczą **2** faktycznie przebiegnięte pola.
+- Szarża to decyzja ostateczna — po jej zadeklarowaniu oddział nie przyjmuje już rozkazów.
 - Jeśli ktoś przetnie drogę za wcześnie — szarża jest przerwana (wpis w logu).
 - Bonus dotyczy tylko ataku na przypięty cel szarży.

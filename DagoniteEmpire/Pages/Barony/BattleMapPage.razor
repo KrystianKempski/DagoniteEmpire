@@ -608,6 +608,13 @@ else
     /// <summary>Threat circle radius = ThreatFactor × size × 0.5 cells (1.0 = exact footprint edge).</summary>
     private const double TokenThreatFactor = 0.82;
 
+    /// <summary>
+    /// Tiles a declared charge must actually cover to earn its bonus. Declaring one still needs
+    /// the per-direction minimum (<see cref="MinChargeStepsForFacing"/>); this is the shorter
+    /// distance that decides whether the run counted once it has happened.
+    /// </summary>
+    private const int ChargeSuccessSteps = 2;
+
     private static readonly string[] Swatches =
     {
         "#c4b896", "#8fbc8f", "#6b8cae", "#b87a5a",
@@ -1385,6 +1392,15 @@ else
             return true;
         }
 
+        // A charge is committed: it runs as far as it can and stops only on contact, so there
+        // are no orders left to give afterwards.
+        if (token.ChargeBonus)
+        {
+            _snackBar.Add(
+                "A charging unit takes no further orders — undo to replan.", Severity.Warning);
+            return false;
+        }
+
         if (budget <= 0)
         {
             _snackBar.Add("No movement left — Finish move or clear path.", Severity.Warning);
@@ -1412,7 +1428,6 @@ else
         }
 
         var remaining = Math.Max(0, budget - cost - (provisional?.FacingCostPaid ?? 0));
-        ClearCharge(token);
         if (provisional is not null)
         {
             provisional.X = nx;
@@ -1465,6 +1480,12 @@ else
             return Task.CompletedTask;
         if (ActiveTokenId != token.Id)
             return Task.CompletedTask;
+
+        if (token.ChargeBonus)
+        {
+            _snackBar.Add("This unit is already charging — undo to replan.", Severity.Warning);
+            return Task.CompletedTask;
+        }
 
         var (_, _, budget) = GetTipPlanOrigin(token);
         if (budget < 3)
@@ -1816,6 +1837,14 @@ else
 
         if (!IsMovementPhase || ActiveTokenId != token.Id)
             return Task.CompletedTask;
+
+        // The charge sets the unit's heading; turning afterwards would break the straight run.
+        if (token.ChargeBonus)
+        {
+            _snackBar.Add(
+                "A charging unit takes no further orders — undo to replan.", Severity.Warning);
+            return Task.CompletedTask;
+        }
 
         CancelChargeEdit();
         var tip = token.LastWaypoint;
@@ -2776,11 +2805,6 @@ else
                 .Select(t => t.Id)
                 .ToHashSet(StringComparer.Ordinal);
 
-            // A charge's minimum run length is read off the plan, so capture it while the plan exists.
-            var chargeMinSteps = Map.Tokens
-                .Where(t => t.ChargeBonus)
-                .ToDictionary(t => t.Id, MinChargeSuccessSteps, StringComparer.Ordinal);
-
             // One simulation decides everything: who gets where, who runs into whom, and when.
             // The animation below is a replay of it, not a second calculation.
             var simulation = BattleMovementSimulator.Simulate(BuildMovementRequest());
@@ -2805,10 +2829,10 @@ else
                 entry => entry.Value.ChargeTilesTravelled,
                 StringComparer.Ordinal);
 
-            foreach (var note in LockChargeContacts(simulation, chargeMinSteps))
+            foreach (var note in LockChargeContacts(simulation))
                 AppendLocalLog(string.Empty, "charge", note);
 
-            foreach (var note in ValidateChargesAfterMovement(chargeSteps, chargeMinSteps))
+            foreach (var note in ValidateChargesAfterMovement(chargeSteps))
                 AppendLocalLog(string.Empty, "charge", note);
 
             Map.TurnState.SubPhase = BaronyBattleSubPhases.AttackPlanning;
@@ -3045,8 +3069,7 @@ else
     /// Charges that fell short are left alone here — <see cref="ValidateChargesAfterMovement"/>
     /// clears them once the tokens have settled.
     /// </summary>
-    private List<string> LockChargeContacts(
-        BattleMovementResult simulation, IReadOnlyDictionary<string, int> chargeMinSteps)
+    private List<string> LockChargeContacts(BattleMovementResult simulation)
     {
         var notes = new List<string>();
         if (Map is null)
@@ -3064,7 +3087,7 @@ else
                 continue;
 
             var steps = outcome.ChargeTilesTravelled;
-            if (steps < MinChargeStepsFor(charger, chargeMinSteps))
+            if (steps < ChargeSuccessSteps)
                 continue;
 
             if (string.IsNullOrWhiteSpace(charger.ChargeTargetId) || charger.ChargeBlind)
@@ -3082,14 +3105,6 @@ else
 
         return notes;
     }
-
-    /// <summary>
-    /// Charge minimums are measured while the plan still exists, so they are captured before the
-    /// simulation runs and looked up afterwards.
-    /// </summary>
-    private static int MinChargeStepsFor(
-        BaronyBattleTokenDTO token, IReadOnlyDictionary<string, int> chargeMinSteps) =>
-        chargeMinSteps.TryGetValue(token.Id, out var min) ? min : MinChargeSuccessSteps(token);
 
     private static int StepsToCell(IReadOnlyList<(int X, int Y)> route, (int X, int Y) cell)
     {
@@ -3155,9 +3170,7 @@ else
     /// After movement settles: charge needs minimum travel and contact with the charge target.
     /// Blind charges succeed from 2 tiles; targeted charges keep the facing start minimum.
     /// </summary>
-    private List<string> ValidateChargesAfterMovement(
-        IReadOnlyDictionary<string, int> chargeSteps,
-        IReadOnlyDictionary<string, int> chargeMinSteps)
+    private List<string> ValidateChargesAfterMovement(IReadOnlyDictionary<string, int> chargeSteps)
     {
         var notes = new List<string>();
         if (Map is null)
@@ -3169,7 +3182,7 @@ else
                 continue;
 
             chargeSteps.TryGetValue(token.Id, out var steps);
-            var minSteps = MinChargeStepsFor(token, chargeMinSteps);
+            var minSteps = ChargeSuccessSteps;
             var target = string.IsNullOrWhiteSpace(token.ChargeTargetId)
                 ? null
                 : Map.Tokens.FirstOrDefault(t => t.Id == token.ChargeTargetId);
@@ -3442,6 +3455,9 @@ else
         {
             if (ActiveTokenId != token.Id)
                 return;
+            // A declared charge accepts no further orders, so there is no range left to offer.
+            if (token.ChargeBonus)
+                return;
             var (fx, fy, budget) = _chargeEditTokenId == token.Id
                 ? GetTipPlanOrigin(token)
                 : GetPlanOrigin(token);
@@ -3534,18 +3550,6 @@ else
     /// planning and resolution can never disagree on what a unit can afford.
     /// </summary>
     private static int MoveHalfBudget(int movePoints) => BattleMovementRules.MoveHalfBudget(movePoints);
-
-    /// <summary>
-    /// Minimum tiles travelled for a declared charge to count after movement/collision.
-    /// Blind charges only need 2; targeted charges keep the charge-path facing minimum.
-    /// </summary>
-    private static int MinChargeSuccessSteps(BaronyBattleTokenDTO token)
-    {
-        if (token.ChargeBlind)
-            return 2;
-        var chargeFacing = token.Path.LastOrDefault(w => w.IsCharge)?.Facing ?? token.Facing;
-        return MinChargeStepsForFacing(chargeFacing);
-    }
 
     /// <summary>Recomputes the exact tile routes for every token that has a planned path.</summary>
     private void RebuildPlannedRoutes()
