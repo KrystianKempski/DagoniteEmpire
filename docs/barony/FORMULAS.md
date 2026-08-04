@@ -318,19 +318,21 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 ### Battle Map — combat damage (`BattleMapPage.ResolveCombatRoundDamage`)
 Phases: Movement → Attack planning → Combat. Stats are frozen on the token at deploy (`UnitCombatFormulas` / MG enemy draft). Attacks resolve in reverse initiative order (highest first). Skip if attacker/defender dead, no target, or not adjacent. No separate melee/ranged damage path — adjacency only.
 
+User-facing flow/rules guide: [`BATTLE_MAP_GUIDE.md`](./BATTLE_MAP_GUIDE.md)
+
 - **dealt** = `max(1, round((Damage + k4 − Armor) × (Attack+k6) / max(1, Defense+k6) × front))`
   - Rounding: away from zero (`MidpointRounding.AwayFromZero`)
-  - **front** = AimBase + ExposureBonus (`GetFrontBreakdown`), range **1–6**
-    - **Aim** — attacker facing toward defender: front **3**, corner **2**, side/rear-corner/rear **1**
-    - **Exposure** — attacker position vs defender facing: front **+0**, corner **+1**, side **+2**, rear-corner **+2**, rear **+3**
-    - Example log: `(Dmg+k4−Arm=5+3−3=5) × (7+k6=12)/(12+k6=16) ×4 (Front Vs Corner) => 15 dmg.`
+  - **front** = AimBase + ExposureBonus (`GetFrontBreakdown`), range **1–4.5**
+    - **Aim** — attacker facing toward defender: front **2.5**, corner **1.5**, side/rear-corner/rear **1**
+    - **Exposure** — attacker position vs defender facing: front **+0**, corner **+0.5**, side **+1.5**, rear-corner **+1.5**, rear **+2**
+    - Example log: `(Dmg+k4−Arm=5+3−3=5) × (7+k6=12)/(12+k6=16) ×3 (Front Vs Corner) => 11 dmg.`
   - If `Damage + k4 < Armor`, raw can be ≤ 0, but dealt is still floored at **1**
 - **defensive dealt** (same exchange) = `max(1, round((Dmg_def + k4 − Arm_atk) × (Def_def + k6) / max(1, Def_atk + k6) × front_def))`
   - Ratio is **Defense vs Defense** (not Attack), both sides roll k6
   - **front_def** = same Aim/Exposure rules with roles swapped (`GetFrontBreakdown(defender, attacker)`)
   - Example log: `(Dmg+k4−Arm=4+2−1=5) × (12+k6=15)/(10+k6=14) ×3 (Front Vs Front) => 16 dmg.` tagged `(defensive)`
 - Both sides may flee at HP ≤ 0 after the exchange. Defender still returns defensive damage even if reduced to 0 by the attack.
-- **Charge** (Movement phase): any unit may charge in a straight line (8 directions). Path length **≥ 2** tiles, up to remaining Move (terrain costs as normal). Blocked by ally/terrain/enemy before the 2nd tile → charge fails. From step ≥2: enemy on the path → stop on the tile before them, set attack target, **ChargeBonus**. After N≥2 empty tiles: success also if an enemy stands in the charge direction from the end tile. In Combat vs that charge target: use **Attack+2** and **Damage+2**. Changing attack target or losing contact after movement clears the bonus.
+- **Charge** (Movement phase): any unit may charge in a straight line (8 directions). To **start** a charge: minimum path length **3** tiles on cardinal directions (N/E/S/W), **2** tiles on diagonals — both require **3** move points on open ground. Charge steps use the same costs as normal movement (half-move budget `Move*2+1`: ortho 2, diagonal 3 → displayed MP `floor(spent/2)`; e.g. Move 4 = 4 cardinal tiles or 3 diagonal; Move 5 = 3 diagonal; Move 6 = 4 diagonal; difficult ×2). Blocked before required start minimum → charge fails. After that, enemy on path means stop before contact and set charge target. A charge may also be planned "blind" (without immediate target). Blind charges may lock a target on collision after **2** tiles of travel (even on cardinal lines), but still need the normal start minimum to declare. If another unit cuts the path before the charge builds up speed, the charge is interrupted (journal note). Charges resolve **highest initiative first** (start-delay in collision + animation): a higher-init charger gets a head start and is more likely to land contact / interrupt a lower-init foe charging back. At the end of a full charge path, an enemy in the **forward arc** (straight ahead or either forward diagonal) can also be locked as the charge target. In Combat vs charge target: use **Attack+2** and **Damage+1**, but only while the target remains in the charger's **forward arc** (front or forward diagonal). Side / rear / rear-corner contact after movement clears the charge. Charge attacks resolve before non-charge attacks; changing target or losing valid contact clears the charge bonus.
 - **End battle** (MG): ends immediately regardless of field state; writes a summary log; syncs each deployed ally’s token HP → `BaronyUnit.CurrentHp` (fled allies → **0**). Army roster is locked while `Phase = battle`.
 - **Troop recovery**: understrength units (not Disbanded) regain **+5** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.
 - **Reinforce project** (`ProjectOutputKind.UnitReinforce`): button on understrength Active units with no open project. People cost = Selected volunteers + Standard, scaled `× N/50` (floor). Gear = current loadout at **50%** salvage × same scale (`× N/100` of full gear). Acquire modes Craft/Buy/Defense like the generator. On complete: add N troops (cap 50) and sync Max HP.

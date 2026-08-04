@@ -5,7 +5,7 @@
 @inject IDialogService _dialogService
 
 @* Shared unit card layout (Excel right-hand card) — used by generator preview and roster. *@
-<div class="unit-draft-card @(Collapsible ? (_isOpen ? "unit-draft-card--open" : "unit-draft-card--collapsed") : null)">
+<div class="unit-draft-card @(Collapsible ? (_isOpen ? "unit-draft-card--open" : "unit-draft-card--collapsed") : null) @(ShowCurrentHp && Unit.CurrentHp <= 0 ? "unit-draft-card--broken" : null)">
     <div class="unit-draft-card__title @(Collapsible ? "unit-draft-card__title--toggle" : null)"
          @onclick="Toggle"
          role="@(Collapsible ? "button" : null)"
