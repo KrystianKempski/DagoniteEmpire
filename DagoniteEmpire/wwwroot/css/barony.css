@@ -4910,6 +4910,142 @@ a.city-building-name-text--link:hover {
     background: #866828 !important;
 }
 
+/* Battle XP summary needs room for all columns at once. */
+.mud-dialog-container .mud-dialog.baron-influence-dialog.battle-xp-summary-mud-dialog:not(.mud-dialog-fullscreen):has(.baron-influence-dialog-content) {
+    width: min(98vw, 1480px) !important;
+    max-width: min(98vw, 1480px) !important;
+    min-width: min(96vw, 1100px) !important;
+}
+
+.battle-xp-summary-dialog {
+    width: 100%;
+    min-width: 0;
+}
+
+.battle-xp-summary-dialog__table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.battle-xp-summary-dialog__table .mud-table-cell {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    vertical-align: middle;
+}
+
+.battle-xp-summary-dialog__table thead .mud-table-cell {
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.15;
+    white-space: normal;
+    word-break: normal;
+    hyphens: none;
+}
+
+.battle-xp-summary-dialog__unit-col {
+    width: 18%;
+    text-align: left !important;
+}
+
+.battle-xp-summary-dialog__num-col {
+    width: 7%;
+    text-align: center !important;
+    white-space: nowrap;
+}
+
+.battle-xp-summary-dialog__bonus-col {
+    width: 9%;
+    text-align: center !important;
+}
+
+.battle-xp-summary-dialog__note-col {
+    width: 16%;
+    text-align: center !important;
+    white-space: nowrap;
+}
+
+.battle-xp-summary-dialog__bonus-col .mud-input-control {
+    margin: 0 auto;
+}
+
+.battle-xp-summary-dialog__bonus-input {
+    width: 100%;
+    max-width: 100%;
+}
+
+.battle-xp-summary-dialog__bonus-input .mud-input-slot,
+.battle-xp-summary-dialog__bonus-input .mud-input-root {
+    padding-inline: 2px !important;
+}
+
+.battle-xp-summary-dialog__bonus-input input {
+    text-align: center;
+}
+
+.battle-xp-summary-dialog__note-input {
+    width: 100%;
+    min-width: 0;
+}
+
+.battle-xp-summary-dialog__note-input .mud-input-root {
+    padding-inline: 6px !important;
+}
+
+.unit-log-dialog {
+    min-width: min(94vw, 760px);
+    width: 100%;
+}
+
+.unit-log-dialog__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.unit-log-dialog__item {
+    border: 1px solid #d9cfb8;
+    border-radius: 8px;
+    padding: 7px 9px;
+    background: #fbf8f1;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.unit-log-dialog__row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: baseline;
+    font-size: 0.76rem;
+    line-height: 1.2;
+    color: #6f6656;
+}
+
+.unit-log-dialog__kind {
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+}
+
+.unit-log-dialog__xp {
+    margin-left: 0;
+    font-weight: 700;
+    color: #9c7a33;
+}
+
+.unit-log-dialog__text {
+    margin-top: 3px;
+    color: #2f2a24;
+    line-height: 1.25;
+}
+
+.unit-log-dialog__note {
+    margin-top: 3px;
+    color: #6f6656;
+    font-size: 0.78rem;
+    line-height: 1.2;
+}
+
 .ppb-compact-numeric.mud-input-control {
     margin-top: 0;
     margin-bottom: 0;
@@ -8127,6 +8263,20 @@ a.city-building-name-text--link:hover {
     font-weight: 600;
 }
 
+.barony-scope .bbm-map-overlay-status {
+    position: absolute;
+    left: 50%;
+    top: 20px;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+    justify-content: center;
+    max-width: calc(100% - 1.5rem);
+    pointer-events: none;
+}
+
 .barony-scope .bbm-map-overlay-actions {
     position: absolute;
     left: 50%;
@@ -8136,6 +8286,7 @@ a.city-building-name-text--link:hover {
     display: flex;
     gap: 0.45rem;
     align-items: center;
+    flex-wrap: nowrap;
     pointer-events: none;
 }
 
@@ -8143,6 +8294,53 @@ a.city-building-name-text--link:hover {
     pointer-events: auto;
     min-width: 7.5rem;
     text-align: center;
+    white-space: nowrap;
+}
+
+.barony-scope .bbm-map-overlay-actions .bbm-map-btn--compact {
+    min-width: 0;
+    height: 1.85rem;
+    padding: 0 0.7rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.barony-scope .bbm-map-wait,
+.barony-scope .bbm-map-ready {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.barony-scope .bbm-map-wait {
+    border: 1.5px solid color-mix(in srgb, var(--barony-neg, #a5503f) 55%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--barony-surface) 88%, var(--barony-neg, #a5503f));
+    color: var(--barony-ink);
+    padding: 0.35rem 0.85rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.barony-scope .bbm-map-ready {
+    border: 1.5px solid color-mix(in srgb, var(--barony-pos, #4f7a4d) 55%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--barony-surface) 88%, var(--barony-pos, #4f7a4d));
+    color: var(--barony-ink);
+    padding: 0.35rem 0.85rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .barony-scope .bbm-map-btn {
@@ -8188,9 +8386,6 @@ a.city-building-name-text--link:hover {
     border: 1.5px solid #8b3a3a;
     background: #8b3a3a;
     color: #f5f0e6;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    box-shadow: 0 1px 0 rgba(47, 42, 36, 0.2);
 }
 
 .barony-scope .bbm-map-btn--end-battle:hover:not(:disabled) {
@@ -9026,6 +9221,18 @@ a.city-building-name-text--link:hover {
     z-index: 3;
 }
 
+.barony-scope .bbm-token-slot--facing-ghost {
+    z-index: 6;
+    pointer-events: none;
+    transform: translate(7px, -7px);
+}
+
+.barony-scope .bbm-token-slot--facing-ghost .bbm-token-label,
+.barony-scope .bbm-token-slot--facing-ghost .bbm-move-badge,
+.barony-scope .bbm-token-slot--facing-ghost .bbm-lock-badge {
+    display: none;
+}
+
 .barony-scope .bbm-token-rect {
     width: 100%;
     height: 46%;
@@ -9157,6 +9364,31 @@ a.city-building-name-text--link:hover {
     height: 0.72rem;
     object-fit: contain;
     pointer-events: none;
+}
+
+.barony-scope .bbm-facing-only-badge {
+    position: absolute;
+    left: -3px;
+    top: -3px;
+    z-index: 7;
+    width: 1.15rem;
+    height: 1.15rem;
+    border: 1.5px solid color-mix(in srgb, var(--barony-neg, #a5503f) 70%, #2f2a24);
+    border-radius: 3px;
+    background: rgba(245, 240, 230, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+}
+
+.barony-scope .bbm-facing-only-badge__icon {
+    display: block;
+    width: 0.72rem;
+    height: 0.72rem;
+    object-fit: contain;
+    opacity: 0.9;
 }
 
 .barony-scope .bbm-charge-btn {

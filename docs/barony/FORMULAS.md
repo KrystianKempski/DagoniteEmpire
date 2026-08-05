@@ -348,19 +348,25 @@ Phases: Movement → Attack planning → Combat. Stats are frozen on the token a
 
 User-facing flow/rules guide: [`BATTLE_MAP_GUIDE.md`](./BATTLE_MAP_GUIDE.md)
 
-- **dealt** = `max(1, round((Damage + k4 − Armor) × (Attack+k6) / max(1, Defense+k6) × front))`
+- **dealt** = `max(1, round((Damage + k4 − effArmor) × (Attack+k6) / max(1, Defense+k6) × front))`, where `effArmor = UnitCombatFormulas.EffectiveArmor(target.Armor, attacker.Pierce)`
   - Rounding: away from zero (`MidpointRounding.AwayFromZero`)
   - **front** = AimBase + ExposureBonus (`GetFrontBreakdown`), range **1–4.5**
     - **Aim** — attacker facing toward defender: front **2.5**, corner **1.5**, side/rear-corner/rear **1**
     - **Exposure** — attacker position vs defender facing: front **+0**, corner **+0.5**, side **+1.5**, rear-corner **+1.5**, rear **+2**
     - Example log: `(Dmg+k4−Arm=5+3−3=5) × (7+k6=12)/(12+k6=16) ×3 (Front Vs Corner) => 11 dmg.`
   - If `Damage + k4 < Armor`, raw can be ≤ 0, but dealt is still floored at **1**
-- **defensive dealt** (melee exchange only) = `max(1, round((Dmg_def + k4 − Arm_atk) × (Def_def + k6) / max(1, Def_atk + k6) × front_def))`
+- **defensive dealt** (melee exchange only) = `max(1, round((Dmg_def + k4 − effArm_atk) × (Def_def + k6) / max(1, Def_atk + k6) × front_def))` — the defender's own Pierce bites into the attacker's armor
   - Ratio is **Defense vs Defense** (not Attack), both sides roll k6
   - **front_def** = same Aim/Exposure rules with roles swapped (`GetFrontBreakdown(defender, attacker)`)
   - Example log: `(Dmg+k4−Arm=4+2−1=5) × (12+k6=15)/(10+k6=14) ×3 (Front Vs Front) => 16 dmg.` tagged `(defensive)`
 - Both sides may flee at HP ≤ 0 after the exchange. Defender still returns defensive damage even if reduced to 0 by the attack (melee only).
 - Surviving **melee** exchanges bind engagement; shots never do.
+
+### Battle Map — armor pierce (`token.Pierce`, `UnitCombatFormulas.EffectiveArmor`)
+- Token field `Pierce` (JSON in `TokensJson`): allies copy `UnitWeaponCatalog.Find(Weapon1Key).Pierce` at deploy; MG enemies set it in the draft form (default 0). Weapon quality does not scale it.
+- `EffectiveArmor(armor, pierce) = max(0, armor − max(0, pierce))` — pierce **only cancels armor**, it never becomes a flat damage bonus, so a piercing weapon gains nothing against an unarmored target and overkill pierce is wasted.
+- Applies to all three damage paths: the attack, the melee defensive return (defender's Pierce vs attacker's Armor) and the disengage free hit. Logged as `[pierce −N arm]` whenever it actually bit.
+- Covered by `DA_Business.Tests/Barony/UnitArmorPierceTests.cs`.
 
 ### Battle Map — ranged attacks (`token.Range`, `BattleMovementRules.IsInShotRange`)
 - Token field `Range` (JSON in `TokensJson`): allies copy `UnitWeaponCatalog.Find(Weapon1Key).Range` at deploy; MG enemies set it in the draft form (default 0).
@@ -373,6 +379,35 @@ User-facing flow/rules guide: [`BATTLE_MAP_GUIDE.md`](./BATTLE_MAP_GUIDE.md)
 ### Battle Map — charge (continued from combat)
 - **Charge** (Movement phase): any unit may charge in a straight line (8 directions). To **start** a charge: minimum path length **3** tiles on cardinal directions (N/E/S/W), **2** tiles on diagonals — both require **3** move points on open ground. Charge steps use the same costs as normal movement (half-move budget `Move*2+1`: ortho 2, diagonal 3 → displayed MP `floor(spent/2)`; e.g. Move 4 = 4 cardinal tiles or 3 diagonal; Move 5 = 3 diagonal; Move 6 = 4 diagonal; difficult ×2). Blocked before required start minimum → charge fails. A charge always runs as far as it can — until move points run out or something is in the way — and once declared the unit accepts no further orders (no extra waypoints, no facing change, no second charge); undo the plan to change it. After the start minimum, an enemy on the path means stop before contact and set charge target. A charge may also be planned "blind" (without immediate target). A charge **counts as successful once the unit has actually covered 2 tiles** (`ChargeSuccessSteps`), regardless of direction or whether it was aimed or blind; from there it locks a target on collision and earns the bonus. If another unit cuts the path before those 2 tiles, the charge is interrupted (journal note). Charges get **priority on contested tiles** rather than a head start: when a charger and another unit reach for the same tile in the same instant the charger takes it, and between two chargers the higher initiative wins. At the end of a full charge path, an enemy in the **forward arc** (straight ahead or either forward diagonal) can also be locked as the charge target. In Combat vs charge target: use **Attack+2** and **Damage+1**, but only while the target remains in the charger's **forward arc** (front or forward diagonal). Side / rear / rear-corner contact after movement clears the charge. Charge attacks resolve before non-charge attacks; changing target or losing valid contact clears the charge bonus.
 - **End battle** (MG): ends immediately regardless of field state; writes a summary log; syncs each deployed ally’s token HP → `BaronyUnit.CurrentHp` (fled allies → **0**). Army roster is locked while `Phase = battle`.
+- **Battle XP tallies** (persisted in `BaronyBattleMap.TalliesJson`): during battle each allied unit accumulates:
+  - `DamageDealt` (from combat exchanges and disengage free hits),
+  - `DamageTaken`,
+  - `Kills` (enemy that flees at HP 0),
+  - `RoundsEngaged` (distinct rounds where `EngagedEnemyIds.Count > 0`),
+  - `Fled`.
+- **Battle XP formula** (`UnitExperienceRules.ComputeBattleXp`):
+  - `xpDealt = floor(DamageDealt / 3)`
+  - `xpEngaged = RoundsEngaged`
+  - `xpKills = 3 × Kills`
+  - `xpTakenLoss = floor(DamageTaken / 8)`
+  - `xpFleeLoss = Fled ? 1 : 0`
+  - `xpNetBase = xpDealt + xpEngaged + xpKills - xpTakenLoss - xpFleeLoss`
+- **MG adjustment layer** (dialog at End battle):
+  - per-unit `MgBonusXp` (signed int) + optional `MgNote`
+  - `xpNetFinal = xpNetBase + MgBonusXp`
+- **Apply to unit pool**:
+  - `BaronyUnit.RemainingPd = max(0, RemainingPd + xpNetFinal)`
+  - summary is stored in `BaronyBattleMap.XpSummaryJson` and shown to baron until `AcknowledgedByBaron = true`.
+
+### Unit log (`BaronyUnit.LogJson`)
+
+JSON ledger per unit (max 200 entries), mapped to `BaronyUnitLogEntryDTO`:
+
+- `Id`, `UtcAt`, `Kind`, `Text`, optional `XpDelta`, optional `Note`.
+- written on:
+  - unit creation (`kind=created`),
+  - completed change equipment project (`kind=equipment`),
+  - battle XP apply (`kind=battle` + `kind=xp` entries, including MG adjustment and final pool update).
 - **Troop recovery**: understrength units (not Disbanded) regain **+5** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.
 - **Reinforce project** (`ProjectOutputKind.UnitReinforce`): button on understrength Active units with no open project. People cost = Selected volunteers + Standard, scaled `× N/50` (floor). Gear = current loadout at **50%** salvage × same scale (`× N/100` of full gear). Acquire modes Craft/Buy/Defense like the generator. On complete: add N troops (cap 50) and sync Max HP.
 - **Change equipment project** (`ProjectOutputKind.UnitChangeEquipment`): button on Active units with no open project. Dialog picks new loadout + Craft/Buy/Defense pay modes (unit generator Gear UX). Cost = full gear `SumGear` scaled `× troopCount/50`; turns = max(1, Standard×N/50). Starts in Resource allocation. On complete: write keys/quality, refresh agility penalty / Defense skill / Max HP.

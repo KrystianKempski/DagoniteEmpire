@@ -456,6 +456,14 @@ namespace DA_Common.Barony
             attributeValue + baseLevel + other;
 
         /// <summary>
+        /// Armor a target actually gets to use once the attacker's Pierce has bitten into it.
+        /// Pierce only cancels armor — it never turns into a bonus against an unarmored target,
+        /// so a piercing weapon gains nothing from overkill.
+        /// </summary>
+        public static int EffectiveArmor(int armor, int pierce) =>
+            Math.Max(0, armor - Math.Max(0, pierce));
+
+        /// <summary>
         /// Eligible defense skills: Dodges always; Shields only with a shield; Armor only with armor.
         /// Uses the highest skill total among eligible options (stable tie-break: Shields, Armor, Dodges).
         /// </summary>

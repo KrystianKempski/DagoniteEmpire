@@ -115,6 +115,11 @@
                     </BaronyTooltip>
                 }
             }
+            <MudIconButton Icon="@Icons.Material.Filled.History"
+                           Size="Size.Small"
+                           title="Show unit history"
+                           Disabled="@_busy"
+                           OnClick="OpenUnitLogAsync" />
             @if (CanManageAsMg)
             {
                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
@@ -321,6 +326,26 @@
         {
             _busy = false;
         }
+    }
+
+    private async Task OpenUnitLogAsync()
+    {
+        if (_busy)
+            return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitLogDialog.Unit)] = Unit,
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+        };
+        var dialog = await _dialogService.ShowAsync<UnitLogDialog>(
+            "Unit history", parameters, options);
+        _ = await dialog.Result;
     }
 
     private async Task ActivateUnitAsync()

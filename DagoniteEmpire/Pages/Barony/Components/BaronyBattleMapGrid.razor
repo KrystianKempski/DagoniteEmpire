@@ -104,12 +104,18 @@
                                     </div>
                                     @if (IsEngagedToken(token))
                                     {
-                                        <span class="bbm-engage-badge @(ShowOriginChargeButton(token) ? "shifted" : null)" title="@EngagementTooltip(token)">
+                                        <span class="bbm-engage-badge @(ShowOriginChargeButton(token) || ShowFogFacingOnlyBadge(token) ? "shifted" : null)" title="@EngagementTooltip(token)">
                                             <img class="bbm-engage-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
                                             @if (token.EngagedEnemyIds.Count > 1)
                                             {
                                                 <span class="bbm-engage-badge__count">@token.EngagedEnemyIds.Count</span>
                                             }
+                                        </span>
+                                    }
+                                    @if (ShowFogFacingOnlyBadge(token))
+                                    {
+                                        <span class="bbm-facing-only-badge" title="This unit is only changing facing (no move).">
+                                            <img class="bbm-facing-only-badge__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
                                         </span>
                                     }
                                     @if (IsRangedToken(token))
@@ -118,6 +124,20 @@
                                             <img class="bbm-ranged-badge__icon" src="/icons/archer.svg" alt="" aria-hidden="true" />
                                             <span class="bbm-ranged-badge__count">@token.Range</span>
                                         </span>
+                                    }
+                                    @if (ShowInPlaceFacingGhost(token))
+                                    {
+                                        var facingTip = token.LastWaypoint!;
+                                        var plannedFacingDeg = FacingDegreesForTip(token, facingTip);
+                                        <div class="bbm-token-slot bbm-token-slot--ghost bbm-token-slot--facing-ghost @(large ? "large" : null)"
+                                             style="@TokenFootprintStyle(token)"
+                                             aria-hidden="true">
+                                            <div class="bbm-token-rect bbm-token-rect--ghost @(token.IsEnemy ? "enemy" : "ally") locked"
+                                                 style="--bbm-facing:@(plannedFacingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
+                                                 title="@($"{token.Label} (planned facing)")">
+                                                @TokenIcon(token.IconKey, token.Label)
+                                            </div>
+                                        </div>
                                     }
                                 }
                                 @if (waypoint is not null)
@@ -185,6 +205,8 @@
                         if (points.Count < 2) continue;
                         var arrowClass = token.IsEnemy ? "bbm-path-arrow bbm-path-arrow--enemy" : "bbm-path-arrow bbm-path-arrow--ally";
                         var markerId = token.IsEnemy ? "bbm-arrow-enemy" : "bbm-arrow-ally";
+                        // Fog hints are not exact destinations — draw the shaft only, no arrowhead.
+                        var showHead = !(FogEnemyPlans && token.IsEnemy);
                         for (var i = 0; i < points.Count - 1; i++)
                         {
                             var a = points[i];
@@ -195,7 +217,7 @@
                                   y1="@a.cy.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                   x2="@b.cx.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                   y2="@b.cy.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                  marker-end="@(isLast ? $"url(#{markerId})" : null)" />
+                                  marker-end="@(showHead && isLast ? $"url(#{markerId})" : null)" />
                         }
                     }
                 </svg>
@@ -443,10 +465,17 @@
     [Parameter] public bool AnimTransitions { get; set; }
     [Parameter] public bool ShowDeployZone { get; set; } = true;
     [Parameter] public bool AllowSetupFacing { get; set; }
+    /// <summary>False when the unit on the clock belongs to a side the viewer may not order.</summary>
+    [Parameter] public bool AllowActiveOrders { get; set; } = true;
     [Parameter] public bool ShowThreatRadius { get; set; }
     [Parameter] public double ThreatFactor { get; set; } = 1.3;
     [Parameter] public IReadOnlyDictionary<string, List<(int X, int Y)>> PlannedRoutes { get; set; }
         = new Dictionary<string, List<(int X, int Y)>>();
+    /// <summary>
+    /// When true (Baron in movement phase), enemy destination ghosts and full arrows are hidden;
+    /// only a short direction hint from PlannedRoutes (or a facing-only badge) is shown.
+    /// </summary>
+    [Parameter] public bool FogEnemyPlans { get; set; }
     /// <summary>When true, only the focused attacker's arrow is drawn (or none if focus is null).</summary>
     [Parameter] public bool CombatAnimActive { get; set; }
     [Parameter] public string? CombatFocusAttackerId { get; set; }
@@ -522,6 +551,11 @@
         if (!token.ChargeBonus)
             return new List<(double cx, double cy)>();
 
+        // Baron fog: short start hint is drawn as the ordinary path arrow (PlannedRoutes).
+        // Never show the full charge shaft / destination.
+        if (FogEnemyPlans && token.IsEnemy)
+            return new List<(double cx, double cy)>();
+
         var size = TokenSize(token);
         var origin = ResolveChargeOrigin(token);
         var chargeWps = token.Path.Where(w => w.IsCharge).ToList();
@@ -589,6 +623,10 @@
     {
         foreach (var t in Tokens)
         {
+            // Baron fog: never show enemy destination ghosts (arrow hint comes from PlannedRoutes).
+            if (FogEnemyPlans && t.IsEnemy)
+                continue;
+
             var wp = t.Path.FirstOrDefault(w => w.X == x && w.Y == y && (w.X != t.X || w.Y != t.Y));
             if (wp is null)
                 continue;
@@ -600,6 +638,43 @@
             return (t, wp);
         }
         return null;
+    }
+
+    private bool ShowFogFacingOnlyBadge(BaronyBattleTokenDTO token)
+    {
+        if (!FogEnemyPlans || !token.IsEnemy || IsAnimating)
+            return false;
+        if (ActiveTokenId == token.Id)
+            return false;
+        if (!token.HasPath || token.Path.Any(w => !w.Locked))
+            return false;
+        if (token.Path.Any(w => w.X != token.X || w.Y != token.Y))
+            return false;
+        var tip = token.LastWaypoint;
+        if (tip is null)
+            return false;
+        return tip.FacingCostPaid > 0
+               || BaronyBattleFacing.Clamp(tip.Facing) != BaronyBattleFacing.Clamp(token.Facing);
+    }
+
+    /// <summary>
+    /// In-place facing change during movement planning: keep the living token on its current
+    /// heading and show a ghost with the planned facing (applied only when movement resolves).
+    /// </summary>
+    private bool ShowInPlaceFacingGhost(BaronyBattleTokenDTO token)
+    {
+        if (IsAnimating || AllowSetupFacing)
+            return false;
+        // Baron fog already uses the rotation badge instead of a facing ghost.
+        if (FogEnemyPlans && token.IsEnemy)
+            return false;
+        var tip = token.LastWaypoint;
+        if (tip is null || !IsInPlaceTip(token, tip))
+            return false;
+        if (FacingEditTokenId == token.Id)
+            return true;
+        return tip.FacingCostPaid > 0
+               || BaronyBattleFacing.Clamp(tip.Facing) != BaronyBattleFacing.Clamp(token.Facing);
     }
 
     private bool ShowMoveBadge(BaronyBattleTokenDTO token) =>
@@ -617,6 +692,8 @@
         if (AllowSetupFacing && SelectedTokenId == token.Id)
             return true;
 
+        if (!AllowActiveOrders)
+            return false;
         if (ActiveTokenId != token.Id)
             return false;
         // A declared charge fixes the heading and takes no further orders.
@@ -635,7 +712,7 @@
     {
         if (IsAnimating || IsFacingEdit || IsChargeEdit || !Interactive)
             return false;
-        if (AllowSetupFacing)
+        if (AllowSetupFacing || !AllowActiveOrders)
             return false;
         if (ActiveTokenId != token.Id)
             return false;
@@ -659,7 +736,7 @@
 
     private bool ShowFacingButton(BaronyBattleTokenDTO owner, BaronyBattleWaypointDTO wp)
     {
-        if (IsAnimating || IsFacingEdit || IsChargeEdit)
+        if (IsAnimating || IsFacingEdit || IsChargeEdit || !AllowActiveOrders)
             return false;
         if (ActiveTokenId != owner.Id)
             return false;
@@ -673,7 +750,7 @@
 
     private bool ShowChargeButton(BaronyBattleTokenDTO owner, BaronyBattleWaypointDTO wp)
     {
-        if (IsAnimating || IsFacingEdit || IsChargeEdit || AllowSetupFacing)
+        if (IsAnimating || IsFacingEdit || IsChargeEdit || AllowSetupFacing || !AllowActiveOrders)
             return false;
         if (ActiveTokenId != owner.Id)
             return false;
@@ -687,15 +764,16 @@
 
     private double FacingDegreesForToken(BaronyBattleTokenDTO token)
     {
-        var tip = token.LastWaypoint;
-        var hasSeparateTip = tip is not null && !IsInPlaceTip(token, tip);
-        if ((FacingEditTokenId == token.Id || ChargeEditTokenId == token.Id)
-            && FacingPreviewDegrees is double preview
-            // When token has a separate destination ghost, preview should rotate only the ghost.
-            && !hasSeparateTip)
-            return preview;
-        if (tip is not null && IsInPlaceTip(token, tip))
-            return BaronyBattleFacing.ToDegrees(tip.Facing);
+        // Setup / deploy: facing edits apply immediately to the living token.
+        if (AllowSetupFacing)
+        {
+            if (FacingEditTokenId == token.Id && FacingPreviewDegrees is double setupPreview)
+                return setupPreview;
+            return BaronyBattleFacing.ToDegrees(token.Facing);
+        }
+
+        // Movement planning: the living token keeps its current facing until resolve.
+        // Planned facing is shown on the destination ghost or the in-place facing ghost.
         return BaronyBattleFacing.ToDegrees(token.Facing);
     }
 
@@ -761,6 +839,11 @@
             && PlannedRoutes.TryGetValue(token.Id, out var cells)
             && cells.Count > 1)
             return cells.Select(c => CellCenter(c.X, c.Y, size)).ToList();
+
+        // Baron fog: never fall back to full Path waypoints (would leak destination).
+        if (FogEnemyPlans && token.IsEnemy)
+            return new List<(double cx, double cy)>();
+
         if (token.Path.Count > 0)
             return PathPoints(token);
         return new List<(double cx, double cy)>();
@@ -773,6 +856,17 @@
         var hasChargeSegment = token.ChargeBonus
             || token.Path.Any(w => w.IsCharge)
             || (token.ChargeOriginX is not null && token.ChargeOriginY is not null);
+
+        // Baron fog: PlannedRoutes already carries the short reveal hint (or nothing).
+        if (FogEnemyPlans && token.IsEnemy)
+        {
+            if (PlannedRoutes is not null
+                && PlannedRoutes.TryGetValue(token.Id, out var fogCells)
+                && fogCells.Count > 1)
+                return fogCells.Select(c => CellCenter(c.X, c.Y, size)).ToList();
+            return new List<(double cx, double cy)>();
+        }
+
         if (!hasChargeSegment)
             return RouteCellsFor(token);
 

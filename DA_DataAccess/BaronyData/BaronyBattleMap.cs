@@ -26,5 +26,7 @@ namespace DA_DataAccess.BaronyData
         public string TokensJson { get; set; } = "[]";
         public string TurnStateJson { get; set; } = "{}";
         public string LogJson { get; set; } = "[]";
+        public string TalliesJson { get; set; } = "[]";
+        public string XpSummaryJson { get; set; } = "null";
     }
 }

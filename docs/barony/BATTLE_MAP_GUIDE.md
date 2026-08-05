@@ -15,6 +15,21 @@ Każda runda przebiega w fazach:
 2. **Attack Planning** - wskazanie celu ataku dla oddziałów, które mają kontakt z wrogiem.
 3. **Combat** - rozstrzygnięcie wszystkich wymian obrażeń i ewentualnych ucieczek.
 
+## Kto czym dowodzi
+
+- **Baron** wydaje rozkazy wyłącznie swoim oddziałom — ruch, obrót, szarża i cel ataku. Oddziały
+  przeciwnika może zaznaczyć tylko do podglądu (statystyki, zasięg), ale nie wyda im rozkazu.
+- **MG** steruje wszystkimi oddziałami na mapie, po obu stronach.
+- Gdy w fazie ruchu kolejka przypada na oddział przeciwnika, baron widzi pod mapą pasek
+  „Enemy order: … — waiting for the Game Master”, a przyciski Finish move / Undo oraz ikony obrotu
+  i szarży są ukryte. Aktywny oddział jest podświetlony na mapie, więc widać, na kogo się czeka.
+- **Fog of war planu ruchu wroga:** podczas gdy MG planuje rozkaz, baron nie widzi ghosta ani
+  strzałki. Dopiero po **Finish move** pojawia się skrót: **1 pole** strzałki, gdy oddział idzie
+  1–2 pola, albo **2 pola**, gdy dystans jest większy. Sam obrót w miejscu pokazuje tylko ikonę
+  obrotu na tokenie (z tooltipem), bez zmiany widocznego kierunku oddziału.
+- Zasięg ruchu barona **nie** omija pozycji wrogów ani ich planowanych celów — można planować
+  trasę „w ciemno” na te pola; przy resolve oddział zatrzyma się na kontakcie.
+
 ## Movement
 
 Oddziały planują trasy po kolei, od najniższej inicjatywy, ale **wykonują ruch równocześnie**:
@@ -165,8 +180,27 @@ Zielona odznaka z łukiem i liczbą na żetonie oznacza jednostkę zasięgową (
 - Kara obniża tylko **atak**, więc nie zeruje trafienia — daleki strzał robi się jednak
   wyraźnie słabszy. Journal pokazuje ją jako `[range −N att]`.
 
+## Przebicie pancerza (Pierce)
+
+- `Pierce` to cecha broni, a więc i oddziału: mówi, ile **pancerza celu** atak przecina.
+- Obrażenia liczą się od `Armor − Pierce`, ale nigdy poniżej 0. Wynika z tego, że przebicie
+  **działa tylko przeciw opancerzonym** — wobec celu bez pancerza nie daje nic, a nadmiar
+  przebicia się marnuje.
+- **Sojusznicy** biorą `Pierce` z wyposażonej broni głównej (kusze i młoty bojowe 2–4, miecze 0);
+  jakość broni tego nie podbija.
+- **Wrogowie** — ręczne pole **Pierce** w formularzu MG (domyślnie 0).
+- Liczy się w każdej wymianie: przy ataku, przy obrażeniach obronnych (tam działa `Pierce`
+  broniącego się) i przy darmowym ciosie za ruch w związaniu.
+- Journal pokazuje to jako `[pierce −N arm]`, a karty oddziałów jako `Prc N` (tylko gdy > 0).
+
 ## Attack Planning
 
+- Baron przypisuje cele tylko swoim oddziałom; rozkazy ataku dla wrogów wydaje MG (dotyczy też
+  przycisku **Auto-assign attacks**, który obsługuje wyłącznie oddziały pod kontrolą danej roli).
+- Baron **nie** rozpoczyna walki — po ustawieniu celów klika **I'm ready**. Tylko MG naciska
+  **Begin combat** (widzi też status gotowości barona).
+- Po zakończeniu wszystkich rozkazów ruchu baron czeka na MG: tylko MG uruchamia
+  **Resolve all movement** (Finish move na ostatnim oddziale u barona już nie odpala resolve).
 - Atak wręcz wymaga kontaktu (adjacency); jednostki zasięgowe mogą celować w każdego wroga w zasięgu (podświetlone pola).
 - Dla oddziału po udanej szarży cel ataku jest **zablokowany** po resolve ruchu — nie da się go odwołać ani zmienić w Attack Planning.
 - Po kolizjach i przeliczeniu ruchu cele mogą zostać skorygowane przez system.
@@ -177,6 +211,34 @@ Zielona odznaka z łukiem i liczbą na żetonie oznacza jednostkę zasięgową (
 - Ataki szarży są rozpatrywane **przed** pozostałymi atakami (z pominięciem globalnej inicjatywy).
 - Wymiana wręcz nadal ma kontratak defensywny; **strzał go nie ma**.
 - Jednostki z HP <= 0 uciekają/schodzą zgodnie z logiką bitwy.
+
+## Doświadczenie po bitwie
+
+Po kliknięciu **End battle** każdy oddział barona, który brał udział w bitwie, dostaje podsumowanie XP:
+
+- **+1 XP** za każde pełne 3 punkty zadanych obrażeń.
+- **+1 XP** za każdą rundę, w której był związany walką.
+- **+3 XP** za każdy zniszczony oddział.
+- **−1 XP** za każde pełne 8 punktów otrzymanych obrażeń.
+- **−1 XP** dodatkowo za ucieczkę z pola bitwy.
+
+Wynik trafia do puli `RemainingPd` (tej samej, z której kupujesz atrybuty i skille), ale nigdy nie schodzi poniżej zera.
+
+### Kolejność podsumowania
+
+- Najpierw podsumowanie widzi **MG** i może dodać ręczną korektę XP dla każdego oddziału wraz z notatką.
+- Po zatwierdzeniu przez MG to samo podsumowanie pojawia się jako pop-up u **barona** (tylko do odczytu).
+- Potwierdzenie barona zamyka etap podsumowania dla tej bitwy.
+
+### Co zapisuje się w historii oddziału
+
+Każdy oddział ma własny log (ikona historii na karcie oddziału w Army), gdzie zapisywane są m.in.:
+
+- utworzenie oddziału,
+- zmiany wyposażenia,
+- wpis z podsumowania bitwy (obrażenia, rundy związania, zabicia, ucieczka, XP netto),
+- korekta MG (bonus/kara XP + notatka),
+- aktualizacja puli XP po bitwie.
 
 ## Szybki skrót dla gracza
 

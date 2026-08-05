@@ -977,6 +977,10 @@ namespace DA_Business.Repository.BaronyRepos
                             notes.Add($"{project.Name}: change-equipment notes incomplete — loadout not updated.");
                             return new ProjectApplyResult(notes, Applied: false);
                         }
+                        AddUnitLogEntry(
+                            unit,
+                            kind: "equipment",
+                            text: $"Equipment changed: {loadoutNote}.");
 
                         if (project.UnitId is null or <= 0)
                             project.UnitId = unit.Id;
@@ -3230,6 +3234,10 @@ namespace DA_Business.Repository.BaronyRepos
                 var combatPreview = ComputeUnitCombat(unitDtoPreview);
                 unit.DefenseSkillKey = unitDtoPreview.DefenseSkillKey;
                 unit.CurrentHp = combatPreview.MaxHp;
+                AddUnitLogEntry(
+                    unit,
+                    kind: "created",
+                    text: $"Unit created: {unit.Name} ({recruit.Name}, {training.Name}).");
 
                 ctx.BaronyUnits.Add(unit);
                 await ctx.SaveChangesAsync();
@@ -4889,6 +4897,9 @@ namespace DA_Business.Repository.BaronyRepos
             MaxBaseSkillAtGraduation = e.MaxBaseSkillAtGraduation,
             FreeAttributePoints = e.FreeAttributePoints,
             CurrentHp = e.CurrentHp,
+            CreatedAtUtc = e.CreatedAtUtc,
+            UpdatedAtUtc = e.UpdatedAtUtc,
+            Log = DeUnitLog(e.LogJson),
         };
 
         private static BaronyUnit ToUnitEntity(BaronyUnitDTO d)
@@ -4959,6 +4970,9 @@ namespace DA_Business.Repository.BaronyRepos
             e.MaxBaseSkillAtGraduation = d.MaxBaseSkillAtGraduation;
             e.FreeAttributePoints = Math.Max(0, d.FreeAttributePoints);
             e.CurrentHp = d.CurrentHp;
+            e.CreatedAtUtc = d.CreatedAtUtc;
+            e.UpdatedAtUtc = d.UpdatedAtUtc;
+            e.LogJson = SerUnitLog(d.Log);
         }
 
         private static string? BuildGearDefenseNote(StartUnitTrainingRequest request)
@@ -5304,6 +5318,76 @@ namespace DA_Business.Repository.BaronyRepos
                 // ignore corrupt JSON
             }
             return result;
+        }
+
+        private static string SerUnitLog(List<BaronyUnitLogEntryDTO>? log)
+        {
+            log ??= new();
+            var clean = log
+                .Where(e => e is not null)
+                .Select(e => new BaronyUnitLogEntryDTO
+                {
+                    Id = string.IsNullOrWhiteSpace(e.Id) ? Guid.NewGuid().ToString("N") : e.Id.Trim(),
+                    UtcAt = e.UtcAt == default ? DateTime.UtcNow : e.UtcAt,
+                    Kind = string.IsNullOrWhiteSpace(e.Kind) ? "system" : e.Kind.Trim(),
+                    Text = (e.Text ?? string.Empty).Trim(),
+                    XpDelta = e.XpDelta,
+                    Note = string.IsNullOrWhiteSpace(e.Note) ? null : e.Note.Trim(),
+                })
+                .ToList();
+            if (clean.Count > 200)
+                clean = clean[^200..];
+            return JsonSerializer.Serialize(clean, JsonOptions);
+        }
+
+        private static void AddUnitLogEntry(
+            BaronyUnit unit,
+            string kind,
+            string text,
+            int? xpDelta = null,
+            string? note = null)
+        {
+            var log = DeUnitLog(unit.LogJson);
+            log.Add(new BaronyUnitLogEntryDTO
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                UtcAt = DateTime.UtcNow,
+                Kind = string.IsNullOrWhiteSpace(kind) ? "system" : kind.Trim(),
+                Text = (text ?? string.Empty).Trim(),
+                XpDelta = xpDelta,
+                Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
+            });
+            unit.LogJson = SerUnitLog(log);
+        }
+
+        private static List<BaronyUnitLogEntryDTO> DeUnitLog(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new();
+            try
+            {
+                var list = JsonSerializer.Deserialize<List<BaronyUnitLogEntryDTO>>(json, JsonOptions) ?? new();
+                var normalized = list
+                    .Where(e => e is not null)
+                    .Select(e => new BaronyUnitLogEntryDTO
+                    {
+                        Id = string.IsNullOrWhiteSpace(e.Id) ? Guid.NewGuid().ToString("N") : e.Id.Trim(),
+                        UtcAt = e.UtcAt,
+                        Kind = string.IsNullOrWhiteSpace(e.Kind) ? "system" : e.Kind.Trim(),
+                        Text = e.Text ?? string.Empty,
+                        XpDelta = e.XpDelta,
+                        Note = e.Note,
+                    })
+                    .OrderBy(e => e.UtcAt)
+                    .ToList();
+                if (normalized.Count > 200)
+                    normalized = normalized[^200..];
+                return normalized;
+            }
+            catch
+            {
+                return new();
+            }
         }
 
         internal static UnitCombatTotals ComputeUnitCombat(BaronyUnitDTO dto) =>

@@ -41,6 +41,47 @@ namespace DA_Models.BaronyModels
         public List<BaronyBattleTokenDTO> Tokens { get; set; } = new();
         public BaronyBattleTurnStateDTO TurnState { get; set; } = new();
         public List<BaronyBattleLogEntryDTO> Log { get; set; } = new();
+        public List<BaronyBattleXpTallyDTO> Tallies { get; set; } = new();
+        public BaronyBattleXpSummaryDTO? XpSummary { get; set; }
+    }
+
+    public class BaronyBattleXpTallyDTO
+    {
+        public int UnitId { get; set; }
+        public string UnitName { get; set; } = string.Empty;
+        public int DamageDealt { get; set; }
+        public int DamageTaken { get; set; }
+        public int Kills { get; set; }
+        public bool Fled { get; set; }
+        public List<int> RoundsEngaged { get; set; } = new();
+    }
+
+    public class BaronyBattleXpSummaryDTO
+    {
+        public string Id { get; set; } = string.Empty;
+        public DateTime Utc { get; set; }
+        public bool AcknowledgedByBaron { get; set; }
+        public List<BaronyBattleXpSummaryEntryDTO> Entries { get; set; } = new();
+    }
+
+    public class BaronyBattleXpSummaryEntryDTO
+    {
+        public int UnitId { get; set; }
+        public string UnitName { get; set; } = string.Empty;
+        public int DamageDealt { get; set; }
+        public int DamageTaken { get; set; }
+        public int EngagedRounds { get; set; }
+        public int Kills { get; set; }
+        public bool Fled { get; set; }
+        public int XpFromDamageDealt { get; set; }
+        public int XpFromEngagedRounds { get; set; }
+        public int XpFromKills { get; set; }
+        public int XpLossFromDamageTaken { get; set; }
+        public int XpLossFromFlee { get; set; }
+        public int XpNetBase { get; set; }
+        public int MgBonusXp { get; set; }
+        public string MgNote { get; set; } = string.Empty;
+        public int XpNetFinal => XpNetBase + MgBonusXp;
     }
 
     public class BaronyBattleCellDTO
@@ -100,6 +141,12 @@ namespace DA_Models.BaronyModels
         /// 0 = melee only. Allies copy it from their primary weapon; MG enemies set it by hand.
         /// </summary>
         public int Range { get; set; }
+
+        /// <summary>
+        /// Armor this unit's attacks cut through, subtracted from the target's Armor (never below 0).
+        /// 0 = no pierce. Allies copy it from their primary weapon; MG enemies set it by hand.
+        /// </summary>
+        public int Pierce { get; set; }
 
         /// <summary><see cref="BaronyBattleFacing"/> — current front (0 = North).</summary>
         public int Facing { get; set; } = BaronyBattleFacing.North;
@@ -177,6 +224,10 @@ namespace DA_Models.BaronyModels
         /// <summary><see cref="BaronyBattleSubPhases"/> while battle is running.</summary>
         public string SubPhase { get; set; } = BaronyBattleSubPhases.Movement;
         public int Round { get; set; } = 1;
+        /// <summary>
+        /// Baron confirms their attack orders are done; only the Game Master advances the phase.
+        /// </summary>
+        public bool BaronPhaseReady { get; set; }
     }
 
     public class BaronyBattleLogEntryDTO

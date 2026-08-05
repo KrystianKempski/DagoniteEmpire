@@ -74,6 +74,7 @@ namespace DA_DataAccess.BaronyData
         public int FreeAttributePoints { get; set; }
 
         public int CurrentHp { get; set; }
+        public string LogJson { get; set; } = "[]";
 
         public DateTime CreatedAtUtc { get; set; }
         public DateTime UpdatedAtUtc { get; set; }

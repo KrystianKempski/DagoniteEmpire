@@ -1,5 +1,18 @@
+using System;
+using System.Collections.Generic;
+
 namespace DA_Models.BaronyModels
 {
+    public class BaronyUnitLogEntryDTO
+    {
+        public string Id { get; set; } = string.Empty;
+        public DateTime UtcAt { get; set; }
+        public string Kind { get; set; } = "system";
+        public string Text { get; set; } = string.Empty;
+        public int? XpDelta { get; set; }
+        public string? Note { get; set; }
+    }
+
     public class BaronyUnitSkillLevels
     {
         public Dictionary<string, int> Base { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -74,6 +87,9 @@ namespace DA_Models.BaronyModels
         public int MaxBaseSkillAtGraduation { get; set; }
         public int FreeAttributePoints { get; set; }
         public int CurrentHp { get; set; }
+        public DateTime CreatedAtUtc { get; set; }
+        public DateTime UpdatedAtUtc { get; set; }
+        public List<BaronyUnitLogEntryDTO> Log { get; set; } = new();
 
         public int? TrainingProjectId { get; set; }
         public int? TrainingTurnsRemaining { get; set; }

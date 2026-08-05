@@ -1,0 +1,74 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Models.BaronyModels
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Unit history — @Unit.Name</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog unit-log-dialog">
+            @if (Entries.Count == 0)
+            {
+                <MudText Typo="Typo.body2">No history entries yet.</MudText>
+            }
+            else
+            {
+                <div class="unit-log-dialog__list">
+                    @foreach (var entry in Entries)
+                    {
+                        <div class="unit-log-dialog__item">
+                            <div class="unit-log-dialog__row">
+                                <span class="unit-log-dialog__time">@entry.UtcAt.ToString("yyyy-MM-dd HH:mm")</span>
+                                <span class="unit-log-dialog__kind">@entry.Kind</span>
+                                @if (entry.XpDelta is int xpDelta)
+                                {
+                                    <span class="unit-log-dialog__xp">XP @xpDelta.ToString("+#;-#;0")</span>
+                                }
+                            </div>
+                            <div class="unit-log-dialog__text">@entry.Text</div>
+                            @if (!string.IsNullOrWhiteSpace(entry.Note))
+                            {
+                                <div class="unit-log-dialog__note">Note: @entry.Note</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Class="baron-influence-save-btn"
+                   Variant="Variant.Filled"
+                   OnClick="Close">
+            Close
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public BaronyUnitDTO Unit { get; set; } = new();
+
+    private List<BaronyUnitLogEntryDTO> Entries { get; set; } = new();
+
+    protected override void OnParametersSet()
+    {
+        Entries = (Unit.Log ?? new())
+            .OrderByDescending(e => e.UtcAt)
+            .ToList();
+        if (Entries.Count == 0 && Unit.CreatedAtUtc != default)
+        {
+            Entries.Add(new BaronyUnitLogEntryDTO
+            {
+                Id = "synthetic-created",
+                UtcAt = Unit.CreatedAtUtc,
+                Kind = "created",
+                Text = $"Unit created: {Unit.Name}.",
+            });
+        }
+    }
+
+    private void Close() => MudDialog.Close();
+}

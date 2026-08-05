@@ -7,6 +7,7 @@
 @using DA_Common.Barony.Battle
 @using DA_Models.BaronyModels
 @using DA_Models.ChatModels
+@using DagoniteEmpire.Pages.Barony.Components
 @using Microsoft.AspNetCore.SignalR.Client
 @inject IBaronyBattleMapRepository _battleMapRepo
 @inject IDialogService _dialogService
@@ -30,7 +31,7 @@ else if (Map is null)
 else if (!CanManageAsMg && !Map.IsActive)
 {
     <MudAlert Severity="Severity.Info" Class="my-2">
-        Battle Map is not active. The Game Master must enable it.
+        Battle Map is not visible yet. Wait for the Game Master to show the map so you can deploy your units.
     </MudAlert>
 }
 else
@@ -61,17 +62,6 @@ else
                     <span class="bbm-turn-chip">Round @Map.TurnState.Round — combat</span>
                 }
             </Summary>
-            <Actions>
-                @if (CanManageAsMg)
-                {
-                    <MudSwitch T="bool"
-                               Value="Map.IsActive"
-                               ValueChanged="OnActiveChanged"
-                               Color="Color.Default"
-                               Label="Active"
-                               Class="barony-page-header__sections-switch" />
-                }
-            </Actions>
         </BaronyPageHeader>
 
         <div class="bbm-layout">
@@ -167,11 +157,13 @@ else
                                      AnimatingTokens="@_animFrames"
                                      AnimTransitions="@_animTransitionsOn"
                                      PlannedRoutes="@_plannedRoutes"
+                                     FogEnemyPlans="@FogEnemyMovementPlans"
                                      CombatAnimActive="@_combatAnimActive"
                                      CombatFocusAttackerId="@_combatFocusAttackerId"
                                      CombatFx="@_combatFx"
                                      ShowDeployZone="@IsSetupPhase"
                                      AllowSetupFacing="@IsSetupPhase"
+                                     AllowActiveOrders="@(ActiveToken is null || CanControlToken(ActiveToken))"
                                      ShowThreatRadius="@_showThreatRadius"
                                      ThreatFactor="@TokenThreatFactor"
                                      FacingEditTokenId="@_facingEditTokenId"
@@ -185,9 +177,59 @@ else
                                      OnFacingConfirm="ConfirmFacingEdit"
                                      OnChargeConfirm="ConfirmChargeEdit" />
 
-                @if (ShowMovementControls || (CanManageAsMg && IsMovementPhase && !_isResolvingMovement && !_isResolvingCombat) || (CanManageAsMg && IsCombatPhase) || (IsAttackPlanningPhase && (CanEdit || CanManageAsMg) && !_isResolvingCombat))
+                @if (WaitingForOpponentOrder
+                     || WaitingForMovementResolve
+                     || (IsAttackPlanningPhase && !_isResolvingCombat && CanManageAsMg)
+                     || (IsAttackPlanningPhase && !_isResolvingCombat && CanEdit && Map.TurnState.BaronPhaseReady))
+                {
+                    <div class="bbm-map-overlay-status">
+                        @if (WaitingForOpponentOrder)
+                        {
+                            <span class="bbm-map-wait">
+                                Enemy order: @ActiveToken!.Label — waiting for the Game Master.
+                            </span>
+                        }
+                        else if (WaitingForMovementResolve)
+                        {
+                            <span class="bbm-map-wait">
+                                All movement orders set — waiting for the Game Master to resolve.
+                            </span>
+                        }
+                        else if (IsAttackPlanningPhase && CanManageAsMg)
+                        {
+                            @if (Map.TurnState.BaronPhaseReady)
+                            {
+                                <span class="bbm-map-ready">Baron is ready</span>
+                            }
+                            else
+                            {
+                                <span class="bbm-map-wait">Waiting for baron ready</span>
+                            }
+                        }
+                        else if (IsAttackPlanningPhase && CanEdit && Map.TurnState.BaronPhaseReady)
+                        {
+                            <span class="bbm-map-ready">
+                                Ready — waiting for the Game Master to begin combat.
+                            </span>
+                        }
+                    </div>
+                }
+
+                @if (ShowMovementControls
+                     || (CanManageAsMg && IsSetupPhase)
+                     || (CanManageAsMg && IsMovementPhase && !_isResolvingMovement && !_isResolvingCombat)
+                     || (CanManageAsMg && IsCombatPhase)
+                     || (IsAttackPlanningPhase && (CanEdit || CanManageAsMg) && !_isResolvingCombat))
                 {
                     <div class="bbm-map-overlay-actions">
+                        @if (CanManageAsMg && IsSetupPhase)
+                        {
+                            <button type="button"
+                                    class="bbm-map-btn bbm-map-btn--solid"
+                                    @onclick="BeginBattle">
+                                Begin battle
+                            </button>
+                        }
                         @if (ShowMovementControls)
                         {
                             <button type="button"
@@ -208,7 +250,7 @@ else
                         @if (CanManageAsMg && IsMovementPhase)
                         {
                             <button type="button"
-                                    class="bbm-map-btn bbm-map-btn--ghost"
+                                    class="bbm-map-btn @(AllMovementOrdersFinished ? "bbm-map-btn--solid" : "bbm-map-btn--ghost")"
                                     @onclick="ResolveMovementPhase"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
                                 Resolve all movement
@@ -226,26 +268,38 @@ else
                         @if (CanManageAsMg && IsBattlePhase)
                         {
                             <button type="button"
-                                    class="bbm-map-btn bbm-map-btn--end-battle"
+                                    class="bbm-map-btn bbm-map-btn--end-battle bbm-map-btn--compact"
                                     @onclick="EndBattle"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
                                 End battle
                             </button>
                         }
-                        @if (IsAttackPlanningPhase && (CanEdit || CanManageAsMg))
+                        @if (IsAttackPlanningPhase && !_isResolvingCombat)
                         {
-                            <button type="button"
-                                    class="bbm-map-btn bbm-map-btn--ghost"
-                                    @onclick="AutoAssignAttackTargets"
-                                    disabled="@_isResolvingCombat">
-                                Auto-assign attacks
-                            </button>
-                            <button type="button"
-                                    class="bbm-map-btn bbm-map-btn--solid"
-                                    @onclick="AdvanceToCombat"
-                                    disabled="@_isResolvingCombat">
-                                Begin combat
-                            </button>
+                            @if (CanEdit || CanManageAsMg)
+                            {
+                                <button type="button"
+                                        class="bbm-map-btn bbm-map-btn--ghost bbm-map-btn--compact"
+                                        @onclick="AutoAssignAttackTargets">
+                                    Auto-assign attacks
+                                </button>
+                            }
+                            @if (CanManageAsMg)
+                            {
+                                <button type="button"
+                                        class="bbm-map-btn bbm-map-btn--solid bbm-map-btn--compact"
+                                        @onclick="AdvanceToCombat">
+                                    Begin combat
+                                </button>
+                            }
+                            else if (CanEdit && !Map.TurnState.BaronPhaseReady)
+                            {
+                                <button type="button"
+                                        class="bbm-map-btn bbm-map-btn--solid bbm-map-btn--compact"
+                                        @onclick="MarkBaronPhaseReady">
+                                    I'm ready
+                                </button>
+                            }
                         }
                     </div>
                 }
@@ -349,7 +403,10 @@ else
                                     </div>
                                 </div>
                                 <div class="bbm-force-card__stats">
-                                    Atk @stats.Attack · Def @stats.Defense · Dmg @stats.Damage · Arm @stats.Armor · Disc @unit.Discipline · Mv @stats.Move · @unit.TroopCount men
+                                    @{
+                                        var unitPierce = UnitWeaponCatalog.Find(unit.Weapon1Key)?.Pierce ?? 0;
+                                    }
+                                    Atk @stats.Attack · Def @stats.Defense · Dmg @stats.Damage · Arm @stats.Armor@(unitPierce > 0 ? $" · Prc {unitPierce}" : "") · Disc @unit.Discipline · Mv @stats.Move · @unit.TroopCount men
                                 </div>
                             </div>
                         }
@@ -404,7 +461,7 @@ else
                                     }
                                 </div>
                                 <div class="bbm-force-card__stats">
-                                    Atk @enemy.Attack · Def @enemy.Defense · Dmg @enemy.Damage · Arm @enemy.Armor · Disc @enemy.Discipline · Mv @enemy.Move · @enemy.TroopCount men
+                                    Atk @enemy.Attack · Def @enemy.Defense · Dmg @enemy.Damage · Arm @enemy.Armor@(enemy.Pierce > 0 ? $" · Prc {enemy.Pierce}" : "") · Disc @enemy.Discipline · Mv @enemy.Move · @enemy.TroopCount men
                                 </div>
                             </div>
                         }
@@ -459,6 +516,7 @@ else
                                     <label>Men <input type="number" @bind="_enemyDraft.TroopCount" /></label>
                                     <label>Move <input type="number" @bind="_enemyDraft.Move" /></label>
                                     <label>Range <input type="number" @bind="_enemyDraft.Range" title="0 = melee only; >0 = ranged unit" /></label>
+                                    <label>Pierce <input type="number" @bind="_enemyDraft.Pierce" title="Armor cut through by this unit's attacks; 0 = none" /></label>
                                 </div>
                             </div>
                         }
@@ -474,26 +532,28 @@ else
                     {
                         <div class="bbm-actions">
                             <div class="bbm-tool-row">
-                                @if (IsSetupPhase)
+                                @if (Map.IsActive)
                                 {
-                                    <button type="button" class="bbm-map-btn bbm-map-btn--solid" @onclick="BeginBattle">Begin battle</button>
+                                    <button type="button"
+                                            class="bbm-map-btn bbm-map-btn--ghost"
+                                            @onclick="() => OnActiveChanged(false)">
+                                        Hide map
+                                    </button>
                                 }
                                 else
                                 {
                                     <button type="button"
-                                            class="bbm-map-btn bbm-map-btn--end-battle"
-                                            @onclick="EndBattle"
-                                            disabled="@_isResolvingMovement">
-                                        End battle
+                                            class="bbm-map-btn bbm-map-btn--solid"
+                                            @onclick="() => OnActiveChanged(true)">
+                                        Show map
                                     </button>
                                 }
                             </div>
-                            @if (IsBattlePhase)
-                            {
-                                <p class="bbm-hint" style="margin-top:0.35rem;">
-                                    Ends the battle immediately, writes a summary, and syncs ally HP to the Army tab.
-                                </p>
-                            }
+                            <p class="bbm-hint" style="margin-top:0.35rem;">
+                                @(Map.IsActive
+                                    ? "The baron can see this map and deploy units into the green zone."
+                                    : "Show the map to the baron so they can deploy units before battle starts.")
+                            </p>
                         </div>
                     }
                     else
@@ -524,8 +584,15 @@ else
                                     <span class="bbm-force-meta">(@tok.InitiativeTotal)</span>
                                     @if (IsMovementPhase && tok.HasPath)
                                     {
-                                        var end = tok.PlannedEnd();
-                                        <span class="bbm-force-meta"> → @FormatCell(end.X, end.Y) (@tok.Path.Count step@(tok.Path.Count == 1 ? "" : "s"))</span>
+                                        if (!FogEnemyMovementPlans || !tok.IsEnemy)
+                                        {
+                                            var end = tok.PlannedEnd();
+                                            <span class="bbm-force-meta"> → @FormatCell(end.X, end.Y) (@tok.Path.Count step@(tok.Path.Count == 1 ? "" : "s"))</span>
+                                        }
+                                        else if (IsEnemyPlanRevealedToBaron(tok))
+                                        {
+                                            <span class="bbm-force-meta">@(IsFacingOnlyPlan(tok) ? " ↻ turning" : " → orders given")</span>
+                                        }
                                     }
                                 </li>
                             }
@@ -588,6 +655,7 @@ else
     private HashSet<(int X, int Y)> _chargePreviewCells = new();
     private bool _battleLogCollapsed;
     private bool _showThreatRadius;
+    private string? _shownXpSummaryId;
     /// <summary>Ally unitId → HP at Begin battle.</summary>
     private readonly Dictionary<int, int> _allyStartHp = new();
     /// <summary>Ally unitId → final HP (0 if fled).</summary>
@@ -651,14 +719,24 @@ else
         IsSetupPhase
             ? "Deploy Active units into the green deployment zone, then wait for the Game Master to begin battle."
             : IsMovementPhase
-                ? "Use Undo / Finish move at the bottom of the map. While testing, you may also move enemy units on their order."
+                ? WaitingForMovementResolve
+                    ? "All movement orders are set — wait for the Game Master to resolve movement."
+                    : WaitingForOpponentOrder
+                        ? $"Enemy order ({ActiveToken!.Label}) — wait for the Game Master to move it. After they finish, you will only see a short direction hint."
+                        : "Your unit's order — plan its path and use Undo / Finish move at the bottom of the map."
                 : IsAttackPlanningPhase
-                    ? "Select your unit to highlight adjacent enemies. Click a highlighted enemy to assign an attack target. Click again to clear. When ready, press Begin Combat."
+                    ? Map!.TurnState.BaronPhaseReady
+                        ? "You are ready — wait for the Game Master to begin combat."
+                        : "Assign attack targets for your units, then press I'm ready. Only the Game Master starts combat."
                     : "Combat phase — wait for the Game Master to end combat and start the next round.";
 
     private string? ActiveTokenId =>
-        IsMovementPhase && Map is not null && Map.TurnState.InitiativeOrder.Count > 0
-            ? Map.TurnState.InitiativeOrder[Math.Clamp(Map.TurnState.CurrentIndex, 0, Map.TurnState.InitiativeOrder.Count - 1)]
+        IsMovementPhase
+        && Map is not null
+        && Map.TurnState.InitiativeOrder.Count > 0
+        && Map.TurnState.CurrentIndex >= 0
+        && Map.TurnState.CurrentIndex < Map.TurnState.InitiativeOrder.Count
+            ? Map.TurnState.InitiativeOrder[Map.TurnState.CurrentIndex]
             : null;
 
     private BaronyBattleTokenDTO? ActiveToken =>
@@ -671,6 +749,36 @@ else
         && !_isResolvingMovement
         && ActiveToken is not null
         && CanControlToken(ActiveToken);
+
+    /// <summary>Movement phase, but the unit on the clock is not ours to order.</summary>
+    private bool WaitingForOpponentOrder =>
+        IsMovementPhase
+        && !_isResolvingMovement
+        && !_isResolvingCombat
+        && ActiveToken is not null
+        && !CanControlToken(ActiveToken);
+
+    /// <summary>Every unit has Finish move'd; Baron waits for MG to resolve.</summary>
+    private bool AllMovementOrdersFinished =>
+        IsMovementPhase
+        && Map is not null
+        && Map.TurnState.InitiativeOrder.Count > 0
+        && Map.TurnState.CurrentIndex >= Map.TurnState.InitiativeOrder.Count;
+
+    private bool WaitingForMovementResolve =>
+        AllMovementOrdersFinished
+        && !CanManageAsMg
+        && !_isResolvingMovement
+        && !_isResolvingCombat;
+
+    /// <summary>
+    /// Baron fog-of-war for enemy orders: hide unfinished plans, and after Finish move
+    /// reveal only a short direction hint (or a facing-only badge) instead of the full ghost.
+    /// </summary>
+    private bool FogEnemyMovementPlans =>
+        !CanManageAsMg
+        && IsMovementPhase
+        && !_isResolvingMovement;
 
     private bool CanUndoMove =>
         ShowMovementControls
@@ -704,6 +812,7 @@ else
                     _allyIconKeys[uid] = t.IconKey!;
             }
             RefreshRange();
+            await MaybeShowBaronXpSummaryAsync();
         }
         catch (Exception ex)
         {
@@ -747,6 +856,7 @@ else
                 else if (_selectedTokenId is not null && Map.Tokens.All(t => t.Id != _selectedTokenId))
                     _selectedTokenId = null;
                 RefreshRange();
+                await MaybeShowBaronXpSummaryAsync();
                 StateHasChanged();
             }
             catch (Exception ex)
@@ -761,7 +871,9 @@ else
         if (Map is null || !CanManageAsMg)
             return;
         Map.IsActive = value;
-        await SaveAsync(systemMessage: value ? "Battle Map activated." : "Battle Map deactivated (state kept).");
+        await SaveAsync(systemMessage: value
+            ? "Battle Map shown to the baron — deployment is open."
+            : "Battle Map hidden from the baron (state kept).");
     }
 
     private void SetTool(string tool)
@@ -986,6 +1098,7 @@ else
                             attacker.ChargeBlind = false;
                             attacker.ChargeTargetId = null;
                         }
+                        ClearBaronPhaseReadyIfPlayer();
                         var msg = attacker.AttackTargetId is null
                             ? $"{attacker.Label} cleared attack order."
                             : IsShotAt(attacker, planClicked)
@@ -1001,8 +1114,7 @@ else
             // Otherwise: select / deselect the clicked token
             if (planClicked is not null)
             {
-                bool canSelect = CanManageAsMg || (!planClicked.IsEnemy && CanEdit);
-                if (canSelect)
+                if (CanSelectToken(planClicked))
                     _selectedTokenId = planClicked.Id == _selectedTokenId ? null : planClicked.Id;
             }
             else
@@ -1089,6 +1201,7 @@ else
             Move = Math.Max(0, stats.Move),
             RemainingMove = Math.Max(0, stats.Move),
             Range = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Range ?? 0),
+            Pierce = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Pierce ?? 0),
         };
         Map.Tokens.Add(token);
         _deployUnitId = null;
@@ -1232,6 +1345,7 @@ else
         token.Move = move;
         token.RemainingMove = Math.Clamp(token.RemainingMove, 0, move);
         token.Range = Math.Max(0, _enemyDraft.Range);
+        token.Pierce = Math.Max(0, _enemyDraft.Pierce);
 
         var label = token.Label;
         CancelEditEnemy();
@@ -1268,6 +1382,7 @@ else
             Move = Math.Max(0, _enemyDraft.Move),
             RemainingMove = Math.Max(0, _enemyDraft.Move),
             Range = Math.Max(0, _enemyDraft.Range),
+            Pierce = Math.Max(0, _enemyDraft.Pierce),
             Facing = BaronyBattleFacing.South,
         };
         Map.Tokens.Add(token);
@@ -1324,7 +1439,9 @@ else
 
         if (!CanControlToken(token))
         {
-            _snackBar.Add("You cannot move this token.", Severity.Warning);
+            _snackBar.Add(token.IsEnemy
+                ? "Enemy units are moved by the Game Master."
+                : "You cannot move this token.", Severity.Warning);
             return false;
         }
 
@@ -1965,15 +2082,15 @@ else
     {
         if (CanManageAsMg)
             return true;
-        // While the battle map is still in development, Baron may also control enemy orders.
-        return CanEdit;
+        // Baron gives orders only to their own units — enemy orders belong to the Game Master.
+        return CanEdit && !token.IsEnemy;
     }
 
     private bool CanSelectToken(BaronyBattleTokenDTO token)
     {
         if (CanManageAsMg)
             return true;
-        // Setup: Baron only deploys allies. Battle: may select either side while testing.
+        // Setup: Baron only deploys allies. Battle: enemies may be selected read-only for inspection.
         if (IsSetupPhase)
             return !token.IsEnemy;
         return CanEdit;
@@ -2224,8 +2341,16 @@ else
             return;
         }
 
+        ClearBaronPhaseReadyIfPlayer();
         await SaveAsync(systemMessage: $"Auto-assign attacks: {assigned} assigned, {cleared} cleared.");
         RefreshRange();
+    }
+
+    private void ClearBaronPhaseReadyIfPlayer()
+    {
+        if (Map is null || CanManageAsMg || !Map.TurnState.BaronPhaseReady)
+            return;
+        Map.TurnState.BaronPhaseReady = false;
     }
 
     /// <summary>
@@ -2387,18 +2512,21 @@ else
             var defenseRoll = defender.Defense + defenseDie;
             var ratio = Math.Max(1, attackRoll) / (double)Math.Max(1, defenseRoll);
             var front = GetFrontBreakdown(attacker, defender, forceFrontAim: isShot);
-            var baseDamage = damageStat + damageDie - defender.Armor;
+            var defenderArmor = UnitCombatFormulas.EffectiveArmor(defender.Armor, attacker.Pierce);
+            var baseDamage = damageStat + damageDie - defenderArmor;
             var rawDamage = baseDamage * ratio * front.Multiplier;
             var dealt = Math.Max(1, (int)Math.Round(rawDamage, MidpointRounding.AwayFromZero));
             defHp = Math.Max(0, defHp - dealt);
             var modifierNote = chargeBonus ? " [charge +2/+1]" : "";
             if (rangePenalty > 0)
                 modifierNote += $" [range −{rangePenalty} att]";
+            if (defender.Armor > defenderArmor)
+                modifierNote += $" [pierce −{defender.Armor - defenderArmor} arm]";
             var verb = isShot ? "shoots" : "->";
             notes.Add(
                 $"{attacker.Label} {verb} {defender.Label}" +
                 (isShot ? $" at {BattleMovementRules.SpentMovePoints(shotHalf)} tiles" : "") +
-                $": (Dmg+k4−Arm={damageStat}+{damageDie}−{defender.Armor}={baseDamage}) " +
+                $": (Dmg+k4−Arm={damageStat}+{damageDie}−{defenderArmor}={baseDamage}) " +
                 $"× ({attackStat}+k6={attackRoll})/({defender.Defense}+k6={defenseRoll}) " +
                 $"×{FormatFrontMultiplier(front.Multiplier)} ({front.AimLabel} Vs {front.ExposureLabel}) => {dealt} dmg.{modifierNote}" +
                 (isShot ? " (no defensive return)" : ""));
@@ -2414,15 +2542,17 @@ else
                 var atkDefenseRoll = attacker.Defense + atkDefDie;
                 var defRatio = defDefenseRoll / (double)Math.Max(1, atkDefenseRoll);
                 var defFront = GetFrontBreakdown(defender, attacker);
-                var defBaseDamage = defender.Damage + defDamageDie - attacker.Armor;
+                var attackerArmor = UnitCombatFormulas.EffectiveArmor(attacker.Armor, defender.Pierce);
+                var defBaseDamage = defender.Damage + defDamageDie - attackerArmor;
                 var defRaw = defBaseDamage * defRatio * defFront.Multiplier;
                 defDealt = Math.Max(1, (int)Math.Round(defRaw, MidpointRounding.AwayFromZero));
                 atkHp = Math.Max(0, atkHp - defDealt);
                 notes.Add(
                     $"{defender.Label} -> {attacker.Label} (defensive): " +
-                    $"(Dmg+k4−Arm={defender.Damage}+{defDamageDie}−{attacker.Armor}={defBaseDamage}) " +
+                    $"(Dmg+k4−Arm={defender.Damage}+{defDamageDie}−{attackerArmor}={defBaseDamage}) " +
                     $"× ({defender.Defense}+k6={defDefenseRoll})/({attacker.Defense}+k6={atkDefenseRoll}) " +
-                    $"×{FormatFrontMultiplier(defFront.Multiplier)} ({defFront.AimLabel} Vs {defFront.ExposureLabel}) => {defDealt} dmg.");
+                    $"×{FormatFrontMultiplier(defFront.Multiplier)} ({defFront.AimLabel} Vs {defFront.ExposureLabel}) => {defDealt} dmg." +
+                    (attacker.Armor > attackerArmor ? $" [pierce −{attacker.Armor - attackerArmor} arm]" : ""));
                 notes.Add($"{attacker.Label} takes {defDealt} defensive damage (HP: {atkHp}/{attacker.MaxHp}).");
             }
 
@@ -2494,6 +2624,9 @@ else
                 // 2) Floating damage numbers + apply HP (bars update)
                 defender.Hp = Math.Max(0, defender.Hp - plan.Dealt);
                 attacker.Hp = Math.Max(0, attacker.Hp - plan.DefDealt);
+                TrackDamage(attacker, defender, plan.Dealt);
+                if (plan.DefDealt > 0)
+                    TrackDamage(defender, attacker, plan.DefDealt);
                 RecordAllyOutcome(defender, defender.Hp);
                 RecordAllyOutcome(attacker, attacker.Hp);
 
@@ -2516,11 +2649,13 @@ else
                 var fledThisExchange = new List<BaronyBattleTokenDTO>();
                 if (plan.DefenderFlees && Map.Tokens.Any(t => t.Id == plan.DefenderId))
                 {
+                    TrackKill(attacker, defender);
                     fledThisExchange.Add(defender);
                     AppendLocalLog(string.Empty, "combat", $"{defender.Label} flees the battlefield.");
                 }
                 if (plan.AttackerFlees && Map.Tokens.Any(t => t.Id == plan.AttackerId))
                 {
+                    TrackKill(defender, attacker);
                     fledThisExchange.Add(attacker);
                     AppendLocalLog(string.Empty, "combat", $"{attacker.Label} flees the battlefield.");
                 }
@@ -2610,6 +2745,7 @@ else
             token.EngagedEnemyIds.Clear();
         _tool = "token";
         SnapshotAllyStartHp();
+        ResetBattleTallies();
 
         var lines = Map.Tokens
             .OrderBy(t => t.InitiativeTotal)
@@ -2635,6 +2771,85 @@ else
         }
     }
 
+    private void ResetBattleTallies()
+    {
+        if (Map is null)
+            return;
+        Map.Tallies.Clear();
+        Map.XpSummary = null;
+        foreach (var token in Map.Tokens.Where(t => !t.IsEnemy && t.UnitId is int))
+        {
+            Map.Tallies.Add(new BaronyBattleXpTallyDTO
+            {
+                UnitId = token.UnitId!.Value,
+                UnitName = token.Label,
+            });
+        }
+    }
+
+    private BaronyBattleXpTallyDTO? GetOrAddTally(BaronyBattleTokenDTO token)
+    {
+        if (Map is null || token.IsEnemy || token.UnitId is not int uid)
+            return null;
+        var tally = Map.Tallies.FirstOrDefault(t => t.UnitId == uid);
+        if (tally is null)
+        {
+            tally = new BaronyBattleXpTallyDTO
+            {
+                UnitId = uid,
+                UnitName = token.Label,
+            };
+            Map.Tallies.Add(tally);
+        }
+        if (!string.IsNullOrWhiteSpace(token.Label))
+            tally.UnitName = token.Label;
+        return tally;
+    }
+
+    private void TrackDamage(BaronyBattleTokenDTO attacker, BaronyBattleTokenDTO defender, int dealt)
+    {
+        if (dealt <= 0)
+            return;
+        var attackerTally = GetOrAddTally(attacker);
+        if (attackerTally is not null)
+            attackerTally.DamageDealt += dealt;
+        var defenderTally = GetOrAddTally(defender);
+        if (defenderTally is not null)
+            defenderTally.DamageTaken += dealt;
+    }
+
+    private void TrackKill(BaronyBattleTokenDTO killer, BaronyBattleTokenDTO victim)
+    {
+        if (victim.Hp > 0)
+            return;
+        var killerTally = GetOrAddTally(killer);
+        if (killerTally is not null)
+            killerTally.Kills += 1;
+    }
+
+    private void TrackFled(BaronyBattleTokenDTO token)
+    {
+        var tally = GetOrAddTally(token);
+        if (tally is not null)
+            tally.Fled = true;
+    }
+
+    private void TrackEngagedRound(int round)
+    {
+        if (Map is null || round <= 0)
+            return;
+        foreach (var token in Map.Tokens.Where(t => !t.IsEnemy && t.UnitId is int))
+        {
+            if (token.EngagedEnemyIds.Count == 0)
+                continue;
+            var tally = GetOrAddTally(token);
+            if (tally is null)
+                continue;
+            if (!tally.RoundsEngaged.Contains(round))
+                tally.RoundsEngaged.Add(round);
+        }
+    }
+
     private void RecordAllyOutcome(BaronyBattleTokenDTO token, int? fledHp = null)
     {
         if (token.IsEnemy || token.UnitId is not int uid)
@@ -2648,6 +2863,7 @@ else
     private async Task MarkAllyFledAsync(BaronyBattleTokenDTO fled)
     {
         RecordAllyOutcome(fled, fledHp: 0);
+        TrackFled(fled);
         if (fled.IsEnemy || fled.UnitId is not int uid)
             return;
 
@@ -2680,6 +2896,165 @@ else
             Logger.LogError(ex, "Failed to mark fled unit {UnitId} as 0 HP for barony {BaronyId}", uid, BaronyId);
             _snackBar.Add($"Failed to update Army HP for {fled.Label}.", Severity.Error);
         }
+    }
+
+    private BaronyBattleXpSummaryDTO BuildXpSummaryFromTallies()
+    {
+        var summary = new BaronyBattleXpSummaryDTO
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Utc = DateTime.UtcNow,
+            AcknowledgedByBaron = false,
+            Entries = new(),
+        };
+
+        if (Map is null)
+            return summary;
+
+        foreach (var tally in Map.Tallies
+                     .Where(t => t.UnitId > 0)
+                     .OrderBy(t => t.UnitName))
+        {
+            var xp = UnitExperienceRules.ComputeBattleXp(
+                damageDealt: tally.DamageDealt,
+                engagedRounds: tally.RoundsEngaged.Count,
+                kills: tally.Kills,
+                damageTaken: tally.DamageTaken,
+                fled: tally.Fled);
+
+            summary.Entries.Add(new BaronyBattleXpSummaryEntryDTO
+            {
+                UnitId = tally.UnitId,
+                UnitName = tally.UnitName,
+                DamageDealt = tally.DamageDealt,
+                DamageTaken = tally.DamageTaken,
+                EngagedRounds = tally.RoundsEngaged.Count,
+                Kills = tally.Kills,
+                Fled = tally.Fled,
+                XpFromDamageDealt = xp.FromDamageDealt,
+                XpFromEngagedRounds = xp.FromEngagedRounds,
+                XpFromKills = xp.FromKills,
+                XpLossFromDamageTaken = xp.FromDamageTakenLoss,
+                XpLossFromFlee = xp.FromFleeLoss,
+                XpNetBase = xp.Net,
+            });
+        }
+
+        return summary;
+    }
+
+    private async Task<BaronyBattleXpSummaryDTO?> ShowMgXpSummaryDialogAsync(BaronyBattleXpSummaryDTO summary)
+    {
+        var parameters = new DialogParameters
+        {
+            [nameof(BattleXpSummaryDialog.Summary)] = summary,
+            [nameof(BattleXpSummaryDialog.CanAdjust)] = true,
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.False,
+            FullWidth = true,
+        };
+        var dialog = await _dialogService.ShowAsync<BattleXpSummaryDialog>(
+            "Battle XP summary", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyBattleXpSummaryDTO edited)
+            return null;
+        return edited;
+    }
+
+    private static void AddUnitLogEntry(
+        BaronyUnitDTO unit,
+        string kind,
+        string text,
+        int? xpDelta = null,
+        string? note = null)
+    {
+        unit.Log ??= new();
+        unit.Log.Add(new BaronyUnitLogEntryDTO
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            UtcAt = DateTime.UtcNow,
+            Kind = kind,
+            Text = text,
+            XpDelta = xpDelta,
+            Note = note,
+        });
+        if (unit.Log.Count > 200)
+            unit.Log = unit.Log[^200..];
+    }
+
+    private async Task ApplyXpSummaryAsync(BaronyBattleXpSummaryDTO summary, int round)
+    {
+        if (summary.Entries.Count == 0)
+            return;
+
+        var units = await _baronyRepo.GetUnits(BaronyId);
+        foreach (var entry in summary.Entries)
+        {
+            var unit = units.FirstOrDefault(u => u.Id == entry.UnitId);
+            if (unit is null)
+                continue;
+
+            var delta = entry.XpNetFinal;
+            var beforePd = unit.RemainingPd;
+            unit.RemainingPd = Math.Max(0, unit.RemainingPd + delta);
+
+            var battleText = $"Battle round {Math.Max(1, round)} summary: dealt {entry.DamageDealt}, took {entry.DamageTaken}, engaged rounds {entry.EngagedRounds}, kills {entry.Kills}, fled {(entry.Fled ? "yes" : "no")} -> XP {entry.XpNetBase:+#;-#;0}.";
+            AddUnitLogEntry(unit, "battle", battleText, xpDelta: entry.XpNetBase);
+            if (entry.MgBonusXp != 0 || !string.IsNullOrWhiteSpace(entry.MgNote))
+            {
+                AddUnitLogEntry(
+                    unit,
+                    "xp",
+                    $"MG adjustment: {entry.MgBonusXp:+#;-#;0} XP.",
+                    xpDelta: entry.MgBonusXp,
+                    note: entry.MgNote);
+            }
+            AddUnitLogEntry(
+                unit,
+                "xp",
+                $"XP pool update: {beforePd} -> {unit.RemainingPd}.",
+                xpDelta: delta);
+
+            await _baronyRepo.SaveUnit(unit);
+        }
+    }
+
+    private async Task MaybeShowBaronXpSummaryAsync()
+    {
+        if (Map is null || CanManageAsMg)
+            return;
+        var summary = Map.XpSummary;
+        if (summary is null || summary.AcknowledgedByBaron || summary.Entries.Count == 0)
+            return;
+        if (string.IsNullOrWhiteSpace(summary.Id))
+            summary.Id = Guid.NewGuid().ToString("N");
+        if (string.Equals(_shownXpSummaryId, summary.Id, StringComparison.Ordinal))
+            return;
+        _shownXpSummaryId = summary.Id;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(BattleXpSummaryDialog.Summary)] = summary,
+            [nameof(BattleXpSummaryDialog.CanAdjust)] = false,
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.False,
+            FullWidth = true,
+        };
+        var dialog = await _dialogService.ShowAsync<BattleXpSummaryDialog>(
+            "Battle XP summary", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not true)
+            return;
+        if (Map.XpSummary is null || !string.Equals(Map.XpSummary.Id, summary.Id, StringComparison.Ordinal))
+            return;
+        Map.XpSummary.AcknowledgedByBaron = true;
+        await SaveAsync(systemMessage: "Baron acknowledged battle XP summary.");
     }
 
     private async Task EndBattle()
@@ -2733,6 +3108,18 @@ else
 
         var summaryLines = await SyncAllyHpToArmyAsync();
         var round = Math.Max(1, Map.TurnState.Round);
+        var xpPreview = BuildXpSummaryFromTallies();
+        var editedXpSummary = await ShowMgXpSummaryDialogAsync(xpPreview);
+        if (editedXpSummary is null)
+            return;
+        if (string.IsNullOrWhiteSpace(editedXpSummary.Id))
+            editedXpSummary.Id = Guid.NewGuid().ToString("N");
+        editedXpSummary.Utc = DateTime.UtcNow;
+        editedXpSummary.AcknowledgedByBaron = false;
+        await ApplyXpSummaryAsync(editedXpSummary, round);
+        Map.XpSummary = editedXpSummary;
+        _shownXpSummaryId = null;
+        Map.Tallies.Clear();
 
         foreach (var token in Map.Tokens)
         {
@@ -2748,11 +3135,18 @@ else
         AppendLocalLog(string.Empty, "phase", PhaseBanner($"End of Battle (round {round})"));
         foreach (var line in summaryLines)
             AppendLocalLog(string.Empty, "system", line);
+        foreach (var entry in editedXpSummary.Entries.OrderBy(e => e.UnitName))
+        {
+            AppendLocalLog(
+                string.Empty,
+                "system",
+                $"XP — {entry.UnitName}: base {entry.XpNetBase:+#;-#;0}, MG {entry.MgBonusXp:+#;-#;0}, final {entry.XpNetFinal:+#;-#;0}.");
+        }
 
-        await SaveAsync(systemMessage: "Battle ended. Ally HP synced to Army.");
+        await SaveAsync(systemMessage: "Battle ended. Ally HP and XP synced to Army.");
         _selectedTokenId = null;
         RefreshRange();
-        _snackBar.Add("Battle ended — Army HP updated.", Severity.Success);
+        _snackBar.Add("Battle ended — Army HP and XP updated.", Severity.Success);
     }
 
     /// <summary>Writes CurrentHp for every ally that entered the battle; returns summary lines.</summary>
@@ -2866,8 +3260,19 @@ else
         var next = Map.TurnState.CurrentIndex + 1;
         if (next >= Map.TurnState.InitiativeOrder.Count)
         {
-            AppendLocalLog(string.Empty, "system", msg);
-            await ResolveMovementPhase();
+            // Past the last unit: orders are complete. Only MG may resolve movement —
+            // Baron finishing the last slot must wait (never auto-start the next phase).
+            Map.TurnState.CurrentIndex = Map.TurnState.InitiativeOrder.Count;
+            if (CanManageAsMg)
+            {
+                AppendLocalLog(string.Empty, "system", msg);
+                await ResolveMovementPhase();
+                return;
+            }
+
+            await SaveAsync(systemMessage: $"{msg} All movement orders set — waiting for the Game Master to resolve.");
+            _selectedTokenId = null;
+            RefreshRange();
             return;
         }
 
@@ -3050,6 +3455,14 @@ else
 
             var moved = ApplyMovementOutcomes(simulation, movingTokenIds);
 
+            foreach (var (_, hit) in appliedEngagementHits)
+            {
+                var hitAttacker = Map.Tokens.FirstOrDefault(t => t.Id == hit.AttackerId);
+                var hitDefender = Map.Tokens.FirstOrDefault(t => t.Id == hit.DefenderId);
+                if (hitAttacker is not null && hitDefender is not null)
+                    TrackDamage(hitAttacker, hitDefender, hit.Dealt);
+            }
+
             // Apply disengage-hit HP after positions settle; dead units stay as blockers until now.
             foreach (var (tokenId, hp) in workingHp)
             {
@@ -3068,9 +3481,18 @@ else
             var fledFromLeave = Map.Tokens.Where(t => workingHp.TryGetValue(t.Id, out var hp) && hp <= 0).ToList();
             if (fledFromLeave.Count > 0)
             {
+                var finalHitByDefender = appliedEngagementHits
+                    .GroupBy(x => x.Hit.DefenderId, StringComparer.Ordinal)
+                    .ToDictionary(g => g.Key, g => g.Last().Hit, StringComparer.Ordinal);
                 var fledIds = fledFromLeave.Select(t => t.Id).ToHashSet(StringComparer.Ordinal);
                 foreach (var fled in fledFromLeave)
                 {
+                    if (finalHitByDefender.TryGetValue(fled.Id, out var hit))
+                    {
+                        var killer = Map.Tokens.FirstOrDefault(t => t.Id == hit.AttackerId);
+                        if (killer is not null)
+                            TrackKill(killer, fled);
+                    }
                     ClearEngagementsWith(fled.Id);
                     AppendLocalLog(string.Empty, "engagement",
                         $"{fled.Label} is destroyed disengaging and flees the battlefield.");
@@ -3106,9 +3528,11 @@ else
                 AppendLocalLog(string.Empty, "charge", note);
 
             ReconcileEngagements();
+            TrackEngagedRound(Math.Max(1, Map.TurnState.Round));
 
             Map.TurnState.SubPhase = BaronyBattleSubPhases.AttackPlanning;
             Map.TurnState.CurrentIndex = 0;
+            Map.TurnState.BaronPhaseReady = false;
 
             var round = Math.Max(1, Map.TurnState.Round);
             AppendLocalLog(string.Empty, "phase",
@@ -3196,7 +3620,8 @@ else
             var defenseRoll = defender.Defense + defenseDie;
             var ratio = attackRoll / (double)Math.Max(1, defenseRoll);
             var front = GetFrontBreakdown(attacker, defender);
-            var baseDamage = attacker.Damage + damageDie - defender.Armor;
+            var defenderArmor = UnitCombatFormulas.EffectiveArmor(defender.Armor, attacker.Pierce);
+            var baseDamage = attacker.Damage + damageDie - defenderArmor;
             var rawDamage = baseDamage * ratio * front.Multiplier;
             var full = Math.Max(1, (int)Math.Round(rawDamage, MidpointRounding.AwayFromZero));
             var dealt = Math.Max(1, (int)Math.Round(full / 2.0, MidpointRounding.AwayFromZero));
@@ -3204,10 +3629,11 @@ else
             var notes = new List<string>
             {
                 $"{attacker.Label} free hit as {defender.Label} moves while engaged: " +
-                $"(Dmg+k4−Arm={attacker.Damage}+{damageDie}−{defender.Armor}={baseDamage}) " +
+                $"(Dmg+k4−Arm={attacker.Damage}+{damageDie}−{defenderArmor}={baseDamage}) " +
                 $"× ({attacker.Attack}+k6={attackRoll})/({defender.Defense}+k6={defenseRoll}) " +
                 $"×{FormatFrontMultiplier(front.Multiplier)} ({front.AimLabel} Vs {front.ExposureLabel}) " +
-                $"= {full}, half => {dealt} dmg (no defensive return).",
+                $"= {full}, half => {dealt} dmg (no defensive return)." +
+                (defender.Armor > defenderArmor ? $" [pierce −{defender.Armor - defenderArmor} arm]" : ""),
                 $"{defender.Label} takes {dealt} disengage damage.",
             };
 
@@ -3691,9 +4117,21 @@ else
         }
     }
 
+    private async Task MarkBaronPhaseReady()
+    {
+        if (Map is null || !IsAttackPlanningPhase || !CanEdit || CanManageAsMg || _isResolvingCombat)
+            return;
+        if (Map.TurnState.BaronPhaseReady)
+            return;
+
+        Map.TurnState.BaronPhaseReady = true;
+        await SaveAsync(systemMessage: "Baron is ready for combat.");
+        RefreshRange();
+    }
+
     private async Task AdvanceToCombat()
     {
-        if (Map is null || !IsAttackPlanningPhase || (!CanEdit && !CanManageAsMg) || _isResolvingCombat)
+        if (Map is null || !IsAttackPlanningPhase || !CanManageAsMg || _isResolvingCombat)
             return;
 
         var missingOrders = Map.Tokens
@@ -3715,9 +4153,20 @@ else
             if (proceed != true)
                 return;
         }
+        else if (!Map.TurnState.BaronPhaseReady)
+        {
+            var proceed = await _dialogService.ShowMessageBoxAsync(
+                "Baron not ready",
+                "The baron has not pressed I'm ready yet. Begin combat anyway?",
+                yesText: "Yes, begin combat",
+                cancelText: "Go back");
+            if (proceed != true)
+                return;
+        }
 
         var round = Math.Max(1, Map.TurnState.Round);
         Map.TurnState.SubPhase = BaronyBattleSubPhases.Combat;
+        Map.TurnState.BaronPhaseReady = false;
         AppendLocalLog(string.Empty, "phase",
             PhaseBanner($"End of Attack Planning Phase {round}"));
         AppendLocalLog(string.Empty, "phase",
@@ -3725,6 +4174,7 @@ else
 
         var plans = PlanCombatExchanges(Random.Shared);
         await PlayCombatExchangesAsync(plans);
+        TrackEngagedRound(round);
 
         await SaveAsync(systemMessage: $"Attack planning done — round {round} combat begins and attacks are resolved.");
         _selectedTokenId = null;
@@ -3751,6 +4201,7 @@ else
         Map.TurnState.SubPhase = BaronyBattleSubPhases.Movement;
         Map.TurnState.CurrentIndex = 0;
         Map.TurnState.Round = endedCombatRound + 1;
+        Map.TurnState.BaronPhaseReady = false;
         ReconcileEngagements();
         AppendLocalLog(string.Empty, "phase",
             PhaseBanner($"Start of Movement Phase {Map.TurnState.Round}"));
@@ -3956,7 +4407,11 @@ else
 
                 var occupant = FindFootprintOccupant(token, nx, ny, size);
                 if (occupant is not null)
-                    break;
+                {
+                    // Baron fog: enemies on the charge line must not truncate the preview range.
+                    if (!(FogEnemyMovementPlans && occupant.IsEnemy != token.IsEnemy))
+                        break;
+                }
 
                 remainingHalf -= stepHalf;
                 cx = nx;
@@ -3991,12 +4446,70 @@ else
         {
             foreach (var t in Map.Tokens.Where(t => t.HasPath))
             {
+                if (FogEnemyMovementPlans && t.IsEnemy)
+                {
+                    // Still being planned by MG — reveal nothing until Finish move.
+                    if (!IsEnemyPlanRevealedToBaron(t))
+                        continue;
+                    // Facing-only: no arrow; grid shows a rotation badge instead.
+                    if (IsFacingOnlyPlan(t))
+                        continue;
+                }
+
                 var route = BuildCellRoute(t, ignoreUnits: true);
+                if (route.Count <= 1)
+                    continue;
+
+                if (FogEnemyMovementPlans && t.IsEnemy)
+                    route = TruncateEnemyPlanHint(route);
+
                 if (route.Count > 1)
                     routes[t.Id] = route;
             }
         }
         _plannedRoutes = routes;
+    }
+
+    /// <summary>
+    /// Enemy order is visible to the Baron only after MG finishes that unit's turn
+    /// (initiative advanced past it) and every waypoint is locked.
+    /// </summary>
+    private bool IsEnemyPlanRevealedToBaron(BaronyBattleTokenDTO token)
+    {
+        if (!token.IsEnemy || !token.HasPath)
+            return false;
+        if (ActiveTokenId == token.Id)
+            return false;
+        if (token.Path.Any(w => !w.Locked))
+            return false;
+        return true;
+    }
+
+    /// <summary>True when the plan never leaves the start cell (rotate in place).</summary>
+    private static bool IsFacingOnlyPlan(BaronyBattleTokenDTO token)
+    {
+        if (!token.HasPath)
+            return false;
+        if (token.Path.Any(w => w.X != token.X || w.Y != token.Y))
+            return false;
+        var tip = token.LastWaypoint;
+        if (tip is null)
+            return false;
+        return tip.FacingCostPaid > 0
+               || BaronyBattleFacing.Clamp(tip.Facing) != BaronyBattleFacing.Clamp(token.Facing);
+    }
+
+    /// <summary>
+    /// Baron fog hint: 1 arrow cell when the unit travels 1–2 tiles, 2 cells for longer moves.
+    /// <paramref name="route"/> includes the start cell.
+    /// </summary>
+    private static List<(int X, int Y)> TruncateEnemyPlanHint(List<(int X, int Y)> route)
+    {
+        if (route.Count <= 1)
+            return route;
+        var travelSteps = route.Count - 1;
+        var revealSteps = travelSteps <= 2 ? 1 : 2;
+        return route.Take(revealSteps + 1).ToList();
     }
 
     // --- Grid helpers (forked pathfinding) ---
@@ -4066,6 +4579,8 @@ else
 
     /// <summary>
     /// Waypoint may not overlap another unit's current footprint or another unit's planned end.
+    /// Under Baron fog, enemy bodies and enemy planned ends do not block — the unit may aim
+    /// through/onto them and will stop on contact when movement resolves.
     /// </summary>
     private bool CanPlaceWaypoint(BaronyBattleTokenDTO mover, int x, int y)
     {
@@ -4084,6 +4599,11 @@ else
         {
             if (other.Id == mover.Id)
                 continue;
+
+            // Fog: enemy occupancy / planned destinations must not punch holes in the Baron's range.
+            if (FogEnemyMovementPlans && other.IsEnemy != mover.IsEnemy)
+                continue;
+
             int os = TokenSize(other);
             bool overlapsCurrent = x < other.X + os && x + size > other.X
                                 && y < other.Y + os && y + size > other.Y;
@@ -4106,6 +4626,7 @@ else
     /// <summary>
     /// Tiles a route may not cross: impassable ground, hostile bodies, and comrades pinned in
     /// melee. A comrade standing free is crossable — see <see cref="IsFootprintSlowedByAlly"/>.
+    /// Under Baron fog, hostiles are ignored during planning (contact resolves later).
     /// </summary>
     private bool IsBlockedFor(BaronyBattleTokenDTO mover, int x, int y)
     {
@@ -4113,6 +4634,8 @@ else
             return true;
         var occupant = GetTokenAt(x, y);
         if (occupant is null || occupant.Id == mover.Id)
+            return false;
+        if (FogEnemyMovementPlans && occupant.IsEnemy != mover.IsEnemy)
             return false;
         return occupant.IsEnemy != mover.IsEnemy || IsPinned(occupant);
     }
@@ -4409,6 +4932,9 @@ else
         /// <summary>0 = melee only; &gt;0 = ranged unit (shot reach in move-points).</summary>
         public int Range { get; set; }
 
+        /// <summary>Armor cut through by this unit's attacks; 0 = stopped by armor as usual.</summary>
+        public int Pierce { get; set; }
+
         public static EnemyDraft Default() => new();
 
         public static EnemyDraft FromToken(BaronyBattleTokenDTO token) => new()
@@ -4424,6 +4950,7 @@ else
             TroopCount = token.TroopCount,
             Move = token.Move,
             Range = token.Range,
+            Pierce = token.Pierce,
         };
     }
 }

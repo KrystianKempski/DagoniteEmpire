@@ -78,6 +78,8 @@ namespace DA_Business.Repository.BaronyRepos
                 obj.TokensJson = JsonSerializer.Serialize(dto.Tokens ?? new(), JsonOptions);
                 obj.TurnStateJson = JsonSerializer.Serialize(dto.TurnState ?? new(), JsonOptions);
                 obj.LogJson = JsonSerializer.Serialize(dto.Log ?? new(), JsonOptions);
+                obj.TalliesJson = JsonSerializer.Serialize(dto.Tallies ?? new(), JsonOptions);
+                obj.XpSummaryJson = JsonSerializer.Serialize(dto.XpSummary, JsonOptions);
                 await ctx.SaveChangesAsync();
                 return ToDTO(obj);
             }
@@ -122,6 +124,8 @@ namespace DA_Business.Repository.BaronyRepos
                 Tokens = Deserialize<List<BaronyBattleTokenDTO>>(entity.TokensJson) ?? new(),
                 TurnState = Deserialize<BaronyBattleTurnStateDTO>(entity.TurnStateJson) ?? new(),
                 Log = Deserialize<List<BaronyBattleLogEntryDTO>>(entity.LogJson) ?? new(),
+                Tallies = Deserialize<List<BaronyBattleXpTallyDTO>>(entity.TalliesJson) ?? new(),
+                XpSummary = Deserialize<BaronyBattleXpSummaryDTO>(entity.XpSummaryJson),
             };
             TrimToSize(dto);
             return dto;
@@ -154,6 +158,8 @@ namespace DA_Business.Repository.BaronyRepos
             TokensJson = JsonSerializer.Serialize(dto.Tokens ?? new(), JsonOptions),
             TurnStateJson = JsonSerializer.Serialize(dto.TurnState ?? new(), JsonOptions),
             LogJson = JsonSerializer.Serialize(dto.Log ?? new(), JsonOptions),
+            TalliesJson = JsonSerializer.Serialize(dto.Tallies ?? new(), JsonOptions),
+            XpSummaryJson = JsonSerializer.Serialize(dto.XpSummary, JsonOptions),
         };
 
         private static T? Deserialize<T>(string? json)

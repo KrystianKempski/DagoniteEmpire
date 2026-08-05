@@ -1,7 +1,9 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
-@implements IDisposable
+@implements IAsyncDisposable
 @using DA_Business.Repository.BaronyRepos
 @using DA_Business.Services.Interfaces
+@using DA_Models.ChatModels
+@using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager _navigationManager
 @inject IUserService _userService
 @inject IBaronyRepository _baronyRepo
@@ -74,12 +76,47 @@
     private bool _orderChanged;
     private bool _suppressNextClick;
     private bool _showBattleMapTab = true;
+    private HubConnection? _hubConnection;
+    private int _baronyId;
 
     protected override async Task OnInitializedAsync()
     {
         _navigationManager.LocationChanged += OnLocationChanged;
         await LoadBattleMapVisibilityAsync();
         await LoadOrderAsync();
+        await InitializeSignalRAsync();
+    }
+
+    private async Task InitializeSignalRAsync()
+    {
+        if (_baronyId <= 0)
+            return;
+        try
+        {
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
+                .WithAutomaticReconnect()
+                .Build();
+            _hubConnection.On<int>("BaronyBattleMapUpdated", OnBattleMapUpdated);
+            if (_hubConnection.State == HubConnectionState.Disconnected)
+                await _hubConnection.StartAsync();
+        }
+        catch
+        {
+            // Tab visibility refresh is best-effort; page reload still works.
+        }
+    }
+
+    private async Task OnBattleMapUpdated(int baronyId)
+    {
+        if (baronyId != _baronyId)
+            return;
+        await InvokeAsync(async () =>
+        {
+            await LoadBattleMapVisibilityAsync();
+            _orderedTabs = ApplySavedOrder(await SafeGetTabOrderJson());
+            StateHasChanged();
+        });
     }
 
     private async Task LoadBattleMapVisibilityAsync()
@@ -104,9 +141,11 @@
             if (barony is null)
             {
                 _showBattleMapTab = false;
+                _baronyId = 0;
                 return;
             }
 
+            _baronyId = barony.Id;
             _showBattleMapTab = await _battleMapRepo.IsActive(barony.Id);
         }
         catch
@@ -318,5 +357,13 @@
         catch { return null; }
     }
 
-    public void Dispose() => _navigationManager.LocationChanged -= OnLocationChanged;
+    public async ValueTask DisposeAsync()
+    {
+        _navigationManager.LocationChanged -= OnLocationChanged;
+        if (_hubConnection is not null)
+        {
+            try { await _hubConnection.DisposeAsync(); }
+            catch { /* ignore */ }
+        }
+    }
 }
