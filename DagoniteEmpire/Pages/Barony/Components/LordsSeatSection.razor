@@ -209,7 +209,7 @@
                         <col class="lords-seat-col-purpose" />
                         <col class="lords-seat-col-level" />
                         <col class="lords-seat-col-size" />
-                        <col class="lords-seat-col-desc" />
+                        <col class="lords-seat-col-occupant" />
                         <col class="lords-seat-col-prestige" />
                         @foreach (var _ in PpbCatalog.All)
                         {
@@ -221,16 +221,10 @@
                         <tr>
                             <th rowspan="2" class="ppb-row-label lords-seat-col-name">Chamber</th>
                             <th rowspan="2" class="ppb-row-label lords-seat-col-purpose">Purpose</th>
-                            <th rowspan="2" class="lords-seat-col-level">Floor</th>
-                            <th rowspan="2" class="lords-seat-col-size">Size</th>
-                            <th rowspan="2" class="lords-seat-col-desc">Description</th>
-                            <th rowspan="2" class="lords-seat-col-prestige seat-php-header" title="Prestige / Honor / Fear (per-chamber, × multiplier)">
-                                <span class="seat-php-header__icons">
-                                    <PhpMetricIcon Metric="PhpMetric.Prestige" />
-                                    <PhpMetricIcon Metric="PhpMetric.Honor" />
-                                    <PhpMetricIcon Metric="PhpMetric.Fear" />
-                                </span>
-                            </th>
+                            <th rowspan="2" class="lords-seat-col-level" title="Floor level">Floor</th>
+                            <th rowspan="2" class="lords-seat-col-size" title="Size category (tiles)">Size</th>
+                            <th rowspan="2" class="lords-seat-col-occupant">Occupant</th>
+                            <th rowspan="2" class="lords-seat-col-prestige seat-php-header" title="Prestige / Honor / Fear (per-chamber, × multiplier)">Prestige</th>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
@@ -289,22 +283,23 @@
                                 <td class="lords-seat-col-level" title="@SeatFloorLevel.Label(room.Level)">
                                     @room.Level
                                 </td>
-                                <td class="lords-seat-col-size" title="@($"{room.TileCount} tiles")">
-                                    @room.SizeCategory
-                                    <span class="lords-seat-tiles">(@room.TileCount)</span>
+                                <td class="lords-seat-col-size"
+                                    title="@($"{room.SizeCategory} · {room.TileCount} tiles")">
+                                    @(SeatRoomSizeCategory.Letter(room.SizeCategory))(@room.TileCount)
                                 </td>
-                                <td class="lords-seat-col-desc">
+                                <td class="lords-seat-col-occupant">
                                     @{
-                                        var desc = DescriptionText(room);
+                                        var occupantName = OccupantNameOnly(room);
+                                        var occupantTip = OccupantSubtitle(room);
                                     }
-                                    @if (string.IsNullOrWhiteSpace(desc))
+                                    @if (string.IsNullOrWhiteSpace(occupantName))
                                     {
                                         <span class="lords-seat-muted">—</span>
                                     }
                                     else
                                     {
-                                        <BaronyTooltip Title="Description" Text="@desc">
-                                            <span class="lords-seat-ellipsis">@desc</span>
+                                        <BaronyTooltip Title="Occupant" Text="@(occupantTip ?? occupantName)">
+                                            <span class="lords-seat-occupant-name">@occupantName</span>
                                         </BaronyTooltip>
                                     }
                                 </td>
@@ -317,7 +312,7 @@
                                                    Text="@PhpTooltip(room, php, mult)">
                                         @if (php is null)
                                         {
-                                            <span class="seat-php-values seat-php-values--empty">
+                                                <span class="seat-php-values seat-php-values--stacked seat-php-values--empty">
                                                 <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
                                                     <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
                                                     <span class="seat-php-value__num">—</span>
@@ -335,7 +330,7 @@
                                         }
                                         else
                                         {
-                                            <span class="seat-php-values">
+                                            <span class="seat-php-values seat-php-values--stacked">
                                                 <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
                                                     <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
                                                     <span class="seat-php-value__num">@FmtPhp(php.Value.Prestige)</span>
@@ -363,7 +358,26 @@
                         @if (OrderedRooms.Any())
                         {
                             <tr class="ppb-summary-row">
-                                <td class="ppb-row-label" colspan="6">Σ Lord's Seat</td>
+                                <td class="ppb-row-label" colspan="5">Σ Lord's Seat</td>
+                                <td class="lords-seat-col-prestige seat-php-cell">
+                                    <BaronyTooltip Title="Prestige / Honor / Fear"
+                                                   Text="@($"Lord's Seat total: Prestige {FmtPhp(SeatPhpSum.Prestige)} · Honor {FmtPhp(SeatPhpSum.Honor)} · Fear {FmtPhp(SeatPhpSum.Fear)}")">
+                                        <span class="seat-php-values">
+                                            <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
+                                                <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
+                                                <span class="seat-php-value__num">@FmtPhp(SeatPhpSum.Prestige)</span>
+                                            </span>
+                                            <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Honor)">
+                                                <PhpMetricIcon Metric="PhpMetric.Honor" Title="" />
+                                                <span class="seat-php-value__num">@FmtPhp(SeatPhpSum.Honor)</span>
+                                            </span>
+                                            <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Fear)">
+                                                <PhpMetricIcon Metric="PhpMetric.Fear" Title="" />
+                                                <span class="seat-php-value__num">@FmtPhp(SeatPhpSum.Fear)</span>
+                                            </span>
+                                        </span>
+                                    </BaronyTooltip>
+                                </td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
                                     <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
@@ -568,6 +582,28 @@
         PpbVector.Sum(Seat.Rooms.Where(r => r.ContributesPpb)
             .Select(r => RoomEffectivePpb(r).Percent));
 
+    private (decimal Prestige, decimal Honor, decimal Fear) SeatPhpSum
+    {
+        get
+        {
+            decimal prestige = 0m;
+            decimal honor = 0m;
+            decimal fear = 0m;
+
+            foreach (var room in Seat.Rooms.Where(r => r.ContributesPpb))
+            {
+                if (RoomPhpTotals(room) is not { } php)
+                    continue;
+
+                prestige += php.Prestige;
+                honor += php.Honor;
+                fear += php.Fear;
+            }
+
+            return (prestige, honor, fear);
+        }
+    }
+
     private (PpbVector Additive, PpbVector Percent) RoomEffectivePpb(SeatRoomDTO room) =>
         BaronyCalc.SeatRoomEffectivePpb(room, PurposeLookup);
 
@@ -595,13 +631,21 @@
     {
         if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var p))
             return "—";
-
-        var occupant = OccupantSubtitle(room);
-        if (!string.IsNullOrWhiteSpace(occupant))
-            return $"{p.Name} ({occupant})";
-        if (!string.IsNullOrWhiteSpace(p.WhoOccupies))
-            return $"{p.Name} ({p.WhoOccupies})";
         return p.Name;
+    }
+
+    private string? OccupantNameOnly(SeatRoomDTO room)
+    {
+        if (!string.IsNullOrWhiteSpace(room.OccupantCustom))
+            return room.OccupantCustom.Trim();
+
+        if (room.OccupantAdvisorId is int aid && AdvisorLookup.TryGetValue(aid, out var advisor))
+        {
+            var name = advisor.PersonName?.Trim();
+            return string.IsNullOrWhiteSpace(name) ? null : name;
+        }
+
+        return null;
     }
 
     private string? OccupantSubtitle(SeatRoomDTO room)

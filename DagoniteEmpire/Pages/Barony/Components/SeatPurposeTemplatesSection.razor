@@ -26,13 +26,7 @@
                         <th rowspan="2" class="ppb-row-label lords-seat-templates-col-name">Name</th>
                         <th rowspan="2" class="lords-seat-templates-col-size">Min size</th>
                         <th rowspan="2" class="lords-seat-templates-col-desc">Description</th>
-                        <th rowspan="2" class="lords-seat-templates-col-prestige seat-php-header" title="Prestige / Honor / Fear (additive)">
-                            <span class="seat-php-header__icons">
-                                <PhpMetricIcon Metric="PhpMetric.Prestige" />
-                                <PhpMetricIcon Metric="PhpMetric.Honor" />
-                                <PhpMetricIcon Metric="PhpMetric.Fear" />
-                            </span>
-                        </th>
+                        <th rowspan="2" class="lords-seat-templates-col-prestige seat-php-header" title="Prestige / Honor / Fear (additive)">Prestige</th>
                         @foreach (var info in PpbCatalog.All)
                         {
                             <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
@@ -83,7 +77,7 @@
                             </td>
                             <td class="lords-seat-templates-col-prestige seat-php-cell">
                                 <BaronyTooltip Title="Prestige / Honor / Fear" Text="@TemplatePhpTooltip(t)">
-                                    <span class="seat-php-values">
+                                    <span class="seat-php-values seat-php-values--stacked seat-php-values--stacked-singlecol">
                                         <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
                                             <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
                                             <span class="seat-php-value__num">@FmtPhp(t.AdditivePrestige)</span>

@@ -752,6 +752,16 @@ namespace DA_Common.Barony
         public static string OptionLabel(string category) =>
             $"{category} ({PrestigeBonus(category):0.#} prestige multiplier)";
 
+        /// <summary>Compact table label: S / M / L / H.</summary>
+        public static string Letter(string? category) => category switch
+        {
+            Small => "S",
+            Medium => "M",
+            Large => "L",
+            Huge => "H",
+            _ => "?",
+        };
+
         public static bool MeetsMinimum(int tileCount, string minCategory) =>
             Rank(FromTileCount(tileCount)) >= Rank(minCategory);
     }

@@ -7537,8 +7537,8 @@ a.city-building-name-text--link:hover {
 .lords-seat-templates-table {
     --barony-pre-ppb-width: 550px;
     --barony-ppb-subcol-width: 28px;
-    --lords-seat-size-width: 72px;
-    --lords-seat-prestige-width: 56px;
+    --lords-seat-size-width: 44px;
+    --lords-seat-prestige-width: 88px;
     table-layout: fixed;
     width: max-content;
     min-width: 100%;
@@ -7546,9 +7546,10 @@ a.city-building-name-text--link:hover {
 
 .lords-seat-table {
     --lords-seat-name-width: 140px;
-    --lords-seat-purpose-width: 140px;
-    --lords-seat-level-width: 48px;
-    --lords-seat-desc-width: calc(
+    --lords-seat-purpose-width: 128px;
+    --lords-seat-level-width: 40px;
+    --lords-seat-size-width: 44px;
+    --lords-seat-occupant-width: calc(
         var(--barony-pre-ppb-width)
         - var(--lords-seat-name-width)
         - var(--lords-seat-purpose-width)
@@ -7594,7 +7595,10 @@ a.city-building-name-text--link:hover {
     width: var(--lords-seat-size-width);
 }
 
-.lords-seat-table col.lords-seat-col-desc,
+.lords-seat-table col.lords-seat-col-occupant {
+    width: var(--lords-seat-occupant-width);
+}
+
 .lords-seat-templates-table col.lords-seat-templates-col-desc {
     width: var(--lords-seat-desc-width);
 }
@@ -7618,6 +7622,8 @@ a.city-building-name-text--link:hover {
     max-width: var(--lords-seat-name-width);
     text-align: left;
     overflow: hidden;
+    white-space: normal;
+    vertical-align: middle;
 }
 
 .lords-seat-table th.lords-seat-col-purpose,
@@ -7627,6 +7633,8 @@ a.city-building-name-text--link:hover {
     max-width: var(--lords-seat-purpose-width);
     text-align: left;
     overflow: hidden;
+    white-space: normal;
+    vertical-align: middle;
 }
 
 .lords-seat-table th.lords-seat-col-level,
@@ -7647,10 +7655,19 @@ a.city-building-name-text--link:hover {
     width: var(--lords-seat-size-width);
     max-width: var(--lords-seat-size-width);
     white-space: nowrap;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
 }
 
-.lords-seat-table th.lords-seat-col-desc,
-.lords-seat-table td.lords-seat-col-desc,
+.lords-seat-table th.lords-seat-col-occupant,
+.lords-seat-table td.lords-seat-col-occupant {
+    min-width: var(--lords-seat-occupant-width);
+    width: var(--lords-seat-occupant-width);
+    max-width: var(--lords-seat-occupant-width);
+    text-align: left;
+    overflow: hidden;
+}
+
 .lords-seat-templates-table th.lords-seat-templates-col-desc,
 .lords-seat-templates-table td.lords-seat-templates-col-desc {
     min-width: var(--lords-seat-desc-width);
@@ -7673,6 +7690,31 @@ a.city-building-name-text--link:hover {
     font-variant-numeric: tabular-nums;
 }
 
+/* Prestige stacked grid may paint past the cell; don't let it widen the column / shift PPB. */
+.lords-seat-table td.lords-seat-col-prestige {
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+}
+
+.lords-seat-table td.lords-seat-col-prestige:hover {
+    z-index: 2;
+}
+
+.lords-seat-table td.lords-seat-col-prestige > .mud-tooltip-root {
+    display: block;
+    width: 0;
+    min-width: 100%;
+    max-width: none;
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+.lords-seat-table td.lords-seat-col-prestige .seat-php-values--stacked {
+    overflow: visible;
+    max-width: none;
+}
+
 .lords-seat-table .ppb-subcol,
 .lords-seat-templates-table .ppb-subcol,
 .lords-seat-table tbody td:nth-child(n+7),
@@ -7683,6 +7725,26 @@ a.city-building-name-text--link:hover {
     white-space: nowrap;
     text-align: center;
     font-variant-numeric: tabular-nums;
+    overflow: hidden;
+}
+
+.lords-seat-occupant-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
+    line-height: 1.25;
+}
+
+.lords-seat-col-occupant > .mud-tooltip-root {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
     overflow: hidden;
 }
 
@@ -7699,7 +7761,6 @@ a.city-building-name-text--link:hover {
     line-height: 1.35;
 }
 
-.lords-seat-col-desc > .mud-tooltip-root,
 .lords-seat-templates-col-desc > .mud-tooltip-root {
     display: block;
     max-width: 100%;
@@ -7712,6 +7773,7 @@ a.city-building-name-text--link:hover {
 .lords-seat-templates-col-name .city-building-name-cell {
     width: 100%;
     justify-content: flex-start;
+    align-items: center;
 }
 
 .lords-seat-col-name .city-building-name-cell > .mud-tooltip-root,
@@ -7720,12 +7782,20 @@ a.city-building-name-text--link:hover {
     flex: 1 1 auto;
     min-width: 0;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
     text-align: left;
 }
 
 .lords-seat-col-name .city-building-name-text,
-.lords-seat-col-purpose .city-building-name-text,
+.lords-seat-col-purpose .city-building-name-text {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.25;
+}
+
 .lords-seat-templates-col-name .city-building-name-text {
     text-align: left;
 }
@@ -10687,7 +10757,7 @@ a.city-building-name-text--link:hover {
 }
 
 .seat-php-cell {
-    text-align: center;
+    text-align: right;
     white-space: nowrap;
 }
 
@@ -10714,6 +10784,53 @@ a.city-building-name-text--link:hover {
 
 .seat-php-value__num {
     font-weight: 700;
+}
+
+.seat-php-values--stacked {
+    display: inline-grid;
+    grid-template-columns: 2.6rem 2.2rem;
+    grid-auto-rows: 1.15rem;
+    align-items: center;
+    justify-items: start;
+    column-gap: 0.35rem;
+    row-gap: 0.12rem;
+}
+
+.seat-php-values--stacked .seat-php-value {
+    grid-column: 1;
+    width: 2.6rem;
+    height: 1.15rem;
+    min-width: 2.6rem;
+    max-width: 2.6rem;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.seat-php-values--stacked .seat-php-value__num {
+    display: inline-block;
+    min-width: 1.35em;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.seat-php-values--stacked .lords-seat-prestige-mult {
+    grid-column: 2;
+    grid-row: 2;
+    width: 2.2rem;
+    min-width: 2.2rem;
+    max-width: 2.2rem;
+    height: 1.15rem;
+    margin-top: 0;
+    margin-left: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: left;
+    line-height: 1.15rem;
+    box-sizing: border-box;
+}
+
+.seat-php-values--stacked-singlecol {
+    grid-template-columns: 2.6rem;
 }
 
 .seat-php-values--empty .seat-php-value {
