@@ -1191,8 +1191,9 @@ namespace DagoniteEmpire.Pages.Barony
         // --- Baron Card: Prestige / Honor / Fear ---
 
         /// <summary>
-        /// Lord's Seat contribution to PHP. Prestige = Σ (multiplier × purpose AdditivePrestige)
-        /// for active rooms with a purpose. Honor/Fear reserved for future purpose fields.
+        /// Lord's Seat contribution to PHP. For each active room with a purpose:
+        /// Prestige / Honor / Fear = Σ (chamber multiplier × purpose additive value).
+        /// The same chamber multiplier applies to all three metrics.
         /// </summary>
         public static PhpTotals SeatPhpContribution(
             BaronySeatDTO? seat,
@@ -1205,6 +1206,8 @@ namespace DagoniteEmpire.Pages.Barony
                 .ToDictionary(p => p.Id);
 
             decimal prestige = 0m;
+            decimal honor = 0m;
+            decimal fear = 0m;
             foreach (var room in seat.Rooms)
             {
                 if (room.IsRuin)
@@ -1212,13 +1215,16 @@ namespace DagoniteEmpire.Pages.Barony
                 if (room.PurposeTemplateId is not int pid || !purposes.TryGetValue(pid, out var purpose))
                     continue;
 
-                prestige += room.PrestigeMultiplier * purpose.AdditivePrestige;
+                var mult = room.PrestigeMultiplier;
+                prestige += mult * purpose.AdditivePrestige;
+                honor += mult * purpose.AdditiveHonor;
+                fear += mult * purpose.AdditiveFear;
             }
 
             return new PhpTotals(
                 Prestige: (int)Math.Round(prestige, MidpointRounding.AwayFromZero),
-                Honor: 0,
-                Fear: 0);
+                Honor: (int)Math.Round(honor, MidpointRounding.AwayFromZero),
+                Fear: (int)Math.Round(fear, MidpointRounding.AwayFromZero));
         }
 
         public static List<BaronPhpRow> BuildPhpRows(
@@ -1237,8 +1243,8 @@ namespace DagoniteEmpire.Pages.Barony
                     Fear = seatContribution.Fear,
                     IsSystem = true,
                     Description =
-                        "Sum of chamber prestige from Lord's Seat (purpose prestige × chamber multiplier). "
-                        + "Honor and Fear from the seat will appear when purpose templates define them.",
+                        "Sum of Prestige, Honor and Fear from Lord's Seat chambers "
+                        + "(purpose additive value × chamber multiplier).",
                 },
                 new()
                 {

@@ -1,0 +1,707 @@
+{
+  "$schema_comment": "Court commander skill tree (model B). Readable nested export for tools/chats.",
+  "id": "court-commander-skill-tree",
+  "version": 2,
+  "rules": {
+    "cxByTier": {
+      "1": 1,
+      "2": 2,
+      "3": 3
+    },
+    "requirementsScope": "per branch+tier only — abilities inherit their tier's requirements",
+    "progressionGates": {
+      "tier2": ">=2 Tier1 from Trunk ∪ branch",
+      "tier3": ">=2 Tier2 from Trunk ∪ branch OR (>=1 in-branch T2 + >=1 Trunk T2)",
+      "maxTier3": 2,
+      "softCaps": {
+        "cmdAttack": 2,
+        "cmdDefense": 2,
+        "move": 2
+      }
+    },
+    "statusLegend": {
+      "in-code": "Already in CourtCommanderCatalog.cs",
+      "proposal": "Designed, not implemented",
+      "draft": "New from Excel tree notes"
+    }
+  },
+  "tree": [
+    {
+      "id": "trunk",
+      "label": "Trunk",
+      "tiers": [
+        {
+          "tier": 1,
+          "cxCost": 1,
+          "requirements": [
+            {
+              "skill": "Command",
+              "min": 4,
+              "kind": "main"
+            }
+          ],
+          "requirementsText": "Command ≥ 4",
+          "abilities": [
+            {
+              "key": "hold-the-line",
+              "name": "Hold the Line",
+              "description": "+8 Max HP for the commanded unit.",
+              "effects": "Hp+8",
+              "status": "in-code",
+              "notes": "Was Hp+2 in code; tree comment says +8."
+            },
+            {
+              "key": "discipline-boost",
+              "name": "+1 Discipline",
+              "description": "+1 Discipline for the commanded unit.",
+              "effects": "Discipline+1",
+              "status": "draft",
+              "notes": "New from tree cell."
+            },
+            {
+              "key": "column-march",
+              "name": "Column March",
+              "description": "Passing through a friendly body costs open-ground rates instead of Difficult ×2 (still cannot end on ally).",
+              "effects": "FriendlyPassCostHalved",
+              "status": "proposal"
+            },
+            {
+              "key": "keep-facing",
+              "name": "Keep Facing",
+              "description": "Once per Movement phase: one in-place facing change does not spend Move.",
+              "effects": "FreeFacingOnce",
+              "status": "proposal"
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "cxCost": 2,
+          "requirements": [
+            {
+              "skill": "Command",
+              "min": 6,
+              "kind": "main"
+            }
+          ],
+          "requirementsText": "Command ≥ 6",
+          "abilities": [
+            {
+              "key": "fighting-withdrawal",
+              "name": "Fighting Withdrawal",
+              "description": "Disengage free hit deals one-third damage instead of half.",
+              "effects": "FightingWithdrawal",
+              "status": "in-code"
+            },
+            {
+              "key": "second-wind",
+              "name": "Second Wind",
+              "description": "Between Combat rounds: restore 4 HP (not above Max HP).",
+              "effects": "HpRegenBetweenRounds+4",
+              "status": "proposal",
+              "notes": "Was +2; tree comment says +4."
+            },
+            {
+              "key": "march-cadence",
+              "name": "March Cadence",
+              "description": "+1 Move for the commanded unit.",
+              "effects": "Move+1",
+              "status": "in-code",
+              "notes": "Moved to Trunk T2 in tree."
+            }
+          ]
+        },
+        {
+          "tier": 3,
+          "cxCost": 3,
+          "requirements": [
+            {
+              "skill": "Command",
+              "min": 8,
+              "kind": "main"
+            }
+          ],
+          "requirementsText": "Command ≥ 8",
+          "abilities": [
+            {
+              "key": "front-reface-planning",
+              "name": "Front Reface (Planning)",
+              "description": "May change facing to Front during the Attack Planning phase.",
+              "effects": "FrontFacingInAttackPlanning",
+              "status": "draft",
+              "notes": "New from tree: 'Can do Front direction change during attack planning phase'."
+            },
+            {
+              "key": "close-ranks",
+              "name": "Close Ranks",
+              "description": "When attacked from the side: Exposure bonus against this unit is −0.5 (min 0).",
+              "effects": "ExposureVsSide-0.5",
+              "status": "proposal",
+              "notes": "Moved to Trunk T3 in tree."
+            },
+            {
+              "key": "pathfinder",
+              "name": "Pathfinder",
+              "description": "Treat the first and every odd Difficult terrain tile as open.",
+              "effects": "PathfinderOddTiles",
+              "status": "in-code",
+              "notes": "Moved to Trunk T3; comment clarifies odd tiles."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shock",
+      "label": "Shock",
+      "tiers": [
+        {
+          "tier": 1,
+          "cxCost": 1,
+          "requirements": [
+            {
+              "skill": "Athletics",
+              "min": 2,
+              "kind": "secondary"
+            },
+            {
+              "skill": "AnimalHandlingRiding",
+              "min": 2,
+              "kind": "secondary"
+            }
+          ],
+          "requirementsText": "Athletics ≥ 2, Riding ≥ 2",
+          "abilities": [
+            {
+              "key": "counter-charge",
+              "name": "Counter-Charge",
+              "description": "+2 Defense when this unit is the target of a charge.",
+              "effects": "CounterCharge+2",
+              "status": "in-code",
+              "notes": "Was +1; tree comment says +2. Moved to Shock T1."
+            },
+            {
+              "key": "shock-lance",
+              "name": "Shock Lance",
+              "description": "+1 charge Damage.",
+              "effects": "ChargeDamage+1",
+              "status": "in-code",
+              "notes": "Tree comment dropped 'when mounted' requirement."
+            },
+            {
+              "key": "wedge",
+              "name": "Wedge",
+              "description": "During a charge: treat 1 Difficult tile as open.",
+              "effects": "ChargeIgnoreDifficult1",
+              "status": "proposal",
+              "notes": "Moved to Shock T1."
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "cxCost": 2,
+          "requirements": [
+            {
+              "skill": "Athletics",
+              "min": 3,
+              "kind": "secondary"
+            },
+            {
+              "skill": "AnimalHandlingRiding",
+              "min": 3,
+              "kind": "secondary"
+            }
+          ],
+          "requirementsText": "Athletics ≥ 3, Riding ≥ 3",
+          "abilities": [
+            {
+              "key": "mounted-superiority",
+              "name": "Mounted Superiority",
+              "description": "+1 Attack and +1 Defense when mounted vs unmounted foes.",
+              "effects": "MountedSuperiorityAtkDef+1",
+              "status": "in-code",
+              "notes": "Tree: Atk and Def."
+            },
+            {
+              "key": "unbroken-momentum",
+              "name": "Unbroken Momentum",
+              "description": "Charge interrupt distance is lowered to 1 tile (default 2).",
+              "effects": "ChargeInterruptMinSteps1",
+              "status": "proposal",
+              "notes": "Reworded from once-immune."
+            },
+            {
+              "key": "blind-fury",
+              "name": "Blind Fury",
+              "description": "Blind charge end-lock also catches enemies on side-front corners (wider forward arc).",
+              "effects": "BlindChargeForwardArcWiden",
+              "status": "proposal",
+              "notes": "Moved to Shock T2."
+            }
+          ]
+        },
+        {
+          "tier": 3,
+          "cxCost": 3,
+          "requirements": [
+            {
+              "skill": "Athletics",
+              "min": 5,
+              "kind": "secondary"
+            },
+            {
+              "skill": "AnimalHandlingRiding",
+              "min": 5,
+              "kind": "secondary"
+            }
+          ],
+          "requirementsText": "Athletics ≥ 5, Riding ≥ 5",
+          "abilities": [
+            {
+              "key": "flying-start",
+              "name": "Flying Start",
+              "description": "Charge minimum path is 1 tile shorter (cardinal 3→2, diagonal 2→1).",
+              "effects": "FlyingStart",
+              "status": "in-code"
+            },
+            {
+              "key": "thunder-charge",
+              "name": "Thunder Charge",
+              "description": "Charge bonus becomes +3 Attack / +2 Damage (instead of +2/+1).",
+              "effects": "ChargeBonusOverride",
+              "status": "in-code"
+            },
+            {
+              "key": "overrun",
+              "name": "Overrun",
+              "description": "If the charge target flees this Combat: this unit heals 12 HP.",
+              "effects": "ChargeKillHeal+12",
+              "status": "proposal",
+              "notes": "Changed from leftover Move step."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "line",
+      "label": "Line",
+      "tiers": [
+        {
+          "tier": 1,
+          "cxCost": 1,
+          "requirements": [
+            {
+              "skill": "Athletics",
+              "min": 2,
+              "kind": "secondary"
+            },
+            {
+              "skill": "Melee",
+              "min": 5,
+              "kind": "main"
+            }
+          ],
+          "requirementsText": "Athletics ≥ 2, Melee ≥ 5",
+          "abilities": [
+            {
+              "key": "riveted-plate",
+              "name": "Riveted Plate",
+              "description": "Ignore 1 Pierce when computing EffectiveArmor.",
+              "effects": "PierceIgnore1",
+              "status": "proposal",
+              "notes": "Moved to Line T1."
+            },
+            {
+              "key": "shield-wall-basics",
+              "name": "Shield Wall Basics",
+              "description": "+1 Defense while the unit carries a shield.",
+              "effects": "CmdDefense+1WhileShield",
+              "status": "in-code"
+            },
+            {
+              "key": "return-stroke",
+              "name": "Return Stroke",
+              "description": "+2 Defense on melee defensive return hits.",
+              "effects": "DefensiveDefense+2",
+              "status": "proposal",
+              "notes": "Tree: +2 Defence on defensive return."
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "cxCost": 2,
+          "requirements": [
+            {
+              "skill": "Athletics",
+              "min": 3,
+              "kind": "secondary"
+            },
+            {
+              "skill": "Melee",
+              "min": 6,
+              "kind": "main"
+            }
+          ],
+          "requirementsText": "Athletics ≥ 3, Melee ≥ 6",
+          "abilities": [
+            {
+              "key": "killing-blow",
+              "name": "Killing Blow",
+              "description": "+1 melee Damage (Other Damage).",
+              "effects": "DamageMelee+1",
+              "status": "in-code"
+            },
+            {
+              "key": "pike-hedge",
+              "name": "Pike Hedge",
+              "description": "+3 Defense when the attacker has a charge bonus against this unit.",
+              "effects": "VsChargeDefense+3",
+              "status": "proposal",
+              "notes": "Was +1; tree says +3."
+            },
+            {
+              "key": "form-testudo",
+              "name": "Form Testudo",
+              "description": "May form Testudo: Exposure from side and front-corner lowered by 0.5; Move −1 while formed.",
+              "effects": "FormTestudo",
+              "status": "draft",
+              "notes": "New from tree."
+            }
+          ]
+        },
+        {
+          "tier": 3,
+          "cxCost": 3,
+          "requirements": [
+            {
+              "skill": "Athletics",
+              "min": 5,
+              "kind": "secondary"
+            },
+            {
+              "skill": "Melee",
+              "min": 8,
+              "kind": "main"
+            }
+          ],
+          "requirementsText": "Athletics ≥ 5, Melee ≥ 8",
+          "abilities": [
+            {
+              "key": "ironclad",
+              "name": "Ironclad",
+              "description": "Once per battle: +2 Armor for one combat round (active).",
+              "effects": "Ironclad+2",
+              "status": "in-code"
+            },
+            {
+              "key": "no-step-back",
+              "name": "No Step Back",
+              "description": "Once per battle: when unit HP falls below 40%, automatically regain 20 HP.",
+              "effects": "NoStepBackHeal20Below40pct",
+              "status": "in-code",
+              "notes": "Reworked vs old panic/flee ignore."
+            },
+            {
+              "key": "form-square",
+              "name": "Form Square",
+              "description": "May form Square: all sides treated as front; Move lowered to 0 while formed.",
+              "effects": "FormSquare",
+              "status": "draft",
+              "notes": "New from tree."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "skirmish",
+      "label": "Skirmish",
+      "tiers": [
+        {
+          "tier": 1,
+          "cxCost": 1,
+          "requirements": [
+            {
+              "skill": "Acrobatics",
+              "min": 2,
+              "kind": "secondary"
+            },
+            {
+              "skill": "Shooting",
+              "min": 5,
+              "kind": "main"
+            }
+          ],
+          "requirementsText": "Acrobatics ≥ 2, Shooting ≥ 5",
+          "abilities": [
+            {
+              "key": "drill-shot",
+              "name": "Drill — Shot",
+              "description": "+1 Attack on ranged attacks.",
+              "effects": "CmdAttack+1Ranged",
+              "status": "in-code"
+            },
+            {
+              "key": "loose-files",
+              "name": "Loose Files",
+              "description": "Once per Movement: may take one diagonal step even if both corner tiles are occupied.",
+              "effects": "DiagonalSqueezeBypassOnce",
+              "status": "proposal"
+            },
+            {
+              "key": "snap-shot",
+              "name": "Snap Shot",
+              "description": "+1 Damage on shots against adjacent targets (still a shot: no return, no bind).",
+              "effects": "PointBlankDamage+1",
+              "status": "proposal",
+              "notes": "Tree: damage not Attack."
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "cxCost": 2,
+          "requirements": [
+            {
+              "skill": "Acrobatics",
+              "min": 3,
+              "kind": "secondary"
+            },
+            {
+              "skill": "Shooting",
+              "min": 6,
+              "kind": "main"
+            }
+          ],
+          "requirementsText": "Acrobatics ≥ 3, Shooting ≥ 6",
+          "abilities": [
+            {
+              "key": "feigned-retreat",
+              "name": "Feigned Retreat",
+              "description": "After Disengage: +1 Move that turn.",
+              "effects": "FeignedRetreat",
+              "status": "in-code"
+            },
+            {
+              "key": "long-shot",
+              "name": "Long Shot",
+              "description": "Shot range Attack penalty is −1 per tile instead of −2.",
+              "effects": "LongShot",
+              "status": "in-code"
+            },
+            {
+              "key": "harassing-fire",
+              "name": "Harassing Fire",
+              "description": "On a damaging shot: target’s next turn Move is lowered by 1.",
+              "effects": "ShotNextTurnMove-1",
+              "status": "proposal",
+              "notes": "Reworded from same-phase remaining Move."
+            }
+          ]
+        },
+        {
+          "tier": 3,
+          "cxCost": 3,
+          "requirements": [
+            {
+              "skill": "Acrobatics",
+              "min": 5,
+              "kind": "secondary"
+            },
+            {
+              "skill": "Shooting",
+              "min": 8,
+              "kind": "main"
+            }
+          ],
+          "requirementsText": "Acrobatics ≥ 5, Shooting ≥ 8",
+          "abilities": [
+            {
+              "key": "extended-range",
+              "name": "Extended Range",
+              "description": "+1 Range on ranged attacks.",
+              "effects": "Range+1",
+              "status": "draft",
+              "notes": "New from tree: '+1 range to range attacks'."
+            },
+            {
+              "key": "skirmish-screen",
+              "name": "Skirmish Screen",
+              "description": "May shoot even while engaged.",
+              "effects": "ShootWhileEngaged",
+              "status": "proposal",
+              "notes": "Tree dropped 'once per battle'."
+            },
+            {
+              "key": "enfilade",
+              "name": "Enfilade",
+              "description": "Shots treat target side Exposure as rear-corner (+1.5→+2) and rear-corner as rear (+2→+2.5).",
+              "effects": "ShotExposureEscalate",
+              "status": "proposal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cunning",
+      "label": "Cunning",
+      "tiers": [
+        {
+          "tier": 1,
+          "cxCost": 1,
+          "requirements": [
+            {
+              "skill": "Deceit",
+              "min": 5,
+              "kind": "main"
+            },
+            {
+              "skill": "Observation",
+              "min": 2,
+              "kind": "secondary"
+            }
+          ],
+          "requirementsText": "Deceit ≥ 5, Observation ≥ 2",
+          "abilities": [
+            {
+              "key": "kill-the-captain",
+              "name": "Kill the Captain",
+              "description": "+2 Attack against units that have an assigned captain.",
+              "effects": "VsCaptainAttack+2",
+              "status": "proposal",
+              "notes": "Was +1; tree says +2. Moved to T1."
+            },
+            {
+              "key": "look-away",
+              "name": "Look Away",
+              "description": "Once per Movement phase: after this unit finishes its move, set facing for free (no Move spend).",
+              "effects": "FreeFacingAfterMoveOnce",
+              "status": "proposal"
+            },
+            {
+              "key": "knife-in-the-dark",
+              "name": "Knife in the Dark",
+              "description": "Attacks from rear or rear-corner: +1 Damage (stacks with Backstab Doctrine).",
+              "effects": "RearDamage+1",
+              "status": "proposal",
+              "notes": "Tree dropped 'first each battle'."
+            },
+            {
+              "key": "initiative-boost",
+              "name": "+2 Initiative",
+              "description": "+2 Initiative for contested-tile ties and Combat resolve order.",
+              "effects": "Initiative+2",
+              "status": "draft",
+              "notes": "New from tree cell."
+            }
+          ]
+        },
+        {
+          "tier": 2,
+          "cxCost": 2,
+          "requirements": [
+            {
+              "skill": "Deceit",
+              "min": 6,
+              "kind": "main"
+            },
+            {
+              "skill": "Observation",
+              "min": 3,
+              "kind": "secondary"
+            }
+          ],
+          "requirementsText": "Deceit ≥ 6, Observation ≥ 3",
+          "abilities": [
+            {
+              "key": "decoy-banner",
+              "name": "Decoy Banner",
+              "description": "Once per Attack Planning: if an enemy targets an adjacent ally and this unit is a valid target, pull the order onto yourself.",
+              "effects": "PullAttackOntoSelfOnce",
+              "status": "proposal",
+              "notes": "Moved to T2."
+            },
+            {
+              "key": "false-retreat-trap",
+              "name": "False Retreat Trap",
+              "description": "When an enemy moves while engaged with this unit: free hit deals full Damage instead of half (once per battle).",
+              "effects": "DisengageHitFullOnce",
+              "status": "proposal",
+              "notes": "Moved to T2."
+            },
+            {
+              "key": "turn-the-flank",
+              "name": "Turn the Flank",
+              "description": "When attacking from the side: Aim counts as corner (1.5) instead of side/rear (1).",
+              "effects": "AimVsSideAsCorner",
+              "status": "proposal"
+            }
+          ]
+        },
+        {
+          "tier": 3,
+          "cxCost": 3,
+          "requirements": [
+            {
+              "skill": "Deceit",
+              "min": 8,
+              "kind": "main"
+            },
+            {
+              "skill": "Observation",
+              "min": 5,
+              "kind": "secondary"
+            }
+          ],
+          "requirementsText": "Deceit ≥ 8, Observation ≥ 5",
+          "abilities": [
+            {
+              "key": "backstab-doctrine",
+              "name": "Backstab Doctrine",
+              "description": "+1 front multiplier on rear and side-rear attacks.",
+              "effects": "BackstabDoctrine",
+              "status": "in-code",
+              "notes": "Moved to T3; includes side-rear."
+            },
+            {
+              "key": "read-the-enemy",
+              "name": "Read the Enemy",
+              "description": "Nearest enemy within 3 movement range reveals planned movement.",
+              "effects": "ReadTheEnemyRange3",
+              "status": "in-code"
+            },
+            {
+              "key": "clean-disengage",
+              "name": "Clean Disengage",
+              "description": "Disengage does not provoke free attacks.",
+              "effects": "DisengageNoProvoke",
+              "status": "draft",
+              "notes": "New from tree."
+            },
+            {
+              "key": "mask-of-dust",
+              "name": "Mask of Dust",
+              "description": "Opponent sees no movement ghost for this unit until Finish move.",
+              "effects": "HideMoveGhost",
+              "status": "proposal",
+              "notes": "Moved to T3."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "branches": 5,
+    "abilities": 48,
+    "byStatus": {
+      "in-code": 18,
+      "proposal": 23,
+      "draft": 7
+    }
+  }
+}

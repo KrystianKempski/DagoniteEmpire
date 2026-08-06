@@ -40,7 +40,8 @@ else if (Barony is not null)
                               CanManage="@CanManageAsMg"
                               OnEdit="EditAvailableAdvisorAsync"
                               OnDelete="DeleteAvailableAdvisorAsync"
-                              OnAdd="AddAvailableAdvisorAsync" />
+                              OnAdd="AddAvailableAdvisorAsync"
+                              OnSheetChanged="SaveCourtSheetAsync" />
 
     @if (CanManageAsMg)
     {
@@ -113,7 +114,11 @@ else if (Barony is not null)
     private async Task AddAvailableAdvisorAsync()
     {
         if (Barony is null || !CanManageAsMg) return;
-        await OpenAvailableAdvisorDialog(new AvailableAdvisorDTO { BaronyId = Barony.Id });
+        await OpenAvailableAdvisorDialog(new AvailableAdvisorDTO
+        {
+            BaronyId = Barony.Id,
+            Sheet = CourtCharacterSheet.CreateDefault(),
+        });
     }
 
     private async Task EditAvailableAdvisorAsync(AvailableAdvisorDTO person)
@@ -125,6 +130,7 @@ else if (Barony is not null)
             BaronyId = person.BaronyId,
             Name = person.Name,
             Description = person.Description,
+            Sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault(),
             Skills = person.Skills.Clone(),
         });
     }
@@ -133,16 +139,16 @@ else if (Barony is not null)
     {
         if (!CanManageAsMg) return;
         var dialog = await _dialogService.ShowAsync<AvailableAdvisorEditDialog>(
-            draft.Id > 0 ? "Edit Available Advisor" : "Add Available Advisor",
+            draft.Id > 0 ? "Edit court person" : "Add court person",
             new DialogParameters<AvailableAdvisorEditDialog> { { x => x.Advisor, draft } },
-            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true });
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not AvailableAdvisorDTO saved)
             return;
 
         saved.BaronyId = Barony!.Id;
         await _baronyRepo.SaveAvailableAdvisor(saved);
-        _snackBar.Add("Available advisor saved.", Severity.Success);
+        _snackBar.Add("Court person saved.", Severity.Success);
         await ReloadAsync();
     }
 
@@ -150,7 +156,18 @@ else if (Barony is not null)
     {
         if (!CanManageAsMg || person.Id <= 0) return;
         await _baronyRepo.DeleteAvailableAdvisor(person.Id);
-        _snackBar.Add("Available advisor removed.", Severity.Success);
+        _snackBar.Add("Court person removed.", Severity.Success);
+        await ReloadAsync();
+    }
+
+    private async Task SaveCourtSheetAsync(AvailableAdvisorDTO person)
+    {
+        if (!CanManageAsMg || person.Id <= 0)
+            return;
+
+        person.BaronyId = Barony!.Id;
+        await _baronyRepo.SaveAvailableAdvisor(person);
+        _snackBar.Add("Court sources saved.", Severity.Success);
         await ReloadAsync();
     }
 }

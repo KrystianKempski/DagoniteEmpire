@@ -22,7 +22,9 @@ namespace DA_Business.Repository.BaronyRepos
             decimal Production,
             decimal Economy,
             decimal Defense,
-            int SortOrder);
+            int SortOrder,
+            decimal AdditiveHonor = 0m,
+            decimal AdditiveFear = 0m);
 
         public static readonly IReadOnlyList<SeedEntry> Defaults =
         [
@@ -276,6 +278,8 @@ namespace DA_Business.Repository.BaronyRepos
                 WhoOccupies = entry.WhoOccupies,
                 SleepCapacity = entry.SleepCapacity,
                 AdditivePrestige = entry.AdditivePrestige,
+                AdditiveHonor = entry.AdditiveHonor,
+                AdditiveFear = entry.AdditiveFear,
                 AdditiveJson = JsonSerializer.Serialize(additive, JsonOptions),
                 PercentJson = JsonSerializer.Serialize(new PpbVector(), JsonOptions),
                 IsUniversal = true,

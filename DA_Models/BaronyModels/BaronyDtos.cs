@@ -111,7 +111,9 @@ namespace DA_Models.BaronyModels
         public int BaronyId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+        /// <summary>Total Domain Skills: from-skill PPB + Domain Other (<see cref="DA_Common.Barony.CourtPpbFormulas.ComputeTotal"/>).</summary>
         public PpbVector Skills { get; set; } = new();
+        public CourtCharacterSheet Sheet { get; set; } = CourtCharacterSheet.CreateDefault();
     }
 
     public class BaronyBuildingDTO
@@ -611,6 +613,8 @@ namespace DA_Models.BaronyModels
         public string WhoOccupies { get; set; } = string.Empty;
         public int SleepCapacity { get; set; }
         public decimal AdditivePrestige { get; set; }
+        public decimal AdditiveHonor { get; set; }
+        public decimal AdditiveFear { get; set; }
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();
         public bool IsUniversal { get; set; } = true;

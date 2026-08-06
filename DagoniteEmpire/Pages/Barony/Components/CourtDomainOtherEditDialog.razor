@@ -1,0 +1,120 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Extra Domain Skill sources. Values are summed into the Other row;
+                source names show on hover and here.
+            </MudText>
+
+            <div class="court-other-list">
+                @for (var i = 0; i < _entries.Count; i++)
+                {
+                    var index = i;
+                    var entry = _entries[index];
+                    <div class="court-domain-other-block">
+                        <div class="court-other-row">
+                            <MudTextField @bind-Value="entry.Name"
+                                          Label="Source"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Class="court-other-row__name" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           title="Remove"
+                                           OnClick="@(() => Remove(index))" />
+                        </div>
+                        <PpbVectorEditor @bind-Value="entry.Additive" Title="PPB bonuses" Compact="true" ExcludeTreasury="true" />
+                    </div>
+                }
+            </div>
+
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Class="mt-2"
+                       OnClick="Add">
+                Add source
+            </MudButton>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<CourtDomainOtherSource> Sources { get; set; } = new();
+
+    private readonly List<CourtDomainOtherSource> _entries = new();
+
+    protected override void OnInitialized()
+    {
+        _entries.Clear();
+        foreach (var src in Sources ?? Enumerable.Empty<CourtDomainOtherSource>())
+        {
+            var vec = (src.Additive ?? new PpbVector()).Clone();
+            vec.EnsureSize();
+            _entries.Add(new CourtDomainOtherSource
+            {
+                Name = src.Name,
+                Additive = vec,
+            });
+        }
+    }
+
+    private void Add()
+    {
+        var vec = new PpbVector();
+        vec.EnsureSize();
+        _entries.Add(new CourtDomainOtherSource
+        {
+            Name = string.Empty,
+            Additive = vec,
+        });
+    }
+
+    private void Remove(int index)
+    {
+        if (index >= 0 && index < _entries.Count)
+            _entries.RemoveAt(index);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        foreach (var entry in _entries)
+        {
+            if (string.IsNullOrWhiteSpace(entry.Name))
+            {
+                _snackBar.Add("Each source needs a name.", Severity.Warning);
+                return;
+            }
+        }
+
+        var cleaned = new List<CourtDomainOtherSource>();
+        foreach (var entry in _entries)
+        {
+            var vec = (entry.Additive ?? new PpbVector()).Clone();
+            vec.EnsureSize();
+            vec[Ppb.Treasury] = 0m;
+            if (vec.IsEmpty)
+                continue;
+            cleaned.Add(new CourtDomainOtherSource
+            {
+                Name = entry.Name.Trim(),
+                Additive = vec,
+            });
+        }
+
+        MudDialog.Close(DialogResult.Ok(cleaned));
+    }
+}

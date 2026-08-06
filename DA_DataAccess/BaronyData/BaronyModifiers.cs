@@ -50,7 +50,10 @@ namespace DA_DataAccess.BaronyData
         public int BaronyId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+        /// <summary>Computed administrative PPB vector (from <see cref="SheetJson"/>).</summary>
         public string SkillsJson { get; set; } = "{}";
+        /// <summary>Court character sheet JSON (<c>CourtCharacterSheet</c>).</summary>
+        public string SheetJson { get; set; } = "{}";
     }
 
     /// <summary>Budynek/ulepszenie działające w mieście głównym (sekcja "Miasto i budynki").</summary>

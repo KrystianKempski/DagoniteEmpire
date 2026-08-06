@@ -1,13 +1,16 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<table class="ppb-table ppb-table--source ppb-table--office ppb-table--lined">
+<table class="ppb-table ppb-table--source ppb-table--office ppb-table--lined @(ShowCost ? null : "ppb-table--office-no-cost") @ExtraClass">
     <colgroup>
         <col class="offices-label-col" />
         @foreach (var _ in SkillColumns)
         {
             <col class="offices-ppb-col" />
         }
-        <col class="offices-trailing-col" />
+        @if (ShowCost)
+        {
+            <col class="offices-trailing-col" />
+        }
     </colgroup>
     <thead>
         <tr>
@@ -17,7 +20,10 @@
                 var inactive = IsColumnInactive(info.Key);
                 <th class="@HeaderClass(inactive)" title="@HeaderTitle(info, inactive)">@PpbShort(info.Key)</th>
             }
-            <th class="office-cost-col">Cost</th>
+            @if (ShowCost)
+            {
+                <th class="office-cost-col">Cost</th>
+            }
         </tr>
     </thead>
     <tbody>
@@ -40,11 +46,14 @@
                         {
                             <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Style="vertical-align:text-bottom;opacity:.6;" />
                         }
-                        @if (CanEdit && !row.IsSystem)
+                        @if ((CanEdit && !row.IsSystem) || (CanEditOther && row.SystemKind == AdvisorInfluenceSystemKind.Other))
                         {
                             <span class="source-cell__actions">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OnEdit.InvokeAsync(row))" />
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => OnDelete.InvokeAsync(row))" />
+                                @if (CanEdit && !row.IsSystem)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => OnDelete.InvokeAsync(row))" />
+                                }
                             </span>
                         }
                     </div>
@@ -52,9 +61,13 @@
                 @foreach (var info in SkillColumns)
                 {
                     var inactive = IsColumnInactive(info.Key);
-                    <td class="@CellClass(info.Key, row.Values[info.Key], inactive)">@Fmt(row.Values[info.Key])</td>
+                    var tip = CellTooltip?.Invoke(row, info.Key);
+                    <td class="@CellClass(info.Key, row.Values[info.Key], inactive)" title="@tip">@Fmt(row.Values[info.Key])</td>
                 }
-                <td class="office-cost-col @CostClass(row.Cost)">@FmtCost(row.Cost)</td>
+                @if (ShowCost)
+                {
+                    <td class="office-cost-col @CostClass(row.Cost)">@FmtCost(row.Cost)</td>
+                }
             </tr>
         }
         @if (Summary is not null)
@@ -66,7 +79,10 @@
                     var v = Summary[info.Key];
                     <td class="@PpbCellStyle.ValueClass(info.Key, v)"><b>@Fmt(v)</b></td>
                 }
-                <td class="office-cost-col @CostClass(SummaryCost)"><b>@FmtCost(SummaryCost)</b></td>
+                @if (ShowCost)
+                {
+                    <td class="office-cost-col @CostClass(SummaryCost)"><b>@FmtCost(SummaryCost)</b></td>
+                }
             </tr>
         }
     </tbody>
@@ -79,8 +95,12 @@
     [Parameter] public string SummaryLabel { get; set; } = "Σ total";
     [Parameter] public IReadOnlySet<Ppb>? SignificantSkills { get; set; }
     [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanEditOther { get; set; }
+    [Parameter] public bool ShowCost { get; set; } = true;
+    [Parameter] public string? ExtraClass { get; set; }
     [Parameter] public EventCallback<AdvisorInfluenceRow> OnEdit { get; set; }
     [Parameter] public EventCallback<AdvisorInfluenceRow> OnDelete { get; set; }
+    [Parameter] public Func<AdvisorInfluenceRow, Ppb, string?>? CellTooltip { get; set; }
 
     private static IEnumerable<PpbInfo> SkillColumns
         => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);

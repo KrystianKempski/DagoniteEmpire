@@ -175,6 +175,9 @@ namespace DA_DataAccess.Data
             modelBuilder.Entity<BaronyUnit>(entity =>
             {
                 entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => e.CaptainAvailableAdvisorId)
+                    .IsUnique()
+                    .HasFilter("\"CaptainAvailableAdvisorId\" IS NOT NULL");
             });
 
             modelBuilder.Entity<BaronyProject>(entity =>

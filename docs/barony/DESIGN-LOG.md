@@ -5,6 +5,22 @@
 
 ---
 
+## 2026-08-05 — Court commanders (model B)
+
+### D-CMD1. Gałęzie + trzon
+Zdolności dowódcy: wspólny **Trunk** oraz **Shock / Line / Skirmish / Cunning**.  
+Court Attack/Defence **nie** wpływają na Cmd — tylko odblokowane ability.
+
+### D-CMD2. Przypisanie 1:1
+`BaronyUnit.CaptainAvailableAdvisorId` → AvailableAdvisor. Jeden Courtier na jeden oddział; oddział bez kapitana jest OK.
+
+### D-CMD3. Dwa T3 szarży
+**Thunder Charge** (+3 Atk/+2 Dmg) oraz **Flying Start** (min. ścieżka −1). Osobne klucze, niezależne.
+
+Dokument: [`COMMANDER.md`](./COMMANDER.md).
+
+---
+
 ## 2026-07-10 — Fundamenty warstwy Baronii
 
 ### D1. Rola Barona = istniejąca `DukePlayer` + `NPCType.Duke`

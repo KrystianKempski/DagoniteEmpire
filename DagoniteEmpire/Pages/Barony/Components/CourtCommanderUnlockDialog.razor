@@ -1,0 +1,103 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="barony-dialog">
+    <DialogContent>
+        <div class="barony-dialog-theme">
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+            Available CX: @_available. Trunk + branch gates apply (model B).
+        </MudText>
+        <MudSelect T="string"
+                   Value="_selectedKey"
+                   ValueChanged="OnSelectedChanged"
+                   Label="Ability"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true">
+            @foreach (var ability in Unlockable)
+            {
+                <MudSelectItem Value="@ability.Key">
+                    [T@versionability.Tier] @ability.Branch · @ability.NameEn (@ability.CxCost CX)
+                </MudSelectItem>
+            }
+        </MudSelect>
+        @if (Selected is not null)
+        {
+            <MudText Typo="Typo.body2" Class="mt-2">@Selected.DescriptionEn</MudText>
+            @if (!string.IsNullOrWhiteSpace(_gateHint))
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">@_gateHint</MudAlert>
+            }
+        }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Disabled="@(Selected is null || !string.IsNullOrEmpty(_gateHint))"
+                   OnClick="Save">
+            Unlock
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public CourtCharacterSheet Sheet { get; set; } = CourtCharacterSheet.CreateDefault();
+
+    private string? _selectedKey;
+    private int _available;
+    private string? _gateHint;
+
+    private List<CourtCommanderAbility> Unlockable =>
+        CourtCommanderCatalog.All
+            .Where(a => Sheet.UnlockedCommanderAbilities.All(k =>
+                !string.Equals(k, a.Key, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(a => a.Branch)
+            .ThenBy(a => a.Tier)
+            .ThenBy(a => a.NameEn)
+            .ToList();
+
+    private CourtCommanderAbility? Selected =>
+        string.IsNullOrWhiteSpace(_selectedKey) ? null : CourtCommanderCatalog.Find(_selectedKey);
+
+    protected override void OnInitialized()
+    {
+        Sheet.Normalize();
+        _available = CourtCommanderFormulas.AvailableCx(Sheet);
+        _selectedKey = Unlockable.FirstOrDefault()?.Key;
+        RefreshHint();
+    }
+
+    protected override void OnParametersSet() => RefreshHint();
+
+    private void RefreshHint()
+    {
+        _gateHint = null;
+        if (Selected is null)
+            return;
+        if (!CourtCommanderFormulas.CanUnlock(Sheet, Selected.Key, out var reason))
+            _gateHint = reason;
+    }
+
+    private void OnSelectedChanged(string value)
+    {
+        _selectedKey = value;
+        RefreshHint();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (Selected is null)
+            return;
+        if (!CourtCommanderFormulas.TryUnlock(Sheet, Selected.Key, out var error))
+        {
+            _snackBar.Add(error ?? "Cannot unlock.", Severity.Warning);
+            RefreshHint();
+            return;
+        }
+        MudDialog.Close(DialogResult.Ok(Sheet));
+    }
+}

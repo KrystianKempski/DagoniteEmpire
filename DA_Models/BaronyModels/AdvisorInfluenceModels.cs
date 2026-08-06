@@ -17,6 +17,7 @@ namespace DA_Models.BaronyModels
     {
         None,
         Skills,
+        Other,
     }
 
     /// <summary>Single row in an advisor office influence table.</summary>

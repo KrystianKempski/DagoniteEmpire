@@ -26,7 +26,13 @@
                         <th rowspan="2" class="ppb-row-label lords-seat-templates-col-name">Name</th>
                         <th rowspan="2" class="lords-seat-templates-col-size">Min size</th>
                         <th rowspan="2" class="lords-seat-templates-col-desc">Description</th>
-                        <th rowspan="2" class="lords-seat-templates-col-prestige">Prestige +</th>
+                        <th rowspan="2" class="lords-seat-templates-col-prestige seat-php-header" title="Prestige / Honor / Fear (additive)">
+                            <span class="seat-php-header__icons">
+                                <PhpMetricIcon Metric="PhpMetric.Prestige" />
+                                <PhpMetricIcon Metric="PhpMetric.Honor" />
+                                <PhpMetricIcon Metric="PhpMetric.Fear" />
+                            </span>
+                        </th>
                         @foreach (var info in PpbCatalog.All)
                         {
                             <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
@@ -75,15 +81,23 @@
                                     </BaronyTooltip>
                                 }
                             </td>
-                            <td class="lords-seat-templates-col-prestige @PpbCellStyle.ValueClassStandard(t.AdditivePrestige)">
-                                @if (t.AdditivePrestige == 0m)
-                                {
-                                    <span class="lords-seat-muted">—</span>
-                                }
-                                else
-                                {
-                                    @FmtAdd(t.AdditivePrestige)
-                                }
+                            <td class="lords-seat-templates-col-prestige seat-php-cell">
+                                <BaronyTooltip Title="Prestige / Honor / Fear" Text="@TemplatePhpTooltip(t)">
+                                    <span class="seat-php-values">
+                                        <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
+                                            <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
+                                            <span class="seat-php-value__num">@FmtPhp(t.AdditivePrestige)</span>
+                                        </span>
+                                        <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Honor)">
+                                            <PhpMetricIcon Metric="PhpMetric.Honor" Title="" />
+                                            <span class="seat-php-value__num">@FmtPhp(t.AdditiveHonor)</span>
+                                        </span>
+                                        <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Fear)">
+                                            <PhpMetricIcon Metric="PhpMetric.Fear" Title="" />
+                                            <span class="seat-php-value__num">@FmtPhp(t.AdditiveFear)</span>
+                                        </span>
+                                    </span>
+                                </BaronyTooltip>
                             </td>
                             @foreach (var info in PpbCatalog.All)
                             {
@@ -148,6 +162,14 @@
     private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
 
     private static string FmtPct(decimal v) => PpbFormat.Percent(v);
+
+    private static string FmtPhp(decimal v) => v == 0m
+        ? "0"
+        : (v > 0m ? $"+{v.ToString("0.##")}" : v.ToString("0.##"));
+
+    private static string TemplatePhpTooltip(SeatPurposeTemplateDTO t) =>
+        $"Prestige {FmtPhp(t.AdditivePrestige)} · Honor {FmtPhp(t.AdditiveHonor)} · Fear {FmtPhp(t.AdditiveFear)}"
+        + " (per chamber, before multiplier)";
 
     private Task AddAsync() => OpenDialog(new SeatPurposeTemplateDTO { IsUniversal = true, BaronyId = BaronyId }, isNew: true);
 
@@ -214,6 +236,8 @@
         WhoOccupies = s.WhoOccupies,
         SleepCapacity = s.SleepCapacity,
         AdditivePrestige = s.AdditivePrestige,
+        AdditiveHonor = s.AdditiveHonor,
+        AdditiveFear = s.AdditiveFear,
         Additive = s.Additive.Clone(),
         Percent = s.Percent.Clone(),
         IsUniversal = s.IsUniversal,

@@ -75,6 +75,13 @@ namespace DA_Models.BaronyModels
 
         public int CommanderAttack { get; set; }
         public int CommanderDefense { get; set; }
+
+        /// <summary>Assigned court person acting as unit captain (1:1).</summary>
+        public int? CaptainAvailableAdvisorId { get; set; }
+
+        /// <summary>Display name of assigned captain (filled when loading roster).</summary>
+        public string? CaptainName { get; set; }
+
         public int OtherAttack { get; set; }
         public int OtherDefense { get; set; }
         public int OtherDamage { get; set; }

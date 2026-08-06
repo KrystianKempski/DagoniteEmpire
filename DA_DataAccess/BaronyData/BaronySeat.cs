@@ -135,6 +135,12 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Additive prestige from purpose (multiplied by room prestige later).</summary>
         public decimal AdditivePrestige { get; set; }
 
+        /// <summary>Additive honor from purpose (multiplied by room prestige multiplier).</summary>
+        public decimal AdditiveHonor { get; set; }
+
+        /// <summary>Additive fear from purpose (multiplied by room prestige multiplier).</summary>
+        public decimal AdditiveFear { get; set; }
+
         public string AdditiveJson { get; set; } = string.Empty;
 
         public string PercentJson { get; set; } = string.Empty;

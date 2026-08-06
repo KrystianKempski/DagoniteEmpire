@@ -131,13 +131,81 @@
             }
         </TitleActions>
     </UnitDraftCardPreview>
+
+    @if (CanEdit || !string.IsNullOrWhiteSpace(Unit.CaptainName))
+    {
+        <div class="unit-captain-row">
+            <span class="unit-captain-row__label">Captain</span>
+            @if (CanEdit)
+            {
+                <MudSelect T="int?"
+                           Value="@Unit.CaptainAvailableAdvisorId"
+                           ValueChanged="OnCaptainChangedAsync"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Dense="true"
+                           Clearable="true"
+                           Disabled="@_busy"
+                           Class="unit-captain-row__select">
+                    @foreach (var person in SelectableCaptains)
+                    {
+                        var count = person.Sheet?.UnlockedCommanderAbilities.Count ?? 0;
+                        <MudSelectItem T="int?" Value="@person.Id">
+                            <div class="unit-captain-option">
+                                <span class="unit-captain-option__name">@person.Name</span>
+                                @if (count > 0)
+                                {
+                                    <span class="unit-captain-option__badge" title="Unlocked commander abilities">
+                                        <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" Size="Size.Small" />
+                                        @count
+                                    </span>
+                                }
+                            </div>
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            else
+            {
+                <span class="unit-captain-row__name">@(Unit.CaptainName ?? "—")</span>
+            }
+        </div>
+        @if (CurrentCaptain is { } captain
+             && captain.Sheet is { } captainSheet
+             && captainSheet.UnlockedCommanderAbilities.Count > 0)
+        {
+            <div class="unit-captain-abilities">
+                @foreach (var key in captainSheet.UnlockedCommanderAbilities)
+                {
+                    var ability = CourtCommanderCatalog.Find(key);
+                    <span class="ppb-chip unit-captain-abilities__chip" title="@(ability?.DescriptionEn)">
+                        <span class="ppb-chip__label">@(ability?.NameEn ?? key)</span>
+                        <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
+                    </span>
+                }
+            </div>
+        }
+    }
 </div>
 
 @code {
     [Parameter] public BaronyUnitDTO Unit { get; set; } = new();
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public bool CanManageAsMg { get; set; }
+    [Parameter] public List<AvailableAdvisorDTO> AvailableCaptains { get; set; } = new();
+    [Parameter] public HashSet<int> OccupiedCaptainIds { get; set; } = new();
     [Parameter] public EventCallback OnChanged { get; set; }
+
+    private IEnumerable<AvailableAdvisorDTO> SelectableCaptains =>
+        AvailableCaptains
+            .Where(a => !OccupiedCaptainIds.Contains(a.Id)
+                        || a.Id == Unit.CaptainAvailableAdvisorId)
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
+
+    private AvailableAdvisorDTO? CurrentCaptain =>
+        Unit.CaptainAvailableAdvisorId is int id
+            ? AvailableCaptains.FirstOrDefault(a => a.Id == id)
+            : null;
 
     private bool CanSpendPd => CanEdit && Unit.IsActive;
     private bool HasOpenReinforceProject =>
@@ -181,6 +249,30 @@
     private bool _xpDirty;
     private bool _busy;
     private int _baselineUnitId = int.MinValue;
+
+    private async Task OnCaptainChangedAsync(int? captainId)
+    {
+        if (_busy)
+            return;
+        _busy = true;
+        try
+        {
+            Unit.CaptainAvailableAdvisorId = captainId is > 0 ? captainId : null;
+            await _baronyRepo.SaveUnit(Unit);
+            _snackBar.Add(
+                Unit.CaptainAvailableAdvisorId is null ? "Captain cleared." : "Captain assigned.",
+                Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
     private XpBaseline? _baseline;
 
     private int XpSpentPending =>

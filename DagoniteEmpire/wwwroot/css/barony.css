@@ -4653,6 +4653,21 @@ a.city-building-name-text--link:hover {
     font-weight: 600;
 }
 
+/* Barony-themed checkbox: amber/gold instead of MUI blue */
+.barony-checkbox .mud-checkbox-icons .mud-icon-root {
+    color: rgba(47, 42, 36, 0.35);
+}
+.barony-checkbox.mud-checkbox-true .mud-checkbox-icons .mud-icon-root,
+.barony-checkbox .mud-checkbox-true .mud-checkbox-icons .mud-icon-root {
+    color: #9c7a33;
+}
+.barony-checkbox:not(.mud-disabled):hover .mud-checkbox-icons .mud-icon-root {
+    color: #c3a050;
+}
+.barony-checkbox.mud-checkbox-true:hover .mud-checkbox-icons .mud-icon-root {
+    color: #7a5e1e;
+}
+
 .ppb-summary-row td {
     border-top: 2px solid var(--barony-border-strong);
     font-weight: 700;
@@ -4783,6 +4798,36 @@ a.city-building-name-text--link:hover {
 
     color: var(--barony-ink);
     font-family: 'Open Sans', sans-serif;
+}
+
+/* Generic barony dialog chrome — title bar, content bg, footer */
+.mud-dialog.barony-dialog {
+    border: 1px solid #c3b696;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 8px 28px rgba(47, 42, 36, 0.18);
+}
+
+.mud-dialog.barony-dialog .mud-dialog-title {
+    background: linear-gradient(180deg, #fbf8f1 0%, #f0ead9 100%);
+    border-bottom: 1px solid #d9cfb8;
+    color: #2f2a24;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 700;
+    padding: 12px 16px;
+}
+
+.mud-dialog.barony-dialog .mud-dialog-content {
+    background: #fbf8f1;
+    color: #2f2a24;
+    padding: 16px !important;
+}
+
+.mud-dialog.barony-dialog .mud-dialog-actions {
+    background: #f0ead9;
+    border-top: 1px solid #d9cfb8;
+    padding: 10px 16px !important;
+    gap: 8px;
 }
 
 .mud-dialog-container .mud-dialog.baron-influence-dialog:not(.mud-dialog-fullscreen):has(.baron-influence-dialog-content) {
@@ -5123,6 +5168,782 @@ a.city-building-name-text--link:hover {
     width: var(--offices-trailing-width, 56px);
     max-width: var(--offices-trailing-width, 56px);
     box-sizing: border-box;
+}
+
+.barony-scope .court-person-card .project-card__title-row {
+    align-items: center;
+}
+
+.barony-scope .court-person-card {
+    cursor: pointer;
+}
+
+.barony-scope .court-person-card.project-card--open .project-card__panels {
+    cursor: default;
+}
+
+.barony-scope .court-person-card__title-actions {
+    margin-top: 0;
+    margin-left: auto;
+    flex: 0 0 auto;
+}
+
+.barony-scope .court-person-card__ppb-glance {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.75rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 0.25rem;
+}
+
+.barony-scope .court-person-card__ppb-glance .ppb-chips {
+    margin: 0;
+    flex-wrap: wrap;
+}
+
+.barony-scope .court-person-card__panels {
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.barony-scope .court-person-card__panel--skills {
+    flex: 1 1 0;
+    min-width: 0;
+    border-right: 1px solid var(--barony-border);
+}
+
+.barony-scope .court-person-card__panel--ppb {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.barony-scope .court-person-card__panel--commander {
+    border-top: 1px solid var(--barony-border);
+}
+
+.barony-scope .court-commander-chips {
+    margin: 0;
+}
+
+.barony-scope .court-commander-xp-field {
+    max-width: 8rem;
+}
+
+.court-commander-panel__cx {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.45rem;
+}
+
+.court-commander-panel__cx-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--barony-muted, #6f6656);
+}
+
+.court-commander-panel__cx-meta {
+    font-size: 0.68rem;
+    color: var(--barony-muted, #6f6656);
+}
+
+.court-commander-panel__cx-value {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #7a6020;
+    background: rgba(156, 122, 51, 0.1);
+    border: 1px solid rgba(156, 122, 51, 0.35);
+    border-radius: 4px;
+    padding: 0.1rem 0.45rem;
+    font-family: inherit;
+    cursor: default;
+}
+
+.court-commander-panel__cx-value--editable {
+    cursor: pointer;
+}
+
+.court-commander-panel__cx-value--editable:hover {
+    background: rgba(156, 122, 51, 0.2);
+    border-color: #9c7a33;
+    color: #5c4710;
+}
+
+.court-commander-panel__abilities {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* Commander skill tree dialog (MudBlazor portal — outside .barony-scope). */
+.mud-dialog.court-commander-tree-dialog {
+    width: fit-content !important;
+    max-width: min(96vw, 1400px) !important;
+}
+
+.mud-dialog.court-commander-tree-dialog .court-commander-tree-dialog__content {
+    max-height: min(85vh, 60rem);
+    overflow: auto;
+    width: fit-content;
+}
+
+.court-commander-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: fit-content;
+}
+
+/* shared fit-content column: trunk stretches to branches width */
+.court-commander-tree__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    width: fit-content;
+}
+
+.court-commander-tree__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem 1rem;
+}
+
+.court-commander-tree__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.court-commander-tree__trunk {
+    border: 1px solid rgba(47, 42, 36, 0.14);
+    border-radius: 6px;
+    padding: 0.65rem 0.75rem 0.75rem;
+    background: rgba(251, 248, 241, 0.55);
+    width: fit-content;
+    align-self: center;
+}
+
+.court-commander-tree__branch {
+    border: 1px solid rgba(47, 42, 36, 0.14);
+    border-radius: 6px;
+    padding: 0.65rem 0.75rem 0.75rem;
+    background: rgba(251, 248, 241, 0.55);
+    width: fit-content;
+}
+
+.court-commander-tree__branch-title {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 0 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #7a6020;
+}
+
+.court-commander-tree__branch-icon {
+    color: #9c7a33;
+}
+
+/* branches row: shrink-wrap each branch to its content */
+.court-commander-tree__branches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: flex-start;
+}
+
+.court-commander-tree__tiers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.85rem;
+    align-items: flex-start;
+}
+
+/* trunk tiers side by side */
+.court-commander-tree__trunk .court-commander-tree__tiers {
+    flex-wrap: nowrap;
+}
+
+.court-commander-tree__tiers--vertical {
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+
+.court-commander-tree__tier {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: fit-content;
+}
+
+.court-commander-tree__tier-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(47, 42, 36, 0.55);
+}
+
+/* exactly 2 columns of tiles per tier */
+.court-commander-tree__nodes {
+    display: grid;
+    grid-template-columns: repeat(2, 100px);
+    gap: 0.4rem;
+}
+
+.court-commander-tree__tiers--vertical .court-commander-tree__nodes {
+    display: grid;
+    grid-template-columns: repeat(2, 100px);
+    gap: 0.4rem;
+}
+
+.court-commander-node {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.1rem;
+    text-align: left;
+    border: 1px solid rgba(47, 42, 36, 0.18);
+    border-radius: 5px;
+    padding: 0.4rem 0.5rem;
+    width: 100px;
+    flex: 0 0 100px;
+    /* 2 lines of text at 0.78rem×1.3 + padding top+bottom */
+    height: calc(2 * 0.78rem * 1.3 + 0.8rem);
+    overflow: hidden;
+    cursor: pointer;
+    background: #fbf8f1;
+    color: var(--barony-ink, #2f2a24);
+    font: inherit;
+    line-height: 1.2;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.court-commander-node__name {
+    font-size: 0.78rem;
+    font-weight: 650;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.court-commander-node__meta {
+    display: none;
+}
+
+.court-commander-node--unlocked {
+    border-color: rgba(61, 122, 69, 0.45);
+    background: rgba(61, 122, 69, 0.1);
+}
+
+.court-commander-node--ready {
+    border-color: rgba(156, 122, 51, 0.55);
+    background: rgba(196, 163, 90, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(156, 122, 51, 0.12);
+}
+
+.court-commander-node--locked {
+    opacity: 0.62;
+    background: rgba(47, 42, 36, 0.04);
+}
+
+.court-commander-node--selected {
+    border-color: #7a6020;
+    box-shadow: 0 0 0 2px rgba(156, 122, 51, 0.28);
+}
+
+.court-commander-node--legend {
+    cursor: default;
+    width: 80px;
+    flex: 0 0 80px;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.66rem;
+    pointer-events: none;
+    justify-content: center;
+    text-align: center;
+    height: auto;
+}
+
+.court-commander-node--legend .court-commander-node__meta {
+    display: none;
+}
+
+.court-commander-tree__detail {
+    border-top: 1px solid rgba(47, 42, 36, 0.12);
+    padding-top: 0.75rem;
+}
+
+.court-commander-tree__detail-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.court-commander-tree__unlock-btn {
+    margin-left: 0.5rem;
+    flex-shrink: 0;
+}
+
+.court-commander-tree__detail-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.court-commander-tree__detail-meta {
+    font-size: 0.72rem;
+    color: rgba(47, 42, 36, 0.55);
+}
+
+.court-commander-tree__detail p {
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.court-commander-tree__req {
+    color: rgba(47, 42, 36, 0.65);
+    font-size: 0.78rem !important;
+}
+
+.court-commander-tree__effects {
+    color: rgba(47, 42, 36, 0.72);
+    font-size: 0.78rem !important;
+    font-style: italic;
+}
+
+.court-commander-status {
+    display: inline-block;
+    margin: 0.15rem 0 0.1rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+
+.court-commander-status--in-code {
+    color: #2f5d3a;
+    background: rgba(92, 140, 92, 0.18);
+    border-color: rgba(92, 140, 92, 0.5);
+}
+
+.court-commander-status--proposal {
+    color: #7a5a17;
+    background: rgba(156, 122, 51, 0.16);
+    border-color: rgba(156, 122, 51, 0.5);
+}
+
+.court-commander-status--draft {
+    color: rgba(47, 42, 36, 0.6);
+    background: rgba(47, 42, 36, 0.08);
+    border-color: rgba(47, 42, 36, 0.28);
+}
+
+.court-commander-tree__branch--shock {
+    border-top: 3px solid rgba(139, 58, 58, 0.55);
+}
+
+.court-commander-tree__branch--line {
+    border-top: 3px solid rgba(107, 140, 174, 0.65);
+}
+
+.court-commander-tree__branch--skirmish {
+    border-top: 3px solid rgba(92, 107, 74, 0.65);
+}
+
+.court-commander-tree__branch--cunning {
+    border-top: 3px solid rgba(156, 122, 51, 0.7);
+}
+
+.unit-captain-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.45rem 0.75rem 0.65rem;
+    border-top: 1px solid var(--barony-border);
+}
+
+.unit-captain-row__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #7a6020;
+}
+
+.unit-captain-row__select {
+    flex: 1 1 12rem;
+    min-width: 10rem;
+    max-width: 18rem;
+}
+
+.unit-captain-row__name {
+    font-size: 0.9rem;
+}
+
+.unit-captain-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.unit-captain-option__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #7a6020;
+}
+
+.unit-captain-abilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    padding: 0 0.75rem 0.6rem;
+}
+
+.unit-captain-abilities__chip {
+    font-size: 0.72rem;
+}
+
+.barony-scope .court-combat-table th:not(.source-col),
+.barony-scope .court-combat-table td.court-skill-table__val {
+    min-width: 4.5rem;
+    width: 4.5rem;
+}
+
+.barony-scope .court-person-card__subpanel-title {
+    margin-top: 0.85rem;
+}
+
+.barony-scope .court-person-card__ppb-table-wrap {
+    overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+    .barony-scope .court-person-card__panels {
+        flex-direction: column;
+    }
+
+    .barony-scope .court-person-card__panel--skills {
+        border-right: none;
+        border-bottom: 1px solid var(--barony-border);
+    }
+}
+
+.barony-scope .court-skill-table--with-source {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.barony-scope .court-skill-table--with-source .source-col {
+    width: 6.25rem;
+    min-width: 6.25rem;
+    max-width: 6.25rem;
+    white-space: nowrap;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+.barony-scope .court-skill-table--with-source .source-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: space-between;
+}
+
+.barony-scope .court-skill-table--with-source .source-cell__actions {
+    display: inline-flex;
+    opacity: 0.7;
+}
+
+.barony-scope .court-skill-table--with-source tbody tr:hover .source-cell__actions {
+    opacity: 1;
+}
+
+/* Domain Skills: same compact look as Main skills (narrow Source, dense headers). */
+.barony-scope .ppb-table--court-domain {
+    --offices-label-width: 6.25rem;
+    --offices-ppb-width: auto;
+    table-layout: fixed;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+}
+
+.barony-scope .ppb-table--court-domain col.offices-label-col,
+.barony-scope .ppb-table--court-domain .source-col {
+    width: var(--offices-label-width);
+    min-width: var(--offices-label-width);
+    max-width: var(--offices-label-width);
+}
+
+.barony-scope .ppb-table--court-domain th {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 0.25rem 0.15rem;
+    line-height: 1.15;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.barony-scope .ppb-table--court-domain th.source-col {
+    text-align: left;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+.barony-scope .ppb-table--court-domain td:not(.source-col) {
+    text-align: center;
+    font-weight: 700;
+    padding: 0.35rem 0.15rem;
+}
+
+.barony-scope .ppb-table--court-domain td.source-col {
+    padding: 0.35rem 0.25rem;
+    font-size: 0.78rem;
+}
+
+.barony-scope .ppb-table--court-domain .source-cell__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.court-other-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.court-other-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.45rem;
+}
+
+.court-other-row__name {
+    flex: 1 1 10rem;
+    min-width: 8rem;
+}
+
+.court-other-row__skill {
+    flex: 1 1 9rem;
+    min-width: 8rem;
+}
+
+.court-other-row__value {
+    flex: 0 0 6rem;
+    max-width: 6.5rem;
+}
+
+.court-domain-other-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid var(--barony-border, rgba(0, 0, 0, 0.12));
+}
+
+.court-domain-other-block:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.barony-scope .court-skill-table {
+    width: 100%;
+    max-width: none;
+}
+
+.barony-scope .court-skill-table--main-row {
+    max-width: none;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.barony-scope .court-skill-table--main-row th {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 0.25rem 0.15rem;
+    line-height: 1.15;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.barony-scope .court-skill-table--main-row td.court-skill-table__val {
+    width: auto;
+    text-align: center;
+    font-weight: 700;
+    padding: 0.35rem 0.15rem;
+}
+
+.barony-scope .court-skill-table__val {
+    width: 5.5rem;
+    text-align: center;
+}
+
+.barony-scope .court-skill-table--edit .court-skill-num,
+.barony-scope .court-secondary-row .court-skill-num,
+.barony-scope .court-secondary-add .court-skill-num {
+    max-width: 5.5rem;
+}
+
+.barony-scope .court-skill-table--main-row.court-skill-table--edit .court-skill-num {
+    max-width: none;
+}
+
+.barony-scope .court-secondary-add {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.barony-scope .court-secondary-add__select {
+    min-width: 14rem;
+    flex: 1 1 12rem;
+}
+
+.barony-scope .court-secondary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.barony-scope .court-secondary-row {
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+}
+
+.barony-scope .court-secondary-row__name {
+    flex: 1 1 auto;
+    min-width: 8rem;
+    font-size: 0.85rem;
+}
+
+/* Court edit dialog renders outside .barony-scope (MudBlazor portal). */
+.mud-dialog.court-person-dialog .court-skill-table-wrap {
+    overflow-x: auto;
+}
+
+.mud-dialog.court-person-dialog .court-skill-table--main-row {
+    width: 100%;
+    max-width: none;
+    table-layout: fixed;
+}
+
+.mud-dialog.court-person-dialog .court-skill-table--main-row th {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 0.25rem 0.15rem;
+    line-height: 1.15;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.mud-dialog.court-person-dialog .court-skill-table--main-row td {
+    padding: 0.2rem 0.1rem;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.mud-dialog.court-person-dialog .court-skill-table--main-row .court-skill-num {
+    width: 100%;
+    max-width: none;
+}
+
+.mud-dialog.court-person-dialog .court-skill-table--main-row .court-skill-num .mud-input-control {
+    margin: 0;
+}
+
+.mud-dialog.court-person-dialog .court-secondary-add {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.mud-dialog.court-person-dialog .court-secondary-add__select {
+    min-width: 14rem;
+    flex: 1 1 12rem;
+}
+
+.mud-dialog.court-person-dialog .court-secondary-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.65rem;
+    align-items: center;
+}
+
+.mud-dialog.court-person-dialog .court-secondary-row {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+    align-items: center;
+    max-width: 100%;
+}
+
+.mud-dialog.court-person-dialog .court-secondary-row__name {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 11rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mud-dialog.court-person-dialog .court-secondary-row--add .court-secondary-add__select {
+    min-width: 11rem;
+    flex: 0 1 14rem;
+}
+
+.mud-dialog.court-person-dialog .court-secondary-row .court-skill-num,
+.mud-dialog.court-person-dialog .court-secondary-add .court-skill-num {
+    max-width: 4.5rem;
+    flex: 0 0 4.5rem;
+}
+
+.mud-dialog.court-person-dialog .court-skill-num--bare .mud-input-control {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.mud-dialog.court-person-dialog .court-skill-num--bare .mud-input-control-helper-container {
+    display: none;
+}
+
+.mud-dialog.court-person-dialog .court-skill-num--bare .mud-input > input {
+    text-align: center;
+    padding-top: 6px;
+    padding-bottom: 6px;
 }
 
 /* ---- Bottom "Barony Tabs" bar (Excel-like tabs) ---- */
@@ -9847,3 +10668,55 @@ a.city-building-name-text--link:hover {
         overflow: auto;
     }
 }
+
+/* --- Seat P/H/F cell (Chambers + Purpose Templates tables) --- */
+.seat-php-header {
+    text-align: center;
+}
+
+.seat-php-header__icons {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.seat-php-header__icons .php-metric-icon {
+    width: 1em;
+    height: 1em;
+}
+
+.seat-php-cell {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.seat-php-values {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.seat-php-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.seat-php-value .php-metric-icon {
+    width: 0.95em;
+    height: 0.95em;
+}
+
+.seat-php-value__num {
+    font-weight: 700;
+}
+
+.seat-php-values--empty .seat-php-value {
+    opacity: 0.55;
+}
+

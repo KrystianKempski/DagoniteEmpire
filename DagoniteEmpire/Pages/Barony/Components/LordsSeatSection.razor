@@ -224,7 +224,13 @@
                             <th rowspan="2" class="lords-seat-col-level">Floor</th>
                             <th rowspan="2" class="lords-seat-col-size">Size</th>
                             <th rowspan="2" class="lords-seat-col-desc">Description</th>
-                            <th rowspan="2" class="lords-seat-col-prestige">Prestige</th>
+                            <th rowspan="2" class="lords-seat-col-prestige seat-php-header" title="Prestige / Honor / Fear (per-chamber, × multiplier)">
+                                <span class="seat-php-header__icons">
+                                    <PhpMetricIcon Metric="PhpMetric.Prestige" />
+                                    <PhpMetricIcon Metric="PhpMetric.Honor" />
+                                    <PhpMetricIcon Metric="PhpMetric.Fear" />
+                                </span>
+                            </th>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
@@ -302,28 +308,50 @@
                                         </BaronyTooltip>
                                     }
                                 </td>
-                                <td class="lords-seat-col-prestige">
+                                <td class="lords-seat-col-prestige seat-php-cell">
                                     @{
-                                        var prestigeTotal = RoomPrestigeTotal(room);
+                                        var php = RoomPhpTotals(room);
                                         var mult = room.PrestigeMultiplier;
                                     }
-                                    @if (prestigeTotal is null)
-                                    {
-                                        <BaronyTooltip Title="Prestige"
-                                                       Text="@($"Chamber multiplier: ×{mult:0.##}. Assign a purpose with prestige to see the total.")">
-                                            <span class="lords-seat-muted">— (×@mult.ToString("0.##"))</span>
-                                        </BaronyTooltip>
-                                    }
-                                    else
-                                    {
-                                        <BaronyTooltip Title="Prestige"
-                                                       Text="@PrestigeTooltip(room, prestigeTotal.Value)">
-                                            <span class="@(prestigeTotal.Value == 0m ? "lords-seat-muted" : PpbCellStyle.ValueClassStandard(prestigeTotal.Value))">
-                                                @prestigeTotal.Value.ToString("0.##")
+                                    <BaronyTooltip Title="Prestige / Honor / Fear"
+                                                   Text="@PhpTooltip(room, php, mult)">
+                                        @if (php is null)
+                                        {
+                                            <span class="seat-php-values seat-php-values--empty">
+                                                <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
+                                                    <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
+                                                    <span class="seat-php-value__num">—</span>
+                                                </span>
+                                                <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Honor)">
+                                                    <PhpMetricIcon Metric="PhpMetric.Honor" Title="" />
+                                                    <span class="seat-php-value__num">—</span>
+                                                </span>
+                                                <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Fear)">
+                                                    <PhpMetricIcon Metric="PhpMetric.Fear" Title="" />
+                                                    <span class="seat-php-value__num">—</span>
+                                                </span>
                                                 <span class="lords-seat-prestige-mult">(×@mult.ToString("0.##"))</span>
                                             </span>
-                                        </BaronyTooltip>
-                                    }
+                                        }
+                                        else
+                                        {
+                                            <span class="seat-php-values">
+                                                <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
+                                                    <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
+                                                    <span class="seat-php-value__num">@FmtPhp(php.Value.Prestige)</span>
+                                                </span>
+                                                <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Honor)">
+                                                    <PhpMetricIcon Metric="PhpMetric.Honor" Title="" />
+                                                    <span class="seat-php-value__num">@FmtPhp(php.Value.Honor)</span>
+                                                </span>
+                                                <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Fear)">
+                                                    <PhpMetricIcon Metric="PhpMetric.Fear" Title="" />
+                                                    <span class="seat-php-value__num">@FmtPhp(php.Value.Fear)</span>
+                                                </span>
+                                                <span class="lords-seat-prestige-mult">(×@mult.ToString("0.##"))</span>
+                                            </span>
+                                        }
+                                    </BaronyTooltip>
                                 </td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
@@ -635,21 +663,33 @@
         return string.Join(" ", parts);
     }
 
-    private decimal? RoomPrestigeTotal(SeatRoomDTO room)
+    private (decimal Prestige, decimal Honor, decimal Fear)? RoomPhpTotals(SeatRoomDTO room)
     {
         if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var purpose))
             return null;
 
-        return room.PrestigeMultiplier * purpose.AdditivePrestige;
+        var mult = room.PrestigeMultiplier;
+        return (
+            mult * purpose.AdditivePrestige,
+            mult * purpose.AdditiveHonor,
+            mult * purpose.AdditiveFear);
     }
 
-    private string PrestigeTooltip(SeatRoomDTO room, decimal total)
+    private string PhpTooltip(SeatRoomDTO room, (decimal Prestige, decimal Honor, decimal Fear)? totals, decimal mult)
     {
         if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var purpose))
-            return $"Chamber multiplier: ×{room.PrestigeMultiplier:0.##}.";
+            return $"Chamber multiplier: ×{mult:0.##}. Assign a purpose with prestige / honor / fear to see totals.";
 
-        return $"Purpose prestige {purpose.AdditivePrestige:0.##} × chamber multiplier ×{room.PrestigeMultiplier:0.##} = {total:0.##}.";
+        var t = totals ?? (0m, 0m, 0m);
+        return
+            $"Prestige {FmtPhp(t.Prestige)}  (purpose {FmtPhp(purpose.AdditivePrestige)} × ×{mult:0.##})\n"
+            + $"Honor {FmtPhp(t.Honor)}  (purpose {FmtPhp(purpose.AdditiveHonor)} × ×{mult:0.##})\n"
+            + $"Fear {FmtPhp(t.Fear)}  (purpose {FmtPhp(purpose.AdditiveFear)} × ×{mult:0.##})";
     }
+
+    private static string FmtPhp(decimal v) => v == 0m
+        ? "0"
+        : (v > 0m ? $"+{v.ToString("0.##")}" : v.ToString("0.##"));
 
     private string RoomPlanTooltip(SeatRoomDTO room, SeatRoomLayoutIssue layoutIssue)
     {
@@ -670,8 +710,8 @@
         lines.Add($"Material: {SeatRoomMaterial.OptionLabel(room.Material)}");
         lines.Add($"Prestige multiplier: ×{room.PrestigeMultiplier:0.##} ({SeatRoomPrestige.FormulaHint(room.Material, room.TileCount)})");
 
-        if (RoomPrestigeTotal(room) is decimal prestigeTotal)
-            lines.Add($"Prestige total: {prestigeTotal:0.##}");
+        if (RoomPhpTotals(room) is { } php)
+            lines.Add($"P/H/F: {FmtPhp(php.Prestige)} / {FmtPhp(php.Honor)} / {FmtPhp(php.Fear)}");
 
         lines.Add(room.IsRuin ? "Status: Ruin (excluded from totals)" : "Status: Active");
 

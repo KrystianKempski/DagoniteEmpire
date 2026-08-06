@@ -109,6 +109,8 @@ else if (Barony is not null)
                                          Unit="@unit"
                                          CanEdit="@RosterCanEdit"
                                          CanManageAsMg="@RosterCanManage"
+                                         AvailableCaptains="@_courtiers"
+                                         OccupiedCaptainIds="@_occupiedCaptainIds"
                                          OnChanged="ReloadAsync" />
                     }
                 </div>
@@ -124,6 +126,8 @@ else if (Barony is not null)
 
 @code {
     private List<BaronyUnitDTO> _units = new();
+    private List<AvailableAdvisorDTO> _courtiers = new();
+    private HashSet<int> _occupiedCaptainIds = new();
     private bool _battleInProgress;
 
     private bool RosterCanEdit => CanEdit && !_battleInProgress;
@@ -148,6 +152,11 @@ else if (Barony is not null)
         if (Barony is null)
             return;
         _units = await _baronyRepo.GetUnits(Barony.Id);
+        _courtiers = await _baronyRepo.GetAvailableAdvisors(Barony.Id);
+        _occupiedCaptainIds = _units
+            .Where(u => u.CaptainAvailableAdvisorId is int)
+            .Select(u => u.CaptainAvailableAdvisorId!.Value)
+            .ToHashSet();
         try
         {
             var map = await _battleMapRepo.GetOrCreate(Barony.Id);

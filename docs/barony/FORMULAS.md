@@ -249,6 +249,59 @@ Detailed skill formulas — only on **Baron Card → From Skills** (`ExplainAddi
 
 ---
 
+## Court people — sheet → Domain Skills
+
+Logic: `CourtPpbFormulas.Compute` / `ComputeTotal` (`DA_Common/Barony/CourtCharacterSkills.cs`).  
+UI: Offices → **Court** (`AvailableAdvisors` pool with `SheetJson`).
+
+Ranges:
+- Main skills (always present): **3–10**, except **Magic 0–10**. New person defaults: mains **3**, Magic **0**.
+- Secondary skills (optional, typically 2–3): **0–6**. Missing secondary counts as **0**.
+- Main skills table also has an **Other** row: named bonuses (`MainOther`) per main skill. Values are summed in the row; source names appear only in tooltips / the edit dialog. These do **not** feed Domain Skills.
+- Domain Skills table: **From skill** = `Compute(sheet)` from mains + secondaries; **Other** = sum of named `DomainOther` PPB vectors. Stored `AvailableAdvisor.Skills` = `ComputeTotal` = From skill + Other.
+
+Each administrative PPB (except Gold) from skills = **sum of 1 main + 2 secondaries**. Corruption is stored as a **negative** sum.
+
+| PPB | Main | Secondary A | Secondary B |
+|---|---|---|---|
+| Food | Knowledge | Farming / husbandry | Animals / riding |
+| Economy | Administration | Trade | Mathematics / logic / ciphers |
+| Production | Craft | Engineering / gunsmithing | Smithing / metallurgy |
+| Loyalty | Diplomacy | Performance / acting | Faith / rites |
+| Stability | Administration | Law / investigation | Heraldry / etiquette |
+| Law | Intimidation | Law / investigation | Observation |
+| Corruption | Deceit | Heraldry / etiquette | Performance / acting |
+| Science | Knowledge | Mathematics / logic / ciphers | Alchemy / natural sciences |
+| Magic | Magic | Alchemy / natural sciences | Faith / rites |
+| Culture | Diplomacy | Fine arts | Languages |
+| Intelligence | Deceit | Observation | Tracking / survival |
+| Defense | Command | Strategy / tactics | Geography / nations |
+
+Melee / Shooting and unused secondaries (Medicine, Architecture, Geology, Seafaring, …) do not feed Domain Skills PPB.
+Athletics, Acrobatics, and Observation feed **Combat skills** (below).
+
+### Combat skills
+
+Logic: `CourtCombatFormulas.Compute` (From skill) + `CombatOther` (Other row).  
+Shown under Domain Skills on the court card. Main Other bonuses are included in Melee / Shooting for From skill.
+
+| Total | From skill formula |
+|---|---|
+| Attack | Melee + Athletics |
+| Shooting | Shooting + Observation |
+| Dodge | max(Melee, Shooting) + Acrobatics |
+| Defence | Melee + Athletics |
+
+Other row: named bonuses per combat total (same UX as Main skills Other).
+
+Office rows still use the computed `AvailableAdvisor.Skills` (`PpbVector`) when a court person is assigned.
+
+### Commanders (unit captains)
+
+See [`COMMANDER.md`](./COMMANDER.md). Unlocked commander abilities sync into unit `CommanderAttack` / `CommanderDefense` and named combat-Other “Commander” rows. Court combat Attack/Defence do **not** feed Cmd. Charge overrides: Thunder Charge (+3/+2), Flying Start (min path −1).
+
+---
+
 ## Baron and Advisors — advisor rows (Domain Panel)
 
 Logic: `BaronyCalc.ApplyAdvisorSkillInfluence`.

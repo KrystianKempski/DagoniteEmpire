@@ -1,124 +1,472 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
+@inject IDialogService _dialogService
 
-<BaronySection Title="Available advisors">
+<BaronySection Title="Court">
+    <Summary>
+        <span class="projects-summary">
+            <span class="projects-summary__item">@AdvisorList.Count person@(AdvisorList.Count == 1 ? "" : "s")</span>
+        </span>
+    </Summary>
     <ChildContent>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
+            Advisors, servants, and other people of the court. Main skills plus a few secondary skills
+            compute their Domain Skills. Click a person card to expand the sheet.
+        </MudText>
+
+        @if (CanManage)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="OnAdd">
+                    Add court person
+                </MudButton>
+            </div>
+        }
+
         @if (AdvisorList.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No available advisors in the pool yet.</MudText>
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No court people yet.
+                @if (CanManage)
+                {
+                    <text> Add one above.</text>
+                }
+            </MudText>
         }
         else
         {
-            <div style="overflow-x:auto;">
-                <table class="ppb-table ppb-table--source ppb-table--available-advisors ppb-table--lined">
-                    <colgroup>
-                        <col class="offices-label-col" />
-                        @foreach (var _ in SkillColumns)
-                        {
-                            <col class="offices-ppb-col" />
-                        }
-                        @if (CanManage)
-                        {
-                            <col class="offices-trailing-col" />
-                        }
-                    </colgroup>
-                    <thead>
-                        <tr>
-                            <th class="ppb-row-label source-col">Name</th>
-                            @foreach (var info in SkillColumns)
-                            {
-                                <th title="@info.NameEn">@PpbShort(info.Key)</th>
-                            }
-                            @if (CanManage)
-                            {
-                                <th class="available-advisor-actions-col">Actions</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var person in AdvisorList)
-                        {
-                            <tr>
-                                <td class="ppb-row-label source-col">
-                                    @if (!string.IsNullOrWhiteSpace(person.Description))
+            <div class="project-card-grid">
+                @foreach (var person in AdvisorList)
+                {
+                    var isOpen = _openIds.Contains(person.Id);
+                    var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+                    <article class="project-card court-person-card @(isOpen ? "project-card--open" : "project-card--collapsed")"
+                             @onclick="() => Toggle(person.Id)"
+                             role="button"
+                             aria-expanded="@isOpen"
+                             tabindex="0"
+                             @onkeydown="(e) => OnCardKeyDown(e, person.Id)">
+                        <header class="project-card__header">
+                            <div class="project-card__title-row">
+                                <h3 class="project-card__title">@person.Name</h3>
+                                @if (isOpen)
+                                {
+                                    @if (CanManage)
                                     {
-                                        <BaronyTooltip Title="Description" Text="@person.Description">
-                                            <span>@person.Name</span>
-                                        </BaronyTooltip>
+                                        <div class="project-card__actions court-person-card__title-actions" @onclick:stopPropagation="true">
+                                            <BaronyTooltip Text="Edit person">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               OnClick="@(() => OnEdit.InvokeAsync(person))" />
+                                            </BaronyTooltip>
+                                            <BaronyTooltip Text="Remove person">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                               Size="Size.Small"
+                                                               Color="Color.Error"
+                                                               OnClick="@(() => OnDelete.InvokeAsync(person))" />
+                                            </BaronyTooltip>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="court-person-card__ppb-glance">
+                                        <PpbSummaryChips Vector="@person.Skills" HideZero="false" ExcludeTreasury="true" />
+                                    </div>
+                                }
+                            </div>
+
+                            @if (isOpen && !string.IsNullOrWhiteSpace(person.Description))
+                            {
+                                <p class="project-card__description">@person.Description</p>
+                            }
+                        </header>
+
+                        @if (isOpen)
+                        {
+                            var combat = CourtCombatFormulas.Compute(sheet);
+                            <div class="project-card__panels court-person-card__panels" @onclick:stopPropagation="true">
+                                <section class="project-card__panel court-person-card__panel court-person-card__panel--skills">
+                                    <h4 class="project-card__panel-title">Main skills</h4>
+                                    <div class="court-skill-table-wrap">
+                                        <table class="ppb-table ppb-table--source ppb-table--lined court-skill-table court-skill-table--main-row court-skill-table--with-source">
+                                            <thead>
+                                                <tr>
+                                                    <th class="ppb-row-label source-col">Source</th>
+                                                    @foreach (var skill in CourtSkillCatalog.Main)
+                                                    {
+                                                        <th title="@skill.NameEn">@(string.IsNullOrEmpty(skill.ShortEn) ? skill.NameEn : skill.ShortEn)</th>
+                                                    }
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="source-row--system">
+                                                    <td class="ppb-row-label source-col">
+                                                        <span class="source-cell__name">@CourtCharacterSheet.FromSkillLabel</span>
+                                                    </td>
+                                                    @foreach (var skill in CourtSkillCatalog.Main)
+                                                    {
+                                                        <td class="court-skill-table__val">@sheet.GetMain(skill.Key)</td>
+                                                    }
+                                                </tr>
+                                                <tr class="@(sheet.MainOther.Count == 0 ? "source-row--system" : null)">
+                                                    <td class="ppb-row-label source-col">
+                                                        <div class="source-cell">
+                                                            <span class="source-cell__name">@CourtCharacterSheet.OtherLabel</span>
+                                                            @if (CanManage)
+                                                            {
+                                                                <span class="source-cell__actions" @onclick:stopPropagation="true">
+                                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                                   Size="Size.Small"
+                                                                                   title="Edit other sources"
+                                                                                   OnClick="@(() => EditMainOtherAsync(person))" />
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                    @foreach (var skill in CourtSkillCatalog.Main)
+                                                    {
+                                                        var otherSum = sheet.GetMainOtherSum(skill.Key);
+                                                        var tip = sheet.MainOtherTooltip(skill.Key);
+                                                        <td class="court-skill-table__val" title="@tip">@(otherSum == 0 ? "·" : otherSum.ToString())</td>
+                                                    }
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <h4 class="project-card__panel-title court-person-card__subpanel-title">Secondary skills</h4>
+                                    @if (sheet.Secondary.Count == 0)
+                                    {
+                                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">None.</MudText>
                                     }
                                     else
                                     {
-                                        @person.Name
+                                        <div class="ppb-chips">
+                                            @foreach (var entry in sheet.Secondary)
+                                            {
+                                                var info = CourtSkillCatalog.FindSecondary(entry.Key);
+                                                <span class="ppb-chip">
+                                                    <span class="ppb-chip__label">@(info?.NameEn ?? entry.Key)</span>
+                                                    <span class="ppb-chip__value">@entry.Value</span>
+                                                </span>
+                                            }
+                                        </div>
                                     }
-                                </td>
-                                @foreach (var info in SkillColumns)
-                                {
-                                    var v = person.Skills[info.Key];
-                                    <td class="@PpbCellStyle.ValueClass(info.Key, v)">@Fmt(v)</td>
-                                }
-                                @if (CanManage)
-                                {
-                                    <td class="available-advisor-actions-col">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                       Size="Size.Small"
-                                                       title="Edit"
-                                                       OnClick="@(() => OnEdit.InvokeAsync(person))" />
-                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                       Size="Size.Small"
-                                                       Color="Color.Error"
-                                                       title="Remove"
-                                                       OnClick="@(() => OnDelete.InvokeAsync(person))" />
-                                    </td>
-                                }
-                            </tr>
+                                </section>
+
+                                <section class="project-card__panel court-person-card__panel court-person-card__panel--ppb">
+                                    <h4 class="project-card__panel-title">Domain Skills</h4>
+                                    <div class="court-person-card__ppb-table-wrap">
+                                        <OfficeSourcePpbTable Rows="@DomainSkillRows(person)"
+                                                                ShowCost="false"
+                                                                ExtraClass="ppb-table--court-domain"
+                                                                CanEditOther="@CanManage"
+                                                                OnEdit="@(_ => EditDomainOtherAsync(person))"
+                                                                CellTooltip="@((row, key) => DomainCellTooltip(person, row, key))" />
+                                    </div>
+
+                                    <h4 class="project-card__panel-title court-person-card__subpanel-title">Combat skills</h4>
+                                    <div class="court-skill-table-wrap">
+                                        <table class="ppb-table ppb-table--source ppb-table--lined court-skill-table court-skill-table--main-row court-skill-table--with-source court-combat-table">
+                                            <thead>
+                                                <tr>
+                                                    <th class="ppb-row-label source-col">Source</th>
+                                                    @foreach (var skill in CourtCombatCatalog.All)
+                                                    {
+                                                        <th title="@(combat.Formula(skill.Key) ?? skill.NameEn)">@skill.ShortEn</th>
+                                                    }
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="source-row--system">
+                                                    <td class="ppb-row-label source-col">
+                                                        <span class="source-cell__name">@CourtCharacterSheet.FromSkillLabel</span>
+                                                    </td>
+                                                    @foreach (var skill in CourtCombatCatalog.All)
+                                                    {
+                                                        <td class="court-skill-table__val" title="@combat.Formula(skill.Key)">@combat.Get(skill.Key)</td>
+                                                    }
+                                                </tr>
+                                                <tr class="@(sheet.CombatOther.Count == 0 ? "source-row--system" : null)">
+                                                    <td class="ppb-row-label source-col">
+                                                        <div class="source-cell">
+                                                            <span class="source-cell__name">@CourtCharacterSheet.OtherLabel</span>
+                                                            @if (CanManage)
+                                                            {
+                                                                <span class="source-cell__actions" @onclick:stopPropagation="true">
+                                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                                   Size="Size.Small"
+                                                                                   title="Edit other sources"
+                                                                                   OnClick="@(() => EditCombatOtherAsync(person))" />
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                    @foreach (var skill in CourtCombatCatalog.All)
+                                                    {
+                                                        var otherSum = sheet.GetCombatOtherSum(skill.Key);
+                                                        var tip = sheet.CombatOtherTooltip(skill.Key);
+                                                        <td class="court-skill-table__val" title="@tip">@(otherSum == 0 ? "·" : otherSum.ToString())</td>
+                                                    }
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <section class="project-card__panel court-person-card__panel court-person-card__panel--commander" @onclick:stopPropagation="true">
+                                <h4 class="project-card__panel-title">Commander</h4>
+                                <div class="court-commander-panel__cx">
+                                    <span class="court-commander-panel__cx-label">CX pool</span>
+                                    @if (CanManage)
+                                    {
+                                        <button type="button"
+                                                class="court-commander-panel__cx-value court-commander-panel__cx-value--editable"
+                                                title="Click to edit CX pool"
+                                                @onclick="@(() => OpenCxEditAsync(person))">
+                                            @sheet.CommanderXp
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="court-commander-panel__cx-value">@sheet.CommanderXp</span>
+                                    }
+                                    <span class="court-commander-panel__cx-meta">avail. @CourtCommanderFormulas.AvailableCx(sheet) · spent @CourtCommanderFormulas.SpentCx(sheet)</span>
+                                </div>
+                                <div class="court-commander-panel__abilities">
+                                    <MudButton Variant="Variant.Outlined"
+                                               Size="Size.Small"
+                                               StartIcon="@Icons.Material.Filled.AccountTree"
+                                               OnClick="@(() => OpenCommanderTreeAsync(person))">
+                                        Skill tree
+                                    </MudButton>
+                                    @if (sheet.UnlockedCommanderAbilities.Count == 0)
+                                    {
+                                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No abilities unlocked.</MudText>
+                                    }
+                                    else
+                                    {
+                                        <div class="ppb-chips court-commander-chips">
+                                            @foreach (var key in sheet.UnlockedCommanderAbilities)
+                                            {
+                                                var ability = CourtCommanderCatalog.Find(key);
+                                                <span class="ppb-chip" title="@(ability?.DescriptionEn)">
+                                                    <span class="ppb-chip__label">@(ability?.NameEn ?? key)</span>
+                                                    <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </section>
                         }
-                    </tbody>
-                </table>
+                    </article>
+                }
             </div>
-        }
-        @if (CanManage)
-        {
-            <MudButton Variant="Variant.Outlined"
-                       Class="mt-2"
-                       StartIcon="@Icons.Material.Filled.Add"
-                       OnClick="OnAdd">
-                Add available advisor
-            </MudButton>
         }
     </ChildContent>
 </BaronySection>
 
 @code {
     [Parameter] public IEnumerable<AvailableAdvisorDTO>? Advisors { get; set; }
-    /// <summary>MG/Admin — create/edit pool people and their skills. Baron only views the pool.</summary>
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback<AvailableAdvisorDTO> OnEdit { get; set; }
     [Parameter] public EventCallback<AvailableAdvisorDTO> OnDelete { get; set; }
     [Parameter] public EventCallback OnAdd { get; set; }
+    [Parameter] public EventCallback<AvailableAdvisorDTO> OnSheetChanged { get; set; }
+
+    private readonly HashSet<int> _openIds = new();
 
     private List<AvailableAdvisorDTO> AdvisorList =>
         (Advisors ?? Enumerable.Empty<AvailableAdvisorDTO>())
             .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-    private static IEnumerable<PpbInfo> SkillColumns
-        => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);
-
-    private static string PpbShort(Ppb p) => p switch
+    private void Toggle(int id)
     {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
-        Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
-        Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        _ => p.ToString(),
-    };
+        if (!_openIds.Add(id))
+            _openIds.Remove(id);
+    }
 
-    private static string Fmt(decimal v) => PpbFormat.Additive(v);
+    private void OnCardKeyDown(KeyboardEventArgs e, int id)
+    {
+        if (e.Key is "Enter" or " ")
+            Toggle(id);
+    }
+
+    private static IReadOnlyList<AdvisorInfluenceRow> DomainSkillRows(AvailableAdvisorDTO person)
+    {
+        var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+        sheet.Normalize();
+        var fromSkills = CourtPpbFormulas.Compute(sheet);
+        var other = sheet.SumDomainOther();
+        return
+        [
+            new AdvisorInfluenceRow
+            {
+                Source = CourtCharacterSheet.FromSkillLabel,
+                Values = fromSkills,
+                IsSystem = true,
+                SystemKind = AdvisorInfluenceSystemKind.Skills,
+            },
+            new AdvisorInfluenceRow
+            {
+                Source = CourtCharacterSheet.OtherLabel,
+                Values = other,
+                IsSystem = true,
+                SystemKind = AdvisorInfluenceSystemKind.Other,
+                Description = sheet.DomainOtherSourcesTooltip(),
+            },
+        ];
+    }
+
+    private static string? DomainCellTooltip(AvailableAdvisorDTO person, AdvisorInfluenceRow row, Ppb key)
+    {
+        if (row.SystemKind != AdvisorInfluenceSystemKind.Other)
+            return null;
+        var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+        return sheet.DomainOtherTooltip(key);
+    }
+
+    private async Task EditMainOtherAsync(AvailableAdvisorDTO person)
+    {
+        if (!CanManage)
+            return;
+
+        var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+        var draft = sheet.MainOther
+            .Select(s => new CourtMainOtherSource { Name = s.Name, SkillKey = s.SkillKey, Value = s.Value })
+            .ToList();
+
+        var dialog = await _dialogService.ShowAsync<CourtMainOtherEditDialog>(
+            "Other main skill sources",
+            new DialogParameters<CourtMainOtherEditDialog> { { x => x.Sources, draft } },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not List<CourtMainOtherSource> saved)
+            return;
+
+        sheet.MainOther = saved;
+        sheet.Normalize();
+        person.Sheet = sheet;
+        person.Skills = CourtPpbFormulas.ComputeTotal(sheet);
+        await OnSheetChanged.InvokeAsync(person);
+    }
+
+    private async Task EditDomainOtherAsync(AvailableAdvisorDTO person)
+    {
+        if (!CanManage)
+            return;
+
+        var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+        var draft = sheet.DomainOther
+            .Select(s => new CourtDomainOtherSource
+            {
+                Name = s.Name,
+                Additive = (s.Additive ?? new PpbVector()).Clone(),
+            })
+            .ToList();
+
+        var dialog = await _dialogService.ShowAsync<CourtDomainOtherEditDialog>(
+            "Other Domain Skill sources",
+            new DialogParameters<CourtDomainOtherEditDialog> { { x => x.Sources, draft } },
+            new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not List<CourtDomainOtherSource> saved)
+            return;
+
+        sheet.DomainOther = saved;
+        sheet.Normalize();
+        person.Sheet = sheet;
+        person.Skills = CourtPpbFormulas.ComputeTotal(sheet);
+        await OnSheetChanged.InvokeAsync(person);
+    }
+
+    private async Task EditCombatOtherAsync(AvailableAdvisorDTO person)
+    {
+        if (!CanManage)
+            return;
+
+        var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+        var draft = sheet.CombatOther
+            .Select(s => new CourtCombatOtherSource { Name = s.Name, SkillKey = s.SkillKey, Value = s.Value })
+            .ToList();
+
+        var dialog = await _dialogService.ShowAsync<CourtCombatOtherEditDialog>(
+            "Other combat skill sources",
+            new DialogParameters<CourtCombatOtherEditDialog> { { x => x.Sources, draft } },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not List<CourtCombatOtherSource> saved)
+            return;
+
+        sheet.CombatOther = saved;
+        sheet.Normalize();
+        person.Sheet = sheet;
+        person.Skills = CourtPpbFormulas.ComputeTotal(sheet);
+        await OnSheetChanged.InvokeAsync(person);
+    }
+
+    private async Task OpenCommanderTreeAsync(AvailableAdvisorDTO person)
+    {
+        var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+        var dialog = await _dialogService.ShowAsync<CourtCommanderTreeDialog>(
+            $"{person.Name} — commander tree",
+            new DialogParameters<CourtCommanderTreeDialog>
+            {
+                { x => x.Sheet, sheet },
+                { x => x.CanManage, CanManage },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.False, FullWidth = false, CloseOnEscapeKey = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not CourtCharacterSheet saved)
+            return;
+
+        person.Sheet = saved;
+        person.Skills = CourtPpbFormulas.ComputeTotal(saved);
+        await OnSheetChanged.InvokeAsync(person);
+    }
+
+    private async Task SaveCommanderXpAsync(AvailableAdvisorDTO person)
+    {
+        if (!CanManage)
+            return;
+        var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+        sheet.CommanderXp = Math.Max(0, sheet.CommanderXp);
+        sheet.Normalize();
+        person.Sheet = sheet;
+        person.Skills = CourtPpbFormulas.ComputeTotal(sheet);
+        await OnSheetChanged.InvokeAsync(person);
+    }
+
+    private async Task OpenCxEditAsync(AvailableAdvisorDTO person)
+    {
+        if (!CanManage)
+            return;
+        var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+        var spent = CourtCommanderFormulas.SpentCx(sheet);
+        var dialog = await _dialogService.ShowAsync<CourtCommanderXpEditDialog>(
+            "Commander XP pool",
+            new DialogParameters<CourtCommanderXpEditDialog>
+            {
+                { x => x.AdvisorName, person.Name },
+                { x => x.Value, sheet.CommanderXp },
+                { x => x.Spent, spent },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true, CloseOnEscapeKey = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int newCx)
+            return;
+        sheet.CommanderXp = Math.Max(spent, newCx);
+        sheet.Normalize();
+        person.Sheet = sheet;
+        person.Skills = CourtPpbFormulas.ComputeTotal(sheet);
+        await OnSheetChanged.InvokeAsync(person);
+    }
 }

@@ -1543,19 +1543,74 @@ namespace DA_Business.Repository.BaronyRepos
                 {
                     e = ToEntity(dto);
                     ctx.AvailableAdvisors.Add(e);
+                    await ctx.SaveChangesAsync();
                 }
                 else
                 {
                     ApplyAvailableAdvisor(e, dto);
+                    var skillsJson = e.SkillsJson;
+                    var linked = await ctx.Advisors
+                        .Where(a => a.AvailableAdvisorId == e.Id)
+                        .ToListAsync();
+                    foreach (var advisor in linked)
+                        advisor.SkillsJson = skillsJson;
+                    await ResyncUnitsForCaptainAsync(ctx, e.Id, e.BaronyId);
+                    await ctx.SaveChangesAsync();
                 }
-                await ctx.SaveChangesAsync();
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveAvailableAdvisor)); }
         }
 
-        public Task<int> DeleteAvailableAdvisor(int id) =>
-            Delete(ctx => ctx.AvailableAdvisors, id, nameof(DeleteAvailableAdvisor));
+        public async Task<int> DeleteAvailableAdvisor(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var linked = await ctx.Advisors
+                    .Where(a => a.AvailableAdvisorId == id)
+                    .ToListAsync();
+                foreach (var advisor in linked)
+                    advisor.AvailableAdvisorId = null;
+
+                var captained = await ctx.BaronyUnits
+                    .Where(u => u.CaptainAvailableAdvisorId == id)
+                    .ToListAsync();
+                foreach (var unit in captained)
+                {
+                    unit.CaptainAvailableAdvisorId = null;
+                    var dto = ToUnitDTO(unit);
+                    var ca = 0;
+                    var cd = 0;
+                    var oa = dto.OtherAttack;
+                    var od = dto.OtherDefense;
+                    var odm = dto.OtherDamage;
+                    var om = dto.OtherMove;
+                    var oar = dto.OtherArmor;
+                    var oh = dto.OtherHp;
+                    UnitCommanderSync.ClearCaptainBonuses(
+                        ref ca, ref cd, ref oa, ref od, ref odm, ref om, ref oar, ref oh, dto.CombatOther);
+                    dto.CommanderAttack = ca;
+                    dto.CommanderDefense = cd;
+                    dto.OtherAttack = oa;
+                    dto.OtherDefense = od;
+                    dto.OtherDamage = odm;
+                    dto.OtherMove = om;
+                    dto.OtherArmor = oar;
+                    dto.OtherHp = oh;
+                    ApplyUnit(unit, dto);
+                    unit.UpdatedAtUtc = DateTime.UtcNow;
+                }
+
+                var entity = await ctx.AvailableAdvisors.FirstOrDefaultAsync(x => x.Id == id);
+                if (entity is null)
+                    return 0;
+                ctx.AvailableAdvisors.Remove(entity);
+                await ctx.SaveChangesAsync();
+                return 1;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteAvailableAdvisor)); }
+        }
 
         // ---------------- Buildings ----------------
         public async Task<List<BaronyBuildingDTO>> GetBuildings(int baronyId) =>
@@ -3035,6 +3090,17 @@ namespace DA_Business.Repository.BaronyRepos
                     .GroupBy(p => p.UnitId!.Value)
                     .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.Id).First());
 
+                var captainIds = units
+                    .Where(u => u.CaptainAvailableAdvisorId is int)
+                    .Select(u => u.CaptainAvailableAdvisorId!.Value)
+                    .Distinct()
+                    .ToList();
+                var captainNames = captainIds.Count == 0
+                    ? new Dictionary<int, string>()
+                    : await ctx.AvailableAdvisors.AsNoTracking()
+                        .Where(a => a.BaronyId == baronyId && captainIds.Contains(a.Id))
+                        .ToDictionaryAsync(a => a.Id, a => a.Name);
+
                 return units.Select(u =>
                 {
                     var dto = ToUnitDTO(u);
@@ -3045,6 +3111,9 @@ namespace DA_Business.Repository.BaronyRepos
                         dto.OpenProjectOutputKind = proj.OutputKind;
                         dto.OpenProjectStatus = proj.Status;
                     }
+                    if (u.CaptainAvailableAdvisorId is int cid
+                        && captainNames.TryGetValue(cid, out var cname))
+                        dto.CaptainName = cname;
                     return dto;
                 }).ToList();
             }
@@ -3056,6 +3125,9 @@ namespace DA_Business.Repository.BaronyRepos
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
+                await EnforceCaptainAssignmentAsync(ctx, dto);
+                await SyncUnitCommanderBonusesAsync(ctx, dto);
+
                 var e = dto.Id > 0
                     ? await ctx.BaronyUnits.FirstOrDefaultAsync(x => x.Id == dto.Id)
                     : null;
@@ -4098,14 +4170,19 @@ namespace DA_Business.Repository.BaronyRepos
             e.UpkeepGold = d.UpkeepGold;
         }
 
-        private static AvailableAdvisorDTO ToDTO(AvailableAdvisor e) => new()
+        private static AvailableAdvisorDTO ToDTO(AvailableAdvisor e)
         {
-            Id = e.Id,
-            BaronyId = e.BaronyId,
-            Name = e.Name,
-            Description = e.Description,
-            Skills = De(e.SkillsJson),
-        };
+            var sheet = DeserializeCourtSheet(e.SheetJson);
+            return new AvailableAdvisorDTO
+            {
+                Id = e.Id,
+                BaronyId = e.BaronyId,
+                Name = e.Name,
+                Description = e.Description,
+                Sheet = sheet,
+                Skills = CourtPpbFormulas.ComputeTotal(sheet),
+            };
+        }
 
         private static AvailableAdvisor ToEntity(AvailableAdvisorDTO d)
         {
@@ -4117,10 +4194,30 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static void ApplyAvailableAdvisor(AvailableAdvisor e, AvailableAdvisorDTO d)
         {
+            var sheet = d.Sheet ?? CourtCharacterSheet.CreateDefault();
+            sheet.Normalize();
             e.BaronyId = d.BaronyId;
             e.Name = d.Name;
             e.Description = d.Description;
-            e.SkillsJson = Ser(d.Skills);
+            e.SheetJson = JsonSerializer.Serialize(sheet, JsonOptions);
+            e.SkillsJson = Ser(CourtPpbFormulas.ComputeTotal(sheet));
+        }
+
+        private static CourtCharacterSheet DeserializeCourtSheet(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json) || json is "{}" or "null")
+                return CourtCharacterSheet.CreateDefault();
+            try
+            {
+                var sheet = JsonSerializer.Deserialize<CourtCharacterSheet>(json, JsonOptions)
+                            ?? CourtCharacterSheet.CreateDefault();
+                sheet.Normalize();
+                return sheet;
+            }
+            catch
+            {
+                return CourtCharacterSheet.CreateDefault();
+            }
         }
 
         // ---------------- Mapping: Building ----------------
@@ -4886,6 +4983,7 @@ namespace DA_Business.Repository.BaronyRepos
             DefenseSkillKey = e.DefenseSkillKey,
             CommanderAttack = e.CommanderAttack,
             CommanderDefense = e.CommanderDefense,
+            CaptainAvailableAdvisorId = e.CaptainAvailableAdvisorId,
             OtherAttack = e.OtherAttack,
             OtherDefense = e.OtherDefense,
             OtherDamage = e.OtherDamage,
@@ -4959,6 +5057,7 @@ namespace DA_Business.Repository.BaronyRepos
                 : d.DefenseSkillKey.Trim();
             e.CommanderAttack = d.CommanderAttack;
             e.CommanderDefense = d.CommanderDefense;
+            e.CaptainAvailableAdvisorId = d.CaptainAvailableAdvisorId is int cap && cap > 0 ? cap : null;
             e.OtherAttack = d.OtherAttack;
             e.OtherDefense = d.OtherDefense;
             e.OtherDamage = d.OtherDamage;
@@ -4973,6 +5072,131 @@ namespace DA_Business.Repository.BaronyRepos
             e.CreatedAtUtc = d.CreatedAtUtc;
             e.UpdatedAtUtc = d.UpdatedAtUtc;
             e.LogJson = SerUnitLog(d.Log);
+        }
+
+        private static async Task EnforceCaptainAssignmentAsync(ApplicationDbContext ctx, BaronyUnitDTO dto)
+        {
+            if (dto.CaptainAvailableAdvisorId is not int captainId || captainId <= 0)
+            {
+                dto.CaptainAvailableAdvisorId = null;
+                dto.CaptainName = null;
+                return;
+            }
+
+            var person = await ctx.AvailableAdvisors.AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == captainId && a.BaronyId == dto.BaronyId);
+            if (person is null)
+                throw new InvalidOperationException("Captain must be a court person of this barony.");
+
+            dto.CaptainName = person.Name;
+
+            var others = await ctx.BaronyUnits
+                .Where(u => u.BaronyId == dto.BaronyId
+                            && u.CaptainAvailableAdvisorId == captainId
+                            && u.Id != dto.Id)
+                .ToListAsync();
+            foreach (var other in others)
+            {
+                other.CaptainAvailableAdvisorId = null;
+                other.CommanderAttack = 0;
+                other.CommanderDefense = 0;
+                // Strip Commander combat-other entries and resum.
+                var map = DeCombatOther(other.CombatOtherJson);
+                var ca = 0;
+                var cd = 0;
+                var oa = other.OtherAttack;
+                var od = other.OtherDefense;
+                var odm = other.OtherDamage;
+                var om = other.OtherMove;
+                var oar = other.OtherArmor;
+                var oh = other.OtherHp;
+                UnitCommanderSync.ClearCaptainBonuses(
+                    ref ca, ref cd, ref oa, ref od, ref odm, ref om, ref oar, ref oh, map);
+                other.CommanderAttack = ca;
+                other.CommanderDefense = cd;
+                other.OtherAttack = oa;
+                other.OtherDefense = od;
+                other.OtherDamage = odm;
+                other.OtherMove = om;
+                other.OtherArmor = oar;
+                other.OtherHp = oh;
+                other.CombatOtherJson = SerCombatOther(map);
+                other.UpdatedAtUtc = DateTime.UtcNow;
+            }
+        }
+
+        private static async Task SyncUnitCommanderBonusesAsync(ApplicationDbContext ctx, BaronyUnitDTO dto)
+        {
+            dto.CombatOther ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+            CourtCharacterSheet? sheet = null;
+            if (dto.CaptainAvailableAdvisorId is int captainId && captainId > 0)
+            {
+                var person = await ctx.AvailableAdvisors.AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.Id == captainId && a.BaronyId == dto.BaronyId);
+                if (person is not null)
+                    sheet = DeserializeCourtSheet(person.SheetJson);
+            }
+
+            var hasMount = !string.IsNullOrWhiteSpace(dto.MountKey);
+            var hasShield = !string.IsNullOrWhiteSpace(dto.ShieldKey);
+            var ca = dto.CommanderAttack;
+            var cd = dto.CommanderDefense;
+            var oa = dto.OtherAttack;
+            var od = dto.OtherDefense;
+            var odm = dto.OtherDamage;
+            var om = dto.OtherMove;
+            var oar = dto.OtherArmor;
+            var oh = dto.OtherHp;
+            UnitCommanderSync.ApplyCaptainBonuses(
+                ref ca, ref cd, ref oa, ref od, ref odm, ref om, ref oar, ref oh,
+                dto.CombatOther, sheet, hasMount, hasShield);
+            dto.CommanderAttack = ca;
+            dto.CommanderDefense = cd;
+            dto.OtherAttack = oa;
+            dto.OtherDefense = od;
+            dto.OtherDamage = odm;
+            dto.OtherMove = om;
+            dto.OtherArmor = oar;
+            dto.OtherHp = oh;
+        }
+
+        private static async Task ResyncUnitsForCaptainAsync(ApplicationDbContext ctx, int captainId, int baronyId)
+        {
+            if (captainId <= 0)
+                return;
+            var person = await ctx.AvailableAdvisors.AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == captainId && a.BaronyId == baronyId);
+            var sheet = person is null ? null : DeserializeCourtSheet(person.SheetJson);
+            var units = await ctx.BaronyUnits
+                .Where(u => u.BaronyId == baronyId && u.CaptainAvailableAdvisorId == captainId)
+                .ToListAsync();
+            foreach (var unit in units)
+            {
+                var dto = ToUnitDTO(unit);
+                var hasMount = !string.IsNullOrWhiteSpace(dto.MountKey);
+                var hasShield = !string.IsNullOrWhiteSpace(dto.ShieldKey);
+                var ca = dto.CommanderAttack;
+                var cd = dto.CommanderDefense;
+                var oa = dto.OtherAttack;
+                var od = dto.OtherDefense;
+                var odm = dto.OtherDamage;
+                var om = dto.OtherMove;
+                var oar = dto.OtherArmor;
+                var oh = dto.OtherHp;
+                UnitCommanderSync.ApplyCaptainBonuses(
+                    ref ca, ref cd, ref oa, ref od, ref odm, ref om, ref oar, ref oh,
+                    dto.CombatOther, sheet, hasMount, hasShield);
+                dto.CommanderAttack = ca;
+                dto.CommanderDefense = cd;
+                dto.OtherAttack = oa;
+                dto.OtherDefense = od;
+                dto.OtherDamage = odm;
+                dto.OtherMove = om;
+                dto.OtherArmor = oar;
+                dto.OtherHp = oh;
+                ApplyUnit(unit, dto);
+                unit.UpdatedAtUtc = DateTime.UtcNow;
+            }
         }
 
         private static string? BuildGearDefenseNote(StartUnitTrainingRequest request)
@@ -5572,6 +5796,8 @@ namespace DA_Business.Repository.BaronyRepos
             WhoOccupies = e.WhoOccupies ?? "",
             SleepCapacity = e.SleepCapacity,
             AdditivePrestige = e.AdditivePrestige,
+            AdditiveHonor = e.AdditiveHonor,
+            AdditiveFear = e.AdditiveFear,
             Additive = De(e.AdditiveJson),
             Percent = De(e.PercentJson),
             IsUniversal = e.IsUniversal,
@@ -5652,6 +5878,8 @@ namespace DA_Business.Repository.BaronyRepos
             e.WhoOccupies = d.WhoOccupies ?? "";
             e.SleepCapacity = Math.Max(0, d.SleepCapacity);
             e.AdditivePrestige = d.AdditivePrestige;
+            e.AdditiveHonor = d.AdditiveHonor;
+            e.AdditiveFear = d.AdditiveFear;
             e.AdditiveJson = Ser(d.Additive);
             e.PercentJson = Ser(d.Percent);
             e.IsUniversal = d.IsUniversal;

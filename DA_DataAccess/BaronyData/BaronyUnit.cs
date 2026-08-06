@@ -61,6 +61,10 @@ namespace DA_DataAccess.BaronyData
 
         public int CommanderAttack { get; set; }
         public int CommanderDefense { get; set; }
+
+        /// <summary>Optional court person assigned as this unit's captain (1:1 per barony).</summary>
+        public int? CaptainAvailableAdvisorId { get; set; }
+
         public int OtherAttack { get; set; }
         public int OtherDefense { get; set; }
         public int OtherDamage { get; set; }

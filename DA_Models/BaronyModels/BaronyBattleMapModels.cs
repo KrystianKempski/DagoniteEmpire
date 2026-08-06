@@ -155,10 +155,20 @@ namespace DA_Models.BaronyModels
         public string? AttackTargetId { get; set; }
 
         /// <summary>
-        /// Charge intent this turn: +2 Attack / +1 Damage vs <see cref="ChargeTargetId"/> in Combat.
+        /// Charge intent this turn: default +2 Attack / +1 Damage vs <see cref="ChargeTargetId"/> in Combat
+        /// (overridden by <see cref="ThunderCharge"/> / Shock Lance flags).
         /// Cleared when the charge target is changed or at end of combat.
         /// </summary>
         public bool ChargeBonus { get; set; }
+
+        /// <summary>Captain Thunder Charge: charge bonus +3 Atk / +2 Dmg instead of +2/+1.</summary>
+        public bool ThunderCharge { get; set; }
+
+        /// <summary>Captain Flying Start: charge minimum path −1 tile.</summary>
+        public bool FlyingStart { get; set; }
+
+        /// <summary>Extra charge Damage when mounted (Shock Lance).</summary>
+        public int ChargeDamageExtra { get; set; }
 
         /// <summary>
         /// True when the charge was declared without an immediate target (blind).

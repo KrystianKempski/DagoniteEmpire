@@ -624,6 +624,7 @@ else
     private BaronyBattleMapDTO? Map;
     private HubConnection? _hubConnection;
     private List<BaronyUnitDTO> _activeUnits = new();
+    private List<AvailableAdvisorDTO> _courtiers = new();
     private readonly Dictionary<int, string> _allyIconKeys = new();
 
     private string _tool = "token";
@@ -801,6 +802,7 @@ else
                 _selectedTokenId = ActiveTokenId;
             var units = await _baronyRepo.GetUnits(BaronyId);
             _activeUnits = units.Where(u => u.IsActive).OrderBy(u => u.Name).ToList();
+            _courtiers = await _baronyRepo.GetAvailableAdvisors(BaronyId);
             foreach (var u in _activeUnits)
             {
                 if (!_allyIconKeys.ContainsKey(u.Id))
@@ -1203,6 +1205,7 @@ else
             Range = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Range ?? 0),
             Pierce = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Pierce ?? 0),
         };
+        ApplyCommanderBattleFlags(token, unit);
         Map.Tokens.Add(token);
         _deployUnitId = null;
         _selectedTokenId = token.Id;
@@ -1721,8 +1724,10 @@ else
         token.ChargeOriginY = chargeOy;
 
         CancelChargeEdit();
+        var atkB = ChargeAttackBonus(token);
+        var dmgB = ChargeDamageBonus(token);
         var chargeMsg = built.Target is not null
-            ? $"{token.Label} charges ({facing * 45}°) at {built.Target.Label} — +2 Atk/+1 Dmg if contact holds."
+            ? $"{token.Label} charges ({facing * 45}°) at {built.Target.Label} — +{atkB} Atk/+{dmgB} Dmg if contact holds."
             : $"{token.Label} charges ({facing * 45}°) in a straight line.";
         await SaveAsync(systemMessage: chargeMsg);
         RefreshRange();
@@ -1753,7 +1758,7 @@ else
             return false;
 
         facing = BaronyBattleFacing.Clamp(facing);
-        var minSteps = MinChargeStepsForFacing(facing);
+        var minSteps = MinChargeStepsForFacing(facing, token);
         var (dx, dy) = BaronyBattleFacing.StepDelta(facing);
         var diagonal = dx != 0 && dy != 0;
         var (ox, oy, budget) = GetTipPlanOrigin(token);
@@ -2506,8 +2511,10 @@ else
                     defender.X, defender.Y, TokenSize(defender))
                 : 0;
             var rangePenalty = isShot ? BattleMovementRules.ShotAttackPenalty(shotHalf) : 0;
-            var attackStat = attacker.Attack + (chargeBonus ? 2 : 0) - rangePenalty;
-            var damageStat = attacker.Damage + (chargeBonus ? 1 : 0);
+            var chargeAtk = chargeBonus ? ChargeAttackBonus(attacker) : 0;
+            var chargeDmg = chargeBonus ? ChargeDamageBonus(attacker) : 0;
+            var attackStat = attacker.Attack + chargeAtk - rangePenalty;
+            var damageStat = attacker.Damage + chargeDmg;
             var attackRoll = attackStat + attackDie;
             var defenseRoll = defender.Defense + defenseDie;
             var ratio = Math.Max(1, attackRoll) / (double)Math.Max(1, defenseRoll);
@@ -2517,7 +2524,7 @@ else
             var rawDamage = baseDamage * ratio * front.Multiplier;
             var dealt = Math.Max(1, (int)Math.Round(rawDamage, MidpointRounding.AwayFromZero));
             defHp = Math.Max(0, defHp - dealt);
-            var modifierNote = chargeBonus ? " [charge +2/+1]" : "";
+            var modifierNote = chargeBonus ? $" [charge +{chargeAtk}/+{chargeDmg}]" : "";
             if (rangePenalty > 0)
                 modifierNote += $" [range −{rangePenalty} att]";
             if (defender.Armor > defenderArmor)
@@ -2720,6 +2727,12 @@ else
         var rng = Random.Shared;
         foreach (var token in Map.Tokens)
         {
+            if (token.UnitId is int uid)
+            {
+                var unit = _activeUnits.FirstOrDefault(u => u.Id == uid);
+                if (unit is not null)
+                    ApplyCommanderBattleFlags(token, unit);
+            }
             token.InitiativeDie = rng.Next(1, 11);
             token.InitiativeTotal = token.Discipline + token.InitiativeDie;
             token.RemainingMove = token.Move;
@@ -3020,7 +3033,77 @@ else
 
             await _baronyRepo.SaveUnit(unit);
         }
+
+        await AwardCaptainCxAsync(summary);
     }
+
+    private async Task AwardCaptainCxAsync(BaronyBattleXpSummaryDTO summary)
+    {
+        if (summary.Entries.Count == 0)
+            return;
+
+        var units = await _baronyRepo.GetUnits(BaronyId);
+        var courtiers = await _baronyRepo.GetAvailableAdvisors(BaronyId);
+        _courtiers = courtiers;
+
+        foreach (var entry in summary.Entries)
+        {
+            var unit = units.FirstOrDefault(u => u.Id == entry.UnitId);
+            if (unit?.CaptainAvailableAdvisorId is not int captainId)
+                continue;
+            var captain = courtiers.FirstOrDefault(c => c.Id == captainId);
+            if (captain is null)
+                continue;
+
+            var sheet = captain.Sheet ?? CourtCharacterSheet.CreateDefault();
+            var gained = CourtCommanderFormulas.ComputeBattleCx(
+                sheet,
+                entry.DamageDealt,
+                entry.EngagedRounds,
+                entry.Kills,
+                entry.DamageTaken,
+                entry.MgBonusXp);
+            if (gained <= 0)
+                continue;
+
+            sheet.CommanderXp += gained;
+            sheet.Normalize();
+            captain.Sheet = sheet;
+            captain.Skills = CourtPpbFormulas.ComputeTotal(sheet);
+            await _baronyRepo.SaveAvailableAdvisor(captain);
+            AddUnitLogEntry(
+                unit,
+                "xp",
+                $"Captain {captain.Name} gained {gained} CX (pool {sheet.CommanderXp}).",
+                xpDelta: null);
+            await _baronyRepo.SaveUnit(unit);
+        }
+    }
+
+    private void ApplyCommanderBattleFlags(BaronyBattleTokenDTO token, BaronyUnitDTO unit)
+    {
+        token.ThunderCharge = false;
+        token.FlyingStart = false;
+        token.ChargeDamageExtra = 0;
+        if (unit.CaptainAvailableAdvisorId is not int captainId)
+            return;
+        var captain = _courtiers.FirstOrDefault(c => c.Id == captainId);
+        if (captain is null)
+            return;
+        var bonuses = CourtCommanderFormulas.ComputeBonuses(
+            captain.Sheet,
+            unitHasMount: !string.IsNullOrWhiteSpace(unit.MountKey),
+            unitHasShield: !string.IsNullOrWhiteSpace(unit.ShieldKey));
+        token.ThunderCharge = bonuses.ThunderCharge;
+        token.FlyingStart = bonuses.FlyingStart;
+        token.ChargeDamageExtra = bonuses.ShockLance && !string.IsNullOrWhiteSpace(unit.MountKey) ? 1 : 0;
+    }
+
+    private static int ChargeAttackBonus(BaronyBattleTokenDTO token) =>
+        token.ThunderCharge ? 3 : 2;
+
+    private static int ChargeDamageBonus(BaronyBattleTokenDTO token) =>
+        (token.ThunderCharge ? 2 : 1) + Math.Max(0, token.ChargeDamageExtra);
 
     private async Task MaybeShowBaronXpSummaryAsync()
     {
@@ -4417,7 +4500,7 @@ else
                 cx = nx;
                 cy = ny;
                 steps++;
-                if (steps >= MinChargeStepsForFacing(facing))
+                if (steps >= MinChargeStepsForFacing(facing, token))
                     cells.Add((cx, cy));
             }
         }
@@ -4425,11 +4508,14 @@ else
         return cells;
     }
 
-    private static int MinChargeStepsForFacing(int facing)
+    private static int MinChargeStepsForFacing(int facing, BaronyBattleTokenDTO? token = null)
     {
         var normalized = BaronyBattleFacing.Clamp(facing);
         // Cardinal directions need 3 tiles; diagonal directions need 2 tiles.
-        return normalized % 2 == 0 ? 3 : 2;
+        var min = normalized % 2 == 0 ? 3 : 2;
+        if (token?.FlyingStart == true)
+            min = Math.Max(1, min - 1);
+        return min;
     }
 
     /// <summary>
