@@ -13,6 +13,16 @@
         <div class="unit-draft-card__title-main">
             <span>@ResolvedTitleEyebrow</span>
             <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
+            @if (!string.IsNullOrWhiteSpace(Unit.CaptainName))
+            {
+                <BaronyTooltip Title="Captain"
+                               Text="@(string.IsNullOrWhiteSpace(CaptainTooltip) ? Unit.CaptainName : CaptainTooltip)"
+                               Placement="Placement.Bottom"
+                               Class="unit-draft-card__captain-tip">
+                    <span class="unit-draft-card__captain"
+                          @onclick:stopPropagation="true">(@Unit.CaptainName)</span>
+                </BaronyTooltip>
+            }
         </div>
         @if (TitleActions is not null)
         {
@@ -286,6 +296,8 @@
     [Parameter] public bool CanManageAsMg { get; set; }
     [Parameter] public bool CanSpendPd { get; set; }
     [Parameter] public bool ShowCurrentHp { get; set; }
+    /// <summary>Baron-style tooltip body for the captain name in parentheses (defaults to the name).</summary>
+    [Parameter] public string? CaptainTooltip { get; set; }
     [Parameter] public string? TitleEyebrow { get; set; }
     /// <summary>Optional controls aligned with the unit name (e.g. Reinforce / re-equip).</summary>
     [Parameter] public RenderFragment? TitleActions { get; set; }

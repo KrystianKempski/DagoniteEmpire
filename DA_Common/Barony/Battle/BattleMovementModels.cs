@@ -98,6 +98,12 @@ public sealed class BattleMovementMover
     /// </summary>
     public bool IsPinned { get; init; }
 
+    /// <summary>Column March: squeezing past comrades costs open-ground rates, not difficult ×2.</summary>
+    public bool ColumnMarch { get; init; }
+
+    /// <summary>Loose Files: one diagonal step per phase may pass between two occupied corners.</summary>
+    public bool LooseFiles { get; init; }
+
     /// <summary>
     /// Hard wall-clock cap: the mover stops once the simulation clock reaches this time.
     /// Used on re-runs after a unit is destroyed mid-movement by a leave-engagement hit.

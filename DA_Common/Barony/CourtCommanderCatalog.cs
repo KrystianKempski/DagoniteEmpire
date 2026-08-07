@@ -69,16 +69,38 @@ public sealed class CommanderBonusResult
     public int OtherHp { get; set; }
     public int OtherDamageMelee { get; set; }
     public int OtherDamageShooting { get; set; }
+    public int OtherDiscipline { get; set; }
+    public int OtherInitiative { get; set; }
+    /// <summary>Riveted Plate: Pierce ignored when this unit computes EffectiveArmor as defender.</summary>
+    public int PierceIgnore { get; set; }
 
     public bool ThunderCharge { get; set; }
     public bool FlyingStart { get; set; }
     public bool ShockLance { get; set; }
+    public bool Wedge { get; set; }
+    public bool UnbrokenMomentum { get; set; }
+    public bool BlindFury { get; set; }
+    public bool Overrun { get; set; }
+    public bool DrillShot { get; set; }
+    public bool KillTheCaptain { get; set; }
+    public bool PikeHedge { get; set; }
+    public bool ReturnStroke { get; set; }
     public bool FightingWithdrawal { get; set; }
     public bool RotatingRanks { get; set; }
     public bool NcoScreen { get; set; }
     public bool MountedSuperiority { get; set; }
     public bool CounterCharge { get; set; }
     public bool LongShot { get; set; }
+    public bool SnapShot { get; set; }
+    public bool ExtendedRange { get; set; }
+    public bool SkirmishScreen { get; set; }
+    public bool Enfilade { get; set; }
+    public bool HarassingFire { get; set; }
+    public bool KnifeInTheDark { get; set; }
+    public bool KeepFacing { get; set; }
+    public bool LookAway { get; set; }
+    public bool ColumnMarch { get; set; }
+    public bool LooseFiles { get; set; }
     public bool Pathfinder { get; set; }
     public bool FeignedRetreat { get; set; }
     public bool AmbushMark { get; set; }
@@ -108,6 +130,16 @@ public static class CourtCommanderCatalog
     public const int SoftCapCmdAttack = 2;
     public const int SoftCapCmdDefense = 2;
     public const int SoftCapMove = 2;
+
+    /// <summary>
+    /// Abilities temporarily disabled: not unlockable and their battle effect is neutralised
+    /// (e.g. Loose Files, whose diagonal squeeze the movement planner cannot yet mirror).
+    /// </summary>
+    public static readonly IReadOnlySet<string> DisabledKeys =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "loose-files" };
+
+    public static bool IsDisabled(string? key) =>
+        !string.IsNullOrWhiteSpace(key) && DisabledKeys.Contains(key.Trim());
 
     public static int CxCostForTier(int tier) => tier switch
     {
@@ -331,6 +363,12 @@ public static class CourtCommanderFormulas
             return false;
         }
 
+        if (CourtCommanderCatalog.IsDisabled(ability.Key))
+        {
+            reason = "Temporarily disabled.";
+            return false;
+        }
+
         if (sheet.UnlockedCommanderAbilities.Any(k =>
                 string.Equals(k, ability.Key, StringComparison.OrdinalIgnoreCase)))
         {
@@ -390,13 +428,140 @@ public static class CourtCommanderFormulas
     }
 
     /// <summary>
-    /// Effect application is intentionally disabled for now: abilities are represented and buyable,
-    /// but none are wired to unit/combat stats yet. Returns an empty result so the existing sync and
-    /// battle plumbing keeps compiling and can be wired later.
+    /// Passive stat bonuses applied to the commanded unit from unlocked abilities.
+    /// Phase 1 wires the flat, always-on passives (HP / Move / melee Damage / shield Defense);
+    /// context-sensitive and battle-flow abilities are computed elsewhere as they are wired.
     /// </summary>
     public static CommanderBonusResult ComputeBonuses(
         CourtCharacterSheet? sheet,
         bool unitHasMount,
         bool unitHasShield)
-        => new();
+    {
+        var result = new CommanderBonusResult();
+        if (sheet is null)
+            return result;
+        sheet.Normalize();
+
+        foreach (var key in sheet.UnlockedCommanderAbilities)
+        {
+            if (CourtCommanderCatalog.IsDisabled(key))
+                continue;
+            switch (key.Trim().ToLowerInvariant())
+            {
+                case "hold-the-line":
+                    result.OtherHp += 8;
+                    break;
+                case "march-cadence":
+                    result.OtherMove += 1;
+                    break;
+                case "killing-blow":
+                    result.OtherDamageMelee += 1;
+                    break;
+                case "shield-wall-basics":
+                    if (unitHasShield)
+                        result.CommanderDefense += 1;
+                    break;
+
+                // Phase 2 — flat passives.
+                case "discipline-boost":
+                    result.OtherDiscipline += 1;
+                    break;
+                case "initiative-boost":
+                    result.OtherInitiative += 2;
+                    break;
+                case "riveted-plate":
+                    result.PierceIgnore += 1;
+                    break;
+
+                // Phase 2 — context-sensitive combat flags (applied during battle resolution).
+                case "drill-shot":
+                    result.DrillShot = true;
+                    break;
+                case "mounted-superiority":
+                    result.MountedSuperiority = true;
+                    break;
+                case "counter-charge":
+                    result.CounterCharge = true;
+                    break;
+                case "pike-hedge":
+                    result.PikeHedge = true;
+                    break;
+                case "return-stroke":
+                    result.ReturnStroke = true;
+                    break;
+                case "kill-the-captain":
+                    result.KillTheCaptain = true;
+                    break;
+
+                // Phase 3 — charge mechanics.
+                case "shock-lance":
+                    result.ShockLance = true;
+                    break;
+                case "thunder-charge":
+                    result.ThunderCharge = true;
+                    break;
+                case "flying-start":
+                    result.FlyingStart = true;
+                    break;
+                case "wedge":
+                    result.Wedge = true;
+                    break;
+                case "unbroken-momentum":
+                    result.UnbrokenMomentum = true;
+                    break;
+                case "blind-fury":
+                    result.BlindFury = true;
+                    break;
+                case "overrun":
+                    result.Overrun = true;
+                    break;
+
+                // Phase 4 — ranged / skirmish.
+                case "long-shot":
+                    result.LongShot = true;
+                    break;
+                case "snap-shot":
+                    result.SnapShot = true;
+                    break;
+                case "extended-range":
+                    result.ExtendedRange = true;
+                    break;
+                case "skirmish-screen":
+                    result.SkirmishScreen = true;
+                    break;
+                case "enfilade":
+                    result.Enfilade = true;
+                    break;
+                case "harassing-fire":
+                    result.HarassingFire = true;
+                    break;
+
+                // Tier 1 finishers — rear damage + free facing.
+                case "knife-in-the-dark":
+                    result.KnifeInTheDark = true;
+                    break;
+                case "keep-facing":
+                    result.KeepFacing = true;
+                    break;
+                case "look-away":
+                    result.LookAway = true;
+                    break;
+                case "column-march":
+                    result.ColumnMarch = true;
+                    break;
+                case "loose-files":
+                    result.LooseFiles = true;
+                    break;
+                case "ironclad":
+                    result.Ironclad = true;
+                    break;
+            }
+        }
+
+        // Soft caps on commander-sourced stats.
+        result.OtherMove = Math.Min(result.OtherMove, CourtCommanderCatalog.SoftCapMove);
+        result.CommanderAttack = Math.Min(result.CommanderAttack, CourtCommanderCatalog.SoftCapCmdAttack);
+        result.CommanderDefense = Math.Min(result.CommanderDefense, CourtCommanderCatalog.SoftCapCmdDefense);
+        return result;
+    }
 }

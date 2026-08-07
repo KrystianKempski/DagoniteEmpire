@@ -17,7 +17,7 @@
             @foreach (var ability in Unlockable)
             {
                 <MudSelectItem Value="@ability.Key">
-                    [T@versionability.Tier] @ability.Branch · @ability.NameEn (@ability.CxCost CX)
+                    @($"[T{ability.Tier}] {ability.Branch} · {ability.NameEn} ({ability.CxCost} CX)")
                 </MudSelectItem>
             }
         </MudSelect>
@@ -51,8 +51,9 @@
 
     private List<CourtCommanderAbility> Unlockable =>
         CourtCommanderCatalog.All
-            .Where(a => Sheet.UnlockedCommanderAbilities.All(k =>
-                !string.Equals(k, a.Key, StringComparison.OrdinalIgnoreCase)))
+            .Where(a => !CourtCommanderCatalog.IsDisabled(a.Key)
+                && Sheet.UnlockedCommanderAbilities.All(k =>
+                    !string.Equals(k, a.Key, StringComparison.OrdinalIgnoreCase)))
             .OrderBy(a => a.Branch)
             .ThenBy(a => a.Tier)
             .ThenBy(a => a.NameEn)

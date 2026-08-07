@@ -1,5 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @using DA_Common.Barony
+@using DA_Common.Barony.Battle
 @using DA_Models.BaronyModels
 
 <div class="bbm-grid-root" style="--bbm-cell:@(CellPx)px;">
@@ -101,7 +102,53 @@
                                                 <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
                                             </button>
                                         }
+                                        @if (ShowAbilitiesButton(token))
+                                        {
+                                            <div class="bbm-abilities-anchor" @onclick:stopPropagation="true">
+                                                @if (CanShowFullDefense(token) && !CanShowCommanderActive(token))
+                                                {
+                                                    <button type="button"
+                                                            class="bbm-abilities-btn @(token.FullDefense ? "active" : null)"
+                                                            title="@(token.FullDefense ? "Full Defense active (click to cancel)" : $"Full Defense (+{BattleMovementRules.FullDefenseDefenseBonus} Def, −{BattleMovementRules.FullDefenseAttackPenalty} Atk, no move)")"
+                                                            @onclick:stopPropagation="true"
+                                                            @onclick="@(() => OnActivateAbility.InvokeAsync((token.Id, "full-defense")))">
+                                                        <img class="bbm-abilities-btn__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <MudMenu Dense="true"
+                                                             AnchorOrigin="Origin.TopCenter"
+                                                             TransformOrigin="Origin.BottomCenter">
+                                                        <ActivatorContent>
+                                                            <span class="bbm-abilities-btn" title="Zdolności">
+                                                                <img class="bbm-abilities-btn__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                                                            </span>
+                                                        </ActivatorContent>
+                                                        <ChildContent>
+                                                            @if (CanShowCommanderActive(token))
+                                                            {
+                                                                <MudMenuItem Disabled="@(token.IroncladUsed || token.IroncladActive)"
+                                                                             OnClick="@(() => OnActivateAbility.InvokeAsync((token.Id, "ironclad")))">
+                                                                    @(token.IroncladActive
+                                                                        ? "Ironclad — active this round"
+                                                                        : token.IroncladUsed
+                                                                            ? "Ironclad — used"
+                                                                            : "Ironclad · +2 Armor (1 round)")
+                                                                </MudMenuItem>
+                                                            }
+                                                        </ChildContent>
+                                                    </MudMenu>
+                                                }
+                                            </div>
+                                        }
                                     </div>
+                                    @if (token.FullDefense)
+                                    {
+                                        <span class="bbm-full-defense-badge" title="@($"Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Def, −{BattleMovementRules.FullDefenseAttackPenalty} Atk, no movement this round")">
+                                            <img class="bbm-full-defense-badge__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                                        </span>
+                                    }
                                     @if (IsEngagedToken(token))
                                     {
                                         <span class="bbm-engage-badge @(ShowOriginChargeButton(token) || ShowFogFacingOnlyBadge(token) ? "shifted" : null)" title="@EngagementTooltip(token)">
@@ -409,6 +456,12 @@
                                     @TokenIcon(token.IconKey, token.Label)
                                 </div>
                                 <div class="bbm-token-label @(token.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@token.Label</div>
+                                @if (token.FullDefense)
+                                {
+                                    <span class="bbm-full-defense-badge" title="@($"Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Def, −{BattleMovementRules.FullDefenseAttackPenalty} Atk, no movement this round")">
+                                        <img class="bbm-full-defense-badge__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                                    </span>
+                                }
                                 @if (IsEngagedToken(token))
                                 {
                                     <span class="bbm-engage-badge" title="@EngagementTooltip(token)">
@@ -488,6 +541,11 @@
     [Parameter] public EventCallback<(int X, int Y)> OnCellClick { get; set; }
     [Parameter] public EventCallback<string> OnFacingButton { get; set; }
     [Parameter] public EventCallback<string> OnChargeButton { get; set; }
+    /// <summary>When true, the active unit may take the universal Full Defense stance (movement phase).</summary>
+    [Parameter] public bool AllowFullDefense { get; set; }
+    /// <summary>When true, the selected friendly unit may trigger captain active abilities (combat phases).</summary>
+    [Parameter] public bool AllowCommanderActives { get; set; }
+    [Parameter] public EventCallback<(string TokenId, string AbilityKey)> OnActivateAbility { get; set; }
     [Parameter] public EventCallback<double> OnFacingPreview { get; set; }
     [Parameter] public EventCallback OnFacingConfirm { get; set; }
     [Parameter] public EventCallback OnChargeConfirm { get; set; }
@@ -706,6 +764,22 @@
         var moveLeft = tip?.RemainingMoveAfter ?? token.RemainingMove;
         var paid = tip?.FacingCostPaid ?? 0;
         return moveLeft >= 1 || paid > 0;
+    }
+
+    private bool CanShowFullDefense(BaronyBattleTokenDTO token) =>
+        AllowFullDefense && ActiveTokenId == token.Id;
+
+    private bool CanShowCommanderActive(BaronyBattleTokenDTO token) =>
+        AllowCommanderActives && SelectedTokenId == token.Id && token.CmdIronclad;
+
+    private bool ShowAbilitiesButton(BaronyBattleTokenDTO token)
+    {
+        if (IsAnimating || IsFacingEdit || IsChargeEdit || !Interactive)
+            return false;
+        // Enemies may take Full Defense on their order (MG); commander actives stay ally-only.
+        if (token.IsEnemy)
+            return CanShowFullDefense(token);
+        return CanShowFullDefense(token) || CanShowCommanderActive(token);
     }
 
     private bool ShowOriginChargeButton(BaronyBattleTokenDTO token)

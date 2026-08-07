@@ -144,6 +144,12 @@ public static class BattleMovementSimulator
 
         var occupant = FindBlocker(states, mover, to.X, to.Y);
         var diagonalObstruction = FindDiagonalObstruction(states, mover, from, to);
+        // Loose Files: spend the once-per-phase charge to slip one diagonal between held corners.
+        if (occupant is null && diagonalObstruction is not null && mover.LooseFilesLeft > 0)
+        {
+            mover.LooseFilesLeft--;
+            diagonalObstruction = null;
+        }
         var blocker = occupant ?? diagonalObstruction;
 
         if (blocker is not null)
@@ -246,7 +252,7 @@ public static class BattleMovementSimulator
             if (occupant is not null && !CanSlipPast(mover, occupant))
                 return false;
 
-            var slowed = occupant is not null
+            var slowed = (occupant is not null && !mover.Spec.ColumnMarch)
                          || terrain.FootprintEntersDifficult(from.X, from.Y, to.X, to.Y, size);
             var halfCost = BattleMovementRules.StepHalfCost(from.X, from.Y, to.X, to.Y, slowed);
             if (spent + halfCost > budget)
@@ -479,6 +485,7 @@ public static class BattleMovementSimulator
             TrailAnchor = Anchor;
             Facing = spec.StartFacing;
             OpenEngagements = new HashSet<string>(spec.EngagedEnemyIds, StringComparer.Ordinal);
+            LooseFilesLeft = spec.LooseFiles ? 1 : 0;
         }
 
         public BattleMovementMover Spec { get; }
@@ -502,6 +509,9 @@ public static class BattleMovementSimulator
         public int Facing { get; set; }
 
         public int WaitingSinceMs { get; set; } = -1;
+
+        /// <summary>Remaining Loose Files diagonal-squeeze charges this phase.</summary>
+        public int LooseFilesLeft { get; set; }
 
         public bool Active { get; set; } = true;
 

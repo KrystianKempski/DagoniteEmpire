@@ -976,6 +976,17 @@
     color: var(--barony-ink);
 }
 
+.unit-draft-card__captain {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #7a6020;
+    white-space: nowrap;
+}
+
+.unit-draft-card__captain-tip {
+    min-width: 0;
+}
+
 .unit-draft-card__meta {
     display: flex;
     flex-wrap: wrap;
@@ -5573,6 +5584,16 @@ a.city-building-name-text--link:hover {
     border-top: 3px solid rgba(156, 122, 51, 0.7);
 }
 
+.unit-draft-card__icon-btn--captain {
+    border-color: color-mix(in srgb, #7a6020 45%, var(--barony-border));
+    background: color-mix(in srgb, #c7901a 12%, var(--barony-surface));
+}
+
+.unit-draft-card__icon-btn--captain:hover:not(:disabled) {
+    background: color-mix(in srgb, #c7901a 22%, var(--barony-surface));
+    border-color: #7a6020;
+}
+
 .unit-captain-row {
     display: flex;
     flex-wrap: wrap;
@@ -5590,22 +5611,33 @@ a.city-building-name-text--link:hover {
     color: #7a6020;
 }
 
-.unit-captain-row__select {
-    flex: 1 1 12rem;
-    min-width: 10rem;
-    max-width: 18rem;
-}
-
 .unit-captain-row__name {
     font-size: 0.9rem;
+    font-weight: 600;
 }
 
-.unit-captain-option {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    width: 100%;
+.unit-captain-row__clear {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0.1rem 0.35rem;
+    margin: 0;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--barony-muted);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.unit-captain-row__clear:hover:not(:disabled) {
+    color: #8b3a3a;
+}
+
+.unit-captain-row__clear:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .unit-captain-option__badge {
@@ -5626,6 +5658,59 @@ a.city-building-name-text--link:hover {
 
 .unit-captain-abilities__chip {
     font-size: 0.72rem;
+}
+
+.unit-captain-pick__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-height: min(50vh, 22rem);
+    overflow: auto;
+    margin-top: 0.35rem;
+}
+
+.unit-captain-pick__option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--barony-border);
+    border-radius: 4px;
+    background: var(--barony-surface);
+    color: var(--barony-ink);
+    cursor: pointer;
+    font: inherit;
+}
+
+.unit-captain-pick__option:hover {
+    border-color: var(--barony-border-strong);
+    background: color-mix(in srgb, var(--barony-accent) 10%, var(--barony-surface));
+}
+
+.unit-captain-pick__option--picked {
+    border-color: #7a6020;
+    background: color-mix(in srgb, #c7901a 14%, var(--barony-surface));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #7a6020 35%, transparent);
+}
+
+.unit-captain-pick__name {
+    font-weight: 700;
+    font-size: 0.92rem;
+}
+
+.unit-captain-pick__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.65rem;
+}
+
+.unit-captain-pick__hint {
+    font-size: 0.75rem;
+    color: var(--barony-muted);
 }
 
 .barony-scope .court-combat-table th:not(.source-col),
@@ -9676,6 +9761,47 @@ a.city-building-name-text--link:hover {
     color: var(--barony-accent);
 }
 
+.barony-scope .bbm-force-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.2rem;
+}
+
+.barony-scope .bbm-force-status__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.12rem 0.4rem 0.12rem 0.25rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #f5f0e6;
+    box-shadow: 0 0 0 1px rgba(245, 240, 230, 0.35);
+}
+
+.barony-scope .bbm-force-status__badge img {
+    width: 0.85rem;
+    height: 0.85rem;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) invert(1);
+}
+
+.barony-scope .bbm-force-status__badge em {
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+}
+
+.barony-scope .bbm-force-status__badge--full-def {
+    background: rgba(36, 99, 178, 0.94);
+}
+
+.barony-scope .bbm-force-status__badge--ironclad {
+    background: rgba(90, 78, 120, 0.94);
+}
+
 .barony-scope .bbm-force-card__actions {
     flex: 0 0 auto;
 }
@@ -9685,6 +9811,16 @@ a.city-building-name-text--link:hover {
     font-size: 0.72rem;
     line-height: 1.35;
     color: var(--barony-muted);
+}
+
+.barony-scope .bbm-force-stat--boost {
+    color: #2463b2;
+    font-weight: 700;
+}
+
+.barony-scope .bbm-force-stat--down {
+    color: #8b3a3a;
+    font-weight: 700;
 }
 
 .barony-scope .bbm-force-meta {
@@ -9814,6 +9950,62 @@ a.city-building-name-text--link:hover {
     background: var(--barony-bg);
     color: var(--barony-ink);
     padding: 0.15rem;
+}
+
+.barony-scope .bbm-enemy-abilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+}
+
+.barony-scope .bbm-enemy-ability-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.18rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--barony-border) 72%, #2f2a24);
+    background: color-mix(in srgb, var(--barony-bg) 88%, #ffffff);
+    font-size: 0.72rem;
+    color: var(--barony-ink);
+}
+
+.barony-scope .bbm-enemy-ability-chip button {
+    border: 0;
+    background: transparent;
+    color: var(--barony-muted);
+    cursor: pointer;
+    line-height: 1;
+    font-size: 0.88rem;
+    padding: 0;
+}
+
+.barony-scope .bbm-force-abilities {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.35rem;
+}
+
+.barony-scope .bbm-force-abilities__label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--barony-muted);
+}
+
+.barony-scope .bbm-force-ability-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.12rem 0.4rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--barony-accent) 45%, var(--barony-border));
+    background: color-mix(in srgb, var(--barony-accent) 14%, var(--barony-bg));
+    font-size: 0.68rem;
+    color: var(--barony-ink);
+    cursor: help;
 }
 
 .barony-scope .bbm-log-entry {
@@ -10313,6 +10505,50 @@ a.city-building-name-text--link:hover {
     pointer-events: none;
 }
 
+.barony-scope .bbm-abilities-anchor {
+    position: absolute;
+    left: -3px;
+    bottom: -3px;
+    z-index: 8;
+    pointer-events: auto;
+}
+
+.barony-scope .bbm-abilities-btn {
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    border: 1.5px solid #6b4f8a;
+    border-radius: 3px;
+    background: rgba(245, 240, 230, 0.95);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.barony-scope .bbm-abilities-btn:hover {
+    background: #efe8f5;
+}
+
+.barony-scope .bbm-abilities-btn.active {
+    border-color: #2f6b4f;
+    background: #e8f2ec;
+    box-shadow: 0 0 0 1px rgba(47, 107, 79, 0.45), 0 0 9px rgba(47, 107, 79, 0.55);
+}
+
+.barony-scope .bbm-abilities-btn.active .bbm-abilities-btn__icon {
+    filter: hue-rotate(70deg) saturate(1.3) brightness(0.95);
+}
+
+.barony-scope .bbm-abilities-btn__icon {
+    display: block;
+    width: 0.72rem;
+    height: 0.72rem;
+    object-fit: contain;
+    pointer-events: none;
+}
+
 .barony-scope .bbm-charge-preview {
     position: absolute;
     inset: 1px;
@@ -10403,6 +10639,44 @@ a.city-building-name-text--link:hover {
     z-index: 6;
     pointer-events: none;
     box-shadow: 0 0 0 1px rgba(245, 240, 230, 0.6);
+}
+
+.barony-scope .bbm-full-defense-badge {
+    position: absolute;
+    right: 1px;
+    top: 8px;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 999px;
+    background: rgba(36, 99, 178, 0.94);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 7;
+    pointer-events: none;
+    box-shadow:
+        0 0 0 1.5px rgba(245, 240, 230, 0.75),
+        0 0 10px rgba(36, 99, 178, 0.55);
+}
+
+.barony-scope .bbm-token-slot.large .bbm-full-defense-badge {
+    width: 2.05rem;
+    height: 2.05rem;
+    top: 10px;
+    right: 2px;
+}
+
+.barony-scope .bbm-full-defense-badge__icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) invert(1);
+}
+
+.barony-scope .bbm-token-slot.large .bbm-full-defense-badge__icon {
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 /* Clears the charge button, which owns the same corner while a unit is still taking orders. */
@@ -10657,7 +10931,7 @@ a.city-building-name-text--link:hover {
     display: block !important;
     max-width: 100%;
     padding: 0 1px;
-    font-size: 0.88rem !important;
+    font-size: 0.78rem !important;
     line-height: 1;
     font-weight: 700;
     text-align: center;

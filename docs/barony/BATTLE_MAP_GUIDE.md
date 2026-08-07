@@ -250,3 +250,23 @@ Każdy oddział ma własny log (ikona historii na karcie oddziału w Army), gdzi
 - Bonus dotyczy tylko ataku na przypięty cel szarży.
 - Skrzyżowane miecze = związanie walką. Każde ruszenie się w związaniu = darmowy atak za pół obrażeń od każdego związanego wroga (bez kontrataku).
 - Zielony łuk = jednostka zasięgowa. Strzał na dystans bez kontrataku; związanie walką blokuje strzał (zostaje tylko wręcz).
+
+## Pełna obrona (Full Defense)
+
+Uniwersalna postawa dostępna w **fazie ruchu** dla aktywnego oddziału (sojusznicy i wrogowie — u wrogów rozkaz wydaje MG).
+
+### Jak włączyć
+
+- Przy aktywnym oddziale na mapie pojawia się przycisk **Full Defense** (tarcza).
+- Kliknięcie włącza postawę; ponowne kliknięcie ją **cofa** (przywraca budżet ruchu).
+
+### Efekty
+
+- **Defence +4** w tej rundzie (w Combat liczy się do obrony przy ataku i przy kontrataku obronnym atakującego).
+- **Attack −5** w tej rundzie (gdy oddział sam atakuje lub zadaje darmowy cios za ruch w związaniu).
+- **Move 0** — oddział rezygnuje z całego ruchu w tej rundzie (ścieżka i szarża są czyszczone).
+- Na żetonie widać niebieską odznakę; panel **Your forces** / **Enemy forces** pokazuje skorygowane staty (`Atk X (−5)`, `Def X (+4)`, `Mv 0`).
+
+### Kiedy gaśnie
+
+- Postawa resetuje się na początku kolejnej rundy (po resolve Combat).

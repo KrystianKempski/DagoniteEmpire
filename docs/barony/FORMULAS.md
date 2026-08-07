@@ -382,12 +382,13 @@ Movement is resolved by one deterministic simulation in `DA_Common/Barony/Battle
 - **Diagonal** steps are refused when both flanking tiles are held, which also stops two units swapping across the same diagonal.
 - Output: timed legs for the animation, plus per-unit outcomes (final tile, facing, remaining move, charge tiles travelled, who stopped it) and log events.
 - **Moving while engaged**: the first completed step of a mover listed against `EngagedEnemyIds` emits `MovedWhileEngaged` once per engaged pair, whether or not contact was actually broken. `StopAtMs` on a mover hard-caps further steps (used when the free hit kills mid-phase); the corpse stays as an obstacle until the phase ends.
+- **Full Defense** (Movement phase): any active unit (ally or MG enemy) may toggle the universal stance. While active: **Defence +4** (`FullDefenseDefenseBonus`), **Attack −5** (`FullDefenseAttackPenalty`), **Move 0** (path/charge cleared, no steps planned). Resets at the start of the next round after Combat resolve. Journal: `[full def +4]` on defence, `[full def −5 att]` when the unit attacks.
 
 ### Battle Map — disengage hit
 Stored on tokens as `EngagedEnemyIds` (JSON in `TokensJson`, no EF migration). Created by hostile movement collisions and by surviving **melee** combat exchanges; cleared when contact breaks or a unit flees. Ranged shots never bind engagement.
 
 - Trigger is **any** movement, not leaving the adjacency ring: a sidestep next to the same enemy costs the same as running away. Standing still (including an in-place facing change) costs nothing.
-- **dealt** = `max(1, round(full / 2))` where `full` is the normal attack formula using **start-of-phase** positions and facings (same Aim/Exposure as Combat).
+- **dealt** = `max(1, round(full / 2))` where `full` is the normal attack formula using **start-of-phase** positions and facings (same Aim/Exposure as Combat). **Full Defense** modifiers apply the same way as in Combat (`Attack −5` on the hitter, `Defence +4` on the target).
 - No defensive return from the unit that moved, and a unit already killed this phase delivers no hit.
 - Pre-rolled before the simulation so the animation is a pure replay; if a hit kills, `StopAtMs` is set and the simulation is re-run.
 - Pairs that moved but stayed in contact remain engaged; `ReconcileEngagements` drops only pairs that are no longer adjacent.
@@ -402,6 +403,8 @@ Phases: Movement → Attack planning → Combat. Stats are frozen on the token a
 User-facing flow/rules guide: [`BATTLE_MAP_GUIDE.md`](./BATTLE_MAP_GUIDE.md)
 
 - **dealt** = `max(1, round((Damage + k4 − effArmor) × (Attack+k6) / max(1, Defense+k6) × front))`, where `effArmor = UnitCombatFormulas.EffectiveArmor(target.Armor, attacker.Pierce)`
+  - Defender **Full Defense** adds **+4** to `Defense` in the attack ratio (logged `[full def +4]`)
+  - Attacker **Full Defense** subtracts **5** from `Attack` in the attack ratio (logged `[full def −5 att]`)
   - Rounding: away from zero (`MidpointRounding.AwayFromZero`)
   - **front** = AimBase + ExposureBonus (`GetFrontBreakdown`), range **1–4.5**
     - **Aim** — attacker facing toward defender: front **2.5**, corner **1.5**, side/rear-corner/rear **1**
@@ -410,6 +413,7 @@ User-facing flow/rules guide: [`BATTLE_MAP_GUIDE.md`](./BATTLE_MAP_GUIDE.md)
   - If `Damage + k4 < Armor`, raw can be ≤ 0, but dealt is still floored at **1**
 - **defensive dealt** (melee exchange only) = `max(1, round((Dmg_def + k4 − effArm_atk) × (Def_def + k6) / max(1, Def_atk + k6) × front_def))` — the defender's own Pierce bites into the attacker's armor
   - Ratio is **Defense vs Defense** (not Attack), both sides roll k6
+  - Attacker **Full Defense** adds **+4** to `Def_atk` in the defensive ratio (logged `[full def +4]`)
   - **front_def** = same Aim/Exposure rules with roles swapped (`GetFrontBreakdown(defender, attacker)`)
   - Example log: `(Dmg+k4−Arm=4+2−1=5) × (12+k6=15)/(10+k6=14) ×3 (Front Vs Front) => 16 dmg.` tagged `(defensive)`
 - Both sides may flee at HP ≤ 0 after the exchange. Defender still returns defensive damage even if reduced to 0 by the attack (melee only).

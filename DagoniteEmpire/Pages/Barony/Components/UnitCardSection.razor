@@ -40,6 +40,7 @@
                           CanManageAsMg="@CanManageAsMg"
                           CanSpendPd="@CanSpendPd"
                           ShowCurrentHp="true"
+                          CaptainTooltip="@CaptainTooltipText"
                           Collapsible="true"
                           SkillsChanged="PersistFromCardAsync"
                           OnXpDraftChanged="OnXpDraftFromCardAsync">
@@ -115,6 +116,23 @@
                     </BaronyTooltip>
                 }
             }
+            @if (CanEdit)
+            {
+                <BaronyTooltip Title="@(string.IsNullOrWhiteSpace(Unit.CaptainName) ? "Assign captain" : $"Captain: {Unit.CaptainName}")"
+                               Text="Choose a free courtier as this unit’s captain (1 courtier ↔ 1 unit).">
+                    <button type="button"
+                            class="unit-draft-card__icon-btn @(Unit.CaptainAvailableAdvisorId is > 0 ? "unit-draft-card__icon-btn--captain" : null)"
+                            disabled="@_busy"
+                            aria-label="Assign captain"
+                            @onclick="OpenCaptainPickerAsync">
+                        <img src="/icons/black-knight-helm.svg"
+                             alt=""
+                             width="20"
+                             height="20"
+                             class="unit-draft-card__icon-btn-img" />
+                    </button>
+                </BaronyTooltip>
+            }
             <MudIconButton Icon="@Icons.Material.Filled.History"
                            Size="Size.Small"
                            title="Show unit history"
@@ -131,61 +149,6 @@
             }
         </TitleActions>
     </UnitDraftCardPreview>
-
-    @if (CanEdit || !string.IsNullOrWhiteSpace(Unit.CaptainName))
-    {
-        <div class="unit-captain-row">
-            <span class="unit-captain-row__label">Captain</span>
-            @if (CanEdit)
-            {
-                <MudSelect T="int?"
-                           Value="@Unit.CaptainAvailableAdvisorId"
-                           ValueChanged="OnCaptainChangedAsync"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Dense="true"
-                           Clearable="true"
-                           Disabled="@_busy"
-                           Class="unit-captain-row__select">
-                    @foreach (var person in SelectableCaptains)
-                    {
-                        var count = person.Sheet?.UnlockedCommanderAbilities.Count ?? 0;
-                        <MudSelectItem T="int?" Value="@person.Id">
-                            <div class="unit-captain-option">
-                                <span class="unit-captain-option__name">@person.Name</span>
-                                @if (count > 0)
-                                {
-                                    <span class="unit-captain-option__badge" title="Unlocked commander abilities">
-                                        <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" Size="Size.Small" />
-                                        @count
-                                    </span>
-                                }
-                            </div>
-                        </MudSelectItem>
-                    }
-                </MudSelect>
-            }
-            else
-            {
-                <span class="unit-captain-row__name">@(Unit.CaptainName ?? "—")</span>
-            }
-        </div>
-        @if (CurrentCaptain is { } captain
-             && captain.Sheet is { } captainSheet
-             && captainSheet.UnlockedCommanderAbilities.Count > 0)
-        {
-            <div class="unit-captain-abilities">
-                @foreach (var key in captainSheet.UnlockedCommanderAbilities)
-                {
-                    var ability = CourtCommanderCatalog.Find(key);
-                    <span class="ppb-chip unit-captain-abilities__chip" title="@(ability?.DescriptionEn)">
-                        <span class="ppb-chip__label">@(ability?.NameEn ?? key)</span>
-                        <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
-                    </span>
-                }
-            </div>
-        }
-    }
 </div>
 
 @code {
@@ -196,16 +159,70 @@
     [Parameter] public HashSet<int> OccupiedCaptainIds { get; set; } = new();
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private IEnumerable<AvailableAdvisorDTO> SelectableCaptains =>
-        AvailableCaptains
-            .Where(a => !OccupiedCaptainIds.Contains(a.Id)
-                        || a.Id == Unit.CaptainAvailableAdvisorId)
-            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
-
     private AvailableAdvisorDTO? CurrentCaptain =>
         Unit.CaptainAvailableAdvisorId is int id
             ? AvailableCaptains.FirstOrDefault(a => a.Id == id)
             : null;
+
+    private string CaptainTooltipText
+    {
+        get
+        {
+            var name = Unit.CaptainName ?? CurrentCaptain?.Name;
+            if (string.IsNullOrWhiteSpace(name))
+                return string.Empty;
+
+            var lines = new List<string> { name, "Courtier captain of this unit (1 courtier ↔ 1 unit)." };
+            var unlocked = CurrentCaptain?.Sheet?.UnlockedCommanderAbilities;
+            if (unlocked is { Count: > 0 })
+            {
+                lines.Add("");
+                lines.Add("Unlocked abilities:");
+                foreach (var key in unlocked)
+                {
+                    var ability = CourtCommanderCatalog.Find(key);
+                    var label = ability is null
+                        ? key
+                        : $"{ability.NameEn} (T{ability.Tier})";
+                    lines.Add("• " + label);
+                }
+            }
+
+            return string.Join("\n", lines);
+        }
+    }
+
+    private async Task OpenCaptainPickerAsync()
+    {
+        if (!CanEdit || _busy)
+            return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitCaptainPickDialog.UnitName)] = Unit.Name,
+            [nameof(UnitCaptainPickDialog.CurrentCaptainId)] = Unit.CaptainAvailableAdvisorId,
+            [nameof(UnitCaptainPickDialog.AvailableCaptains)] = AvailableCaptains,
+            [nameof(UnitCaptainPickDialog.OccupiedCaptainIds)] = OccupiedCaptainIds,
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+        };
+        var dialog = await _dialogService.ShowAsync<UnitCaptainPickDialog>("Assign captain", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled)
+            return;
+
+        // Ok(null) means clear; Ok(int) means assign.
+        int? captainId = result.Data switch
+        {
+            int id => id,
+            _ => null,
+        };
+        await OnCaptainChangedAsync(captainId);
+    }
 
     private bool CanSpendPd => CanEdit && Unit.IsActive;
     private bool HasOpenReinforceProject =>

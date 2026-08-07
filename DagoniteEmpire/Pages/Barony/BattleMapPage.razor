@@ -173,6 +173,9 @@ else
                                      OnCellClick="HandleCellClick"
                                      OnFacingButton="StartFacingEdit"
                                      OnChargeButton="StartChargeEdit"
+                                     AllowFullDefense="@(IsMovementPhase && !_isResolvingCombat && !_isResolvingMovement && (CanEdit || CanManageAsMg))"
+                                     AllowCommanderActives="@((IsAttackPlanningPhase || IsCombatPhase) && !_isResolvingCombat && !_isResolvingMovement && (CanEdit || CanManageAsMg))"
+                                     OnActivateAbility="ActivateCommanderAbility"
                                      OnFacingPreview="OnFacingPreview"
                                      OnFacingConfirm="ConfirmFacingEdit"
                                      OnChargeConfirm="ConfirmChargeEdit" />
@@ -382,6 +385,10 @@ else
                                     <div class="bbm-force-card__identity">
                                         <strong class="bbm-force-card__name bbm-name--ally">@unit.Name</strong>
                                         <span class="bbm-force-card__hp">HP @hpNow/@hpMax@(isBroken ? " — fled" : "")</span>
+                                        @if (onMap is not null)
+                                        {
+                                            @ForceStatusBadges(onMap)
+                                        }
                                     </div>
                                     <div class="bbm-force-card__actions">
                                         @if (onMap is null && IsSetupPhase && CanEdit && !isBroken)
@@ -405,9 +412,29 @@ else
                                 <div class="bbm-force-card__stats">
                                     @{
                                         var unitPierce = UnitWeaponCatalog.Find(unit.Weapon1Key)?.Pierce ?? 0;
+                                        var allyAtk = onMap?.Attack ?? stats.Attack;
+                                        var allyDef = onMap?.Defense ?? stats.Defense;
+                                        var allyArm = onMap?.Armor ?? stats.Armor;
+                                        var allyMv = onMap?.Move ?? stats.Move;
+                                        var allyFullDef = onMap?.FullDefense == true;
+                                        var allyIronclad = onMap?.IroncladActive == true;
+                                        var allyAtkEff = allyAtk - (allyFullDef ? BattleMovementRules.FullDefenseAttackPenalty : 0);
+                                        var allyDefEff = allyDef + (allyFullDef ? BattleMovementRules.FullDefenseDefenseBonus : 0);
+                                        var allyArmEff = allyArm + (allyIronclad ? 2 : 0);
+                                        var allyMvEff = allyFullDef ? 0 : allyMv;
                                     }
-                                    Atk @stats.Attack · Def @stats.Defense · Dmg @stats.Damage · Arm @stats.Armor@(unitPierce > 0 ? $" · Prc {unitPierce}" : "") · Disc @unit.Discipline · Mv @stats.Move · @unit.TroopCount men
+                                    <span class="@(allyFullDef ? "bbm-force-stat--down" : null)">Atk @(allyFullDef ? $"{allyAtkEff} (−{BattleMovementRules.FullDefenseAttackPenalty})" : allyAtk.ToString())</span> ·
+                                    <span class="@(allyFullDef ? "bbm-force-stat--boost" : null)">Def @(allyFullDef ? $"{allyDefEff} (+{BattleMovementRules.FullDefenseDefenseBonus})" : allyDefEff.ToString())</span> ·
+                                    Dmg @(onMap?.Damage ?? stats.Damage) ·
+                                    <span class="@(allyIronclad ? "bbm-force-stat--boost" : null)">Arm @(allyIronclad ? $"{allyArmEff} (+2)" : allyArmEff.ToString())</span>@(unitPierce > 0 ? $" · Prc {unitPierce}" : "") ·
+                                    Disc @(onMap?.Discipline ?? unit.Discipline) ·
+                                    <span class="@(allyFullDef ? "bbm-force-stat--down" : null)">Mv @allyMvEff</span> ·
+                                    @(onMap?.TroopCount ?? unit.TroopCount) men
                                 </div>
+                                @if (onMap is not null)
+                                {
+                                    @CommanderAbilityBadges(onMap)
+                                }
                             </div>
                         }
                         @if (_activeUnits.Count == 0)
@@ -443,6 +470,7 @@ else
                                     <div class="bbm-force-card__identity">
                                         <strong class="bbm-force-card__name bbm-name--enemy">@enemy.Label</strong>
                                         <span class="bbm-force-card__hp">HP @enemy.Hp/@enemy.MaxHp</span>
+                                        @ForceStatusBadges(enemy)
                                     </div>
                                     @if (CanManageAsMg)
                                     {
@@ -461,8 +489,21 @@ else
                                     }
                                 </div>
                                 <div class="bbm-force-card__stats">
-                                    Atk @enemy.Attack · Def @enemy.Defense · Dmg @enemy.Damage · Arm @enemy.Armor@(enemy.Pierce > 0 ? $" · Prc {enemy.Pierce}" : "") · Disc @enemy.Discipline · Mv @enemy.Move · @enemy.TroopCount men
+                                    @{
+                                        var enemyDefEff = enemy.Defense + (enemy.FullDefense ? BattleMovementRules.FullDefenseDefenseBonus : 0);
+                                        var enemyAtkEff = enemy.Attack - (enemy.FullDefense ? BattleMovementRules.FullDefenseAttackPenalty : 0);
+                                        var enemyArmEff = enemy.Armor + (enemy.IroncladActive ? 2 : 0);
+                                        var enemyMvEff = enemy.FullDefense ? 0 : enemy.Move;
+                                    }
+                                    <span class="@(enemy.FullDefense ? "bbm-force-stat--down" : null)">Atk @(enemy.FullDefense ? $"{enemyAtkEff} (−{BattleMovementRules.FullDefenseAttackPenalty})" : enemy.Attack.ToString())</span> ·
+                                    <span class="@(enemy.FullDefense ? "bbm-force-stat--boost" : null)">Def @(enemy.FullDefense ? $"{enemyDefEff} (+{BattleMovementRules.FullDefenseDefenseBonus})" : enemyDefEff.ToString())</span> ·
+                                    Dmg @enemy.Damage ·
+                                    <span class="@(enemy.IroncladActive ? "bbm-force-stat--boost" : null)">Arm @(enemy.IroncladActive ? $"{enemyArmEff} (+2)" : enemyArmEff.ToString())</span>@(enemy.Pierce > 0 ? $" · Prc {enemy.Pierce}" : "") ·
+                                    Disc @enemy.Discipline ·
+                                    <span class="@(enemy.FullDefense ? "bbm-force-stat--down" : null)">Mv @enemyMvEff</span> ·
+                                    @enemy.TroopCount men
                                 </div>
+                                @CommanderAbilityBadges(enemy)
                             </div>
                         }
                         @if (CanManageAsMg)
@@ -486,6 +527,11 @@ else
                                         }
                                     </button>
                                     <input class="bbm-input bbm-enemy-name" placeholder="Name" @bind="_enemyDraft.Label" />
+                                    <button type="button"
+                                            class="bbm-map-btn bbm-map-btn--ghost bbm-enemy-add-btn"
+                                            @onclick="OpenEnemyAbilityDialogAsync">
+                                        Dodaj zdolnosc
+                                    </button>
                                     @if (_editingEnemyTokenId is not null)
                                     {
                                         <button type="button"
@@ -517,7 +563,29 @@ else
                                     <label>Move <input type="number" @bind="_enemyDraft.Move" /></label>
                                     <label>Range <input type="number" @bind="_enemyDraft.Range" title="0 = melee only; >0 = ranged unit" /></label>
                                     <label>Pierce <input type="number" @bind="_enemyDraft.Pierce" title="Armor cut through by this unit's attacks; 0 = none" /></label>
+                                    <label>
+                                        Mounted
+                                        <input type="checkbox" @bind="_enemyDraft.Mounted" title="Needed for mount-based abilities" />
+                                    </label>
                                 </div>
+                                @if (_enemyDraft.CommanderAbilities.Count > 0)
+                                {
+                                    <div class="bbm-enemy-abilities">
+                                        @foreach (var key in _enemyDraft.CommanderAbilities)
+                                        {
+                                            var ab = CourtCommanderCatalog.Find(key);
+                                            <span class="bbm-enemy-ability-chip" title="@ab?.DescriptionEn">
+                                                @(ab?.NameEn ?? key)
+                                                <button type="button"
+                                                        title="Remove"
+                                                        @onclick:stopPropagation="true"
+                                                        @onclick="() => RemoveEnemyAbility(key)">
+                                                    ×
+                                                </button>
+                                            </span>
+                                        }
+                                    </div>
+                                }
                             </div>
                         }
                         else if (!Map.Tokens.Any(t => t.IsEnemy))
@@ -1286,6 +1354,12 @@ else
             _snackBar.Add("Enemy name required.", Severity.Warning);
             return;
         }
+        var abilityError = ValidateEnemyDraftAbilitiesSet();
+        if (!string.IsNullOrWhiteSpace(abilityError))
+        {
+            _snackBar.Add(abilityError, Severity.Warning);
+            return;
+        }
         _placingEnemy = true;
         _deployUnitId = null;
         _tool = "token";
@@ -1325,6 +1399,12 @@ else
             _snackBar.Add("Enemy name required.", Severity.Warning);
             return;
         }
+        var abilityError = ValidateEnemyDraftAbilitiesSet();
+        if (!string.IsNullOrWhiteSpace(abilityError))
+        {
+            _snackBar.Add(abilityError, Severity.Warning);
+            return;
+        }
 
         var token = Map.Tokens.FirstOrDefault(t => t.Id == _editingEnemyTokenId && t.IsEnemy);
         if (token is null)
@@ -1349,6 +1429,23 @@ else
         token.RemainingMove = Math.Clamp(token.RemainingMove, 0, move);
         token.Range = Math.Max(0, _enemyDraft.Range);
         token.Pierce = Math.Max(0, _enemyDraft.Pierce);
+        token.Mounted = _enemyDraft.Mounted;
+        token.EnemyBaseRange = Math.Max(0, _enemyDraft.Range);
+        // Refresh the captured base so passive bonuses re-derive from the game master's new numbers.
+        token.EnemyBaseCaptured = true;
+        token.EnemyBaseHp = hp;
+        token.EnemyBaseMove = move;
+        token.EnemyBaseDamage = _enemyDraft.Damage;
+        token.EnemyBaseDefense = _enemyDraft.Defense;
+        token.EnemyBaseDiscipline = Math.Max(0, _enemyDraft.Discipline);
+        token.EnemyCommanderAbilities = _enemyDraft.CommanderAbilities
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .Select(k => k.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        ApplyEnemyCommanderAbilities(token);
+        // Configuring an enemy starts it at full effective HP (including Hold the Line).
+        token.Hp = token.MaxHp;
 
         var label = token.Label;
         CancelEditEnemy();
@@ -1359,6 +1456,12 @@ else
 
     private async Task PlacePendingEnemy(int x, int y)
     {
+        var abilityError = ValidateEnemyDraftAbilitiesSet();
+        if (!string.IsNullOrWhiteSpace(abilityError))
+        {
+            _snackBar.Add(abilityError, Severity.Warning);
+            return;
+        }
         if (Map is null || !CanPlace(x, y, 1))
         {
             _snackBar.Add("Cannot place here.", Severity.Warning);
@@ -1387,7 +1490,17 @@ else
             Range = Math.Max(0, _enemyDraft.Range),
             Pierce = Math.Max(0, _enemyDraft.Pierce),
             Facing = BaronyBattleFacing.South,
+            Mounted = _enemyDraft.Mounted,
+            EnemyBaseRange = Math.Max(0, _enemyDraft.Range),
+            EnemyCommanderAbilities = _enemyDraft.CommanderAbilities
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Select(k => k.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList(),
         };
+        ApplyEnemyCommanderAbilities(token);
+        // A freshly placed enemy starts at full effective HP (including Hold the Line).
+        token.Hp = token.MaxHp;
         Map.Tokens.Add(token);
         _placingEnemy = false;
         _editingEnemyTokenId = null;
@@ -1788,6 +1901,7 @@ else
         var cy = oy;
         var remainingHalf = halfBudget;
         var steps = 0;
+        var wedgeLeft = token.CmdWedge ? 1 : 0;
 
         BaronyBattleTokenDTO? hitEnemy = null;
         var blockedEarly = false;
@@ -1798,8 +1912,14 @@ else
             var nx = cx + dx;
             var ny = cy + dy;
             var stepHalf = diagonal ? 3 : 2;
+            var wedgeThisStep = false;
             if (FootprintEntersDifficult(cx, cy, nx, ny, size))
-                stepHalf *= 2;
+            {
+                if (wedgeLeft > 0)
+                    wedgeThisStep = true;
+                else
+                    stepHalf *= 2;
+            }
             if (remainingHalf < stepHalf)
                 break;
 
@@ -1843,6 +1963,8 @@ else
 
             // Empty cell — step onto it
             remainingHalf -= stepHalf;
+            if (wedgeThisStep)
+                wedgeLeft--;
             cx = nx;
             cy = ny;
             steps++;
@@ -1909,7 +2031,9 @@ else
         BaronyBattleTokenDTO mover, int facing, int endX, int endY, int size)
     {
         facing = BaronyBattleFacing.Clamp(facing);
-        foreach (var offset in new[] { 0, -1, 1 })
+        // Blind Fury widens the forward arc to the side-front corners (facing ±90°).
+        var offsets = mover.CmdBlindFury ? new[] { 0, -1, 1, -2, 2 } : new[] { 0, -1, 1 };
+        foreach (var offset in offsets)
         {
             var look = BaronyBattleFacing.Clamp(facing + offset);
             var (dx, dy) = BaronyBattleFacing.StepDelta(look);
@@ -1933,7 +2057,9 @@ else
 
         var size = TokenSize(charger);
         var facing = BaronyBattleFacing.Clamp(charger.Facing);
-        foreach (var offset in new[] { 0, -1, 1 })
+        // Blind Fury also accepts the side-front corners it can now lock onto.
+        var offsets = charger.CmdBlindFury ? new[] { 0, -1, 1, -2, 2 } : new[] { 0, -1, 1 };
+        foreach (var offset in offsets)
         {
             var look = BaronyBattleFacing.Clamp(facing + offset);
             var (dx, dy) = BaronyBattleFacing.StepDelta(look);
@@ -1996,7 +2122,7 @@ else
         // Stay-put facing: create a same-cell tip to hold facing + move cost.
         if (tip is null)
         {
-            if (token.RemainingMove < 1)
+            if (token.RemainingMove < 1 && !CommanderFreeFacingAvailable(token, inPlace: true))
             {
                 _snackBar.Add("Need at least 1 move point to change facing.", Severity.Warning);
                 return Task.CompletedTask;
@@ -2014,7 +2140,9 @@ else
             token.Path.Add(tip);
         }
 
-        if (tip.RemainingMoveAfter < 1 && tip.FacingCostPaid <= 0)
+        var tipInPlace = tip.X == token.X && tip.Y == token.Y;
+        if (tip.RemainingMoveAfter < 1 && tip.FacingCostPaid <= 0
+            && !CommanderFreeFacingAvailable(token, tipInPlace))
         {
             _snackBar.Add("Need at least 1 move point to change facing.", Severity.Warning);
             return Task.CompletedTask;
@@ -2060,27 +2188,295 @@ else
 
         var snapped = BaronyBattleFacing.SnapFromDegrees(_facingPreviewDeg ?? BaronyBattleFacing.ToDegrees(tip.Facing));
         var changed = snapped != _facingEditStartFacing;
+        var freeTurn = false;
+        string? freeTurnAbility = null;
         if (changed && tip.FacingCostPaid <= 0)
         {
-            if (tip.RemainingMoveAfter < 1)
+            var inPlace = tip.X == token.X && tip.Y == token.Y;
+            if (CommanderFreeFacingAvailable(token, inPlace))
             {
-                _snackBar.Add("Need 1 move point to change facing.", Severity.Warning);
-                CancelFacingEdit();
-                return;
+                // Keep Facing / Look Away: one free turn per Movement phase spends no Move.
+                token.FreeFacingUsed = true;
+                tip.FacingCostPaid = 1;
+                freeTurn = true;
+                freeTurnAbility = inPlace ? "Keep Facing" : "Look Away";
             }
-            tip.FacingCostPaid = 1;
-            tip.RemainingMoveAfter = Math.Max(0, tip.RemainingMoveAfter - 1);
-            // Spend RemainingMove only for a locked tip; provisional pays on lock.
-            if (tip.Locked)
-                token.RemainingMove = tip.RemainingMoveAfter;
+            else
+            {
+                if (tip.RemainingMoveAfter < 1)
+                {
+                    _snackBar.Add("Need 1 move point to change facing.", Severity.Warning);
+                    CancelFacingEdit();
+                    return;
+                }
+                tip.FacingCostPaid = 1;
+                tip.RemainingMoveAfter = Math.Max(0, tip.RemainingMoveAfter - 1);
+                // Spend RemainingMove only for a locked tip; provisional pays on lock.
+                if (tip.Locked)
+                    token.RemainingMove = tip.RemainingMoveAfter;
+            }
         }
 
         tip.Facing = snapped;
         CancelFacingEdit();
+        var facingCostNote = freeTurn ? ", free turn" : tip.FacingCostPaid > 0 ? ", −1 move" : "";
+        if (freeTurn && !string.IsNullOrWhiteSpace(freeTurnAbility))
+            AppendLocalLog(string.Empty, "phase", $"{token.Label} uses {freeTurnAbility} (free facing change).");
         await SaveAsync(systemMessage: changed
-            ? $"{token.Label} facing set ({snapped * 45}°){(tip.FacingCostPaid > 0 ? ", −1 move" : "")}."
+            ? $"{token.Label} facing set ({snapped * 45}°){facingCostNote}."
             : $"{token.Label} facing unchanged.");
         RefreshRange();
+    }
+
+    /// <summary>Keep Facing (in-place) / Look Away (after a move): one free commander turn per Movement phase.</summary>
+    private static bool CommanderFreeFacingAvailable(BaronyBattleTokenDTO token, bool inPlace) =>
+        !token.FreeFacingUsed
+        && ((inPlace && token.CmdKeepFacing) || (!inPlace && token.CmdLookAway));
+
+    private static readonly HashSet<string> EnemyMountedAbilityKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "shock-lance",
+        "mounted-superiority",
+        "counter-charge",
+        "thunder-charge",
+        "flying-start",
+        "wedge",
+        "unbroken-momentum",
+        "overrun",
+    };
+
+    private static readonly HashSet<string> EnemyRangedAbilityKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "drill-shot",
+        "long-shot",
+        "snap-shot",
+        "extended-range",
+        "skirmish-screen",
+        "enfilade",
+        "harassing-fire",
+    };
+
+    /// <summary>Passive commander abilities (baked into stats) surfaced as ally badges.</summary>
+    private static readonly HashSet<string> AllyPassiveBadgeKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "hold-the-line",
+        "march-cadence",
+        "killing-blow",
+        "shield-wall-basics",
+        "discipline-boost",
+        "initiative-boost",
+    };
+
+    private static readonly HashSet<string> EnemySupportedAbilityKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "drill-shot",
+        "mounted-superiority",
+        "counter-charge",
+        "pike-hedge",
+        "return-stroke",
+        "kill-the-captain",
+        "riveted-plate",
+        "shock-lance",
+        "thunder-charge",
+        "flying-start",
+        "wedge",
+        "unbroken-momentum",
+        "blind-fury",
+        "overrun",
+        "long-shot",
+        "snap-shot",
+        "extended-range",
+        "skirmish-screen",
+        "enfilade",
+        "harassing-fire",
+        "knife-in-the-dark",
+        "keep-facing",
+        "look-away",
+        "column-march",
+        "ironclad",
+        // Passive stat bonuses (applied idempotently from captured base stats).
+        "hold-the-line",
+        "march-cadence",
+        "killing-blow",
+        "shield-wall-basics",
+        "discipline-boost",
+        "initiative-boost",
+    };
+
+    private List<CourtCommanderAbility> EnemySelectableAbilities =>
+        CourtCommanderCatalog.All
+            .Where(a => EnemySupportedAbilityKeys.Contains(a.Key))
+            .OrderBy(a => a.Branch)
+            .ThenBy(a => a.Tier)
+            .ThenBy(a => a.NameEn)
+            .ToList();
+
+    private string? ValidateEnemyDraftAbility(string abilityKey)
+    {
+        if (_enemyDraft.CommanderAbilities.Any(a => string.Equals(a, abilityKey, StringComparison.OrdinalIgnoreCase)))
+            return "Ta zdolnosc jest juz dodana.";
+        if (EnemyMountedAbilityKeys.Contains(abilityKey) && !_enemyDraft.Mounted)
+            return "Ta zdolnosc wymaga wierzchowca (Mounted).";
+        if (EnemyRangedAbilityKeys.Contains(abilityKey) && _enemyDraft.Range <= 0)
+            return "Ta zdolnosc wymaga ataku dystansowego (Range > 0).";
+        return null;
+    }
+
+    private async Task OpenEnemyAbilityDialogAsync()
+    {
+        if (!CanManageAsMg)
+            return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(EnemyCommanderAbilityDialog.Selectable)] = EnemySelectableAbilities,
+            [nameof(EnemyCommanderAbilityDialog.ValidateAbility)] = (Func<string, string?>)ValidateEnemyDraftAbility,
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+        };
+
+        var dialog = await _dialogService.ShowAsync<EnemyCommanderAbilityDialog>(
+            "Dodaj zdolnosc kapitana", parameters, options);
+        var result = await dialog.Result;
+        if (result.Canceled || result.Data is not string key)
+            return;
+
+        var error = ValidateEnemyDraftAbility(key);
+        if (!string.IsNullOrWhiteSpace(error))
+        {
+            _snackBar.Add(error, Severity.Warning);
+            return;
+        }
+
+        _enemyDraft.CommanderAbilities.Add(key);
+        StateHasChanged();
+    }
+
+    private void RemoveEnemyAbility(string key)
+    {
+        _enemyDraft.CommanderAbilities.RemoveAll(a => string.Equals(a, key, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string? ValidateEnemyDraftAbilitiesSet()
+    {
+        foreach (var key in _enemyDraft.CommanderAbilities)
+        {
+            var error = ValidateEnemyDraftAbility(key);
+            if (string.IsNullOrWhiteSpace(error)
+                || error.Contains("juz dodana", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var name = CourtCommanderCatalog.Find(key)?.NameEn ?? key;
+            return $"{name}: {error}";
+        }
+
+        return null;
+    }
+
+    /// <summary>Clears every commander battle flag on a token. Shared by the ally and enemy apply paths.</summary>
+    private static void ResetCommanderFlags(BaronyBattleTokenDTO token)
+    {
+        token.ThunderCharge = false;
+        token.FlyingStart = false;
+        token.ChargeDamageExtra = 0;
+        token.CommanderInitiative = 0;
+        token.CmdDrillShot = false;
+        token.CmdMountedSuperiority = false;
+        token.CmdCounterCharge = false;
+        token.CmdPikeHedge = false;
+        token.CmdReturnStroke = false;
+        token.CmdKillTheCaptain = false;
+        token.CmdPierceIgnore = 0;
+        token.CmdWedge = false;
+        token.CmdUnbrokenMomentum = false;
+        token.CmdBlindFury = false;
+        token.CmdOverrun = false;
+        token.CmdLongShot = false;
+        token.CmdSnapShot = false;
+        token.CmdSkirmishScreen = false;
+        token.CmdEnfilade = false;
+        token.CmdHarassingFire = false;
+        token.CmdKnifeInTheDark = false;
+        token.CmdKeepFacing = false;
+        token.CmdLookAway = false;
+        token.CmdColumnMarch = false;
+        token.CmdLooseFiles = false;
+        token.CmdIronclad = false;
+        token.AllyCommanderAbilities.Clear();
+    }
+
+    private static void ApplyEnemyCommanderAbilities(BaronyBattleTokenDTO token)
+    {
+        // Capture the game master's raw stats once so passive bonuses apply idempotently
+        // (this method also runs at BeginBattle and on every edit).
+        if (!token.EnemyBaseCaptured)
+        {
+            token.EnemyBaseHp = token.MaxHp > 0 ? token.MaxHp : token.Hp;
+            token.EnemyBaseMove = token.Move;
+            token.EnemyBaseDamage = token.Damage;
+            token.EnemyBaseDefense = token.Defense;
+            token.EnemyBaseDiscipline = token.Discipline;
+            if (token.EnemyBaseRange <= 0)
+                token.EnemyBaseRange = token.Range;
+            token.EnemyBaseCaptured = true;
+        }
+
+        ResetCommanderFlags(token);
+
+        token.HasCaptain = token.EnemyCommanderAbilities.Count > 0;
+        var baseRange = Math.Max(0, token.EnemyBaseRange > 0 ? token.EnemyBaseRange : token.Range);
+        token.Range = baseRange;
+
+        // Reuse the same tested formula the ally captains use. Enemies have no shield model,
+        // so an MG-selected Shield Wall implies a shield (unitHasShield: true).
+        var bonuses = CourtCommanderFormulas.ComputeBonuses(
+            new CourtCharacterSheet { UnlockedCommanderAbilities = token.EnemyCommanderAbilities.ToList() },
+            unitHasMount: token.Mounted,
+            unitHasShield: true);
+
+        token.CmdDrillShot = bonuses.DrillShot;
+        token.CmdMountedSuperiority = bonuses.MountedSuperiority;
+        token.CmdCounterCharge = bonuses.CounterCharge;
+        token.CmdPikeHedge = bonuses.PikeHedge;
+        token.CmdReturnStroke = bonuses.ReturnStroke;
+        token.CmdKillTheCaptain = bonuses.KillTheCaptain;
+        token.CmdPierceIgnore = bonuses.PierceIgnore;
+        token.ChargeDamageExtra = bonuses.ShockLance ? 1 : 0;
+        token.ThunderCharge = bonuses.ThunderCharge;
+        token.FlyingStart = bonuses.FlyingStart;
+        token.CmdWedge = bonuses.Wedge;
+        token.CmdUnbrokenMomentum = bonuses.UnbrokenMomentum;
+        token.CmdBlindFury = bonuses.BlindFury;
+        token.CmdOverrun = bonuses.Overrun;
+        token.CmdLongShot = bonuses.LongShot;
+        token.CmdSnapShot = bonuses.SnapShot;
+        token.CmdSkirmishScreen = bonuses.SkirmishScreen;
+        token.CmdEnfilade = bonuses.Enfilade;
+        token.CmdHarassingFire = bonuses.HarassingFire;
+        token.CmdKnifeInTheDark = bonuses.KnifeInTheDark;
+        token.CmdKeepFacing = bonuses.KeepFacing;
+        token.CmdLookAway = bonuses.LookAway;
+        token.CmdColumnMarch = bonuses.ColumnMarch;
+        token.CmdLooseFiles = bonuses.LooseFiles;
+        token.CmdIronclad = bonuses.Ironclad;
+
+        // Re-derive effective stats from the captured base so repeated calls never stack.
+        token.MaxHp = token.EnemyBaseHp + bonuses.OtherHp;
+        token.Hp = Math.Min(token.Hp <= 0 ? token.MaxHp : token.Hp, token.MaxHp);
+        token.Move = token.EnemyBaseMove + bonuses.OtherMove;
+        token.Damage = token.EnemyBaseDamage + bonuses.OtherDamageMelee;
+        token.Defense = token.EnemyBaseDefense + bonuses.CommanderDefense;
+        token.Discipline = Math.Max(0, token.EnemyBaseDiscipline + bonuses.OtherDiscipline);
+        token.CommanderInitiative = bonuses.OtherInitiative;
+
+        if (bonuses.ExtendedRange && baseRange > 0)
+            token.Range = baseRange + 1;
     }
 
     private bool CanControlToken(BaronyBattleTokenDTO token)
@@ -2091,6 +2487,59 @@ else
         return CanEdit && !token.IsEnemy;
     }
 
+    private async Task ActivateCommanderAbility((string TokenId, string AbilityKey) request)
+    {
+        var token = Map?.Tokens.FirstOrDefault(t => t.Id == request.TokenId);
+        if (token is null || !CanControlToken(token))
+            return;
+
+        switch (request.AbilityKey)
+        {
+            case "full-defense":
+                if (!IsMovementPhase)
+                    return;
+                token.FullDefense = !token.FullDefense;
+                if (token.FullDefense)
+                {
+                    CancelFacingEdit();
+                    CancelChargeEdit();
+                    token.ClearPath();
+                    ClearCharge(token);
+                    token.RemainingMove = 0;
+                    AppendLocalLog(string.Empty, "phase",
+                        $"{token.Label} uses Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Defence, −{BattleMovementRules.FullDefenseAttackPenalty} Attack, movement set to 0.");
+                    await SaveAsync(systemMessage:
+                        $"{token.Label} takes Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Defence, −{BattleMovementRules.FullDefenseAttackPenalty} Attack, no movement this round.");
+                }
+                else
+                {
+                    AppendLocalLog(string.Empty, "phase", $"{token.Label} drops Full Defense.");
+                    token.RemainingMove = token.Move;
+                    await SaveAsync(systemMessage: $"{token.Label} drops Full Defense.");
+                }
+                RefreshRange();
+                break;
+
+            case "ironclad":
+                if (token.IsEnemy)
+                    return;
+                if (!(IsAttackPlanningPhase || IsCombatPhase))
+                    return;
+                if (!token.CmdIronclad || token.IroncladUsed || token.IroncladActive)
+                    return;
+                token.IroncladUsed = true;
+                token.IroncladActive = true;
+                AppendLocalLog(string.Empty, "phase", $"{token.Label} activates Ironclad (+2 Armor this combat round).");
+                await SaveAsync(systemMessage:
+                    $"{token.Label} braces — Ironclad: +2 Armor for this combat round.");
+                break;
+
+            default:
+                return;
+        }
+
+        StateHasChanged();
+    }
     private bool CanSelectToken(BaronyBattleTokenDTO token)
     {
         if (CanManageAsMg)
@@ -2107,6 +2556,9 @@ else
     /// </summary>
     private static (int X, int Y, int Budget) GetPlanOrigin(BaronyBattleTokenDTO token)
     {
+        // Full Defense forfeits movement — no budget to plan any step.
+        if (token.FullDefense)
+            return (token.X, token.Y, 0);
         var locked = token.Path.LastOrDefault(w => w.Locked);
         if (locked is not null)
             return (locked.X, locked.Y, locked.RemainingMoveAfter);
@@ -2144,7 +2596,7 @@ else
 
     /// <summary>Ranged unit that is not locked in melee — free to shoot.</summary>
     private bool CanShoot(BaronyBattleTokenDTO token) =>
-        token.Range > 0 && !IsPinned(token);
+        token.Range > 0 && (!IsPinned(token) || token.CmdSkirmishScreen);
 
     /// <summary>
     /// True when the attacker will resolve this order as a shot (no defensive return, no engagement).
@@ -2365,12 +2817,13 @@ else
     /// When <paramref name="forceFrontAim"/> is true (ranged shot), Aim is locked to front —
     /// the shooter always aims well; only the target's exposure still matters.
     /// </summary>
-    private readonly record struct FrontBreakdown(double Multiplier, string AimLabel, string ExposureLabel);
+    private readonly record struct FrontBreakdown(double Multiplier, string AimLabel, string ExposureLabel, int ExposureBand);
 
     private static FrontBreakdown GetFrontBreakdown(
         BaronyBattleTokenDTO attacker,
         BaronyBattleTokenDTO defender,
-        bool forceFrontAim = false)
+        bool forceFrontAim = false,
+        bool enfiladeExposure = false)
     {
         var attackerCenterX = attacker.X + TokenSize(attacker) * 0.5;
         var attackerCenterY = attacker.Y + TokenSize(attacker) * 0.5;
@@ -2390,6 +2843,10 @@ else
             3 => 1.5, // rear-corner
             _ => 2.0, // rear
         };
+
+        // Enfilade: flank / rear shots escalate the Exposure bonus by one half-step.
+        if (enfiladeExposure && exposureDiff >= 2)
+            exposureBonus += 0.5;
 
         // Aim: how the attacker faces toward the defender (shots always aim front).
         int aimDiff;
@@ -2416,7 +2873,8 @@ else
         return new FrontBreakdown(
             aimBase + exposureBonus,
             FacingBandLabel(aimDiff),
-            FacingBandLabel(exposureDiff));
+            FacingBandLabel(exposureDiff),
+            exposureDiff);
     }
 
     private static string FormatFrontMultiplier(double value) =>
@@ -2439,6 +2897,8 @@ else
         bool AttackerFlees,
         bool DefenderFlees,
         bool IsShot,
+        int AttackerHeal,
+        bool HarassDefender,
         IReadOnlyList<string> Notes);
 
     private List<CombatExchangePlan> PlanCombatExchanges(Random rng)
@@ -2464,6 +2924,31 @@ else
                 return false;
             var target = Map.Tokens.FirstOrDefault(t => t.Id == attacker.ChargeTargetId);
             return target is not null && IsValidChargeContact(attacker, target);
+        }
+
+        // Commander (Phase 2) context-sensitive attack/defense modifiers.
+        static int CommanderAttackMod(BaronyBattleTokenDTO atk, BaronyBattleTokenDTO def, bool isShot)
+        {
+            var m = 0;
+            if (isShot && atk.CmdDrillShot)
+                m += 1;
+            if (!isShot && atk.CmdMountedSuperiority && atk.Mounted && !def.Mounted)
+                m += 1;
+            if (atk.CmdKillTheCaptain && def.HasCaptain)
+                m += 2;
+            return m;
+        }
+
+        static int CommanderDefenseMod(BaronyBattleTokenDTO def, BaronyBattleTokenDTO atk, bool defenderIsCharged)
+        {
+            var m = 0;
+            if (defenderIsCharged && def.CmdCounterCharge)
+                m += 2;
+            if (defenderIsCharged && def.CmdPikeHedge)
+                m += 3;
+            if (def.CmdMountedSuperiority && def.Mounted && !atk.Mounted)
+                m += 1;
+            return m;
         }
 
         // Charge attacks resolve first, ignoring global initiative order.
@@ -2511,30 +2996,87 @@ else
                     defender.X, defender.Y, TokenSize(defender))
                 : 0;
             var rangePenalty = isShot ? BattleMovementRules.ShotAttackPenalty(shotHalf) : 0;
+            if (isShot && attacker.CmdLongShot)
+                rangePenalty /= 2; // Long Shot: −1 per tile instead of −2 (penalty is always even).
             var chargeAtk = chargeBonus ? ChargeAttackBonus(attacker) : 0;
             var chargeDmg = chargeBonus ? ChargeDamageBonus(attacker) : 0;
-            var attackStat = attacker.Attack + chargeAtk - rangePenalty;
-            var damageStat = attacker.Damage + chargeDmg;
+            var cmdAtk = CommanderAttackMod(attacker, defender, isShot);
+            var cmdDef = CommanderDefenseMod(defender, attacker, chargeBonus);
+            var usedDrillShot = isShot && attacker.CmdDrillShot;
+            var usedMountedAtk = !isShot && attacker.CmdMountedSuperiority && attacker.Mounted && !defender.Mounted;
+            var usedKillCaptain = attacker.CmdKillTheCaptain && defender.HasCaptain;
+            var usedCounterCharge = chargeBonus && defender.CmdCounterCharge;
+            var usedPikeHedge = chargeBonus && defender.CmdPikeHedge;
+            var usedMountedDef = defender.CmdMountedSuperiority && defender.Mounted && !attacker.Mounted;
+            var snapShotDmg = isShot && attacker.CmdSnapShot && AreAdjacent(attacker, defender) ? 1 : 0;
+            var front = GetFrontBreakdown(
+                attacker, defender, forceFrontAim: isShot, enfiladeExposure: isShot && attacker.CmdEnfilade);
+            var knifeDmg = attacker.CmdKnifeInTheDark && front.ExposureBand >= 4 ? 1 : 0;
+            var fullDefAtk = attacker.FullDefense ? BattleMovementRules.FullDefenseAttackPenalty : 0;
+            var attackStat = attacker.Attack + chargeAtk - rangePenalty + cmdAtk - fullDefAtk;
+            var damageStat = attacker.Damage + chargeDmg + snapShotDmg + knifeDmg;
             var attackRoll = attackStat + attackDie;
-            var defenseRoll = defender.Defense + defenseDie;
+            var defenseStat = defender.Defense + cmdDef + (defender.FullDefense ? BattleMovementRules.FullDefenseDefenseBonus : 0);
+            var defenseRoll = defenseStat + defenseDie;
             var ratio = Math.Max(1, attackRoll) / (double)Math.Max(1, defenseRoll);
-            var front = GetFrontBreakdown(attacker, defender, forceFrontAim: isShot);
-            var defenderArmor = UnitCombatFormulas.EffectiveArmor(defender.Armor, attacker.Pierce);
+            var defArmorBase = defender.Armor + (defender.IroncladActive ? 2 : 0);
+            var defenderArmor = UnitCombatFormulas.EffectiveArmor(
+                defArmorBase, Math.Max(0, attacker.Pierce - defender.CmdPierceIgnore));
             var baseDamage = damageStat + damageDie - defenderArmor;
             var rawDamage = baseDamage * ratio * front.Multiplier;
             var dealt = Math.Max(1, (int)Math.Round(rawDamage, MidpointRounding.AwayFromZero));
             defHp = Math.Max(0, defHp - dealt);
+
+            if (chargeBonus && attacker.ThunderCharge)
+                notes.Add($"{attacker.Label} uses Thunder Charge.");
+            else if (chargeBonus && attacker.ChargeDamageExtra > 0)
+                notes.Add($"{attacker.Label} uses Shock Lance.");
+            if (usedDrillShot)
+                notes.Add($"{attacker.Label} uses Drill Shot.");
+            if (usedMountedAtk)
+                notes.Add($"{attacker.Label} uses Mounted Superiority (attack).");
+            if (usedKillCaptain)
+                notes.Add($"{attacker.Label} uses Kill the Captain.");
+            if (usedCounterCharge)
+                notes.Add($"{defender.Label} uses Counter-Charge.");
+            if (usedPikeHedge)
+                notes.Add($"{defender.Label} uses Pike Hedge.");
+            if (usedMountedDef)
+                notes.Add($"{defender.Label} uses Mounted Superiority (defense).");
+            if (attacker.CmdLongShot && rangePenalty > 0)
+                notes.Add($"{attacker.Label} uses Long Shot.");
+            if (snapShotDmg > 0)
+                notes.Add($"{attacker.Label} uses Snap Shot.");
+            if (knifeDmg > 0)
+                notes.Add($"{attacker.Label} uses Knife in the Dark.");
+            if (isShot && attacker.CmdEnfilade && front.ExposureBand >= 2)
+                notes.Add($"{attacker.Label} uses Enfilade.");
+
             var modifierNote = chargeBonus ? $" [charge +{chargeAtk}/+{chargeDmg}]" : "";
+            if (cmdAtk != 0)
+                modifierNote += $" [cmd +{cmdAtk} att]";
+            if (cmdDef != 0)
+                modifierNote += $" [cmd +{cmdDef} def]";
+            if (fullDefAtk > 0)
+                modifierNote += $" [full def −{fullDefAtk} att]";
+            if (defender.FullDefense)
+                modifierNote += $" [full def +{BattleMovementRules.FullDefenseDefenseBonus}]";
+            if (snapShotDmg > 0)
+                modifierNote += $" [snap +{snapShotDmg} dmg]";
+            if (knifeDmg > 0)
+                modifierNote += $" [rear +{knifeDmg} dmg]";
             if (rangePenalty > 0)
-                modifierNote += $" [range −{rangePenalty} att]";
-            if (defender.Armor > defenderArmor)
-                modifierNote += $" [pierce −{defender.Armor - defenderArmor} arm]";
+                modifierNote += attacker.CmdLongShot ? $" [long range −{rangePenalty} att]" : $" [range −{rangePenalty} att]";
+            if (defender.IroncladActive)
+                modifierNote += " [ironclad +2 arm]";
+            if (defArmorBase > defenderArmor)
+                modifierNote += $" [pierce −{defArmorBase - defenderArmor} arm]";
             var verb = isShot ? "shoots" : "->";
             notes.Add(
                 $"{attacker.Label} {verb} {defender.Label}" +
                 (isShot ? $" at {BattleMovementRules.SpentMovePoints(shotHalf)} tiles" : "") +
                 $": (Dmg+k4−Arm={damageStat}+{damageDie}−{defenderArmor}={baseDamage}) " +
-                $"× ({attackStat}+k6={attackRoll})/({defender.Defense}+k6={defenseRoll}) " +
+                $"× ({attackStat}+k6={attackRoll})/({defenseStat}+k6={defenseRoll}) " +
                 $"×{FormatFrontMultiplier(front.Multiplier)} ({front.AimLabel} Vs {front.ExposureLabel}) => {dealt} dmg.{modifierNote}" +
                 (isShot ? " (no defensive return)" : ""));
             notes.Add($"{defender.Label} takes {dealt} damage (HP: {defHp}/{defender.MaxHp}).");
@@ -2545,11 +3087,22 @@ else
                 var defDamageDie = rng.Next(1, 5);
                 var defDefDie = rng.Next(1, 7);
                 var atkDefDie = rng.Next(1, 7);
-                var defDefenseRoll = defender.Defense + defDefDie;
-                var atkDefenseRoll = attacker.Defense + atkDefDie;
+                var defReturnMod = (defender.CmdReturnStroke ? 2 : 0)
+                    + (defender.CmdMountedSuperiority && defender.Mounted && !attacker.Mounted ? 1 : 0);
+                var atkReturnMod = attacker.CmdMountedSuperiority && attacker.Mounted && !defender.Mounted ? 1 : 0;
+                if (defender.CmdReturnStroke)
+                    notes.Add($"{defender.Label} uses Return Stroke.");
+                if (defender.CmdMountedSuperiority && defender.Mounted && !attacker.Mounted)
+                    notes.Add($"{defender.Label} uses Mounted Superiority (defensive return).");
+                if (attacker.CmdMountedSuperiority && attacker.Mounted && !defender.Mounted)
+                    notes.Add($"{attacker.Label} uses Mounted Superiority (resisting return).");
+                var defDefenseRoll = defender.Defense + defDefDie + defReturnMod;
+                var atkDefenseRoll = attacker.Defense + atkDefDie + atkReturnMod + (attacker.FullDefense ? BattleMovementRules.FullDefenseDefenseBonus : 0);
                 var defRatio = defDefenseRoll / (double)Math.Max(1, atkDefenseRoll);
                 var defFront = GetFrontBreakdown(defender, attacker);
-                var attackerArmor = UnitCombatFormulas.EffectiveArmor(attacker.Armor, defender.Pierce);
+                var atkArmorBase = attacker.Armor + (attacker.IroncladActive ? 2 : 0);
+                var attackerArmor = UnitCombatFormulas.EffectiveArmor(
+                    atkArmorBase, Math.Max(0, defender.Pierce - attacker.CmdPierceIgnore));
                 var defBaseDamage = defender.Damage + defDamageDie - attackerArmor;
                 var defRaw = defBaseDamage * defRatio * defFront.Multiplier;
                 defDealt = Math.Max(1, (int)Math.Round(defRaw, MidpointRounding.AwayFromZero));
@@ -2557,9 +3110,12 @@ else
                 notes.Add(
                     $"{defender.Label} -> {attacker.Label} (defensive): " +
                     $"(Dmg+k4−Arm={defender.Damage}+{defDamageDie}−{attackerArmor}={defBaseDamage}) " +
-                    $"× ({defender.Defense}+k6={defDefenseRoll})/({attacker.Defense}+k6={atkDefenseRoll}) " +
+                    $"× ({defender.Defense + defReturnMod}+k6={defDefenseRoll})/({attacker.Defense + atkReturnMod + (attacker.FullDefense ? BattleMovementRules.FullDefenseDefenseBonus : 0)}+k6={atkDefenseRoll}) " +
                     $"×{FormatFrontMultiplier(defFront.Multiplier)} ({defFront.AimLabel} Vs {defFront.ExposureLabel}) => {defDealt} dmg." +
-                    (attacker.Armor > attackerArmor ? $" [pierce −{attacker.Armor - attackerArmor} arm]" : ""));
+                    (defReturnMod != 0 ? $" [cmd +{defReturnMod} def]" : "") +
+                    (attacker.FullDefense ? $" [full def +{BattleMovementRules.FullDefenseDefenseBonus}]" : "") +
+                    (attacker.IroncladActive ? " [ironclad +2 arm]" : "") +
+                    (atkArmorBase > attackerArmor ? $" [pierce −{atkArmorBase - attackerArmor} arm]" : ""));
                 notes.Add($"{attacker.Label} takes {defDealt} defensive damage (HP: {atkHp}/{attacker.MaxHp}).");
             }
 
@@ -2567,10 +3123,28 @@ else
             hp[attacker.Id] = atkHp;
             var defenderFlees = defHp <= 0;
             var attackerFlees = atkHp <= 0;
+
+            // Overrun: charging attacker heals when the charge target flees.
+            var attackerHeal = 0;
+            if (chargeBonus && defenderFlees && !attackerFlees && attacker.CmdOverrun)
+            {
+                attackerHeal = Math.Min(12, Math.Max(0, attacker.MaxHp - atkHp));
+                if (attackerHeal > 0)
+                {
+                    hp[attacker.Id] = atkHp + attackerHeal;
+                    notes.Add($"{attacker.Label} overruns {defender.Label} and recovers {attackerHeal} HP.");
+                }
+            }
+
             if (defenderFlees)
                 fledIds.Add(defender.Id);
             if (attackerFlees)
                 fledIds.Add(attacker.Id);
+
+            // Harassing Fire: a damaging shot slows the surviving target's next Movement phase.
+            var harassDefender = isShot && attacker.CmdHarassingFire && dealt > 0 && !defenderFlees;
+            if (harassDefender)
+                notes.Add($"{attacker.Label}'s harassing fire will slow {defender.Label} next turn (−1 Move).");
 
             plans.Add(new CombatExchangePlan(
                 attacker.Id,
@@ -2580,6 +3154,8 @@ else
                 attackerFlees,
                 defenderFlees,
                 isShot,
+                attackerHeal,
+                harassDefender,
                 notes));
         }
 
@@ -2631,6 +3207,10 @@ else
                 // 2) Floating damage numbers + apply HP (bars update)
                 defender.Hp = Math.Max(0, defender.Hp - plan.Dealt);
                 attacker.Hp = Math.Max(0, attacker.Hp - plan.DefDealt);
+                if (plan.AttackerHeal > 0 && attacker.Hp > 0)
+                    attacker.Hp = Math.Min(attacker.MaxHp, attacker.Hp + plan.AttackerHeal);
+                if (plan.HarassDefender && defender.Hp > 0)
+                    defender.HarassedNextTurn = true;
                 TrackDamage(attacker, defender, plan.Dealt);
                 if (plan.DefDealt > 0)
                     TrackDamage(defender, attacker, plan.DefDealt);
@@ -2733,9 +3313,16 @@ else
                 if (unit is not null)
                     ApplyCommanderBattleFlags(token, unit);
             }
+            else if (token.IsEnemy)
+            {
+                ApplyEnemyCommanderAbilities(token);
+            }
             token.InitiativeDie = rng.Next(1, 11);
-            token.InitiativeTotal = token.Discipline + token.InitiativeDie;
+            token.InitiativeTotal = token.Discipline + token.InitiativeDie + token.CommanderInitiative;
             token.RemainingMove = token.Move;
+            token.IroncladUsed = false;
+            token.IroncladActive = false;
+            token.FullDefense = false;
             token.ClearPath();
         }
 
@@ -2762,7 +3349,7 @@ else
 
         var lines = Map.Tokens
             .OrderBy(t => t.InitiativeTotal)
-            .Select(t => $"{t.Label}: {t.Discipline}+{t.InitiativeDie}={t.InitiativeTotal}");
+            .Select(t => $"{t.Label}: {t.Discipline}+{t.InitiativeDie}{(t.CommanderInitiative != 0 ? $"+{t.CommanderInitiative}" : "")}={t.InitiativeTotal}");
         AppendLocalLog(string.Empty, "phase",
             PhaseBanner($"Start of Movement Phase {Map.TurnState.Round}"));
         await SaveAsync(systemMessage: "Battle begins — movement phase (low → high initiative). " + string.Join("; ", lines));
@@ -3082,9 +3669,12 @@ else
 
     private void ApplyCommanderBattleFlags(BaronyBattleTokenDTO token, BaronyUnitDTO unit)
     {
-        token.ThunderCharge = false;
-        token.FlyingStart = false;
-        token.ChargeDamageExtra = 0;
+        ResetCommanderFlags(token);
+        token.Discipline = Math.Max(0, unit.Discipline);
+        token.Mounted = !string.IsNullOrWhiteSpace(unit.MountKey);
+        token.HasCaptain = unit.CaptainAvailableAdvisorId is not null;
+        var baseRange = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Range ?? 0);
+        token.Range = baseRange;
         if (unit.CaptainAvailableAdvisorId is not int captainId)
             return;
         var captain = _courtiers.FirstOrDefault(c => c.Id == captainId);
@@ -3096,7 +3686,43 @@ else
             unitHasShield: !string.IsNullOrWhiteSpace(unit.ShieldKey));
         token.ThunderCharge = bonuses.ThunderCharge;
         token.FlyingStart = bonuses.FlyingStart;
-        token.ChargeDamageExtra = bonuses.ShockLance && !string.IsNullOrWhiteSpace(unit.MountKey) ? 1 : 0;
+        token.ChargeDamageExtra = bonuses.ShockLance ? 1 : 0;
+        token.Discipline = Math.Max(0, unit.Discipline + bonuses.OtherDiscipline);
+        token.CommanderInitiative = bonuses.OtherInitiative;
+        token.CmdDrillShot = bonuses.DrillShot;
+        token.CmdMountedSuperiority = bonuses.MountedSuperiority;
+        token.CmdCounterCharge = bonuses.CounterCharge;
+        token.CmdPikeHedge = bonuses.PikeHedge;
+        token.CmdReturnStroke = bonuses.ReturnStroke;
+        token.CmdKillTheCaptain = bonuses.KillTheCaptain;
+        token.CmdPierceIgnore = bonuses.PierceIgnore;
+        token.CmdWedge = bonuses.Wedge;
+        token.CmdUnbrokenMomentum = bonuses.UnbrokenMomentum;
+        token.CmdBlindFury = bonuses.BlindFury;
+        token.CmdOverrun = bonuses.Overrun;
+        token.CmdLongShot = bonuses.LongShot;
+        token.CmdSnapShot = bonuses.SnapShot;
+        token.CmdSkirmishScreen = bonuses.SkirmishScreen;
+        token.CmdEnfilade = bonuses.Enfilade;
+        token.CmdHarassingFire = bonuses.HarassingFire;
+        token.CmdKnifeInTheDark = bonuses.KnifeInTheDark;
+        token.CmdKeepFacing = bonuses.KeepFacing;
+        token.CmdLookAway = bonuses.LookAway;
+        token.CmdColumnMarch = bonuses.ColumnMarch;
+        token.CmdLooseFiles = bonuses.LooseFiles;
+        token.CmdIronclad = bonuses.Ironclad;
+        if (bonuses.ExtendedRange && baseRange > 0)
+            token.Range = baseRange + 1;
+
+        // Passive abilities have no per-token flag (they bake into stats), so capture the
+        // active ones here for badge display. Shield Wall Basics only applies with a shield.
+        var hasShield = !string.IsNullOrWhiteSpace(unit.ShieldKey);
+        var unlocked = captain.Sheet?.UnlockedCommanderAbilities ?? new List<string>();
+        token.AllyCommanderAbilities = unlocked
+            .Where(k => AllyPassiveBadgeKeys.Contains(k)
+                && (!string.Equals(k, "shield-wall-basics", StringComparison.OrdinalIgnoreCase) || hasShield))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static int ChargeAttackBonus(BaronyBattleTokenDTO token) =>
@@ -3699,8 +4325,8 @@ else
             var damageDie = rng.Next(1, 5);
             var attackDie = rng.Next(1, 7);
             var defenseDie = rng.Next(1, 7);
-            var attackRoll = attacker.Attack + attackDie;
-            var defenseRoll = defender.Defense + defenseDie;
+            var attackRoll = attacker.Attack + attackDie - (attacker.FullDefense ? BattleMovementRules.FullDefenseAttackPenalty : 0);
+            var defenseRoll = defender.Defense + defenseDie + (defender.FullDefense ? BattleMovementRules.FullDefenseDefenseBonus : 0);
             var ratio = attackRoll / (double)Math.Max(1, defenseRoll);
             var front = GetFrontBreakdown(attacker, defender);
             var defenderArmor = UnitCombatFormulas.EffectiveArmor(defender.Armor, attacker.Pierce);
@@ -3713,9 +4339,11 @@ else
             {
                 $"{attacker.Label} free hit as {defender.Label} moves while engaged: " +
                 $"(Dmg+k4−Arm={attacker.Damage}+{damageDie}−{defenderArmor}={baseDamage}) " +
-                $"× ({attacker.Attack}+k6={attackRoll})/({defender.Defense}+k6={defenseRoll}) " +
+                $"× ({attacker.Attack - (attacker.FullDefense ? BattleMovementRules.FullDefenseAttackPenalty : 0)}+k6={attackRoll})/({defender.Defense + (defender.FullDefense ? BattleMovementRules.FullDefenseDefenseBonus : 0)}+k6={defenseRoll}) " +
                 $"×{FormatFrontMultiplier(front.Multiplier)} ({front.AimLabel} Vs {front.ExposureLabel}) " +
                 $"= {full}, half => {dealt} dmg (no defensive return)." +
+                (attacker.FullDefense ? $" [full def −{BattleMovementRules.FullDefenseAttackPenalty} att]" : "") +
+                (defender.FullDefense ? $" [full def +{BattleMovementRules.FullDefenseDefenseBonus}]" : "") +
                 (defender.Armor > defenderArmor ? $" [pierce −{defender.Armor - defenderArmor} arm]" : ""),
                 $"{defender.Label} takes {dealt} disengage damage.",
             };
@@ -3772,6 +4400,8 @@ else
                     : 0,
                 EngagedEnemyIds = token.EngagedEnemyIds.ToList(),
                 IsPinned = IsPinned(token),
+                ColumnMarch = token.CmdColumnMarch,
+                LooseFiles = token.CmdLooseFiles,
                 StopAtMs = stopAtMs is not null && stopAtMs.TryGetValue(token.Id, out var cap)
                     ? cap
                     : null,
@@ -4015,7 +4645,7 @@ else
                 continue;
 
             var steps = outcome.ChargeTilesTravelled;
-            if (steps < ChargeSuccessSteps)
+            if (steps < ChargeInterruptSteps(charger))
                 continue;
 
             if (string.IsNullOrWhiteSpace(charger.ChargeTargetId) || charger.ChargeBlind)
@@ -4121,7 +4751,7 @@ else
                 continue;
 
             chargeSteps.TryGetValue(token.Id, out var steps);
-            var minSteps = ChargeSuccessSteps;
+            var minSteps = ChargeInterruptSteps(token);
             var target = string.IsNullOrWhiteSpace(token.ChargeTargetId)
                 ? null
                 : Map.Tokens.FirstOrDefault(t => t.Id == token.ChargeTargetId);
@@ -4273,7 +4903,16 @@ else
         {
             token.AttackTargetId = null;
             ClearCharge(token);
-            token.RemainingMove = token.Move;
+            token.RemainingMove = token.HarassedNextTurn ? Math.Max(0, token.Move - 1) : token.Move;
+            token.FreeFacingUsed = false;
+            token.IroncladActive = false;
+            token.FullDefense = false;
+            if (token.HarassedNextTurn)
+            {
+                AppendLocalLog(string.Empty, "phase",
+                    $"{token.Label} is harassed: Move reduced by 1 this turn ({token.RemainingMove}).");
+                token.HarassedNextTurn = false;
+            }
             token.ClearPath();
         }
 
@@ -4473,14 +5112,21 @@ else
             var cy = fromY;
             var remainingHalf = MoveHalfBudget(budget);
             var steps = 0;
+            var wedgeLeft = token.CmdWedge ? 1 : 0;
 
             while (remainingHalf > 0)
             {
                 var nx = cx + dx;
                 var ny = cy + dy;
                 var stepHalf = diagonal ? 3 : 2;
+                var wedgeThisStep = false;
                 if (FootprintEntersDifficult(cx, cy, nx, ny, size))
-                    stepHalf *= 2;
+                {
+                    if (wedgeLeft > 0)
+                        wedgeThisStep = true;
+                    else
+                        stepHalf *= 2;
+                }
                 if (remainingHalf < stepHalf)
                     break;
 
@@ -4497,6 +5143,8 @@ else
                 }
 
                 remainingHalf -= stepHalf;
+                if (wedgeThisStep)
+                    wedgeLeft--;
                 cx = nx;
                 cy = ny;
                 steps++;
@@ -4517,6 +5165,10 @@ else
             min = Math.Max(1, min - 1);
         return min;
     }
+
+    /// <summary>Tiles a charge must build before contact counts; Unbroken Momentum lowers it to 1.</summary>
+    private static int ChargeInterruptSteps(BaronyBattleTokenDTO? token) =>
+        token?.CmdUnbrokenMomentum == true ? 1 : ChargeSuccessSteps;
 
     /// <summary>
     /// Half-move budget used by pathfinding / charge. Shared with the movement simulation so
@@ -4792,7 +5444,7 @@ else
         BattleMovementRules.StepHalfCost(
             fromX, fromY, toX, toY,
             FootprintEntersDifficult(fromX, fromY, toX, toY, size)
-            || (!ignoreUnits && IsFootprintSlowedByAlly(mover, toX, toY, size)));
+            || (!ignoreUnits && !mover.CmdColumnMarch && IsFootprintSlowedByAlly(mover, toX, toY, size)));
 
     private HashSet<(int X, int Y)> ComputeReachableAnchorsFrom(
         BaronyBattleTokenDTO mover, int fromX, int fromY, int range)
@@ -4994,6 +5646,97 @@ else
     private static char ColumnLetter(int x) => (char)('A' + x);
     private static string FormatCell(int x, int y) => $"{ColumnLetter(x)}{y + 1}";
 
+    private RenderFragment ForceStatusBadges(BaronyBattleTokenDTO token) => __builder =>
+    {
+        if (!token.FullDefense && !token.IroncladActive)
+            return;
+
+        <div class="bbm-force-status">
+            @if (token.FullDefense)
+            {
+                <span class="bbm-force-status__badge bbm-force-status__badge--full-def"
+                      title="@($"Full Defense: Atk {token.Attack - BattleMovementRules.FullDefenseAttackPenalty} (−{BattleMovementRules.FullDefenseAttackPenalty}), Def {token.Defense + BattleMovementRules.FullDefenseDefenseBonus} (+{BattleMovementRules.FullDefenseDefenseBonus}), Move 0")">
+                    <img src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                    <em>Atk @($"{token.Attack}−{BattleMovementRules.FullDefenseAttackPenalty}") · Def @($"{token.Defense}+{BattleMovementRules.FullDefenseDefenseBonus}")</em>
+                </span>
+            }
+            @if (token.IroncladActive)
+            {
+                <span class="bbm-force-status__badge bbm-force-status__badge--ironclad"
+                      title="@($"Ironclad: Armor {token.Armor + 2} (+2) this combat round")">
+                    <img src="/icons/breastplate.svg" alt="" aria-hidden="true" />
+                    <em>Arm @token.Armor+2</em>
+                </span>
+            }
+        </div>
+    };
+
+    /// <summary>Commander abilities carried by a token: enemies from their selected keys, allies derived from active flags.</summary>
+    private static IReadOnlyList<string> TokenCommanderAbilityKeys(BaronyBattleTokenDTO token)
+    {
+        if (token.IsEnemy)
+            return token.EnemyCommanderAbilities ?? (IReadOnlyList<string>)Array.Empty<string>();
+
+        var keys = new List<string>();
+        void Add(bool on, string key)
+        {
+            if (on)
+                keys.Add(key);
+        }
+
+        Add(token.CmdDrillShot, "drill-shot");
+        Add(token.CmdMountedSuperiority, "mounted-superiority");
+        Add(token.CmdCounterCharge, "counter-charge");
+        Add(token.CmdPikeHedge, "pike-hedge");
+        Add(token.CmdReturnStroke, "return-stroke");
+        Add(token.CmdKillTheCaptain, "kill-the-captain");
+        Add(token.CmdPierceIgnore > 0, "riveted-plate");
+        Add(token.ChargeDamageExtra > 0, "shock-lance");
+        Add(token.ThunderCharge, "thunder-charge");
+        Add(token.FlyingStart, "flying-start");
+        Add(token.CmdWedge, "wedge");
+        Add(token.CmdUnbrokenMomentum, "unbroken-momentum");
+        Add(token.CmdBlindFury, "blind-fury");
+        Add(token.CmdOverrun, "overrun");
+        Add(token.CmdLongShot, "long-shot");
+        Add(token.CmdSnapShot, "snap-shot");
+        Add(token.CmdSkirmishScreen, "skirmish-screen");
+        Add(token.CmdEnfilade, "enfilade");
+        Add(token.CmdHarassingFire, "harassing-fire");
+        Add(token.CmdKnifeInTheDark, "knife-in-the-dark");
+        Add(token.CmdKeepFacing, "keep-facing");
+        Add(token.CmdLookAway, "look-away");
+        Add(token.CmdColumnMarch, "column-march");
+        Add(token.CmdLooseFiles, "loose-files");
+        Add(token.CmdIronclad, "ironclad");
+        // Passive abilities have no per-token flag, so they are captured separately at deploy.
+        foreach (var key in token.AllyCommanderAbilities ?? Enumerable.Empty<string>())
+        {
+            if (!keys.Contains(key))
+                keys.Add(key);
+        }
+        return keys;
+    }
+
+    private RenderFragment CommanderAbilityBadges(BaronyBattleTokenDTO token) => __builder =>
+    {
+        var keys = TokenCommanderAbilityKeys(token);
+        if (keys.Count == 0)
+            return;
+
+        <div class="bbm-force-abilities">
+            <span class="bbm-force-abilities__label">Zdolności:</span>
+            @foreach (var key in keys)
+            {
+                var ab = CourtCommanderCatalog.Find(key);
+                <span class="bbm-force-ability-chip"
+                      title="@($"[T{ab?.Tier}] {ab?.Branch} · {ab?.DescriptionEn}")">
+                    @(ab?.NameEn ?? key)
+                </span>
+            }
+        </div>
+    };
+
     public async ValueTask DisposeAsync()
     {
         if (_hubConnection is not null)
@@ -5021,6 +5764,12 @@ else
         /// <summary>Armor cut through by this unit's attacks; 0 = stopped by armor as usual.</summary>
         public int Pierce { get; set; }
 
+        /// <summary>Mount state used by horse-dependent commander abilities.</summary>
+        public bool Mounted { get; set; }
+
+        /// <summary>Selected commander abilities (skill-tree keys) for this enemy unit.</summary>
+        public List<string> CommanderAbilities { get; set; } = new();
+
         public static EnemyDraft Default() => new();
 
         public static EnemyDraft FromToken(BaronyBattleTokenDTO token) => new()
@@ -5028,15 +5777,21 @@ else
             Label = token.Label,
             IconKey = string.IsNullOrWhiteSpace(token.IconKey) ? "skull" : token.IconKey,
             Attack = token.Attack,
-            Defense = token.Defense,
-            Damage = token.Damage,
-            Hp = token.Hp,
+            Defense = token.EnemyBaseCaptured ? token.EnemyBaseDefense : token.Defense,
+            Damage = token.EnemyBaseCaptured ? token.EnemyBaseDamage : token.Damage,
+            Hp = token.EnemyBaseCaptured ? token.EnemyBaseHp : token.Hp,
             Armor = token.Armor,
-            Discipline = token.Discipline,
+            Discipline = token.EnemyBaseCaptured ? token.EnemyBaseDiscipline : token.Discipline,
             TroopCount = token.TroopCount,
-            Move = token.Move,
-            Range = token.Range,
+            Move = token.EnemyBaseCaptured ? token.EnemyBaseMove : token.Move,
+            Range = token.EnemyBaseRange > 0 ? token.EnemyBaseRange : token.Range,
             Pierce = token.Pierce,
+            Mounted = token.Mounted,
+            CommanderAbilities = token.EnemyCommanderAbilities
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Select(k => k.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList(),
         };
     }
 }

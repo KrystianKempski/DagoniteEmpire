@@ -170,6 +170,96 @@ namespace DA_Models.BaronyModels
         /// <summary>Extra charge Damage when mounted (Shock Lance).</summary>
         public int ChargeDamageExtra { get; set; }
 
+        /// <summary>This token's unit is mounted (context for Mounted Superiority).</summary>
+        public bool Mounted { get; set; }
+
+        /// <summary>This token's unit has an assigned captain (context for Kill the Captain).</summary>
+        public bool HasCaptain { get; set; }
+
+        /// <summary>Captain Initiative bonus (Discipline / Initiative abilities), added to InitiativeTotal.</summary>
+        public int CommanderInitiative { get; set; }
+
+        /// <summary>Drill — Shot: +1 Attack on ranged attacks.</summary>
+        public bool CmdDrillShot { get; set; }
+
+        /// <summary>Mounted Superiority: +1 Atk/Def when mounted vs an unmounted foe.</summary>
+        public bool CmdMountedSuperiority { get; set; }
+
+        /// <summary>Counter-Charge: +2 Defense when targeted by a charge.</summary>
+        public bool CmdCounterCharge { get; set; }
+
+        /// <summary>Pike Hedge: +3 Defense when the attacker has a charge bonus against this unit.</summary>
+        public bool CmdPikeHedge { get; set; }
+
+        /// <summary>Return Stroke: +2 Defense on melee defensive return hits.</summary>
+        public bool CmdReturnStroke { get; set; }
+
+        /// <summary>Kill the Captain: +2 Attack against units that have a captain.</summary>
+        public bool CmdKillTheCaptain { get; set; }
+
+        /// <summary>Riveted Plate: Pierce ignored when this unit is the defender.</summary>
+        public int CmdPierceIgnore { get; set; }
+
+        /// <summary>Wedge: during a charge, one Difficult tile is treated as open.</summary>
+        public bool CmdWedge { get; set; }
+
+        /// <summary>Unbroken Momentum: charge interrupt distance lowered to 1 tile (default 2).</summary>
+        public bool CmdUnbrokenMomentum { get; set; }
+
+        /// <summary>Blind Fury: blind-charge end-lock also catches side-front corners.</summary>
+        public bool CmdBlindFury { get; set; }
+
+        /// <summary>Overrun: heal 12 HP when a charge target flees this Combat.</summary>
+        public bool CmdOverrun { get; set; }
+
+        /// <summary>Long Shot: range Attack penalty is −1 per tile instead of −2.</summary>
+        public bool CmdLongShot { get; set; }
+
+        /// <summary>Snap Shot: +1 Damage on shots against adjacent targets.</summary>
+        public bool CmdSnapShot { get; set; }
+
+        /// <summary>Skirmish Screen: may shoot even while engaged (pinned).</summary>
+        public bool CmdSkirmishScreen { get; set; }
+
+        /// <summary>Enfilade: shots escalate the target's Exposure band by one step.</summary>
+        public bool CmdEnfilade { get; set; }
+
+        /// <summary>Harassing Fire: a damaging shot lowers the target's next-turn Move by 1.</summary>
+        public bool CmdHarassingFire { get; set; }
+
+        /// <summary>Knife in the Dark: +1 Damage when attacking a target from its rear.</summary>
+        public bool CmdKnifeInTheDark { get; set; }
+
+        /// <summary>Keep Facing: one in-place facing change per Movement phase spends no Move.</summary>
+        public bool CmdKeepFacing { get; set; }
+
+        /// <summary>Look Away: one post-move facing change per Movement phase spends no Move.</summary>
+        public bool CmdLookAway { get; set; }
+
+        /// <summary>Column March: squeezing past comrades costs open-ground rates, not difficult ×2.</summary>
+        public bool CmdColumnMarch { get; set; }
+
+        /// <summary>Loose Files: one diagonal step per phase may pass between two occupied corners.</summary>
+        public bool CmdLooseFiles { get; set; }
+
+        /// <summary>Ironclad: captain may spend a once-per-battle +2 Armor combat-round buff.</summary>
+        public bool CmdIronclad { get; set; }
+
+        /// <summary>Ironclad has already been spent this battle.</summary>
+        public bool IroncladUsed { get; set; }
+
+        /// <summary>Ironclad is boosting Armor (+2) for the current combat round.</summary>
+        public bool IroncladActive { get; set; }
+
+        /// <summary>Full Defense stance: +4 Defence, −5 Attack; the unit forfeits all movement this round.</summary>
+        public bool FullDefense { get; set; }
+
+        /// <summary>Set once the free commander facing change was used this Movement phase.</summary>
+        public bool FreeFacingUsed { get; set; }
+
+        /// <summary>Set when Harassing Fire hit this token; consumed at the next Movement phase.</summary>
+        public bool HarassedNextTurn { get; set; }
+
         /// <summary>
         /// True when the charge was declared without an immediate target (blind).
         /// Blind charges can lock a target after only 2 tiles of travel on collision.
@@ -178,6 +268,29 @@ namespace DA_Models.BaronyModels
 
         /// <summary>Enemy token the charge locked onto (must match <see cref="AttackTargetId"/> for the bonus).</summary>
         public string? ChargeTargetId { get; set; }
+
+        /// <summary>Enemy's configured base shot range before commander modifiers like Extended Range.</summary>
+        public int EnemyBaseRange { get; set; }
+
+        /// <summary>Enemy base stats captured once, so passive commander bonuses apply idempotently.</summary>
+        public bool EnemyBaseCaptured { get; set; }
+        public int EnemyBaseHp { get; set; }
+        public int EnemyBaseMove { get; set; }
+        public int EnemyBaseDamage { get; set; }
+        public int EnemyBaseDefense { get; set; }
+        public int EnemyBaseDiscipline { get; set; }
+
+        /// <summary>
+        /// For manually configured enemy commanders: selected commander ability keys from the skill tree.
+        /// Allies derive abilities from their assigned captain sheet instead.
+        /// </summary>
+        public List<string> EnemyCommanderAbilities { get; set; } = new();
+
+        /// <summary>
+        /// For allies: commander ability keys currently affecting this unit (behavioral + active passives),
+        /// captured from the captain sheet at deploy time so they can be shown as badges.
+        /// </summary>
+        public List<string> AllyCommanderAbilities { get; set; } = new();
 
         /// <summary>
         /// Grid cell where the charge segment begins (after any pre-charge march).

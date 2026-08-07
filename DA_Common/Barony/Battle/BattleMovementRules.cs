@@ -21,6 +21,12 @@ public static class BattleMovementRules
     /// <summary>Attack lost per tile of flight beyond point-blank range.</summary>
     public const int ShotAttackPenaltyPerTile = 2;
 
+    /// <summary>Defence bonus while a unit holds the Full Defense stance (movement phase).</summary>
+    public const int FullDefenseDefenseBonus = 4;
+
+    /// <summary>Attack penalty while a unit holds the Full Defense stance (movement phase).</summary>
+    public const int FullDefenseAttackPenalty = 5;
+
     /// <summary>
     /// Wall-clock time in which a unit spends its whole move allowance. Step duration is
     /// proportional to the step's cost and inversely proportional to <c>Move</c>, so a Move 8

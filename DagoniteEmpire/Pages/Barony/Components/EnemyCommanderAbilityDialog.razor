@@ -1,0 +1,90 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="barony-dialog">
+    <DialogContent>
+        <div class="barony-dialog-theme">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Wybierz zdolnosc z drzewka kapitana. Tylko zaimplementowane mechaniki.
+            </MudText>
+
+            <MudSelect T="string"
+                       Value="_selectedKey"
+                       ValueChanged="OnSelectedChanged"
+                       Label="Zdolnosc"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true">
+                @foreach (var item in Selectable)
+                {
+                    <MudSelectItem Value="@item.Key">
+                        @($"[T{item.Tier}] {item.Branch} · {item.NameEn}")
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (Selected is not null)
+            {
+                <MudText Typo="Typo.body2" Class="mt-2">@Selected.DescriptionEn</MudText>
+                @if (!string.IsNullOrWhiteSpace(_hint))
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">@_hint</MudAlert>
+                }
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Disabled="@(Selected is null || !string.IsNullOrWhiteSpace(_hint))"
+                   OnClick="Save">
+            Dodaj
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public IReadOnlyList<CourtCommanderAbility> Selectable { get; set; } = Array.Empty<CourtCommanderAbility>();
+    [Parameter] public Func<string, string?>? ValidateAbility { get; set; }
+
+    private string? _selectedKey;
+    private string? _hint;
+
+    private CourtCommanderAbility? Selected =>
+        string.IsNullOrWhiteSpace(_selectedKey)
+            ? null
+            : Selectable.FirstOrDefault(a => string.Equals(a.Key, _selectedKey, StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnParametersSet()
+    {
+        _selectedKey ??= Selectable.FirstOrDefault()?.Key;
+        RefreshHint();
+    }
+
+    private void OnSelectedChanged(string value)
+    {
+        _selectedKey = value;
+        RefreshHint();
+    }
+
+    private void RefreshHint()
+    {
+        _hint = null;
+        if (Selected is null)
+            return;
+        _hint = ValidateAbility?.Invoke(Selected.Key);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (Selected is null)
+            return;
+        var error = ValidateAbility?.Invoke(Selected.Key);
+        if (!string.IsNullOrWhiteSpace(error))
+            return;
+        MudDialog.Close(DialogResult.Ok(Selected.Key));
+    }
+}
