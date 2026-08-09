@@ -41,9 +41,9 @@
 }
 else
 {
-    @if (OngoingBattle)
+    @if (OngoingBattle && (!_editorExpanded || !_isNarrowViewport))
     {
-        <div class="battle-map-fab-wrapper" style="display:flex; flex-direction:column; gap:12px; align-items:center;">
+        <div class="battle-map-fab-wrapper">
             <MudFab Color="Color.Error"
                     StartIcon="@Icons.Material.Filled.MenuBook"
                     Size="Size.Large"
@@ -557,6 +557,7 @@ else
     private bool _toolbarExpanded;
     private bool _editorFullScreen;
     private bool _outsideCollapseRegistered;
+    private bool _isNarrowViewport;
     private DotNetObjectReference<ChapterThread>? _dotNetRef;
     private const string PostDockId = "bottom-container";
     private const string PostsTopSentinelId = "posts-top-sentinel";
@@ -583,6 +584,7 @@ else
         if (_editorExpanded)
             return;
 
+        _isNarrowViewport = await _viewportService.GetCurrentBreakpointAsync() <= Breakpoint.Md;
         _editorExpanded = true;
         StateHasChanged();
         await FocusPostEditorAsync();
@@ -895,6 +897,7 @@ else
             {
                 var bp = await _viewportService.GetCurrentBreakpointAsync();
                 _showDrawerPanelLayout = bp <= Breakpoint.Lg;
+                _isNarrowViewport = bp <= Breakpoint.Md;
                 StateHasChanged();
             }
 
