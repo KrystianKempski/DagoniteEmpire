@@ -37,12 +37,6 @@ else if (_overview is not null)
                     <span class="barony-meta-bar__value">@_overview.Barony.Year</span>
                 </span>
             </BaronyHudTip>
-            <BaronyHudTip Title="Month" Text="@BaronyUiTooltips.MetaMonth">
-                <span class="barony-meta-bar__stat">
-                    <span class="barony-meta-bar__label">Month</span>
-                    <span class="barony-meta-bar__value">@MonthEn(_overview.Barony.Month)</span>
-                </span>
-            </BaronyHudTip>
             <BaronyHudTip Title="Season" Text="@BaronyUiTooltips.MetaSeason">
                 <span class="barony-meta-bar__stat">
                     <span class="barony-meta-bar__label">Season</span>
@@ -194,6 +188,7 @@ else if (_overview is not null)
                                 Tiles="@_overview.Tiles"
                                 Fiefs="@_overview.Fiefs"
                                 VassalTributePercent="@_overview.Barony.VassalTributePercent"
+                                Season="@_overview.Barony.Season"
                                 CanManage="@CanManageAsMg"
                                 OnChanged="ReloadOverviewAsync" />
     <DecreesSection BaronyId="@BaronyId"
@@ -618,12 +613,4 @@ else if (_overview is not null)
         _ => season,
     };
 
-    private static readonly string[] MonthNames =
-    {
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    };
-
-    private static string MonthEn(int month)
-        => month >= 1 && month <= MonthNames.Length ? MonthNames[month - 1] : month.ToString();
 }

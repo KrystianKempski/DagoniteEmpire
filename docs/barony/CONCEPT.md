@@ -14,6 +14,8 @@ Branch roboczy: **`Duke`**.
 
 Nowa warstwa aplikacji pozwalająca wybranym użytkownikom (Baronom) zarządzać
 niewielką baronią. Rozgrywka jest **turowa** — jedna tura = jeden **sezon**.
+Kolejność sezonów: **wiosna → lato → jesień → zima** (rok zaczyna się wiosną).
+Zimą farmy i plon wsi z fertility **nie dają żywności** — baronia musi przetrwać na zapasach w spichlerzach.
 Wszystkie statystyki, parametry i elementy baronii żyją w aplikacji.
 
 ### Rola / tożsamość Barona
@@ -21,6 +23,8 @@ Wszystkie statystyki, parametry i elementy baronii żyją w aplikacji.
   (już obecne w `DA_Common/SD.cs`). Nie tworzymy nowej roli.
 - Jedna postać typu Duke/Baron = jedna baronia (relacja 1:1).
 - Baronia jest wiązana z użytkownikiem pośrednio, przez `Character.UserName`.
+- Przy utworzeniu baronii powstaje też **kampania** o tej samej nazwie; baron jest jej członkiem
+  (`CampaignCharacter`). Baronia nadal należy do postaci, nie do kampanii (bez FK `Barony↔Campaign`).
 
 ---
 

@@ -22,9 +22,9 @@ namespace DA_DataAccess.BaronyData
 
         // --- Stan sezonu / tury (BaronySeasonState, osadzony) ---
         public int Year { get; set; } = 625;
-        public int Month { get; set; } = 1;
+        public int Month { get; set; } = 3;
         public int TurnNumber { get; set; } = 1;
-        public string Season { get; set; } = "Winter";
+        public string Season { get; set; } = "Spring";
 
         // --- Akumulatory (przenoszą się między turami) ---
         /// <summary>Skarbiec baronii.</summary>

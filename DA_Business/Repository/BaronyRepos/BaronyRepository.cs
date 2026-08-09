@@ -4,6 +4,7 @@ using DA_Common;
 using DA_Common.Barony;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.CharacterClasses;
+using DA_DataAccess.Chat;
 using DA_DataAccess.Data;
 using DA_Models.BaronyModels;
 using DagoniteEmpire.Exceptions;
@@ -104,8 +105,7 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
 
-                var character = await ctx.Characters.AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == characterId);
+                var character = await ctx.Characters.FirstOrDefaultAsync(c => c.Id == characterId);
                 if (character is null)
                     throw new RepositoryErrorException("Character not found.");
                 if (character.NPCType != SD.NPCType.Duke)
@@ -122,6 +122,10 @@ namespace DA_Business.Repository.BaronyRepos
                     CharacterId = characterId,
                     Name = string.IsNullOrWhiteSpace(name) ? "Nowa Baronia" : name.Trim(),
                     Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
+                    Year = 625,
+                    Month = 3,
+                    TurnNumber = 1,
+                    Season = "Spring",
                     ConjunctureDice = RollService.Roll2d6().Sum,
                     ConjunctureModifier = 0,
                     LiegeTributePercent = FiefTributeFormulas.DefaultPercent,
@@ -144,12 +148,32 @@ namespace DA_Business.Repository.BaronyRepos
                 VassalsFromFiefsSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 await EnsureStarterCityBuildingsAsync(ctx, added.Entity.Id);
                 SeedStarterUnits(ctx, added.Entity.Id);
+                SeedBaronCampaign(ctx, character, added.Entity);
                 await ctx.SaveChangesAsync();
 
                 return ToDTO(added.Entity);
             }
             catch (RepositoryErrorException) { throw; }
             catch (System.Exception ex) { throw Err(ex, nameof(CreateForCharacter)); }
+        }
+
+        /// <summary>
+        /// Each new barony gets a dedicated campaign with the baron character as a member.
+        /// </summary>
+        private static void SeedBaronCampaign(ApplicationDbContext ctx, Character character, Barony barony)
+        {
+            var baronName = string.IsNullOrWhiteSpace(character.NPCName) ? "Baron" : character.NPCName.Trim();
+            var description = string.IsNullOrWhiteSpace(barony.Notes)
+                ? $"Campaign for the barony of {barony.Name} (baron: {baronName})."
+                : barony.Notes.Trim();
+
+            ctx.Campaigns.Add(new Campaign
+            {
+                Name = barony.Name,
+                Description = description,
+                CreatedDate = DateTime.Now,
+                Characters = new List<Character> { character },
+            });
         }
 
         public async Task<BaronyDTO> UpdateBarony(BaronyDTO dto)
@@ -1118,7 +1142,8 @@ namespace DA_Business.Repository.BaronyRepos
                 {
                     var population = existing?.Population ?? 0;
                     var hasPalisade = existing?.HasPalisade ?? false;
-                    additive = VillagePpbFormulas.Compute(population, tile.Fertility, hasPalisade);
+                    additive = VillagePpbFormulas.Compute(
+                        population, tile.Fertility, hasPalisade, TownTaxRates.Defaults, barony.Season);
                     percent = new PpbVector();
                 }
                 else if (string.Equals(mapKind, MapImprovement.FishingHarbor, StringComparison.OrdinalIgnoreCase)
@@ -1353,7 +1378,7 @@ namespace DA_Business.Repository.BaronyRepos
                     .Select(r => (r.Group, r.TaxPercent)));
 
                 var improvementDtos = improvements
-                    .Select(e => ToImprovementDto(e, tiles, taxRates))
+                    .Select(e => ToImprovementDto(e, tiles, taxRates, barony.Season))
                     .ToList();
 
                 VassalsFromFiefsSeeder.EnsureForBarony(ctx, baronyId);
@@ -2988,7 +3013,11 @@ namespace DA_Business.Repository.BaronyRepos
                         .Where(x => x.BaronyId == baronyId)
                         .ToListAsync())
                     .Select(r => (r.Group, r.TaxPercent)));
-                return entities.Select(e => ToImprovementDto(e, tiles, taxRates)).ToList();
+                var season = await ctx.Baronies.AsNoTracking()
+                    .Where(b => b.Id == baronyId)
+                    .Select(b => b.Season)
+                    .FirstOrDefaultAsync();
+                return entities.Select(e => ToImprovementDto(e, tiles, taxRates, season)).ToList();
             }
             catch (System.Exception ex) { throw Err(ex, nameof(GetImprovements)); }
         }
@@ -3012,7 +3041,11 @@ namespace DA_Business.Repository.BaronyRepos
                         .Where(x => x.BaronyId == dto.BaronyId)
                         .ToListAsync())
                     .Select(r => (r.Group, r.TaxPercent)));
-                return ToImprovementDto(e, tile, taxRates);
+                var season = await ctx.Baronies.AsNoTracking()
+                    .Where(b => b.Id == dto.BaronyId)
+                    .Select(b => b.Season)
+                    .FirstOrDefaultAsync();
+                return ToImprovementDto(e, tile, taxRates, season);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveImprovement)); }
         }
@@ -4535,7 +4568,7 @@ namespace DA_Business.Repository.BaronyRepos
             Year = e.Year,
             Month = e.Month,
             Day = e.Day,
-            Season = e.Season ?? "Winter",
+            Season = e.Season ?? "Spring",
             SeenByBaron = e.SeenByBaron,
             SeenByGm = e.SeenByGm,
             SortOrder = e.SortOrder,
@@ -4585,7 +4618,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.Year = d.Year;
             e.Month = d.Month;
             e.Day = d.Day;
-            e.Season = string.IsNullOrWhiteSpace(d.Season) ? "Winter" : d.Season;
+            e.Season = string.IsNullOrWhiteSpace(d.Season) ? "Spring" : d.Season;
             e.SeenByBaron = d.SeenByBaron;
             e.SeenByGm = d.SeenByGm;
             e.SortOrder = d.SortOrder;
@@ -4793,18 +4826,24 @@ namespace DA_Business.Repository.BaronyRepos
                     .ToListAsync())
                 .Select(r => (r.Group, r.TaxPercent)));
 
-            ApplySettlementFormulas(dto, fertility, taxRates);
+            var season = await ctx.Baronies.AsNoTracking()
+                .Where(b => b.Id == dto.BaronyId)
+                .Select(b => b.Season)
+                .FirstOrDefaultAsync();
+
+            ApplySettlementFormulas(dto, fertility, taxRates, season);
         }
 
         private static void ApplySettlementFormulas(
             TerrainImprovementDTO dto,
             int fertility,
-            TownTaxRates? taxRates = null)
+            TownTaxRates? taxRates = null,
+            string? season = null)
         {
             var taxes = taxRates ?? TownTaxRates.Defaults;
             if (IsVillage(dto.Name))
             {
-                dto.Additive = VillagePpbFormulas.Compute(dto.Population, fertility, dto.HasPalisade, taxes);
+                dto.Additive = VillagePpbFormulas.Compute(dto.Population, fertility, dto.HasPalisade, taxes, season);
                 dto.Percent = new PpbVector();
                 dto.FormulaText = VillagePpbFormulas.CatalogDescription;
             }
@@ -4826,21 +4865,23 @@ namespace DA_Business.Repository.BaronyRepos
         private static TerrainImprovementDTO ToImprovementDto(
             TerrainImprovement e,
             IEnumerable<TerrainTile> tiles,
-            TownTaxRates taxRates)
+            TownTaxRates taxRates,
+            string? season = null)
         {
             TerrainTile? tile = null;
             if (e.TileId is int tid)
                 tile = tiles.FirstOrDefault(t => t.Id == tid);
-            return ToImprovementDto(e, tile, taxRates);
+            return ToImprovementDto(e, tile, taxRates, season);
         }
 
         private static TerrainImprovementDTO ToImprovementDto(
             TerrainImprovement e,
             TerrainTile? tile,
-            TownTaxRates taxRates)
+            TownTaxRates taxRates,
+            string? season = null)
         {
             var dto = ToDTO(e);
-            ApplySettlementFormulas(dto, tile?.Fertility ?? TerrainFertility.Unknown, taxRates);
+            ApplySettlementFormulas(dto, tile?.Fertility ?? TerrainFertility.Unknown, taxRates, season);
             return dto;
         }
 

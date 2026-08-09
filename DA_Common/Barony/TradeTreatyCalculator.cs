@@ -87,11 +87,17 @@ namespace DA_Common.Barony
       out PpbVector additive,
       out PpbVector percent)
     {
-      var goods = BaronyReceivedGoods(treaties);
+      var treatyList = treaties as IList<BaronyTradeTreaty> ?? treaties.ToList();
+      var goods = BaronyReceivedGoods(treatyList);
       TradeGoodsBonusAggregator.Sum(goods, out additive, out percent);
-      var economy = TotalRouteEconomyBonus(treaties);
+      var economy = TotalRouteEconomyBonus(treatyList);
       if (economy != 0m)
         additive[Ppb.Economy] += economy;
+
+      // Net gold leaving the barony reduces Treasury (same sign as Domain Panel).
+      var goldOutflow = TotalGoldOutflowPerTurn(treatyList);
+      if (goldOutflow != 0m)
+        additive[Ppb.Treasury] -= goldOutflow;
     }
 
     /// <summary>Ordered lord keys on the route (transit… then destination).</summary>

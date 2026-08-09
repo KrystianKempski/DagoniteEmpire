@@ -116,8 +116,8 @@ namespace DA_Common.Barony
             "Spring" => new[] { 3, 4, 5 },
             "Summer" => new[] { 6, 7, 8 },
             "Fall" or "Autumn" => new[] { 9, 10, 11 },
-            // Winter turn sits at the start of the year (Abadius–Calistril).
-            _ => new[] { 1, 2, 3 },
+            // Winter turn sits at the end of the year (Kuthona–Calistril).
+            _ => new[] { 12, 1, 2 },
         };
 
         public static string MonthName(int month)

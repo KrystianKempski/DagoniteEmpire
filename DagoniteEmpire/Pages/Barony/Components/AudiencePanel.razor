@@ -1,12 +1,12 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
 <article class="project-card @CardClass @(_isOpen ? "project-card--open" : "project-card--collapsed")">
-    <header class="project-card__header">
-        <div class="project-card__title-row" @onclick="Toggle" role="button" aria-expanded="@_isOpen">
+    <header class="project-card__header" @onclick="Toggle" role="button" aria-expanded="@_isOpen">
+        <div class="project-card__title-row">
             <h3 class="project-card__title">@Audience.Title</h3>
             @if (Audience.HasPpb || Audience.HasPhp)
             {
-                <div class="baron-audience__ppb-glance" @onclick:stopPropagation="true">
+                <div class="baron-audience__ppb-glance">
                     @if (Audience.HasPpb)
                     {
                         <PpbSummaryChips Vector="@AudienceGlance" />
@@ -62,7 +62,17 @@
                             @SpeakerLabel(x)
                             <span>· T@(x.TurnNumber)</span>
                         </div>
-                        <div class="baron-audience__exchange-body">@x.Body</div>
+                        <div class="baron-audience__exchange-body">
+                            @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
+                            {
+                                <span>@chapterLabel </span>
+                                <a href="/chapter/@chapterId">Open chapter</a>
+                            }
+                            else
+                            {
+                                @x.Body
+                            }
+                        </div>
                         @if (x.IsResourceChange
                             && ((x.Additive is not null && !x.Additive.IsEmpty) || x.HasPhp))
                         {
@@ -179,6 +189,13 @@
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
+                                       OnClick="() => OnMakeChapter.InvokeAsync()">
+                                Make chapter
+                            </MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
                                        OnClick="() => OnResolve.InvokeAsync()">Resolve</MudButton>
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
@@ -206,7 +223,28 @@
                      && string.Equals(Audience.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
                      && !ShowSummary)
             {
+                <div class="baron-audience__composer-actions mb-2">
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Outlined"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               Disabled="Busy"
+                               OnClick="() => OnMakeChapter.InvokeAsync()">
+                        Make chapter
+                    </MudButton>
+                </div>
                 <MudText Typo="Typo.caption">Deferred — will open again next turn with the last exchange.</MudText>
+            }
+            else if (CanWriteAsGm && ReadOnly)
+            {
+                <div class="baron-audience__composer-actions">
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Outlined"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               Disabled="Busy"
+                               OnClick="() => OnMakeChapter.InvokeAsync()">
+                        Make chapter
+                    </MudButton>
+                </div>
             }
         </div>
     }
@@ -216,6 +254,13 @@
     public const string SpeakerModePetitioner = "petitioner";
     public const string SpeakerModeOther = "other";
     public const string ProjectSpeaker = "Project";
+    public const string ChapterSpeaker = "Chapter";
+
+    /// <summary>Stored in exchange body after the human-readable line.</summary>
+    public const string ChapterLinkPrefix = "#/chapter/";
+
+    public static string FormatChapterExchangeBody(string chapterName, int chapterId) =>
+        $"Created chapter \"{chapterName}\".\n{ChapterLinkPrefix}{chapterId}";
 
     public sealed record SpeakRequest(string Body, bool IsGmSide, string? SpeakerName);
 
@@ -228,6 +273,7 @@
     [Parameter] public EventCallback<SpeakRequest> OnSpeak { get; set; }
     [Parameter] public EventCallback OnAddResources { get; set; }
     [Parameter] public EventCallback OnCreateProject { get; set; }
+    [Parameter] public EventCallback OnMakeChapter { get; set; }
     [Parameter] public EventCallback OnResolve { get; set; }
     [Parameter] public EventCallback OnDefer { get; set; }
     [Parameter] public EventCallback OnDismiss { get; set; }
@@ -270,7 +316,7 @@
     private void Toggle() => _isOpen = !_isOpen;
 
     private string ExchangeThemeClass(BaronAudienceExchangeDTO x) =>
-        x.IsResourceChange || IsProjectNote(x)
+        x.IsResourceChange || IsProjectNote(x) || IsChapterNote(x)
             ? "baron-audience__exchange--resource"
             : x.IsFromPetitioner
                 ? "baron-audience__exchange--gm"
@@ -287,6 +333,31 @@
 
     private static bool IsProjectNote(BaronAudienceExchangeDTO x) =>
         string.Equals(x.SpeakerName, ProjectSpeaker, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsChapterNote(BaronAudienceExchangeDTO x) =>
+        string.Equals(x.SpeakerName, ChapterSpeaker, StringComparison.OrdinalIgnoreCase);
+
+    private static bool TryGetChapterLink(BaronAudienceExchangeDTO x, out int chapterId, out string label)
+    {
+        chapterId = 0;
+        label = x.Body ?? string.Empty;
+        if (!IsChapterNote(x) || string.IsNullOrWhiteSpace(x.Body))
+            return false;
+
+        var body = x.Body;
+        var idx = body.LastIndexOf(ChapterLinkPrefix, StringComparison.Ordinal);
+        if (idx < 0)
+            return false;
+
+        var idPart = body[(idx + ChapterLinkPrefix.Length)..].Trim();
+        if (!int.TryParse(idPart, out chapterId) || chapterId <= 0)
+            return false;
+
+        label = body[..idx].TrimEnd();
+        if (string.IsNullOrWhiteSpace(label))
+            label = "Chapter created.";
+        return true;
+    }
 
     private async Task SpeakAsync()
     {

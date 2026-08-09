@@ -90,4 +90,23 @@ namespace DA_Common.Barony
             return result;
         }
     }
+
+    /// <summary>Chapter naming for audience → campaign thread links.</summary>
+    public static class BaronAudienceChapter
+    {
+        /// <summary>
+        /// Detailed chapter title: <c>Audience {year}, {season}, {audience title}</c>.
+        /// Fall is shown as Autumn to match Domain Panel labels.
+        /// </summary>
+        public static string FormatName(int year, string? season, string? audienceTitle)
+        {
+            var seasonLabel = BaronyCalendarFormulas.NormalizeSeason(season) switch
+            {
+                "Fall" => "Autumn",
+                var s => s,
+            };
+            var title = string.IsNullOrWhiteSpace(audienceTitle) ? "Untitled" : audienceTitle.Trim();
+            return $"Audience {year}, {seasonLabel}, {title}";
+        }
+    }
 }

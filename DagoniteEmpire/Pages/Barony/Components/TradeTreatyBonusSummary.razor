@@ -5,10 +5,10 @@
         <span class="projects-summary__item">@_receivedCount good@(_receivedCount == 1 ? "" : "s") from treaties</span>
     </Summary>
     <ChildContent>
-        @if (_receivedCount == 0 && _routeEconomy == 0m)
+        @if (_receivedCount == 0 && !_hasTreatyPpb)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No treaty goods or route economy yet.
+                No treaty goods, route economy, or gold flows yet.
             </MudText>
         }
         else
@@ -42,7 +42,15 @@
     [Parameter] public IReadOnlyList<BaronyTradeTreaty> Treaties { get; set; } = Array.Empty<BaronyTradeTreaty>();
 
     private int _receivedCount => TradeTreatyCalculator.BaronyReceivedGoods(Treaties).Count;
-    private decimal _routeEconomy => TradeTreatyCalculator.TotalRouteEconomyBonus(Treaties);
+
+    private bool _hasTreatyPpb
+    {
+        get
+        {
+            TradeTreatyCalculator.SumTreatyBonuses(Treaties, out var add, out var pct);
+            return PpbCatalog.All.Any(info => add[info.Key] != 0m || pct[info.Key] != 0m);
+        }
+    }
 
     private IEnumerable<PpbRow> Rows
     {

@@ -328,6 +328,9 @@ namespace DagoniteEmpire.Pages.Barony
         public static bool IsVillage(TerrainImprovementDTO improvement) =>
             string.Equals(improvement.Name, MapImprovement.Village, StringComparison.OrdinalIgnoreCase);
 
+        public static bool IsFarm(TerrainImprovementDTO improvement) =>
+            string.Equals(improvement.Name, MapImprovement.Farm, StringComparison.OrdinalIgnoreCase);
+
         public static string TownPopulationLabel(TerrainImprovementDTO town) =>
             TownPpbFormulas.PopulationRowLabel(ImprovementDisplayLabel(town));
 
@@ -472,7 +475,8 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<TerrainImprovementDTO> improvements,
             IEnumerable<TerrainTileDTO>? tiles = null,
             IEnumerable<FiefDTO>? fiefs = null,
-            decimal vassalTributePercent = FiefTributeFormulas.DefaultPercent)
+            decimal vassalTributePercent = FiefTributeFormulas.DefaultPercent,
+            string? season = null)
         {
             var tilesById = (tiles ?? Enumerable.Empty<TerrainTileDTO>())
                 .ToDictionary(t => t.Id);
@@ -488,12 +492,39 @@ namespace DagoniteEmpire.Pages.Barony
                 .Select(i =>
                 {
                     var additive = ApplyVassalVillageGoldShare(i, tilesById, fiefsById, rate, out var note);
-                    var formula = string.IsNullOrWhiteSpace(note)
-                        ? i.FormulaText
-                        : string.IsNullOrWhiteSpace(i.FormulaText) ? note : $"{i.FormulaText}\n\n{note}";
+                    additive = ApplyWinterFarmFoodHalt(i, additive, season, out var winterNote);
+                    var formula = i.FormulaText;
+                    foreach (var extra in new[] { note, winterNote })
+                    {
+                        if (string.IsNullOrWhiteSpace(extra))
+                            continue;
+                        formula = string.IsNullOrWhiteSpace(formula) ? extra : $"{formula}\n\n{extra}";
+                    }
                     return Row(ImprovementDisplayLabel(i), additive, i.Percent, formula, i.Description);
                 })
                 .ToList();
+        }
+
+        /// <summary>
+        /// Map farms contribute no Food in Winter (stored yield is kept; Domain Panel / income zeroes it).
+        /// </summary>
+        public static PpbVector ApplyWinterFarmFoodHalt(
+            TerrainImprovementDTO improvement,
+            PpbVector additive,
+            string? season,
+            out string? note)
+        {
+            note = null;
+            if (!IsFarm(improvement) || BaronyCalendarFormulas.FarmsProduceFood(season))
+                return additive;
+
+            var clone = additive.Clone();
+            if (clone[Ppb.Food] == 0m)
+                return clone;
+
+            clone[Ppb.Food] = 0m;
+            note = "Farm food yield is 0 in Winter — survive on granary stocks.";
+            return clone;
         }
 
         /// <summary>
@@ -594,7 +625,7 @@ namespace DagoniteEmpire.Pages.Barony
                 .ToList();
 
         /// <summary>
-        /// Always-active trade / luxury / route bonuses shown under Decrees and Technologies.
+        /// Always-active combined trade / luxury / treaty row under Decrees and Technologies.
         /// </summary>
         public static List<PpbModifierRow> TradeGoodDomainRows(
             IEnumerable<BaronyBuildingDTO>? buildings,
@@ -896,7 +927,7 @@ namespace DagoniteEmpire.Pages.Barony
                 ov.Barony.Id, ov.Buildings, ov.Improvements, ov.Seat, ov.SeatPurposeTemplates);
             var socialRows = SocialRows(ov.Barony.Id, ov.SocialRelations);
             var improvementRows = ImprovementRows(
-                ov.Improvements, ov.Tiles, ov.Fiefs, ov.Barony.VassalTributePercent);
+                ov.Improvements, ov.Tiles, ov.Fiefs, ov.Barony.VassalTributePercent, ov.Barony.Season);
             var decreeRows = DecreeSectionRows(
                 ov.Decrees,
                 ov.Buildings,

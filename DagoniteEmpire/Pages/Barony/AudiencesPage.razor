@@ -3,6 +3,10 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject IDialogService _dialogService
+@inject ICampaignRepository _campaignRepository
+@inject IChapterRepository _chapterRepository
+@using DA_DataAccess.Chat
+@using DA_Models.CharacterModels
 
 <PageTitle>Dagonite Empire | Audiences</PageTitle>
 
@@ -146,7 +150,7 @@ else if (Barony is not null)
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-                    Click an audience title row to expand or collapse the dialogue.
+                    Click an audience card header to expand or collapse the dialogue.
                 </MudText>
 
                 @if (CanWriteAsGm)
@@ -183,6 +187,7 @@ else if (Barony is not null)
                                            OnSpeak="req => SendReplyAsync(a, req)"
                                            OnAddResources="() => AddResourcesAsync(a)"
                                            OnCreateProject="() => CreateProjectAsync(a)"
+                                           OnMakeChapter="() => MakeChapterAsync(a)"
                                            OnResolve="() => ResolveAsync(a)"
                                            OnDefer="() => DeferAsync(a)"
                                            OnDismiss="() => DismissAsync(a)" />
@@ -200,7 +205,8 @@ else if (Barony is not null)
                                            ReadOnly="true"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
-                                           Busy="_busy" />
+                                           Busy="_busy"
+                                           OnMakeChapter="() => MakeChapterAsync(a)" />
                         }
                     </div>
                 }
@@ -241,7 +247,8 @@ else if (Barony is not null)
                                                        ShowSummary="true"
                                                        CanWriteAsGm="CanWriteAsGm"
                                                        CanWriteAsBaron="CanWriteAsBaron"
-                                                       Busy="_busy" />
+                                                       Busy="_busy"
+                                                       OnMakeChapter="() => MakeChapterAsync(a)" />
                                     }
                                 </div>
                             }
@@ -488,6 +495,84 @@ else if (Barony is not null)
 
             await ReloadAsync();
             _snackBar.Add("Project added.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task MakeChapterAsync(BaronAudienceDTO a)
+    {
+        if (Barony is null)
+            return;
+
+        _busy = true;
+        try
+        {
+            var chapterName = BaronAudienceChapter.FormatName(Barony.Year, Barony.Season, a.Title);
+            var campaigns = (await _campaignRepository.GetAll(Barony.CharacterId)).ToList();
+            var campaign = campaigns.FirstOrDefault(c =>
+                                 string.Equals(c.Name, Barony.Name, StringComparison.OrdinalIgnoreCase))
+                           ?? campaigns.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
+
+            if (campaign is null || campaign.Id <= 0)
+            {
+                _snackBar.Add("No campaign found for this baron. Create a barony campaign first.", Severity.Warning);
+                return;
+            }
+
+            var existing = (await _chapterRepository.GetAll(campaign.Id))
+                .FirstOrDefault(c => string.Equals(c.Name, chapterName, StringComparison.OrdinalIgnoreCase));
+
+            ChapterDTO chapter;
+            var createdNow = false;
+            if (existing is not null)
+            {
+                chapter = existing;
+            }
+            else
+            {
+                chapter = await _chapterRepository.Create(new ChapterDTO
+                {
+                    CampaignId = campaign.Id,
+                    Name = chapterName,
+                    Description = $"From audience \"{a.Title}\" with {a.PetitionerName} (turn {a.TurnNumber}).",
+                    CreatedDate = DateTime.Now,
+                    Characters = new List<CharacterDTO>
+                    {
+                        new() { Id = Barony.CharacterId },
+                    },
+                });
+                createdNow = true;
+            }
+
+            var alreadyLinked = a.Exchanges.Any(x =>
+                string.Equals(x.SpeakerName, AudiencePanel.ChapterSpeaker, StringComparison.OrdinalIgnoreCase)
+                && x.Body.Contains($"{AudiencePanel.ChapterLinkPrefix}{chapter.Id}", StringComparison.Ordinal));
+
+            if (!alreadyLinked)
+            {
+                await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+                {
+                    AudienceId = a.Id,
+                    Body = AudiencePanel.FormatChapterExchangeBody(chapter.Name, chapter.Id),
+                    IsFromPetitioner = false,
+                    SpeakerName = AudiencePanel.ChapterSpeaker,
+                    TurnNumber = Barony.TurnNumber,
+                });
+            }
+
+            await ReloadAsync();
+            _snackBar.Add(
+                createdNow
+                    ? $"Chapter created: \"{chapter.Name}\"."
+                    : $"Chapter already exists: \"{chapter.Name}\".",
+                createdNow ? Severity.Success : Severity.Info);
         }
         catch (Exception ex)
         {

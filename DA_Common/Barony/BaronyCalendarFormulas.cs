@@ -3,7 +3,8 @@ namespace DA_Common.Barony
     /// <summary>Advances barony calendar: one turn = one season.</summary>
     public static class BaronyCalendarFormulas
     {
-        public static readonly string[] SeasonOrder = { "Winter", "Spring", "Summer", "Fall" };
+        /// <summary>Canonical order; year increments when entering Spring.</summary>
+        public static readonly string[] SeasonOrder = { "Spring", "Summer", "Fall", "Winter" };
 
         public static string NormalizeSeason(string? season)
         {
@@ -15,8 +16,12 @@ namespace DA_Common.Barony
                 if (string.Equals(s, known, StringComparison.OrdinalIgnoreCase))
                     return known;
             }
-            return "Winter";
+            return "Spring";
         }
+
+        /// <summary>Farms and village farm yield produce food in every season except Winter.</summary>
+        public static bool FarmsProduceFood(string? season) =>
+            !string.Equals(NormalizeSeason(season), "Winter", StringComparison.OrdinalIgnoreCase);
 
         public static (int Year, int Month, int TurnNumber, string Season) AdvanceOneTurn(
             int year, int month, int turnNumber, string? season)

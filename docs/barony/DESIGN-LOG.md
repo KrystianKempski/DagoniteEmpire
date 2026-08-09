@@ -5,6 +5,16 @@
 
 ---
 
+## 2026-08-09 — Kampania przy tworzeniu baronii
+
+### D-CAMP1. Seed kampanii w `CreateForCharacter`
+Gdy GM tworzy baronię dla postaci Duke, w tym samym zapisie powstaje `Campaign`
+o nazwie baronii, z baronem w `Campaign.Characters`. Bez FK `Barony↔Campaign`
+(D2 nadal obowiązuje: baronia to atrybut postaci). Cel: baron od razu ma wątek
+kampanii/threadów, bez ręcznego tworzenia kampanii.
+
+---
+
 ## 2026-08-05 — Court commanders (model B)
 
 ### D-CMD1. Gałęzie + trzon

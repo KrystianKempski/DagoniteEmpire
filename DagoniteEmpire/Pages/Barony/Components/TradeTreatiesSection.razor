@@ -23,11 +23,11 @@
                     }
                 </span>
             }
-            @if (_routeEconomy > 0m)
-            {
-                <span class="projects-summary__item">+@_routeEconomy.ToString("0.##") Economy (routes)</span>
-            }
         </span>
+        @if (_hasTreatyPpb)
+        {
+            <PpbSummaryChips Vector="@_treatyPpbGlance" />
+        }
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3 d-block">
@@ -139,7 +139,18 @@
 
     private decimal _customsPerTurn => TradeTreatyCalculator.TotalCustomsGoldPerTurn(Treaties);
     private decimal _sweetenerPerTurn => TradeTreatyCalculator.TotalSweetenerGoldPerTurn(Treaties);
-    private decimal _routeEconomy => TradeTreatyCalculator.TotalRouteEconomyBonus(Treaties);
+
+    private PpbVector _treatyPpbGlance
+    {
+        get
+        {
+            TradeTreatyCalculator.SumTreatyBonuses(Treaties, out var add, out _);
+            return add;
+        }
+    }
+
+    private bool _hasTreatyPpb =>
+        PpbCatalog.All.Any(info => _treatyPpbGlance[info.Key] != 0m);
 
     private static string FormatGoods(IEnumerable<string> keys) =>
         string.Join(", ", keys.Select(k => TradeGoodsCatalog.Find(k)?.Name ?? k));

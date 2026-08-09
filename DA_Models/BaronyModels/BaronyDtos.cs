@@ -10,9 +10,9 @@ namespace DA_Models.BaronyModels
         public int Size { get; set; }
 
         public int Year { get; set; } = 625;
-        public int Month { get; set; } = 1;
+        public int Month { get; set; } = 3;
         public int TurnNumber { get; set; } = 1;
-        public string Season { get; set; } = "Winter";
+        public string Season { get; set; } = "Spring";
 
         public decimal TreasuryGold { get; set; }
         public decimal BaronPurseGold { get; set; }

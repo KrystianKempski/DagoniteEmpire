@@ -16,7 +16,8 @@ namespace DA_Common.Barony
             "Current month in the barony calendar.";
 
         public const string MetaSeason =
-            "One turn equals one season. Current season of the year.";
+            "One turn equals one season (Spring → Summer → Autumn → Winter). "
+            + "Farms produce no food in Winter — the barony lives off granary stocks.";
 
         public const string MetaTurn =
             "Number of seasons elapsed since the barony began.";

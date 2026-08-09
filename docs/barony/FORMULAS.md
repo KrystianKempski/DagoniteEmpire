@@ -72,11 +72,13 @@ Class: `VillagePpbFormulas`. The catalog has no fixed PPB bonuses.
 | 5 | 3 |
 | other | 0 |
 
+**Winter:** farm yield is **0** (villages and map farms). Population still consumes Food (`0 − Population` for villages). Survive on granary stocks.
+
 ### PPB (additive)
 
 | PPB | Formula |
 |-----|---------|
-| Food | `FarmFood(Fertility) − Population` |
+| Food | `FarmFood(Fertility, Season) − Population` |
 | Economy | `Population / 2` |
 | Production | `Population` |
 | Loyalty | `−Population` |
@@ -166,7 +168,7 @@ Pipeline (player End Turn flag → MG Resolve Turn):
    - Auto-generated unit/map projects start as **Resource allocation** (turns do not tick until fully funded); then → **In progress**
 3. Sync `Size` = primary-domain tile count
 4. If Final Stability ≤ 0 → loyalty test (below)
-5. Advance calendar one season (`BaronyCalendarFormulas`); re-roll Conjuncture 2d6
+5. Advance calendar one season (`BaronyCalendarFormulas`: Spring → Summer → Fall → Winter; year++ on Spring); re-roll Conjuncture 2d6
 6. Reset Baron's Time: remove non-system actions; restore management to `RequiredManagementJc` (100 BT). Percent time modifiers are kept.
 7. Letter communication quotas refresh with the new turn number (inbound caps per correspondent/region; awaiting-reply lock is only for the current turn).
 8. Depleted units regenerate troops (`UnitRules.TroopRegenPerTurn`)

@@ -16,15 +16,27 @@ namespace DA_Common.Barony
             _ => 0m,
         };
 
-        public static PpbVector Compute(int population, int fertility, bool hasPalisade = false) =>
-            Compute(population, fertility, hasPalisade, TownTaxRates.Defaults);
+        /// <summary>Fertility farm yield, or 0 in Winter.</summary>
+        public static decimal FarmFoodForFertility(int fertility, string? season) =>
+            BaronyCalendarFormulas.FarmsProduceFood(season) ? FarmFoodForFertility(fertility) : 0m;
 
-        public static PpbVector Compute(int population, int fertility, bool hasPalisade, TownTaxRates taxes)
+        public static PpbVector Compute(int population, int fertility, bool hasPalisade = false) =>
+            Compute(population, fertility, hasPalisade, TownTaxRates.Defaults, season: null);
+
+        public static PpbVector Compute(int population, int fertility, bool hasPalisade, TownTaxRates taxes) =>
+            Compute(population, fertility, hasPalisade, taxes, season: null);
+
+        public static PpbVector Compute(
+            int population,
+            int fertility,
+            bool hasPalisade,
+            TownTaxRates taxes,
+            string? season)
         {
             var pop = Math.Max(0, population);
             var v = new PpbVector();
             v.EnsureSize();
-            v[Ppb.Food] = FarmFoodForFertility(fertility) - pop;
+            v[Ppb.Food] = FarmFoodForFertility(fertility, season) - pop;
             v[Ppb.Economy] = pop / 2m;
             v[Ppb.Production] = pop;
             v[Ppb.Loyalty] = -pop;
@@ -39,11 +51,13 @@ namespace DA_Common.Barony
             return v;
         }
 
-        public static string? ExplainAdditive(Ppb key, bool hasPalisade = false)
+        public static string? ExplainAdditive(Ppb key, bool hasPalisade = false, string? season = null)
         {
             var p = InputLabel;
             return key switch
             {
+                Ppb.Food when !BaronyCalendarFormulas.FarmsProduceFood(season) =>
+                    $"= 0 farm yield (Winter) − {p}",
                 Ppb.Food => $"= farm yield − {p}",
                 Ppb.Economy => $"= {p} / 2",
                 Ppb.Production => $"= {p}",
@@ -66,6 +80,6 @@ namespace DA_Common.Barony
         public static string CatalogDescription =>
             "A small village allowing farms and sawmills on distant land. Besides gold and production cost, requires 1 community relocated from elsewhere. "
             + "PPB comes from Population, tile fertility, and an optional palisade — hover each PPB value for its formula "
-            + "(Economy = Population/2, Law = −Population/2, Corruption = Population/4, Loyalty = −Population; Food = farm yield − Population).";
+            + "(Economy = Population/2, Law = −Population/2, Corruption = Population/4, Loyalty = −Population; Food = farm yield − Population; farm yield is 0 in Winter).";
     }
 }

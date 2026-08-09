@@ -139,48 +139,67 @@ namespace DA_Common.Barony
             return result;
         }
 
-        /// <summary>PPB rows for Domain Panel (Decrees and Technologies): one per available good + luxury + route economy.</summary>
+        public const string DomainPanelRowLabel = "Trade Goods and treaties";
+
+        /// <summary>
+        /// Single Domain Panel (Decrees and Technologies) row: sum of available goods, luxury,
+        /// route economy, and net treaty gold (customs / sweeteners).
+        /// </summary>
         public static List<(string Label, PpbVector Additive, PpbVector Percent, string? Note)> DomainPanelBonusParts(
             TradeGoodAvailabilitySnapshot availability,
             IEnumerable<BaronyTradeTreaty> treaties,
             string? luxuryAccessKey)
         {
-            var parts = new List<(string Label, PpbVector Additive, PpbVector Percent, string? Note)>();
+            var treatyList = treaties as IList<BaronyTradeTreaty> ?? treaties.ToList();
+            var additive = new PpbVector();
+            var percent = new PpbVector();
+            var noteParts = new List<string>();
 
-            foreach (var good in TradeGoodsCatalog.All
-                         .Where(g => availability.AvailableKeys.Contains(g.Key))
-                         .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase))
+            var availableGoods = TradeGoodsCatalog.All
+                .Where(g => availability.AvailableKeys.Contains(g.Key))
+                .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (availableGoods.Count > 0)
             {
-                parts.Add((
-                    good.Name,
-                    good.BonusAdditive.Clone(),
-                    good.BonusPercent.Clone(),
-                    availability.SourceLabel(good.Key)));
+                TradeGoodsBonusAggregator.Sum(availableGoods, out var goodsAdd, out var goodsPct);
+                additive.AddInPlace(goodsAdd);
+                percent.AddInPlace(goodsPct);
+                noteParts.Add($"{availableGoods.Count} available good{(availableGoods.Count == 1 ? "" : "s")}");
             }
 
             var luxury = LuxuryGoodsAccessCatalog.Find(luxuryAccessKey);
             if (PpbCatalog.All.Any(info => luxury.BonusAdditive[info.Key] != 0m))
             {
-                parts.Add((
-                    $"Luxury access — {luxury.NameEn}",
-                    luxury.BonusAdditive.Clone(),
-                    new PpbVector(),
-                    "Always active"));
+                additive.AddInPlace(luxury.BonusAdditive);
+                noteParts.Add($"luxury — {luxury.NameEn}");
             }
 
-            var routeEconomy = TradeTreatyCalculator.TotalRouteEconomyBonus(treaties);
+            var routeEconomy = TradeTreatyCalculator.TotalRouteEconomyBonus(treatyList);
             if (routeEconomy != 0m)
             {
-                var add = new PpbVector();
-                add[Ppb.Economy] = routeEconomy;
-                parts.Add((
-                    "Trade route economy",
-                    add,
-                    new PpbVector(),
-                    "From active trade treaties"));
+                additive[Ppb.Economy] += routeEconomy;
+                noteParts.Add($"route economy {PpbFormat.Additive(routeEconomy)}");
             }
 
-            return parts;
+            // Positive outflow = gold leaving the barony → negative Treasury on Domain Panel.
+            var goldOutflow = TradeTreatyCalculator.TotalGoldOutflowPerTurn(treatyList);
+            if (goldOutflow != 0m)
+            {
+                additive[Ppb.Treasury] -= goldOutflow;
+                noteParts.Add($"customs & sweeteners {PpbFormat.Additive(-goldOutflow)} Gold");
+            }
+
+            if (!PpbCatalog.All.Any(info => additive[info.Key] != 0m || percent[info.Key] != 0m))
+                return new List<(string Label, PpbVector Additive, PpbVector Percent, string? Note)>();
+
+            return new List<(string Label, PpbVector Additive, PpbVector Percent, string? Note)>
+            {
+                (
+                    DomainPanelRowLabel,
+                    additive,
+                    percent,
+                    noteParts.Count == 0 ? null : string.Join(" · ", noteParts)),
+            };
         }
     }
 }

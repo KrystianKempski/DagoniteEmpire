@@ -143,6 +143,7 @@
     [Parameter] public List<TerrainTileDTO> Tiles { get; set; } = new();
     [Parameter] public List<FiefDTO> Fiefs { get; set; } = new();
     [Parameter] public decimal VassalTributePercent { get; set; } = FiefTributeFormulas.DefaultPercent;
+    [Parameter] public string? Season { get; set; }
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
@@ -162,7 +163,7 @@
         VisibleImprovements.Where(i => i.IsActive);
 
     private List<PpbModifierRow> SectionRows =>
-        BaronyCalc.ImprovementRows(Improvements, Tiles, Fiefs, VassalTributePercent);
+        BaronyCalc.ImprovementRows(Improvements, Tiles, Fiefs, VassalTributePercent, Season);
 
     private PpbVector AdditiveSum => BaronyCalc.SumAdditive(SectionRows);
     private PpbVector PercentSum => BaronyCalc.SumPercent(SectionRows);
@@ -172,8 +173,11 @@
     private static string DisplayLabel(TerrainImprovementDTO item) => BaronyCalc.ImprovementDisplayLabel(item);
 
     private PpbVector EffectiveAdditive(TerrainImprovementDTO item)
-        => BaronyCalc.ApplyVassalVillageGoldShare(
+    {
+        var additive = BaronyCalc.ApplyVassalVillageGoldShare(
             item, TilesById, FiefsById, VassalTributePercent, out _);
+        return BaronyCalc.ApplyWinterFarmFoodHalt(item, additive, Season, out _);
+    }
 
     private string? NameTooltip(TerrainImprovementDTO item)
     {
@@ -221,7 +225,7 @@
         if (!BaronyCalc.IsVillage(item))
             return null;
 
-        var baseTip = VillagePpbFormulas.ExplainAdditive(key, item.HasPalisade);
+        var baseTip = VillagePpbFormulas.ExplainAdditive(key, item.HasPalisade, Season);
         if (key != Ppb.Treasury || !IsVassal(item))
             return baseTip;
 

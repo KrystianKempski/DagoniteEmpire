@@ -77,7 +77,7 @@ public class TradeGoodAvailabilityTests
     }
 
     [Fact]
-    public void DomainPanelBonusParts_IncludesAvailableGoodsLuxuryAndRoute()
+    public void DomainPanelBonusParts_SumsIntoSingleTradeGoodsAndTreatiesRow()
     {
         var treaty = new BaronyTradeTreaty
         {
@@ -94,8 +94,6 @@ public class TradeGoodAvailabilityTests
             },
         };
 
-        // Use a known lord key with Wealth so route economy is non-zero if possible;
-        // otherwise parts still include the spice good.
         var availability = TradeGoodAvailability.Resolve(
             new[] { "Apiary" },
             new[] { treaty },
@@ -106,8 +104,60 @@ public class TradeGoodAvailabilityTests
             new[] { treaty },
             LuxuryGoodsAccessCatalog.Insufficient);
 
-        Assert.Contains(parts, p => p.Label == "Honey & wax");
-        Assert.Contains(parts, p => p.Label == "Spices");
-        Assert.Contains(parts, p => p.Label.StartsWith("Luxury access", StringComparison.Ordinal));
+        var row = Assert.Single(parts);
+        Assert.Equal(TradeGoodAvailability.DomainPanelRowLabel, row.Label);
+        Assert.Equal(-1m, row.Additive[Ppb.Loyalty]); // honey +1, insufficient luxury −2
+        Assert.Equal(1m, row.Additive[Ppb.Science]);
+        Assert.Equal(2m, row.Additive[Ppb.Economy]); // spices
+        Assert.Equal(-2m, row.Additive[Ppb.Stability]); // insufficient luxury
+        Assert.Contains("2 available goods", row.Note);
+        Assert.Contains("luxury", row.Note, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void DomainPanelBonusParts_IncludesCustomsAndSweetenersAsTreasury()
+    {
+        var treaty = new BaronyTradeTreaty
+        {
+            Id = "t-gold",
+            CounterpartyLordKey = "corlin",
+            Paragraphs =
+            {
+                new TradeTreatyParagraph
+                {
+                    LordKey = "olgred",
+                    IsDestination = false,
+                    CustomsGoldPerTurn = 4,
+                },
+                new TradeTreatyParagraph
+                {
+                    LordKey = "corlin",
+                    IsDestination = true,
+                    SweetenerGoldPerTurn = 5,
+                    CounterpartyGrantsGoodKeys = { "horses" },
+                },
+            },
+        };
+
+        var availability = TradeGoodAvailability.Resolve(
+            Array.Empty<string>(),
+            new[] { treaty },
+            null);
+
+        var parts = TradeGoodAvailability.DomainPanelBonusParts(
+            availability,
+            new[] { treaty },
+            LuxuryGoodsAccessCatalog.Basic);
+
+        var row = Assert.Single(parts);
+        Assert.Equal(TradeGoodAvailability.DomainPanelRowLabel, row.Label);
+        Assert.Equal(-9m, row.Additive[Ppb.Treasury]);
+        Assert.Equal(1m, row.Additive[Ppb.Defense]);
+        Assert.Equal(1m, row.Additive[Ppb.Production]);
+
+        TradeTreatyCalculator.SumTreatyBonuses(new[] { treaty }, out var add, out _);
+        Assert.Equal(-9m, add[Ppb.Treasury]);
+        Assert.Equal(1m, add[Ppb.Defense]);
+        Assert.Equal(1m, add[Ppb.Production]);
     }
 }

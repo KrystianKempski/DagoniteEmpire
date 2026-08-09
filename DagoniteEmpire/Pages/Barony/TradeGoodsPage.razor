@@ -28,12 +28,13 @@ else
     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
         Goods are available when produced by a city building or terrain improvement, or received via a trade treaty.
         Only locally produced goods (or MG overrides) can be granted in treaties — treaty imports cannot be re-exported.
-        PPB totals also include luxury access and trade-route economy.
+        Available goods, luxury access, route economy, and treaty gold (customs / sweeteners) all feed Domain Panel → Decrees and Technologies.
     </MudText>
 
     <TradeGoodsPpbSummarySection Selected="@AvailableGoods"
                                  TreatyGoods="@_noExtraTreatyGoods"
                                  TreatyRouteEconomyBonus="@_treatyRouteEconomy"
+                                 TreatyGoldOutflowPerTurn="@_treatyGoldOutflow"
                                  LuxuryAccessKey="@_luxuryKey" />
 
     <TradeTreatiesSection BaronyId="@BaronyId"
@@ -75,6 +76,7 @@ else
         TradeGoodsCatalog.All.Where(g => _availability.AvailableKeys.Contains(g.Key)).ToList();
 
     private decimal _treatyRouteEconomy => TradeTreatyCalculator.TotalRouteEconomyBonus(_treaties);
+    private decimal _treatyGoldOutflow => TradeTreatyCalculator.TotalGoldOutflowPerTurn(_treaties);
 
     protected override async Task OnInitializedAsync()
     {

@@ -4,12 +4,13 @@
     <Summary>
         <span class="projects-summary__item">@SelectedCount good@(SelectedCount == 1 ? "" : "s")</span>
         <span class="projects-summary__item">@LuxuryTier.NameEn</span>
+        <PpbSummaryChips Vector="@GlanceAdditive" />
     </Summary>
     <ChildContent>
-        @if (SelectedCount == 0 && !HasLuxuryBonus && TreatyRouteEconomyBonus == 0m)
+        @if (SelectedCount == 0 && !HasLuxuryBonus && TreatyRouteEconomyBonus == 0m && TreatyGoldOutflowPerTurn == 0m)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                Available goods (from production, trade, or MG override) and luxury access contribute to the combined PPB bonus.
+                Available goods (from production, trade, or MG override), luxury access, route economy, and treaty gold contribute to Domain Panel PPB.
             </MudText>
         }
         else
@@ -43,6 +44,8 @@
     [Parameter] public IReadOnlyList<TradeGoodEntry> Selected { get; set; } = Array.Empty<TradeGoodEntry>();
     [Parameter] public IReadOnlyList<TradeGoodEntry> TreatyGoods { get; set; } = Array.Empty<TradeGoodEntry>();
     [Parameter] public decimal TreatyRouteEconomyBonus { get; set; }
+    /// <summary>Net gold leaving the barony per turn (customs + sweeteners). Applied as −Treasury.</summary>
+    [Parameter] public decimal TreatyGoldOutflowPerTurn { get; set; }
     [Parameter] public string LuxuryAccessKey { get; set; } = LuxuryGoodsAccessCatalog.DefaultKey;
 
     private int SelectedCount =>
@@ -55,18 +58,34 @@
     private bool HasLuxuryBonus =>
         PpbCatalog.All.Any(info => LuxuryTier.BonusAdditive[info.Key] != 0m);
 
+    private void BuildTotals(out PpbVector add, out PpbVector pct)
+    {
+        var merged = Selected.Concat(TreatyGoods)
+            .GroupBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+        TradeGoodsBonusAggregator.Sum(merged, out add, out pct);
+        add.AddInPlace(LuxuryTier.BonusAdditive);
+        if (TreatyRouteEconomyBonus != 0m)
+            add[Ppb.Economy] += TreatyRouteEconomyBonus;
+        if (TreatyGoldOutflowPerTurn != 0m)
+            add[Ppb.Treasury] -= TreatyGoldOutflowPerTurn;
+    }
+
+    private PpbVector GlanceAdditive
+    {
+        get
+        {
+            BuildTotals(out var add, out _);
+            return add;
+        }
+    }
+
     private IEnumerable<PpbRow> Rows
     {
         get
         {
-            var merged = Selected.Concat(TreatyGoods)
-                .GroupBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.First())
-                .ToList();
-            TradeGoodsBonusAggregator.Sum(merged, out var add, out var pct);
-            add.AddInPlace(LuxuryTier.BonusAdditive);
-            if (TreatyRouteEconomyBonus != 0m)
-                add[Ppb.Economy] += TreatyRouteEconomyBonus;
+            BuildTotals(out var add, out var pct);
             foreach (var info in PpbCatalog.All)
             {
                 var a = add[info.Key];
