@@ -4,7 +4,7 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject IDialogService _dialogService
 
-<PageTitle>Dagonite Empire | Offices</PageTitle>
+<PageTitle>Dagonite Empire | Court</PageTitle>
 
 @if (IsLoading)
 {
@@ -16,7 +16,7 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Offices">
+    <BaronyPageHeader Title="Court">
         <Summary>
             <div class="offices-cost-total" title="Combined upkeep of all offices per turn">
                 <span class="offices-cost-total__label">Σ advisor upkeep</span>

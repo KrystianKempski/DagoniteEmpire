@@ -4,7 +4,7 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject ICharacterRepository _characterRepo
 
-<PageTitle>Dagonite Empire | Baron Card</PageTitle>
+<PageTitle>Dagonite Empire | Baron</PageTitle>
 
 @if (IsLoading)
 {
@@ -16,7 +16,7 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Baron Card" />
+    <BaronyPageHeader Title="Baron" />
 
     <BaronInfluenceSection Barony="@Barony"
                            Character="@_character"

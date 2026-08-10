@@ -325,9 +325,11 @@ namespace DA_Common.Barony
             SoftMetals => "/icons/copper.svg",
             Iron or Silver or Gold or Dagoferryt => "/icons/metal-bar.svg",
             Fishery => "/icons/fishing.svg",
-            Stone or Granite or Tarnit => "/icons/stone-block.svg",
+            Stone => "/icons/stone-block-stroke.svg",
+            Granite or Tarnit => "/icons/stone-block.svg",
             Obsidian or Sulfur => "/icons/silex.svg",
-            Clay or Salt => "/icons/coal-pile.svg",
+            Clay => "/icons/coal-pile.svg",
+            Salt => "/icons/coal-pile-stroke.svg",
             Ironwood or ElvenAlder or ShipbuildingWood => "/icons/wood-pile.svg",
             Gemstones => "/icons/crystal-growth.svg",
             Woad => "/icons/three-leaves.svg",
@@ -363,11 +365,20 @@ namespace DA_Common.Barony
             _ => "#888888",
         };
 
-        /// <summary>Near-white fills (e.g. building stone) need a black outline on pale UI backgrounds.</summary>
+        /// <summary>
+        /// Near-white fills that still use CSS masks — soft drop-shadow outline.
+        /// Stone / Salt use <see cref="UsesBakedStrokeIcon"/> instead (real black SVG stroke).
+        /// </summary>
         public static bool NeedsDarkOutline(string? key) =>
-            string.Equals(key, Stone, StringComparison.Ordinal)
-            || string.Equals(key, Salt, StringComparison.Ordinal)
-            || string.Equals(key, Silver, StringComparison.Ordinal);
+            string.Equals(key, Silver, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Icon is a ready-made SVG (white fill + black stroke). Render as &lt;img&gt;,
+        /// not as a CSS mask — otherwise the stroke would inherit the resource fill color.
+        /// </summary>
+        public static bool UsesBakedStrokeIcon(string? key) =>
+            string.Equals(key, Stone, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, Salt, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Map-placed terrain improvements (stored as TerrainImprovement.Name).</summary>

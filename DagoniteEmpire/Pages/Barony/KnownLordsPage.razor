@@ -3,7 +3,7 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 
-<PageTitle>Dagonite Empire | Known lords</PageTitle>
+<PageTitle>Dagonite Empire | Lords</PageTitle>
 
 @if (IsLoading)
 {
@@ -15,7 +15,7 @@ else if (LoadError is not null)
 }
 else
 {
-    <BaronyPageHeader Title="Known lords">
+    <BaronyPageHeader Title="Lords">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@_lords.Count lord@(_lords.Count == 1 ? "" : "s")</span>

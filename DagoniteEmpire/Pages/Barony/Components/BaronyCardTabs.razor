@@ -33,7 +33,9 @@
              @onkeydown="e => OnTabKeyDown(e, tab.Href)">
             @if (!string.IsNullOrEmpty(tab.SvgIcon))
             {
-                <img src="@tab.SvgIcon" class="barony-tabbar__svg-icon" alt="" />
+                <img src="@tab.SvgIcon"
+                     class="barony-tabbar__svg-icon @(tab.Key == "relations" ? "barony-tabbar__svg-icon--lg" : "")"
+                     alt="" />
             }
             else if (!string.IsNullOrEmpty(tab.Icon))
             {
@@ -55,18 +57,18 @@
         new("budget", "Budget", "/barony/budget", SvgIcon: "/" + MyIcon.TwoCoins),
         new("projects", "Projects", "/barony/projects", SvgIcon: "/" + MyIcon.GearHammer),
         new("army", "Army", "/barony/army", Icons.Material.Filled.Shield),
-        new("battle-map", "Battle Map", "/barony/battle-map", Icons.Material.Filled.Map),
+        new("battle-map", "Battle", "/barony/battle-map", SvgIcon: "/" + MyIcon.AxeSword),
         new("buildings", "Buildings", "/barony/buildings", SvgIcon: "/" + MyIcon.WoodCabinBlack),
-        new("offices", "Offices", "/barony/offices", Icons.Material.Filled.Groups),
+        new("offices", "Court", "/barony/offices", SvgIcon: "/" + MyIcon.People),
         new("terrain", "Terrain", "/barony/terrain", SvgIcon: "/" + MyIcon.WindmillBlack),
-        new("character-card", "Baron Card", "/barony/character-card", SvgIcon: "/" + MyIcon.JewelCrown),
+        new("character-card", "Baron", "/barony/character-card", SvgIcon: "/" + MyIcon.JewelCrown),
         new("letters", "Letters", "/barony/letters", SvgIcon: "/" + MyIcon.WaxSeal),
         new("audiences", "Audiences", "/barony/audiences", SvgIcon: "/" + MyIcon.TiedScroll),
         new("lords-seat", "Lord's Seat", "/barony/lords-seat", Icons.Material.Filled.Castle),
-        new("relations", "Relations", "/barony/relations", Icons.Material.Filled.Handshake),
-        new("known-lords", "Known lords", "/barony/known-lords", Icons.Material.Filled.PersonSearch),
+        new("relations", "Relations", "/barony/relations", SvgIcon: "/" + MyIcon.ShakingHands),
+        new("known-lords", "Lords", "/barony/known-lords", SvgIcon: "/" + MyIcon.VerticalBanner),
         new("march-map", "March map", "/barony/march-map", SvgIcon: "/" + MyIcon.Compass),
-        new("trade-goods", "Trade goods", "/barony/trade-goods", SvgIcon: "/" + MyIcon.WoodenCrate),
+        new("trade-goods", "Trade", "/barony/trade-goods", SvgIcon: "/" + MyIcon.Trade),
     };
 
     private List<TabItem> _orderedTabs = DefaultTabs.ToList();

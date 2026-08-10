@@ -14,7 +14,7 @@
 @inject ILogger<BattleMapPage> Logger
 @implements IAsyncDisposable
 
-<PageTitle>Dagonite Empire | Battle Map</PageTitle>
+<PageTitle>Dagonite Empire | Battle</PageTitle>
 
 @if (IsLoading)
 {
@@ -37,7 +37,7 @@ else if (!CanManageAsMg && !Map.IsActive)
 else
 {
     <div class="bbm-page">
-        <BaronyPageHeader Title="Battle Map" ShowSectionToggle="false">
+        <BaronyPageHeader Title="Battle" ShowSectionToggle="false">
             <Summary>
                 <span class="bbm-phase-chip">@PhaseLabel</span>
                 @if (IsMovementPhase && ActiveToken is not null)

@@ -35,6 +35,7 @@ else if (Barony is not null)
                 {
                     <MudButton Variant="Variant.Outlined"
                                Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="@(() => CreateThreadAsync(isInbound: false))"
                                Disabled="@_busy">
@@ -44,8 +45,8 @@ else if (Barony is not null)
                 @if (CanWriteAsGm)
                 {
                     <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
                                Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--solid"
                                StartIcon="@Icons.Material.Filled.Mail"
                                OnClick="@(() => CreateThreadAsync(isInbound: true))"
                                Disabled="@_busy">
@@ -234,8 +235,8 @@ else if (Barony is not null)
                         </MudText>
                         <MudButton Variant="Variant.Outlined"
                                    Size="Size.Small"
+                                   Class="barony-turn-btn barony-turn-btn--ghost mt-2"
                                    StartIcon="@Icons.Material.Filled.Edit"
-                                   Class="mt-2"
                                    OnClick="BeginEditLastLetterAsync"
                                    Disabled="@_busy">
                             Edit last letter
@@ -272,10 +273,13 @@ else if (Barony is not null)
                         <div class="baron-mail__composer-actions">
                             @if (_editingLastLetter)
                             {
-                                <MudButton Variant="Variant.Outlined" OnClick="CancelEditLastLetterAsync" Disabled="@_busy">
+                                <MudButton Variant="Variant.Outlined"
+                                           Class="barony-turn-btn barony-turn-btn--ghost"
+                                           OnClick="CancelEditLastLetterAsync"
+                                           Disabled="@_busy">
                                     Cancel
                                 </MudButton>
-                                <MudButton Class="baron-influence-save-btn"
+                                <MudButton Class="barony-turn-btn barony-turn-btn--solid"
                                            Variant="Variant.Filled"
                                            OnClick="SaveEditAsync"
                                            Disabled="@_busy">
@@ -284,7 +288,7 @@ else if (Barony is not null)
                             }
                             else
                             {
-                                <MudButton Class="baron-influence-save-btn"
+                                <MudButton Class="barony-turn-btn barony-turn-btn--solid"
                                            Variant="Variant.Filled"
                                            OnClick="SendAsync"
                                            Disabled="@_busy">

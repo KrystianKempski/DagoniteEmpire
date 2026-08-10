@@ -3853,6 +3853,11 @@ a.city-building-name-text--link:hover {
     opacity: 0.9;
 }
 
+.barony-tabbar__svg-icon--lg {
+    width: 1.35rem;
+    height: 1.35rem;
+}
+
 /* --- Letters mailbox (Gmail-like) --- */
 .baron-mail {
     display: grid;
@@ -4962,13 +4967,29 @@ a.city-building-name-text--link:hover {
     background: #ece0c4 !important;
 }
 
-.baron-influence-dialog .baron-influence-save-btn {
-    background: #9c7a33 !important;
-    color: #fbf8f1 !important;
+/* Gold primary action — works on pages and in dialogs (not only inside .baron-influence-dialog). */
+.baron-influence-save-btn.mud-button-filled,
+.barony-scope .mud-button-filled.mud-button-filled-primary,
+.mud-dialog.baron-influence-dialog .mud-button-filled.mud-button-filled-primary,
+.mud-dialog.barony-dialog .mud-button-filled.mud-button-filled-primary {
+    background: var(--barony-accent, #9c7a33) !important;
+    color: var(--barony-surface, #fbf8f1) !important;
+    box-shadow: none !important;
 }
 
-.baron-influence-dialog .baron-influence-save-btn:hover {
+.baron-influence-save-btn.mud-button-filled:hover:not(:disabled),
+.barony-scope .mud-button-filled.mud-button-filled-primary:hover:not(:disabled),
+.mud-dialog.baron-influence-dialog .mud-button-filled.mud-button-filled-primary:hover:not(:disabled),
+.mud-dialog.barony-dialog .mud-button-filled.mud-button-filled-primary:hover:not(:disabled) {
     background: #866828 !important;
+}
+
+.baron-influence-save-btn.mud-button-filled:disabled,
+.barony-scope .mud-button-filled.mud-button-filled-primary:disabled,
+.mud-dialog.baron-influence-dialog .mud-button-filled.mud-button-filled-primary:disabled,
+.mud-dialog.barony-dialog .mud-button-filled.mud-button-filled-primary:disabled {
+    background: color-mix(in srgb, var(--barony-accent, #9c7a33) 45%, var(--barony-border, #c3b696)) !important;
+    color: color-mix(in srgb, var(--barony-surface, #fbf8f1) 70%, transparent) !important;
 }
 
 /* Battle XP summary needs room for all columns at once. */
@@ -6123,21 +6144,41 @@ a.city-building-name-text--link:hover {
     box-sizing: border-box;
 }
 
-.barony-terrain-map__scroll {
-    overflow: auto;
+/* Fill remaining viewport so map scrollbars sit at the bottom of the visible page
+   (above the fixed tabbar), instead of only at the far bottom of a tall grid. */
+.terrain-page {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100dvh - 64px - 12px - 96px);
+}
+
+.terrain-page > .barony-terrain-map {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
     max-width: 100%;
-    padding: 4px 0 12px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-terrain-map__scroll {
+    flex: 1 1 auto;
+    min-height: 12rem;
+    width: 100%;
+    max-width: 100%;
+    overflow: auto;
+    padding: 4px 0 8px 0;
 }
 
 .barony-terrain-map {
-    width: fit-content;
+    width: 100%;
     max-width: 100%;
 }
 
 .barony-terrain-cell {
     position: relative;
-    width: var(--terrain-cell-size, 60px);
-    height: var(--terrain-cell-size, 60px);
+    width: var(--terrain-cell-size, 90px);
+    height: var(--terrain-cell-size, 90px);
     box-sizing: border-box;
     padding: 0;
     border: none;
@@ -6317,10 +6358,27 @@ a.city-building-name-text--link:hover {
     height: 1.35rem;
 }
 
+.barony-terrain-cell__resource-icon--img,
+.terrain-resource-option__icon--img,
+.trade-good-icon--img {
+    display: block;
+    object-fit: contain;
+    background: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    filter: none;
+}
+
 .terrain-resource-option__icon,
 .barony-resource-hud__icon {
     width: 1.25rem;
     height: 1.25rem;
+}
+
+.terrain-resource-option__icon--img {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
 }
 
 .barony-terrain-cell__improvement {
@@ -6358,6 +6416,22 @@ a.city-building-name-text--link:hover {
     height: 1.69rem;
 }
 
+.barony-terrain-cell__build-hint {
+    z-index: 12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.barony-terrain-cell__build-hint-icon {
+    width: 2.1rem;
+    height: 2.1rem;
+    object-fit: contain;
+    opacity: 0.42;
+    filter: drop-shadow(0 0 1.5px rgba(251, 248, 241, 0.85));
+}
+
 .barony-terrain-cell--clickable {
     cursor: pointer;
 }
@@ -6375,12 +6449,14 @@ a.city-building-name-text--link:hover {
     padding: 0 2px;
     font-size: 0.55rem;
     font-weight: 700;
-    line-height: 1.05;
+    line-height: 1.1;
     color: var(--barony-ink);
     text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: break-word;
+    word-break: break-word;
     text-shadow:
         0 0 2px rgba(251, 248, 241, 0.95),
         0 0 3px rgba(251, 248, 241, 0.9);
@@ -6444,8 +6520,13 @@ a.city-building-name-text--link:hover {
     display: none;
 }
 
-.terrain-page__intro {
-    margin-bottom: 10px !important;
+.terrain-page__mg-editor .terrain-page__brushes {
+    margin-bottom: 0;
+}
+
+.terrain-page__mg-editor .terrain-page__layers {
+    margin-top: 12px;
+    margin-bottom: 0;
 }
 
 .terrain-page__brushes {
@@ -6537,6 +6618,31 @@ a.city-building-name-text--link:hover {
     margin-bottom: 12px;
 }
 
+.terrain-page__layers .terrain-layer-chip.mud-chip {
+    text-transform: none;
+    letter-spacing: 0.01em;
+    font-weight: 600;
+    border-color: var(--barony-border-strong) !important;
+    color: var(--barony-ink) !important;
+    background: var(--barony-surface) !important;
+}
+
+.terrain-page__layers .terrain-layer-chip--on.mud-chip {
+    background: var(--barony-accent) !important;
+    border-color: var(--barony-accent) !important;
+    color: var(--barony-surface, #fbf8f1) !important;
+}
+
+.terrain-page__layers .terrain-layer-chip.mud-chip:hover:not(.mud-disabled) {
+    background: var(--barony-accent-soft) !important;
+}
+
+.terrain-page__layers .terrain-layer-chip--on.mud-chip:hover:not(.mud-disabled) {
+    background: #866828 !important;
+    border-color: #866828 !important;
+    color: var(--barony-surface, #fbf8f1) !important;
+}
+
 .terrain-page__selection {
     margin-bottom: 10px;
 }
@@ -6621,6 +6727,33 @@ a.city-building-name-text--link:hover {
     border-color: var(--barony-accent);
     outline: 2px solid var(--barony-accent);
     outline-offset: 1px;
+}
+
+.terrain-resource-option {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    width: 5.75rem;
+    max-width: 5.75rem;
+    height: auto;
+    min-height: 3.25rem;
+    padding: 6px 6px;
+    text-align: center;
+    white-space: normal;
+    overflow: visible;
+}
+
+.terrain-resource-option__label {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.15;
 }
 
 .terrain-type-option .mud-icon-root {
@@ -8143,11 +8276,35 @@ a.city-building-name-text--link:hover {
     filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.45));
 }
 
-/* Near-white mask fills (building stone, salt, …) on pale backgrounds */
+.trade-good-icon--img {
+    background: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    filter: none;
+    object-fit: contain;
+}
+
+/* Near-white mask fills (stone, salt, silver, …) on pale backgrounds */
 .resource-icon--dark-outline {
-    filter: drop-shadow(0 0 0.45px #000)
-            drop-shadow(0 0 0.9px #000)
-            drop-shadow(0 0 1.35px rgba(0, 0, 0, 0.85));
+    filter:
+        drop-shadow(1px 0 0 #000)
+        drop-shadow(-1px 0 0 #000)
+        drop-shadow(0 1px 0 #000)
+        drop-shadow(0 -1px 0 #000)
+        drop-shadow(0 0 0.75px #000)
+        drop-shadow(0 0 1.25px rgba(0, 0, 0, 0.9));
+}
+
+/* Beat the default resource-icon drop-shadow on the terrain map / brush */
+.barony-terrain-cell__resource-icon.resource-icon--dark-outline,
+.terrain-resource-option__icon.resource-icon--dark-outline {
+    filter:
+        drop-shadow(1px 0 0 #000)
+        drop-shadow(-1px 0 0 #000)
+        drop-shadow(0 1px 0 #000)
+        drop-shadow(0 -1px 0 #000)
+        drop-shadow(0 0 0.75px #000)
+        drop-shadow(0 0 1.25px rgba(0, 0, 0, 0.9));
 }
 
 .trade-good-chip-row {

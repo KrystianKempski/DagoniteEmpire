@@ -1,9 +1,11 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <div class="barony-terrain-map @LayerVisibilityClass @(PaintEnabled ? "barony-terrain-map--paint" : "")"
      @onmouseup="EndDragAsync"
      @onmouseleave="OnMapMouseLeaveAsync">
-    <div class="barony-terrain-map__scroll">
+    <div @ref="_scrollRef" class="barony-terrain-map__scroll">
         <div class="barony-terrain-grid-wrap"
              style="--terrain-cell-size: @(CellSizePx)px;">
             <div class="barony-terrain-grid"
@@ -20,10 +22,13 @@
                         var domain = GetDomain(tile?.MapDomainId);
                         var hovered = HoveredX == cx && HoveredY == cy;
                         var showFertility = ShowLayer(TerrainMapLayer.Fertility);
+                        var showBuildHint = hovered
+                            && CanProposeBuildAt is not null
+                            && CanProposeBuildAt(cx, cy);
 
                         <div role="button"
                              tabindex="0"
-                             class="barony-terrain-cell @(hovered ? "barony-terrain-cell--hovered" : "") @(ClickEnabled ? "barony-terrain-cell--clickable" : "")"
+                             class="barony-terrain-cell @(hovered ? "barony-terrain-cell--hovered" : "") @(ClickEnabled ? "barony-terrain-cell--clickable" : "") @(showBuildHint ? "barony-terrain-cell--buildable" : "")"
                              @onmousedown="() => OnCellMouseDownAsync(cx, cy)"
                              @onmousedown:preventDefault="@PaintEnabled"
                              @onclick="() => OnCellClickAsync(cx, cy)"
@@ -107,9 +112,19 @@
                             @if (ShowLayer(TerrainMapLayer.Resources) && !string.IsNullOrWhiteSpace(tile?.Resource))
                             {
                                 <span class="barony-terrain-cell__layer barony-terrain-cell__resource">
-                                    <span class="barony-terrain-cell__resource-icon @(TerrainResource.NeedsDarkOutline(tile!.Resource) ? "resource-icon--dark-outline" : null)"
-                                          style="@ResourceIconStyle(tile!.Resource)"
-                                          aria-hidden="true"></span>
+                                    @if (TerrainResource.UsesBakedStrokeIcon(tile!.Resource))
+                                    {
+                                        <img src="@TerrainResource.IconUrl(tile.Resource)"
+                                             alt=""
+                                             class="barony-terrain-cell__resource-icon barony-terrain-cell__resource-icon--img"
+                                             aria-hidden="true" />
+                                    }
+                                    else
+                                    {
+                                        <span class="barony-terrain-cell__resource-icon @(TerrainResource.NeedsDarkOutline(tile!.Resource) ? "resource-icon--dark-outline" : null)"
+                                              style="@ResourceIconStyle(tile!.Resource)"
+                                              aria-hidden="true"></span>
+                                    }
                                 </span>
                             }
 
@@ -132,6 +147,15 @@
                                          alt="@construction.Name"
                                          title="@construction.Name"
                                          class="barony-terrain-cell__improvement-icon barony-terrain-cell__improvement-icon--construction" />
+                                </span>
+                            }
+
+                            @if (showBuildHint)
+                            {
+                                <span class="barony-terrain-cell__layer barony-terrain-cell__build-hint" aria-hidden="true">
+                                    <img src="/icons/hammer.svg"
+                                         alt=""
+                                         class="barony-terrain-cell__build-hint-icon" />
                                 </span>
                             }
                         </div>
@@ -158,7 +182,7 @@
 
 @code {
     [Parameter] public int GridSize { get; set; } = TerrainMapConstants.GridSize;
-    [Parameter] public int CellSizePx { get; set; } = 60;
+    [Parameter] public int CellSizePx { get; set; } = TerrainMapConstants.CellSizePx;
     [Parameter] public IReadOnlyDictionary<(int X, int Y), TerrainTileDTO> Tiles { get; set; }
         = new Dictionary<(int X, int Y), TerrainTileDTO>();
     [Parameter] public IReadOnlyDictionary<int, FiefDTO> Fiefs { get; set; }
@@ -178,6 +202,8 @@
     [Parameter] public bool PaintEnabled { get; set; }
     /// <summary>When true and not painting, cell click fires <see cref="OnCellClick"/>.</summary>
     [Parameter] public bool ClickEnabled { get; set; }
+    /// <summary>True when the baron can start a building project on this tile (hover build hint).</summary>
+    [Parameter] public Func<int, int, bool>? CanProposeBuildAt { get; set; }
     [Parameter] public EventCallback<(int? X, int? Y)> OnCellHover { get; set; }
     /// <summary>
     /// Paint a cell. <c>ContinuingStroke</c> is false on mousedown (new stroke),
@@ -187,7 +213,57 @@
     [Parameter] public EventCallback<(int X, int Y)> OnCellClick { get; set; }
     [Parameter] public EventCallback OnPaintStrokeEnd { get; set; }
 
+    private ElementReference _scrollRef;
+    private IJSObjectReference? _wheelModule;
+    private IJSObjectReference? _wheelHandle;
+    private bool _wheelAttached;
     private bool _dragPainting;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _wheelAttached)
+            return;
+
+        try
+        {
+            _wheelModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./js/terrain-map.js?v=page-scroll-wheel");
+            _wheelHandle = await _wheelModule.InvokeAsync<IJSObjectReference>(
+                "attachPageScrollWheel", _scrollRef);
+            _wheelAttached = true;
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit gone during render — ignore.
+        }
+        catch (JSException)
+        {
+            /* page-scroll wheel optional — do not break the Blazor circuit */
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_wheelHandle is not null)
+            {
+                await _wheelHandle.InvokeVoidAsync("dispose");
+                await _wheelHandle.DisposeAsync();
+            }
+
+            if (_wheelModule is not null)
+                await _wheelModule.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        finally
+        {
+            _wheelHandle = null;
+            _wheelModule = null;
+        }
+    }
 
     private async Task OnCellMouseDownAsync(int x, int y)
     {

@@ -1,10 +1,22 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<span class="trade-good-icon @(NeedsOutline ? "resource-icon--dark-outline" : null) @Class"
-      style="@IconStyle"
-      title="@(string.IsNullOrWhiteSpace(Title) ? null : Title)"
-      aria-hidden="@(string.IsNullOrWhiteSpace(Title) ? "true" : null)"
-      aria-label="@Title"></span>
+@if (UsesBakedStroke)
+{
+    <img class="trade-good-icon trade-good-icon--img @Class"
+         src="@ResolvedIconUrl"
+         alt=""
+         title="@(string.IsNullOrWhiteSpace(Title) ? null : Title)"
+         aria-hidden="@(string.IsNullOrWhiteSpace(Title) ? "true" : null)"
+         aria-label="@Title" />
+}
+else
+{
+    <span class="trade-good-icon @(NeedsOutline ? "resource-icon--dark-outline" : null) @Class"
+          style="@IconStyle"
+          title="@(string.IsNullOrWhiteSpace(Title) ? null : Title)"
+          aria-hidden="@(string.IsNullOrWhiteSpace(Title) ? "true" : null)"
+          aria-label="@Title"></span>
+}
 
 @code {
     [Parameter] public string? GoodKey { get; set; }
@@ -14,13 +26,20 @@
 
     private TradeGoodEntry? Resolved => Good ?? TradeGoodsCatalog.Find(GoodKey);
 
-    private bool NeedsOutline => TradeGoodsCatalog.NeedsDarkOutline(Resolved?.Key ?? GoodKey);
+    private string? ResolvedKey => Resolved?.Key ?? GoodKey;
+
+    private bool NeedsOutline => TradeGoodsCatalog.NeedsDarkOutline(ResolvedKey);
+
+    private bool UsesBakedStroke => TradeGoodsCatalog.UsesBakedStrokeIcon(ResolvedKey);
+
+    private string ResolvedIconUrl =>
+        Resolved?.IconUrl ?? TradeGoodsCatalog.IconUrl(GoodKey);
 
     private string IconStyle
     {
         get
         {
-            var icon = Resolved?.IconUrl ?? TradeGoodsCatalog.IconUrl(GoodKey);
+            var icon = ResolvedIconUrl;
             var color = Resolved?.ColorHex ?? TradeGoodsCatalog.ColorHex(GoodKey);
             return $"--resource-color:{color};" +
                    $"-webkit-mask-image:url('{icon}');" +

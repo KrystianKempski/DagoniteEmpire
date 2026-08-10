@@ -7,26 +7,36 @@
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
             <button type="button"
-                    class="terrain-type-option @(string.IsNullOrEmpty(Value) ? "terrain-type-option--selected" : "")"
+                    class="terrain-type-option terrain-resource-option @(string.IsNullOrEmpty(Value) ? "terrain-type-option--selected" : "")"
                     title="Clear resource"
                     aria-label="Clear resource"
                     @onclick="() => SelectAsync(null)">
                 <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" />
-                <span>None</span>
+                <span class="terrain-resource-option__label">None</span>
             </button>
             @foreach (var resource in TerrainResource.All)
             {
                 var r = resource;
                 var selected = Value == r;
                 <button type="button"
-                        class="terrain-type-option @(selected ? "terrain-type-option--selected" : "")"
+                        class="terrain-type-option terrain-resource-option @(selected ? "terrain-type-option--selected" : "")"
                         title="@TerrainResource.DisplayName(r)"
                         aria-label="@TerrainResource.DisplayName(r)"
                         @onclick="() => SelectAsync(r)">
-                    <span class="terrain-resource-option__icon @(TerrainResource.NeedsDarkOutline(r) ? "resource-icon--dark-outline" : null)"
-                          style="@IconStyle(r)"
-                          aria-hidden="true"></span>
-                    <span>@TerrainResource.DisplayName(r)</span>
+                    @if (TerrainResource.UsesBakedStrokeIcon(r))
+                    {
+                        <img src="@TerrainResource.IconUrl(r)"
+                             alt=""
+                             class="terrain-resource-option__icon terrain-resource-option__icon--img"
+                             aria-hidden="true" />
+                    }
+                    else
+                    {
+                        <span class="terrain-resource-option__icon @(TerrainResource.NeedsDarkOutline(r) ? "resource-icon--dark-outline" : null)"
+                              style="@IconStyle(r)"
+                              aria-hidden="true"></span>
+                    }
+                    <span class="terrain-resource-option__label">@TerrainResource.DisplayName(r)</span>
                 </button>
             }
         </div>

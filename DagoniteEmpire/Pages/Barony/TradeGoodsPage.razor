@@ -3,11 +3,11 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 
-<PageTitle>Dagonite Empire | Trade goods</PageTitle>
+<PageTitle>Dagonite Empire | Trade</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading trade goods...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading trade...</span>
 }
 else if (LoadError is not null)
 {
@@ -15,7 +15,7 @@ else if (LoadError is not null)
 }
 else
 {
-    <BaronyPageHeader Title="Trade goods">
+    <BaronyPageHeader Title="Trade">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@_availability.AvailableKeys.Count / @TradeGoodsCatalog.All.Count available</span>

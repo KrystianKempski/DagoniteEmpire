@@ -24,98 +24,85 @@ else
             </Summary>
         </BaronyPageHeader>
 
-        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="terrain-page__intro">
-            @GridSize×@GridSize domain map. Toggle layers to inspect terrain.
-            @(CanManageAsMg ? " Select a brush tab to paint tiles." : " Click a tile in your domain to start a building project.")
-        </MudText>
-
         @if (CanManageAsMg)
         {
-            <div class="terrain-page__brushes">
-                <MudTabs @bind-ActivePanelIndex="_brushTabIndex"
-                         Elevation="0"
-                         Rounded="false"
-                         Border="false"
-                         ApplyEffectsToContainer="false"
-                         Class="terrain-brush-tabs">
-                    <MudTabPanel Text="Off">
-                        <div class="terrain-brush">
-                            <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-                                No brush selected. Hover tiles to inspect the map.
-                            </MudText>
-                            <div class="terrain-brush__body"></div>
+            <BaronySection Title="Brushes & layers" DefaultOpen="false">
+                <ChildContent>
+                    <div class="terrain-page__mg-editor">
+                        <div class="terrain-page__brushes">
+                            <MudTabs @bind-ActivePanelIndex="_brushTabIndex"
+                                     Elevation="0"
+                                     Rounded="false"
+                                     Border="false"
+                                     ApplyEffectsToContainer="false"
+                                     Class="terrain-brush-tabs">
+                                <MudTabPanel Text="Off">
+                                    <div class="terrain-brush">
+                                        <MudText Typo="Typo.caption" Class="terrain-brush__hint">
+                                            No brush selected. Hover tiles to inspect the map.
+                                        </MudText>
+                                        <div class="terrain-brush__body"></div>
+                                    </div>
+                                </MudTabPanel>
+                                <MudTabPanel Text="Fertility">
+                                    <TerrainFertilityBrush Value="@_brushFertility"
+                                                           ValueChanged="v => _brushFertility = v" />
+                                </MudTabPanel>
+                                <MudTabPanel Text="Terrain type">
+                                    <TerrainTypeBrush SubMode="@_terrainTypeSubMode"
+                                                      SubModeChanged="v => _terrainTypeSubMode = v"
+                                                      BaseTypeValue="@_brushBaseType"
+                                                      BaseTypeValueChanged="v => _brushBaseType = v"
+                                                      FeatureValue="@_brushFeature"
+                                                      FeatureValueChanged="v => _brushFeature = v" />
+                                </MudTabPanel>
+                                <MudTabPanel Text="Domain">
+                                    <TerrainDomainBrush Domains="@_mapDomains"
+                                                        TileCountsByDomainId="@DomainTileCounts"
+                                                        SelectedDomainId="@_selectedDomainId"
+                                                        SelectedDomainIdChanged="v => _selectedDomainId = v"
+                                                        OnDomainColorChanged="OnDomainColorChangedAsync"
+                                                        OnAddDomain="OpenAddDomainDialogAsync"
+                                                        OnEditDomain="OpenEditDomainDialogAsync"
+                                                        OnDeleteDomain="DeleteDomainAsync" />
+                                </MudTabPanel>
+                                <MudTabPanel Text="Fief">
+                                    <TerrainFiefBrush Fiefs="@_fiefs"
+                                                      DomainsById="@_domainsById"
+                                                      TileCountsByFiefId="@FiefTileCounts"
+                                                      SelectedFiefId="@_selectedFiefId"
+                                                      SelectedFiefIdChanged="v => _selectedFiefId = v"
+                                                      OnFiefColorChanged="OnFiefColorChangedAsync"
+                                                      OnAddFief="OpenAddFiefDialogAsync"
+                                                      OnEditFief="OpenEditFiefDialogAsync"
+                                                      OnDeleteFief="DeleteFiefAsync" />
+                                </MudTabPanel>
+                                <MudTabPanel Text="Resources">
+                                    <TerrainResourceBrush Value="@_brushResource"
+                                                          ValueChanged="v => _brushResource = v" />
+                                </MudTabPanel>
+                                <MudTabPanel Text="Improvements">
+                                    <TerrainImprovementBrush Value="@_brushImprovement"
+                                                             ValueChanged="OnBrushImprovementChanged" />
+                                </MudTabPanel>
+                            </MudTabs>
                         </div>
-                    </MudTabPanel>
-                    <MudTabPanel Text="Fertility">
-                        <TerrainFertilityBrush Value="@_brushFertility"
-                                               ValueChanged="v => _brushFertility = v" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="Terrain type">
-                        <TerrainTypeBrush SubMode="@_terrainTypeSubMode"
-                                          SubModeChanged="v => _terrainTypeSubMode = v"
-                                          BaseTypeValue="@_brushBaseType"
-                                          BaseTypeValueChanged="v => _brushBaseType = v"
-                                          FeatureValue="@_brushFeature"
-                                          FeatureValueChanged="v => _brushFeature = v" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="Domain">
-                        <TerrainDomainBrush Domains="@_mapDomains"
-                                            TileCountsByDomainId="@DomainTileCounts"
-                                            SelectedDomainId="@_selectedDomainId"
-                                            SelectedDomainIdChanged="v => _selectedDomainId = v"
-                                            OnDomainColorChanged="OnDomainColorChangedAsync"
-                                            OnAddDomain="OpenAddDomainDialogAsync"
-                                            OnEditDomain="OpenEditDomainDialogAsync"
-                                            OnDeleteDomain="DeleteDomainAsync" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="Fief">
-                        <TerrainFiefBrush Fiefs="@_fiefs"
-                                          DomainsById="@_domainsById"
-                                          TileCountsByFiefId="@FiefTileCounts"
-                                          SelectedFiefId="@_selectedFiefId"
-                                          SelectedFiefIdChanged="v => _selectedFiefId = v"
-                                          OnFiefColorChanged="OnFiefColorChangedAsync"
-                                          OnAddFief="OpenAddFiefDialogAsync"
-                                          OnEditFief="OpenEditFiefDialogAsync"
-                                          OnDeleteFief="DeleteFiefAsync" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="Resources">
-                        <TerrainResourceBrush Value="@_brushResource"
-                                              ValueChanged="v => _brushResource = v" />
-                    </MudTabPanel>
-                    <MudTabPanel Text="Improvements">
-                        <TerrainImprovementBrush Value="@_brushImprovement"
-                                                 ValueChanged="OnBrushImprovementChanged" />
-                    </MudTabPanel>
-                </MudTabs>
-            </div>
+                        <TerrainMapLayersBar VisibleLayers="@_visibleLayers"
+                                             ShowClearLayer="@(PaintMode != TerrainPaintMode.None)"
+                                             OnToggleLayer="ToggleLayerAsync"
+                                             OnClearLayer="ClearCurrentLayerAsync" />
+                    </div>
+                </ChildContent>
+            </BaronySection>
+        }
+        else
+        {
+            <TerrainMapLayersBar VisibleLayers="@_visibleLayers"
+                                  OnToggleLayer="ToggleLayerAsync" />
         }
 
-        <div class="terrain-page__layers">
-            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Layers:</MudText>
-            @foreach (var layer in AllLayers)
-            {
-                <MudChip T="string"
-                         Variant="@(IsLayerVisible(layer) ? Variant.Filled : Variant.Outlined)"
-                         Color="@(IsLayerVisible(layer) ? Color.Primary : Color.Default)"
-                         Size="Size.Small"
-                         OnClick="@(() => ToggleLayer(layer))">
-                    @LayerLabel(layer)
-                </MudChip>
-            }
-            @if (CanManageAsMg && PaintMode != TerrainPaintMode.None)
-            {
-                <MudButton Variant="Variant.Outlined"
-                           Size="Size.Small"
-                           Color="Color.Warning"
-                           StartIcon="@Icons.Material.Filled.DeleteSweep"
-                           OnClick="ClearCurrentLayerAsync">
-                    Clear current layer
-                </MudButton>
-            }
-        </div>
-
         <TerrainMapGrid GridSize="@GridSize"
+                        CellSizePx="@TerrainMapConstants.CellSizePx"
                         Tiles="@_tileIndex"
                         Fiefs="@_fiefIndex"
                         ImprovementsByTileId="@_improvementByTileId"
@@ -127,6 +114,7 @@ else
                         HoverLines="@_hoverTileLines"
                         PaintEnabled="@(CanManageAsMg && PaintMode != TerrainPaintMode.None)"
                         ClickEnabled="@CanProposeConstruction"
+                        CanProposeBuildAt="CanProposeBuildAt"
                         OnCellHover="HoverCellAsync"
                         OnCellPaint="PaintCellAsync"
                         OnCellClick="OnTileClickAsync"
@@ -181,6 +169,7 @@ else
     private CustomImprovementDialog.CustomImprovementDraft? _customPlacementStroke;
     private bool _improvementNamingInProgress;
     private List<BuildingTemplateDTO> _improvementTemplates = new();
+    private TradeGoodAvailabilitySnapshot _tradeGoodAvailability = new();
     private int? _selectedDomainId;
     private int? _selectedFiefId;
     private int? _playerPrimaryDomainId;
@@ -233,8 +222,38 @@ else
             .Where(t => t.Kind == BuildingKind.Improvement)
             .ToList();
 
+        _tradeGoodAvailability = await _baronyRepo.GetTradeGoodAvailability(Barony.Id);
+
         await EnsurePlayerDomainAsync();
         await EnsurePlayerFiefAsync();
+    }
+
+    private bool CanProposeBuildAt(int x, int y)
+    {
+        if (!CanProposeConstruction)
+            return false;
+
+        if (!_tileIndex.TryGetValue((x, y), out var tile) || tile.Id <= 0)
+            return false;
+
+        if (_playerPrimaryDomainId is not int primaryId || tile.MapDomainId != primaryId)
+            return false;
+
+        if (_improvementByTileId.ContainsKey(tile.Id))
+            return false;
+
+        if (_constructionByTileId.ContainsKey(tile.Id))
+            return false;
+
+        if (TerrainImprovementCatalogMap.IsWaterTile(tile.BaseType))
+            return false;
+
+        var allowedNames = TerrainImprovementCatalogMap.AllowedCatalogTemplateNames(
+            tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType);
+
+        return _improvementTemplates.Any(t =>
+            allowedNames.Contains(t.Name)
+            && HerdStockRequirements.HasAccess(t.Name, _tradeGoodAvailability));
     }
 
     private async Task OnTileClickAsync((int X, int Y) cell)
@@ -274,7 +293,7 @@ else
 
         var allowedNames = TerrainImprovementCatalogMap.AllowedCatalogTemplateNames(
             tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType);
-        var availability = await _baronyRepo.GetTradeGoodAvailability(Barony.Id);
+        var availability = _tradeGoodAvailability;
         var lockedHerd = new List<string>();
         var placeable = new List<BuildingTemplateDTO>();
         foreach (var t in _improvementTemplates.Where(t => allowedNames.Contains(t.Name)))
@@ -1360,13 +1379,17 @@ else
         }
     }
 
+    private Task ToggleLayerAsync(TerrainMapLayer layer)
+    {
+        ToggleLayer(layer);
+        return Task.CompletedTask;
+    }
+
     private void ToggleLayer(TerrainMapLayer layer)
     {
         if (!_visibleLayers.Remove(layer))
             _visibleLayers.Add(layer);
     }
-
-    private bool IsLayerVisible(TerrainMapLayer layer) => _visibleLayers.Contains(layer);
 
     private IReadOnlyList<string> TileDetailLines(int x, int y)
     {
@@ -1438,15 +1461,4 @@ else
     }
 
     private string TileDetailText(int x, int y) => string.Join("; ", TileDetailLines(x, y));
-
-    private static string LayerLabel(TerrainMapLayer layer) => layer switch
-    {
-        TerrainMapLayer.Fertility => "Fertility",
-        TerrainMapLayer.TerrainType => "Terrain type",
-        TerrainMapLayer.Domain => "Domain",
-        TerrainMapLayer.Fief => "Fief",
-        TerrainMapLayer.Resources => "Resources",
-        TerrainMapLayer.Improvements => "Improvements",
-        _ => layer.ToString(),
-    };
 }

@@ -336,13 +336,13 @@ namespace DA_Common.Barony
             Set("silver", "metal-bar.svg", "#c0c7ce");
             Set("gold", "metal-bar.svg", "#d4af37");
             Set("dagoferryt", "metal-bar.svg", "#8e44ad");
-            Set("building-stone", "stone-block.svg", "#f4f1ea");
+            Set("building-stone", "stone-block-stroke.svg", "#f4f1ea");
             Set("granite", "stone-block.svg", "#7f8c8d");
             Set("tarnit", "stone-block.svg", "#9b59b6");
             Set("obsidian", "silex.svg", "#1c1c1c");
             Set("sulfur", "silex.svg", "#e6c200");
             Set("clay", "coal-pile.svg", "#c4783a");
-            Set("salt", "coal-pile.svg", "#f8f8ff");
+            Set("salt", "coal-pile-stroke.svg", "#f8f8ff");
             Set("gemstones", "emerald.svg", "#9b59b6");
 
             // Wood
@@ -403,11 +403,9 @@ namespace DA_Common.Barony
 
         public static string ColorHex(string? key) => Find(key)?.ColorHex ?? "#888888";
 
-        /// <summary>Near-white fills need a black outline on pale UI backgrounds.</summary>
+        /// <summary>Near-white mask fills that still use CSS drop-shadow outlines.</summary>
         public static bool NeedsDarkOutline(string? key) =>
-            string.Equals(key, "building-stone", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(key, "salt", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(key, "silver", StringComparison.OrdinalIgnoreCase)
+            string.Equals(key, "silver", StringComparison.OrdinalIgnoreCase)
             || string.Equals(key, "wool", StringComparison.OrdinalIgnoreCase)
             || string.Equals(key, "sheep", StringComparison.OrdinalIgnoreCase)
             || string.Equals(key, "cotton", StringComparison.OrdinalIgnoreCase)
@@ -415,6 +413,13 @@ namespace DA_Common.Barony
             || string.Equals(key, "sugar", StringComparison.OrdinalIgnoreCase)
             || string.Equals(key, "ivory", StringComparison.OrdinalIgnoreCase)
             || string.Equals(key, "saltpeter", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Ready-made SVG with black stroke — must render as &lt;img&gt;, not a CSS mask.
+        /// </summary>
+        public static bool UsesBakedStrokeIcon(string? key) =>
+            string.Equals(key, "building-stone", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "salt", StringComparison.OrdinalIgnoreCase);
 
         public static TradeGoodEntry? Find(string? key) =>
             string.IsNullOrWhiteSpace(key) ? null : _all.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
