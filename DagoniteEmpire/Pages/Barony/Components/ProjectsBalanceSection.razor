@@ -12,7 +12,7 @@
             Overview of open projects. Click a project name to jump to its card below.
         </MudText>
 
-        @if (_rows.Count == 0 && !HasAudienceRow)
+        @if (_rows.Count == 0 && !HasAudienceRow && !HasAdventureRow)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No projects to show.</MudText>
         }
@@ -110,6 +110,26 @@
                                 }
                             </tr>
                         }
+
+                        @if (HasAdventureRow)
+                        {
+                            var adventureOutputIndex = 0;
+                            <tr class="projects-balance-tr--audience">
+                                <td class="ppb-row-label projects-balance-col-name">
+                                    <span>@BaronAdventurePpb.SummaryRowName</span>
+                                </td>
+                                @foreach (var info in _costColumns)
+                                {
+                                    <td class="projects-balance-zone--cost">·</td>
+                                }
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _adventureAdd[info.Key]) @(adventureOutputIndex == 0 ? "projects-balance-split-start" : null)">@FmtAdd(_adventureAdd[info.Key])</td>
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _adventurePct[info.Key])">@FmtPct(_adventurePct[info.Key])</td>
+                                    adventureOutputIndex++;
+                                }
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -120,6 +140,7 @@
 @code {
     [Parameter] public List<BaronyProjectDTO> Projects { get; set; } = new();
     [Parameter] public List<BaronAudienceDTO> Audiences { get; set; } = new();
+    [Parameter] public List<BaronyEventDTO> Events { get; set; } = new();
     [Parameter] public int CurrentTurn { get; set; } = 1;
     [Parameter] public bool CanManage { get; set; }
 
@@ -130,6 +151,9 @@
     private PpbVector _audienceAdd = new();
     private PpbVector _audiencePct = new();
     private bool HasAudienceRow => !_audienceAdd.IsEmpty || !_audiencePct.IsEmpty;
+    private PpbVector _adventureAdd = new();
+    private PpbVector _adventurePct = new();
+    private bool HasAdventureRow => !_adventureAdd.IsEmpty || !_adventurePct.IsEmpty;
 
     protected override void OnParametersSet() => RebuildRows();
 
@@ -146,6 +170,7 @@
             .ToList();
 
         BaronyCalc.AudienceCumulativeTotals(Audiences, CurrentTurn, out _audienceAdd, out _audiencePct);
+        BaronyCalc.AdventureCumulativeTotals(Events, CurrentTurn, out _adventureAdd, out _adventurePct);
     }
 
     private static string ProjectAnchorId(int projectId) => $"project-{projectId}";

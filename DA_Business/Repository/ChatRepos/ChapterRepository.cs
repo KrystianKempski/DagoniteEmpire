@@ -3,9 +3,12 @@ using DA_Business.Repository.CharacterReps.IRepository;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Data;
+using DA_Common.Barony;
 using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace DA_Business.Repository.ChatRepos
 {
@@ -128,7 +131,9 @@ namespace DA_Business.Repository.ChatRepos
                     query = query.Where(u => u.CampaignId == campaignId);
                 }
 
-                return await ProjectChapterList(query).ToListAsync();
+                var chapters = await ProjectChapterList(query).ToListAsync();
+                await PopulateBaronyTotalsAsync(contex, chapters);
+                return chapters;
             }
             catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex); }
         }
@@ -142,7 +147,7 @@ namespace DA_Business.Repository.ChatRepos
 
                 if (campaignId is null or < 1)
                 {
-                    return await query
+                    var chapters = await query
                         .AsNoTracking()
                         .OrderBy(c => c.CreatedDate)
                         .Select(c => new ChapterDTO
@@ -168,10 +173,15 @@ namespace DA_Business.Repository.ChatRepos
                                 .ToList(),
                         })
                         .ToListAsync();
+
+                    await PopulateBaronyTotalsAsync(contex, chapters);
+                    return chapters;
                 }
 
                 query = query.Where(u => u.CampaignId == campaignId && u.Characters.Any(c => c.Id == characterId));
-                return await ProjectChapterList(query).ToListAsync();
+                var campaignChapters = await ProjectChapterList(query).ToListAsync();
+                await PopulateBaronyTotalsAsync(contex, campaignChapters);
+                return campaignChapters;
             }
             catch (Exception ex) { throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex); }
         }
@@ -209,6 +219,7 @@ namespace DA_Business.Repository.ChatRepos
                     .FirstOrDefaultAsync();
                 if (obj != null)
                 {
+                    await PopulateBaronyTotalsAsync(contex, new List<ChapterDTO> { obj });
                     return obj;
                 }
             }
@@ -280,6 +291,124 @@ namespace DA_Business.Repository.ChatRepos
             {
                 throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod()!.Name, ex);
             }
+        }
+
+        private static async Task PopulateBaronyTotalsAsync(ApplicationDbContext context, IList<ChapterDTO> chapters)
+        {
+            if (chapters.Count == 0)
+                return;
+
+            var chapterIds = chapters.Select(c => c.Id).ToList();
+            var resourcePosts = await context.Posts
+                .AsNoTracking()
+                .Where(p => chapterIds.Contains(p.ChapterId) && p.AlternativeName == "Barony resources")
+                .Select(p => new { p.ChapterId, p.Content })
+                .ToListAsync();
+
+            var totalsByChapter = resourcePosts
+                .GroupBy(p => p.ChapterId)
+                .ToDictionary(
+                    g => g.Key,
+                    g =>
+                    {
+                        var ppb = new PpbVector();
+                        var prestige = 0;
+                        var honor = 0;
+                        var fear = 0;
+                        foreach (var post in g)
+                        {
+                            var delta = ExtractBaronyDelta(post.Content);
+                            ppb.AddInPlace(delta.PpbDelta);
+                            prestige += delta.PrestigeDelta;
+                            honor += delta.HonorDelta;
+                            fear += delta.FearDelta;
+                        }
+                        return (ppb, prestige, honor, fear);
+                    });
+
+            foreach (var chapter in chapters)
+            {
+                if (totalsByChapter.TryGetValue(chapter.Id, out var totals))
+                {
+                    chapter.BaronyPpbTotal = totals.ppb;
+                    chapter.BaronyPrestigeTotal = totals.prestige;
+                    chapter.BaronyHonorTotal = totals.honor;
+                    chapter.BaronyFearTotal = totals.fear;
+                }
+                else
+                {
+                    chapter.BaronyPpbTotal = new PpbVector();
+                    chapter.BaronyPrestigeTotal = 0;
+                    chapter.BaronyHonorTotal = 0;
+                    chapter.BaronyFearTotal = 0;
+                }
+            }
+        }
+
+        private static BaronyResourceDelta ExtractBaronyDelta(string? content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+                return new BaronyResourceDelta();
+
+            // New format: hidden JSON payload embedded in the post.
+            var payloadMatch = Regex.Match(
+                content,
+                @"<!--\s*BARONY_RESOURCE:(\{.*?\})\s*-->",
+                RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            if (payloadMatch.Success)
+            {
+                try
+                {
+                    var payload = JsonSerializer.Deserialize<BaronyResourcePayload>(payloadMatch.Groups[1].Value);
+                    if (payload is not null)
+                    {
+                        return new BaronyResourceDelta
+                        {
+                            PpbDelta = payload.PpbDelta ?? new PpbVector(),
+                            PrestigeDelta = payload.PrestigeDelta,
+                            HonorDelta = payload.HonorDelta,
+                            FearDelta = payload.FearDelta
+                        };
+                    }
+                }
+                catch
+                {
+                    // Fall back to legacy parsing below.
+                }
+            }
+
+            // Legacy fallback: "PPB: X" and "Prestige: Y" from first implementation.
+            var legacyPpb = ExtractLegacyInt(content, "PPB");
+            var legacyPrestige = ExtractLegacyInt(content, "Prestige");
+            var ppbVector = new PpbVector();
+            ppbVector[Ppb.Treasury] = legacyPpb;
+            return new BaronyResourceDelta
+            {
+                PpbDelta = ppbVector,
+                PrestigeDelta = legacyPrestige
+            };
+        }
+
+        private static int ExtractLegacyInt(string content, string label)
+        {
+            var match = Regex.Match(content, $"{Regex.Escape(label)}:\\s*([+-]?\\d+)", RegexOptions.IgnoreCase);
+            return match.Success && int.TryParse(match.Groups[1].Value, out var value) ? value : 0;
+        }
+
+        private sealed class BaronyResourcePayload
+        {
+            public PpbVector? PpbDelta { get; set; }
+            public int PrestigeDelta { get; set; }
+            public int HonorDelta { get; set; }
+            public int FearDelta { get; set; }
+        }
+
+        private sealed class BaronyResourceDelta
+        {
+            public PpbVector PpbDelta { get; set; } = new();
+            public int PrestigeDelta { get; set; }
+            public int HonorDelta { get; set; }
+            public int FearDelta { get; set; }
         }
     }
 }

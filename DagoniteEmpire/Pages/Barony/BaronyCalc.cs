@@ -663,7 +663,7 @@ namespace DagoniteEmpire.Pages.Barony
 
         public static List<PpbModifierRow> EventRows(IEnumerable<BaronyEventDTO> events, int currentTurn)
             => events
-                .Where(e => e.IsActiveOnTurn(currentTurn))
+                .Where(e => e.IsActiveOnTurn(currentTurn) && !BaronAdventurePpb.IsAdventureEvent(e.Name))
                 .Select(e => Row(e.Name, e.Additive, e.Percent, null, e.Description))
                 .ToList();
 
@@ -699,7 +699,39 @@ namespace DagoniteEmpire.Pages.Barony
             };
         }
 
-        /// <summary>Cumulative PPB slice from this turn's audiences (for Project Summary).</summary>
+        /// <summary>
+        /// Non-cumulative PPB from this turn's campaign adventure grants.
+        /// Shown as a synthetic Events row named <see cref="BaronAdventurePpb.SummaryRowName"/>.
+        /// </summary>
+        public static List<PpbModifierRow> AdventureEventRows(IEnumerable<BaronyEventDTO>? events, int currentTurn)
+        {
+            var add = new PpbVector();
+            var pct = new PpbVector();
+            foreach (var e in events ?? Enumerable.Empty<BaronyEventDTO>())
+            {
+                if (!BaronAdventurePpb.IsAdventureEvent(e.Name) || !e.IsActiveOnTurn(currentTurn))
+                    continue;
+                add.AddInPlace(e.Additive);
+                pct.AddInPlace(e.Percent);
+            }
+
+            add = BaronAudiencePpb.SliceNonCumulative(add);
+            pct = BaronAudiencePpb.SliceNonCumulative(pct);
+            if (add.IsEmpty && pct.IsEmpty)
+                return new List<PpbModifierRow>();
+
+            return new List<PpbModifierRow>
+            {
+                Row(
+                    BaronAdventurePpb.SummaryRowName,
+                    add,
+                    pct,
+                    formula: "Sum of campaign adventure grants (non-cumulative PPB)",
+                    note: "From campaign chapters this turn"),
+            };
+        }
+
+        /// <summary>Cumulative PPB slice from this turn's audiences (for Project Summary / Resources).</summary>
         public static void AudienceCumulativeTotals(
             IEnumerable<BaronAudienceDTO>? audiences,
             int currentTurn,
@@ -714,6 +746,27 @@ namespace DagoniteEmpire.Pages.Barony
                     continue;
                 additive.AddInPlace(a.Additive);
                 percent.AddInPlace(a.Percent);
+            }
+
+            additive = BaronAudiencePpb.SliceCumulative(additive);
+            percent = BaronAudiencePpb.SliceCumulative(percent);
+        }
+
+        /// <summary>Cumulative PPB slice from this turn's campaign adventure grants.</summary>
+        public static void AdventureCumulativeTotals(
+            IEnumerable<BaronyEventDTO>? events,
+            int currentTurn,
+            out PpbVector additive,
+            out PpbVector percent)
+        {
+            additive = new PpbVector();
+            percent = new PpbVector();
+            foreach (var e in events ?? Enumerable.Empty<BaronyEventDTO>())
+            {
+                if (!BaronAdventurePpb.IsAdventureEvent(e.Name) || !e.IsActiveOnTurn(currentTurn))
+                    continue;
+                additive.AddInPlace(e.Additive);
+                percent.AddInPlace(e.Percent);
             }
 
             additive = BaronAudiencePpb.SliceCumulative(additive);
@@ -943,6 +996,7 @@ namespace DagoniteEmpire.Pages.Barony
                 ov.Barony.LuxuryGoodsAccessKey);
             var eventRows = EventRows(ov.Events, ov.Barony.TurnNumber);
             eventRows.AddRange(AudienceEventRows(ov.Audiences, ov.Barony.TurnNumber));
+            eventRows.AddRange(AdventureEventRows(ov.Events, ov.Barony.TurnNumber));
             var armyRows = ArmyRows(ov.Units);
             var settlementPop = SumSettlementPopulation(ov.Barony.Id, ov.Buildings, ov.Improvements);
             var communityRows = CommunityRows(
@@ -1297,13 +1351,16 @@ namespace DagoniteEmpire.Pages.Barony
                     Fear = adventuresContribution.Fear,
                     IsSystem = true,
                     Description =
-                        "Prestige, Honor and Fear granted through baronial audiences "
-                        + "(petitioner adventures). Deferred and dismissed audiences are excluded.",
+                        "Prestige, Honor and Fear from baronial audiences and campaign adventure grants. "
+                        + "Deferred and dismissed audiences are excluded.",
                 },
             };
 
             foreach (var source in customSources ?? Enumerable.Empty<BaronPhpSourceDTO>())
             {
+                if (BaronAdventurePpb.IsAdventurePhpSource(source.Source))
+                    continue;
+
                 rows.Add(new BaronPhpRow
                 {
                     Source = source.Source,
@@ -1334,6 +1391,28 @@ namespace DagoniteEmpire.Pages.Barony
 
             return new PhpTotals(prestige, honor, fear);
         }
+
+        /// <summary>Lifetime PHP stored from campaign chapter “Barony resources” posts.</summary>
+        public static PhpTotals CampaignAdventurePhpContribution(IEnumerable<BaronPhpSourceDTO>? sources)
+        {
+            int prestige = 0, honor = 0, fear = 0;
+            foreach (var s in sources ?? Enumerable.Empty<BaronPhpSourceDTO>())
+            {
+                if (!BaronAdventurePpb.IsAdventurePhpSource(s.Source))
+                    continue;
+                prestige += s.Prestige;
+                honor += s.Honor;
+                fear += s.Fear;
+            }
+
+            return new PhpTotals(prestige, honor, fear);
+        }
+
+        /// <summary>Audiences + campaign adventure PHP for the system “From Adventures” row.</summary>
+        public static PhpTotals AdventuresPhpContribution(
+            IEnumerable<BaronAudienceDTO>? audiences,
+            IEnumerable<BaronPhpSourceDTO>? phpSources = null)
+            => AudiencePhpContribution(audiences).Add(CampaignAdventurePhpContribution(phpSources));
 
         /// <summary>
         /// Artifacts contribution: Σ (base PHP × chamber PrestigeMultiplier).

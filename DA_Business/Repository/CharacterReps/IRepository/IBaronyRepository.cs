@@ -140,6 +140,9 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         // --- Pola terenu ---
         Task<List<TerrainTileDTO>> GetTiles(int baronyId);
         Task<List<TerrainTileDTO>> EnsureTerrainGrid(int baronyId);
+        /// <summary>Expand/shrink map edges. Positive = add tiles, negative = remove.</summary>
+        Task<(int Width, int Height)> ResizeTerrainMap(
+            int baronyId, int deltaLeft, int deltaRight, int deltaTop, int deltaBottom);
         Task<TerrainTileDTO> SaveTile(TerrainTileDTO dto);
         Task<int> DeleteTile(int id);
 

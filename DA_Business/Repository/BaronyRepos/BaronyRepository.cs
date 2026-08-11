@@ -122,6 +122,8 @@ namespace DA_Business.Repository.BaronyRepos
                     CharacterId = characterId,
                     Name = string.IsNullOrWhiteSpace(name) ? "Nowa Baronia" : name.Trim(),
                     Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
+                    TerrainMapWidth = TerrainMapGrid.DefaultSize,
+                    TerrainMapHeight = TerrainMapGrid.DefaultSize,
                     Year = 625,
                     Month = 3,
                     TurnNumber = 1,
@@ -1124,8 +1126,10 @@ namespace DA_Business.Repository.BaronyRepos
                 if (string.IsNullOrWhiteSpace(catalogName))
                     catalogName = null;
 
-                var mapKind = TerrainImprovementCatalogMap.MapKindFromCatalogTemplateName(catalogName)
-                    ?? MapImprovement.Custom;
+                var mapKind = !string.IsNullOrWhiteSpace(template?.MapPinKind)
+                    ? template!.MapPinKind!.Trim()
+                    : TerrainImprovementCatalogMap.MapKindFromCatalogTemplateName(catalogName)
+                      ?? MapImprovement.Custom;
                 var name = mapKind;
                 // Match MG brush: Name = map kind (icons); Description = catalog name (Domain Panel label).
                 // Village/Town place names are unknown here — keep catalog name so the label stays useful.
@@ -1154,6 +1158,10 @@ namespace DA_Business.Repository.BaronyRepos
                     additive[Ppb.Treasury] += TerrainImprovementCatalogMap.FishingHarborFisheryTreasuryBonus;
                 }
 
+                var iconUrl = !string.IsNullOrWhiteSpace(template?.IconUrl)
+                    ? template!.IconUrl!.Trim()
+                    : null;
+
                 if (existing is null)
                 {
                     ctx.TerrainImprovements.Add(new TerrainImprovement
@@ -1166,6 +1174,7 @@ namespace DA_Business.Repository.BaronyRepos
                         FormulaText = template?.Description,
                         AdditiveJson = Ser(additive),
                         PercentJson = Ser(percent),
+                        IconUrl = iconUrl,
                         IsActive = true,
                     });
                 }
@@ -1177,6 +1186,7 @@ namespace DA_Business.Repository.BaronyRepos
                     existing.FormulaText = template?.Description ?? existing.FormulaText;
                     existing.AdditiveJson = Ser(additive);
                     existing.PercentJson = Ser(percent);
+                    existing.IconUrl = iconUrl ?? existing.IconUrl;
                     existing.IsActive = true;
                     existing.InactiveReason = null;
                 }
@@ -1188,7 +1198,8 @@ namespace DA_Business.Repository.BaronyRepos
             // Map catalog improvements must not fall through into city buildings when TileId is missing.
             if (template is not null
                 && string.Equals(template.Kind, BuildingKind.Improvement, StringComparison.OrdinalIgnoreCase)
-                && TerrainImprovementCatalogMap.MapKindFromCatalogTemplateName(template.Name) is not null)
+                && (TerrainImprovementCatalogMap.MapKindFromCatalogTemplateName(template.Name) is not null
+                    || !string.IsNullOrWhiteSpace(template.MapPinKind)))
             {
                 notes.Add(
                     $"{project.Name}: catalog improvement “{template.Name}” requires a map tile (TileId) and was not applied.");
@@ -2904,15 +2915,28 @@ namespace DA_Business.Repository.BaronyRepos
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var width = TerrainMapGrid.ClampDimension(
+                    barony.TerrainMapWidth > 0 ? barony.TerrainMapWidth : TerrainMapGrid.DefaultSize);
+                var height = TerrainMapGrid.ClampDimension(
+                    barony.TerrainMapHeight > 0 ? barony.TerrainMapHeight : TerrainMapGrid.DefaultSize);
+                if (barony.TerrainMapWidth != width || barony.TerrainMapHeight != height)
+                {
+                    barony.TerrainMapWidth = width;
+                    barony.TerrainMapHeight = height;
+                }
+
                 var existing = await ctx.TerrainTiles
                     .Where(x => x.BaronyId == baronyId)
                     .ToListAsync();
                 var existingCoords = existing.Select(t => (t.X, t.Y)).ToHashSet();
                 var added = false;
 
-                for (var y = 0; y < TerrainMapGrid.Size; y++)
+                for (var y = 0; y < height; y++)
                 {
-                    for (var x = 0; x < TerrainMapGrid.Size; x++)
+                    for (var x = 0; x < width; x++)
                     {
                         if (existingCoords.Contains((x, y)))
                             continue;
@@ -2930,7 +2954,7 @@ namespace DA_Business.Repository.BaronyRepos
                     }
                 }
 
-                if (added)
+                if (added || ctx.ChangeTracker.HasChanges())
                     await ctx.SaveChangesAsync();
 
                 return await ctx.TerrainTiles.AsNoTracking()
@@ -2939,6 +2963,128 @@ namespace DA_Business.Repository.BaronyRepos
                     .ToListAsync();
             }
             catch (System.Exception ex) { throw Err(ex, nameof(EnsureTerrainGrid)); }
+        }
+
+        /// <summary>
+        /// Expand or shrink the terrain map from each edge.
+        /// Positive deltas add tiles; negative deltas remove them.
+        /// Existing tiles shift when growing/shrinking from left or top.
+        /// </summary>
+        public async Task<(int Width, int Height)> ResizeTerrainMap(
+            int baronyId,
+            int deltaLeft,
+            int deltaRight,
+            int deltaTop,
+            int deltaBottom)
+        {
+            try
+            {
+                using var strategyCtx = await _db.CreateDbContextAsync();
+                var strategy = strategyCtx.Database.CreateExecutionStrategy();
+                return await strategy.ExecuteAsync(async () =>
+                {
+                    using var ctx = await _db.CreateDbContextAsync();
+                    await using var tx = await ctx.Database.BeginTransactionAsync();
+
+                    var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                        ?? throw new InvalidOperationException("Barony not found.");
+
+                    var oldW = TerrainMapGrid.ClampDimension(
+                        barony.TerrainMapWidth > 0 ? barony.TerrainMapWidth : TerrainMapGrid.DefaultSize);
+                    var oldH = TerrainMapGrid.ClampDimension(
+                        barony.TerrainMapHeight > 0 ? barony.TerrainMapHeight : TerrainMapGrid.DefaultSize);
+                    var newW = oldW + deltaLeft + deltaRight;
+                    var newH = oldH + deltaTop + deltaBottom;
+                    if (!TerrainMapGrid.IsValidDimension(newW) || !TerrainMapGrid.IsValidDimension(newH))
+                    {
+                        throw new InvalidOperationException(
+                            $"Map size must be between {TerrainMapGrid.MinSize} and {TerrainMapGrid.MaxSize} "
+                            + $"(requested {newW}×{newH}).");
+                    }
+
+                    if (deltaLeft == 0 && deltaRight == 0 && deltaTop == 0 && deltaBottom == 0)
+                    {
+                        await tx.CommitAsync();
+                        return (oldW, oldH);
+                    }
+
+                    var tiles = await ctx.TerrainTiles.Where(t => t.BaronyId == baronyId).ToListAsync();
+                    var removeIds = tiles
+                        .Where(t =>
+                        {
+                            var nx = t.X + deltaLeft;
+                            var ny = t.Y + deltaTop;
+                            return nx < 0 || ny < 0 || nx >= newW || ny >= newH;
+                        })
+                        .Select(t => t.Id)
+                        .ToList();
+
+                    if (removeIds.Count > 0)
+                    {
+                        var removeSet = removeIds.ToHashSet();
+                        var improvements = await ctx.TerrainImprovements
+                            .Where(i => i.BaronyId == baronyId && i.TileId != null && removeSet.Contains(i.TileId.Value))
+                            .ToListAsync();
+                        if (improvements.Count > 0)
+                            ctx.TerrainImprovements.RemoveRange(improvements);
+
+                        var projects = await ctx.BaronyProjects
+                            .Where(p => p.BaronyId == baronyId && p.TileId != null && removeSet.Contains(p.TileId.Value))
+                            .ToListAsync();
+                        foreach (var p in projects)
+                            p.TileId = null;
+
+                        ctx.TerrainTiles.RemoveRange(tiles.Where(t => removeSet.Contains(t.Id)));
+                        await ctx.SaveChangesAsync();
+                        tiles = await ctx.TerrainTiles.Where(t => t.BaronyId == baronyId).ToListAsync();
+                    }
+
+                    // Two-phase shift avoids unique (BaronyId, X, Y) collisions mid-update.
+                    const int shiftPark = 100_000;
+                    if (deltaLeft != 0 || deltaTop != 0)
+                    {
+                        foreach (var t in tiles)
+                        {
+                            t.X += shiftPark;
+                            t.Y += shiftPark;
+                        }
+                        await ctx.SaveChangesAsync();
+
+                        foreach (var t in tiles)
+                        {
+                            t.X = t.X - shiftPark + deltaLeft;
+                            t.Y = t.Y - shiftPark + deltaTop;
+                        }
+                        await ctx.SaveChangesAsync();
+                    }
+
+                    var existingCoords = tiles.Select(t => (t.X, t.Y)).ToHashSet();
+                    for (var y = 0; y < newH; y++)
+                    {
+                        for (var x = 0; x < newW; x++)
+                        {
+                            if (existingCoords.Contains((x, y)))
+                                continue;
+                            ctx.TerrainTiles.Add(new TerrainTile
+                            {
+                                BaronyId = baronyId,
+                                X = x,
+                                Y = y,
+                                BaseType = TerrainBaseType.Plains,
+                                FeaturesMask = 0,
+                                Fertility = TerrainFertility.Unknown,
+                            });
+                        }
+                    }
+
+                    barony.TerrainMapWidth = newW;
+                    barony.TerrainMapHeight = newH;
+                    await ctx.SaveChangesAsync();
+                    await tx.CommitAsync();
+                    return (newW, newH);
+                });
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(ResizeTerrainMap)); }
         }
 
         public async Task<TerrainTileDTO> SaveTile(TerrainTileDTO dto)
@@ -4036,9 +4182,9 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static void SeedTerrainGrid(ApplicationDbContext ctx, int baronyId)
         {
-            for (var y = 0; y < TerrainMapGrid.Size; y++)
+            for (var y = 0; y < TerrainMapGrid.DefaultSize; y++)
             {
-                for (var x = 0; x < TerrainMapGrid.Size; x++)
+                for (var x = 0; x < TerrainMapGrid.DefaultSize; x++)
                 {
                     ctx.TerrainTiles.Add(new TerrainTile
                     {
@@ -4093,6 +4239,10 @@ namespace DA_Business.Repository.BaronyRepos
                 CharacterId = e.CharacterId,
                 Name = e.Name,
                 Size = e.Size,
+                TerrainMapWidth = TerrainMapGrid.ClampDimension(
+                    e.TerrainMapWidth > 0 ? e.TerrainMapWidth : TerrainMapGrid.DefaultSize),
+                TerrainMapHeight = TerrainMapGrid.ClampDimension(
+                    e.TerrainMapHeight > 0 ? e.TerrainMapHeight : TerrainMapGrid.DefaultSize),
                 Year = e.Year,
                 Month = e.Month,
                 TurnNumber = e.TurnNumber,
@@ -4136,6 +4286,10 @@ namespace DA_Business.Repository.BaronyRepos
             e.CharacterId = d.CharacterId;
             e.Name = d.Name;
             e.Size = d.Size;
+            e.TerrainMapWidth = TerrainMapGrid.ClampDimension(
+                d.TerrainMapWidth > 0 ? d.TerrainMapWidth : TerrainMapGrid.DefaultSize);
+            e.TerrainMapHeight = TerrainMapGrid.ClampDimension(
+                d.TerrainMapHeight > 0 ? d.TerrainMapHeight : TerrainMapGrid.DefaultSize);
             e.Year = d.Year;
             e.Month = d.Month;
             e.TurnNumber = d.TurnNumber;
@@ -5717,20 +5871,22 @@ namespace DA_Business.Repository.BaronyRepos
         // ---------------- Mapping: Template ----------------
         private static BuildingTemplateDTO ToDTO(BuildingTemplate e) => new()
         {
-            Id = e.Id, Name = e.Name, RequiredLordshipLevel = e.RequiredLordshipLevel, Kind = e.Kind,
+            Id = e.Id, Name = e.Name, IsCustom = e.IsCustom, RequiredLordshipLevel = e.RequiredLordshipLevel, Kind = e.Kind,
             GoldCost = e.GoldCost, ProductionCost = e.ProductionCost,
             EffectAdditive = De(e.EffectAdditiveJson), EffectPercent = De(e.EffectPercentJson),
             Description = e.Description, TerrainRequirement = e.TerrainRequirement,
+            MapPinKind = e.MapPinKind, IconUrl = e.IconUrl,
         };
 
         private static BuildingTemplate ToEntity(BuildingTemplateDTO d) { var e = new BuildingTemplate(); ApplyTemplate(e, d); e.Id = d.Id; return e; }
 
         private static void ApplyTemplate(BuildingTemplate e, BuildingTemplateDTO d)
         {
-            e.Name = d.Name; e.RequiredLordshipLevel = d.RequiredLordshipLevel; e.Kind = d.Kind;
+            e.Name = d.Name; e.IsCustom = d.IsCustom; e.RequiredLordshipLevel = d.RequiredLordshipLevel; e.Kind = d.Kind;
             e.GoldCost = d.GoldCost; e.ProductionCost = d.ProductionCost;
             e.EffectAdditiveJson = Ser(d.EffectAdditive); e.EffectPercentJson = Ser(d.EffectPercent);
             e.Description = d.Description; e.TerrainRequirement = d.TerrainRequirement;
+            e.MapPinKind = d.MapPinKind; e.IconUrl = d.IconUrl;
         }
 
         // ---------------- Mapping: Lord's Seat ----------------

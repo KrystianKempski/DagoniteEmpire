@@ -20,6 +20,12 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Rozmiar baronii (liczba pól).</summary>
         public int Size { get; set; }
 
+        /// <summary>Terrain map width in tiles (columns). Default 15.</summary>
+        public int TerrainMapWidth { get; set; } = DA_Common.Barony.TerrainMapGrid.DefaultSize;
+
+        /// <summary>Terrain map height in tiles (rows). Default 15.</summary>
+        public int TerrainMapHeight { get; set; } = DA_Common.Barony.TerrainMapGrid.DefaultSize;
+
         // --- Stan sezonu / tury (BaronySeasonState, osadzony) ---
         public int Year { get; set; } = 625;
         public int Month { get; set; } = 3;

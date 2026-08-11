@@ -1869,7 +1869,12 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 /* ---- Global cumulative resource HUD (game-style, top-right) ---- */
 .barony-resource-hud {
     --res-food: #6bcf75;
+    --res-economy: #a67c52;
     --res-production: #e07a8a;
+    --res-loyalty: #d63b3b;
+    --res-stability: #4f9a5a;
+    --res-law: #f0ece4;
+    --res-corruption: #6a7a32;
     --res-science: #6aa8f0;
     --res-magic: #b07aef;
     --res-culture: #f0a45a;
@@ -1957,7 +1962,12 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 .barony-resource-hud__delta--zero { color: rgba(247, 241, 228, 0.45); }
 
 .barony-resource-hud__item--food { --res-accent: var(--res-food); }
+.barony-resource-hud__item--economy { --res-accent: var(--res-economy); }
 .barony-resource-hud__item--production { --res-accent: var(--res-production); }
+.barony-resource-hud__item--loyalty { --res-accent: var(--res-loyalty); }
+.barony-resource-hud__item--stability { --res-accent: var(--res-stability); }
+.barony-resource-hud__item--law { --res-accent: var(--res-law); }
+.barony-resource-hud__item--corruption { --res-accent: var(--res-corruption); }
 .barony-resource-hud__item--science { --res-accent: var(--res-science); }
 .barony-resource-hud__item--magic { --res-accent: var(--res-magic); }
 .barony-resource-hud__item--culture { --res-accent: var(--res-culture); }
@@ -4726,19 +4736,43 @@ a.city-building-name-text--link:hover {
 .ppb-chip {
     display: inline-flex;
     gap: 4px;
-    align-items: baseline;
+    align-items: center;
     padding: 1px 7px;
     border-radius: 10px;
-    background: var(--barony-surface-2);
-    border: 1px solid var(--barony-border);
+    background: var(--barony-surface-2, rgba(255, 255, 255, 0.12));
+    border: 1px solid color-mix(in srgb, var(--ppb-accent, var(--barony-border, #c3b696)) 55%, transparent);
     font-size: 0.72rem;
     line-height: 1.4;
 }
 
-.ppb-chip__label { color: var(--barony-muted); }
+.ppb-chip__label { color: var(--ppb-accent, var(--barony-muted, #6f6656)); }
 .ppb-chip__value { font-weight: 700; }
-.ppb-chip--pos .ppb-chip__value { color: var(--barony-pos); }
-.ppb-chip--neg .ppb-chip__value { color: var(--barony-neg); }
+.ppb-chip--pos .ppb-chip__value { color: var(--barony-pos, #4f7a4d); }
+.ppb-chip--neg .ppb-chip__value { color: var(--barony-neg, #a5503f); }
+
+/* Campaign chapter tiles (outside .barony-scope): PHP + PPB accents still readable on dark overlay */
+.chapter-resource-summary {
+    --php-prestige: #d4b45a;
+    --php-honor: #7aa5d4;
+    --php-fear: #d07070;
+    --barony-surface-2: rgba(255, 255, 255, 0.12);
+    --barony-border: rgba(255, 255, 255, 0.22);
+    --barony-muted: rgba(255, 255, 255, 0.78);
+    --barony-pos: #8fd49a;
+    --barony-neg: #f0a090;
+}
+
+.chapter-resource-summary .ppb-chip {
+    background: rgba(0, 0, 0, 0.28);
+    color: #fff;
+}
+
+.chapter-resource-summary .baron-php-chip {
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
 
 /* ---- Barony Card (generic container) ---- */
 .barony-card {
@@ -6402,13 +6436,21 @@ a.city-building-name-text--link:hover {
 }
 
 .barony-terrain-cell__improvement-icon--town {
-    width: 2.028rem;
-    height: 2.028rem;
+    width: 2.7rem;
+    height: 2.7rem;
+    /* Warm copper / roof-tile — stands out from black resource icons */
+    filter: invert(28%) sepia(55%) saturate(1200%) hue-rotate(345deg) brightness(0.95)
+            drop-shadow(0 0 1.5px rgba(251, 248, 241, 0.95))
+            drop-shadow(0 1px 2px rgba(47, 42, 36, 0.4));
 }
 
 .barony-terrain-cell__improvement-icon--village {
-    width: 1.352rem;
-    height: 1.352rem;
+    width: 2rem;
+    height: 2rem;
+    /* Forest green cabin — quieter than towns, distinct from farms/mines */
+    filter: invert(32%) sepia(28%) saturate(900%) hue-rotate(55deg) brightness(0.9)
+            drop-shadow(0 0 1.5px rgba(251, 248, 241, 0.95))
+            drop-shadow(0 1px 2px rgba(47, 42, 36, 0.35));
 }
 
 .barony-terrain-cell__improvement-icon--construction {
@@ -6459,6 +6501,28 @@ a.city-building-name-text--link:hover {
     word-break: break-word;
     text-shadow:
         0 0 2px rgba(251, 248, 241, 0.95),
+        0 0 3px rgba(251, 248, 241, 0.9);
+}
+
+.barony-terrain-cell__improvement-name--town {
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.05;
+    color: #6b2a12;
+    letter-spacing: 0.01em;
+    text-shadow:
+        0 0 2px rgba(251, 248, 241, 1),
+        0 0 4px rgba(251, 248, 241, 0.95),
+        0 1px 1px rgba(251, 248, 241, 0.9);
+}
+
+.barony-terrain-cell__improvement-name--village {
+    font-size: 0.64rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #2f4a22;
+    text-shadow:
+        0 0 2px rgba(251, 248, 241, 0.98),
         0 0 3px rgba(251, 248, 241, 0.9);
 }
 
@@ -6678,6 +6742,89 @@ a.city-building-name-text--link:hover {
     flex: 1 1 auto;
     align-items: flex-start;
     min-height: 64px;
+}
+
+.terrain-map-size {
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+.terrain-map-size__current {
+    font-size: 0.9rem;
+    color: var(--barony-ink, #1c1a16);
+}
+
+.terrain-map-size__limits {
+    margin-left: 6px;
+    color: var(--barony-muted);
+    font-size: 0.8rem;
+}
+
+.terrain-map-size__amount {
+    max-width: 160px;
+}
+
+.terrain-map-size__amount-field {
+    margin: 0 !important;
+}
+
+.terrain-map-size__pad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0 4px;
+}
+
+.terrain-map-size__middle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.terrain-map-size__edge {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.terrain-map-size__edge--top,
+.terrain-map-size__edge--bottom {
+    flex-direction: row;
+}
+
+.terrain-map-size__edge--left,
+.terrain-map-size__edge--right {
+    flex-direction: column;
+}
+
+.terrain-map-size__edge-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--barony-muted);
+    margin-right: 4px;
+}
+
+.terrain-map-size__edge--left .terrain-map-size__edge-label,
+.terrain-map-size__edge--right .terrain-map-size__edge-label {
+    margin-right: 0;
+    margin-bottom: 2px;
+}
+
+.terrain-map-size__preview {
+    min-width: 88px;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed color-mix(in srgb, var(--barony-muted) 55%, transparent);
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--barony-ink, #1c1a16);
+    background: color-mix(in srgb, var(--barony-panel, #f3efe6) 80%, transparent);
 }
 
 .terrain-brush__body--split {
@@ -7119,6 +7266,12 @@ a.city-building-name-text--link:hover {
     min-width: 0;
 }
 
+.catalog-name-cell__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
 .catalog-name-cell__build {
     flex: 0 0 auto;
     display: inline-flex;
@@ -7138,6 +7291,14 @@ a.city-building-name-text--link:hover {
 .catalog-name-cell__build:hover {
     opacity: 1;
     background: rgba(47, 42, 36, 0.08);
+}
+
+.catalog-name-cell__build--edit {
+    color: #7a6020;
+}
+
+.catalog-name-cell__build--delete {
+    color: #8c3434;
 }
 
 .catalog-name-cell__build-icon {
@@ -7231,6 +7392,32 @@ a.city-building-name-text--link:hover {
 .buildings-catalog-filters__kind {
     flex: 0 1 180px;
     min-width: 160px;
+}
+
+.buildings-catalog-filters__add {
+    flex-shrink: 0;
+    margin-bottom: 2px;
+}
+
+.building-template-dialog__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.building-template-dialog__lordship {
+    flex: 0 1 120px;
+    min-width: 100px;
+}
+
+.building-template-dialog__kind {
+    flex: 1 1 160px;
+    min-width: 140px;
+}
+
+.building-template-dialog__cost {
+    flex: 1 1 140px;
+    min-width: 120px;
 }
 
 .ppb-table--catalog .catalog-th--sortable {

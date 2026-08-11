@@ -75,6 +75,7 @@ namespace DA_DataAccess.BaronyData
         public int Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
+        public bool IsCustom { get; set; }
 
         /// <summary>Minimalny wymagany poziom władzy lordowskiej.</summary>
         public int RequiredLordshipLevel { get; set; }
@@ -92,5 +93,11 @@ namespace DA_DataAccess.BaronyData
 
         /// <summary>Wymagania terenowe dla ulepszeń (np. "Las", "Zasób").</summary>
         public string? TerrainRequirement { get; set; }
+
+        /// <summary>Map pin kind (<see cref="MapImprovement"/>) for terrain improvements.</summary>
+        public string? MapPinKind { get; set; }
+
+        /// <summary>Optional map icon override (defaults from <see cref="MapPinKind"/>).</summary>
+        public string? IconUrl { get; set; }
     }
 }

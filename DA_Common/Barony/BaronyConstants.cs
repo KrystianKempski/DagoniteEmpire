@@ -667,11 +667,22 @@ namespace DA_Common.Barony
         }
     }
 
-    /// <summary>Fixed terrain map dimensions (one grid per barony).</summary>
+    /// <summary>Terrain map grid dimensions (per barony; defaults match legacy 15×15).</summary>
     public readonly struct TerrainMapGrid
     {
-        public const int Size = 15;
+        public const int DefaultSize = 15;
+        public const int MinSize = 5;
+        public const int MaxSize = 40;
+
+        /// <summary>Legacy square default (seed / migration).</summary>
+        public const int Size = DefaultSize;
         public const int CellCount = Size * Size;
+
+        public static int ClampDimension(int value) =>
+            Math.Clamp(value, MinSize, MaxSize);
+
+        public static bool IsValidDimension(int value) =>
+            value >= MinSize && value <= MaxSize;
     }
 
     /// <summary>Lord's Seat room lifecycle.</summary>

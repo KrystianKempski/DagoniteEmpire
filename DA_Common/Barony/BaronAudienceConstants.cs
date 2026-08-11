@@ -91,6 +91,26 @@ namespace DA_Common.Barony
         }
     }
 
+    /// <summary>
+    /// Campaign chapter “Barony resources” grants — same split as audiences:
+    /// non-cumulative → Domain Panel Events row, cumulative → Resources balance, PHP → From Adventures.
+    /// </summary>
+    public static class BaronAdventurePpb
+    {
+        public const string SummaryRowName = "Adventures";
+
+        /// <summary>
+        /// Internal BaronPhpSource key folded into the system “From Adventures” row (not shown as custom).
+        /// </summary>
+        public const string PhpSourceKey = "__CampaignAdventuresPhp__";
+
+        public static bool IsAdventureEvent(string? name) =>
+            string.Equals(name, SummaryRowName, StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsAdventurePhpSource(string? source) =>
+            string.Equals(source, PhpSourceKey, StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>Chapter naming for audience → campaign thread links.</summary>
     public static class BaronAudienceChapter
     {

@@ -9,6 +9,12 @@ namespace DA_Models.BaronyModels
         public string Name { get; set; } = "Nowa Baronia";
         public int Size { get; set; }
 
+        /// <summary>Terrain map width in tiles (columns).</summary>
+        public int TerrainMapWidth { get; set; } = TerrainMapGrid.DefaultSize;
+
+        /// <summary>Terrain map height in tiles (rows).</summary>
+        public int TerrainMapHeight { get; set; } = TerrainMapGrid.DefaultSize;
+
         public int Year { get; set; } = 625;
         public int Month { get; set; } = 3;
         public int TurnNumber { get; set; } = 1;
@@ -525,6 +531,7 @@ namespace DA_Models.BaronyModels
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public bool IsCustom { get; set; }
         public int RequiredLordshipLevel { get; set; }
         public string Kind { get; set; } = DA_Common.Barony.BuildingKind.Building;
         public decimal GoldCost { get; set; }
@@ -533,6 +540,10 @@ namespace DA_Models.BaronyModels
         public PpbVector EffectPercent { get; set; } = new();
         public string? Description { get; set; }
         public string? TerrainRequirement { get; set; }
+        /// <summary>Map pin kind for terrain improvements (<see cref="MapImprovement"/>).</summary>
+        public string? MapPinKind { get; set; }
+        /// <summary>Optional map icon URL (defaults from pin kind).</summary>
+        public string? IconUrl { get; set; }
     }
 
     public class BaronySeatDTO

@@ -101,7 +101,7 @@ else if (Barony is not null)
 
         var seat = BaronyCalc.SeatPhpContribution(_seat, _purposeTemplates);
         var items = BaronyCalc.ArtifactsPhpContribution(_artifacts, _seat);
-        var adventures = BaronyCalc.AudiencePhpContribution(_audiences);
+        var adventures = BaronyCalc.AdventuresPhpContribution(_audiences, _phpSources);
         var total = BaronyCalc.SumPhpRows(BaronyCalc.BuildPhpRows(seat, items, _phpSources, adventures));
 
         if (Barony.Prestige == total.Prestige

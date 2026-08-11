@@ -91,7 +91,7 @@
     {
         var seat = BaronyCalc.SeatPhpContribution(Seat, PurposeTemplates);
         var items = BaronyCalc.ArtifactsPhpContribution(Artifacts, Seat);
-        var adventures = BaronyCalc.AudiencePhpContribution(Audiences);
+        var adventures = BaronyCalc.AdventuresPhpContribution(Audiences, CustomSources);
         _rows = BaronyCalc.BuildPhpRows(seat, items, CustomSources, adventures);
         _total = BaronyCalc.SumPhpRows(_rows);
     }

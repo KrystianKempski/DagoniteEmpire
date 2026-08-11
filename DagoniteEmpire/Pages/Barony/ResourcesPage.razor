@@ -135,8 +135,10 @@ else if (_overview is not null)
 
         BaronyCalc.AudienceCumulativeTotals(
             _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
-        var audienceGrants = ResourceCatalog.Slice(audienceAdd);
-        if (audienceGrants.IsEmpty)
+        BaronyCalc.AdventureCumulativeTotals(
+            _overview.Events, _overview.Barony.TurnNumber, out var adventureAdd, out _);
+        var turnGrants = ResourceCatalog.Slice(audienceAdd + adventureAdd);
+        if (turnGrants.IsEmpty)
             return;
 
         var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
@@ -145,13 +147,13 @@ else if (_overview is not null)
         var sourcesSum = ResourceCatalog.Slice(
             PpbVector.Sum(_overview.ResourceSources.Select(s => ResourceCatalog.Slice(s.Additive))));
 
-        var withoutAudience = ResourceCatalog.Slice(prevStock + prevIncome + sourcesSum + projectCosts);
-        var withAudience = ResourceCatalog.Slice(withoutAudience + audienceGrants);
+        var withoutGrants = ResourceCatalog.Slice(prevStock + prevIncome + sourcesSum + projectCosts);
+        var withGrants = ResourceCatalog.Slice(withoutGrants + turnGrants);
 
-        if (ResourceVectorsEqual(stocks, withAudience) || !ResourceVectorsEqual(stocks, withoutAudience))
+        if (ResourceVectorsEqual(stocks, withGrants) || !ResourceVectorsEqual(stocks, withoutGrants))
             return;
 
-        await ApplyStockDeltaAsync(audienceGrants);
+        await ApplyStockDeltaAsync(turnGrants);
     }
 
     private static bool ResourceVectorsEqual(PpbVector a, PpbVector b)
@@ -179,14 +181,19 @@ else if (_overview is not null)
         BaronyCalc.AudienceCumulativeTotals(
             _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
         var audienceGrants = ResourceCatalog.Slice(audienceAdd);
+        BaronyCalc.AdventureCumulativeTotals(
+            _overview.Events, _overview.Barony.TurnNumber, out var adventureAdd, out _);
+        var adventureGrants = ResourceCatalog.Slice(adventureAdd);
 
         // First load / pre-migration: derive opening stock so Σ still matches HUD.
-        if (prevStock.IsEmpty && (!stocks.IsEmpty || !prevIncome.IsEmpty || !sourcesSum.IsEmpty || !audienceGrants.IsEmpty))
+        if (prevStock.IsEmpty && (!stocks.IsEmpty || !prevIncome.IsEmpty || !sourcesSum.IsEmpty
+            || !audienceGrants.IsEmpty || !adventureGrants.IsEmpty))
         {
             prevStock = ResourceCatalog.Subtract(stocks, prevIncome);
             prevStock = ResourceCatalog.Subtract(prevStock, sourcesSum);
             prevStock = ResourceCatalog.Subtract(prevStock, projectCosts);
             prevStock = ResourceCatalog.Subtract(prevStock, audienceGrants);
+            prevStock = ResourceCatalog.Subtract(prevStock, adventureGrants);
         }
 
         _stocksGlance = stocks;
@@ -249,6 +256,17 @@ else if (_overview is not null)
             });
         }
 
+        if (!adventureGrants.IsEmpty)
+        {
+            _balanceRows.Add(new ResourceTableRow
+            {
+                Label = BaronAdventurePpb.SummaryRowName,
+                Description = "Cumulative resources granted through campaign adventures this turn — already in Current Resource Stocks.",
+                Values = adventureGrants,
+                IsSystem = true,
+            });
+        }
+
         if (!projectCosts.IsEmpty)
         {
             _balanceRows.Add(new ResourceTableRow
@@ -261,7 +279,8 @@ else if (_overview is not null)
         }
 
         // Σ = every balance row → must equal current stocks (HUD).
-        _balanceSum = ResourceCatalog.Slice(prevStock + prevIncome + sourcesSum + audienceGrants + projectCosts);
+        _balanceSum = ResourceCatalog.Slice(
+            prevStock + prevIncome + sourcesSum + audienceGrants + adventureGrants + projectCosts);
     }
 
     private PpbVector ProjectCosts()
@@ -310,11 +329,13 @@ else if (_overview is not null)
             var projectCosts = ProjectCosts();
             BaronyCalc.AudienceCumulativeTotals(
                 _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
-            var audienceGrants = ResourceCatalog.Slice(audienceAdd);
+            BaronyCalc.AdventureCumulativeTotals(
+                _overview.Events, _overview.Barony.TurnNumber, out var adventureAdd, out _);
+            var turnGrants = ResourceCatalog.Slice(audienceAdd + adventureAdd);
             oldOpening = ResourceCatalog.Subtract(stocksNow, prevIncome);
             oldOpening = ResourceCatalog.Subtract(oldOpening, sourcesSum);
             oldOpening = ResourceCatalog.Subtract(oldOpening, projectCosts);
-            oldOpening = ResourceCatalog.Subtract(oldOpening, audienceGrants);
+            oldOpening = ResourceCatalog.Subtract(oldOpening, turnGrants);
         }
 
         var parameters = new DialogParameters<PreviousTurnIncomeEditDialog>

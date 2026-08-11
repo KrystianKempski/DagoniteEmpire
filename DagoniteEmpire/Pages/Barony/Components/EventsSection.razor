@@ -8,7 +8,7 @@
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
     <ChildContent>
-        @if (Events.Count == 0 && !HasAudienceRow)
+        @if (OrderedEvents.Count == 0 && !HasAudienceRow && !HasAdventureRow)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
                 No events yet.
@@ -107,6 +107,26 @@
                             </tr>
                         }
 
+                        @if (HasAdventureRow)
+                        {
+                            <tr class="event-row--audience">
+                                <td class="city-building-col-name">
+                                    <span class="city-building-name-text">@BaronAdventurePpb.SummaryRowName</span>
+                                </td>
+                                <td class="event-col-turns">
+                                    <BaronyTooltip Title="Turn range"
+                                                   Text="@($"Turns {CurrentTurn}–{CurrentTurn}. Adventure grants apply only on the turn they were granted.")">
+                                        <span>@(CurrentTurn)–@(CurrentTurn)</span>
+                                    </BaronyTooltip>
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, AdventureAdditive[info.Key])">@FmtAdd(AdventureAdditive[info.Key])</td>
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, AdventurePercent[info.Key])">@FmtPct(AdventurePercent[info.Key])</td>
+                                }
+                            </tr>
+                        }
+
                         <tr class="ppb-summary-row">
                             <td class="ppb-row-label city-building-col-name">Σ section</td>
                             <td class="event-col-turns"></td>
@@ -144,40 +164,58 @@
 
     private List<BaronyEventDTO> OrderedEvents =>
         Events
+            .Where(e => !BaronAdventurePpb.IsAdventureEvent(e.Name))
             .OrderBy(e => e.StartTurn)
             .ThenBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
     private IEnumerable<BaronyEventDTO> ActiveEvents =>
-        Events.Where(e => e.IsActiveOnTurn(CurrentTurn));
+        OrderedEvents.Where(e => e.IsActiveOnTurn(CurrentTurn));
 
     private PpbVector AudienceAdditive { get; set; } = new();
     private PpbVector AudiencePercent { get; set; } = new();
     private bool HasAudienceRow => !AudienceAdditive.IsEmpty || !AudiencePercent.IsEmpty;
 
+    private PpbVector AdventureAdditive { get; set; } = new();
+    private PpbVector AdventurePercent { get; set; } = new();
+    private bool HasAdventureRow => !AdventureAdditive.IsEmpty || !AdventurePercent.IsEmpty;
+
     private PpbVector AdditiveSum =>
-        PpbVector.Sum(ActiveEvents.Select(e => e.Additive).Append(AudienceAdditive));
+        PpbVector.Sum(ActiveEvents.Select(e => e.Additive).Append(AudienceAdditive).Append(AdventureAdditive));
 
     private PpbVector PercentSum =>
-        PpbVector.Sum(ActiveEvents.Select(e => e.Percent).Append(AudiencePercent));
+        PpbVector.Sum(ActiveEvents.Select(e => e.Percent).Append(AudiencePercent).Append(AdventurePercent));
 
     private PpbVector Glance =>
         BaronyCalc.SectionGlance(
             BaronyCalc.EventRows(Events, CurrentTurn)
-                .Concat(BaronyCalc.AudienceEventRows(Audiences, CurrentTurn)));
+                .Concat(BaronyCalc.AudienceEventRows(Audiences, CurrentTurn))
+                .Concat(BaronyCalc.AdventureEventRows(Events, CurrentTurn)));
 
     protected override void OnParametersSet()
     {
-        var rows = BaronyCalc.AudienceEventRows(Audiences, CurrentTurn);
-        if (rows.Count == 0)
+        var audienceRows = BaronyCalc.AudienceEventRows(Audiences, CurrentTurn);
+        if (audienceRows.Count == 0)
         {
             AudienceAdditive = new PpbVector();
             AudiencePercent = new PpbVector();
         }
         else
         {
-            AudienceAdditive = rows[0].Additive.Clone();
-            AudiencePercent = rows[0].Percent.Clone();
+            AudienceAdditive = audienceRows[0].Additive.Clone();
+            AudiencePercent = audienceRows[0].Percent.Clone();
+        }
+
+        var adventureRows = BaronyCalc.AdventureEventRows(Events, CurrentTurn);
+        if (adventureRows.Count == 0)
+        {
+            AdventureAdditive = new PpbVector();
+            AdventurePercent = new PpbVector();
+        }
+        else
+        {
+            AdventureAdditive = adventureRows[0].Additive.Clone();
+            AdventurePercent = adventureRows[0].Percent.Clone();
         }
     }
 

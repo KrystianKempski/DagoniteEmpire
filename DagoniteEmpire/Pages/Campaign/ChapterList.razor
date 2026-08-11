@@ -75,6 +75,23 @@
                                 </MudStack>
                                 <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.8);">@chap.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
                                 <MudText Class="py-1 chapter-subtitle" Typo="Typo.subtitle2">@chap.Date, @chap.DayTime, @chap.Place</MudText>
+                                <MudStack Spacing="1" Class="mb-1 chapter-resource-summary">
+                                    <PpbSummaryChips Vector="@chap.BaronyPpbTotal" HideZero="true" />
+                                    <div class="baron-php-summary">
+                                        @if (chap.BaronyPrestigeTotal != 0)
+                                        {
+                                            <PhpMetricChip Metric="PhpMetric.Prestige" Value="@chap.BaronyPrestigeTotal" />
+                                        }
+                                        @if (chap.BaronyHonorTotal != 0)
+                                        {
+                                            <PhpMetricChip Metric="PhpMetric.Honor" Value="@chap.BaronyHonorTotal" />
+                                        }
+                                        @if (chap.BaronyFearTotal != 0)
+                                        {
+                                            <PhpMetricChip Metric="PhpMetric.Fear" Value="@chap.BaronyFearTotal" />
+                                        }
+                                    </div>
+                                </MudStack>
                                 <MudText Class="py-1 chapter-description" Typo="Typo.body2">@chap.Description</MudText>
                                 <div class="adventurer-names">
                                     @foreach (var adv in chap.Characters)
@@ -265,4 +282,5 @@
             _snackBar.Add("This character don't have access to that chapter", Severity.Warning);
         }
     }
+
 }

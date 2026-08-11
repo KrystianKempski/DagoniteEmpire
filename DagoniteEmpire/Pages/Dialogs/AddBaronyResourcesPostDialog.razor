@@ -1,0 +1,56 @@
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.body2">
+                Add barony resources as a separate chapter post.
+            </MudText>
+
+            <PpbVectorEditor @bind-Value="_ppbDelta" Title="Resources (Food, Loyalty, Production, ...)" UseEnglishLabels="true" />
+
+            <MudNumericField T="int"
+                             Label="Prestige"
+                             @bind-Value="_prestigeDelta"
+                             Immediate="true"
+                             Variant="Variant.Outlined" />
+            <MudNumericField T="int"
+                             Label="Honor"
+                             @bind-Value="_honorDelta"
+                             Immediate="true"
+                             Variant="Variant.Outlined" />
+            <MudNumericField T="int"
+                             Label="Fear"
+                             @bind-Value="_fearDelta"
+                             Immediate="true"
+                             Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Disabled="@(!CanAccept)">
+            Confirm
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private PpbVector _ppbDelta = new();
+    private int _prestigeDelta;
+    private int _honorDelta;
+    private int _fearDelta;
+
+    private bool CanAccept => !_ppbDelta.IsEmpty || _prestigeDelta != 0 || _honorDelta != 0 || _fearDelta != 0;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Accept()
+    {
+        if (!CanAccept)
+            return;
+
+        MudDialog.Close(DialogResult.Ok(new ResourcePostResult(_ppbDelta.Clone(), _prestigeDelta, _honorDelta, _fearDelta)));
+    }
+
+    public sealed record ResourcePostResult(PpbVector PpbDelta, int PrestigeDelta, int HonorDelta, int FearDelta);
+}

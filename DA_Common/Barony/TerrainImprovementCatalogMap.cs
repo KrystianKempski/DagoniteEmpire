@@ -95,7 +95,8 @@ namespace DA_Common.Barony
             int fertility,
             string? resource,
             int featuresMask = 0,
-            string? baseType = null)
+            string? baseType = null,
+            IEnumerable<BuildingTemplatePin>? extraCatalogTemplates = null)
         {
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (IsWaterTile(baseType))
@@ -118,7 +119,42 @@ namespace DA_Common.Barony
 
             HerdStockRequirements.AddPlaceableTemplateNames(set, fertility, featuresMask, baseType);
 
+            if (extraCatalogTemplates is not null)
+            {
+                foreach (var entry in extraCatalogTemplates)
+                {
+                    if (string.IsNullOrWhiteSpace(entry.Name) || string.IsNullOrWhiteSpace(entry.MapPinKind))
+                        continue;
+
+                    if (CanPlaceMapImprovement(entry.MapPinKind, fertility, resource, featuresMask, baseType)
+                        && MeetsTerrainRequirement(entry.TerrainRequirement, featuresMask, baseType))
+                        set.Add(entry.Name.Trim());
+                }
+            }
+
             return set;
+        }
+
+        /// <summary>MG catalog entry with explicit map pin for terrain placement.</summary>
+        public readonly record struct BuildingTemplatePin(string Name, string? MapPinKind, string? TerrainRequirement = null);
+
+        private static bool MeetsTerrainRequirement(string? requirement, int featuresMask, string? baseType)
+        {
+            if (string.IsNullOrWhiteSpace(requirement))
+                return true;
+
+            return requirement.Trim() switch
+            {
+                "Water" or "Woda" => TerrainBaseType.IsWater(baseType),
+                "Plains" or "Równiny" => string.Equals(baseType, TerrainBaseType.Plains, StringComparison.OrdinalIgnoreCase),
+                "Hills" or "Wzgórza" => string.Equals(baseType, TerrainBaseType.Hills, StringComparison.OrdinalIgnoreCase),
+                "Forest" or "Las" => TerrainFeature.Has(featuresMask, TerrainFeature.Forest),
+                "Dense forest" or "Gęsty las" => TerrainFeature.Has(featuresMask, TerrainFeature.DenseForest),
+                "Swamp" or "Bagna" => TerrainFeature.Has(featuresMask, TerrainFeature.Swamp),
+                "Coast or river" or "Wybrzeże lub rzeka" =>
+                    TerrainFeature.Has(featuresMask, TerrainFeature.Coast) || TerrainFeature.Has(featuresMask, TerrainFeature.River),
+                _ => true,
+            };
         }
 
         /// <summary>

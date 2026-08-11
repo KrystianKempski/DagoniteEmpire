@@ -108,7 +108,7 @@ namespace DagoniteEmpire.Pages.Barony
             var purposes = await baronyRepo.GetSeatPurposeTemplates(barony.Id);
             var seatContribution = BaronyCalc.SeatPhpContribution(seat, purposes);
             var itemsContribution = BaronyCalc.ArtifactsPhpContribution(artifacts, seat);
-            var adventuresContribution = BaronyCalc.AudiencePhpContribution(audiences);
+            var adventuresContribution = BaronyCalc.AdventuresPhpContribution(audiences, sources);
             var totals = BaronyCalc.SumPhpRows(BaronyCalc.BuildPhpRows(
                 seatContribution, itemsContribution, sources, adventuresContribution));
 

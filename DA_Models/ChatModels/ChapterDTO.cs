@@ -1,4 +1,5 @@
 ﻿using DA_Common;
+using DA_Common.Barony;
 using DA_Models;
 using DA_Models.CharacterModels;
 using DA_Models.ComponentModels;
@@ -32,6 +33,10 @@ namespace DA_DataAccess.Chat
         public ICollection<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
         public bool IsFinished { get; set; } = false;
         public int CampaignId { get; set; }
+        public PpbVector BaronyPpbTotal { get; set; } = new();
+        public int BaronyPrestigeTotal { get; set; }
+        public int BaronyHonorTotal { get; set; }
+        public int BaronyFearTotal { get; set; }
 
         public override string ToString() => Name;
     }

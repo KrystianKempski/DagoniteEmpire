@@ -9,10 +9,10 @@
         <div class="barony-terrain-grid-wrap"
              style="--terrain-cell-size: @(CellSizePx)px;">
             <div class="barony-terrain-grid"
-                 style="grid-template-columns: repeat(@GridSize, @(CellSizePx)px); grid-auto-rows: @(CellSizePx)px;">
-                @for (var y = 0; y < GridSize; y++)
+                 style="grid-template-columns: repeat(@GridWidth, @(CellSizePx)px); grid-auto-rows: @(CellSizePx)px;">
+                @for (var y = 0; y < GridHeight; y++)
                 {
-                    @for (var x = 0; x < GridSize; x++)
+                    @for (var x = 0; x < GridWidth; x++)
                     {
                         var cx = x;
                         var cy = y;
@@ -136,7 +136,7 @@
                                          class="@($"barony-terrain-cell__improvement-icon barony-terrain-cell__improvement-icon--{ImprovementIconCss(improvement.Name)}")" />
                                     @if (!string.IsNullOrWhiteSpace(improvement.Description))
                                     {
-                                        <span class="barony-terrain-cell__improvement-name">@improvement.Description</span>
+                                        <span class="@($"barony-terrain-cell__improvement-name barony-terrain-cell__improvement-name--{ImprovementIconCss(improvement.Name)}")">@improvement.Description</span>
                                     }
                                 </span>
                             }
@@ -181,7 +181,8 @@
 </div>
 
 @code {
-    [Parameter] public int GridSize { get; set; } = TerrainMapConstants.GridSize;
+    [Parameter] public int GridWidth { get; set; } = TerrainMapConstants.GridSize;
+    [Parameter] public int GridHeight { get; set; } = TerrainMapConstants.GridSize;
     [Parameter] public int CellSizePx { get; set; } = TerrainMapConstants.CellSizePx;
     [Parameter] public IReadOnlyDictionary<(int X, int Y), TerrainTileDTO> Tiles { get; set; }
         = new Dictionary<(int X, int Y), TerrainTileDTO>();
@@ -312,7 +313,7 @@
             classes.Add("barony-terrain-tooltip--below");
         if (x <= 1)
             classes.Add("barony-terrain-tooltip--start");
-        else if (x >= GridSize - 2)
+        else if (x >= GridWidth - 2)
             classes.Add("barony-terrain-tooltip--end");
         return string.Join(' ', classes);
     }

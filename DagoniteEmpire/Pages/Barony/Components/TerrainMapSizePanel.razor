@@ -1,0 +1,128 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using MapGrid = DA_Common.Barony.TerrainMapGrid
+
+<div class="terrain-brush">
+    <MudText Typo="Typo.caption" Class="terrain-brush__hint">
+        Grow or shrink the map from each edge. New tiles are empty plains.
+        Shrinking permanently deletes edge tiles and any improvements on them.
+    </MudText>
+    <div class="terrain-brush__body terrain-map-size">
+        <div class="terrain-map-size__current">
+            Current size: <strong>@Width</strong> × <strong>@Height</strong>
+            <span class="terrain-map-size__limits">
+                (min @MapGrid.MinSize … max @MapGrid.MaxSize)
+            </span>
+        </div>
+
+        <div class="terrain-map-size__amount">
+            <MudNumericField T="int"
+                             Label="Tiles per click"
+                             @bind-Value="_amount"
+                             Min="1"
+                             Max="10"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Disabled="_busy"
+                             Class="terrain-map-size__amount-field" />
+        </div>
+
+        <div class="terrain-map-size__pad">
+            <div class="terrain-map-size__edge terrain-map-size__edge--top">
+                <span class="terrain-map-size__edge-label">Top</span>
+                <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                               Size="Size.Small"
+                               Disabled="@(_busy || !CanShrinkTop)"
+                               title="Remove rows from the top"
+                               OnClick="@(() => ApplyAsync(0, 0, -Amount, 0))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                               Size="Size.Small"
+                               Disabled="@(_busy || !CanGrowTop)"
+                               title="Add rows at the top"
+                               OnClick="@(() => ApplyAsync(0, 0, Amount, 0))" />
+            </div>
+
+            <div class="terrain-map-size__middle">
+                <div class="terrain-map-size__edge terrain-map-size__edge--left">
+                    <span class="terrain-map-size__edge-label">Left</span>
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                   Size="Size.Small"
+                                   Disabled="@(_busy || !CanShrinkLeft)"
+                                   title="Remove columns from the left"
+                                   OnClick="@(() => ApplyAsync(-Amount, 0, 0, 0))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                   Size="Size.Small"
+                                   Disabled="@(_busy || !CanGrowLeft)"
+                                   title="Add columns on the left"
+                                   OnClick="@(() => ApplyAsync(Amount, 0, 0, 0))" />
+                </div>
+
+                <div class="terrain-map-size__preview" aria-hidden="true">
+                    @Width × @Height
+                </div>
+
+                <div class="terrain-map-size__edge terrain-map-size__edge--right">
+                    <span class="terrain-map-size__edge-label">Right</span>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                   Size="Size.Small"
+                                   Disabled="@(_busy || !CanGrowRight)"
+                                   title="Add columns on the right"
+                                   OnClick="@(() => ApplyAsync(0, Amount, 0, 0))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                   Size="Size.Small"
+                                   Disabled="@(_busy || !CanShrinkRight)"
+                                   title="Remove columns from the right"
+                                   OnClick="@(() => ApplyAsync(0, -Amount, 0, 0))" />
+                </div>
+            </div>
+
+            <div class="terrain-map-size__edge terrain-map-size__edge--bottom">
+                <span class="terrain-map-size__edge-label">Bottom</span>
+                <MudIconButton Icon="@Icons.Material.Filled.Add"
+                               Size="Size.Small"
+                               Disabled="@(_busy || !CanGrowBottom)"
+                               title="Add rows at the bottom"
+                               OnClick="@(() => ApplyAsync(0, 0, 0, Amount))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                               Size="Size.Small"
+                               Disabled="@(_busy || !CanShrinkBottom)"
+                               title="Remove rows from the bottom"
+                               OnClick="@(() => ApplyAsync(0, 0, 0, -Amount))" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Width { get; set; } = MapGrid.DefaultSize;
+    [Parameter] public int Height { get; set; } = MapGrid.DefaultSize;
+    [Parameter] public EventCallback<(int DeltaLeft, int DeltaRight, int DeltaTop, int DeltaBottom)> OnResize { get; set; }
+
+    private bool _busy;
+    private int _amount = 1;
+
+    private int Amount => Math.Clamp(_amount <= 0 ? 1 : _amount, 1, 10);
+
+    private bool CanGrowLeft => Width + Amount <= MapGrid.MaxSize;
+    private bool CanGrowRight => Width + Amount <= MapGrid.MaxSize;
+    private bool CanGrowTop => Height + Amount <= MapGrid.MaxSize;
+    private bool CanGrowBottom => Height + Amount <= MapGrid.MaxSize;
+    private bool CanShrinkLeft => Width - Amount >= MapGrid.MinSize;
+    private bool CanShrinkRight => Width - Amount >= MapGrid.MinSize;
+    private bool CanShrinkTop => Height - Amount >= MapGrid.MinSize;
+    private bool CanShrinkBottom => Height - Amount >= MapGrid.MinSize;
+
+    private async Task ApplyAsync(int deltaLeft, int deltaRight, int deltaTop, int deltaBottom)
+    {
+        if (_busy)
+            return;
+        _busy = true;
+        try
+        {
+            await OnResize.InvokeAsync((deltaLeft, deltaRight, deltaTop, deltaBottom));
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

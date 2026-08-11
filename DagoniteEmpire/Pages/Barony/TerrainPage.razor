@@ -85,6 +85,11 @@ else
                                     <TerrainImprovementBrush Value="@_brushImprovement"
                                                              ValueChanged="OnBrushImprovementChanged" />
                                 </MudTabPanel>
+                                <MudTabPanel Text="Map Size">
+                                    <TerrainMapSizePanel Width="@GridWidth"
+                                                         Height="@GridHeight"
+                                                         OnResize="ResizeMapAsync" />
+                                </MudTabPanel>
                             </MudTabs>
                         </div>
                         <TerrainMapLayersBar VisibleLayers="@_visibleLayers"
@@ -101,7 +106,8 @@ else
                                   OnToggleLayer="ToggleLayerAsync" />
         }
 
-        <TerrainMapGrid GridSize="@GridSize"
+        <TerrainMapGrid GridWidth="@GridWidth"
+                        GridHeight="@GridHeight"
                         CellSizePx="@TerrainMapConstants.CellSizePx"
                         Tiles="@_tileIndex"
                         Fiefs="@_fiefIndex"
@@ -123,10 +129,17 @@ else
 }
 
 @code {
-    private const int GridSize = TerrainMapConstants.GridSize;
+    private int GridWidth => Barony is null
+        ? DA_Common.Barony.TerrainMapGrid.DefaultSize
+        : DA_Common.Barony.TerrainMapGrid.ClampDimension(
+            Barony.TerrainMapWidth > 0 ? Barony.TerrainMapWidth : DA_Common.Barony.TerrainMapGrid.DefaultSize);
+    private int GridHeight => Barony is null
+        ? DA_Common.Barony.TerrainMapGrid.DefaultSize
+        : DA_Common.Barony.TerrainMapGrid.ClampDimension(
+            Barony.TerrainMapHeight > 0 ? Barony.TerrainMapHeight : DA_Common.Barony.TerrainMapGrid.DefaultSize);
     private static readonly TerrainMapLayer[] AllLayers = Enum.GetValues<TerrainMapLayer>();
 
-    private int TotalCells => GridSize * GridSize;
+    private int TotalCells => GridWidth * GridHeight;
 
     private Dictionary<int, int> DomainTileCounts => CountTilesBy(t => t.MapDomainId);
     private Dictionary<int, int> FiefTileCounts => CountTilesBy(t => t.FiefId);
@@ -203,6 +216,7 @@ else
         if (Barony is null)
             return;
 
+        Barony = await _baronyRepo.GetById(Barony.Id) ?? Barony;
         var tiles = await _baronyRepo.EnsureTerrainGrid(Barony.Id);
         _tileIndex = tiles.ToDictionary(t => (t.X, t.Y));
 
@@ -228,6 +242,42 @@ else
         await EnsurePlayerFiefAsync();
     }
 
+    private async Task ResizeMapAsync((int DeltaLeft, int DeltaRight, int DeltaTop, int DeltaBottom) deltas)
+    {
+        if (Barony is null || !CanManageAsMg)
+            return;
+
+        var (dL, dR, dT, dB) = deltas;
+        if (dL == 0 && dR == 0 && dT == 0 && dB == 0)
+            return;
+
+        var shrinking = dL < 0 || dR < 0 || dT < 0 || dB < 0;
+        if (shrinking)
+        {
+            var confirm = await _dialogService.ShowMessageBoxAsync(
+                "Shrink map?",
+                "Tiles removed from the edge (and any improvements on them) will be deleted permanently. Continue?",
+                yesText: "Shrink",
+                cancelText: "Cancel");
+            if (confirm != true)
+                return;
+        }
+
+        try
+        {
+            var (width, height) = await _baronyRepo.ResizeTerrainMap(Barony.Id, dL, dR, dT, dB);
+            Barony.TerrainMapWidth = width;
+            Barony.TerrainMapHeight = height;
+            await LoadMapDataAsync();
+            _snackBar.Add($"Map resized to {width}×{height}.", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+
     private bool CanProposeBuildAt(int x, int y)
     {
         if (!CanProposeConstruction)
@@ -249,12 +299,17 @@ else
             return false;
 
         var allowedNames = TerrainImprovementCatalogMap.AllowedCatalogTemplateNames(
-            tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType);
+            tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType, CustomCatalogPins());
 
         return _improvementTemplates.Any(t =>
             allowedNames.Contains(t.Name)
             && HerdStockRequirements.HasAccess(t.Name, _tradeGoodAvailability));
     }
+
+    private IEnumerable<TerrainImprovementCatalogMap.BuildingTemplatePin> CustomCatalogPins() =>
+        _improvementTemplates
+            .Where(t => !string.IsNullOrWhiteSpace(t.MapPinKind))
+            .Select(t => new TerrainImprovementCatalogMap.BuildingTemplatePin(t.Name, t.MapPinKind, t.TerrainRequirement));
 
     private async Task OnTileClickAsync((int X, int Y) cell)
     {
@@ -292,7 +347,7 @@ else
         }
 
         var allowedNames = TerrainImprovementCatalogMap.AllowedCatalogTemplateNames(
-            tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType);
+            tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType, CustomCatalogPins());
         var availability = _tradeGoodAvailability;
         var lockedHerd = new List<string>();
         var placeable = new List<BuildingTemplateDTO>();
@@ -1100,7 +1155,6 @@ else
                     && (_improvementPlaceNameStroke?.HasPalisade ?? existing?.HasPalisade ?? false);
                 if (!ApplyCatalogTemplate(dto, nextName, tile, placeName, population, hasPalisade))
                     return;
-                dto.IconUrl = null;
             }
             else
             {
@@ -1182,6 +1236,9 @@ else
                 dto.Additive[Ppb.Treasury] += TerrainImprovementCatalogMap.FishingHarborFisheryTreasuryBonus;
             }
         }
+
+        if (!string.IsNullOrWhiteSpace(template.IconUrl))
+            dto.IconUrl = template.IconUrl.Trim();
 
         // Vassal gold share is applied at Domain Panel / Budget calc time (Barony.VassalTributePercent),
         // not stored into Additive — keep full village/town yields on the map entity.

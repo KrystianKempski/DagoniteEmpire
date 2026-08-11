@@ -3,6 +3,7 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject IDialogService _dialogService
+@inject IJSRuntime JS
 
 <PageTitle>Dagonite Empire | Buildings</PageTitle>
 
@@ -34,12 +35,15 @@ else
         @if (_templates.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Dense="true">
-                The building catalog is empty. Game Master can populate templates in a future editor.
+                The building catalog is empty.
+                @if (CanManageAsMg)
+                {
+                    <text> Use <strong>Add building</strong> below to create the first template.</text>
+                }
             </MudAlert>
         }
-        else
-        {
-            <div class="buildings-catalog-filters">
+
+        <div class="buildings-catalog-filters">
                 <MudTextField @bind-Value="_nameFilter"
                               Placeholder="Filter by name…"
                               Variant="Variant.Outlined"
@@ -48,7 +52,8 @@ else
                               Clearable="true"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Search"
-                              Class="buildings-catalog-filters__name" />
+                              Class="buildings-catalog-filters__name"
+                              Disabled="@(_templates.Count == 0)" />
                 <MudSelect T="string"
                            Label="Type"
                            Variant="Variant.Outlined"
@@ -56,12 +61,24 @@ else
                            Clearable="true"
                            Dense="true"
                            Class="buildings-catalog-filters__kind"
-                           @bind-Value="_kindFilter">
+                           @bind-Value="_kindFilter"
+                           Disabled="@(_templates.Count == 0)">
                     <MudSelectItem Value="@BuildingKind.Building">Building</MudSelectItem>
                     <MudSelectItem Value="@BuildingKind.Improvement">Improvement</MudSelectItem>
                 </MudSelect>
-            </div>
+                @if (CanManageAsMg)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Class="barony-turn-btn barony-turn-btn--solid buildings-catalog-filters__add"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="OpenCreateTemplateDialogAsync">
+                        Add building
+                    </MudButton>
+                }
+        </div>
 
+        @if (_templates.Count > 0)
+        {
             @if (FilteredCount == 0)
             {
                 <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
@@ -74,6 +91,9 @@ else
                     <div class="buildings-catalog-scroll">
                         <BuildingCatalogTable Items="@FilteredTemplates"
                                               CanProposeBuild="@CanEdit"
+                                              CanManageCatalog="@CanManageAsMg"
+                                              OnEditTemplate="OpenEditTemplateDialogAsync"
+                                              OnDeleteTemplate="DeleteTemplateAsync"
                                               OnProposeBuild="OnProposeBuildAsync" />
                     </div>
                 </div>
@@ -107,7 +127,43 @@ else
         if (Barony is null)
             return;
 
-        _templates = await _baronyRepo.GetBuildingTemplates();
+        await ReloadTemplatesAsync();
+    }
+
+    private async Task OpenCreateTemplateDialogAsync()
+    {
+        if (!CanManageAsMg)
+            return;
+
+        var existingNames = _templates
+            .Select(t => t.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var parameters = new DialogParameters<CreateBuildingTemplateDialog>
+        {
+            { x => x.DefaultKind, _kindFilter },
+            { x => x.ExistingNames, existingNames },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CreateBuildingTemplateDialog>(
+            "New catalog entry",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BuildingTemplateDTO template)
+            return;
+
+        try
+        {
+            var saved = await _baronyRepo.SaveBuildingTemplate(template);
+            await ReloadTemplatesAsync();
+            _snackBar.Add($"Catalog entry “{saved.Name}” created.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save catalog entry: " + ex.Message, Severity.Error);
+        }
     }
 
     private async Task OnProposeBuildAsync(BuildingTemplateDTO template)
@@ -145,5 +201,73 @@ else
         {
             _snackBar.Add("Could not create project: " + ex.Message, Severity.Error);
         }
+    }
+
+    private async Task OpenEditTemplateDialogAsync(BuildingTemplateDTO template)
+    {
+        if (!CanManageAsMg)
+            return;
+
+        var existingNames = _templates
+            .Where(t => t.Id != template.Id)
+            .Select(t => t.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var parameters = new DialogParameters<CreateBuildingTemplateDialog>
+        {
+            { x => x.ExistingNames, existingNames },
+            { x => x.InitialTemplate, template },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CreateBuildingTemplateDialog>(
+            "Edit catalog entry",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BuildingTemplateDTO edited)
+            return;
+
+        try
+        {
+            var saved = await _baronyRepo.SaveBuildingTemplate(edited);
+            await ReloadTemplatesAsync();
+            _snackBar.Add($"Catalog entry “{saved.Name}” updated.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not update catalog entry: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteTemplateAsync(BuildingTemplateDTO template)
+    {
+        if (!CanManageAsMg || template.Id <= 0)
+            return;
+
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"Delete catalog entry \"{template.Name}\"? This cannot be undone.");
+
+        if (!confirmed)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteBuildingTemplate(template.Id);
+            await ReloadTemplatesAsync();
+            _snackBar.Add($"Catalog entry “{template.Name}” deleted.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not delete catalog entry: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ReloadTemplatesAsync()
+    {
+        _templates = (await _baronyRepo.GetBuildingTemplates())
+            .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

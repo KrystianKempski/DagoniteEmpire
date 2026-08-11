@@ -112,9 +112,9 @@
     }
 
     private static string IconStyle(Ppb key) =>
-        $"--resource-color:{ResourceCatalog.ColorHex(key)};" +
-        $"-webkit-mask-image:url('{ResourceCatalog.IconUrl(key)}');" +
-        $"mask-image:url('{ResourceCatalog.IconUrl(key)}');";
+        $"--resource-color:{PpbVisuals.ColorHex(key)};" +
+        $"-webkit-mask-image:url('{PpbVisuals.IconUrl(key) ?? ResourceCatalog.IconUrl(key)}');" +
+        $"mask-image:url('{PpbVisuals.IconUrl(key) ?? ResourceCatalog.IconUrl(key)}');";
 
     private static string FmtDelta(decimal delta)
     {

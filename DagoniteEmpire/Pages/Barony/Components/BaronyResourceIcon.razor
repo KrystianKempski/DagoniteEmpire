@@ -18,7 +18,7 @@
     };
 
     private string IconStyle =>
-        $"--resource-color:{ResourceCatalog.ColorHex(Resource)};" +
-        $"-webkit-mask-image:url('{ResourceCatalog.IconUrl(Resource)}');" +
-        $"mask-image:url('{ResourceCatalog.IconUrl(Resource)}');";
+        $"--resource-color:{PpbVisuals.ColorHex(Resource)};" +
+        $"-webkit-mask-image:url('{PpbVisuals.IconUrl(Resource) ?? ResourceCatalog.IconUrl(Resource)}');" +
+        $"mask-image:url('{PpbVisuals.IconUrl(Resource) ?? ResourceCatalog.IconUrl(Resource)}');";
 }

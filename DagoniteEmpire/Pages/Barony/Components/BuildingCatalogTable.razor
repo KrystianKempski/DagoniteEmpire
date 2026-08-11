@@ -42,16 +42,35 @@
                 <td class="catalog-col-name catalog-cell-name">
                     <div class="catalog-name-cell">
                         <span class="catalog-name-cell__text">@item.Name</span>
-                        @if (CanProposeBuild && IsCityBuilding(item))
-                        {
-                            <button type="button"
-                                    class="catalog-name-cell__build"
-                                    title="Start building project"
-                                    @onclick="() => ProposeBuildAsync(item)"
-                                    @onclick:stopPropagation="true">
-                                <img src="/icons/hammer.svg" alt="" class="catalog-name-cell__build-icon" />
-                            </button>
-                        }
+                        <span class="catalog-name-cell__actions">
+                            @if (CanProposeBuild && IsCityBuilding(item))
+                            {
+                                <button type="button"
+                                        class="catalog-name-cell__build"
+                                        title="Start building project"
+                                        @onclick="() => ProposeBuildAsync(item)"
+                                        @onclick:stopPropagation="true">
+                                    <img src="/icons/hammer.svg" alt="" class="catalog-name-cell__build-icon" />
+                                </button>
+                            }
+                            @if (CanManageCatalog && item.IsCustom)
+                            {
+                                <button type="button"
+                                        class="catalog-name-cell__build catalog-name-cell__build--edit"
+                                        title="Edit catalog entry"
+                                        @onclick="() => EditTemplateAsync(item)"
+                                        @onclick:stopPropagation="true">
+                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                </button>
+                                <button type="button"
+                                        class="catalog-name-cell__build catalog-name-cell__build--delete"
+                                        title="Delete catalog entry"
+                                        @onclick="() => DeleteTemplateAsync(item)"
+                                        @onclick:stopPropagation="true">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                </button>
+                            }
+                        </span>
                     </div>
                 </td>
                 <td class="catalog-col-lordship">@FmtLevel(item.RequiredLordshipLevel)</td>
@@ -103,7 +122,10 @@
 
     [Parameter] public IEnumerable<BuildingTemplateDTO> Items { get; set; } = Array.Empty<BuildingTemplateDTO>();
     [Parameter] public bool CanProposeBuild { get; set; }
+    [Parameter] public bool CanManageCatalog { get; set; }
     [Parameter] public EventCallback<BuildingTemplateDTO> OnProposeBuild { get; set; }
+    [Parameter] public EventCallback<BuildingTemplateDTO> OnEditTemplate { get; set; }
+    [Parameter] public EventCallback<BuildingTemplateDTO> OnDeleteTemplate { get; set; }
 
     private string _sortKey = SortName;
     private bool _sortDesc;
@@ -114,6 +136,8 @@
         string.Equals(item.Kind, BuildingKind.Building, StringComparison.OrdinalIgnoreCase);
 
     private Task ProposeBuildAsync(BuildingTemplateDTO item) => OnProposeBuild.InvokeAsync(item);
+    private Task EditTemplateAsync(BuildingTemplateDTO item) => OnEditTemplate.InvokeAsync(item);
+    private Task DeleteTemplateAsync(BuildingTemplateDTO item) => OnDeleteTemplate.InvokeAsync(item);
 
     private static string PpbSortKey(Ppb p) => $"ppb:{p}";
 

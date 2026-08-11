@@ -91,46 +91,13 @@ namespace DA_Common.Barony
         public static bool Contains(Ppb p) => Keys.Contains(p);
 
         /// <summary>CSS modifier for resource accent color (e.g. "food", "gold").</summary>
-        public static string ColorKey(Ppb p) => p switch
-        {
-            Ppb.Food => "food",
-            Ppb.Production => "production",
-            Ppb.Science => "science",
-            Ppb.Magic => "magic",
-            Ppb.Culture => "culture",
-            Ppb.Intelligence => "intelligence",
-            Ppb.Defense => "defense",
-            Ppb.Treasury => "gold",
-            _ => "default",
-        };
+        public static string ColorKey(Ppb p) => PpbVisuals.ColorKey(p);
 
         /// <summary>HUD / UI icon path under wwwroot.</summary>
-        public static string IconUrl(Ppb p) => p switch
-        {
-            Ppb.Food => "/icons/wheat.svg",
-            Ppb.Production => "/icons/gear-hammer.svg",
-            Ppb.Science => "/icons/erlenmeyer.svg",
-            Ppb.Magic => "/icons/crystal-wand.svg",
-            Ppb.Culture => "/icons/lyre.svg",
-            Ppb.Intelligence => "/icons/hood.svg",
-            Ppb.Defense => "/icons/shield.svg",
-            Ppb.Treasury => "/icons/two-coins.svg",
-            _ => "/icons/wheat.svg",
-        };
+        public static string IconUrl(Ppb p) => PpbVisuals.IconUrl(p) ?? "/icons/wheat.svg";
 
         /// <summary>Accent hex for masked SVG icons.</summary>
-        public static string ColorHex(Ppb p) => p switch
-        {
-            Ppb.Food => "#6bcf75",
-            Ppb.Production => "#e07a8a",
-            Ppb.Science => "#6aa8f0",
-            Ppb.Magic => "#b07aef",
-            Ppb.Culture => "#f0a45a",
-            Ppb.Intelligence => "#c4b8d8",
-            Ppb.Defense => "#a8b0bc",
-            Ppb.Treasury => "#f0d060",
-            _ => "#d4cfc6",
-        };
+        public static string ColorHex(Ppb p) => PpbVisuals.ColorHex(p);
 
         /// <summary>Copy only cumulative resource keys from <paramref name="source"/>.</summary>
         public static PpbVector Slice(PpbVector? source)
