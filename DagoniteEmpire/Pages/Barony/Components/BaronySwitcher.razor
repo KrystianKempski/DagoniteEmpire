@@ -7,12 +7,13 @@
 
 @if (_visible)
 {
-    <button type="button"
-            class="barony-meta-bar__name barony-meta-bar__name--switch"
-            title="Switch barony"
-            @onclick="OpenSwitchDialogAsync">
+    <BaronyTooltip Text="Switch barony">
+        <button type="button"
+                class="barony-meta-bar__name barony-meta-bar__name--switch"
+                @onclick="OpenSwitchDialogAsync">
         @(_selected?.Name ?? "Select barony")
-    </button>
+        </button>
+    </BaronyTooltip>
 }
 
 @code {

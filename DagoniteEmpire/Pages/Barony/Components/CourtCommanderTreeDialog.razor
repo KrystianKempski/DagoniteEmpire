@@ -179,9 +179,10 @@
                        && string.Equals(_selected.Key, ability.Key, StringComparison.OrdinalIgnoreCase);
         <button type="button"
                 class="court-commander-node @css @(selected ? "court-commander-node--selected" : null)"
-                title="@ability.DescriptionEn"
                 @onclick="() => Select(ability.Key)">
-            <span class="court-commander-node__name">@ability.NameEn</span>
+            <BaronyTooltip Title="@ability.NameEn" Text="@ability.DescriptionEn">
+                <span class="court-commander-node__name">@ability.NameEn</span>
+            </BaronyTooltip>
         </button>
     };
 

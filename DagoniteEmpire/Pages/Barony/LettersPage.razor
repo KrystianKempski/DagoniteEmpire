@@ -86,7 +86,9 @@ else if (Barony is not null)
                                             <div class="baron-mail__thread-title">
                                                 @if (unread)
                                                 {
-                                                    <span class="baron-mail__dot" title="Unread"></span>
+                                                    <BaronyTooltip Text="Unread">
+                                                        <span class="baron-mail__dot"></span>
+                                                    </BaronyTooltip>
                                                 }
                                                 <span>@(string.IsNullOrWhiteSpace(thread.Title) ? "(no title)" : thread.Title)</span>
                                             </div>
@@ -153,18 +155,20 @@ else if (Barony is not null)
                     <div class="baron-mail__header-actions">
                         @if (CanWriteAsGm || CanWriteAsBaron)
                         {
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                           Size="Size.Small"
-                                           title="Rename thread"
-                                           OnClick="BeginEditTitle" />
+                            <BaronyTooltip Text="Rename thread">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Size="Size.Small"
+                                               OnClick="BeginEditTitle" />
+                            </BaronyTooltip>
                         }
                         @if (CanWriteAsGm)
                         {
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                           Size="Size.Small"
-                                           Color="Color.Error"
-                                           title="Delete thread"
-                                           OnClick="DeleteThreadAsync" />
+                            <BaronyTooltip Text="Delete thread">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="DeleteThreadAsync" />
+                            </BaronyTooltip>
                         }
                     </div>
                 </div>
@@ -191,26 +195,29 @@ else if (Barony is not null)
                                 </span>
                                 @if (isLastOutbound && !_editingLastLetter)
                                 {
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                   Size="Size.Small"
-                                                   title="Edit letter"
-                                                   OnClick="BeginEditLastLetterAsync" />
+                                    <BaronyTooltip Text="Edit letter">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                       Size="Size.Small"
+                                                       OnClick="BeginEditLastLetterAsync" />
+                                    </BaronyTooltip>
                                 }
                                 @if (CanWriteAsGm && post.IsDraft)
                                 {
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                   Size="Size.Small"
-                                                   Color="Color.Error"
-                                                   title="Delete draft"
-                                                   OnClick="@(() => DeleteMessageAsync(post))" />
+                                    <BaronyTooltip Text="Delete draft">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                       Size="Size.Small"
+                                                       Color="Color.Error"
+                                                       OnClick="@(() => DeleteMessageAsync(post))" />
+                                    </BaronyTooltip>
                                 }
                                 else if (CanWriteAsBaron && post.IsDraft && !post.IsInbound)
                                 {
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                   Size="Size.Small"
-                                                   Color="Color.Error"
-                                                   title="Delete draft"
-                                                   OnClick="@(() => DeleteMessageAsync(post))" />
+                                    <BaronyTooltip Text="Delete draft">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                       Size="Size.Small"
+                                                       Color="Color.Error"
+                                                       OnClick="@(() => DeleteMessageAsync(post))" />
+                                    </BaronyTooltip>
                                 }
                             </header>
                             <div class="ql-snow baron-mail__post-body">

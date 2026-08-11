@@ -34,10 +34,12 @@
                     <thead>
                         <tr>
                             <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
-                            <th rowspan="2" class="event-col-turns" title="Active from turn – to turn (∞ = ongoing)">Turns</th>
+                            <th rowspan="2" class="event-col-turns">
+                                <BaronyTooltip Title="Turns" Text="Active from turn – to turn (∞ = ongoing)">Turns</BaronyTooltip>
+                            </th>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                                <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
                             }
                         </tr>
                         <tr>
@@ -61,15 +63,17 @@
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                               Size="Size.Small"
-                                                               title="Edit event"
-                                                               OnClick="@(() => EditAsync(item))" />
-                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                               Size="Size.Small"
-                                                               Color="Color.Error"
-                                                               title="Remove event"
-                                                               OnClick="@(() => DeleteAsync(item))" />
+                                                <BaronyTooltip Text="Edit event">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => EditAsync(item))" />
+                                                </BaronyTooltip>
+                                                <BaronyTooltip Text="Remove event">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Size="Size.Small"
+                                                                   Color="Color.Error"
+                                                                   OnClick="@(() => DeleteAsync(item))" />
+                                                </BaronyTooltip>
                                             </span>
                                         }
                                     </div>

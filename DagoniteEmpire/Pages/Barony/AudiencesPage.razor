@@ -25,7 +25,7 @@ else if (Barony is not null)
             <span class="projects-summary">
                 <span class="projects-summary__item">@CurrentTurnActive.Count this turn</span>
                 <span class="projects-summary__item">@DeferredWaiting.Count deferred</span>
-                <span class="projects-summary__item">Archive: @_audiences.Count(IsArchiveEntry)</span>
+                <span class="projects-summary__item">Archive: @AudienceOnly.Count(IsArchiveEntry)</span>
             </span>
         </Summary>
     </BaronyPageHeader>
@@ -57,7 +57,7 @@ else if (Barony is not null)
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
                     Additive PPB → Domain Panel Events · cumulative resources → Resource Balance (stocks immediately) · PHP → Baron Card (From Adventures).
                 </MudText>
-                @if (SummaryRows.Count == 0)
+                @if (AudienceSummaryRows.Count == 0 && CouncilSummary is null)
                 {
                     <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No audience grants this turn yet.</MudText>
                 }
@@ -104,7 +104,7 @@ else if (Barony is not null)
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var a in SummaryRows)
+                                @foreach (var a in AudienceSummaryRows)
                                 {
                                     <tr>
                                         <td class="ppb-row-label city-building-col-name">
@@ -120,6 +120,21 @@ else if (Barony is not null)
                                         <td class="@PhpScoreClass(PhpMetric.Fear, a.Fear)">@FmtPhp(a.Fear)</td>
                                     </tr>
                                 }
+                                @if (CouncilSummary is not null)
+                                {
+                                    <tr>
+                                        <td class="ppb-row-label city-building-col-name">
+                                            <strong>@BaronCouncilSession.SummaryRowName</strong>
+                                        </td>
+                                        @foreach (var info in PpbCatalog.All)
+                                        {
+                                            <td class="@PpbCellStyle.ValueClass(info.Key, CouncilSummary.Additive[info.Key])">@FmtAdd(CouncilSummary.Additive[info.Key])</td>
+                                        }
+                                        <td class="@PhpScoreClass(PhpMetric.Prestige, CouncilSummary.Prestige)">@FmtPhp(CouncilSummary.Prestige)</td>
+                                        <td class="@PhpScoreClass(PhpMetric.Honor, CouncilSummary.Honor)">@FmtPhp(CouncilSummary.Honor)</td>
+                                        <td class="@PhpScoreClass(PhpMetric.Fear, CouncilSummary.Fear)">@FmtPhp(CouncilSummary.Fear)</td>
+                                    </tr>
+                                }
                                 <tr class="ppb-summary-row">
                                     <td class="ppb-row-label city-building-col-name">Σ audiences</td>
                                     @foreach (var info in PpbCatalog.All)
@@ -132,6 +147,65 @@ else if (Barony is not null)
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                }
+            </ChildContent>
+        </BaronySection>
+
+        <BaronySection Title="Council">
+            <Summary>
+                <span class="projects-summary">
+                    @if (CurrentCouncil is not null)
+                    {
+                        <span class="projects-summary__item">This turn</span>
+                    }
+                    <span class="projects-summary__item">Archive: @CouncilArchive.Count</span>
+                </span>
+            </Summary>
+            <ChildContent>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
+                    One Council session per turn. At Resolve Turn it moves to archive and a new session opens.
+                    MG Speak as lists all courtiers from Court.
+                </MudText>
+
+                @if (CurrentCouncil is null)
+                {
+                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                        No Council session for this turn yet.
+                    </MudText>
+                }
+                else
+                {
+                    <div class="project-card-grid">
+                        <AudiencePanel Audience="CurrentCouncil"
+                                       CanWriteAsGm="CanWriteAsGm"
+                                       CanWriteAsBaron="CanWriteAsBaron"
+                                       Busy="_busy"
+                                       CourtSpeakers="_courtSpeakers"
+                                       OnSpeak="req => SendReplyAsync(CurrentCouncil, req)"
+                                       OnAddResources="() => AddResourcesAsync(CurrentCouncil)"
+                                       OnCreateProject="() => CreateProjectAsync(CurrentCouncil)"
+                                       OnMakeChapter="() => MakeChapterAsync(CurrentCouncil)"
+                                       OnResolve="() => ResolveAsync(CurrentCouncil)"
+                                       OnDismiss="() => DismissAsync(CurrentCouncil)" />
+                    </div>
+                }
+
+                @if (CouncilArchive.Count > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Previous Council sessions</MudText>
+                    <div class="project-card-grid">
+                        @foreach (var a in CouncilArchive)
+                        {
+                            <AudiencePanel Audience="a"
+                                           ReadOnly="true"
+                                           ShowSummary="true"
+                                           CanWriteAsGm="CanWriteAsGm"
+                                           CanWriteAsBaron="CanWriteAsBaron"
+                                           Busy="_busy"
+                                           CourtSpeakers="_courtSpeakers"
+                                           OnMakeChapter="() => MakeChapterAsync(a)" />
+                        }
                     </div>
                 }
             </ChildContent>
@@ -216,7 +290,7 @@ else if (Barony is not null)
         <BaronySection Title="Archive" DefaultOpen="false">
             <Summary>
                 <span class="projects-summary">
-                    <span class="projects-summary__item">@_audiences.Count(IsArchiveEntry) archived</span>
+                    <span class="projects-summary__item">@AudienceOnly.Count(IsArchiveEntry) archived</span>
                 </span>
             </Summary>
             <ChildContent>
@@ -261,29 +335,98 @@ else if (Barony is not null)
 
 @code {
     private List<BaronAudienceDTO> _audiences = new();
+    private List<string> _courtSpeakers = new();
     private readonly HashSet<int> _expandedArchiveTurns = new();
     private bool _busy;
 
     private bool CanWriteAsGm => CanManageAsMg;
     private bool CanWriteAsBaron => CanEdit && !CanManageAsMg;
 
-    private IReadOnlyList<BaronAudienceDTO> SummaryRows =>
-        _audiences
+    private IEnumerable<BaronAudienceDTO> AudienceOnly =>
+        _audiences.Where(a => BaronAudienceKind.IsAudience(a.Kind));
+
+    private IEnumerable<BaronAudienceDTO> CouncilOnly =>
+        _audiences.Where(a => BaronAudienceKind.IsCouncil(a.Kind));
+
+    private IReadOnlyList<BaronAudienceDTO> AudienceSummaryRows =>
+        AudienceOnly
             .Where(a => a.ContributesToTurn(Barony?.TurnNumber ?? 0) && a.HasGrants)
             .OrderBy(a => a.Id)
             .ToList();
 
-    private PpbVector SummaryAdditive =>
-        PpbVector.Sum(SummaryRows.Select(a => a.Additive));
+    private BaronAudienceDTO? CouncilSummary
+    {
+        get
+        {
+            var rows = CouncilOnly
+                .Where(a => a.ContributesToTurn(Barony?.TurnNumber ?? 0) && a.HasGrants)
+                .ToList();
+            if (rows.Count == 0)
+                return null;
 
-    private PhpTotals SummaryPhp =>
-        new(
-            SummaryRows.Sum(a => a.Prestige),
-            SummaryRows.Sum(a => a.Honor),
-            SummaryRows.Sum(a => a.Fear));
+            var additive = PpbVector.Sum(rows.Select(a => a.Additive));
+            var percent = PpbVector.Sum(rows.Select(a => a.Percent));
+            return new BaronAudienceDTO
+            {
+                Title = BaronCouncilSession.SummaryRowName,
+                PetitionerName = BaronCouncilSession.PetitionerLabel,
+                Kind = BaronAudienceKind.Council,
+                Additive = additive,
+                Percent = percent,
+                Prestige = rows.Sum(a => a.Prestige),
+                Honor = rows.Sum(a => a.Honor),
+                Fear = rows.Sum(a => a.Fear),
+                Status = BaronAudienceStatus.InProgress,
+                TurnNumber = Barony?.TurnNumber ?? 0,
+            };
+        }
+    }
+
+    private PpbVector SummaryAdditive
+    {
+        get
+        {
+            var v = PpbVector.Sum(AudienceSummaryRows.Select(a => a.Additive));
+            if (CouncilSummary is not null)
+                v.AddInPlace(CouncilSummary.Additive);
+            return v;
+        }
+    }
+
+    private PhpTotals SummaryPhp
+    {
+        get
+        {
+            var prestige = AudienceSummaryRows.Sum(a => a.Prestige);
+            var honor = AudienceSummaryRows.Sum(a => a.Honor);
+            var fear = AudienceSummaryRows.Sum(a => a.Fear);
+            if (CouncilSummary is not null)
+            {
+                prestige += CouncilSummary.Prestige;
+                honor += CouncilSummary.Honor;
+                fear += CouncilSummary.Fear;
+            }
+            return new(prestige, honor, fear);
+        }
+    }
+
+    private BaronAudienceDTO? CurrentCouncil =>
+        CouncilOnly
+            .Where(a => a.TurnNumber == (Barony?.TurnNumber ?? 0)
+                        && (string.Equals(a.Status, BaronAudienceStatus.Scheduled, StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(a.Status, BaronAudienceStatus.InProgress, StringComparison.OrdinalIgnoreCase)))
+            .OrderByDescending(a => a.Id)
+            .FirstOrDefault();
+
+    private IReadOnlyList<BaronAudienceDTO> CouncilArchive =>
+        CouncilOnly
+            .Where(a => a.Id != CurrentCouncil?.Id)
+            .OrderByDescending(a => a.TurnNumber)
+            .ThenByDescending(a => a.UpdatedAtUtc)
+            .ToList();
 
     private IReadOnlyList<BaronAudienceDTO> CurrentTurnActive =>
-        _audiences
+        AudienceOnly
             .Where(a => a.TurnNumber == (Barony?.TurnNumber ?? 0)
                         && (string.Equals(a.Status, BaronAudienceStatus.Scheduled, StringComparison.OrdinalIgnoreCase)
                             || string.Equals(a.Status, BaronAudienceStatus.InProgress, StringComparison.OrdinalIgnoreCase)))
@@ -291,14 +434,14 @@ else if (Barony is not null)
             .ToList();
 
     private IReadOnlyList<BaronAudienceDTO> DeferredWaiting =>
-        _audiences
+        AudienceOnly
             .Where(a => string.Equals(a.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
                         && !_audiences.Any(c => c.ContinuedFromAudienceId == a.Id))
             .OrderBy(a => a.Id)
             .ToList();
 
     private IReadOnlyList<(int Turn, List<BaronAudienceDTO> Items)> ArchiveFolders =>
-        _audiences
+        AudienceOnly
             .Where(IsArchiveEntry)
             .GroupBy(a => a.TurnNumber)
             .OrderByDescending(g => g.Key)
@@ -323,6 +466,20 @@ else if (Barony is not null)
 
     private async Task ReloadAsync()
     {
+        if (Barony is not null)
+        {
+            await _baronyRepo.EnsureCouncilSession(
+                Barony.Id, Barony.TurnNumber, Barony.Year, Barony.Season);
+            var advisors = await _baronyRepo.GetAvailableAdvisors(Barony.Id);
+            _courtSpeakers = advisors
+                .Select(a => a.Name)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Select(n => n.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
         StateHasChanged();
     }
@@ -349,6 +506,7 @@ else if (Barony is not null)
                 BaronyId = BaronyId,
                 PetitionerName = data.PetitionerName,
                 Title = data.Title,
+                Kind = BaronAudienceKind.Audience,
                 Status = BaronAudienceStatus.Scheduled,
                 TurnNumber = Barony!.TurnNumber,
             });

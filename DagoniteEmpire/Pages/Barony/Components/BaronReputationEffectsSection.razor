@@ -36,8 +36,9 @@
                     </div>
                     <div class="baron-reputation-track__tier">@current.Name</div>
                 </div>
-                <div class="@($"baron-reputation-track__score {BaronPhpVisuals.CssClass(metric)}")"
-                     title="Current score">@FormatScore(score)</div>
+                <BaronyTooltip Text="Current score">
+                    <div class="@($"baron-reputation-track__score {BaronPhpVisuals.CssClass(metric)}")">@FormatScore(score)</div>
+                </BaronyTooltip>
             </header>
 
             <div class="baron-reputation-steps" role="list">
@@ -45,10 +46,12 @@
                 {
                     var isCurrent = ReferenceEquals(tier, current) || tier.Name == current.Name;
                     var reached = score >= tier.MinRequired || tier.MinRequired == int.MinValue;
-                    <div class="@StepClass(isCurrent, reached)" role="listitem" title="@TierTooltip(tier)">
-                        <span class="baron-reputation-step__name">@tier.Name</span>
-                        <span class="baron-reputation-step__req">@tier.ThresholdLabel</span>
-                    </div>
+                    <BaronyTooltip Text="@TierTooltip(tier)">
+                        <div class="@StepClass(isCurrent, reached)" role="listitem">
+                            <span class="baron-reputation-step__name">@tier.Name</span>
+                            <span class="baron-reputation-step__req">@tier.ThresholdLabel</span>
+                        </div>
+                    </BaronyTooltip>
                 }
             </div>
 

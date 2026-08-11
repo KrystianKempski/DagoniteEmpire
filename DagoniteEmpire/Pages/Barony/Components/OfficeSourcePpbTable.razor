@@ -18,7 +18,11 @@
             @foreach (var info in SkillColumns)
             {
                 var inactive = IsColumnInactive(info.Key);
-                <th class="@HeaderClass(inactive)" title="@HeaderTitle(info, inactive)">@PpbShort(info.Key)</th>
+                <th class="@HeaderClass(inactive)">
+                    <BaronyTooltip Title="@(inactive ? info.NameEn : null)" Text="@HeaderTitle(info, inactive)">
+                        @PpbShort(info.Key)
+                    </BaronyTooltip>
+                </th>
             }
             @if (ShowCost)
             {
@@ -40,7 +44,9 @@
                         }
                         else
                         {
-                            <span class="source-cell__name" title="@RowTitle(row)">@row.Source</span>
+                            <BaronyTooltip Text="@RowTitle(row)">
+                                <span class="source-cell__name">@row.Source</span>
+                            </BaronyTooltip>
                         }
                         @if (!string.IsNullOrWhiteSpace(row.Formula))
                         {
@@ -62,7 +68,18 @@
                 {
                     var inactive = IsColumnInactive(info.Key);
                     var tip = CellTooltip?.Invoke(row, info.Key);
-                    <td class="@CellClass(info.Key, row.Values[info.Key], inactive)" title="@tip">@Fmt(row.Values[info.Key])</td>
+                    <td class="@CellClass(info.Key, row.Values[info.Key], inactive)">
+                        @if (tip is not null)
+                        {
+                            <BaronyTooltip Title="@info.NameEn" Text="@tip">
+                                <span>@Fmt(row.Values[info.Key])</span>
+                            </BaronyTooltip>
+                        }
+                        else
+                        {
+                            @Fmt(row.Values[info.Key])
+                        }
+                    </td>
                 }
                 @if (ShowCost)
                 {
@@ -147,7 +164,7 @@
         => inactive ? "ppb-col-inactive" : string.Empty;
 
     private static string? HeaderTitle(PpbInfo info, bool inactive)
-        => inactive ? $"{info.NameEn} — not significant for this office" : info.Code;
+        => inactive ? "Not significant for this office" : info.NameEn;
 
     private static string CostClass(decimal cost)
         => cost > 0m ? "ppb-cell-neg" : "ppb-cell-zero";

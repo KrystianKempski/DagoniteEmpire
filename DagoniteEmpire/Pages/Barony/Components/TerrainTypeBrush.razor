@@ -11,11 +11,11 @@
                 {
                     var t = baseType;
                     var selected = SubMode == TerrainTypeSubMode.Base && t == BaseTypeValue;
-                    <button type="button"
-                            class="terrain-type-option @(selected ? "terrain-type-option--selected" : "")"
-                            title="@TerrainBaseType.DisplayName(t)"
-                            aria-label="@TerrainBaseType.DisplayName(t)"
-                            @onclick="() => SelectBaseAsync(t)">
+                    <BaronyTooltip Text="@TerrainBaseType.DisplayName(t)">
+                        <button type="button"
+                                class="terrain-type-option @(selected ? "terrain-type-option--selected" : "")"
+                                aria-label="@TerrainBaseType.DisplayName(t)"
+                                @onclick="() => SelectBaseAsync(t)">
                         @if (TerrainMapVisuals.CustomBaseTypeIconUrl(t) is string customIconUrl)
                         {
                             <img src="@customIconUrl"
@@ -27,7 +27,8 @@
                             <MudIcon Icon="@TerrainMapVisuals.BaseTypeIcon(t)" Size="Size.Medium" />
                         }
                         <span>@TerrainBaseType.DisplayName(t)</span>
-                    </button>
+                        </button>
+                    </BaronyTooltip>
                 }
             </div>
             <MudText Typo="Typo.caption" Class="terrain-brush__label">Base type</MudText>
@@ -39,11 +40,11 @@
                 {
                     var f = feature;
                     var selected = SubMode == TerrainTypeSubMode.Feature && FeatureValue == f;
-                    <button type="button"
-                            class="terrain-type-option @(selected ? "terrain-type-option--selected" : "")"
-                            title="@TerrainFeature.DisplayName(f)"
-                            aria-label="@TerrainFeature.DisplayName(f)"
-                            @onclick="() => SelectFeatureAsync(f)">
+                    <BaronyTooltip Text="@TerrainFeature.DisplayName(f)">
+                        <button type="button"
+                                class="terrain-type-option @(selected ? "terrain-type-option--selected" : "")"
+                                aria-label="@TerrainFeature.DisplayName(f)"
+                                @onclick="() => SelectFeatureAsync(f)">
                         @if (TerrainMapVisuals.FeatureIconUrls(f) is { Count: > 0 } iconUrls)
                         {
                             @if (iconUrls.Count > 1)
@@ -71,7 +72,8 @@
                                      Style="@(f == TerrainFeature.River || f == TerrainFeature.Coast ? "color:#1f6f98;" : null)" />
                         }
                         <span>@TerrainFeature.DisplayName(f)</span>
-                    </button>
+                        </button>
+                    </BaronyTooltip>
                 }
             </div>
             <MudText Typo="Typo.caption" Class="terrain-brush__label">Features</MudText>

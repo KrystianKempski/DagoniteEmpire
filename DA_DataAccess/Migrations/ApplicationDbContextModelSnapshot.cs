@@ -276,6 +276,10 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("Honor")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("OutcomeNotes")
                         .IsRequired()
                         .HasColumnType("text");

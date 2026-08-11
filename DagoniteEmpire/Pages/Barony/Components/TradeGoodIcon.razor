@@ -1,21 +1,14 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-@if (UsesBakedStroke)
+@if (string.IsNullOrWhiteSpace(Title))
 {
-    <img class="trade-good-icon trade-good-icon--img @Class"
-         src="@ResolvedIconUrl"
-         alt=""
-         title="@(string.IsNullOrWhiteSpace(Title) ? null : Title)"
-         aria-hidden="@(string.IsNullOrWhiteSpace(Title) ? "true" : null)"
-         aria-label="@Title" />
+    @IconMarkup
 }
 else
 {
-    <span class="trade-good-icon @(NeedsOutline ? "resource-icon--dark-outline" : null) @Class"
-          style="@IconStyle"
-          title="@(string.IsNullOrWhiteSpace(Title) ? null : Title)"
-          aria-hidden="@(string.IsNullOrWhiteSpace(Title) ? "true" : null)"
-          aria-label="@Title"></span>
+    <BaronyTooltip Text="@Title">
+        @IconMarkup
+    </BaronyTooltip>
 }
 
 @code {
@@ -46,4 +39,23 @@ else
                    $"mask-image:url('{icon}');";
         }
     }
+
+    private RenderFragment IconMarkup => __builder =>
+    {
+        if (UsesBakedStroke)
+        {
+            <img class="trade-good-icon trade-good-icon--img @Class"
+                 src="@ResolvedIconUrl"
+                 alt=""
+                 aria-hidden="true"
+                 aria-label="@Title" />
+        }
+        else
+        {
+            <span class="trade-good-icon @(NeedsOutline ? "resource-icon--dark-outline" : null) @Class"
+                  style="@IconStyle"
+                  aria-hidden="true"
+                  aria-label="@Title"></span>
+        }
+    };
 }

@@ -196,18 +196,21 @@
                                Value="@m"
                                ValueChanged="EventCallback.Factory.Create<string>(this, onChanged)"
                                Class="unit-gear-pay__modes">
-                    <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Craft" Dense="true" Class="unit-gear-pay__mode"
-                              title="@($"Craft: Prod {prod} + Gold {gold}")">
-                        <BaronyResourceIcon Resource="Ppb.Production" Size="xs" />
-                    </MudRadio>
-                    <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Buy" Dense="true" Class="unit-gear-pay__mode"
-                              title="@($"Buy: Mkt {market}")">
-                        <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
-                    </MudRadio>
-                    <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Defense" Dense="true" Class="unit-gear-pay__mode"
-                              title="@($"Defense: 2×Mkt = {(market ?? 0) * 2}")">
-                        <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
-                    </MudRadio>
+                    <BaronyTooltip Text="@($"Craft: Prod {prod} + Gold {gold}")">
+                        <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Craft" Dense="true" Class="unit-gear-pay__mode">
+                            <BaronyResourceIcon Resource="Ppb.Production" Size="xs" />
+                        </MudRadio>
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="@($"Buy: Mkt {market}")">
+                        <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Buy" Dense="true" Class="unit-gear-pay__mode">
+                            <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                        </MudRadio>
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="@($"Defense: 2×Mkt = {(market ?? 0) * 2}")">
+                        <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Defense" Dense="true" Class="unit-gear-pay__mode">
+                            <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
+                        </MudRadio>
+                    </BaronyTooltip>
                 </MudRadioGroup>
             }
         </div>

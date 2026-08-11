@@ -191,8 +191,12 @@ else if (_overview is not null)
                                         @if (CanManageAsMg)
                                         {
                                             <span class="city-building-name-actions">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" title="Edit" OnClick="@(() => EditPurseSourceAsync(src))" />
-                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" title="Remove" OnClick="@(() => DeletePurseSourceAsync(src))" />
+                                                <BaronyTooltip Text="Edit">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditPurseSourceAsync(src))" />
+                                                </BaronyTooltip>
+                                                <BaronyTooltip Text="Remove">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeletePurseSourceAsync(src))" />
+                                                </BaronyTooltip>
                                             </span>
                                         }
                                     </div>

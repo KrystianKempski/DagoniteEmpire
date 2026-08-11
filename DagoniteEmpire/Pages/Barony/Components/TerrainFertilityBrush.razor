@@ -6,24 +6,26 @@
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
-            <button type="button"
-                    class="terrain-fertility-swatch terrain-fertility-swatch--unknown @(Value == TerrainFertility.Unknown ? "terrain-fertility-swatch--selected" : "")"
-                    style="background-color: @TerrainMapVisuals.UnknownFertilityColor"
-                    title="Unknown fertility"
-                    aria-label="Unknown fertility"
-                    @onclick="() => SelectValue(TerrainFertility.Unknown)">
-            </button>
+            <BaronyTooltip Text="Unknown fertility">
+                <button type="button"
+                        class="terrain-fertility-swatch terrain-fertility-swatch--unknown @(Value == TerrainFertility.Unknown ? "terrain-fertility-swatch--selected" : "")"
+                        style="background-color: @TerrainMapVisuals.UnknownFertilityColor"
+                        aria-label="Unknown fertility"
+                        @onclick="() => SelectValue(TerrainFertility.Unknown)">
+                </button>
+            </BaronyTooltip>
             @for (var value = TerrainFertility.Min; value <= TerrainFertility.Max; value++)
             {
                 var v = value;
-                <button type="button"
-                        class="terrain-fertility-swatch @(v == Value ? "terrain-fertility-swatch--selected" : "")"
-                        style="background-color: @TerrainMapVisuals.FertilityColorForValue(v)"
-                        title="@($"{v} — {TerrainFertility.DisplayName(v)}")"
-                        aria-label="@($"{v} — {TerrainFertility.DisplayName(v)}")"
-                        @onclick="() => SelectValue(v)">
-                    @v
-                </button>
+                <BaronyTooltip Title="@v.ToString()" Text="@TerrainFertility.DisplayName(v)">
+                    <button type="button"
+                            class="terrain-fertility-swatch @(v == Value ? "terrain-fertility-swatch--selected" : "")"
+                            style="background-color: @TerrainMapVisuals.FertilityColorForValue(v)"
+                            aria-label="@($"{v} — {TerrainFertility.DisplayName(v)}")"
+                            @onclick="() => SelectValue(v)">
+                        @v
+                    </button>
+                </BaronyTooltip>
             }
         </div>
     </div>

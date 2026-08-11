@@ -21,10 +21,11 @@
                 </MudText>
                 @if (CanEdit)
                 {
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                   Size="Size.Small"
-                                   title="Edit advisor profile"
-                                   OnClick="EditProfileAsync" />
+                    <BaronyTooltip Text="Edit advisor profile">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Size="Size.Small"
+                                       OnClick="EditProfileAsync" />
+                    </BaronyTooltip>
                 }
             </div>
             @if (!string.IsNullOrWhiteSpace(PersonDescription))

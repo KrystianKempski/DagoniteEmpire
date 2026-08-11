@@ -50,9 +50,10 @@
                     <div class="baron-time-bar__track">
                         <div class="baron-time-bar__fill @ManagementBarClass()"
                              style="@($"width:{ManagementWidth()}%")"></div>
-                        <div class="baron-time-bar__marker"
-                             title="Required @BaronTimeRules.RequiredManagementJc BT"
-                             style="left:100%;"></div>
+                        <BaronyTooltip Text="@($"Required {BaronTimeRules.RequiredManagementJc} BT")">
+                            <div class="baron-time-bar__marker"
+                                 style="left:100%;"></div>
+                        </BaronyTooltip>
                     </div>
                 </div>
             </div>
@@ -89,11 +90,18 @@
             <div class="baron-time-block__title">Actions this turn</div>
             <div style="overflow-x:auto;">
                 <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table">
+                    <colgroup>
+                        <col class="baron-time-col-name" />
+                        <col class="baron-time-col-kind" />
+                        <col class="baron-time-col-cost" />
+                        <col class="baron-time-col-desc" />
+                    </colgroup>
                     <thead>
                         <tr>
                             <th class="ppb-row-label source-col">Action</th>
-                            <th>Type</th>
-                            <th>Cost</th>
+                            <th class="baron-time-col-kind">Type</th>
+                            <th class="baron-time-col-cost">Cost</th>
+                            <th class="baron-time-col-desc">Description</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -102,16 +110,7 @@
                             <tr class="@(action.IsSystem ? "source-row--system" : "")">
                                 <td class="ppb-row-label source-col">
                                     <div class="source-cell">
-                                        @if (!string.IsNullOrWhiteSpace(action.Description))
-                                        {
-                                            <BaronyTooltip Title="Description" Text="@action.Description">
-                                                <span class="source-cell__name">@action.Name</span>
-                                            </BaronyTooltip>
-                                        }
-                                        else
-                                        {
-                                            <span class="source-cell__name">@action.Name</span>
-                                        }
+                                        <span class="source-cell__name">@action.Name</span>
                                         @if (CanEdit)
                                         {
                                             <span class="source-cell__actions">
@@ -124,13 +123,15 @@
                                         }
                                     </div>
                                 </td>
-                                <td>@action.Kind</td>
+                                <td class="baron-time-col-kind">@action.Kind</td>
                                 <td class="baron-time-cost">@action.CostJc BT</td>
+                                <td class="baron-time-col-desc">@(action.Description ?? "")</td>
                             </tr>
                         }
                         <tr class="ppb-summary-row">
                             <td class="ppb-row-label" colspan="2">Σ spent</td>
                             <td class="baron-time-cost"><b>@_budget.SpentJc BT</b></td>
+                            <td class="baron-time-col-desc"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -155,10 +156,16 @@
             {
                 <div style="overflow-x:auto;">
                     <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table">
+                        <colgroup>
+                            <col class="baron-time-col-name" />
+                            <col class="baron-time-col-cost" />
+                            <col class="baron-time-col-desc" />
+                        </colgroup>
                         <thead>
                             <tr>
                                 <th class="ppb-row-label source-col">Source</th>
-                                <th>%</th>
+                                <th class="baron-time-col-cost">%</th>
+                                <th class="baron-time-col-desc">Description</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -167,16 +174,7 @@
                                 <tr>
                                     <td class="ppb-row-label source-col">
                                         <div class="source-cell">
-                                            @if (!string.IsNullOrWhiteSpace(mod.Description))
-                                            {
-                                                <BaronyTooltip Title="Description" Text="@mod.Description">
-                                                    <span class="source-cell__name">@mod.Source</span>
-                                                </BaronyTooltip>
-                                            }
-                                            else
-                                            {
-                                                <span class="source-cell__name">@mod.Source</span>
-                                            }
+                                            <span class="source-cell__name">@mod.Source</span>
                                             @if (CanEdit)
                                             {
                                                 <span class="source-cell__actions">
@@ -187,11 +185,13 @@
                                         </div>
                                     </td>
                                     <td class="@PercentClass(mod.Percent)">@BaronyCalc.FormatPercent(mod.Percent)</td>
+                                    <td class="baron-time-col-desc">@(mod.Description ?? "")</td>
                                 </tr>
                             }
                             <tr class="ppb-summary-row">
                                 <td class="ppb-row-label">Σ modifiers</td>
                                 <td class="@PercentClass(_budget.ModifierPercent)"><b>@BaronyCalc.FormatPercent(_budget.ModifierPercent)</b></td>
+                                <td class="baron-time-col-desc"></td>
                             </tr>
                         </tbody>
                     </table>

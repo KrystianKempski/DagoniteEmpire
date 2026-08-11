@@ -116,7 +116,9 @@ else if (_overview is not null)
         <Actions>
             @if (_overview is not null && _overview.Barony.PlayerTurnReady)
             {
-                <span class="barony-turn-ready-chip" title="Player marked this turn finished">Ready for MG</span>
+                <BaronyTooltip Text="Player marked this turn finished">
+                    <span class="barony-turn-ready-chip">Ready for MG</span>
+                </BaronyTooltip>
             }
             @if (CanEdit && !CanManageAsMg)
             {
@@ -229,7 +231,11 @@ else if (_overview is not null)
                             <th class="ppb-row-label summary-col-component">Component</th>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <th title="@info.NameEn">@PpbShort(info.Key)</th>
+                                <th>
+                                    <BaronyTooltip Text="@info.NameEn">
+                                        <span>@PpbShort(info.Key)</span>
+                                    </BaronyTooltip>
+                                </th>
                             }
                         </tr>
                     </thead>

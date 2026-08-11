@@ -42,6 +42,21 @@ namespace DA_Common.Barony
         };
     }
 
+    /// <summary>Audience vs Council session on the Audiences tab.</summary>
+    public readonly struct BaronAudienceKind
+    {
+        public const string Audience = "Audience";
+        public const string Council = "Council";
+
+        public static string Normalize(string? kind) =>
+            string.Equals(kind, Council, StringComparison.OrdinalIgnoreCase) ? Council : Audience;
+
+        public static bool IsCouncil(string? kind) =>
+            string.Equals(Normalize(kind), Council, StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsAudience(string? kind) => !IsCouncil(kind);
+    }
+
     /// <summary>How audience PPB splits into Domain Events vs Project Summary.</summary>
     public static class BaronAudiencePpb
     {
@@ -127,6 +142,26 @@ namespace DA_Common.Barony
             };
             var title = string.IsNullOrWhiteSpace(audienceTitle) ? "Untitled" : audienceTitle.Trim();
             return $"Audience {year}, {seasonLabel}, {title}";
+        }
+    }
+
+    /// <summary>Automatic Council session titles and labels.</summary>
+    public static class BaronCouncilSession
+    {
+        public const string PetitionerLabel = "Council";
+        public const string QuestionToGmSpeaker = "Question to GM";
+        public const string GameMasterSpeaker = "Game Master";
+        public const string SummaryRowName = "Council";
+
+        /// <summary><c>Council session. {year}, {season}</c> (Fall → Autumn).</summary>
+        public static string FormatTitle(int year, string? season)
+        {
+            var seasonLabel = BaronyCalendarFormulas.NormalizeSeason(season) switch
+            {
+                "Fall" => "Autumn",
+                var s => s,
+            };
+            return $"Council session. {year}, {seasonLabel}";
         }
     }
 }

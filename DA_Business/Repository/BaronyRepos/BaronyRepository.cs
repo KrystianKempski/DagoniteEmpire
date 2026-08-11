@@ -802,6 +802,10 @@ namespace DA_Business.Repository.BaronyRepos
                 // 8b) Deferred audiences → new turn copies (last exchange carried forward)
                 await AdvanceDeferredAudiencesAsync(ctx, baronyId, nextCal.TurnNumber);
 
+                // 8c) Council: archive open session → open next turn's session
+                await AdvanceCouncilSessionsAsync(
+                    ctx, baronyId, nextCal.TurnNumber, nextCal.Year, nextCal.Season);
+
                 // 9) Depleted units regenerate troops toward full strength
                 report.UnitTroopRegenerations = await RegenerateDepletedUnitsAsync(ctx, baronyId);
 
@@ -2757,7 +2761,8 @@ namespace DA_Business.Repository.BaronyRepos
         {
             var deferred = await ctx.BaronAudiences
                 .Where(a => a.BaronyId == baronyId
-                    && a.Status == BaronAudienceStatus.Deferred)
+                    && a.Status == BaronAudienceStatus.Deferred
+                    && a.Kind != BaronAudienceKind.Council)
                 .ToListAsync();
             if (deferred.Count == 0)
                 return;
@@ -2791,6 +2796,7 @@ namespace DA_Business.Repository.BaronyRepos
                     BaronyId = baronyId,
                     Title = old.Title,
                     PetitionerName = old.PetitionerName,
+                    Kind = BaronAudienceKind.Normalize(old.Kind),
                     Status = BaronAudienceStatus.Scheduled,
                     TurnNumber = newTurnNumber,
                     ContinuedFromAudienceId = old.Id,
@@ -2823,6 +2829,106 @@ namespace DA_Business.Repository.BaronyRepos
                     await ctx.SaveChangesAsync();
                 }
             }
+        }
+
+        /// <summary>
+        /// Close open Council sessions for the ending turn and open the next turn's session.
+        /// </summary>
+        private static async Task AdvanceCouncilSessionsAsync(
+            ApplicationDbContext ctx,
+            int baronyId,
+            int newTurnNumber,
+            int newYear,
+            string newSeason)
+        {
+            var now = DateTime.UtcNow;
+            var open = await ctx.BaronAudiences
+                .Where(a => a.BaronyId == baronyId
+                    && a.Kind == BaronAudienceKind.Council
+                    && (a.Status == BaronAudienceStatus.Scheduled
+                        || a.Status == BaronAudienceStatus.InProgress))
+                .ToListAsync();
+
+            foreach (var session in open)
+            {
+                session.Status = BaronAudienceStatus.Resolved;
+                session.ClosedAtUtc = now;
+                session.UpdatedAtUtc = now;
+                if (string.IsNullOrWhiteSpace(session.GmSummary))
+                    session.GmSummary = "Closed at end of turn.";
+            }
+
+            var alreadyOpenNext = await ctx.BaronAudiences.AnyAsync(a =>
+                a.BaronyId == baronyId
+                && a.Kind == BaronAudienceKind.Council
+                && a.TurnNumber == newTurnNumber
+                && (a.Status == BaronAudienceStatus.Scheduled
+                    || a.Status == BaronAudienceStatus.InProgress));
+            if (!alreadyOpenNext)
+            {
+                ctx.BaronAudiences.Add(new BaronAudience
+                {
+                    BaronyId = baronyId,
+                    Title = BaronCouncilSession.FormatTitle(newYear, newSeason),
+                    PetitionerName = BaronCouncilSession.PetitionerLabel,
+                    Kind = BaronAudienceKind.Council,
+                    Status = BaronAudienceStatus.Scheduled,
+                    TurnNumber = newTurnNumber,
+                    GmSummary = "",
+                    OutcomeNotes = "",
+                    AdditiveJson = Ser(new PpbVector()),
+                    PercentJson = Ser(new PpbVector()),
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now,
+                });
+            }
+
+            await ctx.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Ensure the current turn has an open Council session (create if missing).
+        /// </summary>
+        public async Task<BaronAudienceDTO> EnsureCouncilSession(
+            int baronyId,
+            int turnNumber,
+            int year,
+            string season)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var existing = await ctx.BaronAudiences.AsNoTracking()
+                    .FirstOrDefaultAsync(a =>
+                        a.BaronyId == baronyId
+                        && a.Kind == BaronAudienceKind.Council
+                        && a.TurnNumber == turnNumber
+                        && (a.Status == BaronAudienceStatus.Scheduled
+                            || a.Status == BaronAudienceStatus.InProgress));
+                if (existing is not null)
+                    return await LoadAudienceDtoAsync(ctx, existing.Id);
+
+                var now = DateTime.UtcNow;
+                var neu = new BaronAudience
+                {
+                    BaronyId = baronyId,
+                    Title = BaronCouncilSession.FormatTitle(year, season),
+                    PetitionerName = BaronCouncilSession.PetitionerLabel,
+                    Kind = BaronAudienceKind.Council,
+                    Status = BaronAudienceStatus.Scheduled,
+                    TurnNumber = turnNumber,
+                    GmSummary = "",
+                    OutcomeNotes = "",
+                    AdditiveJson = Ser(new PpbVector()),
+                    PercentJson = Ser(new PpbVector()),
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now,
+                };
+                ctx.BaronAudiences.Add(neu);
+                await ctx.SaveChangesAsync();
+                return await LoadAudienceDtoAsync(ctx, neu.Id);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(EnsureCouncilSession)); }
         }
 
         // ---------------- Offices influence ----------------
@@ -4788,6 +4894,7 @@ namespace DA_Business.Repository.BaronyRepos
             BaronyId = e.BaronyId,
             Title = e.Title ?? "",
             PetitionerName = e.PetitionerName ?? "",
+            Kind = BaronAudienceKind.Normalize(e.Kind),
             Status = e.Status ?? BaronAudienceStatus.Scheduled,
             TurnNumber = e.TurnNumber,
             ContinuedFromAudienceId = e.ContinuedFromAudienceId,
@@ -4839,6 +4946,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.BaronyId = d.BaronyId;
             e.Title = (d.Title ?? "").Trim();
             e.PetitionerName = (d.PetitionerName ?? "").Trim();
+            e.Kind = BaronAudienceKind.Normalize(d.Kind);
             e.Status = string.IsNullOrWhiteSpace(d.Status)
                 ? BaronAudienceStatus.Scheduled
                 : d.Status.Trim();

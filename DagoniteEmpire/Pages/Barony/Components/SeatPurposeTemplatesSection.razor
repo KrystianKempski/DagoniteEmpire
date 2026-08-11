@@ -26,10 +26,12 @@
                         <th rowspan="2" class="ppb-row-label lords-seat-templates-col-name">Name</th>
                         <th rowspan="2" class="lords-seat-templates-col-size">Min size</th>
                         <th rowspan="2" class="lords-seat-templates-col-desc">Description</th>
-                        <th rowspan="2" class="lords-seat-templates-col-prestige seat-php-header" title="Prestige / Honor / Fear (additive)">Prestige</th>
+                        <th rowspan="2" class="lords-seat-templates-col-prestige seat-php-header">
+                            <BaronyTooltip Title="Prestige" Text="Prestige / Honor / Fear (additive)">Prestige</BaronyTooltip>
+                        </th>
                         @foreach (var info in PpbCatalog.All)
                         {
-                            <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                            <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
                         }
                     </tr>
                     <tr>
@@ -50,15 +52,17 @@
                                         <span class="city-building-name-text">@t.Name</span>
                                     </BaronyTooltip>
                                     <span class="city-building-name-actions">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                       Size="Size.Small"
-                                                       title="Edit template"
-                                                       OnClick="@(() => EditAsync(t))" />
-                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                       Size="Size.Small"
-                                                       Color="Color.Error"
-                                                       title="Delete template"
-                                                       OnClick="@(() => DeleteAsync(t))" />
+                                        <BaronyTooltip Text="Edit template">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Size="Size.Small"
+                                                           OnClick="@(() => EditAsync(t))" />
+                                        </BaronyTooltip>
+                                        <BaronyTooltip Text="Delete template">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Size="Size.Small"
+                                                           Color="Color.Error"
+                                                           OnClick="@(() => DeleteAsync(t))" />
+                                        </BaronyTooltip>
                                     </span>
                                 </div>
                             </td>

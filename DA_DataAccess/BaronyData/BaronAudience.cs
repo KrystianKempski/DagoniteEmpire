@@ -15,6 +15,9 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Name of the petitioner (the person seeking audience).</summary>
         public string PetitionerName { get; set; } = string.Empty;
 
+        /// <summary><see cref="DA_Common.Barony.BaronAudienceKind"/> — Audience (default) or Council.</summary>
+        public string Kind { get; set; } = DA_Common.Barony.BaronAudienceKind.Audience;
+
         /// <summary><see cref="DA_Common.Barony.BaronAudienceStatus"/>.</summary>
         public string Status { get; set; } = DA_Common.Barony.BaronAudienceStatus.Scheduled;
 

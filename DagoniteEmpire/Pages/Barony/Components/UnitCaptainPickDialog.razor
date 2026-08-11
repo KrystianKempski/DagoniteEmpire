@@ -50,10 +50,12 @@
                             <span class="unit-captain-pick__meta">
                                 @if (unlocked > 0)
                                 {
-                                    <span class="unit-captain-option__badge" title="Unlocked commander abilities">
-                                        <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" Size="Size.Small" />
-                                        @unlocked
-                                    </span>
+                                    <BaronyTooltip Text="Unlocked commander abilities">
+                                        <span class="unit-captain-option__badge">
+                                            <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" Size="Size.Small" />
+                                            @unlocked
+                                        </span>
+                                    </BaronyTooltip>
                                 }
                                 @if (!string.IsNullOrWhiteSpace(person.Description))
                                 {

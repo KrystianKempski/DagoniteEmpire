@@ -9,13 +9,14 @@
         <div class="bbm-icon-picker">
             @foreach (var icon in BattleTokenIconCatalog.All)
             {
-                <button type="button"
-                        class="bbm-icon-picker__item @(string.Equals(icon.Key, SelectedKey, StringComparison.OrdinalIgnoreCase) ? "selected" : null)"
-                        title="@icon.Label"
-                        @onclick="() => Select(icon.Key)">
-                    <img src="/@icon.Path" alt="@icon.Label" />
-                    <span>@icon.Label</span>
-                </button>
+                <BaronyTooltip Text="@icon.Label">
+                    <button type="button"
+                            class="bbm-icon-picker__item @(string.Equals(icon.Key, SelectedKey, StringComparison.OrdinalIgnoreCase) ? "selected" : null)"
+                            @onclick="() => Select(icon.Key)">
+                        <img src="/@icon.Path" alt="@icon.Label" />
+                        <span>@icon.Label</span>
+                    </button>
+                </BaronyTooltip>
             }
         </div>
     </DialogContent>

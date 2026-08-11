@@ -66,15 +66,17 @@
                                             @if (CanManage)
                                             {
                                                 <span class="city-building-name-actions">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                                   Size="Size.Small"
-                                                                   title="Edit relation"
-                                                                   OnClick="@(() => EditAsync(item))" />
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                                   Size="Size.Small"
-                                                                   Color="Color.Error"
-                                                                   title="Remove relation"
-                                                                   OnClick="@(() => DeleteAsync(item))" />
+                                                    <BaronyTooltip Text="Edit relation">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                       Size="Size.Small"
+                                                                       OnClick="@(() => EditAsync(item))" />
+                                                    </BaronyTooltip>
+                                                    <BaronyTooltip Text="Remove relation">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                       Size="Size.Small"
+                                                                       Color="Color.Error"
+                                                                       OnClick="@(() => DeleteAsync(item))" />
+                                                    </BaronyTooltip>
                                                 </span>
                                             }
                                         </div>
@@ -109,10 +111,11 @@
                                             </BaronyTooltip>
                                             @if (CanManage)
                                             {
-                                                <MudIconButton Icon="@Icons.Material.Filled.Tune"
-                                                               Size="Size.Small"
-                                                               title="Edit modifiers"
-                                                               OnClick="@(() => EditModifiersAsync(item))" />
+                                                <BaronyTooltip Text="Edit modifiers">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Tune"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => EditModifiersAsync(item))" />
+                                                </BaronyTooltip>
                                             }
                                         </div>
                                     </td>
@@ -130,10 +133,11 @@
                                             }
                                             @if (CanEdit)
                                             {
-                                                <MudIconButton Icon="@Icons.Material.Filled.EditNote"
-                                                               Size="Size.Small"
-                                                               title="Edit notes"
-                                                               OnClick="@(() => EditNotesAsync(item))" />
+                                                <BaronyTooltip Text="Edit notes">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.EditNote"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => EditNotesAsync(item))" />
+                                                </BaronyTooltip>
                                             }
                                         </div>
                                     </td>

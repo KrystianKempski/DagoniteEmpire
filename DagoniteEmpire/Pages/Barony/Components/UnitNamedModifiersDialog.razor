@@ -35,11 +35,12 @@
                                          Variant="Variant.Outlined"
                                          Margin="Margin.Dense"
                                          Class="baron-influence-field relation-modifiers__value" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Size="Size.Small"
-                                       Color="Color.Error"
-                                       title="Remove"
-                                       OnClick="@(() => RemoveRow(index))" />
+                        <BaronyTooltip Text="Remove">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => RemoveRow(index))" />
+                        </BaronyTooltip>
                     </div>
                 }
             }

@@ -54,15 +54,21 @@
                                 }
                                 @if (cell?.Terrain == BaronyBattleTerrain.Difficult)
                                 {
-                                    <div class="bbm-terrain bbm-terrain--difficult" title="Difficult">∿</div>
+                                    <BaronyTooltip Text="Difficult">
+                                        <div class="bbm-terrain bbm-terrain--difficult">∿</div>
+                                    </BaronyTooltip>
                                 }
                                 else if (cell?.Terrain == BaronyBattleTerrain.Impassable)
                                 {
-                                    <div class="bbm-terrain bbm-terrain--impassable" title="Impassable">✕</div>
+                                    <BaronyTooltip Text="Impassable">
+                                        <div class="bbm-terrain bbm-terrain--impassable">✕</div>
+                                    </BaronyTooltip>
                                 }
                                 else if (cell?.Terrain == BaronyBattleTerrain.Deploy && ShowDeployZone)
                                 {
-                                    <div class="bbm-terrain bbm-terrain--deploy" title="Deployment zone"></div>
+                                    <BaronyTooltip Text="Deployment zone">
+                                        <div class="bbm-terrain bbm-terrain--deploy"></div>
+                                    </BaronyTooltip>
                                 }
                                 @if (!string.IsNullOrWhiteSpace(cell?.Text))
                                 {
@@ -72,48 +78,54 @@
                                 {
                                     <div class="bbm-token-slot @(large ? "large" : null) @(isActiveTurn ? "active-order" : null)" style="@TokenFootprintStyle(token)">
                                         @HpBar(token)
-                                        <div class="bbm-token-rect @(token.IsEnemy ? "enemy" : "ally") @(isSelected ? "selected" : null) @(isActiveTurn ? "active-turn" : null)"
-                                             style="--bbm-facing:@(FacingDegreesForToken(token).ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
-                                             title="@($"{token.Label} · HP {token.Hp}/{Math.Max(1, token.MaxHp)}")">
-                                            @TokenIcon(token.IconKey, token.Label)
-                                        </div>
+                                        <BaronyTooltip Text="@($"{token.Label} · HP {token.Hp}/{Math.Max(1, token.MaxHp)}")">
+                                            <div class="bbm-token-rect @(token.IsEnemy ? "enemy" : "ally") @(isSelected ? "selected" : null) @(isActiveTurn ? "active-turn" : null)"
+                                                 style="--bbm-facing:@(FacingDegreesForToken(token).ToString(System.Globalization.CultureInfo.InvariantCulture))deg">
+                                                @TokenIcon(token.IconKey, token.Label)
+                                            </div>
+                                        </BaronyTooltip>
                                         <div class="bbm-token-label @(token.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@token.Label</div>
                                         @if (ShowMoveBadge(token))
                                         {
-                                            <span class="bbm-move-badge" title="Move points">@(OriginMoveBadge(token))</span>
+                                            <BaronyTooltip Text="Move points">
+                                                <span class="bbm-move-badge">@(OriginMoveBadge(token))</span>
+                                            </BaronyTooltip>
                                         }
                                         @if (ShowOriginFacingButton(token))
                                         {
-                                            <button type="button"
-                                                    class="bbm-facing-btn"
-                                                    title="@(AllowSetupFacing ? "Change facing" : "Change facing (1 move)")"
-                                                    @onclick:stopPropagation="true"
-                                                    @onclick="@(() => OnFacingButton.InvokeAsync(token.Id))">
-                                                <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
-                                            </button>
+                                            <BaronyTooltip Text="@(AllowSetupFacing ? "Change facing" : "Change facing (1 move)")">
+                                                <button type="button"
+                                                        class="bbm-facing-btn"
+                                                        @onclick:stopPropagation="true"
+                                                        @onclick="@(() => OnFacingButton.InvokeAsync(token.Id))">
+                                                    <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
+                                                </button>
+                                            </BaronyTooltip>
                                         }
                                         @if (ShowOriginChargeButton(token))
                                         {
-                                            <button type="button"
-                                                    class="bbm-charge-btn"
-                                                    title="Charge (min 3 move; 3 straight / 2 diagonal tiles)"
-                                                    @onclick:stopPropagation="true"
-                                                    @onclick="@(() => OnChargeButton.InvokeAsync(token.Id))">
-                                                <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
-                                            </button>
+                                            <BaronyTooltip Text="Charge (min 3 move; 3 straight / 2 diagonal tiles)">
+                                                <button type="button"
+                                                        class="bbm-charge-btn"
+                                                        @onclick:stopPropagation="true"
+                                                        @onclick="@(() => OnChargeButton.InvokeAsync(token.Id))">
+                                                    <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
+                                                </button>
+                                            </BaronyTooltip>
                                         }
                                         @if (ShowAbilitiesButton(token))
                                         {
                                             <div class="bbm-abilities-anchor" @onclick:stopPropagation="true">
                                                 @if (CanShowFullDefense(token) && !CanShowCommanderActive(token))
                                                 {
-                                                    <button type="button"
-                                                            class="bbm-abilities-btn @(token.FullDefense ? "active" : null)"
-                                                            title="@(token.FullDefense ? "Full Defense active (click to cancel)" : $"Full Defense (+{BattleMovementRules.FullDefenseDefenseBonus} Def, −{BattleMovementRules.FullDefenseAttackPenalty} Atk, no move)")"
-                                                            @onclick:stopPropagation="true"
-                                                            @onclick="@(() => OnActivateAbility.InvokeAsync((token.Id, "full-defense")))">
-                                                        <img class="bbm-abilities-btn__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
-                                                    </button>
+                                                    <BaronyTooltip Text="@(token.FullDefense ? "Full Defense active (click to cancel)" : $"Full Defense (+{BattleMovementRules.FullDefenseDefenseBonus} Def, −{BattleMovementRules.FullDefenseAttackPenalty} Atk, no move)")">
+                                                        <button type="button"
+                                                                class="bbm-abilities-btn @(token.FullDefense ? "active" : null)"
+                                                                @onclick:stopPropagation="true"
+                                                                @onclick="@(() => OnActivateAbility.InvokeAsync((token.Id, "full-defense")))">
+                                                            <img class="bbm-abilities-btn__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                                                        </button>
+                                                    </BaronyTooltip>
                                                 }
                                                 else
                                                 {
@@ -121,9 +133,11 @@
                                                              AnchorOrigin="Origin.TopCenter"
                                                              TransformOrigin="Origin.BottomCenter">
                                                         <ActivatorContent>
-                                                            <span class="bbm-abilities-btn" title="Zdolności">
-                                                                <img class="bbm-abilities-btn__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
-                                                            </span>
+                                                            <BaronyTooltip Text="Zdolności">
+                                                                <span class="bbm-abilities-btn">
+                                                                    <img class="bbm-abilities-btn__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                                                                </span>
+                                                            </BaronyTooltip>
                                                         </ActivatorContent>
                                                         <ChildContent>
                                                             @if (CanShowCommanderActive(token))
@@ -145,32 +159,40 @@
                                     </div>
                                     @if (token.FullDefense)
                                     {
-                                        <span class="bbm-full-defense-badge" title="@($"Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Def, −{BattleMovementRules.FullDefenseAttackPenalty} Atk, no movement this round")">
-                                            <img class="bbm-full-defense-badge__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
-                                        </span>
+                                        <BaronyTooltip Text="@($"Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Def, −{BattleMovementRules.FullDefenseAttackPenalty} Atk, no movement this round")">
+                                            <span class="bbm-full-defense-badge">
+                                                <img class="bbm-full-defense-badge__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                                            </span>
+                                        </BaronyTooltip>
                                     }
                                     @if (IsEngagedToken(token))
                                     {
-                                        <span class="bbm-engage-badge @(ShowOriginChargeButton(token) || ShowFogFacingOnlyBadge(token) ? "shifted" : null)" title="@EngagementTooltip(token)">
-                                            <img class="bbm-engage-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
-                                            @if (token.EngagedEnemyIds.Count > 1)
-                                            {
-                                                <span class="bbm-engage-badge__count">@token.EngagedEnemyIds.Count</span>
-                                            }
-                                        </span>
+                                        <BaronyTooltip Text="@EngagementTooltip(token)">
+                                            <span class="bbm-engage-badge @(ShowOriginChargeButton(token) || ShowFogFacingOnlyBadge(token) ? "shifted" : null)">
+                                                <img class="bbm-engage-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
+                                                @if (token.EngagedEnemyIds.Count > 1)
+                                                {
+                                                    <span class="bbm-engage-badge__count">@token.EngagedEnemyIds.Count</span>
+                                                }
+                                            </span>
+                                        </BaronyTooltip>
                                     }
                                     @if (ShowFogFacingOnlyBadge(token))
                                     {
-                                        <span class="bbm-facing-only-badge" title="This unit is only changing facing (no move).">
-                                            <img class="bbm-facing-only-badge__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
-                                        </span>
+                                        <BaronyTooltip Text="This unit is only changing facing (no move).">
+                                            <span class="bbm-facing-only-badge">
+                                                <img class="bbm-facing-only-badge__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
+                                            </span>
+                                        </BaronyTooltip>
                                     }
                                     @if (IsRangedToken(token))
                                     {
-                                        <span class="bbm-ranged-badge" title="@RangedTooltip(token)">
-                                            <img class="bbm-ranged-badge__icon" src="/icons/archer.svg" alt="" aria-hidden="true" />
-                                            <span class="bbm-ranged-badge__count">@token.Range</span>
-                                        </span>
+                                        <BaronyTooltip Text="@RangedTooltip(token)">
+                                            <span class="bbm-ranged-badge">
+                                                <img class="bbm-ranged-badge__icon" src="/icons/archer.svg" alt="" aria-hidden="true" />
+                                                <span class="bbm-ranged-badge__count">@token.Range</span>
+                                            </span>
+                                        </BaronyTooltip>
                                     }
                                     @if (ShowInPlaceFacingGhost(token))
                                     {
@@ -179,11 +201,12 @@
                                         <div class="bbm-token-slot bbm-token-slot--ghost bbm-token-slot--facing-ghost @(large ? "large" : null)"
                                              style="@TokenFootprintStyle(token)"
                                              aria-hidden="true">
-                                            <div class="bbm-token-rect bbm-token-rect--ghost @(token.IsEnemy ? "enemy" : "ally") locked"
-                                                 style="--bbm-facing:@(plannedFacingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
-                                                 title="@($"{token.Label} (planned facing)")">
-                                                @TokenIcon(token.IconKey, token.Label)
-                                            </div>
+                                            <BaronyTooltip Text="@($"{token.Label} (planned facing)")">
+                                                <div class="bbm-token-rect bbm-token-rect--ghost @(token.IsEnemy ? "enemy" : "ally") locked"
+                                                     style="--bbm-facing:@(plannedFacingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg">
+                                                    @TokenIcon(token.IconKey, token.Label)
+                                                </div>
+                                            </BaronyTooltip>
                                         </div>
                                     }
                                 }
@@ -196,36 +219,43 @@
                                     var showChargeBtn = ShowChargeButton(owner, wp);
                                     <div class="bbm-token-slot bbm-token-slot--ghost @(ghostLarge ? "large" : null) @(wp.Locked ? "locked" : null)"
                                          style="@TokenFootprintStyle(owner)">
-                                        <div class="bbm-token-rect bbm-token-rect--ghost @(owner.IsEnemy ? "enemy" : "ally") @(wp.Locked ? "locked" : null)"
-                                             style="--bbm-facing:@(tipFacingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
-                                             title="@(wp.Locked ? $"{owner.Label} (locked)" : $"{owner.Label} (destination)")">
-                                            @TokenIcon(owner.IconKey, owner.Label)
-                                        </div>
+                                        <BaronyTooltip Text="@(wp.Locked ? $"{owner.Label} (locked)" : $"{owner.Label} (destination)")">
+                                            <div class="bbm-token-rect bbm-token-rect--ghost @(owner.IsEnemy ? "enemy" : "ally") @(wp.Locked ? "locked" : null)"
+                                                 style="--bbm-facing:@(tipFacingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg">
+                                                @TokenIcon(owner.IconKey, owner.Label)
+                                            </div>
+                                        </BaronyTooltip>
                                         <div class="bbm-token-label @(owner.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@owner.Label</div>
-                                        <span class="bbm-move-badge" title="Move left">@wp.RemainingMoveAfter</span>
+                                        <BaronyTooltip Text="Move left">
+                                            <span class="bbm-move-badge">@wp.RemainingMoveAfter</span>
+                                        </BaronyTooltip>
                                         @if (wp.Locked)
                                         {
-                                            <span class="bbm-lock-badge" title="Locked" aria-hidden="true"></span>
+                                            <BaronyTooltip Text="Locked">
+                                                <span class="bbm-lock-badge" aria-hidden="true"></span>
+                                            </BaronyTooltip>
                                         }
                                         @if (showFacingBtn)
                                         {
-                                            <button type="button"
-                                                    class="bbm-facing-btn"
-                                                    title="Change facing (1 move)"
-                                                    @onclick:stopPropagation="true"
-                                                    @onclick="@(() => OnFacingButton.InvokeAsync(owner.Id))">
-                                                <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
-                                            </button>
+                                            <BaronyTooltip Text="Change facing (1 move)">
+                                                <button type="button"
+                                                        class="bbm-facing-btn"
+                                                        @onclick:stopPropagation="true"
+                                                        @onclick="@(() => OnFacingButton.InvokeAsync(owner.Id))">
+                                                    <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
+                                                </button>
+                                            </BaronyTooltip>
                                         }
                                         @if (showChargeBtn)
                                         {
-                                            <button type="button"
-                                                    class="bbm-charge-btn"
-                                                    title="Charge (min 3 move; 3 straight / 2 diagonal tiles)"
-                                                    @onclick:stopPropagation="true"
-                                                    @onclick="@(() => OnChargeButton.InvokeAsync(owner.Id))">
-                                                <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
-                                            </button>
+                                            <BaronyTooltip Text="Charge (min 3 move; 3 straight / 2 diagonal tiles)">
+                                                <button type="button"
+                                                        class="bbm-charge-btn"
+                                                        @onclick:stopPropagation="true"
+                                                        @onclick="@(() => OnChargeButton.InvokeAsync(owner.Id))">
+                                                    <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
+                                                </button>
+                                            </BaronyTooltip>
                                         }
                                     </div>
                                 }
@@ -450,34 +480,41 @@
                                          style="width:@(ringPx.ToString(System.Globalization.CultureInfo.InvariantCulture))px; height:@(ringPx.ToString(System.Globalization.CultureInfo.InvariantCulture))px;"></div>
                                 }
                                 @HpBar(token)
-                                <div class="bbm-token-rect @(token.IsEnemy ? "enemy" : "ally")"
-                                     style="--bbm-facing:@(facingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
-                                     title="@($"{token.Label} · HP {token.Hp}/{Math.Max(1, token.MaxHp)}")">
-                                    @TokenIcon(token.IconKey, token.Label)
-                                </div>
+                                <BaronyTooltip Text="@($"{token.Label} · HP {token.Hp}/{Math.Max(1, token.MaxHp)}")">
+                                    <div class="bbm-token-rect @(token.IsEnemy ? "enemy" : "ally")"
+                                         style="--bbm-facing:@(facingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg">
+                                        @TokenIcon(token.IconKey, token.Label)
+                                    </div>
+                                </BaronyTooltip>
                                 <div class="bbm-token-label @(token.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@token.Label</div>
                                 @if (token.FullDefense)
                                 {
-                                    <span class="bbm-full-defense-badge" title="@($"Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Def, −{BattleMovementRules.FullDefenseAttackPenalty} Atk, no movement this round")">
-                                        <img class="bbm-full-defense-badge__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
-                                    </span>
+                                    <BaronyTooltip Text="@($"Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Def, −{BattleMovementRules.FullDefenseAttackPenalty} Atk, no movement this round")">
+                                        <span class="bbm-full-defense-badge">
+                                            <img class="bbm-full-defense-badge__icon" src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                                        </span>
+                                    </BaronyTooltip>
                                 }
                                 @if (IsEngagedToken(token))
                                 {
-                                    <span class="bbm-engage-badge" title="@EngagementTooltip(token)">
-                                        <img class="bbm-engage-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
-                                        @if (token.EngagedEnemyIds.Count > 1)
-                                        {
-                                            <span class="bbm-engage-badge__count">@token.EngagedEnemyIds.Count</span>
-                                        }
-                                    </span>
+                                    <BaronyTooltip Text="@EngagementTooltip(token)">
+                                        <span class="bbm-engage-badge">
+                                            <img class="bbm-engage-badge__icon" src="/icons/crossed-swords.svg" alt="" aria-hidden="true" />
+                                            @if (token.EngagedEnemyIds.Count > 1)
+                                            {
+                                                <span class="bbm-engage-badge__count">@token.EngagedEnemyIds.Count</span>
+                                            }
+                                        </span>
+                                    </BaronyTooltip>
                                 }
                                 @if (IsRangedToken(token))
                                 {
-                                    <span class="bbm-ranged-badge" title="@RangedTooltip(token)">
-                                        <img class="bbm-ranged-badge__icon" src="/icons/archer.svg" alt="" aria-hidden="true" />
-                                        <span class="bbm-ranged-badge__count">@token.Range</span>
-                                    </span>
+                                    <BaronyTooltip Text="@RangedTooltip(token)">
+                                        <span class="bbm-ranged-badge">
+                                            <img class="bbm-ranged-badge__icon" src="/icons/archer.svg" alt="" aria-hidden="true" />
+                                            <span class="bbm-ranged-badge__count">@token.Range</span>
+                                        </span>
+                                    </BaronyTooltip>
                                 }
                             </div>
                         }
@@ -859,20 +896,17 @@
         return BaronyBattleFacing.ToDegrees(wp.Facing);
     }
 
-    private RenderFragment HpBar(BaronyBattleTokenDTO token) => builder =>
+    private RenderFragment HpBar(BaronyBattleTokenDTO token) => __builder =>
     {
         var max = Math.Max(1, token.MaxHp);
         var cur = Math.Clamp(token.Hp, 0, max);
         var pct = 100.0 * cur / max;
         var pctText = pct.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
-        builder.OpenElement(0, "div");
-        builder.AddAttribute(1, "class", "bbm-hp-bar");
-        builder.AddAttribute(2, "title", $"HP {cur}/{max}");
-        builder.OpenElement(3, "div");
-        builder.AddAttribute(4, "class", "bbm-hp-bar__fill");
-        builder.AddAttribute(5, "style", $"width:{pctText}%");
-        builder.CloseElement();
-        builder.CloseElement();
+        <BaronyTooltip Text="@($"HP {cur}/{max}")">
+            <div class="bbm-hp-bar">
+                <div class="bbm-hp-bar__fill" style="@($"width:{pctText}%")"></div>
+            </div>
+        </BaronyTooltip>
     };
 
     private RenderFragment TokenIcon(string? iconKey, string label) => builder =>

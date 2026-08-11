@@ -10,20 +10,21 @@
         {
             var key = info.Key;
             var significant = IsSignificant(key);
-            <MudNumericField T="decimal"
-                             Label="@FieldLabel(info)"
-                             Value="@Value.Get(key)"
-                             ValueChanged="@(v => OnChanged(key, v))"
-                             Variant="Variant.Text"
-                             Margin="Margin.Dense"
-                             ShrinkLabel="@Compact"
-                             IconSize="Size.Small"
-                             Step="@StepSize"
-                             Format="0.#"
-                             Disabled="@ReadOnly"
-                             HideSpinButtons="@ReadOnly"
-                             Class="@FieldClass(significant)"
-                             title="@FieldTitle(info, significant)" />
+            <BaronyTooltip Text="@FieldTitle(info, significant)">
+                <MudNumericField T="decimal"
+                                 Label="@FieldLabel(info)"
+                                 Value="@Value.Get(key)"
+                                 ValueChanged="@(v => OnChanged(key, v))"
+                                 Variant="Variant.Text"
+                                 Margin="Margin.Dense"
+                                 ShrinkLabel="@Compact"
+                                 IconSize="Size.Small"
+                                 Step="@StepSize"
+                                 Format="0.#"
+                                 Disabled="@ReadOnly"
+                                 HideSpinButtons="@ReadOnly"
+                                 Class="@FieldClass(significant)" />
+            </BaronyTooltip>
         }
     </div>
 </div>

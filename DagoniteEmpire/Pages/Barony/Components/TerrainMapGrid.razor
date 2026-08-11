@@ -143,10 +143,11 @@
                             else if (ShowLayer(TerrainMapLayer.Improvements) && GetConstruction(tile?.Id) is { } construction)
                             {
                                 <span class="barony-terrain-cell__layer barony-terrain-cell__improvement">
-                                    <img src="@MapImprovement.ConstructionIconUrl"
-                                         alt="@construction.Name"
-                                         title="@construction.Name"
-                                         class="barony-terrain-cell__improvement-icon barony-terrain-cell__improvement-icon--construction" />
+                                    <BaronyTooltip Text="@construction.Name">
+                                        <img src="@MapImprovement.ConstructionIconUrl"
+                                             alt="@construction.Name"
+                                             class="barony-terrain-cell__improvement-icon barony-terrain-cell__improvement-icon--construction" />
+                                    </BaronyTooltip>
                                 </span>
                             }
 

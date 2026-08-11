@@ -13,7 +13,7 @@
             <th class="ppb-row-label resource-col-name">@NameHeader</th>
             @foreach (var info in ResourceCatalog.All)
             {
-                <th title="@info.NameEn">@info.ShortEn</th>
+                <th><BaronyTooltip Text="@info.NameEn">@info.ShortEn</BaronyTooltip></th>
             }
         </tr>
     </thead>
@@ -38,18 +38,20 @@
                             <span class="city-building-name-actions">
                                 @if (row.CanEdit)
                                 {
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                   Size="Size.Small"
-                                                   title="Edit"
-                                                   OnClick="@(() => OnEdit.InvokeAsync(row))" />
+                                    <BaronyTooltip Text="Edit">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                       Size="Size.Small"
+                                                       OnClick="@(() => OnEdit.InvokeAsync(row))" />
+                                    </BaronyTooltip>
                                 }
                                 @if (row.CanDelete)
                                 {
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                   Size="Size.Small"
-                                                   Color="Color.Error"
-                                                   title="Remove"
-                                                   OnClick="@(() => OnDelete.InvokeAsync(row))" />
+                                    <BaronyTooltip Text="Remove">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                       Size="Size.Small"
+                                                       Color="Color.Error"
+                                                       OnClick="@(() => OnDelete.InvokeAsync(row))" />
+                                    </BaronyTooltip>
                                 }
                             </span>
                         }

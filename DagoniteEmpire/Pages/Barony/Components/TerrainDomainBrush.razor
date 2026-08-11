@@ -12,34 +12,38 @@
                 var selected = d.Id == SelectedDomainId;
                 var tiles = TileCount(d.Id);
                 <div class="terrain-domain-chip-row">
-                    <button type="button"
-                            class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
-                            title="@($"{d.Name} : {tiles} tiles — {d.LordName}")"
-                            @onclick="() => SelectDomainAsync(d.Id)">
-                        <span class="terrain-domain-chip__swatch"
-                              style="background-color: @d.ColorHex"></span>
-                        <span class="terrain-domain-chip__text">
-                            <span class="terrain-domain-chip__name">@d.Name : @tiles</span>
-                            <span class="terrain-domain-chip__lord">@d.LordName</span>
-                        </span>
-                    </button>
-                    <input type="color"
-                           class="terrain-domain-chip__color-input"
-                           value="@d.ColorHex"
-                           title="Change domain color"
-                           aria-label="@($"Change color for {d.Name}")"
-                           @onchange="e => OnDomainColorInputChangedAsync(d.Id, e)" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                   Size="Size.Small"
-                                   title="Edit domain"
-                                   OnClick="@(() => OnEditDomainAsync(d.Id))" />
+                    <BaronyTooltip Title="@($"{d.Name} : {tiles} tiles")" Text="@d.LordName">
+                        <button type="button"
+                                class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
+                                @onclick="() => SelectDomainAsync(d.Id)">
+                            <span class="terrain-domain-chip__swatch"
+                                  style="background-color: @d.ColorHex"></span>
+                            <span class="terrain-domain-chip__text">
+                                <span class="terrain-domain-chip__name">@d.Name : @tiles</span>
+                                <span class="terrain-domain-chip__lord">@d.LordName</span>
+                            </span>
+                        </button>
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="Change domain color">
+                        <input type="color"
+                               class="terrain-domain-chip__color-input"
+                               value="@d.ColorHex"
+                               aria-label="@($"Change color for {d.Name}")"
+                               @onchange="e => OnDomainColorInputChangedAsync(d.Id, e)" />
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="Edit domain">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Size="Size.Small"
+                                       OnClick="@(() => OnEditDomainAsync(d.Id))" />
+                    </BaronyTooltip>
                     @if (!d.IsPrimary)
                     {
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Size="Size.Small"
-                                       Color="Color.Error"
-                                       title="Delete domain"
-                                       OnClick="@(() => OnDeleteDomainAsync(d.Id))" />
+                        <BaronyTooltip Text="Delete domain">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => OnDeleteDomainAsync(d.Id))" />
+                        </BaronyTooltip>
                     }
                 </div>
             }

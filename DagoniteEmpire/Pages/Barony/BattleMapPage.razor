@@ -114,11 +114,12 @@ else
                                         <div class="bbm-swatches">
                                             @foreach (var swatch in Swatches)
                                             {
-                                                <button type="button"
-                                                        class="bbm-swatch @(_currentColor == swatch ? "selected" : null)"
-                                                        style="background:@swatch"
-                                                        title="@swatch"
-                                                        @onclick="() => _currentColor = swatch"></button>
+                                                <BaronyTooltip Text="@swatch">
+                                                    <button type="button"
+                                                            class="bbm-swatch @(_currentColor == swatch ? "selected" : null)"
+                                                            style="background:@swatch"
+                                                            @onclick="() => _currentColor = swatch"></button>
+                                                </BaronyTooltip>
                                             }
                                         </div>
                                     }
@@ -309,25 +310,27 @@ else
 
                 @if (_battleLogCollapsed)
                 {
-                    <button type="button"
-                            class="bbm-map-log-toggle"
-                            title="Show battle log"
-                            @onclick="() => _battleLogCollapsed = false">
-                        <span class="bbm-map-log-toggle__icon" aria-hidden="true"></span>
-                        <span class="bbm-map-log-toggle__label">Log</span>
-                    </button>
+                    <BaronyTooltip Text="Show battle log">
+                        <button type="button"
+                                class="bbm-map-log-toggle"
+                                @onclick="() => _battleLogCollapsed = false">
+                            <span class="bbm-map-log-toggle__icon" aria-hidden="true"></span>
+                            <span class="bbm-map-log-toggle__label">Log</span>
+                        </button>
+                    </BaronyTooltip>
                 }
                 else
                 {
                     <div class="bbm-map-log">
                         <div class="bbm-map-log__head">
                             <span class="bbm-map-log__title">Battle log</span>
-                            <button type="button"
-                                    class="bbm-map-log__hide"
-                                    title="Hide battle log"
-                                    @onclick="() => _battleLogCollapsed = true">
-                                ▾
-                            </button>
+                            <BaronyTooltip Text="Hide battle log">
+                                <button type="button"
+                                        class="bbm-map-log__hide"
+                                        @onclick="() => _battleLogCollapsed = true">
+                                    ▾
+                                </button>
+                            </BaronyTooltip>
                         </div>
                         <div class="bbm-map-log__entries">
                             @foreach (var entry in Map.Log.OrderByDescending(e => e.Utc).Take(40))
@@ -368,11 +371,11 @@ else
                             var hpMax = onMap?.MaxHp > 0 ? onMap.MaxHp : stats.MaxHp;
                             <div class="bbm-force-card @(onMap is not null ? "on-map" : null) @(isBroken ? "broken" : null) @(_deployUnitId == unit.Id ? "picked" : null)">
                                 <div class="bbm-force-card__top">
-                                    <button type="button"
-                                            class="bbm-force-icon-btn"
-                                            title="Change icon"
-                                            @onclick="() => OpenAllyIconPicker(unit.Id)"
-                                            @onclick:stopPropagation="true">
+                                    <BaronyTooltip Text="Change icon">
+                                        <button type="button"
+                                                class="bbm-force-icon-btn"
+                                                @onclick="() => OpenAllyIconPicker(unit.Id)"
+                                                @onclick:stopPropagation="true">
                                         @if (!string.IsNullOrEmpty(iconPath))
                                         {
                                             <img src="/@iconPath" alt="" />
@@ -382,6 +385,7 @@ else
                                             <span>?</span>
                                         }
                                     </button>
+                                    </BaronyTooltip>
                                     <div class="bbm-force-card__identity">
                                         <strong class="bbm-force-card__name bbm-name--ally">@unit.Name</strong>
                                         <span class="bbm-force-card__hp">HP @hpNow/@hpMax@(isBroken ? " — fled" : "")</span>
@@ -452,12 +456,12 @@ else
                             <div class="bbm-force-card enemy @(_selectedTokenId == enemy.Id ? "picked" : null) @(_editingEnemyTokenId == enemy.Id ? "editing" : null)"
                                  @onclick="() => SelectToken(enemy.Id)">
                                 <div class="bbm-force-card__top">
-                                    <button type="button"
-                                            class="bbm-force-icon-btn"
-                                            title="@(CanManageAsMg ? "Change icon" : enemy.Label)"
-                                            disabled="@(!CanManageAsMg)"
-                                            @onclick="() => OpenEnemyIconPicker(enemy.Id)"
-                                            @onclick:stopPropagation="true">
+                                    <BaronyTooltip Text="@(CanManageAsMg ? "Change icon" : enemy.Label)">
+                                        <button type="button"
+                                                class="bbm-force-icon-btn"
+                                                disabled="@(!CanManageAsMg)"
+                                                @onclick="() => OpenEnemyIconPicker(enemy.Id)"
+                                                @onclick:stopPropagation="true">
                                         @if (!string.IsNullOrEmpty(iconPath))
                                         {
                                             <img src="/@iconPath" alt="" />
@@ -467,6 +471,7 @@ else
                                             <span>?</span>
                                         }
                                     </button>
+                                    </BaronyTooltip>
                                     <div class="bbm-force-card__identity">
                                         <strong class="bbm-force-card__name bbm-name--enemy">@enemy.Label</strong>
                                         <span class="bbm-force-card__hp">HP @enemy.Hp/@enemy.MaxHp</span>
@@ -475,16 +480,18 @@ else
                                     @if (CanManageAsMg)
                                     {
                                         <span @onclick:stopPropagation="true">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                           Size="Size.Small"
-                                                           Color="Color.Default"
-                                                           title="Edit enemy"
-                                                           OnClick="@(() => BeginEditEnemy(enemy.Id))" />
-                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                           Size="Size.Small"
-                                                           Color="Color.Error"
-                                                           title="Remove enemy"
-                                                           OnClick="@(() => RemoveEnemyTokenAsync(enemy.Id))" />
+                                            <BaronyTooltip Text="Edit enemy">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               Color="Color.Default"
+                                                               OnClick="@(() => BeginEditEnemy(enemy.Id))" />
+                                            </BaronyTooltip>
+                                            <BaronyTooltip Text="Remove enemy">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                               Size="Size.Small"
+                                                               Color="Color.Error"
+                                                               OnClick="@(() => RemoveEnemyTokenAsync(enemy.Id))" />
+                                            </BaronyTooltip>
                                         </span>
                                     }
                                 </div>
@@ -510,10 +517,10 @@ else
                         {
                             <div class="bbm-enemy-form @(_editingEnemyTokenId is not null ? "bbm-enemy-form--editing" : null)">
                                 <div class="bbm-force-card__top bbm-enemy-form__top">
-                                    <button type="button"
-                                            class="bbm-force-icon-btn"
-                                            title="Choose icon"
-                                            @onclick="OpenDraftIconPicker">
+                                    <BaronyTooltip Text="Choose icon">
+                                        <button type="button"
+                                                class="bbm-force-icon-btn"
+                                                @onclick="OpenDraftIconPicker">
                                         @{
                                             var draftPath = BattleTokenIconCatalog.PathFor(_enemyDraft.IconKey);
                                         }
@@ -526,6 +533,7 @@ else
                                             <span>?</span>
                                         }
                                     </button>
+                                    </BaronyTooltip>
                                     <input class="bbm-input bbm-enemy-name" placeholder="Name" @bind="_enemyDraft.Label" />
                                     <button type="button"
                                             class="bbm-map-btn bbm-map-btn--ghost bbm-enemy-add-btn"
@@ -561,12 +569,18 @@ else
                                     <label>Discipline <input type="number" @bind="_enemyDraft.Discipline" /></label>
                                     <label>Men <input type="number" @bind="_enemyDraft.TroopCount" /></label>
                                     <label>Move <input type="number" @bind="_enemyDraft.Move" /></label>
-                                    <label>Range <input type="number" @bind="_enemyDraft.Range" title="0 = melee only; >0 = ranged unit" /></label>
-                                    <label>Pierce <input type="number" @bind="_enemyDraft.Pierce" title="Armor cut through by this unit's attacks; 0 = none" /></label>
-                                    <label>
-                                        Mounted
-                                        <input type="checkbox" @bind="_enemyDraft.Mounted" title="Needed for mount-based abilities" />
-                                    </label>
+                                    <BaronyTooltip Text="0 = melee only; >0 = ranged unit">
+                                        <label>Range <input type="number" @bind="_enemyDraft.Range" /></label>
+                                    </BaronyTooltip>
+                                    <BaronyTooltip Text="Armor cut through by this unit's attacks; 0 = none">
+                                        <label>Pierce <input type="number" @bind="_enemyDraft.Pierce" /></label>
+                                    </BaronyTooltip>
+                                    <BaronyTooltip Text="Needed for mount-based abilities">
+                                        <label>
+                                            Mounted
+                                            <input type="checkbox" @bind="_enemyDraft.Mounted" />
+                                        </label>
+                                    </BaronyTooltip>
                                 </div>
                                 @if (_enemyDraft.CommanderAbilities.Count > 0)
                                 {
@@ -574,15 +588,16 @@ else
                                         @foreach (var key in _enemyDraft.CommanderAbilities)
                                         {
                                             var ab = CourtCommanderCatalog.Find(key);
-                                            <span class="bbm-enemy-ability-chip" title="@ab?.DescriptionEn">
-                                                @(ab?.NameEn ?? key)
-                                                <button type="button"
-                                                        title="Remove"
-                                                        @onclick:stopPropagation="true"
-                                                        @onclick="() => RemoveEnemyAbility(key)">
-                                                    ×
-                                                </button>
-                                            </span>
+                                            <BaronyTooltip Title="@(ab?.NameEn ?? key)" Text="@ab?.DescriptionEn">
+                                                <span class="bbm-enemy-ability-chip">
+                                                    @(ab?.NameEn ?? key)
+                                                    <button type="button"
+                                                            @onclick:stopPropagation="true"
+                                                            @onclick="() => RemoveEnemyAbility(key)">
+                                                        ×
+                                                    </button>
+                                                </span>
+                                            </BaronyTooltip>
                                         }
                                     </div>
                                 }
@@ -5654,19 +5669,21 @@ else
         <div class="bbm-force-status">
             @if (token.FullDefense)
             {
-                <span class="bbm-force-status__badge bbm-force-status__badge--full-def"
-                      title="@($"Full Defense: Atk {token.Attack - BattleMovementRules.FullDefenseAttackPenalty} (−{BattleMovementRules.FullDefenseAttackPenalty}), Def {token.Defense + BattleMovementRules.FullDefenseDefenseBonus} (+{BattleMovementRules.FullDefenseDefenseBonus}), Move 0")">
-                    <img src="/icons/full-defence.svg" alt="" aria-hidden="true" />
-                    <em>Atk @($"{token.Attack}−{BattleMovementRules.FullDefenseAttackPenalty}") · Def @($"{token.Defense}+{BattleMovementRules.FullDefenseDefenseBonus}")</em>
-                </span>
+                <BaronyTooltip Text="@($"Full Defense: Atk {token.Attack - BattleMovementRules.FullDefenseAttackPenalty} (−{BattleMovementRules.FullDefenseAttackPenalty}), Def {token.Defense + BattleMovementRules.FullDefenseDefenseBonus} (+{BattleMovementRules.FullDefenseDefenseBonus}), Move 0")">
+                    <span class="bbm-force-status__badge bbm-force-status__badge--full-def">
+                        <img src="/icons/full-defence.svg" alt="" aria-hidden="true" />
+                        <em>Atk @($"{token.Attack}−{BattleMovementRules.FullDefenseAttackPenalty}") · Def @($"{token.Defense}+{BattleMovementRules.FullDefenseDefenseBonus}")</em>
+                    </span>
+                </BaronyTooltip>
             }
             @if (token.IroncladActive)
             {
-                <span class="bbm-force-status__badge bbm-force-status__badge--ironclad"
-                      title="@($"Ironclad: Armor {token.Armor + 2} (+2) this combat round")">
-                    <img src="/icons/breastplate.svg" alt="" aria-hidden="true" />
-                    <em>Arm @token.Armor+2</em>
-                </span>
+                <BaronyTooltip Text="@($"Ironclad: Armor {token.Armor + 2} (+2) this combat round")">
+                    <span class="bbm-force-status__badge bbm-force-status__badge--ironclad">
+                        <img src="/icons/breastplate.svg" alt="" aria-hidden="true" />
+                        <em>Arm @token.Armor+2</em>
+                    </span>
+                </BaronyTooltip>
             }
         </div>
     };
@@ -5729,10 +5746,11 @@ else
             @foreach (var key in keys)
             {
                 var ab = CourtCommanderCatalog.Find(key);
-                <span class="bbm-force-ability-chip"
-                      title="@($"[T{ab?.Tier}] {ab?.Branch} · {ab?.DescriptionEn}")">
-                    @(ab?.NameEn ?? key)
-                </span>
+                <BaronyTooltip Title="@($"[T{ab?.Tier}] {ab?.Branch}")" Text="@ab?.DescriptionEn">
+                    <span class="bbm-force-ability-chip">
+                        @(ab?.NameEn ?? key)
+                    </span>
+                </BaronyTooltip>
             }
         </div>
     };

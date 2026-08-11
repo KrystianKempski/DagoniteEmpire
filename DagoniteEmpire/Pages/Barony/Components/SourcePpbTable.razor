@@ -6,7 +6,7 @@
             <th class="ppb-row-label source-col">Source</th>
             @foreach (var info in SkillColumns)
             {
-                <th title="@info.Code">@PpbShort(info.Key)</th>
+                <th><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
             }
         </tr>
     </thead>
@@ -24,7 +24,9 @@
                         }
                         else
                         {
-                            <span class="source-cell__name" title="@RowTitle(row)">@row.Source</span>
+                            <BaronyTooltip Text="@RowTitle(row)">
+                                <span class="source-cell__name">@row.Source</span>
+                            </BaronyTooltip>
                         }
                         @if (!string.IsNullOrWhiteSpace(row.Formula))
                         {

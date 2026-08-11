@@ -133,19 +133,21 @@
                     </button>
                 </BaronyTooltip>
             }
-            <MudIconButton Icon="@Icons.Material.Filled.History"
-                           Size="Size.Small"
-                           title="Show unit history"
-                           Disabled="@_busy"
-                           OnClick="OpenUnitLogAsync" />
+            <BaronyTooltip Text="Show unit history">
+                <MudIconButton Icon="@Icons.Material.Filled.History"
+                               Size="Size.Small"
+                               Disabled="@_busy"
+                               OnClick="OpenUnitLogAsync" />
+            </BaronyTooltip>
             @if (CanManageAsMg)
             {
-                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                               Size="Size.Small"
-                               Color="Color.Error"
-                               title="Remove unit"
-                               Disabled="@_busy"
-                               OnClick="DeleteUnitAsync" />
+                <BaronyTooltip Text="Remove unit">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   Disabled="@_busy"
+                                   OnClick="DeleteUnitAsync" />
+                </BaronyTooltip>
             }
         </TitleActions>
     </UnitDraftCardPreview>

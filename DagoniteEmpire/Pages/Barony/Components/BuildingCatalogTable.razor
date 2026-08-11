@@ -6,24 +6,32 @@
             <th rowspan="2" class="catalog-col-name catalog-th--sortable @SortClass(SortName)" @onclick="() => ToggleSort(SortName)">
                 Name<span class="catalog-sort-indicator">@SortIndicator(SortName)</span>
             </th>
-            <th rowspan="2" class="catalog-col-lordship catalog-th--sortable @SortClass(SortLordship)" title="Required lordship authority level" @onclick="() => ToggleSort(SortLordship)">
-                Lordship<span class="catalog-sort-indicator">@SortIndicator(SortLordship)</span>
+            <th rowspan="2" class="catalog-col-lordship catalog-th--sortable @SortClass(SortLordship)" @onclick="() => ToggleSort(SortLordship)">
+                <BaronyTooltip Text="Required lordship authority level">
+                    <span>Lordship<span class="catalog-sort-indicator">@SortIndicator(SortLordship)</span></span>
+                </BaronyTooltip>
             </th>
             <th rowspan="2" class="catalog-col-kind catalog-th--sortable @SortClass(SortType)" @onclick="() => ToggleSort(SortType)">
                 Type<span class="catalog-sort-indicator">@SortIndicator(SortType)</span>
             </th>
-            <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortProdCost)" title="Production cost" @onclick="() => ToggleSort(SortProdCost)">
-                Prod.<span class="catalog-sort-indicator">@SortIndicator(SortProdCost)</span>
+            <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortProdCost)" @onclick="() => ToggleSort(SortProdCost)">
+                <BaronyTooltip Text="Production cost">
+                    <span>Prod.<span class="catalog-sort-indicator">@SortIndicator(SortProdCost)</span></span>
+                </BaronyTooltip>
             </th>
-            <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortGoldCost)" title="Gold cost" @onclick="() => ToggleSort(SortGoldCost)">
-                Gold<span class="catalog-sort-indicator">@SortIndicator(SortGoldCost)</span>
+            <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortGoldCost)" @onclick="() => ToggleSort(SortGoldCost)">
+                <BaronyTooltip Text="Gold cost">
+                    <span>Gold<span class="catalog-sort-indicator">@SortIndicator(SortGoldCost)</span></span>
+                </BaronyTooltip>
             </th>
             <th rowspan="2" class="catalog-col-desc">Description</th>
             @foreach (var info in PpbCatalog.All)
             {
                 var sortKey = PpbSortKey(info.Key);
-                <th colspan="2" class="catalog-th--sortable @SortClass(sortKey)" title="@info.NamePl" @onclick="() => ToggleSort(sortKey)">
-                    @PpbShort(info.Key)<span class="catalog-sort-indicator">@SortIndicator(sortKey)</span>
+                <th colspan="2" class="catalog-th--sortable @SortClass(sortKey)" @onclick="() => ToggleSort(sortKey)">
+                    <BaronyTooltip Text="@info.NamePl">
+                        <span>@PpbShort(info.Key)<span class="catalog-sort-indicator">@SortIndicator(sortKey)</span></span>
+                    </BaronyTooltip>
                 </th>
             }
         </tr>
@@ -45,30 +53,33 @@
                         <span class="catalog-name-cell__actions">
                             @if (CanProposeBuild && IsCityBuilding(item))
                             {
-                                <button type="button"
-                                        class="catalog-name-cell__build"
-                                        title="Start building project"
-                                        @onclick="() => ProposeBuildAsync(item)"
-                                        @onclick:stopPropagation="true">
-                                    <img src="/icons/hammer.svg" alt="" class="catalog-name-cell__build-icon" />
-                                </button>
+                                <BaronyTooltip Text="Start building project">
+                                    <button type="button"
+                                            class="catalog-name-cell__build"
+                                            @onclick="() => ProposeBuildAsync(item)"
+                                            @onclick:stopPropagation="true">
+                                        <img src="/icons/hammer.svg" alt="" class="catalog-name-cell__build-icon" />
+                                    </button>
+                                </BaronyTooltip>
                             }
                             @if (CanManageCatalog && item.IsCustom)
                             {
-                                <button type="button"
-                                        class="catalog-name-cell__build catalog-name-cell__build--edit"
-                                        title="Edit catalog entry"
-                                        @onclick="() => EditTemplateAsync(item)"
-                                        @onclick:stopPropagation="true">
-                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                                </button>
-                                <button type="button"
-                                        class="catalog-name-cell__build catalog-name-cell__build--delete"
-                                        title="Delete catalog entry"
-                                        @onclick="() => DeleteTemplateAsync(item)"
-                                        @onclick:stopPropagation="true">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                                </button>
+                                <BaronyTooltip Text="Edit catalog entry">
+                                    <button type="button"
+                                            class="catalog-name-cell__build catalog-name-cell__build--edit"
+                                            @onclick="() => EditTemplateAsync(item)"
+                                            @onclick:stopPropagation="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                    </button>
+                                </BaronyTooltip>
+                                <BaronyTooltip Text="Delete catalog entry">
+                                    <button type="button"
+                                            class="catalog-name-cell__build catalog-name-cell__build--delete"
+                                            @onclick="() => DeleteTemplateAsync(item)"
+                                            @onclick:stopPropagation="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                    </button>
+                                </BaronyTooltip>
                             }
                         </span>
                     </div>
@@ -84,7 +95,7 @@
                     }
                     else
                     {
-                        <div class="catalog-desc" title="@item.Description">
+                        <BaronyTooltip Text="@item.Description" Class="catalog-desc">
                             @foreach (var line in DescriptionLines(item.Description))
                             {
                                 if (line.StartsWith("Produces ", StringComparison.Ordinal))
@@ -100,7 +111,7 @@
                                     <div class="catalog-desc__body">@line</div>
                                 }
                             }
-                        </div>
+                        </BaronyTooltip>
                     }
                 </td>
                 @foreach (var info in PpbCatalog.All)

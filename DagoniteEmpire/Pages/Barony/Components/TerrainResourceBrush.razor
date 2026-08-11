@@ -6,23 +6,24 @@
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
-            <button type="button"
-                    class="terrain-type-option terrain-resource-option @(string.IsNullOrEmpty(Value) ? "terrain-type-option--selected" : "")"
-                    title="Clear resource"
-                    aria-label="Clear resource"
-                    @onclick="() => SelectAsync(null)">
-                <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" />
-                <span class="terrain-resource-option__label">None</span>
-            </button>
+            <BaronyTooltip Text="Clear resource">
+                <button type="button"
+                        class="terrain-type-option terrain-resource-option @(string.IsNullOrEmpty(Value) ? "terrain-type-option--selected" : "")"
+                        aria-label="Clear resource"
+                        @onclick="() => SelectAsync(null)">
+                    <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" />
+                    <span class="terrain-resource-option__label">None</span>
+                </button>
+            </BaronyTooltip>
             @foreach (var resource in TerrainResource.All)
             {
                 var r = resource;
                 var selected = Value == r;
-                <button type="button"
-                        class="terrain-type-option terrain-resource-option @(selected ? "terrain-type-option--selected" : "")"
-                        title="@TerrainResource.DisplayName(r)"
-                        aria-label="@TerrainResource.DisplayName(r)"
-                        @onclick="() => SelectAsync(r)">
+                <BaronyTooltip Text="@TerrainResource.DisplayName(r)">
+                    <button type="button"
+                            class="terrain-type-option terrain-resource-option @(selected ? "terrain-type-option--selected" : "")"
+                            aria-label="@TerrainResource.DisplayName(r)"
+                            @onclick="() => SelectAsync(r)">
                     @if (TerrainResource.UsesBakedStrokeIcon(r))
                     {
                         <img src="@TerrainResource.IconUrl(r)"
@@ -37,7 +38,8 @@
                               aria-hidden="true"></span>
                     }
                     <span class="terrain-resource-option__label">@TerrainResource.DisplayName(r)</span>
-                </button>
+                    </button>
+                </BaronyTooltip>
             }
         </div>
     </div>

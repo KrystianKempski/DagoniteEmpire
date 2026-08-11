@@ -96,7 +96,9 @@
                                                     <th class="ppb-row-label source-col">Source</th>
                                                     @foreach (var skill in CourtSkillCatalog.Main)
                                                     {
-                                                        <th title="@skill.NameEn">@(string.IsNullOrEmpty(skill.ShortEn) ? skill.NameEn : skill.ShortEn)</th>
+                                                        <th>
+                                                            <BaronyTooltip Text="@skill.NameEn">@(string.IsNullOrEmpty(skill.ShortEn) ? skill.NameEn : skill.ShortEn)</BaronyTooltip>
+                                                        </th>
                                                     }
                                                 </tr>
                                             </thead>
@@ -117,10 +119,11 @@
                                                             @if (CanManage)
                                                             {
                                                                 <span class="source-cell__actions" @onclick:stopPropagation="true">
-                                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                                                   Size="Size.Small"
-                                                                                   title="Edit other sources"
-                                                                                   OnClick="@(() => EditMainOtherAsync(person))" />
+                                                                    <BaronyTooltip Text="Edit other sources">
+                                                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                                       Size="Size.Small"
+                                                                                       OnClick="@(() => EditMainOtherAsync(person))" />
+                                                                    </BaronyTooltip>
                                                                 </span>
                                                             }
                                                         </div>
@@ -129,7 +132,16 @@
                                                     {
                                                         var otherSum = sheet.GetMainOtherSum(skill.Key);
                                                         var tip = sheet.MainOtherTooltip(skill.Key);
-                                                        <td class="court-skill-table__val" title="@tip">@(otherSum == 0 ? "·" : otherSum.ToString())</td>
+                                                        <td class="court-skill-table__val">
+                                                            @if (tip is not null)
+                                                            {
+                                                                <BaronyTooltip Text="@tip"><span>@(otherSum == 0 ? "·" : otherSum.ToString())</span></BaronyTooltip>
+                                                            }
+                                                            else
+                                                            {
+                                                                @(otherSum == 0 ? "·" : otherSum.ToString())
+                                                            }
+                                                        </td>
                                                     }
                                                 </tr>
                                             </tbody>
@@ -175,7 +187,19 @@
                                                     <th class="ppb-row-label source-col">Source</th>
                                                     @foreach (var skill in CourtCombatCatalog.All)
                                                     {
-                                                        <th title="@(combat.Formula(skill.Key) ?? skill.NameEn)">@skill.ShortEn</th>
+                                                        <th>
+                                                            @{
+                                                                var combatFormula = combat.Formula(skill.Key);
+                                                            }
+                                                            @if (!string.IsNullOrEmpty(combatFormula))
+                                                            {
+                                                                <BaronyTooltip Title="@skill.NameEn" Text="@combatFormula">@skill.ShortEn</BaronyTooltip>
+                                                            }
+                                                            else
+                                                            {
+                                                                <BaronyTooltip Text="@skill.NameEn">@skill.ShortEn</BaronyTooltip>
+                                                            }
+                                                        </th>
                                                     }
                                                 </tr>
                                             </thead>
@@ -186,7 +210,19 @@
                                                     </td>
                                                     @foreach (var skill in CourtCombatCatalog.All)
                                                     {
-                                                        <td class="court-skill-table__val" title="@combat.Formula(skill.Key)">@combat.Get(skill.Key)</td>
+                                                        <td class="court-skill-table__val">
+                                                            @{
+                                                                var fromSkillFormula = combat.Formula(skill.Key);
+                                                            }
+                                                            @if (!string.IsNullOrEmpty(fromSkillFormula))
+                                                            {
+                                                                <BaronyTooltip Title="@skill.NameEn" Text="@fromSkillFormula"><span>@combat.Get(skill.Key)</span></BaronyTooltip>
+                                                            }
+                                                            else
+                                                            {
+                                                                @combat.Get(skill.Key)
+                                                            }
+                                                        </td>
                                                     }
                                                 </tr>
                                                 <tr class="@(sheet.CombatOther.Count == 0 ? "source-row--system" : null)">
@@ -196,10 +232,11 @@
                                                             @if (CanManage)
                                                             {
                                                                 <span class="source-cell__actions" @onclick:stopPropagation="true">
-                                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                                                   Size="Size.Small"
-                                                                                   title="Edit other sources"
-                                                                                   OnClick="@(() => EditCombatOtherAsync(person))" />
+                                                                    <BaronyTooltip Text="Edit other sources">
+                                                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                                       Size="Size.Small"
+                                                                                       OnClick="@(() => EditCombatOtherAsync(person))" />
+                                                                    </BaronyTooltip>
                                                                 </span>
                                                             }
                                                         </div>
@@ -208,7 +245,16 @@
                                                     {
                                                         var otherSum = sheet.GetCombatOtherSum(skill.Key);
                                                         var tip = sheet.CombatOtherTooltip(skill.Key);
-                                                        <td class="court-skill-table__val" title="@tip">@(otherSum == 0 ? "·" : otherSum.ToString())</td>
+                                                        <td class="court-skill-table__val">
+                                                            @if (tip is not null)
+                                                            {
+                                                                <BaronyTooltip Text="@tip"><span>@(otherSum == 0 ? "·" : otherSum.ToString())</span></BaronyTooltip>
+                                                            }
+                                                            else
+                                                            {
+                                                                @(otherSum == 0 ? "·" : otherSum.ToString())
+                                                            }
+                                                        </td>
                                                     }
                                                 </tr>
                                             </tbody>
@@ -223,12 +269,13 @@
                                     <span class="court-commander-panel__cx-label">CX pool</span>
                                     @if (CanManage)
                                     {
-                                        <button type="button"
-                                                class="court-commander-panel__cx-value court-commander-panel__cx-value--editable"
-                                                title="Click to edit CX pool"
-                                                @onclick="@(() => OpenCxEditAsync(person))">
-                                            @sheet.CommanderXp
-                                        </button>
+                                        <BaronyTooltip Text="Click to edit CX pool">
+                                            <button type="button"
+                                                    class="court-commander-panel__cx-value court-commander-panel__cx-value--editable"
+                                                    @onclick="@(() => OpenCxEditAsync(person))">
+                                                @sheet.CommanderXp
+                                            </button>
+                                        </BaronyTooltip>
                                     }
                                     else
                                     {
@@ -253,10 +300,12 @@
                                             @foreach (var key in sheet.UnlockedCommanderAbilities)
                                             {
                                                 var ability = CourtCommanderCatalog.Find(key);
-                                                <span class="ppb-chip" title="@(ability?.DescriptionEn)">
-                                                    <span class="ppb-chip__label">@(ability?.NameEn ?? key)</span>
-                                                    <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
-                                                </span>
+                                                <BaronyTooltip Text="@(ability?.DescriptionEn)">
+                                                    <span class="ppb-chip">
+                                                        <span class="ppb-chip__label">@(ability?.NameEn ?? key)</span>
+                                                        <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
+                                                    </span>
+                                                </BaronyTooltip>
                                             }
                                         </div>
                                     }

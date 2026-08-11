@@ -120,6 +120,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<List<BaronAudienceDTO>> GetAudiences(int baronyId);
         Task<BaronAudienceDTO> SaveAudience(BaronAudienceDTO dto);
         Task<int> DeleteAudience(int id);
+        Task<BaronAudienceDTO> EnsureCouncilSession(int baronyId, int turnNumber, int year, string season);
         Task<BaronAudienceExchangeDTO> SaveAudienceExchange(BaronAudienceExchangeDTO dto);
         Task<int> DeleteAudienceExchange(int id);
         /// <summary>MG: mark deferred. Spawns a continuation on next Resolve Turn.</summary>

@@ -16,11 +16,11 @@
     @foreach (var tab in _orderedTabs)
     {
         var key = tab.Key;
+        <BaronyTooltip Text="Hold and drag to reorder">
         <div role="link"
              tabindex="0"
              draggable="true"
              class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "") @(_dragKey == key ? "barony-tabbar__tab--dragging" : "") @(_dropTargetKey == key ? "barony-tabbar__tab--drop-target" : "")"
-             title="Hold and drag to reorder"
              @ondragstart="e => OnDragStart(e, key)"
              @ondragenter="e => OnDragEnter(e, key)"
              @ondragleave="() => OnDragLeave(key)"
@@ -44,6 +44,7 @@
             }
             @tab.Label
         </div>
+        </BaronyTooltip>
     }
 </nav>
 

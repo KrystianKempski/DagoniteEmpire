@@ -34,10 +34,12 @@
                     <thead>
                         <tr>
                             <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
-                            <th rowspan="2" class="decree-col-active" title="When checked, this row’s PPB is included in totals">Active</th>
+                            <th rowspan="2" class="decree-col-active">
+                                <BaronyTooltip Title="Active" Text="When checked, this row’s PPB is included in totals">Active</BaronyTooltip>
+                            </th>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                                <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
                             }
                         </tr>
                         <tr>
@@ -61,15 +63,17 @@
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                               Size="Size.Small"
-                                                               title="Edit decree"
-                                                               OnClick="@(() => EditAsync(item))" />
-                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                                               Size="Size.Small"
-                                                               Color="Color.Error"
-                                                               title="Remove decree"
-                                                               OnClick="@(() => DeleteAsync(item))" />
+                                                <BaronyTooltip Text="Edit decree">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => EditAsync(item))" />
+                                                </BaronyTooltip>
+                                                <BaronyTooltip Text="Remove decree">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Size="Size.Small"
+                                                                   Color="Color.Error"
+                                                                   OnClick="@(() => DeleteAsync(item))" />
+                                                </BaronyTooltip>
                                             </span>
                                         }
                                     </div>
@@ -106,15 +110,16 @@
                                 </td>
                                 <td class="decree-col-active">
                                     <div class="decree-active-cell">
-                                        <MudCheckBox T="bool"
-                                                     Value="true"
-                                                     Disabled="true"
-                                                     ReadOnly="true"
-                                                     Size="Size.Small"
-                                                     Dense="true"
-                                                     Color="Color.Primary"
-                                                     Class="decree-active-checkbox"
-                                                     title="Always active" />
+                                        <BaronyTooltip Text="Always active">
+                                            <MudCheckBox T="bool"
+                                                         Value="true"
+                                                         Disabled="true"
+                                                         ReadOnly="true"
+                                                         Size="Size.Small"
+                                                         Dense="true"
+                                                         Color="Color.Primary"
+                                                         Class="decree-active-checkbox" />
+                                        </BaronyTooltip>
                                     </div>
                                 </td>
                                 @foreach (var info in PpbCatalog.All)

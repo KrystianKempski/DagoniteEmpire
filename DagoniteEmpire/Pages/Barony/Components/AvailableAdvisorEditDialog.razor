@@ -27,7 +27,11 @@
                     <tr>
                         @foreach (var skill in CourtSkillCatalog.Main)
                         {
-                            <th title="@skill.NameEn">@(string.IsNullOrEmpty(skill.ShortEn) ? skill.NameEn : skill.ShortEn)</th>
+                            <th>
+                                <BaronyTooltip Text="@skill.NameEn">
+                                    <span>@(string.IsNullOrEmpty(skill.ShortEn) ? skill.NameEn : skill.ShortEn)</span>
+                                </BaronyTooltip>
+                            </th>
                         }
                     </tr>
                 </thead>
@@ -71,7 +75,9 @@
             {
                 var info = CourtSkillCatalog.FindSecondary(entry.Key);
                 <div class="court-secondary-row">
-                    <span class="court-secondary-row__name" title="@(info?.NameEn ?? entry.Key)">@(info?.NameEn ?? entry.Key)</span>
+                    <BaronyTooltip Text="@(info?.NameEn ?? entry.Key)">
+                        <span class="court-secondary-row__name">@(info?.NameEn ?? entry.Key)</span>
+                    </BaronyTooltip>
                     <MudNumericField T="int"
                                      Value="@entry.Value"
                                      ValueChanged="v => SetSecondary(entry.Key, v)"
@@ -81,11 +87,12 @@
                                      Margin="Margin.Dense"
                                      HideSpinButtons="false"
                                      Class="court-skill-num court-skill-num--bare" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                   Size="Size.Small"
-                                   Color="Color.Error"
-                                   title="Remove"
-                                   OnClick="@(() => RemoveSecondary(entry.Key))" />
+                    <BaronyTooltip Text="Remove">
+                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="@(() => RemoveSecondary(entry.Key))" />
+                    </BaronyTooltip>
                 </div>
             }
 
@@ -112,15 +119,17 @@
                                     Margin="Margin.Dense"
                                     HideSpinButtons="false"
                                     Class="court-skill-num court-skill-num--bare" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Check"
-                                   Color="Color.Primary"
-                                   Size="Size.Small"
-                                   title="Confirm"
-                                   OnClick="ConfirmAddSecondary" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                   Size="Size.Small"
-                                   title="Cancel"
-                                   OnClick="CancelAddSecondary" />
+                    <BaronyTooltip Text="Confirm">
+                        <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       OnClick="ConfirmAddSecondary" />
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="Cancel">
+                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                       Size="Size.Small"
+                                       OnClick="CancelAddSecondary" />
+                    </BaronyTooltip>
                 </div>
             }
             else if (_secondary.Count == 0)

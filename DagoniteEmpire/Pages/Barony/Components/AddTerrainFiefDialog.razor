@@ -32,19 +32,22 @@
             <div class="terrain-domain-color-row">
                 @foreach (var swatch in Swatches)
                 {
-                    <button type="button"
-                            class="terrain-fertility-swatch @(swatch == _colorHex ? "terrain-fertility-swatch--selected" : "")"
-                            style="background-color: @swatch"
-                            title="@swatch"
-                            aria-label="@($"Color {swatch}")"
-                            @onclick="() => _colorHex = swatch"></button>
+                    <BaronyTooltip Text="@swatch">
+                        <button type="button"
+                                class="terrain-fertility-swatch @(swatch == _colorHex ? "terrain-fertility-swatch--selected" : "")"
+                                style="background-color: @swatch"
+                                aria-label="@($"Color {swatch}")"
+                                @onclick="() => _colorHex = swatch"></button>
+                    </BaronyTooltip>
                 }
-                <label class="terrain-domain-custom-color" title="Custom color">
-                    <input type="color"
-                           class="terrain-domain-color-input"
-                           value="@_colorHex"
-                           @onchange="OnCustomColorChanged" />
-                </label>
+                <BaronyTooltip Text="Custom color">
+                    <label class="terrain-domain-custom-color">
+                        <input type="color"
+                               class="terrain-domain-color-input"
+                               value="@_colorHex"
+                               @onchange="OnCustomColorChanged" />
+                    </label>
+                </BaronyTooltip>
             </div>
         </div>
     </DialogContent>

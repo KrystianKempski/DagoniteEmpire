@@ -36,16 +36,18 @@
                             <th class="ppb-row-label artifact-col-name">Name</th>
                             <th class="artifact-col-type">Type</th>
                             <th class="artifact-col-origin">Source</th>
-                            <th class="php-col php-col--prestige artifact-col-php" title="Prestige">
+                            <th class="php-col php-col--prestige artifact-col-php">
                                 <PhpMetricIcon Metric="PhpMetric.Prestige" />
                             </th>
-                            <th class="php-col php-col--honor artifact-col-php" title="Honor">
+                            <th class="php-col php-col--honor artifact-col-php">
                                 <PhpMetricIcon Metric="PhpMetric.Honor" />
                             </th>
-                            <th class="php-col php-col--fear artifact-col-php" title="Fear">
+                            <th class="php-col php-col--fear artifact-col-php">
                                 <PhpMetricIcon Metric="PhpMetric.Fear" />
                             </th>
-                            <th class="artifact-col-location" title="Lord's Seat chamber and its prestige multiplier">Location</th>
+                            <th class="artifact-col-location">
+                                <BaronyTooltip Text="Lord's Seat chamber and its prestige multiplier">Location</BaronyTooltip>
+                            </th>
                             <th class="artifact-col-desc">Description</th>
                         </tr>
                     </thead>
@@ -68,17 +70,20 @@
                                 </td>
                                 <td class="artifact-col-type">@item.Kind</td>
                                 <td class="artifact-col-origin">@item.Origin</td>
-                                <td class="@ScoreClass(PhpMetric.Prestige, EffectivePhp(item.Prestige, mult))"
-                                    title="@PhpTitle(item.Prestige, mult)">
-                                    @PhpCell(item.Prestige, mult)
+                                <td class="@ScoreClass(PhpMetric.Prestige, EffectivePhp(item.Prestige, mult))">
+                                    <BaronyTooltip Text="@PhpTitle(item.Prestige, mult)">
+                                        @PhpCell(item.Prestige, mult)
+                                    </BaronyTooltip>
                                 </td>
-                                <td class="@ScoreClass(PhpMetric.Honor, EffectivePhp(item.Honor, mult))"
-                                    title="@PhpTitle(item.Honor, mult)">
-                                    @PhpCell(item.Honor, mult)
+                                <td class="@ScoreClass(PhpMetric.Honor, EffectivePhp(item.Honor, mult))">
+                                    <BaronyTooltip Text="@PhpTitle(item.Honor, mult)">
+                                        @PhpCell(item.Honor, mult)
+                                    </BaronyTooltip>
                                 </td>
-                                <td class="@ScoreClass(PhpMetric.Fear, EffectivePhp(item.Fear, mult))"
-                                    title="@PhpTitle(item.Fear, mult)">
-                                    @PhpCell(item.Fear, mult)
+                                <td class="@ScoreClass(PhpMetric.Fear, EffectivePhp(item.Fear, mult))">
+                                    <BaronyTooltip Text="@PhpTitle(item.Fear, mult)">
+                                        @PhpCell(item.Fear, mult)
+                                    </BaronyTooltip>
                                 </td>
                                 <td class="artifact-col-location">
                                     <BaronyTooltip Title="Location" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">

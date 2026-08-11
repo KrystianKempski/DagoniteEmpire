@@ -9,7 +9,9 @@
             }
             @foreach (var info in PpbCatalog.All)
             {
-                <th title="@info.NameEn">@info.ShortEn</th>
+                <th>
+                    <BaronyTooltip Text="@info.NameEn">@info.ShortEn</BaronyTooltip>
+                </th>
             }
         </tr>
     </thead>
@@ -19,11 +21,19 @@
             <tr>
                 @if (ShowRowLabels)
                 {
-                    <td class="ppb-row-label" title="@row.Formula">
-                        @row.Label
+                    <td class="ppb-row-label">
                         @if (!string.IsNullOrWhiteSpace(row.Formula))
                         {
-                            <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
+                            <BaronyTooltip Title="@row.Label" Text="@row.Formula">
+                                <span>
+                                    @row.Label
+                                    <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
+                                </span>
+                            </BaronyTooltip>
+                        }
+                        else
+                        {
+                            @row.Label
                         }
                     </td>
                 }

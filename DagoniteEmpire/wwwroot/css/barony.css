@@ -1873,7 +1873,7 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     --res-production: #e07a8a;
     --res-loyalty: #d63b3b;
     --res-stability: #4f9a5a;
-    --res-law: #f0ece4;
+    --res-law: #000000;
     --res-corruption: #6a7a32;
     --res-science: #6aa8f0;
     --res-magic: #b07aef;
@@ -3009,6 +3009,16 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     }
 }
 
+.resource-stocks-hero > .mud-tooltip-root,
+.resource-stocks-hero__tip {
+    min-width: 0;
+    display: block;
+}
+
+.resource-stocks-hero > .mud-tooltip-root {
+    width: 100%;
+}
+
 .resource-stocks-hero__item {
     display: flex;
     flex-direction: column;
@@ -3567,10 +3577,36 @@ a.city-building-name-text--link:hover {
     color: var(--barony-ink, #3a2e1f);
 }
 
-.baron-time-table th:not(.source-col),
-.baron-time-table td:not(.source-col) {
+.baron-time-table {
+    width: 100%;
+    table-layout: auto;
+}
+
+.baron-time-table th:not(.source-col):not(.baron-time-col-desc),
+.baron-time-table td:not(.source-col):not(.baron-time-col-desc) {
     text-align: center;
     min-width: 4rem;
+    white-space: nowrap;
+    width: 1%;
+}
+
+.ppb-table.baron-time-table th.baron-time-col-desc,
+.ppb-table.baron-time-table td.baron-time-col-desc {
+    width: 99%;
+    min-width: 14rem;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.35;
+    vertical-align: top;
+    font-weight: 400;
+    color: var(--barony-ink, #3a2e1f);
+}
+
+.ppb-table.baron-time-table th.baron-time-col-desc {
+    vertical-align: middle;
+    font-weight: 600;
 }
 
 .baron-time-cost {
@@ -4536,6 +4572,13 @@ a.city-building-name-text--link:hover {
     padding: 4px 8px;
     text-align: center;
     white-space: nowrap;
+}
+
+/* Baron's Time: Description must wrap and take remaining width. */
+.ppb-table.baron-time-table td.baron-time-col-desc,
+.ppb-table.baron-time-table th.baron-time-col-desc {
+    white-space: pre-wrap;
+    text-align: left;
 }
 
 .ppb-table thead th {
@@ -9395,6 +9438,16 @@ a.city-building-name-text--link:hover {
 .baron-audience__exchange--resource {
     border-left-color: #9c7a33;
     background: rgba(156, 122, 51, 0.08);
+}
+
+.baron-audience__exchange--question {
+    border-left-color: #6b5b95;
+    background: rgba(107, 91, 149, 0.10);
+}
+
+.baron-audience__exchange--gm-master {
+    border-left-color: #4a6741;
+    background: rgba(74, 103, 65, 0.10);
 }
 
 .baron-audience__composer--gm {

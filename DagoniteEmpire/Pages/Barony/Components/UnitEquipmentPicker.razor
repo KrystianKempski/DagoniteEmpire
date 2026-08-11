@@ -65,18 +65,20 @@
                                 var ok = MeetsWeapon(w, out var why);
                                 <tr class="@RowClass(isW1 || isW2, ok)">
                                     <td class="unit-equip-table__pick">
-                                        <button type="button"
-                                                class="unit-equip-pick @(isW1 ? "unit-equip-pick--on" : null)"
-                                                disabled="@(!CanEdit)"
-                                                title="@(ok ? "Select as Weapon 1" : why)"
-                                                @onclick="@(() => SelectWeapon1(w))">@(isW1 ? "●" : "○")</button>
+                                        <BaronyTooltip Text="@(ok ? "Select as Weapon 1" : why)">
+                                            <button type="button"
+                                                    class="unit-equip-pick @(isW1 ? "unit-equip-pick--on" : null)"
+                                                    disabled="@(!CanEdit)"
+                                                    @onclick="@(() => SelectWeapon1(w))">@(isW1 ? "●" : "○")</button>
+                                        </BaronyTooltip>
                                     </td>
                                     <td class="unit-equip-table__pick">
-                                        <button type="button"
-                                                class="unit-equip-pick @(isW2 ? "unit-equip-pick--on" : null)"
-                                                disabled="@(!CanEdit)"
-                                                title="@(ok ? "Select as Weapon 2 (click again to clear)" : why)"
-                                                @onclick="@(() => ToggleWeapon2(w))">@(isW2 ? "●" : "○")</button>
+                                        <BaronyTooltip Text="@(ok ? "Select as Weapon 2 (click again to clear)" : why)">
+                                            <button type="button"
+                                                    class="unit-equip-pick @(isW2 ? "unit-equip-pick--on" : null)"
+                                                    disabled="@(!CanEdit)"
+                                                    @onclick="@(() => ToggleWeapon2(w))">@(isW2 ? "●" : "○")</button>
+                                        </BaronyTooltip>
                                     </td>
                                     <td class="ppb-row-label">@w.Name</td>
                                     <td>@w.WeaponType</td>
@@ -185,11 +187,12 @@
                         var selected = MountKey == m.Key;
                         <tr class="@RowClass(selected, ok)">
                             <td class="unit-equip-table__pick">
-                                <button type="button"
-                                        class="unit-equip-pick @(selected ? "unit-equip-pick--on" : null)"
-                                        disabled="@(!CanEdit)"
-                                        title="@(ok ? "Select mount (click again to clear)" : why)"
-                                        @onclick="@(() => PickMount(m))">@(selected ? "●" : "○")</button>
+                                <BaronyTooltip Text="@(ok ? "Select mount (click again to clear)" : why)">
+                                    <button type="button"
+                                            class="unit-equip-pick @(selected ? "unit-equip-pick--on" : null)"
+                                            disabled="@(!CanEdit)"
+                                            @onclick="@(() => PickMount(m))">@(selected ? "●" : "○")</button>
+                                </BaronyTooltip>
                             </td>
                             <td class="ppb-row-label">@m.Name</td>
                             <td>@m.Attack</td>
@@ -360,11 +363,12 @@
         var ok = MeetsArmor(a, out var why);
         <tr class="@RowClass(selected, ok)">
             <td class="unit-equip-table__pick">
-                <button type="button"
-                        class="unit-equip-pick @(selected ? "unit-equip-pick--on" : null)"
-                        disabled="@(!CanEdit)"
-                        title="@(ok ? (a.IsShield ? "Select shield (click again to clear)" : "Select armor (click again to clear)") : why)"
-                        @onclick="@(() => PickArmor(a))">@(selected ? "●" : "○")</button>
+                <BaronyTooltip Text="@(ok ? (a.IsShield ? "Select shield (click again to clear)" : "Select armor (click again to clear)") : why)">
+                    <button type="button"
+                            class="unit-equip-pick @(selected ? "unit-equip-pick--on" : null)"
+                            disabled="@(!CanEdit)"
+                            @onclick="@(() => PickArmor(a))">@(selected ? "●" : "○")</button>
+                </BaronyTooltip>
             </td>
             <td class="ppb-row-label">@a.Name</td>
             <td>@(a.IsShield ? "Shields" : a.ArmorClass)</td>

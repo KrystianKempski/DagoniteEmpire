@@ -29,13 +29,14 @@
                     {
                         var url = icon;
                         var selected = string.Equals(_iconUrl, url, StringComparison.OrdinalIgnoreCase);
-                        <button type="button"
-                                class="custom-improvement-icon-picker__btn @(selected ? "custom-improvement-icon-picker__btn--selected" : "")"
-                                title="@url"
-                                aria-label="@url"
-                                @onclick="() => _iconUrl = url">
-                            <img src="@url" alt="" class="custom-improvement-icon-picker__img" />
-                        </button>
+                        <BaronyTooltip Text="@url">
+                            <button type="button"
+                                    class="custom-improvement-icon-picker__btn @(selected ? "custom-improvement-icon-picker__btn--selected" : "")"
+                                    aria-label="@url"
+                                    @onclick="() => _iconUrl = url">
+                                <img src="@url" alt="" class="custom-improvement-icon-picker__img" />
+                            </button>
+                        </BaronyTooltip>
                     }
                 </div>
             }

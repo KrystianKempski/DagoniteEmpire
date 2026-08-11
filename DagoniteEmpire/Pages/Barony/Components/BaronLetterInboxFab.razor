@@ -8,12 +8,13 @@
 {
     <div class="baron-letter-inbox-fab">
         <MudBadge Content="@_unreadCount" Color="Color.Error" Overlap="true" Bordered="true">
-            <button type="button"
-                    class="baron-letter-inbox-fab__btn"
-                    title="@($"New letters: {_unreadCount}")"
-                    @onclick="OpenInboxAsync">
-                <img src="@($"/{MyIcon.TiedScroll}")" alt="" class="baron-letter-inbox-fab__icon" />
-            </button>
+            <BaronyTooltip Text="@($"New letters: {_unreadCount}")">
+                <button type="button"
+                        class="baron-letter-inbox-fab__btn"
+                        @onclick="OpenInboxAsync">
+                    <img src="@($"/{MyIcon.TiedScroll}")" alt="" class="baron-letter-inbox-fab__icon" />
+                </button>
+            </BaronyTooltip>
         </MudBadge>
     </div>
 }

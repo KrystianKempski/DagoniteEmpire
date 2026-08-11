@@ -32,7 +32,7 @@ namespace DA_Common.Barony
             Ppb.Production => "#e07a8a",
             Ppb.Loyalty => "#d63b3b",       // red
             Ppb.Stability => "#4f9a5a",     // green
-            Ppb.Law => "#f0ece4",           // white / parchment
+            Ppb.Law => "#000000",           // black
             Ppb.Corruption => "#6a7a32",    // rotten green
             Ppb.Science => "#6aa8f0",
             Ppb.Magic => "#b07aef",

@@ -8,6 +8,9 @@ namespace DA_Models.BaronyModels
         public string Title { get; set; } = string.Empty;
         public string PetitionerName { get; set; } = string.Empty;
 
+        /// <summary><see cref="DA_Common.Barony.BaronAudienceKind"/>.</summary>
+        public string Kind { get; set; } = DA_Common.Barony.BaronAudienceKind.Audience;
+
         public string Status { get; set; } = DA_Common.Barony.BaronAudienceStatus.Scheduled;
 
         public int TurnNumber { get; set; }

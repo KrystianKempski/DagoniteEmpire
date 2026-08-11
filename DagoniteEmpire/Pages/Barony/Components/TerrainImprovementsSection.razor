@@ -29,11 +29,15 @@
                     <thead>
                         <tr>
                             <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
-                            <th rowspan="2" class="city-building-col-owner" title="Land ownership">Owner</th>
-                            <th class="city-building-col-pop" title="Population (additive)">Pop</th>
+                            <th rowspan="2" class="city-building-col-owner">
+                                <BaronyTooltip Text="Land ownership">Owner</BaronyTooltip>
+                            </th>
+                            <th class="city-building-col-pop">
+                                <BaronyTooltip Text="Population (additive)">Pop</BaronyTooltip>
+                            </th>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                                <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
                             }
                         </tr>
                         <tr>
@@ -59,10 +63,11 @@
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                               Size="Size.Small"
-                                                               title="Edit improvement"
-                                                               OnClick="@(() => EditAsync(item))" />
+                                                <BaronyTooltip Text="Edit improvement">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => EditAsync(item))" />
+                                                </BaronyTooltip>
                                             </span>
                                         }
                                     </div>

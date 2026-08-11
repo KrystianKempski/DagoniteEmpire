@@ -24,12 +24,24 @@
                 <thead>
                     <tr>
                         <th rowspan="2" class="ppb-row-label social-group-col-name">Group</th>
-                        <th rowspan="2" class="social-group-col-influence" title="Share of society">Infl.</th>
-                        <th rowspan="2" class="social-group-col-tax" title="Tax rate">Tax</th>
+                        <th rowspan="2" class="social-group-col-influence">
+                            <BaronyTooltip Text="Share of society">
+                                <span>Infl.</span>
+                            </BaronyTooltip>
+                        </th>
+                        <th rowspan="2" class="social-group-col-tax">
+                            <BaronyTooltip Text="Tax rate">
+                                <span>Tax</span>
+                            </BaronyTooltip>
+                        </th>
                         <th rowspan="2" class="social-group-col-relation">Relation</th>
                         @foreach (var info in PpbCatalog.All)
                         {
-                            <th colspan="2" title="@info.Code">@PpbShort(info.Key)</th>
+                            <th colspan="2">
+                                <BaronyTooltip Text="@info.Code">
+                                    <span>@PpbShort(info.Key)</span>
+                                </BaronyTooltip>
+                            </th>
                         }
                     </tr>
                     <tr>
@@ -50,10 +62,11 @@
                                     @if (CanManage)
                                     {
                                         <span class="city-building-name-actions">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                           Size="Size.Small"
-                                                           title="Edit social group"
-                                                           OnClick="@(() => EditGroupAsync(row))" />
+                                            <BaronyTooltip Text="Edit social group">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               OnClick="@(() => EditGroupAsync(row))" />
+                                            </BaronyTooltip>
                                         </span>
                                     }
                                 </div>

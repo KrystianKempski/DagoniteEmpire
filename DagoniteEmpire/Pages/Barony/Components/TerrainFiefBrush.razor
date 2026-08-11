@@ -15,34 +15,38 @@
                 var subtitle = TerrainMapVisuals.FiefChipSubtitle(f, seniorDomain);
                 var tiles = TileCount(f.Id);
                 <div class="terrain-domain-chip-row">
-                    <button type="button"
-                            class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
-                            title="@($"{title} : {tiles} tiles — {subtitle}")"
-                            @onclick="() => SelectFiefAsync(f.Id)">
-                        <span class="terrain-domain-chip__swatch"
-                              style="background-color: @f.ColorHex"></span>
-                        <span class="terrain-domain-chip__text">
-                            <span class="terrain-domain-chip__name">@title : @tiles</span>
-                            <span class="terrain-domain-chip__lord">@subtitle</span>
-                        </span>
-                    </button>
-                    <input type="color"
-                           class="terrain-domain-chip__color-input"
-                           value="@f.ColorHex"
-                           title="Change fief color"
-                           aria-label="@($"Change color for {title}")"
-                           @onchange="e => OnFiefColorInputChangedAsync(f.Id, e)" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                   Size="Size.Small"
-                                   title="Edit fief"
-                                   OnClick="@(() => OnEditFiefAsync(f.Id))" />
+                    <BaronyTooltip Title="@($"{title} : {tiles} tiles")" Text="@subtitle">
+                        <button type="button"
+                                class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
+                                @onclick="() => SelectFiefAsync(f.Id)">
+                            <span class="terrain-domain-chip__swatch"
+                                  style="background-color: @f.ColorHex"></span>
+                            <span class="terrain-domain-chip__text">
+                                <span class="terrain-domain-chip__name">@title : @tiles</span>
+                                <span class="terrain-domain-chip__lord">@subtitle</span>
+                            </span>
+                        </button>
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="Change fief color">
+                        <input type="color"
+                               class="terrain-domain-chip__color-input"
+                               value="@f.ColorHex"
+                               aria-label="@($"Change color for {title}")"
+                               @onchange="e => OnFiefColorInputChangedAsync(f.Id, e)" />
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="Edit fief">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Size="Size.Small"
+                                       OnClick="@(() => OnEditFiefAsync(f.Id))" />
+                    </BaronyTooltip>
                     @if (!TerrainMapVisuals.IsProtectedDefaultFief(f))
                     {
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Size="Size.Small"
-                                       Color="Color.Error"
-                                       title="Delete fief"
-                                       OnClick="@(() => OnDeleteFiefAsync(f.Id))" />
+                        <BaronyTooltip Text="Delete fief">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => OnDeleteFiefAsync(f.Id))" />
+                        </BaronyTooltip>
                     }
                 </div>
             }
