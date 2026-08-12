@@ -26,6 +26,9 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Baron-editable personal notes.</summary>
         public string? Notes { get; set; }
 
+        /// <summary>Player-assigned marks (JSON list of icon + color keys).</summary>
+        public string MarksJson { get; set; } = "[]";
+
         public int SortOrder { get; set; }
 
         /// <summary>When set, this Vassals contact is synced from a terrain fief.</summary>

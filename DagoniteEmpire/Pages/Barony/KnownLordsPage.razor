@@ -15,7 +15,7 @@ else if (LoadError is not null)
 }
 else
 {
-    <BaronyPageHeader Title="Lords">
+    <BaronyPageHeader Title="Lords" HelpKey="known-lords">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@_lords.Count lord@(_lords.Count == 1 ? "" : "s")</span>
@@ -27,12 +27,21 @@ else
         Shared roster for every barony — lords of the Eastern March, their holdings, and trade goods.
     </MudText>
 
-    <KnownLordsSection Region="@KnownLordsCatalog.RegionEasternMarch"
-                       Lords="@_lords" />
+    <KnownLordsSection BaronyId="@Barony!.Id"
+                       Region="@KnownLordsCatalog.RegionEasternMarch"
+                       Lords="@_lords"
+                       LordNotes="@_lordNotes"
+                       LordMarks="@_lordMarks"
+                       CanEdit="CanEdit"
+                       OnChanged="ReloadLordDataAsync" />
 }
 
 @code {
     private IReadOnlyList<KnownLordEntry> _lords = Array.Empty<KnownLordEntry>();
+    private IReadOnlyDictionary<string, string> _lordNotes =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyDictionary<string, IReadOnlyList<BaronyCharacterMarkDTO>> _lordMarks =
+        new Dictionary<string, IReadOnlyList<BaronyCharacterMarkDTO>>(StringComparer.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,5 +50,16 @@ else
             return;
 
         _lords = KnownLordsCatalog.EasternMarch;
+        await ReloadLordDataAsync();
+    }
+
+    private async Task ReloadLordDataAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _lordNotes = await _baronyRepo.GetKnownLordNotes(Barony.Id);
+        _lordMarks = await _baronyRepo.GetKnownLordMarks(Barony.Id);
+        StateHasChanged();
     }
 }

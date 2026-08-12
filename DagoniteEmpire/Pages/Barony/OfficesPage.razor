@@ -16,7 +16,7 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Court">
+    <BaronyPageHeader Title="Court" HelpKey="offices">
         <Summary>
             <BaronyTooltip Text="Combined upkeep of all offices per turn">
                 <div class="offices-cost-total">
@@ -40,6 +40,7 @@ else if (Barony is not null)
 
     <AvailableAdvisorsSection Advisors="@_availableAdvisors"
                               CanManage="@CanManageAsMg"
+                              CanEdit="@CanEdit"
                               OnEdit="EditAvailableAdvisorAsync"
                               OnDelete="DeleteAvailableAdvisorAsync"
                               OnAdd="AddAvailableAdvisorAsync"
@@ -164,7 +165,7 @@ else if (Barony is not null)
 
     private async Task SaveCourtSheetAsync(AvailableAdvisorDTO person)
     {
-        if (!CanManageAsMg || person.Id <= 0)
+        if (!CanEdit || person.Id <= 0)
             return;
 
         person.BaronyId = Barony!.Id;

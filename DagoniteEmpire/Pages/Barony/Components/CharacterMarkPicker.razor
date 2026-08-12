@@ -1,0 +1,167 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudMenu @bind-Open="_open"
+         Disabled="@(!CanEdit)"
+         CloseOnClick="false"
+         Dense="true"
+         AnchorOrigin="Origin.BottomRight"
+         TransformOrigin="Origin.TopRight"
+         Class="character-mark-menu-root">
+    <ActivatorContent>
+        <BaronyTooltip Text="@PickerTooltip">
+            <MudIconButton Icon="@Icons.Material.Filled.StarOutline"
+                           Size="Size.Small"
+                           Class="@TriggerClass"
+                           OnClick="@(() => _open = true)" />
+        </BaronyTooltip>
+    </ActivatorContent>
+    <ChildContent>
+        <div class="character-mark-menu" @onclick:stopPropagation="true">
+            @if (_marks.Count > 0)
+            {
+                <div class="character-mark-menu__active">
+                    @foreach (var mark in _marks)
+                    {
+                        if (mark.ToMark() is not BaronyCharacterMark parsed)
+                            continue;
+
+                        <button type="button"
+                                class="character-mark-menu__active-item"
+                                title="@($"Remove: {BaronyCharacterMarkCatalog.Tooltip(parsed)}")"
+                                @onclick="@(() => RemoveMarkAsync(mark))">
+                            <MudIcon Icon="@CharacterMarkIcons.MaterialIcon(parsed.IconKey)"
+                                     Size="Size.Small"
+                                     Style="@($"color:{BaronyCharacterMarkCatalog.ColorHex(parsed.ColorKey)}")" />
+                        </button>
+                    }
+                </div>
+            }
+            <div class="character-mark-menu__section">
+                <span class="character-mark-menu__label">Icon</span>
+                <div class="character-mark-menu__icons">
+                    @foreach (var icon in BaronyCharacterMarkCatalog.Icons)
+                    {
+                        <button type="button"
+                                class="character-mark-menu__icon-btn @IconBtnClass(icon.Key)"
+                                style="@IconBtnStyle(icon.Key)"
+                                title="@icon.Label"
+                                @onclick="@(() => SelectIconAsync(icon.Key))">
+                            <MudIcon Icon="@CharacterMarkIcons.MaterialIcon(icon.Key)" Size="Size.Small" />
+                        </button>
+                    }
+                </div>
+            </div>
+            <div class="character-mark-menu__section">
+                <span class="character-mark-menu__label">Color</span>
+                <div class="character-mark-menu__colors">
+                    @foreach (var color in BaronyCharacterMarkCatalog.Colors)
+                    {
+                        <button type="button"
+                                class="character-mark-menu__color-btn @ColorBtnClass(color.Key)"
+                                style="@($"--mark-color:{color.Hex}")"
+                                title="@color.Label"
+                                @onclick="@(() => SelectColorAsync(color.Key))" />
+                    }
+                </div>
+            </div>
+            @if (_marks.Count > 0)
+            {
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Text"
+                           Class="character-mark-menu__clear"
+                           OnClick="ClearAsync">
+                    Clear all
+                </MudButton>
+            }
+        </div>
+    </ChildContent>
+</MudMenu>
+
+@code {
+    [Parameter] public IReadOnlyList<BaronyCharacterMarkDTO>? Marks { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<BaronyCharacterMarkDTO>> OnMarksChanged { get; set; }
+
+    private bool _open;
+    private string? _pendingIcon;
+    private string? _pendingColor;
+    private IReadOnlyList<BaronyCharacterMarkDTO> _marks = Array.Empty<BaronyCharacterMarkDTO>();
+
+    private string PickerTooltip
+    {
+        get
+        {
+            var parsed = _marks
+                .Select(m => m.ToMark())
+                .Where(m => m is not null)
+                .Select(m => m!.Value)
+                .ToList();
+            return BaronyCharacterMarkCatalog.TooltipMany(parsed);
+        }
+    }
+
+    private string TriggerClass =>
+        _marks.Count > 0
+            ? "character-mark-picker-btn character-mark-picker-btn--filled"
+            : "character-mark-picker-btn";
+
+    protected override void OnParametersSet()
+    {
+        _marks = BaronyCharacterMarkDTO.NormalizeList(Marks);
+        if (!_open)
+        {
+            _pendingIcon = null;
+            _pendingColor = null;
+        }
+    }
+
+    private string IconBtnClass(string key) =>
+        string.Equals(_pendingIcon, key, StringComparison.OrdinalIgnoreCase)
+            ? "character-mark-menu__icon-btn--selected"
+            : "";
+
+    private string ColorBtnClass(string key) =>
+        string.Equals(_pendingColor, key, StringComparison.OrdinalIgnoreCase)
+            ? "character-mark-menu__color-btn--selected"
+            : "";
+
+    private string IconBtnStyle(string iconKey)
+    {
+        var hex = BaronyCharacterMarkCatalog.ColorHex(_pendingColor) ?? BaronyCharacterMarkCatalog.Colors[0].Hex;
+        return $"color:{hex}";
+    }
+
+    private async Task SelectIconAsync(string iconKey)
+    {
+        _pendingIcon = iconKey;
+        if (!string.IsNullOrWhiteSpace(_pendingColor))
+            await ToggleAsync(_pendingIcon, _pendingColor);
+    }
+
+    private async Task SelectColorAsync(string colorKey)
+    {
+        _pendingColor = colorKey;
+        if (!string.IsNullOrWhiteSpace(_pendingIcon))
+            await ToggleAsync(_pendingIcon, _pendingColor);
+    }
+
+    private async Task ToggleAsync(string? iconKey, string? colorKey)
+    {
+        var next = BaronyCharacterMarkDTO.Toggle(_marks, iconKey, colorKey);
+        _marks = next;
+        _pendingIcon = null;
+        _pendingColor = null;
+        await OnMarksChanged.InvokeAsync(next);
+    }
+
+    private Task RemoveMarkAsync(BaronyCharacterMarkDTO mark) =>
+        ToggleAsync(mark.IconKey, mark.ColorKey);
+
+    private async Task ClearAsync()
+    {
+        _pendingIcon = null;
+        _pendingColor = null;
+        _open = false;
+        await OnMarksChanged.InvokeAsync(Array.Empty<BaronyCharacterMarkDTO>());
+    }
+}

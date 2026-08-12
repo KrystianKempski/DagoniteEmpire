@@ -59,6 +59,7 @@ namespace DA_DataAccess.Data
 
         // BARONIA - warstwa zarządzania baronią
         public DbSet<Barony> Baronies { get; set; }
+        public DbSet<BaronyPlayerNote> BaronyPlayerNotes { get; set; }
         public DbSet<Advisor> Advisors { get; set; }
         public DbSet<AvailableAdvisor> AvailableAdvisors { get; set; }
         public DbSet<BaronyBuilding> BaronyBuildings { get; set; }
@@ -118,6 +119,12 @@ namespace DA_DataAccess.Data
             modelBuilder.Entity<BaronyRelation>(entity =>
             {
                 entity.HasIndex(e => e.FiefId);
+            });
+
+            modelBuilder.Entity<BaronyPlayerNote>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => new { e.BaronyId, e.NoteType });
             });
 
             modelBuilder.Entity<BaronPhpSource>(entity =>

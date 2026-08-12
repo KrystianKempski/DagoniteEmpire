@@ -322,6 +322,7 @@
 @code {
     [Parameter] public IEnumerable<AvailableAdvisorDTO>? Advisors { get; set; }
     [Parameter] public bool CanManage { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
     [Parameter] public EventCallback<AvailableAdvisorDTO> OnEdit { get; set; }
     [Parameter] public EventCallback<AvailableAdvisorDTO> OnDelete { get; set; }
     [Parameter] public EventCallback OnAdd { get; set; }
@@ -471,6 +472,7 @@
             {
                 { x => x.Sheet, sheet },
                 { x => x.CanManage, CanManage },
+                { x => x.CanEdit, CanEdit },
             },
             new DialogOptions { MaxWidth = MaxWidth.False, FullWidth = false, CloseOnEscapeKey = true });
         var result = await dialog.Result;

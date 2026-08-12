@@ -70,6 +70,7 @@
         new("known-lords", "Lords", "/barony/known-lords", SvgIcon: "/" + MyIcon.VerticalBanner),
         new("march-map", "March map", "/barony/march-map", SvgIcon: "/" + MyIcon.Compass),
         new("trade-goods", "Trade", "/barony/trade-goods", SvgIcon: "/" + MyIcon.Trade),
+        new("notes", "Notes", "/barony/notes", SvgIcon: "/" + MyIcon.Quill),
     };
 
     private List<TabItem> _orderedTabs = DefaultTabs.ToList();
@@ -79,6 +80,7 @@
     private bool _orderChanged;
     private bool _suppressNextClick;
     private bool _showBattleMapTab = true;
+    private bool _showNotesTab;
     private HubConnection? _hubConnection;
     private int _baronyId;
 
@@ -129,7 +131,9 @@
             var user = await _userService.GetUserInfo();
             if (user?.IsAdminOrMG == true)
             {
+                // Notes are the baron player's private space; the MG never sees the tab.
                 _showBattleMapTab = true;
+                _showNotesTab = false;
                 return;
             }
 
@@ -137,6 +141,7 @@
             if (characterId <= 0 || characterId == -1)
             {
                 _showBattleMapTab = false;
+                _showNotesTab = false;
                 return;
             }
 
@@ -144,21 +149,25 @@
             if (barony is null)
             {
                 _showBattleMapTab = false;
+                _showNotesTab = false;
                 _baronyId = 0;
                 return;
             }
 
             _baronyId = barony.Id;
+            _showNotesTab = true;
             _showBattleMapTab = await _battleMapRepo.IsActive(barony.Id);
         }
         catch
         {
             _showBattleMapTab = false;
+            _showNotesTab = false;
         }
     }
 
     private IEnumerable<TabItem> VisibleDefaultTabs =>
-        DefaultTabs.Where(t => t.Key != "battle-map" || _showBattleMapTab);
+        DefaultTabs.Where(t => (t.Key != "battle-map" || _showBattleMapTab)
+                               && (t.Key != "notes" || _showNotesTab));
 
     private async Task LoadOrderAsync()
     {

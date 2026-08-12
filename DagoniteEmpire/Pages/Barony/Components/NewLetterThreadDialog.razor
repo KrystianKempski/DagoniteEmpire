@@ -11,21 +11,19 @@
                           Class="baron-influence-field"
                           Required="true" />
 
-            <MudSelect T="int?"
-                       Value="_relationId"
-                       ValueChanged="OnRelationChanged"
-                       Label="@(IsInbound ? "Sender (relation)" : "Recipient (relation)")"
-                       HelperText="Pick a contact from Relations, or leave empty and type a name"
+            <MudSelect T="string"
+                       Value="_recipientKey"
+                       ValueChanged="OnRecipientChanged"
+                       Label="@(IsInbound ? "Sender" : "Recipient")"
+                       HelperText="Pick from Relations or Lords, or choose Other to type a name and title"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Dense="true"
-                       Clearable="true"
                        Class="baron-influence-field">
-                @foreach (var rel in Relations.OrderBy(r => r.Name))
+                <MudSelectItem Value="@OtherRecipientKey">Other</MudSelectItem>
+                @foreach (var option in _recipientOptions)
                 {
-                    <MudSelectItem T="int?" Value="@rel.Id">
-                        @rel.Name@(string.IsNullOrWhiteSpace(rel.Title) ? "" : $" — {rel.Title}")
-                    </MudSelectItem>
+                    <MudSelectItem Value="@option.Key">@option.Label</MudSelectItem>
                 }
             </MudSelect>
 
@@ -34,13 +32,15 @@
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
+                          ReadOnly="@(!IsCustomRecipient)"
                           Required="true" />
 
             <MudTextField @bind-Value="_correspondentTitle"
                           Label="Title"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
-                          Class="baron-influence-field" />
+                          Class="baron-influence-field"
+                          ReadOnly="@(!IsCustomRecipient)" />
 
             <MudSelect T="string"
                        @bind-Value="_replyRegion"
@@ -74,31 +74,101 @@
 
     [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
 
+    private const string OtherRecipientKey = "other";
+
+    private sealed record LetterRecipientOption(
+        string Key,
+        string Label,
+        int? RelationId,
+        string Name,
+        string? Title,
+        string? Category,
+        string ReplyRegion);
+
     private string _title = string.Empty;
+    private string _recipientKey = OtherRecipientKey;
     private int? _relationId;
     private string _correspondentName = string.Empty;
     private string? _correspondentTitle;
     private string? _correspondentCategory;
     private string _replyRegion = BaronLetterReplyRegion.EasternMarch;
     private bool _busy;
+    private List<LetterRecipientOption> _recipientOptions = new();
+
+    private bool IsCustomRecipient => string.Equals(_recipientKey, OtherRecipientKey, StringComparison.Ordinal);
 
     private string RegionHelperText =>
         $"Max {BaronLetterRules.MaxInboundFromCorrespondent(_replyRegion)} inbound letter(s)/turn from this person (to the baron)";
 
-    private Task OnRelationChanged(int? relationId)
+    protected override void OnParametersSet() => BuildRecipientOptions();
+
+    private void BuildRecipientOptions()
     {
-        _relationId = relationId;
-        if (relationId is int id)
+        var options = new List<LetterRecipientOption>();
+        var coveredLordKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var rel in Relations.OrderBy(r => r.Name))
         {
-            var rel = Relations.FirstOrDefault(r => r.Id == id);
-            if (rel is not null)
-            {
-                _correspondentName = rel.Name;
-                _correspondentTitle = rel.Title;
-                _correspondentCategory = rel.Category;
-            }
+            var lordKey = KnownLordsCatalog.MatchLordKeyFromRelationName(rel.Name);
+            if (lordKey is not null)
+                coveredLordKeys.Add(lordKey);
+
+            options.Add(new LetterRecipientOption(
+                Key: $"relation:{rel.Id}",
+                Label: FormatRelationLabel(rel),
+                RelationId: rel.Id,
+                Name: rel.Name,
+                Title: string.IsNullOrWhiteSpace(rel.Title) ? null : rel.Title,
+                Category: rel.Category,
+                ReplyRegion: BaronLetterReplyRegion.EasternMarch));
         }
 
+        foreach (var lord in KnownLordsCatalog.EasternMarch.OrderBy(l => l.Name))
+        {
+            var lordKey = KnownLordsCatalog.LordKey(lord);
+            if (coveredLordKeys.Contains(lordKey))
+                continue;
+
+            options.Add(new LetterRecipientOption(
+                Key: $"lord:{lordKey}",
+                Label: KnownLordsCatalog.DisplayName(lord),
+                RelationId: null,
+                Name: $"{lord.Name} {lord.House}",
+                Title: lord.Title,
+                Category: RelationCategory.Neighbors,
+                ReplyRegion: BaronLetterReplyRegion.EasternMarch));
+        }
+
+        _recipientOptions = options
+            .OrderBy(o => o.Label, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string FormatRelationLabel(BaronyRelationDTO rel) =>
+        string.IsNullOrWhiteSpace(rel.Title) ? rel.Name : $"{rel.Name} — {rel.Title}";
+
+    private Task OnRecipientChanged(string recipientKey)
+    {
+        _recipientKey = recipientKey;
+
+        if (IsCustomRecipient)
+        {
+            _relationId = null;
+            _correspondentCategory = null;
+            _correspondentName = string.Empty;
+            _correspondentTitle = null;
+            return Task.CompletedTask;
+        }
+
+        var option = _recipientOptions.FirstOrDefault(o => o.Key == recipientKey);
+        if (option is null)
+            return Task.CompletedTask;
+
+        _relationId = option.RelationId;
+        _correspondentName = option.Name;
+        _correspondentTitle = option.Title;
+        _correspondentCategory = option.Category;
+        _replyRegion = option.ReplyRegion;
         return Task.CompletedTask;
     }
 

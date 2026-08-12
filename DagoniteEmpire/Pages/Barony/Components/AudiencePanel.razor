@@ -184,7 +184,7 @@
                                        Margin="Margin.Dense"
                                        Dense="true"
                                        Disabled="Busy">
-                                <MudSelectItem Value="@SpeakerModeBaron">Lord</MudSelectItem>
+                                <MudSelectItem Value="@SpeakerModeBaron">@BaronLordSpeaker</MudSelectItem>
                                 <MudSelectItem Value="@BaronCouncilSession.QuestionToGmSpeaker">@BaronCouncilSession.QuestionToGmSpeaker</MudSelectItem>
                             </MudSelect>
                         </div>
@@ -311,6 +311,8 @@
     [Parameter] public bool Busy { get; set; }
     /// <summary>When set (Council), Speak As lists these courtier names instead of petitioner.</summary>
     [Parameter] public IReadOnlyList<string>? CourtSpeakers { get; set; }
+    /// <summary>Player baron character name — used for "Lord …" in Speak as.</summary>
+    [Parameter] public string? BaronCharacterName { get; set; }
     [Parameter] public EventCallback<SpeakRequest> OnSpeak { get; set; }
     [Parameter] public EventCallback OnAddResources { get; set; }
     [Parameter] public EventCallback OnCreateProject { get; set; }
@@ -337,6 +339,11 @@
             .ToList();
 
     private bool HasCourtSpeakers => CourtSpeakerNames.Count > 0;
+
+    private string BaronLordSpeaker => FormatBaronLordSpeaker(BaronCharacterName);
+
+    public static string FormatBaronLordSpeaker(string? characterName) =>
+        string.IsNullOrWhiteSpace(characterName) ? "Lord" : $"Lord {characterName.Trim()}";
 
     private string StatusCss => (Audience.Status ?? "scheduled").ToLowerInvariant();
 
@@ -480,6 +487,10 @@
         else if (_baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker)
         {
             speaker = BaronCouncilSession.QuestionToGmSpeaker;
+        }
+        else if (_baronSpeakerMode == SpeakerModeBaron)
+        {
+            speaker = BaronLordSpeaker;
         }
 
         await OnSpeak.InvokeAsync(new SpeakRequest(text, isGm, speaker));

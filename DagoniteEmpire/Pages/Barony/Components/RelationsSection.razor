@@ -31,7 +31,6 @@
                         <col class="relations-col-troops" />
                         <col class="relations-col-attitude" />
                         <col class="relations-col-mods" />
-                        <col class="relations-col-notes" />
                     </colgroup>
                     <thead>
                         <tr>
@@ -43,7 +42,6 @@
                             <th class="relations-col-troops">Troops</th>
                             <th class="relations-col-attitude">Attitude</th>
                             <th class="relations-col-mods">Modifiers</th>
-                            <th class="relations-col-notes">Notes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,11 +59,32 @@
                                         </td>
                                     }
                                     <td class="relations-col-name">
-                                        <div class="city-building-name-cell">
-                                            <span class="city-building-name-text">@item.Name</span>
-                                            @if (CanManage)
-                                            {
-                                                <span class="city-building-name-actions">
+                                        <div class="known-lords-name-cell">
+                                            <CharacterMarkBadge Marks="@item.Marks" />
+                                            <span class="known-lords-name-text">@item.Name</span>
+                                            <span class="city-building-name-actions">
+                                                @if (CanEdit)
+                                                {
+                                                    <CharacterMarkPicker Marks="@item.Marks"
+                                                                         CanEdit="true"
+                                                                         OnMarksChanged="marks => SaveRelationMarksAsync(item, marks)" />
+                                                    <BaronyTooltip Text="@NotesTooltip(item.Notes)">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.EditNote"
+                                                                       Size="Size.Small"
+                                                                       Class="@NotesButtonClass(item.Notes)"
+                                                                       OnClick="@(() => EditNotesAsync(item))" />
+                                                    </BaronyTooltip>
+                                                }
+                                                else if (!string.IsNullOrWhiteSpace(item.Notes))
+                                                {
+                                                    <BaronyTooltip Title="Notes" Text="@item.Notes">
+                                                        <MudIcon Icon="@Icons.Material.Filled.EditNote"
+                                                                 Size="Size.Small"
+                                                                 Class="known-lords-notes-icon known-lords-notes-icon--filled" />
+                                                    </BaronyTooltip>
+                                                }
+                                                @if (CanManage)
+                                                {
                                                     <BaronyTooltip Text="Edit relation">
                                                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                        Size="Size.Small"
@@ -77,8 +96,8 @@
                                                                        Color="Color.Error"
                                                                        OnClick="@(() => DeleteAsync(item))" />
                                                     </BaronyTooltip>
-                                                </span>
-                                            }
+                                                }
+                                            </span>
                                         </div>
                                     </td>
                                     <td class="relations-col-title">@(string.IsNullOrWhiteSpace(item.Title) ? "—" : item.Title)</td>
@@ -87,7 +106,7 @@
                                         @if (!string.IsNullOrWhiteSpace(item.Description))
                                         {
                                             <BaronyTooltip Title="Description" Text="@item.Description">
-                                                <span class="relations-ellipsis">@item.Description</span>
+                                                <span class="known-lords-desc-text">@item.Description</span>
                                             </BaronyTooltip>
                                         }
                                         else
@@ -115,28 +134,6 @@
                                                     <MudIconButton Icon="@Icons.Material.Filled.Tune"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditModifiersAsync(item))" />
-                                                </BaronyTooltip>
-                                            }
-                                        </div>
-                                    </td>
-                                    <td class="relations-col-notes">
-                                        <div class="relations-notes-cell">
-                                            @if (!string.IsNullOrWhiteSpace(item.Notes))
-                                            {
-                                                <BaronyTooltip Title="Notes" Text="@item.Notes">
-                                                    <span class="relations-ellipsis">@item.Notes</span>
-                                                </BaronyTooltip>
-                                            }
-                                            else
-                                            {
-                                                <span class="relations-notes-empty">—</span>
-                                            }
-                                            @if (CanEdit)
-                                            {
-                                                <BaronyTooltip Text="Edit notes">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.EditNote"
-                                                                   Size="Size.Small"
-                                                                   OnClick="@(() => EditNotesAsync(item))" />
                                                 </BaronyTooltip>
                                             }
                                         </div>
@@ -227,6 +224,21 @@
         catch (Exception ex)
         {
             _snackBar.Add("Could not save relation: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task SaveRelationMarksAsync(BaronyRelationDTO item, IReadOnlyList<BaronyCharacterMarkDTO> marks)
+    {
+        try
+        {
+            var normalized = BaronyCharacterMarkDTO.NormalizeList(marks);
+            await _baronyRepo.SaveRelationMarks(item.Id, normalized);
+            _snackBar.Add(normalized.Count > 0 ? "Marks updated." : "Marks cleared.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save marks: " + ex.Message, Severity.Error);
         }
     }
 
@@ -347,6 +359,14 @@
     private static string FormatAttitude(int attitude) =>
         attitude > 0 ? $"+{attitude}" : attitude.ToString();
 
+    private static string NotesTooltip(string? notes) =>
+        string.IsNullOrWhiteSpace(notes) ? "Edit notes" : notes;
+
+    private static string NotesButtonClass(string? notes) =>
+        string.IsNullOrWhiteSpace(notes)
+            ? "known-lords-notes-btn"
+            : "known-lords-notes-btn known-lords-notes-btn--filled";
+
     private static BaronyRelationDTO Clone(BaronyRelationDTO source) => new()
     {
         Id = source.Id,
@@ -360,6 +380,7 @@
         TroopCount = source.TroopCount,
         RelationDescription = source.RelationDescription,
         Notes = source.Notes,
+        Marks = BaronyCharacterMarkDTO.NormalizeList(source.Marks),
         SortOrder = source.SortOrder,
         FiefId = source.FiefId,
         Modifiers = (source.Modifiers ?? new())

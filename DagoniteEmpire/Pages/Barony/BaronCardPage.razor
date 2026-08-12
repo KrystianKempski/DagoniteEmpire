@@ -16,13 +16,13 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Baron" />
+    <BaronyPageHeader Title="Baron" HelpKey="character-card" />
 
     <BaronInfluenceSection Barony="@Barony"
                            Character="@_character"
                            CustomModifiers="@_customModifiers"
                            TimeActions="@_timeActions"
-                           CanEdit="@CanEdit"
+                           CanEdit="@CanManageAsMg"
                            OnChanged="ReloadAsync" />
 
     <BaronPhpSection Barony="@Barony"
@@ -31,7 +31,7 @@ else if (Barony is not null)
                      CustomSources="@_phpSources"
                      Artifacts="@_artifacts"
                      Audiences="@_audiences"
-                     CanEdit="@CanEdit"
+                     CanEdit="@CanManageAsMg"
                      OnChanged="ReloadAsync" />
 
     <BaronTimeSection Barony="@Barony"
@@ -44,7 +44,7 @@ else if (Barony is not null)
     <BaronArtifactsSection Barony="@Barony"
                            Seat="@_seat"
                            Artifacts="@_artifacts"
-                           CanEdit="@CanEdit"
+                           CanEdit="@CanManageAsMg"
                            OnChanged="ReloadAsync" />
 
     <BaronReputationEffectsSection PrestigeScore="@Barony.Prestige"

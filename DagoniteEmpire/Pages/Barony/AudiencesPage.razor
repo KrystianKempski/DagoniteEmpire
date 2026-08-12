@@ -20,7 +20,7 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Audiences">
+    <BaronyPageHeader Title="Audiences" HelpKey="audiences">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@CurrentTurnActive.Count this turn</span>
@@ -180,6 +180,7 @@ else if (Barony is not null)
                         <AudiencePanel Audience="CurrentCouncil"
                                        CanWriteAsGm="CanWriteAsGm"
                                        CanWriteAsBaron="CanWriteAsBaron"
+                                       BaronCharacterName="BaronCharacterName"
                                        Busy="_busy"
                                        CourtSpeakers="_courtSpeakers"
                                        OnSpeak="req => SendReplyAsync(CurrentCouncil, req)"
@@ -202,6 +203,7 @@ else if (Barony is not null)
                                            ShowSummary="true"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
+                                           BaronCharacterName="BaronCharacterName"
                                            Busy="_busy"
                                            CourtSpeakers="_courtSpeakers"
                                            OnMakeChapter="() => MakeChapterAsync(a)" />
@@ -257,6 +259,7 @@ else if (Barony is not null)
                             <AudiencePanel Audience="a"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
+                                           BaronCharacterName="BaronCharacterName"
                                            Busy="_busy"
                                            OnSpeak="req => SendReplyAsync(a, req)"
                                            OnAddResources="() => AddResourcesAsync(a)"
@@ -279,6 +282,7 @@ else if (Barony is not null)
                                            ReadOnly="true"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
+                                           BaronCharacterName="BaronCharacterName"
                                            Busy="_busy"
                                            OnMakeChapter="() => MakeChapterAsync(a)" />
                         }
@@ -321,6 +325,7 @@ else if (Barony is not null)
                                                        ShowSummary="true"
                                                        CanWriteAsGm="CanWriteAsGm"
                                                        CanWriteAsBaron="CanWriteAsBaron"
+                                                       BaronCharacterName="BaronCharacterName"
                                                        Busy="_busy"
                                                        OnMakeChapter="() => MakeChapterAsync(a)" />
                                     }
@@ -341,6 +346,7 @@ else if (Barony is not null)
 
     private bool CanWriteAsGm => CanManageAsMg;
     private bool CanWriteAsBaron => CanEdit && !CanManageAsMg;
+    private string? BaronCharacterName => UserInfo?.SelectedCharacter?.NPCName;
 
     private IEnumerable<BaronAudienceDTO> AudienceOnly =>
         _audiences.Where(a => BaronAudienceKind.IsAudience(a.Kind));

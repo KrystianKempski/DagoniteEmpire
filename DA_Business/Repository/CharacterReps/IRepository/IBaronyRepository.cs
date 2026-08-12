@@ -60,6 +60,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyRelationDTO> SaveRelation(BaronyRelationDTO dto);
         Task<int> DeleteRelation(int id);
         Task SaveRelationNotes(int relationId, string? notes);
+        Task SaveRelationMarks(int relationId, IReadOnlyList<BaronyCharacterMarkDTO> marks);
 
         // --- Lord's Seat ---
         Task<BaronySeatDTO> EnsureSeat(int baronyId);
@@ -200,6 +201,10 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task SaveTradeTreaties(int baronyId, IReadOnlyList<BaronyTradeTreaty> treaties);
         Task<HashSet<string>> GetBlockedTradeLordKeys(int baronyId);
         Task SetBlockedTradeLordKeys(int baronyId, IReadOnlyCollection<string> lordKeys);
+        Task<IReadOnlyDictionary<string, string>> GetKnownLordNotes(int baronyId);
+        Task SaveKnownLordNote(int baronyId, string lordKey, string? notes);
+        Task<IReadOnlyDictionary<string, IReadOnlyList<BaronyCharacterMarkDTO>>> GetKnownLordMarks(int baronyId);
+        Task SaveKnownLordMarks(int baronyId, string lordKey, IReadOnlyList<BaronyCharacterMarkDTO> marks);
 
         // --- Katalog budynków/ulepszeń (globalny) ---
         Task<List<BuildingTemplateDTO>> GetBuildingTemplates();

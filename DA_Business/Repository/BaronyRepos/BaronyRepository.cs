@@ -461,6 +461,198 @@ namespace DA_Business.Repository.BaronyRepos
             return set;
         }
 
+        public async Task<IReadOnlyDictionary<string, string>> GetKnownLordNotes(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var json = await ctx.Baronies.AsNoTracking()
+                    .Where(b => b.Id == baronyId)
+                    .Select(b => b.KnownLordNotesJson)
+                    .FirstOrDefaultAsync();
+                return ParseKnownLordNotes(json);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetKnownLordNotes)); }
+        }
+
+        public async Task SaveKnownLordNote(int baronyId, string lordKey, string? notes)
+        {
+            try
+            {
+                var key = lordKey?.Trim() ?? "";
+                if (string.IsNullOrWhiteSpace(key) || KnownLordsCatalog.FindByKey(key) is null)
+                    throw new InvalidOperationException("Unknown lord.");
+
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var map = ParseKnownLordNotes(e.KnownLordNotesJson).ToDictionary(
+                    k => k.Key,
+                    v => v.Value,
+                    StringComparer.OrdinalIgnoreCase);
+
+                if (string.IsNullOrWhiteSpace(notes))
+                    map.Remove(key);
+                else
+                    map[key] = notes.Trim();
+
+                e.KnownLordNotesJson = JsonSerializer.Serialize(map, JsonOptions);
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveKnownLordNote));
+            }
+        }
+
+        private static Dictionary<string, string> ParseKnownLordNotes(string? json)
+        {
+            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(json))
+                return map;
+
+            try
+            {
+                var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions);
+                if (parsed is null)
+                    return map;
+
+                foreach (var (key, value) in parsed)
+                {
+                    if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
+                        continue;
+                    if (KnownLordsCatalog.FindByKey(key) is null)
+                        continue;
+                    map[key.Trim()] = value.Trim();
+                }
+            }
+            catch
+            {
+                /* ignore corrupt json */
+            }
+
+            return map;
+        }
+
+        public async Task<IReadOnlyDictionary<string, IReadOnlyList<BaronyCharacterMarkDTO>>> GetKnownLordMarks(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var json = await ctx.Baronies.AsNoTracking()
+                    .Where(b => b.Id == baronyId)
+                    .Select(b => b.KnownLordMarksJson)
+                    .FirstOrDefaultAsync();
+                return ParseKnownLordMarks(json)
+                    .ToDictionary(
+                        k => k.Key,
+                        v => (IReadOnlyList<BaronyCharacterMarkDTO>)v.Value,
+                        StringComparer.OrdinalIgnoreCase);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetKnownLordMarks)); }
+        }
+
+        public async Task SaveKnownLordMarks(int baronyId, string lordKey, IReadOnlyList<BaronyCharacterMarkDTO> marks)
+        {
+            try
+            {
+                var key = lordKey?.Trim() ?? "";
+                if (string.IsNullOrWhiteSpace(key) || KnownLordsCatalog.FindByKey(key) is null)
+                    throw new InvalidOperationException("Unknown lord.");
+
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var map = ParseKnownLordMarks(e.KnownLordMarksJson).ToDictionary(
+                    k => k.Key,
+                    v => v.Value,
+                    StringComparer.OrdinalIgnoreCase);
+
+                var normalized = BaronyCharacterMarkDTO.NormalizeList(marks);
+                if (normalized.Count == 0)
+                    map.Remove(key);
+                else
+                    map[key] = normalized;
+
+                e.KnownLordMarksJson = JsonSerializer.Serialize(map, JsonOptions);
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveKnownLordMarks));
+            }
+        }
+
+        private static Dictionary<string, List<BaronyCharacterMarkDTO>> ParseKnownLordMarks(string? json)
+        {
+            var map = new Dictionary<string, List<BaronyCharacterMarkDTO>>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrWhiteSpace(json))
+                return map;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.ValueKind != JsonValueKind.Object)
+                    return map;
+
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    if (string.IsNullOrWhiteSpace(prop.Name) || KnownLordsCatalog.FindByKey(prop.Name) is null)
+                        continue;
+
+                    var marks = ParseLordMarkValue(prop.Value);
+                    if (marks.Count == 0)
+                        continue;
+
+                    map[prop.Name.Trim()] = marks;
+                }
+            }
+            catch
+            {
+                /* ignore corrupt json */
+            }
+
+            return map;
+        }
+
+        private static List<BaronyCharacterMarkDTO> ParseLordMarkValue(JsonElement value)
+        {
+            if (value.ValueKind == JsonValueKind.Array)
+            {
+                var list = JsonSerializer.Deserialize<List<BaronyCharacterMarkDTO>>(value.GetRawText(), JsonOptions);
+                return BaronyCharacterMarkDTO.NormalizeList(list);
+            }
+
+            if (value.ValueKind == JsonValueKind.Object)
+            {
+                var single = JsonSerializer.Deserialize<BaronyCharacterMarkDTO>(value.GetRawText(), JsonOptions);
+                return BaronyCharacterMarkDTO.NormalizeList(single is null ? null : new[] { single });
+            }
+
+            return new List<BaronyCharacterMarkDTO>();
+        }
+
+        private static List<BaronyCharacterMarkDTO> ParseRelationMarks(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new List<BaronyCharacterMarkDTO>();
+
+            try
+            {
+                var list = JsonSerializer.Deserialize<List<BaronyCharacterMarkDTO>>(json, JsonOptions);
+                return BaronyCharacterMarkDTO.NormalizeList(list);
+            }
+            catch
+            {
+                return new List<BaronyCharacterMarkDTO>();
+            }
+        }
+
+        private static string SerMarks(IReadOnlyList<BaronyCharacterMarkDTO>? marks) =>
+            JsonSerializer.Serialize(BaronyCharacterMarkDTO.NormalizeList(marks), JsonOptions);
+
         private static List<BaronyTradeTreaty> ParseTradeTreaties(string? json)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -1809,6 +2001,23 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) when (ex is not InvalidOperationException)
             {
                 throw Err(ex, nameof(SaveRelationNotes));
+            }
+        }
+
+        public async Task SaveRelationMarks(int relationId, IReadOnlyList<BaronyCharacterMarkDTO> marks)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyRelations.FirstOrDefaultAsync(x => x.Id == relationId)
+                    ?? throw new InvalidOperationException($"Relation {relationId} not found.");
+
+                e.MarksJson = SerMarks(marks);
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveRelationMarks));
             }
         }
 
@@ -4603,6 +4812,7 @@ namespace DA_Business.Repository.BaronyRepos
             TroopCount = e.TroopCount,
             RelationDescription = e.RelationDescription ?? "",
             Notes = e.Notes,
+            Marks = ParseRelationMarks(e.MarksJson),
             SortOrder = e.SortOrder,
             FiefId = e.FiefId,
             Modifiers = (e.Modifiers ?? new List<BaronyRelationModifier>())
@@ -4628,6 +4838,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.TroopCount = d.TroopCount;
             e.RelationDescription = d.RelationDescription ?? "";
             e.Notes = d.Notes;
+            e.MarksJson = SerMarks(d.Marks);
             e.SortOrder = d.SortOrder;
             e.FiefId = d.FiefId;
         }

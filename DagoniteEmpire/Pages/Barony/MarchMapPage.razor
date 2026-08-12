@@ -24,6 +24,13 @@ else
         <div class="march-map-frame">
             <aside class="march-map-legend-panel barony-panel">
                 <div class="march-map-legend-stack">
+                    <div class="march-map-legend-help">
+                        <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
+                                       Size="Size.Small"
+                                       Class="barony-page-header__help-btn"
+                                       aria-label="Help: March map"
+                                       OnClick="OpenMarchHelpAsync" />
+                    </div>
                     <span class="march-map-legend">
                         <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--road"></i> Road</span>
                         <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--river"></i> River</span>
@@ -222,6 +229,18 @@ else
     private string? _baronNameFromList;
     private bool _routeDesignManual;
     private List<string> _manualPathNodeIds = new();
+
+    private async Task OpenMarchHelpAsync()
+    {
+        if (!BaronyHelpCatalog.TryGet("march-map", out var entry))
+            return;
+
+        var parameters = new DialogParameters<BaronyHelpDialog> { { x => x.Entry, entry } };
+        await _dialogService.ShowAsync<BaronyHelpDialog>(
+            entry.Title,
+            parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+    }
 
     private bool ShowMapActionChip =>
         (CanEdit && _playerSeatNodeId is not null) || CanManageAsMg;

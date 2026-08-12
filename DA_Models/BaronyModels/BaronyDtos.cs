@@ -509,6 +509,7 @@ namespace DA_Models.BaronyModels
         public int TroopCount { get; set; }
         public string RelationDescription { get; set; } = string.Empty;
         public string? Notes { get; set; }
+        public List<BaronyCharacterMarkDTO> Marks { get; set; } = new();
         public int SortOrder { get; set; }
         /// <summary>Terrain fief this Vassals contact is synced from (null = manual entry).</summary>
         public int? FiefId { get; set; }

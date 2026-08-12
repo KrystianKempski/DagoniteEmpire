@@ -82,7 +82,7 @@
                         <span class="court-commander-tree__detail-meta">
                             @BranchTitle(_selected.Branch) · Tier @(_selected.Tier) · @_selected.CxCost CX
                         </span>
-                        @if (CanManage && IsReady(_selected))
+                        @if (CanSpendCx && IsReady(_selected))
                         {
                             <MudButton Variant="Variant.Filled"
                                        Size="Size.Small"
@@ -135,6 +135,10 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public CourtCharacterSheet Sheet { get; set; } = CourtCharacterSheet.CreateDefault();
     [Parameter] public bool CanManage { get; set; }
+    /// <summary>Baron (or MG) may spend CX to unlock abilities.</summary>
+    [Parameter] public bool CanEdit { get; set; }
+
+    private bool CanSpendCx => CanManage || CanEdit;
 
     private static readonly string[] BranchOrder =
     [
@@ -252,7 +256,7 @@
 
     private void UnlockSelectedAsync()
     {
-        if (!CanManage || _selected is null)
+        if (!CanSpendCx || _selected is null)
             return;
         if (!CourtCommanderFormulas.TryUnlock(_sheet, _selected.Key, out var error))
         {

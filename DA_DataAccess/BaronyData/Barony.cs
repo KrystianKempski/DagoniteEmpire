@@ -104,6 +104,12 @@ namespace DA_DataAccess.BaronyData
         /// </summary>
         public string BlockedTradeLordKeysJson { get; set; } = "[]";
 
+        /// <summary>JSON map of Known Lords catalog key → player/MG notes for that lord.</summary>
+        public string KnownLordNotesJson { get; set; } = "{}";
+
+        /// <summary>JSON map of Known Lords catalog key → player mark (icon + color).</summary>
+        public string KnownLordMarksJson { get; set; } = "{}";
+
         /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
         public bool PlayerTurnReady { get; set; }
     }

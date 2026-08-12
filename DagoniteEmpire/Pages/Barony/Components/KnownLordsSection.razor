@@ -1,4 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
 
 <BaronySection Title="@Region">
     <Summary>
@@ -15,6 +18,42 @@
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
                           Class="known-lords-filters__search" />
+            <div class="known-lords-mark-filters">
+                <span class="known-lords-mark-filters__label">Mark</span>
+                <div class="known-lords-mark-filters__icons">
+                    @foreach (var icon in BaronyCharacterMarkCatalog.Icons)
+                    {
+                        <BaronyTooltip Text="@icon.Label">
+                            <button type="button"
+                                    class="known-lords-mark-filter-btn known-lords-mark-filter-btn--icon @(IconFilterClass(icon.Key))"
+                                    @onclick="@(() => ToggleIconFilter(icon.Key))">
+                                <MudIcon Icon="@CharacterMarkIcons.MaterialIcon(icon.Key)" Size="Size.Small" />
+                            </button>
+                        </BaronyTooltip>
+                    }
+                </div>
+                <span class="known-lords-mark-filters__label">Color</span>
+                <div class="known-lords-mark-filters__colors">
+                    @foreach (var color in BaronyCharacterMarkCatalog.Colors)
+                    {
+                        <BaronyTooltip Text="@color.Label">
+                            <button type="button"
+                                    class="known-lords-mark-filter-btn known-lords-mark-filter-btn--color @(ColorFilterClass(color.Key))"
+                                    style="@($"--mark-color:{color.Hex}")"
+                                    @onclick="@(() => ToggleColorFilter(color.Key))" />
+                        </BaronyTooltip>
+                    }
+                </div>
+                @if (HasMarkFilters)
+                {
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Text"
+                               Class="known-lords-mark-filters__clear"
+                               OnClick="ClearMarkFilters">
+                        Clear marks
+                    </MudButton>
+                }
+            </div>
         </div>
 
         @if (Filtered.Count == 0)
@@ -50,17 +89,49 @@
                     <tbody>
                         @foreach (var lord in Filtered)
                         {
+                            var lordKey = KnownLordsCatalog.LordKey(lord);
+                            var notes = GetNotes(lordKey);
+                            var mark = GetMarks(lordKey);
                             <tr>
-                                <td class="known-lords-col-name">@lord.Name</td>
-                                <td class="known-lords-col-house">@(DashIfEmpty(lord.House))</td>
-                                <td class="known-lords-col-title">@(DashIfEmpty(lord.Title))</td>
-                                <td class="known-lords-col-holdings">@(DashIfEmpty(lord.Holdings))</td>
+                                <td class="known-lords-col-name">
+                                    <div class="known-lords-name-cell">
+                                        <CharacterMarkBadge Marks="@mark" />
+                                        <span class="known-lords-name-text">@lord.Name</span>
+                                        @if (CanEdit)
+                                        {
+                                            <span class="city-building-name-actions">
+                                                <CharacterMarkPicker Marks="@mark"
+                                                                     CanEdit="true"
+                                                                     OnMarksChanged="m => SaveLordMarksAsync(lordKey, m)" />
+                                                <BaronyTooltip Text="@NotesTooltip(notes)">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.EditNote"
+                                                                   Size="Size.Small"
+                                                                   Class="@NotesButtonClass(notes)"
+                                                                   OnClick="@(() => EditNotesAsync(lord, lordKey, notes))" />
+                                                </BaronyTooltip>
+                                            </span>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(notes))
+                                        {
+                                            <span class="city-building-name-actions">
+                                                <BaronyTooltip Title="Notes" Text="@notes">
+                                                    <MudIcon Icon="@Icons.Material.Filled.EditNote"
+                                                             Size="Size.Small"
+                                                             Class="known-lords-notes-icon known-lords-notes-icon--filled" />
+                                                </BaronyTooltip>
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="known-lords-col-house known-lords-wrap">@(DashIfEmpty(lord.House))</td>
+                                <td class="known-lords-col-title known-lords-wrap">@(DashIfEmpty(lord.Title))</td>
+                                <td class="known-lords-col-holdings known-lords-wrap">@(DashIfEmpty(lord.Holdings))</td>
                                 <td class="known-lords-col-wealth">@lord.Wealth</td>
                                 <td class="known-lords-col-desc">
                                     @if (!string.IsNullOrWhiteSpace(lord.Description))
                                     {
                                         <BaronyTooltip Title="Description" Text="@lord.Description">
-                                            <span class="relations-ellipsis">@lord.Description</span>
+                                            <span class="known-lords-desc-text">@lord.Description</span>
                                         </BaronyTooltip>
                                     }
                                     else
@@ -101,10 +172,19 @@
 </BaronySection>
 
 @code {
+    [Parameter] public int BaronyId { get; set; }
     [Parameter] public string Region { get; set; } = KnownLordsCatalog.RegionEasternMarch;
     [Parameter] public IReadOnlyList<KnownLordEntry> Lords { get; set; } = Array.Empty<KnownLordEntry>();
+    [Parameter] public IReadOnlyDictionary<string, string>? LordNotes { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, IReadOnlyList<BaronyCharacterMarkDTO>>? LordMarks { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
 
     private string _filter = "";
+    private readonly HashSet<string> _filterIcons = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _filterColors = new(StringComparer.OrdinalIgnoreCase);
+
+    private bool HasMarkFilters => _filterIcons.Count > 0 || _filterColors.Count > 0;
 
     private List<KnownLordEntry> Filtered =>
         Lords
@@ -114,6 +194,16 @@
 
     private bool MatchesFilter(KnownLordEntry lord)
     {
+        var lordKey = KnownLordsCatalog.LordKey(lord);
+        var notes = GetNotes(lordKey);
+        var marks = GetMarks(lordKey);
+
+        if (HasMarkFilters)
+        {
+            if (marks.Count == 0 || !marks.Any(MatchesMarkFilter))
+                return false;
+        }
+
         if (string.IsNullOrWhiteSpace(_filter))
             return true;
 
@@ -122,11 +212,122 @@
                || Contains(lord.Title)
                || Contains(lord.Holdings)
                || Contains(lord.Description)
-               || Contains(lord.ProducedGoods);
+               || Contains(lord.ProducedGoods)
+               || Contains(notes);
 
         bool Contains(string? value) =>
             !string.IsNullOrEmpty(value)
             && value.Contains(_filter, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool MatchesMarkFilter(BaronyCharacterMarkDTO markDto)
+    {
+        if (markDto.ToMark() is not BaronyCharacterMark mark)
+            return false;
+
+        var iconOk = _filterIcons.Count == 0
+            || _filterIcons.Contains(mark.IconKey);
+        var colorOk = _filterColors.Count == 0
+            || _filterColors.Contains(mark.ColorKey);
+        return iconOk && colorOk;
+    }
+
+    private void ToggleIconFilter(string iconKey)
+    {
+        if (!_filterIcons.Add(iconKey))
+            _filterIcons.Remove(iconKey);
+    }
+
+    private void ToggleColorFilter(string colorKey)
+    {
+        if (!_filterColors.Add(colorKey))
+            _filterColors.Remove(colorKey);
+    }
+
+    private void ClearMarkFilters()
+    {
+        _filterIcons.Clear();
+        _filterColors.Clear();
+    }
+
+    private string IconFilterClass(string key) =>
+        _filterIcons.Contains(key) ? "known-lords-mark-filter-btn--active" : "";
+
+    private string ColorFilterClass(string key) =>
+        _filterColors.Contains(key) ? "known-lords-mark-filter-btn--active" : "";
+
+    private string? GetNotes(string lordKey) =>
+        LordNotes is not null
+        && LordNotes.TryGetValue(lordKey, out var notes)
+        && !string.IsNullOrWhiteSpace(notes)
+            ? notes
+            : null;
+
+    private IReadOnlyList<BaronyCharacterMarkDTO> GetMarks(string lordKey) =>
+        LordMarks is not null
+        && LordMarks.TryGetValue(lordKey, out var marks)
+            ? BaronyCharacterMarkDTO.NormalizeList(marks)
+            : Array.Empty<BaronyCharacterMarkDTO>();
+
+    private async Task SaveLordMarksAsync(string lordKey, IReadOnlyList<BaronyCharacterMarkDTO> marks)
+    {
+        try
+        {
+            var normalized = BaronyCharacterMarkDTO.NormalizeList(marks);
+            await _baronyRepo.SaveKnownLordMarks(BaronyId, lordKey, normalized);
+            _snackBar.Add(normalized.Count > 0 ? "Marks updated." : "Marks cleared.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save marks: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static string NotesTooltip(string? notes) =>
+        string.IsNullOrWhiteSpace(notes) ? "Edit notes" : notes;
+
+    private static string NotesButtonClass(string? notes) =>
+        string.IsNullOrWhiteSpace(notes)
+            ? "known-lords-notes-btn"
+            : "known-lords-notes-btn known-lords-notes-btn--filled";
+
+    private async Task EditNotesAsync(KnownLordEntry lord, string lordKey, string? notes)
+    {
+        var parameters = new DialogParameters<RelationNotesDialog>
+        {
+            { x => x.RelationId, 0 },
+            { x => x.PersonName, KnownLordsCatalog.DisplayName(lord) },
+            { x => x.Notes, notes },
+        };
+
+        var dialog = await _dialogService.ShowAsync<RelationNotesDialog>(
+            "Edit Notes",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Large,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveKnownLordNote(
+                BaronyId,
+                lordKey,
+                string.IsNullOrWhiteSpace(saved) ? null : saved);
+            _snackBar.Add("Notes updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save notes: " + ex.Message, Severity.Error);
+        }
     }
 
     private static string DashIfEmpty(string? value)
