@@ -41,6 +41,7 @@ public static class CourtSecondarySkill
     public const string FineArts = "fine-arts";
     public const string FaithRites = "faith-rites";
     public const string PerformanceActing = "performance-acting";
+    public const string LogisticsManagement = "logistics-management";
 }
 
 public sealed class CourtSkillInfo
@@ -102,6 +103,7 @@ public static class CourtSkillCatalog
         new() { Key = CourtSecondarySkill.FineArts, NameEn = "Fine arts", NamePl = "Sztuki piękne" },
         new() { Key = CourtSecondarySkill.FaithRites, NameEn = "Faith / rites", NamePl = "Wiara / obrzędy" },
         new() { Key = CourtSecondarySkill.PerformanceActing, NameEn = "Performance / acting", NamePl = "Występy / aktorstwo" },
+        new() { Key = CourtSecondarySkill.LogisticsManagement, NameEn = "Logistics / management", NamePl = "Logistyka / zarządzanie" },
     };
 
     public static CourtSkillInfo? FindMain(string key) =>
@@ -378,51 +380,63 @@ public static class CourtPpbFormulas
 
         v[Ppb.Food] = M(CourtMainSkill.Knowledge)
                       + S(CourtSecondarySkill.FarmingHusbandry)
-                      + S(CourtSecondarySkill.AnimalHandlingRiding);
+                      + S(CourtSecondarySkill.AnimalHandlingRiding)
+                      + S(CourtSecondarySkill.AlchemyNaturalSciences);
 
         v[Ppb.Economy] = M(CourtMainSkill.Administration)
                          + S(CourtSecondarySkill.Trade)
-                         + S(CourtSecondarySkill.MathematicsLogicCiphers);
+                         + S(CourtSecondarySkill.MathematicsLogicCiphers)
+                         + S(CourtSecondarySkill.LogisticsManagement);
 
         v[Ppb.Production] = M(CourtMainSkill.Craft)
                             + S(CourtSecondarySkill.EngineeringGunsmithing)
-                            + S(CourtSecondarySkill.SmithingMetallurgy);
+                            + S(CourtSecondarySkill.SmithingMetallurgy)
+                            + S(CourtSecondarySkill.GeologyMining);
 
         v[Ppb.Loyalty] = M(CourtMainSkill.Diplomacy)
                          + S(CourtSecondarySkill.PerformanceActing)
-                         + S(CourtSecondarySkill.FaithRites);
+                         + S(CourtSecondarySkill.FaithRites)
+                         + S(CourtSecondarySkill.Observation);
 
         v[Ppb.Stability] = M(CourtMainSkill.Administration)
                            + S(CourtSecondarySkill.LawInvestigation)
-                           + S(CourtSecondarySkill.HeraldryEtiquette);
+                           + S(CourtSecondarySkill.HeraldryEtiquette)
+                           + S(CourtSecondarySkill.Medicine);
 
         v[Ppb.Law] = M(CourtMainSkill.Intimidation)
                      + S(CourtSecondarySkill.LawInvestigation)
-                     + S(CourtSecondarySkill.Observation);
+                     + S(CourtSecondarySkill.Observation)
+                     + S(CourtSecondarySkill.TrackingSurvival);
 
-        v[Ppb.Corruption] = -(M(CourtMainSkill.Deceit)
-                              + S(CourtSecondarySkill.HeraldryEtiquette)
-                              + S(CourtSecondarySkill.PerformanceActing));
+        v[Ppb.Corruption] = -((M(CourtMainSkill.Deceit)
+                               + S(CourtSecondarySkill.HeraldryEtiquette)
+                               + S(CourtSecondarySkill.PerformanceActing)
+                               + S(CourtSecondarySkill.Athletics)) / 3);
 
         v[Ppb.Science] = M(CourtMainSkill.Knowledge)
                           + S(CourtSecondarySkill.MathematicsLogicCiphers)
-                          + S(CourtSecondarySkill.AlchemyNaturalSciences);
+                          + S(CourtSecondarySkill.AlchemyNaturalSciences)
+                          + S(CourtSecondarySkill.GeographyNations);
 
         v[Ppb.Magic] = M(CourtMainSkill.Magic)
                        + S(CourtSecondarySkill.AlchemyNaturalSciences)
-                       + S(CourtSecondarySkill.FaithRites);
+                       + S(CourtSecondarySkill.FaithRites)
+                       + S(CourtSecondarySkill.Languages);
 
         v[Ppb.Culture] = M(CourtMainSkill.Diplomacy)
                           + S(CourtSecondarySkill.FineArts)
-                          + S(CourtSecondarySkill.Languages);
+                          + S(CourtSecondarySkill.Languages)
+                          + S(CourtSecondarySkill.HeraldryEtiquette);
 
         v[Ppb.Intelligence] = M(CourtMainSkill.Deceit)
                               + S(CourtSecondarySkill.Observation)
-                              + S(CourtSecondarySkill.TrackingSurvival);
+                              + S(CourtSecondarySkill.TrackingSurvival)
+                              + S(CourtSecondarySkill.Acrobatics);
 
         v[Ppb.Defense] = M(CourtMainSkill.Command)
                           + S(CourtSecondarySkill.StrategyTactics)
-                          + S(CourtSecondarySkill.GeographyNations);
+                          + S(CourtSecondarySkill.LogisticsManagement)
+                          + S(CourtSecondarySkill.SmithingMetallurgy);
 
         v[Ppb.Treasury] = 0m;
         return v;
@@ -437,6 +451,24 @@ public static class CourtPpbFormulas
         total.AddInPlace(sheet.SumDomainOther());
         return total;
     }
+
+    /// <summary>Human-readable formula for what drives each PPB from court skills.</summary>
+    public static string? FormulaLabel(Ppb key) => key switch
+    {
+        Ppb.Food        => "Knowledge + Farming/husbandry + Animals/riding + Alchemy",
+        Ppb.Economy     => "Administration + Trade + Mathematics + Logistics/management",
+        Ppb.Production  => "Craft + Engineering + Smithing/metallurgy + Geology/mining",
+        Ppb.Loyalty     => "Diplomacy + Performance/acting + Faith/rites + Observation",
+        Ppb.Stability   => "Administration + Law/investigation + Heraldry/etiquette + Medicine",
+        Ppb.Law         => "Intimidation + Law/investigation + Observation + Tracking/survival",
+        Ppb.Corruption  => "−(Deceit + Heraldry/etiquette + Performance/acting + Athletics) / 3",
+        Ppb.Science     => "Knowledge + Mathematics + Alchemy + Geography/nations",
+        Ppb.Magic       => "Magic + Alchemy + Faith/rites + Languages",
+        Ppb.Culture     => "Diplomacy + Fine arts + Languages + Heraldry/etiquette",
+        Ppb.Intelligence => "Deceit + Observation + Tracking/survival + Acrobatics",
+        Ppb.Defense     => "Command + Strategy/tactics + Logistics/management + Smithing/metallurgy",
+        _               => null,
+    };
 }
 
 /// <summary>Stable keys for derived court combat totals.</summary>

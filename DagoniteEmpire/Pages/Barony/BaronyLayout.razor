@@ -16,6 +16,11 @@
                         <BaronLetterInboxFab />
                     </Authorized>
                 </AuthorizeView>
+                <AuthorizeView Roles="@SD.Role_DukePlayer">
+                    <Authorized>
+                        <BaronReminderFab />
+                    </Authorized>
+                </AuthorizeView>
             </div>
         }
         else
@@ -25,6 +30,11 @@
             <AuthorizeView Roles="@(SD.Role_DukePlayer + "," + SD.Role_Admin + "," + SD.Role_GameMaster)">
                 <Authorized>
                     <BaronLetterInboxFab />
+                </Authorized>
+            </AuthorizeView>
+            <AuthorizeView Roles="@SD.Role_DukePlayer">
+                <Authorized>
+                    <BaronReminderFab />
                 </Authorized>
             </AuthorizeView>
         }

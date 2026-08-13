@@ -142,7 +142,7 @@ namespace DA_Common.Barony
             g.BonusAdditive[Ppb.Defense] = 1.0m;
             }
             { var g = G("furs", TradeGoodSection.Fibers, "Furs", "Furs from hunts and cold country; luxury and winter wear.",
-                "+1 Culture, +1 Intelligence", "", "Import", null);
+                "+1 Culture, +1 Intelligence", "", "Hunter's Lodge - Furs", "furs deposit");
             g.BonusAdditive[Ppb.Culture] = 1.0m;
             g.BonusAdditive[Ppb.Intelligence] = 1.0m;
             }

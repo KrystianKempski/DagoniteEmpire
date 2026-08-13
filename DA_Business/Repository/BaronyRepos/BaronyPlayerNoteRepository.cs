@@ -115,6 +115,26 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) { throw Err(ex, nameof(DeleteNote)); }
         }
 
+        public async Task<int> GetDueReminderCount(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var turn = await ctx.Baronies
+                    .Where(b => b.Id == baronyId)
+                    .Select(b => (int?)b.TurnNumber)
+                    .FirstOrDefaultAsync() ?? 0;
+
+                return await ctx.BaronyPlayerNotes.AsNoTracking()
+                    .CountAsync(n => n.BaronyId == baronyId
+                                     && n.NoteType == BaronyPlayerNoteType.Reminder
+                                     && !n.IsDone
+                                     && n.DueTurn != null
+                                     && n.DueTurn <= turn);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetDueReminderCount)); }
+        }
+
         private static BaronyPlayerNoteDTO ToDTO(BaronyPlayerNote e) => new()
         {
             Id = e.Id,

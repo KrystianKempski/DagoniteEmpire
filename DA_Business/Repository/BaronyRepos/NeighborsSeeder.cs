@@ -81,8 +81,15 @@ namespace DA_Business.Repository.BaronyRepos
                 Description:
                     "Tall, thin, and little given to ambition—known for intelligence and a love of learning, logic, and games. Young nephew of Margrave Hardwin Greatwing, appointed to Hurtbow after decades of Dalish war on the Irredale fringe: Walch Hurtmere’s feud, peasant revolt for the Empire, failed hostage diplomacy, Lucius Greatwing’s death in ambush, and Urglim Mad Bull’s brutal campaigns that only deepened the hatred. After Urglim fell, neighbours—through Lord Erac Mertyn—bought a fragile peace with the Dalish for his body, goods, and an admission of defeat. Dyron’s arms split Greatwing with a green field and black lion; he is only beginning to settle into a hard, impoverished border barony.",
                 TroopCount: 0,
-                SortOrder: 6),
-            new(
+                SortOrder: 6),            new(
+                GroupName: "House Greatwing",
+                Name: "Milwarn Jettenborg",
+                Title: "Baronet",
+                Age: null,
+                Description:
+                    "Baronet vassal of Dyron Greatwing of Hurtbow. One of the minor lords settled on the Hurtbow fringe.",
+                TroopCount: 0,
+                SortOrder: 7),            new(
                 GroupName: "Clan Dag'Thorak",
                 Name: "Durisug Dag'Thorak",
                 Title: "Marquis (Mountain Prince) of Groundfall",
@@ -221,6 +228,34 @@ namespace DA_Business.Repository.BaronyRepos
             var baronyIds = await ctx.Baronies.AsNoTracking().Select(b => b.Id).ToListAsync();
             foreach (var id in baronyIds)
                 EnsureForBarony(ctx, id);
+            await ctx.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// One-time fix: corrects GroupName for existing entries whose name matches Defaults
+        /// but was seeded without a GroupName or with a wrong one.
+        /// </summary>
+        public static async Task FixGroupNamesAsync(ApplicationDbContext ctx)
+        {
+            var nameToGroup = Defaults
+                .Where(e => !string.IsNullOrWhiteSpace(e.GroupName))
+                .ToDictionary(e => e.Name, e => e.GroupName, StringComparer.OrdinalIgnoreCase);
+
+            var toFix = await ctx.BaronyRelations
+                .Where(r => r.Category == RelationCategory.Neighbors)
+                .ToListAsync();
+
+            foreach (var rel in toFix)
+            {
+                if (string.IsNullOrWhiteSpace(rel.Name))
+                    continue;
+                if (!nameToGroup.TryGetValue(rel.Name, out var expected))
+                    continue;
+                if (string.Equals(rel.GroupName, expected, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                rel.GroupName = expected;
+            }
+
             await ctx.SaveChangesAsync();
         }
     }

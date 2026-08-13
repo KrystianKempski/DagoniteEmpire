@@ -151,15 +151,6 @@
     flex-direction: column;
 }
 
-/* BlazoredTextEditor renders its own root wrapper between .barony-notes__editor
-   and the Quill toolbar/container; make it stretch too. */
-.barony-notes__editor ::deep > div {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
 .barony-notes__editor ::deep .ql-container {
     flex: 1 1 auto;
     min-height: 0;
@@ -313,4 +304,115 @@
 
 .barony-notes__sticky-body::placeholder {
     color: rgba(0, 0, 0, .35);
+}
+
+/* ---- Reminders ---- */
+.barony-notes__reminders {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__reminder-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: .6rem .7rem;
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 6px;
+    background: var(--barony-surface-2);
+    margin-bottom: .6rem;
+}
+
+.barony-notes__reminder-text {
+    flex: 1 1 16rem;
+    min-width: 12rem;
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 4px;
+    padding: .35rem .5rem;
+    font-size: .9rem;
+    color: var(--barony-ink);
+    outline: none;
+}
+
+.barony-notes__reminder-in {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .85rem;
+    color: var(--barony-muted);
+}
+
+.barony-notes__reminder-turns {
+    width: 4rem;
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 4px;
+    padding: .35rem .4rem;
+    font-size: .9rem;
+    color: var(--barony-ink);
+    outline: none;
+}
+
+.barony-notes__reminder-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 2px;
+}
+
+.barony-notes__reminder-card {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .35rem .5rem;
+    border: 1px solid var(--barony-border-strong);
+    border-left: 4px solid var(--barony-border-strong);
+    border-radius: 6px;
+    background: var(--barony-surface);
+}
+
+.barony-notes__reminder-card--due {
+    border-left-color: #c0392b;
+    background: color-mix(in srgb, #c0392b 8%, var(--barony-surface));
+}
+
+.barony-notes__reminder-card--done {
+    opacity: .6;
+}
+
+.barony-notes__reminder-card--done .barony-notes__reminder-title {
+    text-decoration: line-through;
+}
+
+.barony-notes__reminder-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.barony-notes__reminder-title {
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--barony-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.barony-notes__reminder-meta {
+    font-size: .72rem;
+    color: var(--barony-muted);
+}
+
+.barony-notes__reminder-card--due ::deep .barony-notes__reminder-toggle {
+    color: #c0392b;
 }

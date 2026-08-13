@@ -375,6 +375,8 @@
 
     private static string? DomainCellTooltip(AvailableAdvisorDTO person, AdvisorInfluenceRow row, Ppb key)
     {
+        if (row.SystemKind == AdvisorInfluenceSystemKind.Skills)
+            return CourtPpbFormulas.FormulaLabel(key);
         if (row.SystemKind != AdvisorInfluenceSystemKind.Other)
             return null;
         var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();

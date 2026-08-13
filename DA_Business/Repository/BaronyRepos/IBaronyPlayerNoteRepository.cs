@@ -12,5 +12,8 @@ namespace DA_Business.Repository.BaronyRepos
         Task<BaronyPlayerNoteDTO> Upsert(BaronyPlayerNoteDTO dto);
 
         Task DeleteNote(int id);
+
+        /// <summary>Count of active reminders whose target turn has been reached (barony turn resolved internally).</summary>
+        Task<int> GetDueReminderCount(int baronyId);
     }
 }

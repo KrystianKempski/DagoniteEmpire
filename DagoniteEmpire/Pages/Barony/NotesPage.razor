@@ -36,6 +36,7 @@ else if (Barony is not null)
                  Rounded="false"
                  Border="false"
                  ApplyEffectsToContainer="false"
+                 @bind-ActivePanelIndex="_activeTab"
                  Class="terrain-brush-tabs barony-notes__tabs"
                  PanelClass="pt-3">
             <MudTabPanel Text="Journal">
@@ -145,10 +146,12 @@ else if (Barony is not null)
                                  style="@StickyCardStyle(s)"
                                  draggable="true"
                                  @key="s.Id"
-                                 @ondragstart="() => OnStickyDragStart(s.Id)"
+                                 @ondragstart="e => OnStickyDragStart(e, s.Id)"
                                  @ondragend="OnStickyDragEnd"
+                                 @ondragover="OnStickyDragOver"
                                  @ondragover:preventDefault="true"
-                                 @ondrop="() => OnStickyDropAsync(s.Id)">
+                                 @ondrop="() => OnStickyDropAsync(s.Id)"
+                                 @ondrop:preventDefault="true">
                                 <div class="barony-notes__sticky-head">
                                     <span class="barony-notes__sticky-grip" title="Drag to reorder">⠿</span>
                                     <div class="barony-notes__sticky-colors">
@@ -184,13 +187,67 @@ else if (Barony is not null)
         </MudTabPanel>
 
         <MudTabPanel Text="Reminders">
-            <div class="barony-notes__placeholder">
-                <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Size="Size.Large" />
-                <MudText Typo="Typo.h6">Turn reminders</MudText>
-                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                    Coming soon: turn-based reminders (e.g. "in 3 turns" or "on turn 12") that light up
-                    when your barony reaches the target turn. Current turn: <b>T@(Barony.TurnNumber)</b>.
+            <div class="barony-notes__reminders">
+                <div class="barony-notes__reminder-add">
+                    <input class="barony-notes__reminder-text"
+                           placeholder="Remind me to…"
+                           @bind="_newReminderText"
+                           @bind:event="oninput"
+                           @onkeydown="OnReminderKeyDown" />
+                    <div class="barony-notes__reminder-in">
+                        <span>in</span>
+                        <input type="number" min="1" max="999"
+                               class="barony-notes__reminder-turns"
+                               @bind="_newReminderTurns" />
+                        <span>turn@(_newReminderTurns == 1 ? "" : "s") → <b>T@(CurrentTurn + Math.Max(1, _newReminderTurns))</b></span>
+                    </div>
+                    <MudButton Variant="Variant.Filled"
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AddAlarm"
+                               Disabled="@string.IsNullOrWhiteSpace(_newReminderText)"
+                               OnClick="AddReminderAsync">
+                        Add reminder
+                    </MudButton>
+                </div>
+
+                <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
+                    Current turn: <b>T@(CurrentTurn)</b>. Reminders light up when your barony reaches the target turn.
                 </MudText>
+
+                @if (_reminders.Count == 0)
+                {
+                    <div class="barony-notes__placeholder">
+                        <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Size="Size.Large" />
+                        <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                            No reminders yet. Add one above to be nudged in a few turns.
+                        </MudText>
+                    </div>
+                }
+                else
+                {
+                    <div class="barony-notes__reminder-list">
+                        @foreach (var r in SortedReminders())
+                        {
+                            var isDue = !r.IsDone && CurrentTurn >= (r.DueTurn ?? 0);
+                            <div class="barony-notes__reminder-card @(r.IsDone ? "barony-notes__reminder-card--done" : "") @(isDue ? "barony-notes__reminder-card--due" : "")">
+                                <MudIconButton Icon="@(r.IsDone ? Icons.Material.Filled.CheckCircle : (isDue ? Icons.Material.Filled.NotificationsActive : Icons.Material.Outlined.Notifications))"
+                                               Size="Size.Small"
+                                               aria-label="Toggle done"
+                                               Class="barony-notes__reminder-toggle"
+                                               OnClick="() => ToggleReminderDoneAsync(r)" />
+                                <div class="barony-notes__reminder-main">
+                                    <span class="barony-notes__reminder-title">@r.Title</span>
+                                    <span class="barony-notes__reminder-meta">@ReminderMeta(r)</span>
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                               Size="Size.Small"
+                                               aria-label="Delete reminder"
+                                               OnClick="() => DeleteReminderAsync(r)" />
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </MudTabPanel>
     </MudTabs>
@@ -207,6 +264,13 @@ else if (Barony is not null)
     private const string DefaultStickyColor = "#fff9c4";
     private static readonly string[] StickyPalette =
         { "#fff9c4", "#ffe0b2", "#ffcdd2", "#c8e6c9", "#bbdefb", "#e1bee7", "#eceff1" };
+
+    private List<BaronyPlayerNoteDTO> _reminders = new();
+    private string _newReminderText = "";
+    private int _newReminderTurns = 1;
+    private int CurrentTurn => Barony?.TurnNumber ?? 0;
+
+    private int _activeTab;
 
     private bool _shouldLoadEditor;
     private int _loadAttempts;
@@ -271,6 +335,23 @@ else if (Barony is not null)
         SetActiveThread(_threads[0]);
 
         _stickies = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Sticky);
+        _reminders = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Reminder);
+
+        _activeTab = ReadTabFromQuery();
+    }
+
+    private int ReadTabFromQuery()
+    {
+        var uri = _navigationManager.ToAbsoluteUri(_navigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (!query.TryGetValue("tab", out var tab))
+            return 0;
+        return tab.ToString().ToLowerInvariant() switch
+        {
+            "sticky" => 1,
+            "reminders" => 2,
+            _ => 0,
+        };
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -479,7 +560,13 @@ else if (Barony is not null)
         await PersistStickyOrderAsync();
     }
 
-    private void OnStickyDragStart(int id) => _dragStickyId = id;
+    private void OnStickyDragStart(DragEventArgs e, int id)
+    {
+        _dragStickyId = id;
+        e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void OnStickyDragOver(DragEventArgs e) => e.DataTransfer.DropEffect = "move";
 
     private void OnStickyDragEnd() => _dragStickyId = null;
 
@@ -511,6 +598,80 @@ else if (Barony is not null)
                 _stickies[i].Id = saved.Id;
             }
         }
+        StateHasChanged();
+    }
+
+    // ---- Reminders ---------------------------------------------------------
+
+    private IEnumerable<BaronyPlayerNoteDTO> SortedReminders() =>
+        _reminders
+            .OrderBy(r => r.IsDone)
+            .ThenBy(r => r.DueTurn ?? int.MaxValue)
+            .ThenBy(r => r.Id);
+
+    private string ReminderMeta(BaronyPlayerNoteDTO r)
+    {
+        var due = r.DueTurn ?? 0;
+        if (r.IsDone)
+            return $"Done \u00b7 target T{due}";
+        if (CurrentTurn >= due)
+        {
+            var over = CurrentTurn - due;
+            return over == 0 ? $"Due now \u00b7 T{due}" : $"Overdue by {over} turn{(over == 1 ? "" : "s")} \u00b7 T{due}";
+        }
+        var left = due - CurrentTurn;
+        return $"In {left} turn{(left == 1 ? "" : "s")} \u00b7 T{due}";
+    }
+
+    private async Task OnReminderKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await AddReminderAsync();
+    }
+
+    private async Task AddReminderAsync()
+    {
+        var text = (_newReminderText ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        var turns = Math.Max(1, _newReminderTurns);
+        var dto = new BaronyPlayerNoteDTO
+        {
+            BaronyId = BaronyId,
+            NoteType = BaronyPlayerNoteType.Reminder,
+            Title = text,
+            CreatedTurn = CurrentTurn,
+            DueTurn = CurrentTurn + turns,
+            SortOrder = _reminders.Count,
+        };
+        var created = await _notesRepo.Upsert(dto);
+        _reminders.Add(created);
+        _newReminderText = "";
+        _newReminderTurns = 1;
+        StateHasChanged();
+    }
+
+    private async Task ToggleReminderDoneAsync(BaronyPlayerNoteDTO r)
+    {
+        r.IsDone = !r.IsDone;
+        var saved = await _notesRepo.Upsert(r);
+        r.Id = saved.Id;
+        StateHasChanged();
+    }
+
+    private async Task DeleteReminderAsync(BaronyPlayerNoteDTO r)
+    {
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            "Delete reminder",
+            "Delete this reminder permanently? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+        if (ok != true)
+            return;
+
+        await _notesRepo.DeleteNote(r.Id);
+        _reminders.Remove(r);
         StateHasChanged();
     }
 

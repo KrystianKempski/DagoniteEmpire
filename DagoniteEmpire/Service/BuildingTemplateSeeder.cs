@@ -329,6 +329,10 @@ namespace DagoniteEmpire.Service
                 "A lodge for hunters who gather furs and meat and scout the nearby woods.",
                 Fx(food: 0.7m, economy: 0.5m, production: 0.5m, defense: 3, treasury: 5));
 
+            Add("Hunter's Lodge - Furs", 1, I, 25, 20,
+                "A lodge built over a rich fur territory. Trappers and hunters harvest pelts for trade and warm the barony's coffers. Produces Furs.\n+10 Treasury, +2 Culture bonus from the fur deposit.",
+                Fx(food: 0.7m, economy: 0.5m, production: 0.5m, defense: 3, treasury: 15, culture: 2));
+
             Add("Mine - Dagoferryt", 1, I, 200, 120,
                 "A hard, dangerous mine for dagoferryt—the rare metal prized for the finest blades and armor. Extraction is costly, but the ore unlocks good-quality weapons beyond ordinary ironwork.\nProduces Dagoferryt",
                 Fx(food: -0.3m, economy: 4, production: 8, stability: -3, law: -2, defense: 8, treasury: 80),

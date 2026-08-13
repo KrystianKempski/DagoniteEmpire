@@ -8,6 +8,7 @@ namespace DA_Common.Barony
     {
         public const string UnfortifiedVillage = "Unfortified Village";
         public const string HuntersLodge = "Hunter's Lodge";
+        public const string HuntersLodgeFurs = "Hunter's Lodge - Furs";
         public const string FishingPier = "Fishing Pier";
         public const string SawmillCommon = "Sawmill - common";
         public const string ClayPit = "Clay pit";
@@ -42,7 +43,7 @@ namespace DA_Common.Barony
                 MapImprovement.Sawmill => CanPlaceSawmill(featuresMask, resource)
                     ? ResolveSawmill(resource)
                     : null,
-                MapImprovement.HuntersLodge => HuntersLodge,
+                MapImprovement.HuntersLodge => ResolveHuntersLodge(resource),
                 MapImprovement.FishingHarbor => CanPlaceFishingHarbor(featuresMask) ? FishingPier : null,
                 MapImprovement.Village => UnfortifiedVillage,
                 MapImprovement.Town => null,
@@ -248,6 +249,11 @@ namespace DA_Common.Barony
             || string.Equals(resource, TerrainResource.ElvenAlder, StringComparison.Ordinal)
             || string.Equals(resource, TerrainResource.ShipbuildingWood, StringComparison.Ordinal);
 
+        private static string ResolveHuntersLodge(string? resource) =>
+            string.Equals(resource, TerrainResource.Furs, StringComparison.Ordinal)
+                ? HuntersLodgeFurs
+                : HuntersLodge;
+
         private static string? ResolveExtractive(string? resource) => resource switch
         {
             TerrainResource.SoftMetals => "Mine - soft metals",
@@ -291,7 +297,8 @@ namespace DA_Common.Barony
             if (string.Equals(name, UnfortifiedVillage, StringComparison.OrdinalIgnoreCase))
                 return MapImprovement.Village;
 
-            if (string.Equals(name, HuntersLodge, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(name, HuntersLodge, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, HuntersLodgeFurs, StringComparison.OrdinalIgnoreCase))
                 return MapImprovement.HuntersLodge;
 
             if (string.Equals(name, FishingPier, StringComparison.OrdinalIgnoreCase))

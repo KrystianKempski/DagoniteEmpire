@@ -2844,9 +2844,9 @@ namespace DagoniteEmpire.Service
 
                 await SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex);
                 await OrganizationsSeeder.EnsureForAllBaroniesAsync(contex);
-                await NeighborsSeeder.EnsureForAllBaroniesAsync(contex);
+                await VassalFamilySeeder.EnsureForAllBaroniesAsync(contex);
+                await NeighborsSeeder.FixGroupNamesAsync(contex);
                 await MarchMapSeeder.EnsureInitializedAsync(contex);
-                await VassalsFromFiefsSeeder.EnsureForAllBaroniesAsync(contex);
                 await SeatPurposeTemplatesSeeder.EnsureDefaultsAsync(contex);
             }
             catch (Exception ex)

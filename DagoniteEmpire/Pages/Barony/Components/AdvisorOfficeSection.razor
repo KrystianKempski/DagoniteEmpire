@@ -44,7 +44,8 @@
                                         SignificantSkills="@_significantSkills"
                                         CanEdit="@CanManage"
                                         OnEdit="EditRowAsync"
-                                        OnDelete="DeleteRowAsync" />
+                                        OnDelete="DeleteRowAsync"
+                                        CellTooltip="@((row, key) => row.SystemKind == AdvisorInfluenceSystemKind.Skills ? CourtPpbFormulas.FormulaLabel(key) : null)" />
             }
             else if (!BaronyCalc.IsOfficeAssigned(Advisor))
             {

@@ -274,6 +274,7 @@ namespace DA_Common.Barony
         public const string Salt = "Salt";
         public const string Sulfur = "Sulfur";
         public const string Gemstones = "Gemstones";
+        public const string Furs = "Furs";
         public const string Woad = "Woad";
         public const string Madder = "Madder";
         public const string Weld = "Weld";
@@ -285,6 +286,7 @@ namespace DA_Common.Barony
             Stone, Granite, Tarnit, Obsidian,
             Clay, Ironwood, ElvenAlder, ShipbuildingWood, Salt, Sulfur, Gemstones,
             Woad, Madder, Weld,
+            Furs,
         };
 
         public static bool IsKnown(string? key) =>
@@ -317,13 +319,13 @@ namespace DA_Common.Barony
             Woad => "Woad",
             Madder => "Madder",
             Weld => "Weld",
+            Furs => "Furs",
             _ => key ?? "None",
         };
 
         public static string IconUrl(string? key) => key switch
         {
-            SoftMetals => "/icons/copper.svg",
-            Iron or Silver or Gold or Dagoferryt => "/icons/metal-bar.svg",
+            SoftMetals or Iron or Silver or Gold or Dagoferryt => "/icons/metal-bar.svg",
             Fishery => "/icons/fishing.svg",
             Stone => "/icons/stone-block-stroke.svg",
             Granite or Tarnit => "/icons/stone-block.svg",
@@ -335,6 +337,7 @@ namespace DA_Common.Barony
             Woad => "/icons/three-leaves.svg",
             Madder => "/icons/root-tip.svg",
             Weld => "/icons/vine-flower.svg",
+            Furs => "/icons/animal-hide.svg",
             _ => "/icons/metal-bar.svg",
         };
 
@@ -362,6 +365,7 @@ namespace DA_Common.Barony
             Woad => "#2e6bb0",
             Madder => "#a83c3c",
             Weld => "#d4a017",
+            Furs => "#8b5e3c",
             _ => "#888888",
         };
 

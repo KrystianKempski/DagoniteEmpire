@@ -140,14 +140,23 @@ namespace DA_Business.Repository.BaronyRepos
                 var added = await ctx.Baronies.AddAsync(entity);
                 await ctx.SaveChangesAsync();
 
-                SeedDefaultAdvisors(ctx, added.Entity.Id, character.NPCName ?? "Baron");
-                SeedTerrainGrid(ctx, added.Entity.Id);
-                SeedPrimaryMapDomain(ctx, added.Entity.Id, added.Entity.Name, character.NPCName ?? "Baron");
-                SeedPrimaryFief(ctx, added.Entity.Id, character.NPCName ?? "Baron");
+                var baronName = character.NPCName ?? "Baron";
                 SeniorHousesSeeder.EnsureForBarony(ctx, added.Entity.Id);
                 OrganizationsSeeder.EnsureForBarony(ctx, added.Entity.Id);
-                NeighborsSeeder.EnsureForBarony(ctx, added.Entity.Id);
-                VassalsFromFiefsSeeder.EnsureForBarony(ctx, added.Entity.Id);
+                if (DarkholdSeeder.IsDarkhold(added.Entity.Name))
+                {
+                    // Darkhold ships a hand-authored starting state (terrain, fiefs, seat,
+                    // courtiers, vassals + neighbors). Senior houses / organizations stay generic.
+                    await DarkholdSeeder.SeedAsync(ctx, added.Entity.Id, baronName);
+                }
+                else
+                {
+                    SeedDefaultAdvisors(ctx, added.Entity.Id, baronName);
+                    SeedTerrainGrid(ctx, added.Entity.Id);
+                    SeedPrimaryMapDomain(ctx, added.Entity.Id, added.Entity.Name, baronName);
+                    SeedPrimaryFief(ctx, added.Entity.Id, baronName);
+                    NeighborsSeeder.EnsureForBarony(ctx, added.Entity.Id);
+                }
                 await EnsureStarterCityBuildingsAsync(ctx, added.Entity.Id);
                 SeedStarterUnits(ctx, added.Entity.Id);
                 SeedBaronCampaign(ctx, character, added.Entity);
@@ -1588,9 +1597,7 @@ namespace DA_Business.Repository.BaronyRepos
                     .Select(e => ToImprovementDto(e, tiles, taxRates, barony.Season))
                     .ToList();
 
-                VassalsFromFiefsSeeder.EnsureForBarony(ctx, baronyId);
                 SeniorHousesSeeder.EnsureForBarony(ctx, baronyId);
-                NeighborsSeeder.EnsureForBarony(ctx, baronyId);
                 await EnsureCoreOfficeDescriptionsAsync(ctx, baronyId);
                 await EnsureStarterCityBuildingsAsync(ctx, baronyId);
                 await ctx.SaveChangesAsync();
@@ -1930,10 +1937,8 @@ namespace DA_Business.Repository.BaronyRepos
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
-                VassalsFromFiefsSeeder.EnsureForBarony(ctx, baronyId);
                 SeniorHousesSeeder.EnsureForBarony(ctx, baronyId);
                 OrganizationsSeeder.EnsureForBarony(ctx, baronyId);
-                NeighborsSeeder.EnsureForBarony(ctx, baronyId);
                 await ctx.SaveChangesAsync();
 
                 var list = await ctx.BaronyRelations.AsNoTracking()
@@ -3190,8 +3195,6 @@ namespace DA_Business.Repository.BaronyRepos
                 var e = dto.Id > 0 ? await ctx.Fiefs.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
                 if (e is null) { e = ToEntity(dto); ctx.Fiefs.Add(e); }
                 else { ApplyFief(e, dto); }
-                await ctx.SaveChangesAsync();
-                VassalsFromFiefsSeeder.EnsureForBarony(ctx, e.BaronyId);
                 await ctx.SaveChangesAsync();
                 return ToDTO(e);
             }
