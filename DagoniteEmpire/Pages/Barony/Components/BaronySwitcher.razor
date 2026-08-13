@@ -24,7 +24,8 @@
     protected override async Task OnInitializedAsync()
     {
         var userInfo = await _userService.GetUserInfo();
-        _visible = userInfo?.IsAdminOrMG == true;
+        // Hidden demo accounts must never reach real baronies, even when they carry the GM role.
+        _visible = userInfo?.IsAdminOrMG == true && !SD.IsDemoUserName(userInfo?.UserName);
         if (!_visible)
             return;
 

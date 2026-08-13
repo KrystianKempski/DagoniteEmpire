@@ -9,7 +9,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyDTO?> GetByCharacterId(int characterId);
         Task<BaronyDTO?> GetById(int id);
         Task<List<BaronyListItemDTO>> GetAllSummaries();
-        Task<BaronyDTO> CreateForCharacter(int characterId, string name, string? notes = null);
+        Task<BaronyDTO> CreateForCharacter(int characterId, string name, string? notes = null, string? seedProfile = null);
         Task<BaronyDTO> UpdateBarony(BaronyDTO dto);
         Task<BaronyOverviewDTO?> GetOverview(int baronyId);
 

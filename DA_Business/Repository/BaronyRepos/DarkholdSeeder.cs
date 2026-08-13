@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.Data;
@@ -9,9 +10,10 @@ namespace DA_Business.Repository.BaronyRepos
 {
     /// <summary>
     /// Seeds the full starting state of the <c>Darkhold</c> player barony from an embedded
-    /// snapshot (terrain map, fiefs/domains, terrain improvements, lord's seat, courtiers and
-    /// vassal/neighbor relations). Original snapshot ids are remapped onto the freshly created
-    /// barony. Idempotent: skips when the barony already has terrain domains.
+    /// snapshot (terrain map, fiefs/domains, terrain improvements, lord's seat, courtiers,
+    /// vassal/neighbor relations, army units and a ready tactical battle map). Original
+    /// snapshot ids are remapped onto the freshly created barony. Idempotent: skips when the
+    /// barony already has terrain domains.
     /// </summary>
     public static class DarkholdSeeder
     {
@@ -264,11 +266,119 @@ namespace DA_Business.Repository.BaronyRepos
                     }));
             }
 
+            // --- Army units (CaptainAvailableAdvisorId -> courtier). Keep old ids for token remap. ---
+            var unitMap = new Dictionary<int, int>();
+            if (seed.BaronyUnits.Count > 0)
+            {
+                var nowUtc = DateTime.UtcNow;
+                var unitRows = seed.BaronyUnits
+                    .Select(s => (s.Id, Entity: new BaronyUnit
+                    {
+                        BaronyId = baronyId,
+                        Name = s.Name,
+                        Status = s.Status,
+                        TroopCount = s.TroopCount,
+                        RecruitSelectionKey = s.RecruitSelectionKey,
+                        TrainingTypeKey = s.TrainingTypeKey,
+                        RaceKey = s.RaceKey,
+                        Wage = s.Wage,
+                        UpkeepFood = s.UpkeepFood,
+                        UpkeepDefense = s.UpkeepDefense,
+                        Build = s.Build,
+                        Agility = s.Agility,
+                        Will = s.Will,
+                        Perception = s.Perception,
+                        AttrPenaltyBuild = s.AttrPenaltyBuild,
+                        AttrPenaltyAgility = s.AttrPenaltyAgility,
+                        AttrOtherBuild = s.AttrOtherBuild,
+                        AttrOtherAgility = s.AttrOtherAgility,
+                        AttrOtherWill = s.AttrOtherWill,
+                        AttrOtherPerception = s.AttrOtherPerception,
+                        SkillsJson = s.SkillsJson,
+                        SkillOtherJson = s.SkillOtherJson,
+                        CombatOtherJson = s.CombatOtherJson,
+                        SkillOtherSourcesJson = s.SkillOtherSourcesJson,
+                        AttrOtherSourcesJson = s.AttrOtherSourcesJson,
+                        Weapon1Key = s.Weapon1Key,
+                        Weapon2Key = s.Weapon2Key,
+                        ArmorKey = s.ArmorKey,
+                        ShieldKey = s.ShieldKey,
+                        MountKey = s.MountKey,
+                        Weapon1Quality = s.Weapon1Quality,
+                        Weapon2Quality = s.Weapon2Quality,
+                        DefenseSkillKey = s.DefenseSkillKey,
+                        CommanderAttack = s.CommanderAttack,
+                        CommanderDefense = s.CommanderDefense,
+                        CaptainAvailableAdvisorId = Remap(availMap, s.CaptainAvailableAdvisorId),
+                        OtherAttack = s.OtherAttack,
+                        OtherDefense = s.OtherDefense,
+                        OtherDamage = s.OtherDamage,
+                        OtherMove = s.OtherMove,
+                        OtherArmor = s.OtherArmor,
+                        OtherHp = s.OtherHp,
+                        RemainingPd = s.RemainingPd,
+                        Discipline = s.Discipline,
+                        MaxBaseSkillAtGraduation = s.MaxBaseSkillAtGraduation,
+                        FreeAttributePoints = s.FreeAttributePoints,
+                        CurrentHp = s.CurrentHp,
+                        LogJson = s.LogJson,
+                        CreatedAtUtc = nowUtc,
+                        UpdatedAtUtc = nowUtc,
+                    }))
+                    .ToList();
+                ctx.BaronyUnits.AddRange(unitRows.Select(r => r.Entity));
+                await ctx.SaveChangesAsync();
+                foreach (var r in unitRows) unitMap[r.Id] = r.Entity.Id;
+            }
+
+            // --- Tactical battle map (unit ids inside token/tally JSON remapped to the new units) ---
+            var mapSeed = seed.BaronyBattleMaps.FirstOrDefault();
+            if (mapSeed is not null)
+            {
+                ctx.BaronyBattleMaps.Add(new BaronyBattleMap
+                {
+                    BaronyId = baronyId,
+                    IsActive = mapSeed.IsActive,
+                    Phase = mapSeed.Phase,
+                    Width = mapSeed.Width,
+                    Height = mapSeed.Height,
+                    CellsJson = mapSeed.CellsJson,
+                    TokensJson = RemapUnitIds(mapSeed.TokensJson, unitMap),
+                    TurnStateJson = mapSeed.TurnStateJson,
+                    LogJson = mapSeed.LogJson,
+                    TalliesJson = RemapUnitIds(mapSeed.TalliesJson, unitMap),
+                    XpSummaryJson = mapSeed.XpSummaryJson,
+                });
+            }
+
             await ctx.SaveChangesAsync();
         }
 
         private static int? Remap(IReadOnlyDictionary<int, int> map, int? oldId) =>
             oldId is int id && map.TryGetValue(id, out var newId) ? newId : null;
+
+        // Rewrites each object's numeric "unitId" (in a JSON array) from snapshot id to seeded id.
+        private static string RemapUnitIds(string json, IReadOnlyDictionary<int, int> unitMap)
+        {
+            if (unitMap.Count == 0 || string.IsNullOrWhiteSpace(json))
+                return json;
+            JsonNode? node;
+            try { node = JsonNode.Parse(json); }
+            catch { return json; }
+            if (node is not JsonArray arr)
+                return json;
+            foreach (var el in arr)
+            {
+                if (el is JsonObject obj
+                    && obj.TryGetPropertyValue("unitId", out var v)
+                    && v is JsonValue jv && jv.TryGetValue<int>(out var oldId)
+                    && unitMap.TryGetValue(oldId, out var newId))
+                {
+                    obj["unitId"] = newId;
+                }
+            }
+            return arr.ToJsonString();
+        }
 
         private static SeedDocument? LoadSeed()
         {
@@ -301,6 +411,8 @@ namespace DA_Business.Repository.BaronyRepos
             public List<AdvisorSeed> Advisors { get; set; } = new();
             public List<RelationSeed> BaronyRelations { get; set; } = new();
             public List<RelationModifierSeed> BaronyRelationModifiers { get; set; } = new();
+            public List<UnitSeed> BaronyUnits { get; set; } = new();
+            public List<BattleMapSeed> BaronyBattleMaps { get; set; } = new();
         }
 
         private sealed class DomainSeed
@@ -454,6 +566,72 @@ namespace DA_Business.Repository.BaronyRepos
             public string Description { get; set; } = string.Empty;
             public int Value { get; set; }
             public int SortOrder { get; set; }
+        }
+
+        private sealed class UnitSeed
+        {
+            public int Id { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public int TroopCount { get; set; }
+            public string RecruitSelectionKey { get; set; } = string.Empty;
+            public string TrainingTypeKey { get; set; } = string.Empty;
+            public string RaceKey { get; set; } = string.Empty;
+            public int Wage { get; set; }
+            public decimal UpkeepFood { get; set; }
+            public int UpkeepDefense { get; set; }
+            public int Build { get; set; }
+            public int Agility { get; set; }
+            public int Will { get; set; }
+            public int Perception { get; set; }
+            public int AttrPenaltyBuild { get; set; }
+            public int AttrPenaltyAgility { get; set; }
+            public int AttrOtherBuild { get; set; }
+            public int AttrOtherAgility { get; set; }
+            public int AttrOtherWill { get; set; }
+            public int AttrOtherPerception { get; set; }
+            public string SkillsJson { get; set; } = "{}";
+            public string SkillOtherJson { get; set; } = "{}";
+            public string CombatOtherJson { get; set; } = "{}";
+            public string SkillOtherSourcesJson { get; set; } = "{}";
+            public string AttrOtherSourcesJson { get; set; } = "{}";
+            public string? Weapon1Key { get; set; }
+            public string? Weapon2Key { get; set; }
+            public string? ArmorKey { get; set; }
+            public string? ShieldKey { get; set; }
+            public string? MountKey { get; set; }
+            public string Weapon1Quality { get; set; } = string.Empty;
+            public string Weapon2Quality { get; set; } = string.Empty;
+            public string DefenseSkillKey { get; set; } = string.Empty;
+            public int CommanderAttack { get; set; }
+            public int CommanderDefense { get; set; }
+            public int? CaptainAvailableAdvisorId { get; set; }
+            public int OtherAttack { get; set; }
+            public int OtherDefense { get; set; }
+            public int OtherDamage { get; set; }
+            public int OtherMove { get; set; }
+            public int OtherArmor { get; set; }
+            public int OtherHp { get; set; }
+            public int RemainingPd { get; set; }
+            public int Discipline { get; set; } = 1;
+            public int MaxBaseSkillAtGraduation { get; set; }
+            public int FreeAttributePoints { get; set; }
+            public int CurrentHp { get; set; }
+            public string LogJson { get; set; } = "[]";
+        }
+
+        private sealed class BattleMapSeed
+        {
+            public bool IsActive { get; set; }
+            public string Phase { get; set; } = "setup";
+            public int Width { get; set; } = 20;
+            public int Height { get; set; } = 16;
+            public string CellsJson { get; set; } = "[]";
+            public string TokensJson { get; set; } = "[]";
+            public string TurnStateJson { get; set; } = "{}";
+            public string LogJson { get; set; } = "[]";
+            public string TalliesJson { get; set; } = "[]";
+            public string XpSummaryJson { get; set; } = "null";
         }
     }
 }

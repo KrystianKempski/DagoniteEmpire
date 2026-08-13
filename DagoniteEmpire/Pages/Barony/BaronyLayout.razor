@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 
 <div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "") @(IsBattleMap ? "barony-scope--battle-map" : "")">
+    <DemoModeBanner />
     <CascadingValue Value="@_viewOptions">
         @* Fill wrapper only for full-viewport map pages — plain pages stay unwrapped. *@
         @if (IsMarchMap || IsBattleMap)

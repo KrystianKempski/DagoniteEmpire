@@ -256,3 +256,23 @@ window.baronyTipUnwatchScroll = function (ownerId) {
     baronyTipScrollOwner = null;
     baronyTipScrollHandler = null;
 };
+// --- Demo mode: fire-and-forget "leaving the page" beacon ---
+// On real navigation away / tab close the browser fires pagehide and we notify
+// the server so the demo barony is purged promptly. A page refresh also fires
+// pagehide, but the reloaded page re-touches the session before it expires.
+window.registerDemoLeaveBeacon = function (url) {
+    if (!url) return;
+    window.__demoLeaveUrl = url;
+    if (window.__demoLeaveHandler) return;
+    window.__demoLeaveHandler = function () {
+        var u = window.__demoLeaveUrl;
+        if (u && navigator.sendBeacon) {
+            navigator.sendBeacon(u);
+        }
+    };
+    window.addEventListener('pagehide', window.__demoLeaveHandler);
+};
+
+window.unregisterDemoLeaveBeacon = function () {
+    window.__demoLeaveUrl = null;
+};

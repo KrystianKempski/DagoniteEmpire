@@ -31,6 +31,21 @@ namespace DA_Common
         public const string GameMaster_Portrait = "../images/gm_avatar.webp";
         public const string PostNoPortrait = "__no_portrait__";
 
+        /// <summary>Hidden Identity account used by the public "Try baron" demo (DukePlayer role, no interactive login).</summary>
+        public const string DemoBaronUserName = "DemoBaron";
+        public const string DemoBaronEmail = "demo-baron@dagonite.local";
+        /// <summary>Hidden Identity account used by the public "Try Game Master" demo (GameMaster role, no interactive login).</summary>
+        public const string DemoGmUserName = "DemoGM";
+        public const string DemoGmEmail = "demo-gm@dagonite.local";
+        /// <summary>Source character cloned per demo session (seeded by <c>EnsureGenericDemoBaronAsync</c>).</summary>
+        public const string DemoBaronSourceCharacterName = "Aldric Emberfall";
+        /// <summary>Abandoned demo sessions older than this are swept from the database.</summary>
+        public static readonly TimeSpan DemoSessionTtl = TimeSpan.FromMinutes(2);
+
+        /// <summary>True for any hidden demo account (baron or GM), used to isolate demo sessions in shared UI.</summary>
+        public static bool IsDemoUserName(string? userName) =>
+            userName == DemoBaronUserName || userName == DemoGmUserName;
+
         /// <summary>HttpOnly cookie so wiki static middleware can read the active hero (Blazor session storage is not available there).</summary>
         public const string WikiSelectedCharacterCookie = "dagonite_wiki_character_id";
 
@@ -955,7 +970,9 @@ namespace DA_Common
         public const string IsAuthenticated = "IsAuthenticated";
         public const string Role = "Role";
         public const string IsInited = "IsInited";
-        public static readonly string[] All = { SelectedCharacterId, UserName, UserId, IsAdminOrMG, CharacterMG, IsAuthenticated, Role, IsInited };
+        /// <summary>Opaque demo-session token; present only while inside the "Try baron" demo.</summary>
+        public const string DemoToken = "DemoToken";
+        public static readonly string[] All = { SelectedCharacterId, UserName, UserId, IsAdminOrMG, CharacterMG, IsAuthenticated, Role, IsInited, DemoToken };
     }; 
 
     public class States

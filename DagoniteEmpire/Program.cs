@@ -157,6 +157,8 @@ public class Program
         builder.Services.AddScoped<IBaronyPlayerNoteRepository, BaronyPlayerNoteRepository>();
         builder.Services.AddScoped<IMarchMapRepository, MarchMapRepository>();
         builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<IDemoBaronyService, DemoBaronyService>();
+        builder.Services.AddHostedService<DemoSessionSweeper>();
         builder.Services.AddScoped<ICampaignSummaryService, CampaignSummaryService>();
         builder.Services.AddScoped<CallbackService>();
         builder.Services.AddScoped<IFileUpload, FileUpload>();

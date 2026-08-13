@@ -99,7 +99,7 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) { throw Err(ex, nameof(GetAllSummaries)); }
         }
 
-        public async Task<BaronyDTO> CreateForCharacter(int characterId, string name, string? notes = null)
+        public async Task<BaronyDTO> CreateForCharacter(int characterId, string name, string? notes = null, string? seedProfile = null)
         {
             try
             {
@@ -141,24 +141,28 @@ namespace DA_Business.Repository.BaronyRepos
                 await ctx.SaveChangesAsync();
 
                 var baronName = character.NPCName ?? "Baron";
-                SeniorHousesSeeder.EnsureForBarony(ctx, added.Entity.Id);
-                OrganizationsSeeder.EnsureForBarony(ctx, added.Entity.Id);
-                if (DarkholdSeeder.IsDarkhold(added.Entity.Name))
+                var profile = (seedProfile ?? string.Empty).Trim().ToLowerInvariant();
+                if (string.IsNullOrWhiteSpace(profile))
+                    profile = DarkholdSeeder.IsDarkhold(added.Entity.Name) ? "darkhold" : "custom";
+
+                if (profile == "darkhold")
                 {
                     // Darkhold ships a hand-authored starting state (terrain, fiefs, seat,
                     // courtiers, vassals + neighbors). Senior houses / organizations stay generic.
+                    SeniorHousesSeeder.EnsureForBarony(ctx, added.Entity.Id);
+                    OrganizationsSeeder.EnsureForBarony(ctx, added.Entity.Id);
                     await DarkholdSeeder.SeedAsync(ctx, added.Entity.Id, baronName);
+                    await EnsureStarterCityBuildingsAsync(ctx, added.Entity.Id);
+                    SeedStarterUnits(ctx, added.Entity.Id);
+                }
+                else if (profile == "custom")
+                {
+                    // Custom profile intentionally starts blank in all seeded barony sections.
                 }
                 else
                 {
-                    SeedDefaultAdvisors(ctx, added.Entity.Id, baronName);
-                    SeedTerrainGrid(ctx, added.Entity.Id);
-                    SeedPrimaryMapDomain(ctx, added.Entity.Id, added.Entity.Name, baronName);
-                    SeedPrimaryFief(ctx, added.Entity.Id, baronName);
-                    NeighborsSeeder.EnsureForBarony(ctx, added.Entity.Id);
+                    throw new RepositoryErrorException($"Unsupported barony seed profile: {seedProfile}");
                 }
-                await EnsureStarterCityBuildingsAsync(ctx, added.Entity.Id);
-                SeedStarterUnits(ctx, added.Entity.Id);
                 SeedBaronCampaign(ctx, character, added.Entity);
                 await ctx.SaveChangesAsync();
 

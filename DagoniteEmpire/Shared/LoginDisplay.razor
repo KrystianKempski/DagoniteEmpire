@@ -4,6 +4,7 @@
  @inject ICharacterRepository _characterRepository
  @inject ISnackbar _snackbar
  @inject CallbackService callbackService
+ @inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage _sessionStorage
 
 <AuthorizeView>
     <Authorized>
@@ -21,7 +22,7 @@
                 </ActivatorContent>
                 <ChildContent >
                     <MudMenuItem  Disabled>Select character</MudMenuItem>
-                    @if (UserInfo?.IsAdminOrMG == true)
+                    @if (UserInfo?.IsAdminOrMG == true && !SD.IsDemoUserName(UserInfo?.UserName))
                     {
                         <MudMenuItem OnClick="@(e => SelectCharacter())">
                             <div class="d-flex flex-row">
@@ -47,7 +48,7 @@
                             </div>
                         </MudMenuItem>
                     }
-                    <MudMenuItem Class="py-3" OnClick="@(() => GoTo("Logout"))">
+                    <MudMenuItem Class="py-3" OnClick="@LogoutAsync">
                         Log Out                        
                     </MudMenuItem>
                 </ChildContent>
@@ -97,11 +98,11 @@
 
         if (UserInfo?.IsAdminOrMG == true)
         {
-            Characters = await _characterRepository.GetAllApproved();
+            Characters = RestrictForDemo(await _characterRepository.GetAllApproved());
         }
         else
         {
-            Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
+            Characters = RestrictForDemo(await _characterRepository.GetAllApproved(UserInfo?.UserName));
         }
 
         if(UserInfo.SelectedCharacterId > 0)
@@ -116,7 +117,7 @@
             await _userService.SetSelectedCharId(UserInfo.SelectedCharacter.Id);         
             UserInfo = await _userService.GetUserInfo();
         }
-        else if (UserInfo.IsAdminOrMG == true){
+        else if (UserInfo.IsAdminOrMG == true && !SD.IsDemoUserName(UserInfo.UserName)){
             await _userService.SetSelectedCharId(-1);
             UserInfo = await _userService.GetUserInfo();
         }
@@ -170,12 +171,36 @@
 
         if (UserInfo?.IsAdminOrMG == true)
         {
-            Characters = await _characterRepository.GetAllApproved();
+            Characters = RestrictForDemo(await _characterRepository.GetAllApproved());
         }
         else
         {
-            Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
+            Characters = RestrictForDemo(await _characterRepository.GetAllApproved(UserInfo?.UserName));
         }     
+    }
+
+    // Demo baron sessions share one hidden Identity user, so hide every other session's clone:
+    // only the character selected for this browser session may be seen/switched to.
+    private IEnumerable<CharacterDTO> RestrictForDemo(IEnumerable<CharacterDTO> characters)
+    {
+        if (!SD.IsDemoUserName(UserInfo?.UserName))
+            return characters;
+        var selectedId = UserInfo?.SelectedCharacterId ?? 0;
+        return characters.Where(c => c.Id == selectedId).ToList();
+    }
+
+    private async Task LogoutAsync()
+    {
+        if (SD.IsDemoUserName(UserInfo?.UserName))
+        {
+            var t = await _sessionStorage.GetAsync<string>(ProtectedStorageKeys.DemoToken);
+            if (t.Success && !string.IsNullOrWhiteSpace(t.Value))
+            {
+                _navigationManager.NavigateTo($"/Account/DemoExit?t={t.Value}", true);
+                return;
+            }
+        }
+        _navigationManager.NavigateTo("Account/Logout");
     }
 
     private static string GetCharacterIconUrl(CharacterDTO character) =>

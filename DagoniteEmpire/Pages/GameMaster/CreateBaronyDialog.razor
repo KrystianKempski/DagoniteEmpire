@@ -4,11 +4,20 @@
 
 <MudDialog>
     <DialogContent>
+        <MudRadioGroup T="string"
+                       @bind-Value="_seedProfile"
+                       Label="Barony profile"
+                       Class="mb-3">
+            <MudRadio T="string" Value='@("darkhold")'>Darkhold (pre-seeded)</MudRadio>
+            <MudRadio T="string" Value='@("custom")'>Custom (blank start)</MudRadio>
+        </MudRadioGroup>
+
         <MudTextField @bind-Value="_name"
                       Label="Barony name"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Required="true"
+                      Disabled="@IsDarkholdProfile"
                       Class="mb-3" />
         <MudTextField @bind-Value="_description"
                       Label="Description"
@@ -52,11 +61,15 @@
 
     private string _name = string.Empty;
     private string? _description;
+    private string _seedProfile = "darkhold";
     private CharacterDTO? _selectedCharacter;
     private List<CharacterDTO> _eligibleCharacters = new();
+    private bool IsDarkholdProfile => string.Equals(_seedProfile, "darkhold", StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
+        _name = DarkholdSeeder.BaronyName;
+
         var allCharacters = (await _characterRepository.GetAllApproved(fullIncludes: false)).ToList();
         var dukeCharacters = allCharacters
             .Where(c => c.NPCType == SD.NPCType.Duke && c.IsApproved)
@@ -96,10 +109,15 @@
 
         try
         {
+            var effectiveName = IsDarkholdProfile
+                ? DarkholdSeeder.BaronyName
+                : _name.Trim();
+
             var barony = await _baronyRepo.CreateForCharacter(
                 _selectedCharacter.Id,
-                _name.Trim(),
-                _description);
+                effectiveName,
+                _description,
+                _seedProfile);
 
             _snackBar.Add($"Barony \"{barony.Name}\" created (with campaign).", Severity.Success);
             MudDialog.Close(DialogResult.Ok(barony));

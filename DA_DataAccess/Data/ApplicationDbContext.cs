@@ -95,6 +95,7 @@ namespace DA_DataAccess.Data
         public DbSet<BaronyBattleMap> BaronyBattleMaps { get; set; }
         public DbSet<MarchMapState> MarchMapStates { get; set; }
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
+        public DbSet<DemoSession> DemoSessions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

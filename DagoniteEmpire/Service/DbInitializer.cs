@@ -155,6 +155,34 @@ namespace DagoniteEmpire.Service
                     }
                 }
 
+                // Hidden account backing the public "Try baron" demo. Always present (demo is public);
+                // random password because sign-in happens server-side, never via the login form.
+                if (await _userManager.FindByEmailAsync(SD.DemoBaronEmail) is null)
+                {
+                    ApplicationUser demoUser = new()
+                    {
+                        UserName = SD.DemoBaronUserName,
+                        Email = SD.DemoBaronEmail,
+                        EmailConfirmed = true,
+                    };
+                    await _userManager.CreateAsync(demoUser, "Demo!" + Guid.NewGuid().ToString("N") + "A1");
+                    await _userManager.AddToRoleAsync(demoUser, SD.Role_DukePlayer);
+                }
+
+                // Hidden account backing the public "Try Game Master" demo. Same throwaway session
+                // machinery as the baron demo, but signed in with the GameMaster role.
+                if (await _userManager.FindByEmailAsync(SD.DemoGmEmail) is null)
+                {
+                    ApplicationUser demoGmUser = new()
+                    {
+                        UserName = SD.DemoGmUserName,
+                        Email = SD.DemoGmEmail,
+                        EmailConfirmed = true,
+                    };
+                    await _userManager.CreateAsync(demoGmUser, "Demo!" + Guid.NewGuid().ToString("N") + "A1");
+                    await _userManager.AddToRoleAsync(demoGmUser, SD.Role_GameMaster);
+                }
+
                 await SyncBuildingTemplateCatalogAsync(contex);
 
                 if (contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName) == null)
@@ -2842,6 +2870,8 @@ namespace DagoniteEmpire.Service
 
                 contex.SaveChanges();
 
+                await EnsureGenericDemoBaronAsync(contex);
+
                 await SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex);
                 await OrganizationsSeeder.EnsureForAllBaroniesAsync(contex);
                 await VassalFamilySeeder.EnsureForAllBaroniesAsync(contex);
@@ -2853,6 +2883,224 @@ namespace DagoniteEmpire.Service
             {
                 throw new Exception(ex.Message);
             }
+        }
+
+        private static async Task EnsureGenericDemoBaronAsync(ApplicationDbContext contex)
+        {
+            const string sourceName = "Thaddeus Direbolt";
+            const string demoName = "Aldric Emberfall";
+
+            if (await contex.Characters.AnyAsync(c => c.NPCName == demoName))
+                return;
+
+            var source = await contex.Characters
+                .AsNoTracking()
+                .Include(c => c.Attributes)
+                .Include(c => c.BaseSkills)
+                .Include(c => c.SpecialSkills)
+                .Include(c => c.EquipmentSlots)
+                .Include(c => c.Languages)
+                .FirstOrDefaultAsync(c => c.NPCName == sourceName);
+
+            if (source is null)
+                return;
+
+            var created = new Character
+            {
+                UserName = source.UserName,
+                Relation = source.Relation,
+                NPCName = demoName,
+                Description =
+                    "A former adventurer who now rules as a practical baron. Veteran of border expeditions, " +
+                    "strong in melee command and battle leadership, while still keeping a blacksmith's and " +
+                    "craftsman's discipline.",
+                Age = source.Age,
+                ImageUrl = source.ImageUrl,
+                IconUrl = source.IconUrl,
+                NPCType = SD.NPCType.Duke,
+                AttributePoints = source.AttributePoints,
+                CurrentExpPoints = source.CurrentExpPoints,
+                UsedExpPoints = source.UsedExpPoints,
+                TraitBalance = source.TraitBalance,
+                RaceId = source.RaceId,
+                IsApproved = true,
+                ProfessionId = source.ProfessionId,
+                WeaponSet = source.WeaponSet,
+                DateNumber = source.DateNumber,
+                Attributes = source.Attributes?
+                    .OrderBy(a => a.Index)
+                    .Select(a => new DA_DataAccess.CharacterClasses.Attribute
+                    {
+                        Name = a.Name,
+                        FeatureType = a.FeatureType,
+                        Index = a.Index,
+                        BaseBonus = a.BaseBonus,
+                        RaceBonus = a.RaceBonus,
+                        GearBonus = a.GearBonus,
+                        TraitBonus = a.TraitBonus,
+                        OtherBonuses = a.OtherBonuses,
+                        TempBonuses = a.TempBonuses,
+                        HealthBonus = a.HealthBonus,
+                    })
+                    .ToList(),
+                BaseSkills = source.BaseSkills?
+                    .OrderBy(s => s.Index)
+                    .Select(s => new BaseSkill
+                    {
+                        Name = s.Name,
+                        FeatureType = s.FeatureType,
+                        Index = s.Index,
+                        BaseBonus = s.BaseBonus,
+                        RaceBonus = s.RaceBonus,
+                        GearBonus = s.GearBonus,
+                        TraitBonus = s.TraitBonus,
+                        OtherBonuses = s.OtherBonuses,
+                        TempBonuses = s.TempBonuses,
+                        HealthBonus = s.HealthBonus,
+                        RelatedAttribute1 = s.RelatedAttribute1,
+                        RelatedAttribute2 = s.RelatedAttribute2,
+                    })
+                    .ToList(),
+                SpecialSkills = source.SpecialSkills?
+                    .OrderBy(s => s.RelatedBaseSkillName)
+                    .ThenBy(s => s.Index)
+                    .ThenBy(s => s.Name)
+                    .Select(s => new SpecialSkill
+                    {
+                        Name = s.Name,
+                        FeatureType = s.FeatureType,
+                        Index = s.Index,
+                        BaseBonus = s.BaseBonus,
+                        RaceBonus = s.RaceBonus,
+                        GearBonus = s.GearBonus,
+                        TraitBonus = s.TraitBonus,
+                        OtherBonuses = s.OtherBonuses,
+                        TempBonuses = s.TempBonuses,
+                        HealthBonus = s.HealthBonus,
+                        RelatedAttribute1 = s.RelatedAttribute1,
+                        RelatedAttribute2 = s.RelatedAttribute2,
+                        RelatedBaseSkillName = s.RelatedBaseSkillName,
+                        ChosenAttribute = s.ChosenAttribute,
+                        Editable = s.Editable,
+                    })
+                    .ToList(),
+                EquipmentSlots = source.EquipmentSlots?
+                    .OrderBy(s => s.Id)
+                    .Select(s => new EquipmentSlot
+                    {
+                        Count = s.Count,
+                        EquipmentID = s.EquipmentID,
+                        IsEquipped = s.IsEquipped,
+                        SlotType = s.SlotType,
+                    })
+                    .ToList(),
+            };
+
+            if (source.Languages is { Count: > 0 })
+            {
+                var languageIds = source.Languages.Select(l => l.Id).ToList();
+                created.Languages = await contex.Languages
+                    .Where(l => languageIds.Contains(l.Id))
+                    .ToListAsync();
+            }
+
+            ApplyDemoBaronSkillProfile(created);
+
+            contex.Characters.Add(created);
+            await contex.SaveChangesAsync();
+        }
+
+        private static void ApplyDemoBaronSkillProfile(Character character)
+        {
+            if (character.Attributes is not null)
+            {
+                BoostAttribute(character.Attributes, "Strength", 4);
+                BoostAttribute(character.Attributes, "Charisma", 5);
+                BoostAttribute(character.Attributes, "Intelligence", 1);
+                BoostAttribute(character.Attributes, "Willpower", 1);
+            }
+
+            if (character.BaseSkills is not null)
+            {
+                SetBaseSkill(character.BaseSkills, "Melee", 6);
+                SetBaseSkill(character.BaseSkills, "Athletics", 5);
+                SetBaseSkill(character.BaseSkills, "Talk", 5);
+                SetBaseSkill(character.BaseSkills, "Knowledge", 5);
+                SetBaseSkill(character.BaseSkills, "Craft", 6);
+            }
+
+            if (character.SpecialSkills is not null)
+            {
+                SetSpecialSkill(character.SpecialSkills, "Acting", 1);
+                SetSpecialSkill(character.SpecialSkills, "Animals care", 1);
+                SetSpecialSkill(character.SpecialSkills, "Armor", 3);
+                SetSpecialSkill(character.SpecialSkills, "Balance", 1);
+                SetSpecialSkill(character.SpecialSkills, "Bluff", 3);
+                SetSpecialSkill(character.SpecialSkills, "Climbing", 1);
+                SetSpecialSkill(character.SpecialSkills, "Diplomacy", 3);
+                SetSpecialSkill(character.SpecialSkills, "Dirty tricks", 2);
+                SetSpecialSkill(character.SpecialSkills, "Dodge", 3);
+                SetSpecialSkill(character.SpecialSkills, "Geography", 2);
+                SetSpecialSkill(character.SpecialSkills, "Geology and mining", 2);
+                SetSpecialSkill(character.SpecialSkills, "Handcraft", 4);
+                SetSpecialSkill(character.SpecialSkills, "Hearing", 1);
+                SetSpecialSkill(character.SpecialSkills, "Heraldry", 1);
+                SetSpecialSkill(character.SpecialSkills, "History and religion", 2);
+                SetSpecialSkill(character.SpecialSkills, "Shields", 3);
+                SetSpecialSkill(character.SpecialSkills, "Strategy and tactics", 5);
+                SetSpecialSkill(character.SpecialSkills, "Inspire", 4);
+                SetSpecialSkill(character.SpecialSkills, "Intimidate", 3);
+                SetSpecialSkill(character.SpecialSkills, "Jumping", 1);
+                SetSpecialSkill(character.SpecialSkills, "Lifting", 2);
+                SetSpecialSkill(character.SpecialSkills, "Linguistics", 5);
+                SetSpecialSkill(character.SpecialSkills, "Mathematics and logic", 2);
+                SetSpecialSkill(character.SpecialSkills, "Metallurgy and blacksmithing", 5);
+                SetSpecialSkill(character.SpecialSkills, "Pain Resistance", 4);
+                SetSpecialSkill(character.SpecialSkills, "Persuasion", 4);
+                SetSpecialSkill(character.SpecialSkills, "Pickpocketing", 4);
+                SetSpecialSkill(character.SpecialSkills, "Plants and mushrooms", 3);
+                SetSpecialSkill(character.SpecialSkills, "Public speech", 4);
+                SetSpecialSkill(character.SpecialSkills, "Riding", 3);
+                SetSpecialSkill(character.SpecialSkills, "Running", 2);
+                SetSpecialSkill(character.SpecialSkills, "Sense motives", 1);
+                SetSpecialSkill(character.SpecialSkills, "Sense of direction", 2);
+                SetSpecialSkill(character.SpecialSkills, "Sneak", 3);
+                SetSpecialSkill(character.SpecialSkills, "Survival", 3);
+                SetSpecialSkill(character.SpecialSkills, "Swimming", 1);
+                SetSpecialSkill(character.SpecialSkills, "Swords and sabres", 5);
+                SetSpecialSkill(character.SpecialSkills, "Tend wounds", 2);
+                SetSpecialSkill(character.SpecialSkills, "Threatening", 3);
+                SetSpecialSkill(character.SpecialSkills, "Torture", 2);
+                SetSpecialSkill(character.SpecialSkills, "Trade", 2);
+                SetSpecialSkill(character.SpecialSkills, "Trapping", 1);
+                SetSpecialSkill(character.SpecialSkills, "Vigilance", 2);
+                SetSpecialSkill(character.SpecialSkills, "Wilderness knowledge", 3);
+                SetSpecialSkill(character.SpecialSkills, "Wrestling", 4);
+            }
+        }
+
+        private static void BoostAttribute(IEnumerable<DA_DataAccess.CharacterClasses.Attribute> attributes, string name, int add)
+        {
+            var attr = attributes.FirstOrDefault(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (attr is null)
+                return;
+            attr.BaseBonus += add;
+        }
+
+        private static void SetBaseSkill(IEnumerable<BaseSkill> skills, string name, int value)
+        {
+            var skill = skills.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (skill is null)
+                return;
+            skill.BaseBonus = value;
+        }
+
+        private static void SetSpecialSkill(IEnumerable<SpecialSkill> skills, string name, int value)
+        {
+            var skill = skills.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (skill is null)
+                return;
+            skill.BaseBonus = value;
         }
 
         /// <summary>Reseed catalog when empty, legacy Polish, or outdated farm/mine/quarry/sawmill names.</summary>

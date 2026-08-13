@@ -1,0 +1,64 @@
+@namespace DagoniteEmpire.Pages.Barony
+@using DA_Business.Services.Interfaces
+@using DA_Common
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@implements IDisposable
+@inject ProtectedSessionStorage SessionStorage
+@inject IDemoBaronyService DemoService
+@inject IJSRuntime JS
+
+@if (_active)
+{
+    <div class="demo-mode-banner" style="position:fixed;bottom:44px;left:0;z-index:1600;display:flex;align-items:center;gap:.5rem;padding:.25rem .6rem;background:#7b341e;color:#fff;font-size:.8rem;border-top-right-radius:.4rem;border-bottom-right-radius:.4rem;box-shadow:0 1px 6px rgba(0,0,0,.35);">
+        <MudIcon Icon="@Icons.Material.Filled.Science" Size="Size.Small" />
+        <span>Demo mode</span>
+        <a href="@ExitUrl" class="demo-mode-banner__exit" style="color:#fff;font-weight:600;text-decoration:underline;white-space:nowrap;">Exit</a>
+    </div>
+}
+
+@code {
+    private bool _active;
+    private string? _token;
+    private Guid _tokenGuid;
+    private System.Threading.Timer? _heartbeat;
+
+    private string ExitUrl => $"/Account/DemoExit?t={_token}";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        var result = await SessionStorage.GetAsync<string>(ProtectedStorageKeys.DemoToken);
+        if (!result.Success || string.IsNullOrWhiteSpace(result.Value) || !Guid.TryParse(result.Value, out var g))
+            return;
+
+        // A token can linger in session storage after exit — only show the banner for a live session.
+        if (!await DemoService.IsSessionActiveAsync(g))
+        {
+            await SessionStorage.DeleteAsync(ProtectedStorageKeys.DemoToken);
+            return;
+        }
+
+        _token = result.Value;
+        _tokenGuid = g;
+        _active = true;
+        StateHasChanged();
+
+        // Immediate heartbeat so a fresh (or refreshed) tab keeps the session alive right away.
+        try { await DemoService.TouchAsync(_tokenGuid); }
+        catch { /* best-effort */ }
+
+        // Notify the server promptly when the visitor closes the tab or navigates away.
+        try { await JS.InvokeVoidAsync("registerDemoLeaveBeacon", $"/Account/DemoLeave?t={_token}"); }
+        catch { /* best-effort */ }
+
+        _heartbeat = new System.Threading.Timer(async void (_) =>
+        {
+            try { await DemoService.TouchAsync(_tokenGuid); }
+            catch { /* heartbeat is best-effort */ }
+        }, null, TimeSpan.FromSeconds(45), TimeSpan.FromSeconds(45));
+    }
+
+    public void Dispose() => _heartbeat?.Dispose();
+}
